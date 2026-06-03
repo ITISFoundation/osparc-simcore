@@ -590,6 +590,12 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 		xargs -r -n 1 docker pull
 
 
+.PHONY: promote-version
+promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-GIT_TAG guard-DOCKER_USERNAME guard-DOCKER_PASSWORD guard-DOCKER_REGISTRY guard-OWNER ## Promotes registry images from one docker tag family to another without loading images locally
+	# Delegates implementation to ci/deploy/dockerhub-tag-version.bash
+	@bash ci/deploy/dockerhub-tag-version.bash
+
+
 ## ENVIRONMENT -------------------------------
 
 .PHONY: devenv devenv-all node-env
@@ -611,7 +617,7 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 	@echo "# upgrading tools to latest version in" && $@/bin/python --version
 	@uv pip list --python $@
 
-devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
+devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json .vscode/mcp.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
@@ -640,16 +646,8 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json: .vscode/settings.template.json
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
-
-
-.vscode/launch.json: .vscode/launch.template.json
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+.vscode/%.json:
+	@$(MAKE_C) .vscode $(notdir $@)
 
 
 

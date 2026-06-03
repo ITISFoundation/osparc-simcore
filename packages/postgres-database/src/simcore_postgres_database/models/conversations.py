@@ -16,6 +16,11 @@ class ConversationType(enum.Enum):
     SUPPORT_CALL = "SUPPORT_CALL"  # Support call conversation
 
 
+class ConversationStatus(enum.Enum):
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
+
+
 conversations = sa.Table(
     "conversations",
     metadata,
@@ -29,7 +34,7 @@ conversations = sa.Table(
     sa.Column(
         "name",
         sa.String,
-        nullable=False,
+        nullable=True,
     ),
     sa.Column(
         "project_uuid",
@@ -99,6 +104,13 @@ conversations = sa.Table(
         nullable=False,
         server_default=sa.text("true"),
         doc="Indicates if the message has been read by the support user (true) or not (false)",
+    ),
+    sa.Column(
+        "status",
+        sa.Enum(ConversationStatus),
+        nullable=False,
+        server_default="ACTIVE",
+        doc="Conversation status: ACTIVE or ARCHIVED (support view only)",
     ),
     sa.Column(
         "last_message_created_at",

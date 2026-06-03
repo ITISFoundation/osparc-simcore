@@ -11,21 +11,24 @@ might affect the others. E.g. files uploaded in one test can be listed in rext
 # pylint: disable=unused-variable
 
 import logging
-import time
 from operator import attrgetter
 from pathlib import Path
+from typing import Final
 from urllib.parse import quote_plus
 from zipfile import ZipFile
 
 import osparc
 import pytest
 from pytest_simcore.helpers.typing_public_api import ServiceInfoDict, ServiceNameStr
+from tenacity import Retrying, TryAgain, retry_if_exception_type, stop_after_delay, wait_fixed
 
 osparc_VERSION = tuple(map(int, osparc.__version__.split(".")))
 assert osparc_VERSION >= (0, 4, 3)
 
 
 logger = logging.getLogger(__name__)
+
+_JOB_COMPLETION_TIMEOUT: Final = 120
 
 
 @pytest.fixture(scope="module")
@@ -211,19 +214,26 @@ def test_run_job(
     #    job.created_at < status.submitted_at < (job.created_at + timedelta(seconds=2))
     # )
 
-    # poll stop time-stamp
-    while not status.stopped_at:
-        time.sleep(0.5)
-        status: osparc.JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
-        assert isinstance(status, osparc.JobStatus)
+    for attempt in Retrying(
+        stop=stop_after_delay(_JOB_COMPLETION_TIMEOUT),
+        wait=wait_fixed(0.5),
+        retry=retry_if_exception_type(TryAgain),
+        reraise=True,
+    ):
+        with attempt:
+            status = solvers_api.inspect_job(solver.id, solver.version, job.id)
+            assert isinstance(status, osparc.JobStatus)
+            assert 0 <= status.progress <= 100
 
-        assert 0 <= status.progress <= 100
+            print("Solver progress", f"{status.progress}/100", flush=True)
 
-        print("Solver progress", f"{status.progress}/100", flush=True)
+            if not status.stopped_at:
+                raise TryAgain
 
     # done, either successfully or with failures!
     assert status.progress == 100
     assert status.state == expected_outcome
+    assert status.stopped_at is not None
     # FIXME: assert status.submitted_at < status.started_at
     # FIXME: assert status.started_at < status.stopped_at
     assert status.submitted_at < status.stopped_at

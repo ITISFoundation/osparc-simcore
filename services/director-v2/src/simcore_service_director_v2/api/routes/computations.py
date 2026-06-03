@@ -73,8 +73,6 @@ from ...utils import computations as utils
 from ...utils.computations_tasks import validate_pipeline
 from ...utils.dags import (
     compute_pipeline_details,
-    compute_pipeline_started_timestamp,
-    compute_pipeline_stopped_timestamp,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
@@ -181,6 +179,17 @@ async def _get_project_metadata(
         _logger.exception("Could not find parent project: %s", exc.error_context().get("project_id"))
 
     return {}
+
+
+def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
+    assert computation.wallet_info  # nosec
+    raise WalletNotEnoughCreditsError(
+        wallet_name=computation.wallet_info.wallet_name,
+        wallet_credit_amount=computation.wallet_info.wallet_credit_amount,
+        user_id=computation.user_id,
+        product_name=computation.product_name,
+        project_id=computation.project_id,
+    )
 
 
 async def _try_start_pipeline(
@@ -316,7 +325,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         )
         assert computation.product_name  # nosec
         min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
-        comp_tasks = await comp_tasks_repo.upsert_tasks_from_project(
+        comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
             catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
@@ -329,6 +338,9 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
 
         pipeline_started = False
         if computation.start_pipeline:
+            if insufficient_credits:
+                _raise_if_insufficient_credits(computation)
+
             pipeline_started = await _try_start_pipeline(
                 request.app,
                 project_repo=project_repo,
@@ -364,8 +376,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
             ),
             iteration=last_run.iteration if last_run else None,
             result=None,
-            started=compute_pipeline_started_timestamp(minimal_computational_dag, comp_tasks),
-            stopped=compute_pipeline_stopped_timestamp(minimal_computational_dag, comp_tasks),
+            started=last_run.started if last_run and pipeline_started else None,
+            stopped=last_run.ended if last_run and pipeline_started else None,
             submitted=last_run.created if last_run else None,
         )
 
@@ -452,8 +464,8 @@ async def get_computation(
         ),
         iteration=last_run.iteration if last_run else None,
         result=None,
-        started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
-        stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
+        started=last_run.started if last_run else None,
+        stopped=last_run.ended if last_run else None,
         submitted=last_run.created if last_run else None,
     )
 
@@ -505,8 +517,8 @@ async def stop_computation(
             stop_url=None,
             iteration=last_run.iteration if last_run else None,
             result=None,
-            started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
-            stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
+            started=last_run.started if last_run else None,
+            stopped=last_run.ended if last_run else None,
             submitted=last_run.created if last_run else None,
         )
 

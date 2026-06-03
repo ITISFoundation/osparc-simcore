@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 import logging
+from datetime import datetime
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -13,8 +14,10 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
     ConversationPatchDB,
+    ConversationStatus,
     ConversationUserType,
 )
+from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
@@ -23,8 +26,11 @@ from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
 from ..application_keys import APP_SETTINGS_APPKEY
+from ..notifications import notifications_service
+from ..notifications._models import EmailContact
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
+from ..resource_manager.user_sessions import is_user_connected
 from ..users import users_service
 from . import (
     _conversation_message_repository,
@@ -71,6 +77,74 @@ async def _notify_conversation_message_created(
             project_id=None,
             conversation_message=conversation_message,
         )
+
+
+async def _notify_support_reply(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    conversation: ConversationGetDB,
+    conversation_user_type: ConversationUserType,
+    message_content: str,
+    message_created_at: datetime,
+    sender_user_id: UserID,
+) -> None:
+    product = products_service.get_product(app, product_name=product_name)
+    conversation_url = f"{product.base_url}#/conversation/{conversation.conversation_id}"
+
+    match conversation_user_type:
+        case ConversationUserType.SUPPORT_USER:
+            # Notify the conversation creator
+            conversation_creator_user_id = await users_service.get_user_id_from_gid(
+                app, primary_gid=conversation.user_group_id
+            )
+
+            # Check if user is online - if so, skip email (they already receive
+            # the conversation:message:created socketio notification)
+            try:
+                user_is_online = await is_user_connected(app, conversation_creator_user_id)
+            except Exception:  # pylint: disable=broad-except
+                _logger.warning(
+                    "Failed to check if user %s is connected, defaulting to offline",
+                    conversation_creator_user_id,
+                    exc_info=True,
+                )
+                user_is_online = False
+
+            if user_is_online:
+                _logger.info(
+                    "User %s is online, skipping email notification for conversation %s "
+                    "(user receives real-time socketio notification)",
+                    conversation_creator_user_id,
+                    conversation.conversation_id,
+                )
+                return
+
+            recipient_user = await users_service.get_user(app, conversation_creator_user_id)
+            recipient_name = (
+                f"{recipient_user.get('first_name') or ''} {recipient_user.get('last_name') or ''}".strip()
+                or recipient_user["email"]
+            )
+
+            await notifications_service.send_message_from_template(
+                app,
+                user_id=sender_user_id,
+                product_name=product_name,
+                channel=Channel.email,
+                group_ids=None,
+                external_contacts=[EmailContact(name=recipient_name, email=recipient_user["email"])],
+                template_name="support_reply",
+                context={
+                    "user": {
+                        "first_name": recipient_user.get("first_name"),
+                        "user_name": recipient_user.get("name"),
+                    },
+                    "conversation_name": conversation.name,
+                    "conversation_url": conversation_url,
+                    "message_content": message_content,
+                    "message_created_at": message_created_at,
+                },
+            )
 
 
 async def create_message_and_notify(
@@ -173,7 +247,7 @@ async def create_support_message(
         content=content,
         type_=type_,
     )
-    # NOTE: Update conversation last modified (for frontend listing) and read states
+    # NOTE: Update conversation last modified (for frontend listing), read states, and auto-unarchive
     await _conversation_repository.update(
         app,
         conversation_id=conversation.conversation_id,
@@ -181,6 +255,7 @@ async def create_support_message(
             is_read_by_user=_is_read_by_user,
             is_read_by_support=_is_read_by_support,
             last_message_created_at=message.created,
+            status=ConversationStatus.ACTIVE,
         ),
     )
 
@@ -191,7 +266,33 @@ async def create_support_message(
         product_name=product_name,
     )
 
-    # 2. Create or reopen FogBugz case if applicable
+    # 2. Notify via email
+
+    try:
+        await _notify_support_reply(
+            app,
+            product_name=product_name,
+            conversation=conversation,
+            conversation_user_type=conversation_user_type,
+            message_content=message.content,
+            message_created_at=message.created,
+            sender_user_id=user_id,
+        )
+    except Exception as err:  # pylint: disable=broad-except
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                f"Failed to send support reply email notification for conversation {conversation.conversation_id}.",
+                error=err,
+                error_context={
+                    "conversation_id": conversation.conversation_id,
+                    "user_id": user_id,
+                    "conversation_user_type": conversation_user_type,
+                },
+                tip="Check notification service availability and email configuration.",
+            )
+        )
+
+    # 3. Create or reopen FogBugz case if applicable
 
     product = products_service.get_product(app, product_name=product_name)
     fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
@@ -236,12 +337,14 @@ async def create_support_message(
                         "user_id": user_id,
                         "fogbugz_url": str(fogbugz_settings_or_none.FOGBUGZ_URL),
                     },
-                    tip="Check conversation in the database and inform support team (create Fogbugz case manually if needed).",
+                    tip="Check conversation in the database and inform support team "
+                    "(create Fogbugz case manually if needed).",
                 )
             )
     else:
         _logger.info(
-            "Support settings available, Fogbugz case exists but it is closed, so we need to reopen a FogBugz case. Conversation ID: %s",
+            "Support settings available, Fogbugz case exists but it is closed, so we need to reopen a FogBugz case. "
+            "Conversation ID: %s",
             conversation.conversation_id,
         )
         assert product.support_assigned_fogbugz_project_id  # nosec
@@ -285,7 +388,8 @@ async def trigger_chatbot_processing(
 
     if conversation_user_type != ConversationUserType.REGULAR_USER:
         _logger.warning(
-            "Chatbot processing can only be triggered by regular users. Conversation ID: %s, User ID: %s, Conversation User Type: %s",
+            "Chatbot processing can only be triggered by regular users. "
+            "Conversation ID: %s, User ID: %s, Conversation User Type: %s",
             conversation.conversation_id,
             user_id,
             conversation_user_type,
@@ -302,7 +406,8 @@ async def trigger_chatbot_processing(
     )
     if not messages or messages[0].message_id != message_id:
         _logger.warning(
-            "Chatbot processing can only be triggered for the last message in the conversation. Conversation ID: %s, Message ID: %s, Last Message ID: %s",
+            "Chatbot processing can only be triggered for the last message in the conversation. "
+            "Conversation ID: %s, Message ID: %s, Last Message ID: %s",
             conversation.conversation_id,
             message_id,
             messages[0].message_id if messages else "N/A",

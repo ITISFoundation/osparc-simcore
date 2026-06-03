@@ -1,6 +1,6 @@
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.3
+aiohttp==3.13.5
     # via
     #   -c ../../requirements/constraints.txt
     #   -r requirements.in
@@ -117,7 +117,7 @@ termcolor==3.3.0
     # via pytest-sugar
 typing-extensions==4.15.0
     # via openapi-core
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c ../../requirements/constraints.txt
     #   requests

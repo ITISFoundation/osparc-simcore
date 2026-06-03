@@ -5,7 +5,9 @@ from aiohttp import web
 from models_library.conversations import (
     ConversationGetDB,
     ConversationID,
+    ConversationName,
     ConversationPatchDB,
+    ConversationStatus,
     ConversationType,
 )
 from models_library.groups import GroupID
@@ -39,7 +41,7 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    name: str,
+    name: ConversationName | None,
     project_uuid: ProjectID | None,
     user_group_id: GroupID,
     type_: ConversationType,
@@ -127,6 +129,10 @@ async def list_support_conversations_for_user(
     *,
     user_group_id: GroupID,
     product_name: ProductName,
+    # filters
+    filter_status: ConversationStatus | None = None,
+    filter_is_read_by_user: bool | None = None,
+    filter_is_read_by_support: bool | None = None,
     # pagination
     offset: NonNegativeInt,
     limit: NonNegativeInt,
@@ -144,6 +150,13 @@ async def list_support_conversations_for_user(
             )
         )
     )
+
+    if filter_status is not None:
+        base_query = base_query.where(conversations.c.status == filter_status)
+    if filter_is_read_by_user is not None:
+        base_query = base_query.where(conversations.c.is_read_by_user == filter_is_read_by_user)
+    if filter_is_read_by_support is not None:
+        base_query = base_query.where(conversations.c.is_read_by_support == filter_is_read_by_support)
 
     # Select total count from base_query
     subquery = base_query.subquery()
@@ -176,6 +189,10 @@ async def list_all_support_conversations_for_support_user(
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
+    # filters
+    filter_status: ConversationStatus | None = None,
+    filter_is_read_by_user: bool | None = None,
+    filter_is_read_by_support: bool | None = None,
     # pagination
     offset: NonNegativeInt,
     limit: NonNegativeInt,
@@ -190,6 +207,13 @@ async def list_all_support_conversations_for_support_user(
             & (conversations.c.product_name == product_name)
         )
     )
+
+    if filter_status is not None:
+        base_query = base_query.where(conversations.c.status == filter_status)
+    if filter_is_read_by_user is not None:
+        base_query = base_query.where(conversations.c.is_read_by_user == filter_is_read_by_user)
+    if filter_is_read_by_support is not None:
+        base_query = base_query.where(conversations.c.is_read_by_support == filter_is_read_by_support)
 
     # Select total count from base_query
     subquery = base_query.subquery()
@@ -272,9 +296,6 @@ async def update(
         **updates.model_dump(exclude_unset=True),
         conversations.c.modified.name: func.now(),
     }
-    _name = _updates.get("name", "Default")
-    if _name is None:
-        _updates["name"] = "no name"
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(

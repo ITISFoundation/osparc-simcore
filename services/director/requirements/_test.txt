@@ -2,14 +2,14 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.12.12
+aiohttp==3.13.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aioresponses
 aioresponses==0.7.8
     # via -r requirements/_test.in
-aiosignal==1.3.1
+aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -43,6 +43,8 @@ docker==7.1.0
     # via -r requirements/_test.in
 faker==40.11.0
     # via -r requirements/_test.in
+fakeredis==2.36.0
+    # via -r requirements/_test.in
 frozenlist==1.5.0
     # via
     #   -c requirements/_base.txt
@@ -74,6 +76,8 @@ jsonref==1.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+lupa==2.8
+    # via fakeredis
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt
@@ -125,6 +129,11 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
+redis==7.4.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
 requests==2.32.4
     # via
     #   -c requirements/_base.txt
@@ -136,9 +145,11 @@ sniffio==1.3.1
     #   -c requirements/_base.txt
     #   anyio
     #   asgi-lifespan
+sortedcontainers==2.4.0
+    # via fakeredis
 termcolor==3.3.0
     # via pytest-sugar
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

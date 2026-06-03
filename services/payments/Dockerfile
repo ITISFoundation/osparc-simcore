@@ -153,10 +153,10 @@ RUN chmod +x services/payments/docker/*.sh
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=20s \
+  --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "services/payments/docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/payments/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/payments/docker/boot.sh"]
@@ -164,7 +164,7 @@ CMD ["/bin/sh", "services/payments/docker/boot.sh"]
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as "scu" with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR

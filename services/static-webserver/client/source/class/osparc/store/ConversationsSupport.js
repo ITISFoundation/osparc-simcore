@@ -81,27 +81,119 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       });
     },
 
-    fetchConversations: function() {
+    fetchConversations: function(filter, offset = 0) {
+      const params = {
+        url: {
+          offset,
+          limit: 9,
+        }
+      };
+      let endpoint;
+      switch (filter) {
+        case "unread":
+          if (osparc.store.Groups.getInstance().amIASupportUser()) {
+            endpoint = "getConversationsPageUnreadBySupport";
+          } else {
+            endpoint = "getConversationsPageUnreadByUser";
+          }
+          break;
+        case "active":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "ACTIVE";
+          break;
+        case "archived":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "ARCHIVED";
+          break;
+        case "all":
+        default:
+          endpoint = "getConversationsPage";
+          break;
+      }
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params, options)
+        .then(resp => {
+          const conversations = [];
+          const conversationsData = resp["data"] || resp;
+          const total = resp["_meta"] ? resp["_meta"]["total"] : null;
+          if (Array.isArray(conversationsData)) {
+            conversationsData.forEach(conversationData => {
+              const conversation = this.__addToCache(conversationData);
+              conversations.push(conversation);
+            });
+          }
+          return { conversations, total };
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    fetchConversationCount: function(filter) {
       const params = {
         url: {
           offset: 0,
-          limit: 42,
+          limit: 1,
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "getConversationsPage", params)
-        .then(conversationsData => {
-          const conversations = [];
-          if (conversationsData.length) {
-            // Sort conversations by created date, newest first (the new ones will be next to the plus button)
-            conversationsData.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
+      const options = {
+        resolveWResponse: true
+      };
+      let endpoint;
+      switch (filter) {
+        case "unread":
+          if (osparc.store.Groups.getInstance().amIASupportUser()) {
+            endpoint = "getConversationsPageUnreadBySupport";
+          } else {
+            endpoint = "getConversationsPageUnreadByUser";
           }
-          conversationsData.forEach(conversationData => {
-            const conversation = this.__addToCache(conversationData);
-            conversations.push(conversation);
-          });
-          return conversations;
-        })
-        .catch(err => osparc.FlashMessenger.logError(err));
+          break;
+        case "active":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "ACTIVE";
+          break;
+        case "archived":
+          endpoint = "getConversationsPageByStatus";
+          params.url["status"] = "ARCHIVED";
+          break;
+        case "all":
+        default:
+          endpoint = "getConversationsPage";
+          break;
+      }
+      return osparc.data.Resources.fetch("conversationsSupport", endpoint, params, options)
+        .then(resp => resp["_meta"]["total"])
+        .catch(err => console.error(err));
+    },
+
+    fetchConversationCounts: function() {
+      if (osparc.store.Groups.getInstance().amIASupportUser()) {
+        return Promise.all([
+          this.fetchConversationCount("all"),
+          this.fetchConversationCount("unread"),
+          this.fetchConversationCount("active"),
+          this.fetchConversationCount("archived"),
+        ]).then(counts => {
+          const conversationCounts = {
+            all: counts[0],
+            unread: counts[1],
+            active: counts[2],
+            archived: counts[3],
+          };
+          return conversationCounts;
+        });
+      } else {
+        return Promise.all([
+          this.fetchConversationCount("all"),
+          this.fetchConversationCount("unread"),
+        ]).then(counts => {
+          const conversationCounts = {
+            all: counts[0],
+            unread: counts[1],
+          };
+          return conversationCounts;
+        });
+      }
     },
 
     getConversation: function(conversationId) {
@@ -127,7 +219,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       extraContext["product"] = osparc.product.Utils.getProductName();
       const params = {
         data: {
-          name: "null",
+          name: null,
           type,
           extraContext,
         }
@@ -169,7 +261,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
 
     renameConversation: function(conversationId, name) {
       const patchData = {
-        name,
+        name: name || null,
       };
       return this.__patchConversation(conversationId, patchData);
     },
@@ -188,6 +280,13 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       } else {
         patchData["isReadByUser"] = true;
       }
+      return this.__patchConversation(conversationId, patchData);
+    },
+
+    archiveConversation: function(conversationId, archive) {
+      const patchData = {
+        "status": archive ? "ARCHIVED" : "ACTIVE",
+      };
       return this.__patchConversation(conversationId, patchData);
     },
 
@@ -291,8 +390,8 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       const conversation = this.__conversationsCached[conversationId];
       if (conversation) {
         // Only the following properties can be updated:
-        // name, extraContext, readByUser, readBySupport
-        if (conversationData["name"]) {
+        // name, extraContext, readByUser, readBySupport, isArchived
+        if ("name" in conversationData) {
           conversation.setName(conversationData["name"]);
         }
         if (conversationData["extraContext"]) {
@@ -303,6 +402,9 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         }
         if (typeof conversationData["isReadBySupport"] === "boolean") {
           conversation.setReadBySupport(conversationData["isReadBySupport"]);
+        }
+        if (typeof conversationData["isArchived"] === "boolean") {
+          conversation.setArchived(conversationData["isArchived"]);
         }
       }
     },

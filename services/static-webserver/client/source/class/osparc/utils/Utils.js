@@ -359,6 +359,49 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    /**
+     * Animates swapping two widgets: slides the hiding widget out to the left
+     * and slides the showing widget in from the right.
+     *
+     * @param {qx.ui.core.Widget} toHide Widget to hide
+     * @param {qx.ui.core.Widget} toShow Widget to show
+     * @param {Object} [opts] Options
+     * @param {Number} [opts.duration=200] Animation duration in ms
+     * @param {Number} [opts.translation=200] Slide distance in px
+     */
+    animateSwap: function(toHide, toShow, opts) {
+      const duration = (opts && opts.duration) || 200;
+      const translation = (opts && opts.translation) || 200;
+      const hideContainer = toHide.getLayoutParent();
+      const hideDom = hideContainer ? hideContainer.getContentElement().getDomElement() : null;
+      if (hideDom) {
+        qx.bom.element.Animation.animate(hideDom, {
+          duration,
+          keyFrames: {
+            0: {opacity: 1, translate: ["0px"]},
+            100: {opacity: 0, translate: [`-${translation}px`]}
+          }
+        }).addListenerOnce("end", () => {
+          toHide.setVisibility("excluded");
+          toShow.setVisibility("visible");
+          const showContainer = toShow.getLayoutParent();
+          const showDom = showContainer ? showContainer.getContentElement().getDomElement() : null;
+          if (showDom) {
+            qx.bom.element.Animation.animate(showDom, {
+              duration,
+              keyFrames: {
+                0: {opacity: 0, translate: [`${translation}px`]},
+                100: {opacity: 1, translate: ["0px"]}
+              }
+            });
+          }
+        });
+      } else {
+        toHide.setVisibility("excluded");
+        toShow.setVisibility("visible");
+      }
+    },
+
     getGridsFirstColumnWidth: function(grid) {
       let firstColumnWidth = null;
       const firstElement = grid.getCellWidget(0, 0);
@@ -375,8 +418,10 @@ qx.Class.define("osparc.utils.Utils", {
       return firstColumnWidth;
     },
 
-    makeButtonBlink: function(button, nTimes = 1) {
-      const baseColor = button.getBackgroundColor();
+    makeButtonBlink: function(button, nTimes = 1, colorProperty = "backgroundColor") {
+      const getter = "get" + qx.lang.String.firstUp(colorProperty);
+      const setter = "set" + qx.lang.String.firstUp(colorProperty);
+      let baseColor = button[getter]();
       const blinkColor = "strong-main";
       const interval = 500;
       let count = 0;
@@ -384,17 +429,21 @@ qx.Class.define("osparc.utils.Utils", {
       // If a blink is already in progress, cancel it
       if (button._blinkingIntervalId) {
         clearInterval(button._blinkingIntervalId);
-        button.setBackgroundColor(baseColor); // reset to base
+        button[setter](baseColor); // reset to base
       }
 
       const blinkInterval = setInterval(() => {
         if (button && button.getContentElement()) {
-          button.setBackgroundColor((count % 2 === 0) ? blinkColor : baseColor);
+          // Capture base color on first tick if it wasn't available at call time
+          if (baseColor === null || baseColor === undefined) {
+            baseColor = button[getter]();
+          }
+          button[setter]((count % 2 === 0) ? blinkColor : baseColor);
           count++;
 
           if (count >= nTimes * 2) {
             clearInterval(blinkInterval);
-            button.setBackgroundColor(baseColor);
+            button[setter](baseColor);
             button._blinkingIntervalId = null; // cleanup
           }
         }
@@ -733,8 +782,8 @@ qx.Class.define("osparc.utils.Utils", {
       return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
     },
 
-    createReleaseNotesLink: function() {
-      let text = "osparc-simcore " + this.getReleaseTag();
+    createReleaseNotesLink: function(prefix = "osparc") {
+      let text = prefix + " " + this.getReleaseTag();
       const platformName = osparc.store.StaticInfo.getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
       const url = this.self().getReleaseNotesLink();

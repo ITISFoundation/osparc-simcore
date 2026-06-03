@@ -80,6 +80,12 @@ async def list_projects_marked_as_jobs(
             if filters and filters.any_custom_metadata
             else None
         ),
+        filter_all_custom_metadata=(
+            [(custom_metadata.name, custom_metadata.pattern) for custom_metadata in filters.all_custom_metadata]
+            if filters and filters.all_custom_metadata
+            else None
+        ),
+        filter_by_project_uuids=(filters.project_uuids if filters else None),
     )
 
     job_projects = [

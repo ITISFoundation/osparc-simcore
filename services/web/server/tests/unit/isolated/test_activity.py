@@ -75,8 +75,6 @@ def app_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest
             "PROMETHEUS_USERNAME": "fake",
             "PROMETHEUS_VTAG": "v1",
             "SESSION_SECRET_KEY": "REPLACE_ME_with_result__Fernet_generate_key=",
-            "SMTP_HOST": "mail.foo.com",
-            "SMTP_PORT": "25",
             "STORAGE_HOST": "storage",
             "STORAGE_PORT": "11111",
             "STORAGE_VTAG": "v0",

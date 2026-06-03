@@ -16,17 +16,15 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.po.Users", {
+qx.Class.define("osparc.po.UsersSearch", {
   extend: osparc.po.BaseView,
 
   statics: {
     GRID_POS: {
       USERNAME: 0,
       EMAIL: 1,
-      DATE: 2,
-      ACCOUNT_REQUEST_STATUS: 3,
-      STATUS: 4,
-      INFO: 5,
+      STATUS: 2,
+      INFO: 3,
     }
   },
 
@@ -137,14 +135,6 @@ qx.Class.define("osparc.po.Users", {
         row: 0,
         column: this.self().GRID_POS.EMAIL,
       });
-      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Date")), {
-        row: 0,
-        column: this.self().GRID_POS.DATE,
-      });
-      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Request")), {
-        row: 0,
-        column: this.self().GRID_POS.ACCOUNT_REQUEST_STATUS,
-      });
       foundUsersLayout.add(this.__createHeaderLabel(this.tr("Status")), {
         row: 0,
         column: this.self().GRID_POS.STATUS,
@@ -159,7 +149,7 @@ qx.Class.define("osparc.po.Users", {
       foundUsers.forEach((user, index) => {
         const row = index + 1;
 
-        const userNameLabel = new qx.ui.basic.Label(user["username"]).set({
+        const userNameLabel = new qx.ui.basic.Label(user["userName"]).set({
           selectable: true,
         });
         foundUsersLayout.add(userNameLabel, {
@@ -175,21 +165,8 @@ qx.Class.define("osparc.po.Users", {
           column: this.self().GRID_POS.EMAIL,
         });
 
-        const dateData = user["preRegistrationCreated"] || user["accountRequestReviewedAt"];
-        const date = dateData ? osparc.utils.Utils.formatDateAndTime(new Date(dateData)) : "-";
-        const dateLabel = new qx.ui.basic.Label(date);
-        foundUsersLayout.add(dateLabel, {
-          row,
-          column: this.self().GRID_POS.DATE,
-        });
-
-        const accountRequestStatusLabel = new qx.ui.basic.Label(user["accountRequestStatus"]);
-        foundUsersLayout.add(accountRequestStatusLabel, {
-          row,
-          column: this.self().GRID_POS.ACCOUNT_REQUEST_STATUS,
-        });
-
-        const statusLabel = new qx.ui.basic.Label(user["status"]);
+        const status = user["accountRequestStatus"] || user["status"] || "-";
+        const statusLabel = new qx.ui.basic.Label(status);
         foundUsersLayout.add(statusLabel, {
           row,
           column: this.self().GRID_POS.STATUS,

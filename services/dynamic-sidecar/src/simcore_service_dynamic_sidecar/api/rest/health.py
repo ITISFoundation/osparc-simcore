@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -24,11 +25,17 @@ async def health_endpoint(
     application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
     rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
-) -> ApplicationHealth:
+) -> ApplicationHealth | JSONResponse:
     if not application_health.is_healthy:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.model_dump())
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"detail": application_health.model_dump(mode="json")},
+        )
 
     if not rabbitmq_client.healthy or not rabbitmq_rpc_client.healthy:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=RABBITMQ_CLIENT_UNHEALTHY_MSG)
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"detail": RABBITMQ_CLIENT_UNHEALTHY_MSG},
+        )
 
     return application_health

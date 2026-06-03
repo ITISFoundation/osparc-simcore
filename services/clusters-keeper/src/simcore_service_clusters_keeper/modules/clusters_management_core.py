@@ -11,6 +11,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch
+from servicelib.tracing import traced
 from servicelib.utils import limited_gather
 
 from ..constants import (
@@ -121,22 +122,34 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
     return terminateable_instances.union(worker_instances)
 
 
-async def _heartbeat_connected_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
-    """Update heartbeat for all connected clusters. Log busy ones."""
+@traced
+async def _heartbeat_connected_clusters(
+    app: FastAPI, connected_instances: set[EC2InstanceData]
+) -> set[EC2InstanceData]:
+    """Check connected clusters and heartbeat the busy ones.
+
+    Returns the set of instances that are currently busy (and were heartbeated).
+    """
+    busy_instances: set[EC2InstanceData] = set()
     for instance in connected_instances:
         with log_catch(_logger, reraise=False):
             # NOTE: a connected instance could break between these 2 calls;
             # silenced and handled next cycle
             if await is_scheduler_busy(get_scheduler_url(instance), get_scheduler_auth(app)):
                 _logger.info("%s is running tasks", _log_instance(instance))
+                busy_instances.add(instance)
                 await set_instance_heartbeat(app, instance=instance)
 
+    return busy_instances
 
+
+@traced
 async def _terminate_idle_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
     if terminateable_instances := await _find_terminateable_instances(app, connected_instances):
         await delete_clusters(app, instances=terminateable_instances)
 
 
+@traced
 async def _handle_starting_clusters(app: FastAPI, starting_instances: set[EC2InstanceData]) -> None:
     if not starting_instances:
         return
@@ -221,6 +234,7 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
             )
 
 
+@traced
 async def _handle_broken_clusters(app: FastAPI, broken_instances: set[EC2InstanceData]) -> None:
     if not broken_instances:
         return
@@ -242,13 +256,14 @@ async def _handle_broken_clusters(app: FastAPI, broken_instances: set[EC2Instanc
         await delete_clusters(app, instances=terminateable_instances)
 
 
+@traced
 async def check_clusters(app: FastAPI) -> None:
     primary_instances = await get_all_clusters(app)
     connected = {i for i in primary_instances if await ping_scheduler(get_scheduler_url(i), get_scheduler_auth(app))}
     disconnected = primary_instances - connected
 
-    await _heartbeat_connected_clusters(app, connected)
-    await _terminate_idle_clusters(app, connected)
+    busy_instances = await _heartbeat_connected_clusters(app, connected)
+    await _terminate_idle_clusters(app, connected - busy_instances)
 
     starting = {i for i in disconnected if _get_instance_last_heartbeat(i) is None}
     await _handle_starting_clusters(app, starting)

@@ -7,14 +7,21 @@ from collections.abc import AsyncGenerator, Mapping
 from typing import Any, Final, cast
 
 import httpx
-from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
+from aiocache import Cache  # type: ignore[import-untyped]
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.redis import RedisClientsManager
+from servicelib.redis._client import RedisClientSDK
+from servicelib.redis._decorators import exclusive
+from servicelib.redis._errors import CouldNotAcquireLockError
+from servicelib.tracing import traced
 from servicelib.utils import limited_as_completed
+from settings_library.redis import RedisDatabase
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -32,6 +39,9 @@ from .core.errors import (
 from .core.settings import ApplicationSettings, get_application_settings
 
 DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
+_REDIS_NAMESPACE: Final[str] = "director:registry_cache"
+_REGISTRY_CACHE_REFRESH_MARKER_KEY: Final[str] = f"{_REDIS_NAMESPACE}:refresh_marker"
+_REGISTRY_CACHE_REFRESH_LOCK_KEY: Final[str] = f"{_REDIS_NAMESPACE}:refresh_lock"
 
 VERSION_REG = re.compile(
     r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
@@ -49,6 +59,17 @@ class ServiceType(enum.Enum):
     ALL = ""
     COMPUTATIONAL = "comp"
     DYNAMIC = "dynamic"
+
+
+def _normalize_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
+    if not headers:
+        return {}
+    return {str(k).lower(): str(v) for k, v in headers.items()}
+
+
+def _get_redis_clients_manager(app: FastAPI) -> RedisClientsManager | None:
+    """Get Redis clients manager from app state, returns None if not configured."""
+    return getattr(app.state, "redis_clients_manager", None)
 
 
 async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
@@ -199,11 +220,11 @@ async def registry_request(
     use_cache: bool,
     **request_kwargs,
 ) -> tuple[dict, Mapping]:
-    cache: SimpleMemoryCache = app.state.registry_cache_memory
+    cache: BaseCache | None = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
-    if use_cache and (cached_response := await cache.get(cache_key)):
-        assert isinstance(cached_response, tuple)  # nosec
-        return cast(tuple[dict, Mapping], cached_response)
+    if use_cache and cache and (cached_response := await cache.get(cache_key)):
+        cached_body, cached_headers = cast(tuple[dict, Mapping], cached_response)
+        return cached_body, _normalize_headers(cached_headers)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
     if "manifests/" in path and method.upper() == "GET":
         headers = request_kwargs.get("headers", {})
@@ -231,13 +252,17 @@ async def registry_request(
         raise DirectorRuntimeError(msg=msg) from exc
 
     if app_settings.DIRECTOR_REGISTRY_CACHING and method.upper() == "GET":
+        normalized_headers = _normalize_headers(response_headers)
+        assert cache is not None  # nosec
         await cache.set(
             cache_key,
-            (response, response_headers),
-            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
+            (response, normalized_headers),
+            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds()
+            * 2,  # cache TTL should be longer than refresh interval to avoid cache misses
         )
+        return response, normalized_headers
 
-    return response, response_headers
+    return response, _normalize_headers(response_headers)
 
 
 async def _setup_registry(app: FastAPI) -> None:
@@ -254,23 +279,121 @@ async def _setup_registry(app: FastAPI) -> None:
         await _wait_until_registry_responsive(app)
 
 
+async def _is_cache_fresh(app: FastAPI) -> bool:
+    """Check if cache freshness marker exists in Redis (skip refresh if fresh)."""
+    app_settings = get_application_settings(app)
+    if not app_settings.DIRECTOR_REGISTRY_CACHING:
+        return False
+
+    redis_manager = _get_redis_clients_manager(app)
+    if redis_manager is None:
+        return False
+
+    try:
+        redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
+        marker_exists = await redis_client.redis.exists(_REGISTRY_CACHE_REFRESH_MARKER_KEY)
+        if marker_exists:
+            _logger.debug("Cache freshness marker found, skipping refresh")
+            return True
+    except Exception:
+        _logger.warning("Error checking cache freshness marker", exc_info=True)
+
+    return False
+
+
+async def _set_cache_fresh_marker(app: FastAPI) -> None:
+    """Set cache freshness marker in Redis after successful refresh."""
+    app_settings = get_application_settings(app)
+    if not app_settings.DIRECTOR_REGISTRY_CACHING:
+        return
+
+    redis_manager = _get_redis_clients_manager(app)
+    if redis_manager is None:
+        return
+
+    try:
+        redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
+        # Set marker TTL to half the cache TTL, so it expires if no refresh happens
+        marker_ttl = int(app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds())
+        await redis_client.redis.setex(_REGISTRY_CACHE_REFRESH_MARKER_KEY, marker_ttl, "1")
+        _logger.info("Cache freshness marker set with TTL=%s seconds", marker_ttl)
+    except Exception:
+        _logger.warning("Error setting cache freshness marker", exc_info=True)
+
+
+def _get_redis_client_for_lock(app: FastAPI) -> RedisClientSDK:
+    """Get Redis client from LOCKS database, raises error if not configured."""
+    redis_manager = _get_redis_clients_manager(app)
+    if redis_manager is None:
+        msg = "Redis manager not available for cache lock"
+        raise RuntimeError(msg)
+    return redis_manager.client(database=RedisDatabase.LOCKS)
+
+
+@traced
+@exclusive(
+    redis_client=_get_redis_client_for_lock,
+    lock_key=_REGISTRY_CACHE_REFRESH_LOCK_KEY,
+    blocking=False,
+)
+async def _list_all_services_task_locked(*, app: FastAPI) -> None:
+    """Refresh cache (called with distributed lock from @exclusive decorator)."""
+    with log_context(_logger, logging.INFO, msg="Updating cache with services (with lock)"):
+        cache_is_fresh = await _is_cache_fresh(app)
+        if not cache_is_fresh:
+            await list_services(app, ServiceType.ALL, update_cache=True)
+            # Mark cache as fresh after successful refresh
+            await _set_cache_fresh_marker(app)
+
+
+@traced
 async def _list_all_services_task(*, app: FastAPI) -> None:
-    with log_context(_logger, logging.INFO, msg="Updating cache with services"):
-        await list_services(app, ServiceType.ALL, update_cache=True)
+    """Refresh cache with distributed lock to prevent concurrent updates from multiple replicas."""
+    try:
+        await _list_all_services_task_locked(app=app)
+    except CouldNotAcquireLockError:
+        _logger.debug("Another replica is refreshing cache, skipping this cycle")
+    except Exception:
+        _logger.exception("Error during cache refresh with lock, skipping this cycle")
+
+
+def _create_registry_cache(app_settings: ApplicationSettings) -> BaseCache | None:
+    if not app_settings.DIRECTOR_REGISTRY_CACHING:
+        return None
+
+    assert app_settings.DIRECTOR_REDIS is not None  # nosec
+    assert Cache.REDIS is not None  # nosec
+    redis_settings = app_settings.DIRECTOR_REDIS
+    connection_pool_kwargs: dict[str, Any] = {}
+    if redis_settings.REDIS_USER:
+        connection_pool_kwargs["username"] = redis_settings.REDIS_USER
+
+    return cast(
+        BaseCache,
+        Cache(
+            Cache.REDIS,
+            endpoint=redis_settings.REDIS_HOST,
+            port=redis_settings.REDIS_PORT,
+            db=int(RedisDatabase.AIOCACHE),
+            password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
+            ssl=redis_settings.REDIS_SECURE,
+            connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
+            namespace=app_settings.DIRECTOR_REGISTRY_CACHING_REDIS_NAMESPACE,
+        ),
+    )
 
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        cache = Cache(Cache.MEMORY)
-        assert isinstance(cache, SimpleMemoryCache)  # nosec
+        app_settings = get_application_settings(app)
+        cache = _create_registry_cache(app_settings)
         app.state.registry_cache_memory = cache
         await _setup_registry(app)
-        app_settings = get_application_settings(app)
         app.state.auto_cache_task = None
         if app_settings.DIRECTOR_REGISTRY_CACHING:
             app.state.auto_cache_task = create_periodic_task(
                 _list_all_services_task,
-                interval=app_settings.DIRECTOR_REGISTRY_CACHING_TTL / 2,
+                interval=app_settings.DIRECTOR_REGISTRY_CACHING_TTL / 4,
                 task_name="director-auto-cache-task",
                 app=app,
             )
@@ -278,6 +401,8 @@ def setup(app: FastAPI) -> None:
     async def on_shutdown() -> None:
         if app.state.auto_cache_task:
             await cancel_wait_task(app.state.auto_cache_task)
+        if app.state.registry_cache_memory:
+            await app.state.registry_cache_memory.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -306,25 +431,32 @@ async def _list_repositories_gen(
             app, path=path, method="GET", use_cache=not update_cache
         )  # initial call
 
-        while True:
-            if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
-                prefetch_task = asyncio.create_task(
-                    registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
-                )
-            else:
-                prefetch_task = None
+        prefetch_task: asyncio.Task | None = None
+        try:
+            while True:
+                if link_header := headers.get("link"):
+                    next_path = str(link_header).split(";")[0].strip("<>").removeprefix("/v2/")
+                    prefetch_task = asyncio.create_task(
+                        registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
+                    )
+                else:
+                    prefetch_task = None
 
-            yield list(
-                filter(
-                    lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
-                    result["repositories"],
+                yield list(
+                    filter(
+                        lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
+                        result["repositories"],
+                    )
                 )
-            )
-            if prefetch_task:
-                result, headers = await prefetch_task
-            else:
-                return
+                if prefetch_task:
+                    result, headers = await prefetch_task
+                    prefetch_task = None
+                else:
+                    return
+        finally:
+            # Handle cancellation properly
+            if prefetch_task and not prefetch_task.done():
+                await cancel_wait_task(prefetch_task)
 
 
 async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=False) -> AsyncGenerator[list[str]]:
@@ -333,29 +465,36 @@ async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=Fals
         path = f"{image_key}/tags/list?n={max_objects}"
         tags, headers = await registry_request(app, path=path, method="GET", use_cache=not update_cache)  # initial call
         assert "tags" in tags  # nosec
-        while True:
-            if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
-                prefetch_task = asyncio.create_task(
-                    registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
-                )
-            else:
-                prefetch_task = None
-
-            yield (
-                list(
-                    filter(
-                        VERSION_REG.match,
-                        tags["tags"],
+        prefetch_task: asyncio.Task | None = None
+        try:
+            while True:
+                if link_header := headers.get("link"):
+                    next_path = str(link_header).split(";")[0].strip("<>").removeprefix("/v2/")
+                    prefetch_task = asyncio.create_task(
+                        registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
                     )
+                else:
+                    prefetch_task = None
+
+                yield (
+                    list(
+                        filter(
+                            VERSION_REG.match,
+                            tags["tags"],
+                        )
+                    )
+                    if tags["tags"] is not None
+                    else []
                 )
-                if tags["tags"] is not None
-                else []
-            )
-            if prefetch_task:
-                tags, headers = await prefetch_task
-            else:
-                return
+                if prefetch_task:
+                    tags, headers = await prefetch_task
+                    prefetch_task = None
+                else:
+                    return
+        finally:
+            # Handle cancellation properly
+            if prefetch_task and not prefetch_task.done():
+                await cancel_wait_task(prefetch_task)
 
 
 async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
@@ -365,7 +504,7 @@ async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     return image_tags
 
 
-_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "Docker-Content-Digest"
+_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "docker-content-digest"
 
 
 async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
@@ -405,12 +544,12 @@ async def get_image_labels(
                     "application/vnd.docker.distribution.manifest.list.v2+json",
                     "application/vnd.oci.image.index.v1+json",
                 ):
-                    # default to x86_64 architecture
-                    _logger.info(
-                        "Docker image %s:%s contains multiple architectures. "
+                    _logger.debug(
+                        "Docker image %s:%s contains multiple architectures %s. "
                         "Currently defaulting to first architecture",
                         image,
                         tag,
+                        [manifest.get("platform", {}) for manifest in request_result.get("manifests", [])],
                     )
                     manifests = request_result.get("manifests", [])
                     if not manifests:

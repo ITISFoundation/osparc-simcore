@@ -93,18 +93,18 @@ def invite(
         callback=lambda v: TypeAdapter(LowerCaseEmailStr).validate_python(v),
         help="Custom invitation for a given guest",
     ),
-    issuer: str = typer.Option(..., help=InvitationInputs.model_fields["issuer"].description),
+    issuer: str = typer.Option(..., help=InvitationInputs.model_fields["issuer"].description),  # pylint: disable=unsubscriptable-object
     trial_account_days: int = typer.Option(
         None,
-        help=InvitationInputs.model_fields["trial_account_days"].description,
+        help=InvitationInputs.model_fields["trial_account_days"].description,  # pylint: disable=unsubscriptable-object
     ),
     extra_credits_in_usd: int = typer.Option(
         None,
-        help=InvitationInputs.model_fields["extra_credits_in_usd"].description,
+        help=InvitationInputs.model_fields["extra_credits_in_usd"].description,  # pylint: disable=unsubscriptable-object
     ),
     product: str = typer.Option(
         None,
-        help=InvitationInputs.model_fields["product"].description,
+        help=InvitationInputs.model_fields["product"].description,  # pylint: disable=unsubscriptable-object
     ),
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
