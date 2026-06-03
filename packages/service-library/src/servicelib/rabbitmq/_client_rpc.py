@@ -89,7 +89,11 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 with contextlib.suppress(Exception):
                     await self._rpc.close()
 
-            # Re-create RPC on the existing (restored) channel
+            # Re-create RPC on the existing (restored) channel.
+            # NOTE: self._channel is a RobustChannel obtained from a RobustConnection,
+            # so aio-pika reopens it automatically after a reconnect. Only the
+            # application-level RPC state (auto_delete queues, handler registrations)
+            # needs to be rebuilt here.
             await self._create_rpc()
 
             for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
