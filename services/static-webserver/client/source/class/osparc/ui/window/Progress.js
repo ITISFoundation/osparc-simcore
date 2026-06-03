@@ -54,5 +54,11 @@ qx.Class.define("osparc.ui.window.Progress", {
       }
       return control || this.base(arguments, id);
     },
+
+    addHideButton: function() {
+      const hideButton = this.addCancelButton();
+      hideButton.setLabel(qx.locale.Manager.tr("Hide"));
+      return hideButton;
+    },
   }
 });

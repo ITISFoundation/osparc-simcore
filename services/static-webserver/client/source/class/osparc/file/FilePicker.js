@@ -227,6 +227,7 @@ qx.Class.define("osparc.file.FilePicker", {
         "@FontAwesome5Solid/download/14",
         qx.locale.Manager.tr("Starting download..."),
       );
+      progressWindow.addHideButton();
       progressWindow.open();
       const progressCb = ({loaded, total, progress}) => {
         if (progress !== null) {
