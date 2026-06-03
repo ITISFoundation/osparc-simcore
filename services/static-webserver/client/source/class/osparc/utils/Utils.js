@@ -1128,31 +1128,38 @@ qx.Class.define("osparc.utils.Utils", {
      * @param {String} fileName Suggested file name
      * @param {Function} [progressCb] Optional callback receiving {loaded, total, progress} during download
      */
-    downloadNatively: function(url, fileName, progressCb) {
+    downloadNatively: async function(url, fileName, progressCb) {
       if (window.showSaveFilePicker) {
-        return this.self().__downloadWithFileSystemAccess(url, fileName, progressCb);
+        try {
+          return await this.self().__downloadWithFileSystemAccess(url, fileName, progressCb);
+        } catch (err) {
+          // Fall back to fetch+blob if user activation expired or picker was denied
+          if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+            return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
+          }
+          throw err;
+        }
       }
       return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
     },
 
     __downloadWithFileSystemAccess: async function(url, fileName, progressCb) {
-      const extension = fileName.split(".").pop() || "";
+      const extension = (fileName.split(".").pop() || "").toLowerCase();
       const mimeTypes = {
         "zip": "application/zip",
         "tar": "application/x-tar",
         "gz": "application/gzip",
       };
-      const accept = {};
-      if (mimeTypes[extension]) {
-        accept[mimeTypes[extension]] = ["." + extension];
-      }
-      const fileHandle = await window.showSaveFilePicker({
+      const pickerOpts = {
         suggestedName: fileName,
-        types: [{
+      };
+      if (mimeTypes[extension]) {
+        pickerOpts.types = [{
           description: "Downloaded file",
-          accept: accept,
-        }],
-      });
+          accept: { [mimeTypes[extension]]: ["." + extension] },
+        }];
+      }
+      const fileHandle = await window.showSaveFilePicker(pickerOpts);
       const writable = await fileHandle.createWritable();
       const response = await fetch(url);
       if (!response.ok) {
