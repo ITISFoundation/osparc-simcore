@@ -64,9 +64,17 @@ pytest tests/unit/test_<name>.py::test_function_name -v
 
 Use `--keep-docker-up` flag when running integration tests to keep docker containers up between sessions.
 
-### Step 4b: Static analysis (optional but recommended)
+### Step 4b: Quick static analysis
+For any code changes, run the following quick checks and fix any issues before running the full test suite. These checks are much faster than the full test run and can catch common issues early.:
 
-Before or after running tests, verify the project passes static analysis from the project directory:
+```bash
+# Type checking with ruff:
+make ruff
+```
+
+### Step 4b: Long static analysis (required before committing changes)
+
+Verify the project passes static analysis from the project directory:
 
 ```bash
 # Type checking with mypy:
