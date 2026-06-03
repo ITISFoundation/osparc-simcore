@@ -50,6 +50,10 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         self._channel = await self._connection.channel()
         self._channel.close_callbacks.add(self._channel_close_callback)
 
+        await self._create_rpc()
+
+    async def _create_rpc(self) -> None:
+        assert self._channel is not None  # nosec
         self._rpc = aio_pika.patterns.RPC(self._channel)
         # rely on default queue configuration that should be reasonable
         # if overriding parameters, make sure their combination makes sense
@@ -81,8 +85,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             ),
         ):
             # Re-create RPC on the existing (restored) channel
-            self._rpc = aio_pika.patterns.RPC(self._channel)
-            await self._rpc.initialize()
+            await self._create_rpc()
 
             for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
                 await self._rpc.register(
