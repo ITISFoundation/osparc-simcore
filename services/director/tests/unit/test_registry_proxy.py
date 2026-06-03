@@ -13,10 +13,7 @@ from unittest import mock
 
 import httpx
 import pytest
-import redis.asyncio as redis_asyncio
 import respx
-from fakeredis import FakeServer
-from fakeredis.aioredis import FakeConnection
 from fastapi import FastAPI, status
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_mock.plugin import MockerFixture
@@ -24,7 +21,6 @@ from pytest_simcore.helpers.docker_registry_images import PushServicesCallable
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
-from settings_library.redis import RedisSettings
 from simcore_service_director import registry_proxy
 from simcore_service_director.core.settings import ApplicationSettings, get_application_settings
 
@@ -60,26 +56,6 @@ def configure_registry_memory_backend(
     )
 
 
-@pytest.fixture
-def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
-    fake_server = FakeServer()
-    OriginalPool = redis_asyncio.ConnectionPool
-
-    def fake_connection_pool(*args, **kwargs) -> redis_asyncio.ConnectionPool:
-        kwargs["connection_class"] = FakeConnection
-        kwargs["server"] = fake_server
-        return OriginalPool(*args, **kwargs)
-
-    mocker.patch(
-        "redis.asyncio.from_url",
-        lambda *a, **kw: redis_asyncio.Redis(  # noqa: ARG005
-            connection_pool=fake_connection_pool(**kw),
-        ),
-    )
-    mocker.patch("redis.asyncio.ConnectionPool", fake_connection_pool)
-    return RedisSettings()
-
-
 @pytest.fixture(
     params=["memory", "redis"],
     ids=["memory-backend", "redis-backend"],
@@ -92,11 +68,6 @@ def configure_registry_cache_backend(
         request.getfixturevalue("use_in_memory_redis")
         return request.getfixturevalue("configure_registry_redis_backend")
     return request.getfixturevalue("configure_registry_memory_backend")
-
-
-@pytest.fixture
-def with_disabled_auto_caching_task(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
 
 
 async def test_list_no_services_available(

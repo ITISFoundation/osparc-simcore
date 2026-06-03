@@ -6,15 +6,21 @@
 from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
+import redis.asyncio as redis_asyncio
 import simcore_service_director
 from asgi_lifespan import LifespanManager
+from fakeredis import FakeServer
+from fakeredis.aioredis import FakeConnection
 from fastapi import FastAPI
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.tracing import TracingConfig
 from settings_library.docker_registry import RegistrySettings
+from settings_library.redis import RedisSettings
 from simcore_service_director._meta import APP_NAME
 from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings
@@ -213,3 +219,30 @@ def configure_registry_redis_backend(
             "REDIS_PASSWORD": "null",
         },
     )
+
+
+@pytest.fixture
+def with_disabled_auto_caching_task(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
+
+
+@pytest.fixture
+def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
+    # Also patch the redis client of aiocache to use fakeredis,
+    # so that the registry proxy tests can run without a real Redis server
+    fake_server = FakeServer()
+    OriginalPool = redis_asyncio.ConnectionPool
+
+    def fake_connection_pool(*args, **kwargs) -> redis_asyncio.ConnectionPool:
+        kwargs["connection_class"] = FakeConnection
+        kwargs["server"] = fake_server
+        return OriginalPool(*args, **kwargs)
+
+    mocker.patch(
+        "redis.asyncio.from_url",
+        lambda *a, **kw: redis_asyncio.Redis(  # noqa: ARG005
+            connection_pool=fake_connection_pool(**kw),
+        ),
+    )
+    mocker.patch("redis.asyncio.ConnectionPool", fake_connection_pool)
+    return RedisSettings()
