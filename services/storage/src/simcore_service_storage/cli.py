@@ -114,7 +114,7 @@ def reconcile(
 
     counts = asyncio.run(_run())
     prefix = "[DRY-RUN] " if dry_run else ""
-    typer.secho(f"{prefix}Reconciliation complete:", fg=typer.colors.GREEN)
+    typer.secho(f"{prefix}Reconciliation complete:", fg=typer.colors.GREEN if dry_run else typer.colors.RED)
     typer.echo(f"  Unreachable rows {'found' if dry_run else 'removed'}:                 {counts.unreachable_removed}")
     typer.echo(f"  Dangling rows {'found' if dry_run else 'removed'}:                    {counts.dangling_removed}")
     typer.echo(
