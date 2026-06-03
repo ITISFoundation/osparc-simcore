@@ -19,8 +19,8 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_api_routes
 from ..instrumentation import setup as setup_instrumentation
+from ..modules.docker_registry import setup as setup_registry
 from ..modules.redis import setup as setup_redis
-from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)

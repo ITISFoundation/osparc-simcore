@@ -7,21 +7,13 @@ from collections.abc import AsyncGenerator, Mapping
 from typing import Any, Final, cast
 
 import httpx
-from aiocache import Cache  # type: ignore[import-untyped]
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
-from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import RedisClientsManager
-from servicelib.redis._client import RedisClientSDK
-from servicelib.redis._decorators import exclusive
-from servicelib.redis._errors import CouldNotAcquireLockError
-from servicelib.tracing import traced
 from servicelib.utils import limited_as_completed
-from settings_library.redis import RedisDatabase
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -29,19 +21,16 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 from yarl import URL
 
-from .constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
-from .core.errors import (
+from ...constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
+from ...core.errors import (
     DirectorRuntimeError,
     DockerRegistryUnsupportedManifestSchemaVersionError,
     RegistryConnectionError,
     ServiceNotAvailableError,
 )
-from .core.settings import ApplicationSettings, get_application_settings
+from ...core.settings import ApplicationSettings, get_application_settings
 
 DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
-_REDIS_NAMESPACE: Final[str] = "director:registry_cache"
-_REGISTRY_CACHE_REFRESH_MARKER_KEY: Final[str] = f"{_REDIS_NAMESPACE}:refresh_marker"
-_REGISTRY_CACHE_REFRESH_LOCK_KEY: Final[str] = f"{_REDIS_NAMESPACE}:refresh_lock"
 
 VERSION_REG = re.compile(
     r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
@@ -65,11 +54,6 @@ def _normalize_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
     if not headers:
         return {}
     return {str(k).lower(): str(v) for k, v in headers.items()}
-
-
-def _get_redis_clients_manager(app: FastAPI) -> RedisClientsManager | None:
-    """Get Redis clients manager from app state, returns None if not configured."""
-    return getattr(app.state, "redis_clients_manager", None)
 
 
 async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
@@ -279,133 +263,8 @@ async def _setup_registry(app: FastAPI) -> None:
         await _wait_until_registry_responsive(app)
 
 
-async def _is_cache_fresh(app: FastAPI) -> bool:
-    """Check if cache freshness marker exists in Redis (skip refresh if fresh)."""
-    app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY_CACHING:
-        return False
-
-    redis_manager = _get_redis_clients_manager(app)
-    if redis_manager is None:
-        return False
-
-    try:
-        redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
-        marker_exists = await redis_client.redis.exists(_REGISTRY_CACHE_REFRESH_MARKER_KEY)
-        if marker_exists:
-            _logger.debug("Cache freshness marker found, skipping refresh")
-            return True
-    except Exception:
-        _logger.warning("Error checking cache freshness marker", exc_info=True)
-
-    return False
-
-
-async def _set_cache_fresh_marker(app: FastAPI) -> None:
-    """Set cache freshness marker in Redis after successful refresh."""
-    app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY_CACHING:
-        return
-
-    redis_manager = _get_redis_clients_manager(app)
-    if redis_manager is None:
-        return
-
-    try:
-        redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
-        # Set marker TTL to half the cache TTL, so it expires if no refresh happens
-        marker_ttl = int(app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds())
-        await redis_client.redis.setex(_REGISTRY_CACHE_REFRESH_MARKER_KEY, marker_ttl, "1")
-        _logger.info("Cache freshness marker set with TTL=%s seconds", marker_ttl)
-    except Exception:
-        _logger.warning("Error setting cache freshness marker", exc_info=True)
-
-
-def _get_redis_client_for_lock(app: FastAPI) -> RedisClientSDK:
-    """Get Redis client from LOCKS database, raises error if not configured."""
-    redis_manager = _get_redis_clients_manager(app)
-    if redis_manager is None:
-        msg = "Redis manager not available for cache lock"
-        raise RuntimeError(msg)
-    return redis_manager.client(database=RedisDatabase.LOCKS)
-
-
-@traced
-@exclusive(
-    redis_client=_get_redis_client_for_lock,
-    lock_key=_REGISTRY_CACHE_REFRESH_LOCK_KEY,
-    blocking=False,
-)
-async def _list_all_services_task_locked(*, app: FastAPI) -> None:
-    """Refresh cache (called with distributed lock from @exclusive decorator)."""
-    with log_context(_logger, logging.INFO, msg="Updating cache with services (with lock)"):
-        cache_is_fresh = await _is_cache_fresh(app)
-        if not cache_is_fresh:
-            await list_services(app, ServiceType.ALL, update_cache=True)
-            # Mark cache as fresh after successful refresh
-            await _set_cache_fresh_marker(app)
-
-
-@traced
-async def _list_all_services_task(*, app: FastAPI) -> None:
-    """Refresh cache with distributed lock to prevent concurrent updates from multiple replicas."""
-    try:
-        await _list_all_services_task_locked(app=app)
-    except CouldNotAcquireLockError:
-        _logger.debug("Another replica is refreshing cache, skipping this cycle")
-    except Exception:
-        _logger.exception("Error during cache refresh with lock, skipping this cycle")
-
-
-def _create_registry_cache(app_settings: ApplicationSettings) -> BaseCache | None:
-    if not app_settings.DIRECTOR_REGISTRY_CACHING:
-        return None
-
-    assert app_settings.DIRECTOR_REDIS is not None  # nosec
-    assert Cache.REDIS is not None  # nosec
-    redis_settings = app_settings.DIRECTOR_REDIS
-    connection_pool_kwargs: dict[str, Any] = {}
-    if redis_settings.REDIS_USER:
-        connection_pool_kwargs["username"] = redis_settings.REDIS_USER
-
-    return cast(
-        BaseCache,
-        Cache(
-            Cache.REDIS,
-            endpoint=redis_settings.REDIS_HOST,
-            port=redis_settings.REDIS_PORT,
-            db=int(RedisDatabase.AIOCACHE),
-            password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
-            ssl=redis_settings.REDIS_SECURE,
-            connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
-            namespace=app_settings.DIRECTOR_REGISTRY_CACHING_REDIS_NAMESPACE,
-        ),
-    )
-
-
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app_settings = get_application_settings(app)
-        cache = _create_registry_cache(app_settings)
-        app.state.registry_cache_memory = cache
-        await _setup_registry(app)
-        app.state.auto_cache_task = None
-        if app_settings.DIRECTOR_REGISTRY_CACHING:
-            app.state.auto_cache_task = create_periodic_task(
-                _list_all_services_task,
-                interval=app_settings.DIRECTOR_REGISTRY_CACHING_TTL / 4,
-                task_name="director-auto-cache-task",
-                app=app,
-            )
-
-    async def on_shutdown() -> None:
-        if app.state.auto_cache_task:
-            await cancel_wait_task(app.state.auto_cache_task)
-        if app.state.registry_cache_memory:
-            await app.state.registry_cache_memory.close()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+async def setup_registry_connection(app: FastAPI) -> None:
+    await _setup_registry(app)
 
 
 def _get_prefix(service_type: ServiceType) -> str:
