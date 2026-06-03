@@ -1,9 +1,10 @@
 import asyncio
+import contextlib
 import functools
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import aio_pika
@@ -24,9 +25,10 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class RabbitMQRPCClient(RabbitMQClientBase):
-    _connection: aio_pika.abc.AbstractConnection | None = None
+    _connection: aio_pika.abc.AbstractRobustConnection | None = None
     _channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: aio_pika.patterns.RPC | None = None
+    _registered_handlers: dict[RPCNamespacedMethodName, Callable[..., Any]] = field(default_factory=dict)
 
     @classmethod
     async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
@@ -45,6 +47,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             client_properties={"connection_name": connection_name},
         )
         self._connection.close_callbacks.add(self._connection_close_callback)
+        self._connection.reconnect_callbacks.add(self._on_reconnect)
         self._channel = await self._connection.channel()
         self._channel.close_callbacks.add(self._channel_close_callback)
 
@@ -53,6 +56,52 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         # if overriding parameters, make sure their combination makes sense
         # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
         await self._rpc.initialize()
+
+    async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
+        """Re-register all RPC handlers after a reconnection event.
+
+        When the RabbitMQ connection drops (network issue, broker restart, Docker
+        networking), auto_delete queues used for RPC method registration are removed
+        by the broker. The robust connection restores the channel but does NOT
+        restore aio_pika.patterns.RPC internal state. This callback ensures all
+        previously registered handlers are re-registered on a fresh RPC instance.
+        """
+        if not self._registered_handlers:
+            self._healthy_state = True
+            return
+
+        assert self._channel is not None  # nosec
+
+        with log_context(
+            _logger,
+            logging.WARNING,
+            msg=(
+                f"re-registering {len(self._registered_handlers)} RPC handler(s)"
+                f" after RabbitMQ reconnection ({self.client_name})"
+            ),
+        ):
+            # Close the previous RPC to avoid leaking its background consumer
+            if self._rpc is not None:
+                with contextlib.suppress(Exception):
+                    await self._rpc.close()
+
+            # Re-create RPC on the existing (restored) channel.
+            # NOTE: self._channel is a RobustChannel obtained from a RobustConnection,
+            # so aio-pika reopens it automatically after a reconnect. Only the
+            # application-level RPC state (auto_delete queues, handler registrations)
+            # needs to be rebuilt here.
+            self._rpc = aio_pika.patterns.RPC(self._channel)
+            await self._rpc.initialize()
+
+            for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
+                await self._rpc.register(
+                    namespaced_method_name,
+                    handler,
+                    auto_delete=True,
+                )
+                _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
+
+            self._healthy_state = True
 
     async def close(self) -> None:
         with log_context(
@@ -131,11 +180,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         if self._rpc is None:
             raise RPCNotInitializedError
 
+        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
         await self._rpc.register(
-            RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name),
+            namespaced_method_name,
             handler,
             auto_delete=True,
         )
+        self._registered_handlers[namespaced_method_name] = handler
 
     async def register_router(
         self,
@@ -158,6 +209,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             raise RPCNotInitializedError
 
         await self._rpc.unregister(handler)
+        for name in [n for n, h in self._registered_handlers.items() if h is handler]:
+            del self._registered_handlers[name]
 
 
 @asynccontextmanager
