@@ -47,6 +47,8 @@ This installs the package in editable mode along with all test dependencies into
 
 > **Note**: You only need to re-run `make install-dev` when switching to a different project or after dependency changes. If you already installed for this project in the current session, you can skip this step.
 
+> **Note**: In the service-library, it is `make install-dev[all]` to include all dependencies required for testing.
+
 ### Step 4: Run tests
 
 ```bash
