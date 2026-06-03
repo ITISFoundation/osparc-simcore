@@ -393,7 +393,7 @@ async def _load_referenced_paths(app: FastAPI) -> set[str]:
         rows = await conn.execute(sa.select(projects.c.workbench))
         for (workbench,) in rows.fetchall():
             if isinstance(workbench, dict):
-                referenced.update(_extract_store_zero_paths(workbench))
+                referenced.update(_collect_referenced_paths(workbench))
     return referenced
 
 
@@ -473,7 +473,13 @@ def _parse_created_at(created_at_raw: str | None) -> datetime:
         return datetime.min.replace(tzinfo=UTC)
 
 
-def _extract_store_zero_paths(workbench: dict) -> set[str]:
+def _collect_referenced_paths(workbench: dict) -> set[str]:
+    """Returns S3-backed file paths referenced by project workbench ports.
+
+    The reconciliation pass uses these paths as a reachability signal:
+    file-meta rows pointing to any of these paths are treated as in-use and
+    are therefore not considered unreachable.
+    """
     paths: set[str] = set()
     for node_data in workbench.values():
         if not isinstance(node_data, dict):
