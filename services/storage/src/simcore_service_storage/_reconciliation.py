@@ -167,7 +167,7 @@ async def _run_incremental_tick(
         await _reset_pass_state(redis)
         return ReconciliationCounts(orphan_prefixes_removed=prefixes_removed)
 
-    counts = await _process_fmd_rows(app, bucket, s3_client, batch, snapshot, cutoff, dry_run=dry_run)
+    counts = await _cleanup_fmd_rows(app, bucket, s3_client, batch, snapshot, cutoff, dry_run=dry_run)
     await _set_cursor(redis, batch[-1].file_id)
     return counts
 
@@ -189,7 +189,7 @@ async def _run_full_sweep(
         if not batch:
             break
 
-        batch_counts = await _process_fmd_rows(app, bucket, s3_client, batch, snapshot, cutoff, dry_run=dry_run)
+        batch_counts = await _cleanup_fmd_rows(app, bucket, s3_client, batch, snapshot, cutoff, dry_run=dry_run)
         counts.unreachable_removed += batch_counts.unreachable_removed
         counts.dangling_removed += batch_counts.dangling_removed
         cursor = batch[-1].file_id
@@ -204,7 +204,7 @@ async def _run_full_sweep(
     return counts
 
 
-async def _process_fmd_rows(
+async def _cleanup_fmd_rows(
     app: FastAPI,
     bucket: str,
     s3_client: SimcoreS3API,
