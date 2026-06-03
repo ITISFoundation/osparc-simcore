@@ -222,7 +222,26 @@ qx.Class.define("osparc.file.FilePicker", {
 
     downloadOutput: function(node, downloadFileBtn) {
       downloadFileBtn.setFetching(true);
-      const doneCb = () => downloadFileBtn.setFetching(false);
+      const progressWindow = new osparc.ui.window.Progress(
+        qx.locale.Manager.tr("Downloading file"),
+        "@FontAwesome5Solid/download/14",
+        qx.locale.Manager.tr("Starting download..."),
+      );
+      progressWindow.open();
+      const progressCb = ({loaded, total, progress}) => {
+        if (progress !== null) {
+          progressWindow.setProgress(progress * 100);
+        }
+        const loadedStr = osparc.utils.Utils.bytesToSize(loaded);
+        const totalStr = total ? osparc.utils.Utils.bytesToSize(total) : "?";
+        progressWindow.setMessage(
+          qx.locale.Manager.tr("Downloading: ") + loadedStr + " / " + totalStr
+        );
+      };
+      const doneCb = () => {
+        downloadFileBtn.setFetching(false);
+        progressWindow.close();
+      };
       if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
         this.self().getOutputFileMetadata(node)
           .then(fileMetadata => {
@@ -232,7 +251,7 @@ qx.Class.define("osparc.file.FilePicker", {
               osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
                 .then(data => {
                   if (data) {
-                    osparc.utils.Utils.downloadNatively(data.link, data.fileName)
+                    osparc.utils.Utils.downloadNatively(data.link, data.fileName, progressCb)
                       .then(() => doneCb())
                       .catch(() => doneCb());
                   } else {
@@ -247,7 +266,7 @@ qx.Class.define("osparc.file.FilePicker", {
           .catch(() => doneCb());
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-        osparc.utils.Utils.downloadNatively(outFileValue["downloadLink"], outFileValue["label"])
+        osparc.utils.Utils.downloadNatively(outFileValue["downloadLink"], outFileValue["label"], progressCb)
           .then(() => doneCb())
           .catch(() => doneCb());
       }
