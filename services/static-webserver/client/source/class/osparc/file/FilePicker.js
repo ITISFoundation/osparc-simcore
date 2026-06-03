@@ -220,24 +220,48 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
+    // Track active downloads by node ID so recreated buttons can pick up progress
+    __activeDownloads: {},
+
     downloadOutput: function(node, downloadFileBtn) {
+      const nodeId = node.getNodeId();
+      // If a download is already in progress for this node, just register the button
+      if (this.__activeDownloads[nodeId]) {
+        this.__activeDownloads[nodeId].btn = downloadFileBtn;
+        this.__applyDownloadState(downloadFileBtn, this.__activeDownloads[nodeId]);
+        return;
+      }
+
       downloadFileBtn.setFetching(true);
-      const originalLabel = downloadFileBtn.getLabel();
+      const state = {
+        btn: downloadFileBtn,
+        originalLabel: downloadFileBtn.getLabel(),
+        progress: null,
+        label: null,
+      };
+      this.__activeDownloads[nodeId] = state;
+
       const btnWidth = downloadFileBtn.getSizeHint().width;
       downloadFileBtn.setMinWidth(btnWidth);
+
       const progressCb = ({loaded, total, progress}) => {
         if (progress !== null) {
-          const pct = Math.round(progress * 100);
-          downloadFileBtn.setLabel(`${pct}%`);
+          state.label = `${Math.round(progress * 100)}%`;
         } else {
-          const loadedStr = osparc.utils.Utils.bytesToSize(loaded);
-          downloadFileBtn.setLabel(loadedStr);
+          state.label = osparc.utils.Utils.bytesToSize(loaded);
+        }
+        state.progress = progress;
+        if (state.btn) {
+          state.btn.setLabel(state.label);
         }
       };
       const doneCb = () => {
-        downloadFileBtn.setFetching(false);
-        downloadFileBtn.setLabel(originalLabel);
-        downloadFileBtn.resetMinWidth();
+        if (state.btn) {
+          state.btn.setFetching(false);
+          state.btn.setLabel(state.originalLabel);
+          state.btn.resetMinWidth();
+        }
+        delete this.__activeDownloads[nodeId];
       };
       if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
         this.self().getOutputFileMetadata(node)
@@ -266,6 +290,13 @@ qx.Class.define("osparc.file.FilePicker", {
         osparc.utils.Utils.downloadNatively(outFileValue["downloadLink"], outFileValue["label"], progressCb)
           .then(() => doneCb())
           .catch(() => doneCb());
+      }
+    },
+
+    __applyDownloadState: function(btn, state) {
+      btn.setFetching(true);
+      if (state.label) {
+        btn.setLabel(state.label);
       }
     },
 
@@ -409,6 +440,12 @@ qx.Class.define("osparc.file.FilePicker", {
         allowGrowX: false
       });
       downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(node, downloadFileBtn));
+      // If a download is already active for this node, attach the new button to it
+      const activeDownload = osparc.file.FilePicker.__activeDownloads[node.getNodeId()];
+      if (activeDownload) {
+        activeDownload.btn = downloadFileBtn;
+        osparc.file.FilePicker.__applyDownloadState(downloadFileBtn, activeDownload);
+      }
       return downloadFileBtn;
     },
 
