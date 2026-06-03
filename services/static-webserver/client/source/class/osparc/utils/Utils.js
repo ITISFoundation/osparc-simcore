@@ -1118,6 +1118,55 @@ qx.Class.define("osparc.utils.Utils", {
       downloadAnchorNode.remove();
     },
 
+    /**
+     * Downloads a file using the File System Access API (showSaveFilePicker) when available,
+     * which prompts the user for a save location and streams data directly to disk.
+     * Falls back to fetch + blob download for browsers without File System Access API support.
+     * Unlike downloadLink(), this avoids buffering the entire file in an XHR response.
+     */
+    downloadNatively: function(url, fileName) {
+      if (window.showSaveFilePicker) {
+        return this.self().__downloadWithFileSystemAccess(url, fileName);
+      }
+      return this.self().__downloadWithFetchBlob(url, fileName);
+    },
+
+    __downloadWithFileSystemAccess: async function(url, fileName) {
+      const extension = fileName.split(".").pop() || "";
+      const mimeTypes = {
+        "zip": "application/zip",
+        "tar": "application/x-tar",
+        "gz": "application/gzip",
+      };
+      const accept = {};
+      if (mimeTypes[extension]) {
+        accept[mimeTypes[extension]] = ["." + extension];
+      }
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{
+          description: "Downloaded file",
+          accept: accept,
+        }],
+      });
+      const writable = await fileHandle.createWritable();
+      const response = await fetch(url);
+      if (!response.ok) {
+        await writable.abort();
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      await response.body.pipeTo(writable);
+    },
+
+    __downloadWithFetchBlob: async function(url, fileName) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      const blob = await response.blob();
+      osparc.utils.Utils.downloadBlobContent(blob, fileName);
+    },
+
     filenameFromContentDisposition: function(xhr) {
       // https://stackoverflow.com/questions/40939380/how-to-get-file-name-from-content-disposition
       let filename = "";

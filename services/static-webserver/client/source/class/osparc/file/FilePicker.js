@@ -221,8 +221,8 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     downloadOutput: function(node, downloadFileBtn) {
-      const progressCb = () => downloadFileBtn.setFetching(true);
-      const loadedCb = () => downloadFileBtn.setFetching(false);
+      downloadFileBtn.setFetching(true);
+      const doneCb = () => downloadFileBtn.setFetching(false);
       if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
         this.self().getOutputFileMetadata(node)
           .then(fileMetadata => {
@@ -232,14 +232,24 @@ qx.Class.define("osparc.file.FilePicker", {
               osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
                 .then(data => {
                   if (data) {
-                    osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCb, loadedCb);
+                    osparc.utils.Utils.downloadNatively(data.link, data.fileName)
+                      .then(() => doneCb())
+                      .catch(() => doneCb());
+                  } else {
+                    doneCb();
                   }
-                });
+                })
+                .catch(() => doneCb());
+            } else {
+              doneCb();
             }
-          });
+          })
+          .catch(() => doneCb());
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-        osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", outFileValue["label"], progressCb, loadedCb);
+        osparc.utils.Utils.downloadNatively(outFileValue["downloadLink"], outFileValue["label"])
+          .then(() => doneCb())
+          .catch(() => doneCb());
       }
     },
 
