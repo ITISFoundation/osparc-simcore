@@ -93,11 +93,7 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
 def reconcile(
     *,
     dry_run: Annotated[
-        bool,
-        typer.Option(
-            "--dry-run/--execute",
-            help="Report what would be cleaned without actually deleting.",
-        ),
+        bool, typer.Option("--dry-run/--execute", help="Report what would be cleaned without actually deleting.")
     ] = True,
 ) -> None:
     """One-shot ops command to run one full reconciliation v2 sweep.
