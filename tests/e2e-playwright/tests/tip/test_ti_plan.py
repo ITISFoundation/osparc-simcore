@@ -249,7 +249,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
 
     with log_context(logging.INFO, "Check outputs", logger=log_ctx.logger):
         if params.is_product_lite:
-            expected_outputs = ["results.csv"]
+            expected_outputs = ["results.csv", "MIDA_Anisotropic.smash", "WM.cache"]
             text_on_output_button = f"Outputs ({len(expected_outputs)})"
             params.page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
