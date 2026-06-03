@@ -141,6 +141,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __selectedAnnotations: null,
     __annotationEditor: null,
     __annotationLastColor: null,
+    __isProcessingStoppedMoving: false,
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("reloadModel", () => this.__reloadCurrentModel(), this);
@@ -481,6 +482,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __itemStoppedMoving: function(nodeUI) {
+      if (this.__isProcessingStoppedMoving) {
+        return;
+      }
+      this.__isProcessingStoppedMoving = true;
+
       this.getSelectedNodeUIs().forEach(selectedNodeUI => delete selectedNodeUI["initPos"]);
       this.getSelectedAnnotations().forEach(selectedAnnotation => delete selectedAnnotation["initPos"]);
 
@@ -516,6 +522,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           child.style.zIndex = "1";
         }
       });
+
+      this.__isProcessingStoppedMoving = false;
     },
 
     __addNodeListeners: function(nodeUI) {
