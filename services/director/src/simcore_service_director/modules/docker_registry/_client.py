@@ -11,6 +11,7 @@ from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
+from models_library.basic_regex import SIMPLE_VERSION_RE
 from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
@@ -30,18 +31,11 @@ from ...core.errors import (
 )
 from ...core.settings import ApplicationSettings, get_application_settings
 
-DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
+_DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
 
-VERSION_REG = re.compile(
-    r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z]+)*)?$"
-)
+_VERSION_REG: Final[re.Pattern] = re.compile(SIMPLE_VERSION_RE)
 
 _logger = logging.getLogger(__name__)
-
-#
-# NOTE: if you are refactoring this module,
-# please consider reusing packages/pytest-simcore/src/pytest_simcore/helpers/docker_registry.py
-#
 
 
 class ServiceType(enum.Enum):
@@ -338,7 +332,7 @@ async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=Fals
                 yield (
                     list(
                         filter(
-                            VERSION_REG.match,
+                            _VERSION_REG.match,
                             tags["tags"],
                         )
                     )
@@ -516,15 +510,15 @@ async def list_services(app: FastAPI, service_type: ServiceType, *, update_cache
 async def list_interactive_service_dependencies(app: FastAPI, service_key: str, service_tag: str) -> list[dict]:
     image_labels, _ = await get_image_labels(app, service_key, service_tag)
     dependency_keys = []
-    if DEPENDENCIES_LABEL_KEY in image_labels:
+    if _DEPENDENCIES_LABEL_KEY in image_labels:
         try:
-            dependencies = json_loads(image_labels[DEPENDENCIES_LABEL_KEY])
+            dependencies = json_loads(image_labels[_DEPENDENCIES_LABEL_KEY])
             dependency_keys = [{"key": dependency["key"], "tag": dependency["tag"]} for dependency in dependencies]
 
         except json.decoder.JSONDecodeError:
             logging.exception(
                 "Incorrect json formatting in %s, skipping...",
-                image_labels[DEPENDENCIES_LABEL_KEY],
+                image_labels[_DEPENDENCIES_LABEL_KEY],
             )
 
     return dependency_keys
