@@ -13,12 +13,13 @@ def setup(app: FastAPI) -> None:
         settings: ApplicationSettings = get_application_settings(app)
 
         app.state.redis_clients_manager = None
-        if not settings.DIRECTOR_REGISTRY_CACHING:
-            return
 
         redis_settings = settings.DIRECTOR_REDIS
         if redis_settings is None:
-            msg = "DIRECTOR_REGISTRY_CACHING=True requires DIRECTOR_REDIS settings"
+            msg = (
+                "DIRECTOR_REDIS_CACHE_BACKEND='redis' with DIRECTOR_REGISTRY_CACHING=True "
+                "requires DIRECTOR_REDIS settings"
+            )
             raise RuntimeError(msg)
 
         app.state.redis_clients_manager = redis_clients_manager = RedisClientsManager(

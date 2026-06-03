@@ -55,7 +55,8 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
         tracing_config=tracing_config,
     )
-    setup_redis(app)
+    if settings.DIRECTOR_REGISTRY_CACHING:
+        setup_redis(app)
     setup_registry(app)
 
     app.add_middleware(RequestCancellationMiddleware)
