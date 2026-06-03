@@ -19,6 +19,7 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_api_routes
 from ..instrumentation import setup as setup_instrumentation
+from ..modules.redis import setup as setup_redis
 from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings
 
@@ -54,6 +55,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
         tracing_config=tracing_config,
     )
+    setup_redis(app)
     setup_registry(app)
 
     app.add_middleware(RequestCancellationMiddleware)
