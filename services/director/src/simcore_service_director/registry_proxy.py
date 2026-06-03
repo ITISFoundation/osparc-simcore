@@ -378,7 +378,7 @@ def _create_registry_cache(app_settings: ApplicationSettings) -> BaseCache | Non
             password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
             ssl=redis_settings.REDIS_SECURE,
             connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
-            namespace=app_settings.DIRECTOR_REDIS_CACHE_NAMESPACE,
+            namespace=app_settings.DIRECTOR_REGISTRY_CACHING_REDIS_NAMESPACE,
         ),
     )
 

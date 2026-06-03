@@ -77,17 +77,19 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = 0
     DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = 0
-    DIRECTOR_REGISTRY_CACHING: Annotated[bool, Field(description="cache the docker registry internally")]
+    DIRECTOR_REGISTRY_CACHING: Annotated[bool, Field(description="cache the docker registry")]
     DIRECTOR_REGISTRY_CACHING_TTL: Annotated[
         datetime.timedelta,
-        Field(description="cache time to live value (defaults to 15 minutes)"),
+        Field(description="cache time to live value for the docker registry cache"),
     ]
+    DIRECTOR_REGISTRY_CACHING_REDIS_NAMESPACE: Annotated[
+        str, Field(description="namespace for the docker registry cache in Redis")
+    ] = "director-v0-registry-cache"
 
     DIRECTOR_REDIS: Annotated[
         RedisSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ] = None
-    DIRECTOR_REDIS_CACHE_NAMESPACE: str = "director-v0-registry-cache"
 
     DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
         list[DockerPlacementConstraint],
