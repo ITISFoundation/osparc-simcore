@@ -16,6 +16,10 @@ qx.Class.define("osparc.ui.window.Progress", {
 
     const progressBar = this.getChildControl("progress-bar");
     this.bind("progress", progressBar, "value");
+
+    this.set({
+      minWidth: 350,
+    });
   },
 
   properties: {
