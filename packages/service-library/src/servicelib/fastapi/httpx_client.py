@@ -94,7 +94,7 @@ def _create_httpx_default_publisher_lifespan(
     return _publisher_lifespan
 
 
-def create_httpx_lifespan_manager(
+def _create_httpx_lifespan_manager(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
@@ -110,6 +110,24 @@ def create_httpx_lifespan_manager(
     )
     httpx_lifespan_manager.add(publisher_lifespan or _create_httpx_default_publisher_lifespan())
     return httpx_lifespan_manager
+
+
+def configure_httpx_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
+    max_keepalive_connections: int = 20,
+    tracing_config: TracingConfig | None = None,
+    publisher_lifespan: StatefulLifespan | None = None,
+) -> None:
+    app_lifespan.include(
+        _create_httpx_lifespan_manager(
+            default_timeout=default_timeout,
+            max_keepalive_connections=max_keepalive_connections,
+            tracing_config=tracing_config,
+            publisher_lifespan=publisher_lifespan,
+        )
+    )
 
 
 def get_httpx_client(app: FastAPI) -> httpx.AsyncClient:
