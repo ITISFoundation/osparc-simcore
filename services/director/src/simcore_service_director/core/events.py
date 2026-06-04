@@ -5,9 +5,6 @@ from servicelib.fastapi.httpx_client import (
     create_httpx_lifespan_manager,
 )
 from servicelib.fastapi.lifespan_utils import Lifespan
-from servicelib.fastapi.monitoring import (
-    create_prometheus_instrumentation_lifespan_manager,
-)
 from servicelib.fastapi.tracing import tracing_instrumentation_lifespan
 from servicelib.tracing import TracingConfig
 
@@ -48,9 +45,6 @@ def create_app_lifespan(
         app_lifespan.add(redis_clients_manager_lifespan)
     app_lifespan.add(registry_lifespan)
 
-    app_lifespan.include(
-        create_prometheus_instrumentation_lifespan_manager(enabled=settings.DIRECTOR_MONITORING_ENABLED)
-    )
     app_lifespan.add(director_instrumentation_lifespan)
     app_lifespan.add(_banners_lifespan)
 

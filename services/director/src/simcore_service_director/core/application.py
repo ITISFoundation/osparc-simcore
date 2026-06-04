@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.lifespan_utils import Lifespan
-from servicelib.fastapi.monitoring import initialize_prometheus_instrumentation
+from servicelib.fastapi.monitoring import configure_prometheus_instrumentation
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
@@ -28,6 +28,12 @@ def create_app(
     tracing_config: TracingConfig,
     logging_lifespan: Lifespan | None,
 ) -> FastAPI:
+    app_lifespan = events.create_app_lifespan(
+        settings=settings,
+        logging_lifespan=logging_lifespan,
+        tracing_config=tracing_config,
+    )
+
     app = FastAPI(
         debug=settings.DIRECTOR_DEBUG,
         title=APP_NAME,
@@ -36,11 +42,7 @@ def create_app(
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=events.create_app_lifespan(
-            settings=settings,
-            logging_lifespan=logging_lifespan,
-            tracing_config=tracing_config,
-        ),
+        lifespan=app_lifespan,
     )
     override_fastapi_openapi_method(app)
 
@@ -53,8 +55,11 @@ def create_app(
 
     app.add_middleware(RequestCancellationMiddleware)
 
-    if settings.DIRECTOR_MONITORING_ENABLED:
-        initialize_prometheus_instrumentation(app)
+    configure_prometheus_instrumentation(
+        app,
+        app_lifespan,
+        enabled=settings.DIRECTOR_MONITORING_ENABLED,
+    )
 
     if tracing_config.tracing_enabled:
         initialize_fastapi_app_tracing(app, tracing_config=tracing_config)

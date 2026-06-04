@@ -133,20 +133,40 @@ def _create_prometheus_instrumentation_input_state_lifespan(*, enabled: bool) ->
     return _input_state_lifespan
 
 
-def create_prometheus_instrumentation_lifespan_manager(*, enabled: bool) -> LifespanManager[FastAPI]:
+def create_prometheus_instrumentation_lifespan_manager() -> LifespanManager[FastAPI]:
     instrumentation_lifespan_manager = LifespanManager()
-    instrumentation_lifespan_manager.add(_create_prometheus_instrumentation_input_state_lifespan(enabled=enabled))
     instrumentation_lifespan_manager.add(prometheus_instrumentation_lifespan)
     return instrumentation_lifespan_manager
+
+
+def configure_prometheus_instrumentation(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    enabled: bool,
+) -> None:
+    if enabled:
+        initialize_prometheus_instrumentation(app)
+        app_lifespan.include(create_prometheus_instrumentation_lifespan_manager())
 
 
 async def prometheus_instrumentation_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the
     # lifespan of the application runs, usually right after the ``FastAPI`` instance is created
 
-    instrumentation_enabled = state.get(_PROMETHEUS_INSTRUMENTATION_ENABLED, False)
-    if instrumentation_enabled:
-        _startup(app)
+    instrumentation_enabled = state.get(_PROMETHEUS_INSTRUMENTATION_ENABLED, True)
+    if not instrumentation_enabled:
+        yield {}
+        return
+
+    if not hasattr(app.state, "prometheus_metrics"):
+        msg = (
+            "Prometheus instrumentation is enabled but not initialized. "
+            "Call configure_prometheus_instrumentation(...) or initialize_prometheus_instrumentation(...) "
+            "before app startup."
+        )
+        raise RuntimeError(msg)
+
+    _startup(app)
     yield {}
-    if instrumentation_enabled:
-        _shutdown(app)
+    _shutdown(app)
