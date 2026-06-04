@@ -7,7 +7,7 @@ from time import perf_counter
 from typing import Final
 
 from fastapi import FastAPI, Request, Response, status
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from opentelemetry.instrumentation.fastapi import _get_route_details
 from prometheus_client import CollectorRegistry
 from prometheus_client.openmetrics.exposition import (
@@ -28,6 +28,7 @@ from ..prometheus_metrics import (
     record_request_metrics,
     record_response_metrics,
 )
+from .lifespan_utils import StatefulLifespan
 
 _logger = logging.getLogger(__name__)
 _PROMETHEUS_METRICS = "prometheus_metrics"
@@ -123,6 +124,20 @@ _PROMETHEUS_INSTRUMENTATION_ENABLED: Final[str] = "prometheus_instrumentation_en
 
 def create_prometheus_instrumentationmain_input_state(*, enabled: bool) -> State:
     return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
+
+
+def _create_prometheus_instrumentation_input_state_lifespan(*, enabled: bool) -> StatefulLifespan:
+    async def _input_state_lifespan(_: FastAPI, __: State) -> AsyncIterator[State]:
+        yield create_prometheus_instrumentationmain_input_state(enabled=enabled)
+
+    return _input_state_lifespan
+
+
+def create_prometheus_instrumentation_lifespan_manager(*, enabled: bool) -> LifespanManager[FastAPI]:
+    instrumentation_lifespan_manager = LifespanManager()
+    instrumentation_lifespan_manager.add(_create_prometheus_instrumentation_input_state_lifespan(enabled=enabled))
+    instrumentation_lifespan_manager.add(prometheus_instrumentation_lifespan)
+    return instrumentation_lifespan_manager
 
 
 async def prometheus_instrumentation_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
