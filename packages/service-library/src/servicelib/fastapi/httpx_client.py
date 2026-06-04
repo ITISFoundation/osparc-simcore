@@ -1,11 +1,18 @@
 import datetime
+import logging
+from collections.abc import AsyncIterator
+from enum import StrEnum
 
 import httpx
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 
 from servicelib.tracing import TracingConfig
 
 from ..tracing import setup_httpx_client_tracing
+from .lifespan_utils import lifespan_context
+
+_logger = logging.getLogger(__name__)
 
 
 def setup_httpx_client(
@@ -32,6 +39,46 @@ def setup_httpx_client(
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+
+class HttpxLifespanState(StrEnum):
+    HTTPX_DEFAULT_TIMEOUT = "httpx.default_timeout"
+    HTTPX_MAX_KEEPALIVE_CONNECTIONS = "httpx.max_keepalive_connections"
+    HTTPX_CLIENT = "httpx_client"
+
+
+def create_httpx_settings_state(
+    default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
+    max_keepalive_connections: int = 20,
+) -> State:
+    return {
+        HttpxLifespanState.HTTPX_DEFAULT_TIMEOUT: default_timeout,
+        HttpxLifespanState.HTTPX_MAX_KEEPALIVE_CONNECTIONS: max_keepalive_connections,
+    }
+
+
+async def httpx_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
+    _lifespan_name = f"{__name__}.{httpx_lifespan.__name__}"
+
+    with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
+        default_timeout = state[HttpxLifespanState.HTTPX_DEFAULT_TIMEOUT]
+        max_keepalive_connections = state[HttpxLifespanState.HTTPX_MAX_KEEPALIVE_CONNECTIONS]
+
+        try:
+            client = httpx.AsyncClient(
+                transport=httpx.AsyncHTTPTransport(http2=True),
+                limits=httpx.Limits(max_keepalive_connections=max_keepalive_connections),
+                timeout=default_timeout.total_seconds(),
+            )
+            app.state.httpx_client = client
+            yield {
+                HttpxLifespanState.HTTPX_CLIENT: client,
+                **called_state,
+            }
+        finally:
+            client = app.state.httpx_client
+            assert isinstance(client, httpx.AsyncClient)  # nosec
+            await client.aclose()
 
 
 def get_httpx_client(app: FastAPI) -> httpx.AsyncClient:
