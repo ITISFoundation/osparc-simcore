@@ -424,8 +424,9 @@ async def test_refresh_path_with_no_tracked_mount(
         ".",
         "proj",
         "proj/node",
-        "proj/node//file",
         "/proj/node/file",
+        "proj//node/file",
+        "proj/node//file",
     ],
 )
 async def test_refresh_path_with_invalid_remote_path_warns_and_returns(
