@@ -273,6 +273,9 @@ def _inject_otel_collector(
         "volumes": [
             traces_volume_mount,
         ],
+        "mem_limit": "256m",
+        "cpus": "0.30",
+        "cpu_shares": 16,
         "stop_grace_period": (
             f"{int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD.total_seconds())}s"
         ),
