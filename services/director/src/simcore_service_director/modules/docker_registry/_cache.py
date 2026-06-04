@@ -54,20 +54,11 @@ def _get_redis_client_for_lock(app: FastAPI) -> RedisClientSDK:
 
 async def _is_cache_fresh(app: FastAPI) -> bool:
     """Check if cache freshness marker exists in Redis (skip refresh if fresh)."""
-    app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY_CACHING:
-        return False
-
-    redis_manager = get_redis_client_manager(app)
-
-    try:
-        redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
-        marker_exists = await redis_client.redis.exists(_REGISTRY_CACHE_REFRESH_MARKER_KEY)
-        if marker_exists:
-            _logger.debug("Cache freshness marker found, skipping refresh")
-            return True
-    except Exception:
-        _logger.warning("Error checking cache freshness marker", exc_info=True)
+    redis_client = get_redis_client_manager(app).client(database=RedisDatabase.LOCKS)
+    marker_exists = await redis_client.redis.exists(_REGISTRY_CACHE_REFRESH_MARKER_KEY)
+    if marker_exists:
+        _logger.debug("Cache freshness marker found, skipping refresh")
+        return True
 
     return False
 
@@ -75,19 +66,11 @@ async def _is_cache_fresh(app: FastAPI) -> bool:
 async def _set_cache_fresh_marker(app: FastAPI) -> None:
     """Set cache freshness marker in Redis after successful refresh."""
     app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY_CACHING:
-        return
-
-    redis_manager = get_redis_client_manager(app)
-
-    try:
-        redis_client: RedisClientSDK = redis_manager.client(database=RedisDatabase.LOCKS)
-        # Set marker TTL to half the cache TTL, so it expires if no refresh happens
-        marker_ttl = int(app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds())
-        await redis_client.redis.setex(_REGISTRY_CACHE_REFRESH_MARKER_KEY, marker_ttl, "1")
-        _logger.info("Cache freshness marker set with TTL=%s seconds", marker_ttl)
-    except Exception:
-        _logger.warning("Error setting cache freshness marker", exc_info=True)
+    redis_client = get_redis_client_manager(app).client(database=RedisDatabase.LOCKS)
+    # Set marker TTL to half the cache TTL, so it expires if no refresh happens
+    marker_ttl = int(app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds())
+    await redis_client.redis.setex(_REGISTRY_CACHE_REFRESH_MARKER_KEY, marker_ttl, "1")
+    _logger.info("Cache freshness marker set with TTL=%s seconds", marker_ttl)
 
 
 @traced
