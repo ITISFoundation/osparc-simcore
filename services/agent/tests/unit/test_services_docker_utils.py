@@ -18,7 +18,7 @@ from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from simcore_service_agent.services.docker_utils import (
-    _VOLUMES_NOT_TO_BACKUP,
+    _EXCLUDE_VOLUMES,
     _does_volume_require_backup,
     _find_volumes_root,
     _reverse_string,
@@ -207,8 +207,8 @@ async def test_doclker_utils_workflow(
             requires_backup=requires_backup,
         )
 
-    assert count_vloumes_to_backup == (len(VOLUMES_TO_CREATE) - len(_VOLUMES_NOT_TO_BACKUP)) * volume_count
-    assert count_volumes_to_skip == len(_VOLUMES_NOT_TO_BACKUP) * volume_count
+    assert count_vloumes_to_backup == (len(VOLUMES_TO_CREATE) - len(_EXCLUDE_VOLUMES)) * volume_count
+    assert count_volumes_to_skip == len(_EXCLUDE_VOLUMES) * volume_count
 
     assert mock_backup_volume.call_count == (count_vloumes_to_backup if requires_backup else 0)
 
