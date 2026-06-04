@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from time import perf_counter
 from typing import Final
 
@@ -31,6 +31,8 @@ from ..prometheus_metrics import (
 
 _logger = logging.getLogger(__name__)
 _PROMETHEUS_METRICS = "prometheus_metrics"
+
+type PrometheusAdditionalLifespan = Callable[[FastAPI], AsyncIterator[State]]
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
@@ -134,12 +136,14 @@ def create_prometheus_instrumentation_lifespan_manager() -> LifespanManager[Fast
 def configure_prometheus_instrumentation(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
-    *,
+    *additional_lifespans: PrometheusAdditionalLifespan,
     enabled: bool,
 ) -> None:
     if enabled:
         initialize_prometheus_instrumentation(app)
         app_lifespan.include(create_prometheus_instrumentation_lifespan_manager())
+        for additional_lifespan in additional_lifespans:
+            app_lifespan.add(additional_lifespan)
 
 
 async def prometheus_instrumentation_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:

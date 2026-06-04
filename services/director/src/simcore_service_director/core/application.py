@@ -36,29 +36,14 @@ async def _banners_lifespan(_: FastAPI) -> AsyncIterator[State]:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-def _create_app_lifespan(
-    *,
-    logging_lifespan: Lifespan | None,
-) -> LifespanManager[FastAPI]:
-    app_lifespan = LifespanManager()
-    if logging_lifespan:
-        app_lifespan.add(logging_lifespan)
-    return app_lifespan
-
-
-def _configure_director_lifespans(app_lifespan: LifespanManager[FastAPI]) -> None:
-    app_lifespan.add(director_instrumentation_lifespan)
-    app_lifespan.add(_banners_lifespan)
-
-
 def create_app(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
     logging_lifespan: Lifespan | None,
 ) -> FastAPI:
-    app_lifespan = _create_app_lifespan(
-        logging_lifespan=logging_lifespan,
-    )
+    app_lifespan = LifespanManager()
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
 
     app = FastAPI(
         debug=settings.DIRECTOR_DEBUG,
@@ -78,8 +63,10 @@ def create_app(
 
     # PLUGINS SETUP
     setup_api_routes(app)
-
+    # Cancellation middleware
     app.add_middleware(RequestCancellationMiddleware)
+    # ERROR HANDLERS
+    set_app_default_http_error_handlers(app)
 
     configure_httpx_client(
         app_lifespan,
@@ -94,10 +81,9 @@ def create_app(
     configure_prometheus_instrumentation(
         app,
         app_lifespan,
+        director_instrumentation_lifespan,
         enabled=settings.DIRECTOR_MONITORING_ENABLED,
     )
-
-    _configure_director_lifespans(app_lifespan)
 
     configure_fastapi_app_tracing(
         app,
@@ -105,7 +91,7 @@ def create_app(
         tracing_config=tracing_config,
     )
 
-    # ERROR HANDLERS
-    set_app_default_http_error_handlers(app)
+    # comes last to have the banner printed after all the setup is done
+    app_lifespan.add(_banners_lifespan)
 
     return app
