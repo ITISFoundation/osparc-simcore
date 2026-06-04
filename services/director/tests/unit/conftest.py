@@ -222,7 +222,10 @@ def configure_registry_redis_backend(
 
 @pytest.fixture
 def with_disabled_auto_caching_task(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
+    return mocker.patch(
+        "simcore_service_director.modules.docker_registry._setup.refresh_all_services_cache",
+        autospec=True,
+    )
 
 
 @pytest.fixture

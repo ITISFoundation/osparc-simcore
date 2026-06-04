@@ -54,7 +54,7 @@ def update_project_workbench_with_comp_tasks(
             for node_id, node_data in project_nodes_map.items():
                 con.execute(
                     projects_nodes.update()  # pylint:disable=no-value-for-parameter
-                    .values(**node_data)
+                    .values(outputs=node_data.get("outputs"), run_hash=node_data.get("run_hash"))
                     .where((projects_nodes.c.node_id == node_id) & (projects_nodes.c.project_uuid == project_uuid))
                 )
 
