@@ -13,7 +13,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Final
 
-from playwright.sync_api import Page, PlaywrightError, WebSocket, expect
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
