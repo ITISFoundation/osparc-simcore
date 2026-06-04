@@ -19,7 +19,6 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_api_routes
 from ..instrumentation import setup as setup_instrumentation
-from ..modules.docker_registry import setup as setup_registry
 from ..modules.redis import setup as setup_redis
 from . import events
 from .settings import ApplicationSettings
@@ -64,7 +63,6 @@ def create_app(
     )
     if settings.DIRECTOR_REGISTRY_CACHING:
         setup_redis(app)
-    setup_registry(app)
 
     app.add_middleware(RequestCancellationMiddleware)
 

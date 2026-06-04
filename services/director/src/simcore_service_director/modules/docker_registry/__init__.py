@@ -1,7 +1,7 @@
 from . import _client as client
-from ._setup import setup
+from ._setup import registry_lifespan
 
 __all__: tuple[str, ...] = (
     "client",
-    "setup",
+    "registry_lifespan",
 )
