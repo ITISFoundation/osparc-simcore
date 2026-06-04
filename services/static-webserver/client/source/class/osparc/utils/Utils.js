@@ -359,6 +359,49 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    /**
+     * Animates swapping two widgets: slides the hiding widget out to the left
+     * and slides the showing widget in from the right.
+     *
+     * @param {qx.ui.core.Widget} toHide Widget to hide
+     * @param {qx.ui.core.Widget} toShow Widget to show
+     * @param {Object} [opts] Options
+     * @param {Number} [opts.duration=200] Animation duration in ms
+     * @param {Number} [opts.translation=200] Slide distance in px
+     */
+    animateSwap: function(toHide, toShow, opts) {
+      const duration = (opts && opts.duration) || 200;
+      const translation = (opts && opts.translation) || 200;
+      const hideContainer = toHide.getLayoutParent();
+      const hideDom = hideContainer ? hideContainer.getContentElement().getDomElement() : null;
+      if (hideDom) {
+        qx.bom.element.Animation.animate(hideDom, {
+          duration,
+          keyFrames: {
+            0: {opacity: 1, translate: ["0px"]},
+            100: {opacity: 0, translate: [`-${translation}px`]}
+          }
+        }).addListenerOnce("end", () => {
+          toHide.setVisibility("excluded");
+          toShow.setVisibility("visible");
+          const showContainer = toShow.getLayoutParent();
+          const showDom = showContainer ? showContainer.getContentElement().getDomElement() : null;
+          if (showDom) {
+            qx.bom.element.Animation.animate(showDom, {
+              duration,
+              keyFrames: {
+                0: {opacity: 0, translate: [`${translation}px`]},
+                100: {opacity: 1, translate: ["0px"]}
+              }
+            });
+          }
+        });
+      } else {
+        toHide.setVisibility("excluded");
+        toShow.setVisibility("visible");
+      }
+    },
+
     getGridsFirstColumnWidth: function(grid) {
       let firstColumnWidth = null;
       const firstElement = grid.getCellWidget(0, 0);
@@ -1073,6 +1116,104 @@ qx.Class.define("osparc.utils.Utils", {
       downloadAnchorNode.setAttribute("download", filename);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
+    },
+
+    /**
+     * Downloads a file using the File System Access API (showSaveFilePicker) when available,
+     * which prompts the user for a save location and streams data directly to disk.
+     * Falls back to fetch + blob download for browsers without File System Access API support.
+     * Unlike downloadLink(), this avoids buffering the entire file in an XHR response.
+     *
+     * @param {String} url The URL to download from
+     * @param {String} fileName Suggested file name
+     * @param {Function} [progressCb] Optional callback receiving {loaded, total, progress} during download
+     */
+    downloadNatively: async function(url, fileName, progressCb) {
+      if (window.showSaveFilePicker) {
+        try {
+          return await this.self().__downloadWithFileSystemAccess(url, fileName, progressCb);
+        } catch (err) {
+          // Fall back to fetch+blob if user activation expired or picker was denied
+          if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+            return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
+          }
+          throw err;
+        }
+      }
+      return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
+    },
+
+    __downloadWithFileSystemAccess: async function(url, fileName, progressCb) {
+      const extension = (fileName.split(".").pop() || "").toLowerCase();
+      const mimeTypes = {
+        "zip": "application/zip",
+        "tar": "application/x-tar",
+        "gz": "application/gzip",
+      };
+      const pickerOpts = {
+        suggestedName: fileName,
+      };
+      if (mimeTypes[extension]) {
+        pickerOpts.types = [{
+          description: "Downloaded file",
+          accept: { [mimeTypes[extension]]: ["." + extension] },
+        }];
+      }
+      const fileHandle = await window.showSaveFilePicker(pickerOpts);
+      const writable = await fileHandle.createWritable();
+      const response = await fetch(url);
+      if (!response.ok) {
+        await writable.abort();
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      if (progressCb && response.body) {
+        const contentLength = parseInt(response.headers.get("Content-Length") || "0", 10);
+        const reader = response.body.getReader();
+        let loaded = 0;
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          loaded += value.byteLength;
+          await writable.write(value);
+          progressCb({
+            loaded,
+            total: contentLength || null,
+            progress: contentLength ? loaded / contentLength : null,
+          });
+        }
+        await writable.close();
+      } else {
+        await response.body.pipeTo(writable);
+      }
+    },
+
+    __downloadWithFetchBlob: async function(url, fileName, progressCb) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      if (progressCb && response.body) {
+        const contentLength = parseInt(response.headers.get("Content-Length") || "0", 10);
+        const reader = response.body.getReader();
+        const chunks = [];
+        let loaded = 0;
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          loaded += value.byteLength;
+          progressCb({
+            loaded,
+            total: contentLength || null,
+            progress: contentLength ? loaded / contentLength : null,
+          });
+        }
+        const blob = new Blob(chunks);
+        osparc.utils.Utils.downloadBlobContent(blob, fileName);
+      } else {
+        const blob = await response.blob();
+        osparc.utils.Utils.downloadBlobContent(blob, fileName);
+      }
     },
 
     filenameFromContentDisposition: function(xhr) {

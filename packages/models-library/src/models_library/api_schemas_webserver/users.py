@@ -326,7 +326,7 @@ type UserAccountSortableField = Literal[
     "name",
     "email",
     "status",
-    "accountRequestedReviewedAt",
+    "accountRequestReviewedAt",
     "preRegistrationCreated",
 ]
 
@@ -337,7 +337,7 @@ class UsersAccountListOrderParams(
     _default_order_by: ClassVar[str] = "email"
     _field_name_map: ClassVar[dict[str, str]] = {
         "name": "first_name",
-        "accountRequestedReviewedAt": "account_request_reviewed_at",
+        "accountRequestReviewedAt": "account_request_reviewed_at",
         "preRegistrationCreated": "created",
     }
 

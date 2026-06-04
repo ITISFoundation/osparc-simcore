@@ -24,7 +24,7 @@ from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
-from . import docker_utils, registry_proxy
+from . import docker_utils
 from .constants import (
     CPU_RESOURCE_LIMIT_KEY,
     MEM_RESOURCE_LIMIT_KEY,
@@ -43,6 +43,7 @@ from .core.errors import (
 )
 from .core.settings import ApplicationSettings, get_application_settings
 from .instrumentation import get_instrumentation
+from .modules.docker_registry import client as registry_proxy
 from .services_common import ServicesCommonSettings
 
 _logger = logging.getLogger(__name__)

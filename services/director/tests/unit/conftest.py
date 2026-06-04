@@ -6,15 +6,21 @@
 from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
+import redis.asyncio as redis_asyncio
 import simcore_service_director
 from asgi_lifespan import LifespanManager
+from fakeredis import FakeServer
+from fakeredis.aioredis import FakeConnection
 from fastapi import FastAPI
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.tracing import TracingConfig
 from settings_library.docker_registry import RegistrySettings
+from settings_library.redis import RedisSettings
 from simcore_service_director._meta import APP_NAME
 from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings
@@ -31,6 +37,7 @@ pytest_plugins = [
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.logging",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
 ]
@@ -79,7 +86,6 @@ def configure_registry_access(
             "REGISTRY_URL": docker_registry,
             "REGISTRY_PATH": docker_registry,
             "REGISTRY_SSL": False,
-            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
 
@@ -96,7 +102,6 @@ def configure_external_registry_access(
         envs={
             **external_registry_settings.model_dump(by_alias=True, exclude_none=True),
             "REGISTRY_PW": external_registry_settings.REGISTRY_PW.get_secret_value(),
-            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
 
@@ -126,9 +131,16 @@ def configure_custom_registry(
             "REGISTRY_USER": registry_user,
             "REGISTRY_PW": registry_pw,
             "REGISTRY_SSL": False,
-            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
+
+
+@pytest.fixture
+def configure_registry_caching(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(monkeypatch, {"DIRECTOR_REGISTRY_CACHING": True})
 
 
 @pytest.fixture
@@ -146,6 +158,7 @@ def app_environment(
         {
             **docker_compose_service_environment_dict,
             "DIRECTOR_TRACING": "null",
+            "DIRECTOR_REGISTRY_CACHING": False,
         },
     )
 
@@ -191,3 +204,47 @@ def configured_docker_network(
         monkeypatch,
         {"DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME": with_docker_network["Name"]},
     )
+
+
+@pytest.fixture
+def configure_registry_redis_backend(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "REDIS_USER": "null",
+            "REDIS_PASSWORD": "null",
+        },
+    )
+
+
+@pytest.fixture
+def with_disabled_auto_caching_task(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director.modules.docker_registry._setup.refresh_all_services_cache",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
+    # Also patch the redis client of aiocache to use fakeredis,
+    # so that the registry proxy tests can run without a real Redis server
+    fake_server = FakeServer()
+    OriginalPool = redis_asyncio.ConnectionPool
+
+    def fake_connection_pool(*args, **kwargs) -> redis_asyncio.ConnectionPool:
+        kwargs["connection_class"] = FakeConnection
+        kwargs["server"] = fake_server
+        return OriginalPool(*args, **kwargs)
+
+    mocker.patch(
+        "redis.asyncio.from_url",
+        lambda *a, **kw: redis_asyncio.Redis(  # noqa: ARG005
+            connection_pool=fake_connection_pool(**kw),
+        ),
+    )
+    mocker.patch("redis.asyncio.ConnectionPool", fake_connection_pool)
+    return RedisSettings()

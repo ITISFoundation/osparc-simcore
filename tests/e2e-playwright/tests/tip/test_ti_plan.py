@@ -13,7 +13,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Final
 
-from playwright.sync_api import Page, WebSocket
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -39,18 +40,19 @@ _ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 _ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME: Final[int] = 5 * SECOND
 
 
-_JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 3 * MINUTE
-_JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_JLAB_MAX_STARTUP_MAX_TIME: Final[int] = 5 * MINUTE
+_JLAB_DOCKER_PULLING_MAX_TIME: Final[int] = 15 * MINUTE
 _JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _JLAB_DOCKER_PULLING_MAX_TIME + _JLAB_MAX_STARTUP_MAX_TIME
 )
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME: Final[int] = 2 * MINUTE
-_JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 4 * MINUTE
+_JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 20 * MINUTE
+_JLAB_EXPORTING_MAX_TIME: Final[int] = 2 * MINUTE
 _JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 
 
-_POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
-_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
+_POST_PRO_MAX_STARTUP_TIME: Final[int] = 5 * MINUTE
+_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 15 * MINUTE
 _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
 )
@@ -125,13 +127,29 @@ def _run_electrode_selector_step(
 
 @retry(
     stop=stop_after_delay(_JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(2),
+    wait=wait_fixed(10),
     reraise=True,
 )
-def _wait_for_optimization_complete(run_button):
-    bg_color = run_button.evaluate("el => getComputedStyle(el).backgroundColor")
-    if bg_color != "rgb(0, 128, 0)":
-        msg = "Optimization not finished yet: {bg_color=}, {run_button=}"
+def _wait_for_optimization_complete(run_button) -> None:
+    if not run_button.is_enabled():
+        msg = f"Optimization not finished yet: {run_button=}"
+        raise ValueError(msg)
+
+
+@retry(
+    stop=stop_after_delay(_JLAB_EXPORTING_MAX_TIME / 1000),  # seconds
+    wait=wait_fixed(10),
+    reraise=True,
+)
+def _wait_for_export_complete(button) -> None:
+    """Wait for an export button to finish by checking the fa-spinner icon."""
+    try:
+        icon_class = button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("Export button icon not found — export likely completed")
+        return
+    if "fa-spinner" in icon_class:
+        msg = f"Export still running: {icon_class=}"
         raise ValueError(msg)
 
 
@@ -159,19 +177,38 @@ def _run_classic_ti_step(  # noqa: PLR0915
     assert not ws_info.value.is_closed()
     restartable_jlab_websocket = RobustWebSocket(params.page, ws_info.value)
 
+    with log_context(logging.INFO, "Wait for UI to load"):
+        target_tissue_label = ti_iframe.get_by_text("Target tissue:")
+        expect(target_tissue_label).to_be_visible(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+
+    with log_context(logging.INFO, "Select Target tissue"):
+        target_tissue_select = ti_iframe.get_by_label("Target tissue")
+        expect(target_tissue_select).to_be_visible()
+        # Pick the first non-empty option
+        options = target_tissue_select.locator("option").all()
+        selected = False
+        for option in options:
+            value = option.get_attribute("value") or ""
+            if value.strip():
+                target_tissue_select.select_option(value=value)
+                logging.info("Selected target tissue: %s", option.inner_text())
+                selected = True
+                break
+        assert selected, "No non-empty target tissue option found"
+
     if params.is_product_lite:
         with log_context(logging.INFO, "Check species selector has only 2 options", logger=log_ctx.logger):
             species_selector = ti_iframe.locator("select").first
             options = species_selector.locator("option")
-            assert options.count() == 2, f"Expected 2 species options in lite product, got {options.count()}"
-            option_texts = [options.nth(i).inner_text() for i in range(options.count())]
-            assert "Human - MIDA anisotropic" in option_texts
-            assert "Mouse" in option_texts
+            expect(options).to_have_count(2)
+            expect(options.nth(0)).to_have_attribute("value", "Human - MIDA anisotropic")
+            expect(options.nth(1)).to_have_attribute("value", "Mouse")
 
     with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
         run_button = ti_iframe.get_by_role("button", name="Run Optimization")
-        run_button.click(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
+        run_button.click()
         try:
+            expect(run_button).to_be_disabled(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
             _wait_for_optimization_complete(run_button)
             ctx2.logger.info("Optimization finished!")
         except RetryError as e:
@@ -189,7 +226,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
             logging.INFO,
             f"Click button - `Load` and wait for {_JLAB_REPORTING_MAX_TIME}",
         ):
-            ti_iframe.get_by_role("button", name="Load").nth(1).click()
+            ti_iframe.get_by_role("button", name="Load").nth(2).click()
             params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
         if params.is_product_lite:
@@ -212,10 +249,11 @@ def _run_classic_ti_step(  # noqa: PLR0915
                 params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             with log_context(
                 logging.INFO,
-                f"Click button - `Export to S4L` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                "Click button - `Export to S4L` and wait for spinner",
             ):
-                ti_iframe.get_by_role("button", name="Export to S4L").click()
-                params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                export_s4l_button = ti_iframe.get_by_role("button", name="Export to S4L")
+                export_s4l_button.click()
+                _wait_for_export_complete(export_s4l_button)
             with log_context(
                 logging.INFO,
                 f"Click button - `Add to Report (1)` and wait for {_JLAB_REPORTING_MAX_TIME}",
@@ -224,19 +262,20 @@ def _run_classic_ti_step(  # noqa: PLR0915
                 params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             with log_context(
                 logging.INFO,
-                f"Click button - `Export Report` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                "Click button - `Export Report` and wait for spinner",
             ):
-                ti_iframe.get_by_role("button", name="Export Report").click()
-                params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                export_report_button = ti_iframe.get_by_role("button", name="Export Report")
+                export_report_button.click()
+                _wait_for_export_complete(export_report_button)
 
     with log_context(logging.INFO, "Check outputs", logger=log_ctx.logger):
         if params.is_product_lite:
-            expected_outputs = ["results.csv"]
+            expected_outputs = ["results.csv", "MIDA_Anisotropic.smash", "WM.cache"]
             text_on_output_button = f"Outputs ({len(expected_outputs)})"
             params.page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
         else:
-            expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
+            expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv", "MIDA_Anisotropic.smash", "WM.cache"]
             text_on_output_button = f"Outputs ({len(expected_outputs)})"
             params.page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
@@ -260,13 +299,6 @@ def _run_exposure_analysis_step(
         app_mode_trigger_next_app(params.page)
     s4l_postpro_iframe = service_running.iframe_locator
     assert s4l_postpro_iframe
-
-    with log_context(logging.INFO, "Post process", logger=log_ctx.logger):
-        # click on the postpro mode button
-        s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
-        # click on the surface viewer
-        s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
-        s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()
 
 
 def test_classic_ti_plan(

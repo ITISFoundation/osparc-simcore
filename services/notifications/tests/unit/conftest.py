@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
+import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import asdict
 from typing import Any
@@ -26,7 +27,6 @@ from notifications_library._models import (
     ProductData,
     ProductFooterData,
     ProductUIData,
-    ShareLink,
     SocialLink,
 )
 from pytest_mock import MockerFixture
@@ -94,6 +94,19 @@ def app_environment(
             **mock_environment,
             **mock_env_devel_environment,
             "NOTIFICATIONS_TRACING": "null",
+            "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
+                {
+                    "test-domain.com": {
+                        "SMTP_HOST": "mailpit",
+                        "SMTP_PORT": 1025,
+                        "SMTP_PROTOCOL": "UNENCRYPTED",
+                        "SMTP_LOCAL_PARTS": {
+                            "SUPPORT": "support",
+                            "NO_REPLY": "no-reply",
+                        },
+                    }
+                }
+            ),
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
@@ -238,7 +251,6 @@ def fake_ipinfo(faker: Faker) -> dict[str, Any]:
 def fake_product_data(faker: Faker) -> dict[str, Any]:
     footer_data = ProductFooterData(
         social_links=[SocialLink(name=faker.word(), url=faker.url()) for _ in range(3)],
-        share_links=[ShareLink(name=faker.word(), label=faker.word(), url=faker.url()) for _ in range(3)],
         company_name=faker.company(),
         company_address=faker.address(),
         company_links=[CompanyLink(name=faker.word(), url=faker.url()) for _ in range(3)],

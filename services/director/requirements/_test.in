@@ -13,6 +13,7 @@ asgi_lifespan
 aioresponses
 docker
 faker
+fakeredis[lua]
 jsonref
 pytest
 pytest-asyncio

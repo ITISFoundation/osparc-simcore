@@ -27,7 +27,8 @@ qx.Class.define("osparc.po.POCenter", {
     this.addWidgetToTabs(miniProfile);
 
     this.__addReviewUsersPage();
-    this.__addActiveUsersPage();
+    this.__addRegisteredUsersPage();
+    this.__addSearchUsersPage();
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
@@ -47,10 +48,17 @@ qx.Class.define("osparc.po.POCenter", {
       page.pageId = "reviewUsers";
     },
 
-    __addActiveUsersPage: function() {
+    __addRegisteredUsersPage: function() {
       const title = this.tr("Active Users");
-      const iconSrc = "@FontAwesome5Solid/user/22";
-      const users = new osparc.po.Users();
+      const iconSrc = "@MaterialIcons/how_to_reg/34";
+      const usersRegistered = new osparc.po.UsersRegistered();
+      this.addTab(title, iconSrc, usersRegistered);
+    },
+
+    __addSearchUsersPage: function() {
+      const title = this.tr("Search Users");
+      const iconSrc = "@FontAwesome5Solid/search/22";
+      const users = new osparc.po.UsersSearch();
       this.addTab(title, iconSrc, users);
     },
 
