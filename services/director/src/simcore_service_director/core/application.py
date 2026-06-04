@@ -36,6 +36,39 @@ def _banners_lifespan(_: FastAPI) -> Iterator[State]:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
+def _setup_rest_api(app: FastAPI) -> None:
+    setup_api_routes(app)
+    app.add_middleware(RequestCancellationMiddleware)
+    set_app_default_http_error_handlers(app)
+
+
+def _setup_plugins(
+    app: FastAPI, app_lifespan: LifespanManager, settings: ApplicationSettings, tracing_config: TracingConfig
+) -> None:
+    configure_httpx_client(
+        app_lifespan,
+        max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
+        default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
+        tracing_config=tracing_config,
+    )
+    if settings.DIRECTOR_REGISTRY_CACHING:
+        app_lifespan.add(redis_clients_manager_lifespan)
+    configure_registry_lifespans(app_lifespan)
+
+    configure_prometheus_instrumentation(
+        app,
+        app_lifespan,
+        director_instrumentation_lifespan,
+        enabled=settings.DIRECTOR_MONITORING_ENABLED,
+    )
+
+    configure_fastapi_app_tracing(
+        app,
+        app_lifespan,
+        tracing_config=tracing_config,
+    )
+
+
 def create_app(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
@@ -61,36 +94,8 @@ def create_app(
     app.state.settings = settings
     app.state.tracing_config = tracing_config
 
-    # PLUGINS SETUP
-    setup_api_routes(app)
-    # Cancellation middleware
-    app.add_middleware(RequestCancellationMiddleware)
-    # ERROR HANDLERS
-    set_app_default_http_error_handlers(app)
-
-    configure_httpx_client(
-        app_lifespan,
-        max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
-        default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
-        tracing_config=tracing_config,
-    )
-    if settings.DIRECTOR_REGISTRY_CACHING:
-        app_lifespan.add(redis_clients_manager_lifespan)
-    configure_registry_lifespans(app_lifespan)
-
-    configure_prometheus_instrumentation(
-        app,
-        app_lifespan,
-        director_instrumentation_lifespan,
-        enabled=settings.DIRECTOR_MONITORING_ENABLED,
-    )
-
-    configure_fastapi_app_tracing(
-        app,
-        app_lifespan,
-        tracing_config=tracing_config,
-    )
-
+    _setup_rest_api(app)
+    _setup_plugins(app, app_lifespan, settings, tracing_config)
     # comes last to have the banner printed after all the setup is done
     app_lifespan.add(_banners_lifespan)
 
