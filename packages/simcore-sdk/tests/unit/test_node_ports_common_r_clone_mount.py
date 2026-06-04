@@ -417,7 +417,17 @@ async def test_refresh_path_with_no_tracked_mount(
         await r_clone_mount_manager.refresh_path(remote_path=remote_path)
 
 
-@pytest.mark.parametrize("invalid_remote_path", ["", "proj", "proj/node"])
+@pytest.mark.parametrize(
+    "invalid_remote_path",
+    [
+        "",
+        ".",
+        "proj",
+        "proj/node",
+        "proj/node//file",
+        "/proj/node/file",
+    ],
+)
 async def test_refresh_path_with_invalid_remote_path_warns_and_returns(
     r_clone_mount_manager: RCloneMountManager,
     caplog: pytest.LogCaptureFixture,
