@@ -1118,6 +1118,104 @@ qx.Class.define("osparc.utils.Utils", {
       downloadAnchorNode.remove();
     },
 
+    /**
+     * Downloads a file using the File System Access API (showSaveFilePicker) when available,
+     * which prompts the user for a save location and streams data directly to disk.
+     * Falls back to fetch + blob download for browsers without File System Access API support.
+     * Unlike downloadLink(), this avoids buffering the entire file in an XHR response.
+     *
+     * @param {String} url The URL to download from
+     * @param {String} fileName Suggested file name
+     * @param {Function} [progressCb] Optional callback receiving {loaded, total, progress} during download
+     */
+    downloadNatively: async function(url, fileName, progressCb) {
+      if (window.showSaveFilePicker) {
+        try {
+          return await this.self().__downloadWithFileSystemAccess(url, fileName, progressCb);
+        } catch (err) {
+          // Fall back to fetch+blob if user activation expired or picker was denied
+          if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+            return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
+          }
+          throw err;
+        }
+      }
+      return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
+    },
+
+    __downloadWithFileSystemAccess: async function(url, fileName, progressCb) {
+      const extension = (fileName.split(".").pop() || "").toLowerCase();
+      const mimeTypes = {
+        "zip": "application/zip",
+        "tar": "application/x-tar",
+        "gz": "application/gzip",
+      };
+      const pickerOpts = {
+        suggestedName: fileName,
+      };
+      if (mimeTypes[extension]) {
+        pickerOpts.types = [{
+          description: "Downloaded file",
+          accept: { [mimeTypes[extension]]: ["." + extension] },
+        }];
+      }
+      const fileHandle = await window.showSaveFilePicker(pickerOpts);
+      const writable = await fileHandle.createWritable();
+      const response = await fetch(url);
+      if (!response.ok) {
+        await writable.abort();
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      if (progressCb && response.body) {
+        const contentLength = parseInt(response.headers.get("Content-Length") || "0", 10);
+        const reader = response.body.getReader();
+        let loaded = 0;
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          loaded += value.byteLength;
+          await writable.write(value);
+          progressCb({
+            loaded,
+            total: contentLength || null,
+            progress: contentLength ? loaded / contentLength : null,
+          });
+        }
+        await writable.close();
+      } else {
+        await response.body.pipeTo(writable);
+      }
+    },
+
+    __downloadWithFetchBlob: async function(url, fileName, progressCb) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      if (progressCb && response.body) {
+        const contentLength = parseInt(response.headers.get("Content-Length") || "0", 10);
+        const reader = response.body.getReader();
+        const chunks = [];
+        let loaded = 0;
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          loaded += value.byteLength;
+          progressCb({
+            loaded,
+            total: contentLength || null,
+            progress: contentLength ? loaded / contentLength : null,
+          });
+        }
+        const blob = new Blob(chunks);
+        osparc.utils.Utils.downloadBlobContent(blob, fileName);
+      } else {
+        const blob = await response.blob();
+        osparc.utils.Utils.downloadBlobContent(blob, fileName);
+      }
+    },
+
     filenameFromContentDisposition: function(xhr) {
       // https://stackoverflow.com/questions/40939380/how-to-get-file-name-from-content-disposition
       let filename = "";
