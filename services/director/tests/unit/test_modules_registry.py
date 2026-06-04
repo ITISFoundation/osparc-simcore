@@ -21,8 +21,8 @@ from pytest_simcore.helpers.docker_registry_images import PushServicesCallable
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
-from simcore_service_director import registry_proxy
 from simcore_service_director.core.settings import ApplicationSettings, get_application_settings
+from simcore_service_director.modules.docker_registry import client as registry_proxy
 
 _logger = logging.getLogger(__name__)
 

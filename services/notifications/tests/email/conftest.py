@@ -14,7 +14,6 @@ from notifications_library._models import (
     ProductData,
     ProductFooterData,
     ProductUIData,
-    ShareLink,
     SharerData,
     SocialLink,
     UserData,
@@ -85,10 +84,6 @@ def product_data(
     footer_data = ProductFooterData(
         social_links=[
             SocialLink(name=link_name, url=link_url) for link_name, link_url in vendor.get("footer_social_links", [])
-        ],
-        share_links=[
-            ShareLink(name=share_name, label=share_label, url=share_url)
-            for share_name, share_label, share_url in vendor.get("footer_share_links", [])
         ],
         company_name=vendor.get("company_name", ""),
         company_address=vendor.get("company_address", ""),
