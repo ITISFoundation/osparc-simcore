@@ -11,25 +11,27 @@ from ._client import setup_registry_connection
 
 
 async def registry_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app_settings = get_application_settings(app)
-    cache = create_registry_cache(app_settings)
-    app.state.registry_cache_memory = cache
-    await setup_registry_connection(app)
-    app.state.auto_cache_task = None
-    if app_settings.DIRECTOR_REGISTRY_CACHING:
-        app.state.auto_cache_task = create_periodic_task(
-            refresh_all_services_cache,
-            interval=app_settings.DIRECTOR_REGISTRY_CACHING_TTL / 4,
-            task_name="director-auto-cache-task",
-            app=app,
-        )
+    app.state.registry_cache_auto_refresh_task = None
+    app.state.registry_cache = None
+
     try:
+        app_settings = get_application_settings(app)
+        await setup_registry_connection(app)
+
+        if app_settings.DIRECTOR_REGISTRY_CACHING:
+            app.state.registry_cache = create_registry_cache(app_settings)
+            app.state.registry_cache_auto_refresh_task = create_periodic_task(
+                refresh_all_services_cache,
+                interval=app_settings.DIRECTOR_REGISTRY_CACHING_TTL / 4,
+                task_name="director-auto-cache-task",
+                app=app,
+            )
         yield {}
     finally:
-        if app.state.auto_cache_task:
-            await cancel_wait_task(app.state.auto_cache_task)
-        if app.state.registry_cache_memory:
-            await app.state.registry_cache_memory.close()
+        if app.state.registry_cache_auto_refresh_task:
+            await cancel_wait_task(app.state.registry_cache_auto_refresh_task)
+        if app.state.registry_cache:
+            await app.state.registry_cache.close()
 
 
 def configure_registry_lifespans(

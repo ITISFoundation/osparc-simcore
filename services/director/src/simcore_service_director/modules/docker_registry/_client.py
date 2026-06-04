@@ -198,7 +198,7 @@ async def registry_request(
     use_cache: bool,
     **request_kwargs,
 ) -> tuple[dict, Mapping]:
-    cache: BaseCache | None = app.state.registry_cache_memory
+    cache: BaseCache | None = app.state.registry_cache
     cache_key = f"{method}_{path}"
     if use_cache and cache and (cached_response := await cache.get(cache_key)):
         cached_body, cached_headers = cast(tuple[dict, Mapping], cached_response)

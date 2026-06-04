@@ -58,7 +58,7 @@ async def director_instrumentation_lifespan(app: FastAPI) -> AsyncIterator[State
         app.state.instrumentation = DirectorV0Instrumentation(registry=registry, subsystem=metrics_subsystem)
         yield {}
     finally:
-        ...
+        pass
 
 
 def get_instrumentation(app: FastAPI) -> DirectorV0Instrumentation:
