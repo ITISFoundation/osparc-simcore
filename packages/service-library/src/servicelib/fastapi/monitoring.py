@@ -28,7 +28,9 @@ from ..prometheus_metrics import (
     record_response_metrics,
 )
 
-type PrometheusAdditionalLifespan = Callable[[FastAPI], AsyncIterator[State]]
+type PrometheusAdditionalLifespan = (
+    Callable[[FastAPI], AsyncIterator[State]] | Callable[[FastAPI, State], AsyncIterator[State]]
+)
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
