@@ -412,7 +412,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __applyNode: function(node) {
       node.addListener("changePosition", e => {
-        this.moveNodeTo(e.getData());
+        const pos = e.getData();
+        this.setDomPosition(pos.x, pos.y);
         this.fireEvent("updateNodeDecorator");
       });
 
