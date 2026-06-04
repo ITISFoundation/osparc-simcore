@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import Iterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
@@ -30,7 +30,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-async def _banners_lifespan(_: FastAPI) -> AsyncIterator[State]:
+def _banners_lifespan(_: FastAPI) -> Iterator[State]:
     print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
     yield {}
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
