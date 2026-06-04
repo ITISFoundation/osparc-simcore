@@ -62,6 +62,7 @@
 "a:dynamic-sidecar":
   - changed-files:
       - any-glob-to-any-file: services/dynamic-sidecar/**
+      - any-glob-to-any-file: packages/simcore-sdk/**
 
 "a:efs-guardian":
   - changed-files:
