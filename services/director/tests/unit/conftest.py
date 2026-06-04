@@ -12,8 +12,7 @@ import pytest
 import redis.asyncio as redis_asyncio
 import simcore_service_director
 from asgi_lifespan import LifespanManager
-from fakeredis import FakeServer
-from fakeredis.aioredis import FakeConnection
+from fakeredis import FakeAsyncRedisConnection, FakeServer
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -236,7 +235,7 @@ def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
     OriginalPool = redis_asyncio.ConnectionPool
 
     def fake_connection_pool(*args, **kwargs) -> redis_asyncio.ConnectionPool:
-        kwargs["connection_class"] = FakeConnection
+        kwargs["connection_class"] = FakeAsyncRedisConnection
         kwargs["server"] = fake_server
         return OriginalPool(*args, **kwargs)
 
