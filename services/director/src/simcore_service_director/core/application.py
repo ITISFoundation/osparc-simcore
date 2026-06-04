@@ -51,8 +51,10 @@ def _setup_plugins(
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
         tracing_config=tracing_config,
     )
+
     if settings.DIRECTOR_REGISTRY_CACHING:
         app_lifespan.add(redis_clients_manager_lifespan)
+
     configure_registry_lifespans(app_lifespan)
 
     configure_prometheus_instrumentation(

@@ -1,7 +1,6 @@
 # pylint: disable=protected-access
 
 import asyncio
-import logging
 from collections.abc import AsyncIterator, Callable
 from time import perf_counter
 from typing import Final
@@ -28,9 +27,6 @@ from ..prometheus_metrics import (
     record_request_metrics,
     record_response_metrics,
 )
-
-_logger = logging.getLogger(__name__)
-_PROMETHEUS_METRICS = "prometheus_metrics"
 
 type PrometheusAdditionalLifespan = Callable[[FastAPI], AsyncIterator[State]]
 
