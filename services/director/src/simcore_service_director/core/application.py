@@ -10,8 +10,7 @@ from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import configure_prometheus_instrumentation
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
-    initialize_fastapi_app_tracing,
-    tracing_instrumentation_lifespan,
+    configure_fastapi_app_tracing,
 )
 from servicelib.tracing import TracingConfig
 
@@ -40,13 +39,10 @@ async def _banners_lifespan(_: FastAPI) -> AsyncIterator[State]:
 def _create_app_lifespan(
     *,
     logging_lifespan: Lifespan | None,
-    tracing_config: TracingConfig,
 ) -> LifespanManager[FastAPI]:
     app_lifespan = LifespanManager()
     if logging_lifespan:
         app_lifespan.add(logging_lifespan)
-    if tracing_config.tracing_enabled:
-        app_lifespan.add(tracing_instrumentation_lifespan(tracing_config=tracing_config))
     return app_lifespan
 
 
@@ -62,7 +58,6 @@ def create_app(
 ) -> FastAPI:
     app_lifespan = _create_app_lifespan(
         logging_lifespan=logging_lifespan,
-        tracing_config=tracing_config,
     )
 
     app = FastAPI(
@@ -104,8 +99,11 @@ def create_app(
 
     _configure_director_lifespans(app_lifespan)
 
-    if tracing_config.tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
+    configure_fastapi_app_tracing(
+        app,
+        app_lifespan,
+        tracing_config=tracing_config,
+    )
 
     # ERROR HANDLERS
     set_app_default_http_error_handlers(app)
