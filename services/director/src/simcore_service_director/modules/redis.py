@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase
 
@@ -10,7 +10,8 @@ from .._meta import APP_NAME
 from ..core.settings import ApplicationSettings, get_application_settings
 
 
-async def redis_clients_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _redis_clients_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    redis_clients_manager: RedisClientsManager | None = None
     try:
         settings: ApplicationSettings = get_application_settings(app)
         redis_settings = settings.DIRECTOR_REDIS
@@ -34,8 +35,17 @@ async def redis_clients_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
         await redis_clients_manager.setup()
         yield {}
     finally:
-        if redis_clients_manager:
+        if redis_clients_manager is not None:
             await redis_clients_manager.shutdown()
+
+
+def configure_redis_clients_manager(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    enabled: bool,
+) -> None:
+    if enabled:
+        app_lifespan.add(_redis_clients_manager_lifespan)
 
 
 def get_redis_client_manager(app: FastAPI) -> RedisClientsManager:

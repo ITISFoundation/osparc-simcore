@@ -24,7 +24,7 @@ from .._meta import (
 from ..api.rest.routes import setup_api_routes
 from ..instrumentation import director_instrumentation_lifespan
 from ..modules.docker_registry import configure_registry_lifespans
-from ..modules.redis import redis_clients_manager_lifespan
+from ..modules.redis import configure_redis_clients_manager
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -52,8 +52,7 @@ def _configure_plugins(
         tracing_config=tracing_config,
     )
 
-    if settings.DIRECTOR_REGISTRY_CACHING:
-        app_lifespan.add(redis_clients_manager_lifespan)
+    configure_redis_clients_manager(app_lifespan, enabled=settings.DIRECTOR_REGISTRY_CACHING)
 
     configure_registry_lifespans(app_lifespan)
 
