@@ -10,6 +10,7 @@ from servicelib.docker_constants import (
     DEFAULT_USER_SERVICES_NETWORK_NAME,
     SUFFIX_EGRESS_PROXY_NAME,
 )
+from servicelib.tracing import SourceOrigin, create_standard_attributes
 
 from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_config
@@ -181,16 +182,16 @@ def _generate_otel_collector_config(
     settings: ApplicationSettings,
 ) -> str:
     """Generates the OTEL Collector YAML config for the injected collector container."""
-    resource_attributes: list[dict[str, str]] = []
-    for key, value in {
-        "simcore.user_id": f"{settings.DY_SIDECAR_USER_ID}",
-        "simcore.project_id": f"{settings.DY_SIDECAR_PROJECT_ID}",
-        "simcore.node_id": f"{settings.DY_SIDECAR_NODE_ID}",
-        "simcore.service_key": f"{settings.DY_SIDECAR_SERVICE_KEY or ''}",
-        "simcore.service_version": f"{settings.DY_SIDECAR_SERVICE_VERSION or ''}",
-        "simcore.product_name": f"{settings.DY_SIDECAR_PRODUCT_NAME or ''}",
-    }.items():
-        resource_attributes.append({"key": key, "value": value, "action": "upsert"})
+
+    # NOTE: added to collector container so they are always present
+    attributes = create_standard_attributes(
+        user_id=settings.DY_SIDECAR_USER_ID,
+        project_id=settings.DY_SIDECAR_PROJECT_ID,
+        node_id=settings.DY_SIDECAR_NODE_ID,
+        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
+        run_id=settings.DY_SIDECAR_RUN_ID,
+        source_origin=SourceOrigin.USER_SERVICE,
+    )
 
     config = {
         "receivers": {
@@ -202,7 +203,7 @@ def _generate_otel_collector_config(
         },
         "processors": {
             "batch": {"timeout": "5s"},
-            "resource": {"attributes": resource_attributes},
+            "resource": {"attributes": [{"key": k, "value": v, "action": "upsert"} for k, v in attributes.items()]},
         },
         "exporters": {
             "file": {
@@ -231,14 +232,13 @@ def _generate_otel_collector_config(
 
 def _build_otel_resource_attributes(settings: ApplicationSettings) -> str:
     """Builds the OTEL_RESOURCE_ATTRIBUTES value with simcore.* prefixed keys."""
-    attrs = {
-        "simcore.user_id": f"{settings.DY_SIDECAR_USER_ID}",
-        "simcore.project_id": f"{settings.DY_SIDECAR_PROJECT_ID}",
-        "simcore.node_id": f"{settings.DY_SIDECAR_NODE_ID}",
-        "simcore.service_key": f"{settings.DY_SIDECAR_SERVICE_KEY or ''}",
-        "simcore.service_version": f"{settings.DY_SIDECAR_SERVICE_VERSION or ''}",
-        "simcore.product_name": f"{settings.DY_SIDECAR_PRODUCT_NAME or ''}",
-    }
+    # NOTE: added to each service via env var, user could in therory overwrite them,
+    # but to do so they need to put in extra effor
+    attrs = create_standard_attributes(
+        service_key=settings.DY_SIDECAR_SERVICE_KEY,
+        service_version=settings.DY_SIDECAR_SERVICE_VERSION,
+        source_origin=None,
+    )
     return ",".join(f"{k}={v}" for k, v in attrs.items() if v)
 
 
