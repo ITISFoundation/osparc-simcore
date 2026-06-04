@@ -28,7 +28,6 @@ from ..prometheus_metrics import (
     record_request_metrics,
     record_response_metrics,
 )
-from .lifespan_utils import StatefulLifespan
 
 _logger = logging.getLogger(__name__)
 _PROMETHEUS_METRICS = "prometheus_metrics"
@@ -124,13 +123,6 @@ _PROMETHEUS_INSTRUMENTATION_ENABLED: Final[str] = "prometheus_instrumentation_en
 
 def create_prometheus_instrumentationmain_input_state(*, enabled: bool) -> State:
     return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
-
-
-def _create_prometheus_instrumentation_input_state_lifespan(*, enabled: bool) -> StatefulLifespan:
-    async def _input_state_lifespan(_: FastAPI, __: State) -> AsyncIterator[State]:
-        yield create_prometheus_instrumentationmain_input_state(enabled=enabled)
-
-    return _input_state_lifespan
 
 
 def create_prometheus_instrumentation_lifespan_manager() -> LifespanManager[FastAPI]:
