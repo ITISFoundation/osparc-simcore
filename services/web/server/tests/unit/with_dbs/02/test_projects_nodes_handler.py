@@ -339,7 +339,14 @@ async def test_create_node(
         assert "node_id" in data
         node_id = data["node_id"]
         with postgres_db.connect() as conn:
-            result = conn.execute(sa.select(sa.literal(1)).where(projects_nodes.c.node_id == node_id).limit(1))
+            result = conn.execute(
+                sa.select(sa.literal(1))
+                .where(
+                    (projects_nodes.c.project_uuid == user_project["uuid"])
+                    & (projects_nodes.c.node_id == node_id)
+                )
+                .limit(1)
+            )
         assert result.scalar() is not None
     else:
         assert error
