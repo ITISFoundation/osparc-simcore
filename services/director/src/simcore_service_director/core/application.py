@@ -37,6 +37,7 @@ def create_app(
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
         lifespan=events.create_app_lifespan(
+            settings=settings,
             logging_lifespan=logging_lifespan,
             tracing_config=tracing_config,
         ),

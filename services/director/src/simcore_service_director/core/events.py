@@ -39,6 +39,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 def create_app_lifespan(
     *,
+    settings: ApplicationSettings,
     logging_lifespan: Lifespan | None,
     tracing_config: TracingConfig,
 ) -> LifespanManager:  # WARNING: order matters
@@ -54,7 +55,8 @@ def create_app_lifespan(
         httpx_lifespan
     )  # WARNING: httpx client should be started before any other lifespan that needs it, e.g. registry
 
-    app_lifespan.add(redis_clients_manager_lifespan)
+    if settings.DIRECTOR_REGISTRY_CACHING:
+        app_lifespan.add(redis_clients_manager_lifespan)
     app_lifespan.add(registry_lifespan)
 
     app_lifespan.add(prometheus_instrumentation_lifespan)
