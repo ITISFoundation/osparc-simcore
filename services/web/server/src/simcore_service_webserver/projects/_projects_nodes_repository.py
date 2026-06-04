@@ -49,15 +49,23 @@ _ALIAS_TO_COLUMN: dict[str, str] = {
 }
 
 
+# Columns that actually exist in `projects_nodes` and are writable
+_WRITABLE_COLUMNS: frozenset[str] = frozenset(
+    c.name for c in projects_nodes.columns
+) - frozenset({"created", "modified"})
+
+
 def _node_dump_for_db(node_model: Node | PartialNode, *, exclude_unset: bool) -> dict:
     """Serializes a Node/PartialNode for DB storage.
 
     Uses by_alias=True so nested JSONB values (inputs, outputs, state)
     are serialized with camelCase keys (nodeUuid, currentStatus, etc.),
     then maps top-level keys from camelCase aliases back to snake_case DB columns.
+    Filters out deprecated fields that have no corresponding column.
     """
     data = node_model.model_dump(mode="json", by_alias=True, exclude_unset=exclude_unset)
-    return {_ALIAS_TO_COLUMN.get(k, k): v for k, v in data.items()}
+    mapped = {_ALIAS_TO_COLUMN.get(k, k): v for k, v in data.items()}
+    return {k: v for k, v in mapped.items() if k in _WRITABLE_COLUMNS}
 
 
 async def add(

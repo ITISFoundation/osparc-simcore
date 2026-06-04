@@ -54,7 +54,7 @@ def _snake_to_camel(s: str) -> str:
 _ALIAS_TO_COLUMN: dict[str, str] = {_snake_to_camel(c): c for c in _ALL_NODE_COLUMNS if "_" in c}
 # Workbench keys deliberately not migrated into projects_nodes
 # (handled elsewhere or no longer persisted).
-_IGNORED_WORKBENCH_KEYS: frozenset[str] = frozenset({"position"})
+_IGNORED_WORKBENCH_KEYS: frozenset[str] = frozenset({"position", "outputNode"})
 
 
 def _migrate_position_to_projects_ui() -> None:
