@@ -836,6 +836,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
       const nodeUI2 = this.getNodeUI(node2Id);
+      if (!nodeUI1 || !nodeUI2) {
+        return;
+      }
       if (nodeUI1.getCurrentBounds() === null || nodeUI2.getCurrentBounds() === null) {
         console.error("bounds not ready");
         return;
