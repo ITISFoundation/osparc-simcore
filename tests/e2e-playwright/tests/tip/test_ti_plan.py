@@ -13,6 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Final
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
@@ -46,6 +47,7 @@ _JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 )
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME: Final[int] = 2 * MINUTE
 _JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 20 * MINUTE
+_JLAB_EXPORTING_MAX_TIME: Final[int] = 2 * MINUTE
 _JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 
 
@@ -134,6 +136,23 @@ def _wait_for_optimization_complete(run_button) -> None:
         raise ValueError(msg)
 
 
+@retry(
+    stop=stop_after_delay(_JLAB_EXPORTING_MAX_TIME / 1000),  # seconds
+    wait=wait_fixed(10),
+    reraise=True,
+)
+def _wait_for_export_complete(button) -> None:
+    """Wait for an export button to finish by checking the fa-spinner icon."""
+    try:
+        icon_class = button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("Export button icon not found — export likely completed")
+        return
+    if "fa-spinner" in icon_class:
+        msg = f"Export still running: {icon_class=}"
+        raise ValueError(msg)
+
+
 def _run_classic_ti_step(  # noqa: PLR0915
     params: _ServiceStepParams,
     node_id: str,
@@ -207,7 +226,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
             logging.INFO,
             f"Click button - `Load` and wait for {_JLAB_REPORTING_MAX_TIME}",
         ):
-            ti_iframe.get_by_role("button", name="Load").nth(1).click()
+            ti_iframe.get_by_role("button", name="Load").nth(2).click()
             params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
         if params.is_product_lite:
@@ -230,10 +249,11 @@ def _run_classic_ti_step(  # noqa: PLR0915
                 params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             with log_context(
                 logging.INFO,
-                f"Click button - `Export to S4L` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                "Click button - `Export to S4L` and wait for spinner",
             ):
-                ti_iframe.get_by_role("button", name="Export to S4L").click()
-                params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                export_s4l_button = ti_iframe.get_by_role("button", name="Export to S4L")
+                export_s4l_button.click()
+                _wait_for_export_complete(export_s4l_button)
             with log_context(
                 logging.INFO,
                 f"Click button - `Add to Report (1)` and wait for {_JLAB_REPORTING_MAX_TIME}",
@@ -242,10 +262,11 @@ def _run_classic_ti_step(  # noqa: PLR0915
                 params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             with log_context(
                 logging.INFO,
-                f"Click button - `Export Report` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                "Click button - `Export Report` and wait for spinner",
             ):
-                ti_iframe.get_by_role("button", name="Export Report").click()
-                params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                export_report_button = ti_iframe.get_by_role("button", name="Export Report")
+                export_report_button.click()
+                _wait_for_export_complete(export_report_button)
 
     with log_context(logging.INFO, "Check outputs", logger=log_ctx.logger):
         if params.is_product_lite:
