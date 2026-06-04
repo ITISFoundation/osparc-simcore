@@ -8,7 +8,6 @@ from notifications_library._models import (
     ProductData,
     ProductFooterData,
     ProductUIData,
-    ShareLink,
     SocialLink,
     UserData,
 )
@@ -42,12 +41,6 @@ def get_product_data(
         social_links=[
             SocialLink(name=link_name, url=link_url)
             for link_name, link_url in (product.vendor.get("footer_social_links", []) if product.vendor else [])
-        ],
-        share_links=[
-            ShareLink(name=share_name, label=share_label, url=share_url)
-            for share_name, share_label, share_url in (
-                product.vendor.get("footer_share_links", []) if product.vendor else []
-            )
         ],
         company_name=product.vendor.get("company_name", "") if product.vendor else "",
         company_address=product.vendor.get("company_address", "") if product.vendor else "",

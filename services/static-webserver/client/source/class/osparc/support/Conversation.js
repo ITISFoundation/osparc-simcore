@@ -323,7 +323,7 @@ qx.Class.define("osparc.support.Conversation", {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
       let msg = null;
-      const greet = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",\n";
+      const greet = "Hi " + osparc.auth.Data.getInstance().getFriendlyUserName() + ",\n";
       switch (type) {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
           msg = greet + "Have a question or feedback?\nWe are happy to assist!";

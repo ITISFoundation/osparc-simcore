@@ -42,7 +42,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     isTIPProduct: function() {
-      return (this.isProduct("tis") || this.isProduct("tiplite"));
+      return (
+        this.isProduct("tis") ||
+        this.isProduct("tiplite")
+      );
     },
 
     getStudyAlias: function(options = {}) {
