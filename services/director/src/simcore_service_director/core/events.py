@@ -8,7 +8,8 @@ from servicelib.fastapi.monitoring import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
 )
-from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.fastapi.tracing import get_tracing_config, tracing_instrumentation_lifespan
+from servicelib.tracing import TracingConfig
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..instrumentation import director_instrumentation_lifespan
@@ -35,12 +36,18 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     }
 
 
-def create_app_lifespan(logging_lifespan: Lifespan | None = None) -> LifespanManager:  # WARNING: order matters
+def create_app_lifespan(
+    *,
+    logging_lifespan: Lifespan | None,
+    tracing_config: TracingConfig,
+) -> LifespanManager:  # WARNING: order matters
     app_lifespan = LifespanManager()
     if logging_lifespan:
         app_lifespan.add(logging_lifespan)
 
     app_lifespan.add(_settings_lifespan)
+    if tracing_config.tracing_enabled:
+        app_lifespan.add(tracing_instrumentation_lifespan(tracing_config=tracing_config))
 
     app_lifespan.add(
         httpx_lifespan

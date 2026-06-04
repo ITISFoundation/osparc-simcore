@@ -224,7 +224,7 @@ def setup_tracing(app: FastAPI, tracing_config: TracingConfig) -> None:
     app.add_event_handler("shutdown", _on_shutdown)
 
 
-def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
+def tracing_instrumentation_lifespan(tracing_config: TracingConfig):
     # NOTE: This lifespan does not instrument the app itself. Call setup_fastapi_app_tracing to do that.
     if not tracing_config.tracing_enabled:
         msg = "Tracing is not enabled in tracing_config"

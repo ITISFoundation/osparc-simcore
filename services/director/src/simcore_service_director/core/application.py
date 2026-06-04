@@ -8,7 +8,6 @@ from servicelib.fastapi.monitoring import initialize_prometheus_instrumentation
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
-    setup_tracing,
 )
 from servicelib.tracing import TracingConfig
 
@@ -38,7 +37,10 @@ def create_app(
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=events.create_app_lifespan(logging_lifespan=logging_lifespan),
+        lifespan=events.create_app_lifespan(
+            logging_lifespan=logging_lifespan,
+            tracing_config=tracing_config,
+        ),
     )
     override_fastapi_openapi_method(app)
 
@@ -47,9 +49,6 @@ def create_app(
     app.state.tracing_config = tracing_config
 
     # PLUGINS SETUP
-    if tracing_config.tracing_enabled:
-        setup_tracing(app, tracing_config=tracing_config)
-
     setup_api_routes(app)
 
     if settings.DIRECTOR_REGISTRY_CACHING:

@@ -20,8 +20,8 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.fastapi.tracing import (
-    get_tracing_instrumentation_lifespan,
     initialize_fastapi_app_tracing,
+    tracing_instrumentation_lifespan,
 )
 from servicelib.logging_utils import setup_loggers
 from servicelib.tracing import (
@@ -75,10 +75,10 @@ async def test_valid_tracing_settings(
 ):
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
-        async for _ in get_tracing_instrumentation_lifespan(
+        async for _ in tracing_instrumentation_lifespan(
             tracing_config=tracing_config,
         )(app=mocked_app):
             pass
@@ -112,7 +112,7 @@ async def test_invalid_tracing_settings(
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings.create_from_envs()
         tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
-        async for _ in get_tracing_instrumentation_lifespan(
+        async for _ in tracing_instrumentation_lifespan(
             tracing_config=tracing_config,
         )(app=app):
             pass
@@ -160,11 +160,11 @@ async def test_tracing_setup_package_detection(
     importlib.import_module(package_name)
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         # idempotency check
-        async for _ in get_tracing_instrumentation_lifespan(
+        async for _ in tracing_instrumentation_lifespan(
             tracing_config=tracing_config,
         )(app=mocked_app):
             pass
@@ -206,7 +206,7 @@ async def test_trace_id_in_response_header(
 
     mocked_app.get("/")(partial(handler, handler_data))
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -255,7 +255,7 @@ async def test_with_profile_span(
 
     mocked_app.get("/")(partial(handler, handler_data))
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -302,7 +302,7 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
 
     mocked_app.get("/")(handler)
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -378,7 +378,7 @@ async def test_trace_id_in_logs_only_when_sampled(
     all_trace_ids: set[str] = set()
     mocked_app.get("/")(partial(handler, all_trace_ids))
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -435,7 +435,7 @@ async def test_traced_operation_basic(
 
     mocked_app.get("/")(partial(handler, handler_data))
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -499,7 +499,7 @@ async def test_traced_operation_nested_spans(
 
     mocked_app.get("/")(partial(handler, handler_data))
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -566,7 +566,7 @@ async def test_traced_operation_with_exception(
 
     mocked_app.get("/")(partial(handler, handler_data))
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -634,7 +634,7 @@ async def test_traced_operation_with_links(
 
     mocked_app.get("/")(partial(handler, handler_data))
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
@@ -699,7 +699,7 @@ async def test_traced_decorator_async(
     async def _my_async_operation(app: FastAPI) -> str:
         return "async_result"
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         mocked_app.state.tracing_config = tracing_config
@@ -732,7 +732,7 @@ async def test_traced_decorator_sync(
     def _my_sync_operation(app: FastAPI) -> str:
         return "sync_result"
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         mocked_app.state.tracing_config = tracing_config
@@ -765,7 +765,7 @@ async def test_traced_decorator_with_custom_operation_name(
     async def _some_internal_func(app: FastAPI) -> int:
         return 42
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         mocked_app.state.tracing_config = tracing_config
@@ -808,7 +808,7 @@ async def test_traced_decorator_with_attributes_and_links(
     async def _do_work(app: FastAPI):
         pass
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         mocked_app.state.tracing_config = tracing_config
@@ -854,7 +854,7 @@ async def test_traced_decorator_with_tracing_config_getter(
     async def _func_with_custom_getter(cfg: TracingConfig) -> str:
         return "custom"
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         result = await _func_with_custom_getter(tracing_config)
@@ -887,7 +887,7 @@ async def test_traced_decorator_noop_when_tracing_not_configured(
     async def _needs_tracing(app: FastAPI) -> str:
         return "executed"
 
-    async for _ in get_tracing_instrumentation_lifespan(
+    async for _ in tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
         # Do NOT set mocked_app.state.tracing_config

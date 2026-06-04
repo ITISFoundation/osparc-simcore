@@ -14,7 +14,7 @@ from servicelib.fastapi.monitoring import (
 from servicelib.fastapi.postgres_lifespan import (
     create_postgres_database_input_state,
 )
-from servicelib.fastapi.tracing import get_tracing_instrumentation_lifespan
+from servicelib.fastapi.tracing import tracing_instrumentation_lifespan
 from servicelib.tracing import TracingConfig
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
@@ -63,7 +63,7 @@ def create_app_lifespan(
 
     if tracing_config.tracing_enabled:
         app_lifespan.add(
-            get_tracing_instrumentation_lifespan(
+            tracing_instrumentation_lifespan(
                 tracing_config=tracing_config,
             )
         )
