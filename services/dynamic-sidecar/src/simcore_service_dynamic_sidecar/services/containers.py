@@ -86,11 +86,13 @@ async def containers_docker_inspect(app: FastAPI, *, only_status: bool) -> dict[
 
 
 async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
-    # NOTE: returning None means "inactivity detection is not available".
-    # The caller (director-v2) treats None as "service is inactive", meaning
-    # it won't block project auto-shutdown. This is intentional: if we cannot
-    # determine activity (misconfiguration, command failure, unparsable response),
-    # we prefer not to keep the project alive indefinitely.
+    """Returns activity details, or ``None`` when inactivity detection is unavailable.
+
+    Returning ``None`` is intentional: the caller (director-v2) interprets it as
+    "service is inactive", so project auto-shutdown is not blocked. This fail-open
+    behavior applies when activity cannot be determined (misconfiguration, command
+    failure, or unparsable command output).
+    """
 
     settings: ApplicationSettings = app.state.settings
     shared_store: SharedStore = app.state.shared_store

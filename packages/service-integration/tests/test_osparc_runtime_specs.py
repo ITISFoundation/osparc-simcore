@@ -58,11 +58,8 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
         for workdir in pm_spec.state_paths
     ]
 
-    # FIXME: ensure all sources are different! (e.g. a/b/c  and z/c have the same name!)  # noqa: FIX001
-
     print(Service(volumes=volumes).model_dump_json(exclude_unset=True, indent=2))
 
-    # TODO: _auto_map_to_service(osparc_spec["settings"])  # noqa: FIX002
     data = {}
     for obj in osparc_spec["settings"]:
         item = SettingsItem.model_validate(obj)

@@ -540,7 +540,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             if inactivity_service not in expected:
                 _logger.warning(
                     "callbacks_mapping.inactivity.service='%s' not found in "
-                    "expected services %s. Inactivity detection may fail at runtime.",
+                    "expected services %s. Inactivity detection will fail at runtime.",
                     inactivity_service,
                     expected,
                 )
