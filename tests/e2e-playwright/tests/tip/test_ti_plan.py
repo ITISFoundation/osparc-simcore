@@ -226,7 +226,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
             logging.INFO,
             f"Click button - `Load` and wait for {_JLAB_REPORTING_MAX_TIME}",
         ):
-            ti_iframe.get_by_role("button", name="Load").nth(1).click()
+            ti_iframe.get_by_role("button", name="Load").nth(2).click()
             params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
         if params.is_product_lite:
