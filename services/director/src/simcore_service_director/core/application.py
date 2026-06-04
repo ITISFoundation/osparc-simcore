@@ -42,7 +42,7 @@ def _setup_rest_api(app: FastAPI) -> None:
     set_app_default_http_error_handlers(app)
 
 
-def _setup_plugins(
+def _configure_plugins(
     app: FastAPI, app_lifespan: LifespanManager, settings: ApplicationSettings, tracing_config: TracingConfig
 ) -> None:
     configure_httpx_client(
@@ -97,7 +97,7 @@ def create_app(
     app.state.tracing_config = tracing_config
 
     _setup_rest_api(app)
-    _setup_plugins(app, app_lifespan, settings, tracing_config)
+    _configure_plugins(app, app_lifespan, settings, tracing_config)
     # comes last to have the banner printed after all the setup is done
     app_lifespan.add(_banners_lifespan)
 
