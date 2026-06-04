@@ -10,7 +10,7 @@ from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.tracing import TracingConfig
 
 from ..tracing import setup_httpx_client_tracing
-from .lifespan_utils import lifespan_context
+from .lifespan_utils import StatefulLifespan, lifespan_context
 
 _logger = logging.getLogger(__name__)
 
@@ -45,16 +45,16 @@ class HttpxLifespanState(StrEnum):
     HTTPX_CLIENT = "httpx_client"
 
 
-def create_httpx_lifespan(
+def _create_httpx_client_lifespan(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
-) -> LifespanManager[FastAPI]:
+) -> StatefulLifespan:
     async def _lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
         _lifespan_name = f"{__name__}.{_lifespan.__name__}"
 
         with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-            client = None
+            client: httpx.AsyncClient | None = None
             try:
                 client = httpx.AsyncClient(
                     transport=httpx.AsyncHTTPTransport(http2=True),
@@ -70,11 +70,45 @@ def create_httpx_lifespan(
                 }
             finally:
                 if client is not None:
-                    assert isinstance(client, httpx.AsyncClient)  # nosec
                     await client.aclose()
 
+    return _lifespan
+
+
+def _create_httpx_default_publisher_lifespan(
+    state_key: HttpxLifespanState = HttpxLifespanState.HTTPX_CLIENT,
+    app_state_attr: str = "httpx_client",
+) -> StatefulLifespan:
+    async def _publisher_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
+        _lifespan_name = f"{__name__}.{_publisher_lifespan.__name__}"
+
+        with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
+            client = state.get(state_key)
+            if not isinstance(client, httpx.AsyncClient):
+                msg = f"HTTPX client not found in lifespan state under key '{state_key}'"
+                raise TypeError(msg)
+
+            setattr(app.state, app_state_attr, client)
+            yield called_state
+
+    return _publisher_lifespan
+
+
+def create_httpx_lifespan_manager(
+    default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
+    max_keepalive_connections: int = 20,
+    tracing_config: TracingConfig | None = None,
+    publisher_lifespan: StatefulLifespan | None = None,
+) -> LifespanManager[FastAPI]:
     httpx_lifespan_manager = LifespanManager()
-    httpx_lifespan_manager.add(_lifespan)
+    httpx_lifespan_manager.add(
+        _create_httpx_client_lifespan(
+            default_timeout=default_timeout,
+            max_keepalive_connections=max_keepalive_connections,
+            tracing_config=tracing_config,
+        )
+    )
+    httpx_lifespan_manager.add(publisher_lifespan or _create_httpx_default_publisher_lifespan())
     return httpx_lifespan_manager
 
 

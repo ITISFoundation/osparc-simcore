@@ -1,13 +1,11 @@
-import logging
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.httpx_client import (
-    HttpxLifespanState,
-    create_httpx_lifespan,
+    create_httpx_lifespan_manager,
 )
-from servicelib.fastapi.lifespan_utils import Lifespan, lifespan_context
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
@@ -20,8 +18,6 @@ from ..instrumentation import director_instrumentation_lifespan
 from ..modules.docker_registry import registry_lifespan
 from ..modules.redis import redis_clients_manager_lifespan
 from .settings import ApplicationSettings
-
-_logger = logging.getLogger(__name__)
 
 
 async def _banners_lifespan(_) -> AsyncIterator[State]:
@@ -38,12 +34,6 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     }
 
 
-async def httpx_set_in_app(app: FastAPI, state: State) -> AsyncIterator[State]:
-    with lifespan_context(_logger, logging.INFO, f"{__name__}.{httpx_set_in_app.__name__}", state) as called_state:
-        app.state.httpx_client = state[HttpxLifespanState.HTTPX_CLIENT]
-        yield called_state
-
-
 def create_app_lifespan(
     *,
     settings: ApplicationSettings,
@@ -58,14 +48,12 @@ def create_app_lifespan(
     if tracing_config.tracing_enabled:
         app_lifespan.add(tracing_instrumentation_lifespan(tracing_config=tracing_config))
 
-    app_lifespan.add(
-        create_httpx_lifespan(
-            max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
-            default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
-            tracing_config=tracing_config,
-        )
+    httpx_lifespan_manager = create_httpx_lifespan_manager(
+        max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
+        default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
+        tracing_config=tracing_config,
     )
-    app_lifespan.add(httpx_set_in_app)
+    app_lifespan.include(httpx_lifespan_manager)
 
     if settings.DIRECTOR_REGISTRY_CACHING:
         app_lifespan.add(redis_clients_manager_lifespan)
