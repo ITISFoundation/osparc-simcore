@@ -1,9 +1,11 @@
 """'osparc config' is a set of standard file forms (yaml) that the user fills to describe how his/her service works and
 integrates with osparc.
 
-    - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github, .vscode, etc)
+    - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github,
+     .vscode, etc)
     - configs are parsed and validated into pydantic models
-    - models can be serialized/deserialized into label annotations on images. This way, the config is attached to the service
+    - models can be serialized/deserialized into label annotations on images. This way, the config is attached to
+      the service
     during it's entire lifetime.
     - config should provide enough information about that context to allow
         - build an image
@@ -27,6 +29,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.service_settings_nat_rule import NATRule
 from models_library.services import BootOptions, ServiceMetaDataPublished
+from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.services_types import ServiceKey
 from models_library.utils.labels_annotations import (
     OSPARC_LABEL_PREFIXES,
@@ -133,7 +136,7 @@ class MetadataConfig(ServiceMetaDataPublished):
         service_path = self.key
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
-            # TODO: check thisname is compatible with REGEX
+            # TODO: check thisname is compatible with REGEX  # noqa: FIX002
             service_path = TypeAdapter(ServiceKey).validate_python(service_path.replace("/", "."))
 
         service_version = self.version
@@ -188,6 +191,16 @@ class SettingsItem(BaseModel):
 
 
 class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
+    """Re-validates service labels at publish time (ooil).
+
+    Runs the base DynamicSidecarServiceLabels validators (which reject invalid
+    metrics/before_shutdown and warn on inactivity mismatches).
+
+    NOTE: Inactivity-vs-compose-spec strict rejection is handled separately by
+    RuntimeConfig._ensure_inactivity_service_in_compose_spec because this class
+    cannot resolve compose-spec from the raw YAML data (alias mismatch).
+    """
+
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
@@ -238,6 +251,62 @@ class RuntimeConfig(BaseModel):
             raise
 
         return v
+
+    @model_validator(mode="after")
+    def _ensure_callbacks_mapping_services_in_compose_spec(self) -> Self:
+        if not isinstance(self.callbacks_mapping, CallbacksMapping):
+            return self
+
+        defined_services: set[str] = {x.service for x in self.callbacks_mapping.before_shutdown}
+        if self.callbacks_mapping.metrics:
+            defined_services.add(self.callbacks_mapping.metrics.service)
+
+        if not defined_services:
+            return self
+
+        if self.compose_spec is None:
+            if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
+                msg = (
+                    f"callbacks_mapping references services {defined_services} "
+                    f"but without a compose-spec only "
+                    f"'{DEFAULT_SINGLE_SERVICE_NAME}' is allowed"
+                )
+                raise ValueError(msg)
+        else:
+            compose_services = set(self.compose_spec.services.keys()) if self.compose_spec.services else set()
+            for service_name in defined_services:
+                if service_name not in compose_services:
+                    msg = (
+                        f"callbacks_mapping references service '{service_name}' "
+                        f"which is not defined in compose-spec services: "
+                        f"{compose_services}"
+                    )
+                    raise ValueError(msg)
+
+        return self
+
+    @model_validator(mode="after")
+    def _ensure_inactivity_service_in_compose_spec(self) -> Self:
+        if not isinstance(self.callbacks_mapping, CallbacksMapping) or self.callbacks_mapping.inactivity is None:
+            return self
+
+        inactivity_service = self.callbacks_mapping.inactivity.service
+        if self.compose_spec is None:
+            if inactivity_service != DEFAULT_SINGLE_SERVICE_NAME:
+                err_msg = (
+                    f"inactivity.service must be '{DEFAULT_SINGLE_SERVICE_NAME}' "
+                    f"when no compose-spec is defined, got '{inactivity_service}'"
+                )
+                raise ValueError(err_msg)
+        else:
+            containers_in_compose_spec = set(self.compose_spec.services.keys()) if self.compose_spec.services else set()
+            if inactivity_service not in containers_in_compose_spec:
+                err_msg = (
+                    f"inactivity.service='{inactivity_service}' "
+                    f"not found in compose-spec services: {containers_in_compose_spec}"
+                )
+                raise ValueError(err_msg)
+        return self
 
     model_config = ConfigDict(
         alias_generator=_underscore_as_minus,
