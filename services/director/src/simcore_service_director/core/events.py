@@ -14,6 +14,7 @@ from servicelib.tracing import TracingConfig
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..instrumentation import director_instrumentation_lifespan
 from ..modules.docker_registry import registry_lifespan
+from ..modules.redis import redis_clients_manager_lifespan
 from .settings import ApplicationSettings
 
 
@@ -53,6 +54,7 @@ def create_app_lifespan(
         httpx_lifespan
     )  # WARNING: httpx client should be started before any other lifespan that needs it, e.g. registry
 
+    app_lifespan.add(redis_clients_manager_lifespan)
     app_lifespan.add(registry_lifespan)
 
     app_lifespan.add(prometheus_instrumentation_lifespan)

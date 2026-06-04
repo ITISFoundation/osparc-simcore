@@ -17,7 +17,6 @@ from .._meta import (
     APP_NAME,
 )
 from ..api.rest.routes import setup_api_routes
-from ..modules.redis import setup as setup_redis
 from . import events
 from .settings import ApplicationSettings
 
@@ -50,9 +49,6 @@ def create_app(
 
     # PLUGINS SETUP
     setup_api_routes(app)
-
-    if settings.DIRECTOR_REGISTRY_CACHING:
-        setup_redis(app)
 
     app.add_middleware(RequestCancellationMiddleware)
 
