@@ -79,7 +79,9 @@ def _snake_to_camel(s: str) -> str:
 # Mapping from workbench-JSON camelCase keys to projects_nodes snake_case columns.
 # Derived from ProjectNodeCreate to keep a single source of truth.
 WORKBENCH_NODE_ALIAS_TO_COLUMN: dict[str, str] = {
-    _snake_to_camel(name): name for name in ProjectNodeCreate.model_fields if "_" in name
+    _snake_to_camel(name): name
+    for name in ProjectNodeCreate.model_fields  # pylint: disable=not-an-iterable
+    if "_" in name
 }
 
 
