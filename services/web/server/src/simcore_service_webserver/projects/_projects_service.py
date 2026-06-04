@@ -1328,7 +1328,7 @@ async def update_project_node_outputs(
     current_node = await _projects_nodes_repository.get(app, project_id=project_id, node_id=node_id)
     old_outputs = current_node.outputs or {}
 
-    updated_node = await _projects_nodes_repository.update(
+    await _projects_nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
