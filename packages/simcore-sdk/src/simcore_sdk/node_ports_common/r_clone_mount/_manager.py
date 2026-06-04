@@ -224,7 +224,7 @@ class RCloneMountManager:
 
     async def refresh_path(self, remote_path: StorageFileID, *, recursive: bool = False) -> None:
         remote_path_parts = remote_path.split("/")
-        if len(remote_path_parts) < _MIN_PATH_PARTS:
+        if len(remote_path_parts) < _MIN_PATH_PARTS or any(not p for p in remote_path_parts[:_MIN_PATH_PARTS]):
             _logger.warning(
                 (
                     "Skipping mount refresh for invalid remote_path '%s'. "
