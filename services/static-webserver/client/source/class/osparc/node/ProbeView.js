@@ -18,34 +18,74 @@
 qx.Class.define("osparc.node.ProbeView", {
   extend: qx.ui.core.Widget,
 
-  construct: function(node, portId) {
+  construct: function(probe) {
     this.base();
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(16));
 
-    if (node) {
-      this.setNode(node);
-    }
-
-    if (portId) {
-      this.setPortId(portId);
+    if (probe) {
+      this.setNode(probe);
     }
   },
 
   statics: {
-    getOutputValues: function(metaStudy, nodeId, portId) {
-      return new Promise((resolve, reject) => {
-        metaStudy.getIterations()
-          .then(iterations => {
-            const outputValues = [];
-            iterations.forEach(iteration => outputValues.push(osparc.data.model.Study.getOutputValue(iteration, nodeId, portId)));
-            resolve(outputValues);
-          })
-          .catch(err => {
-            reject(err);
+    setProbeOutputValue: function(node, linkLabel) {
+      // Remove previous bindings from any source to this label
+      qx.data.SingleValueBinding.removeAllBindingsForObject(linkLabel);
+      linkLabel.setValue("");
+
+      const populateLinkLabel = linkInfo => {
+        const locationId = linkInfo.store;
+        const fileId = linkInfo.path;
+        osparc.store.Data.getInstance().getPresignedLink(true, locationId, fileId)
+          .then(presignedLinkData => {
+            if ("resp" in presignedLinkData && presignedLinkData.resp) {
+              const filename = linkInfo.filename || osparc.file.FilePicker.getFilenameFromPath(linkInfo);
+              linkLabel.set({
+                value: filename,
+                url: presignedLinkData.resp.link
+              });
+            }
           });
+      }
+
+      const link = node.getLink("in_1");
+      if (link && "nodeUuid" in link) {
+        const inputNodeId = link["nodeUuid"];
+        const portKey = link["output"];
+        const inputNode = node.getWorkbench().getNode(inputNodeId);
+        if (inputNode) {
+          inputNode.bind("outputs", linkLabel, "value", {
+            converter: outputs => {
+              const output = outputs.find(out => out.getPortKey() === portKey);
+              if (output && output.getValue() != null) {
+                const val = output.getValue();
+                if (node.getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
+                  return "[" + val.join(",") + "]";
+                } else if (node.getMetadata()["key"].includes("probe/file")) {
+                  const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
+                  populateLinkLabel(val);
+                  return filename;
+                }
+                return String(val);
+              }
+              return "";
+            }
+          });
+        }
+      }
+    },
+
+    createProbeValueLabel: function(node) {
+      const linkLabel = new osparc.ui.basic.LinkLabel().set({
+        rich: false, // this will make the ellipsis work
       });
-    }
+
+      node.getPropsForm().addListener("linkFieldModified", () => this.setProbeOutputValue(node, linkLabel));
+      this.setProbeOutputValue(node, linkLabel);
+
+      return linkLabel;
+    },
   },
 
   properties: {
@@ -55,13 +95,6 @@ qx.Class.define("osparc.node.ProbeView", {
       nullable: false,
       apply: "__applyNode"
     },
-
-    portId: {
-      check: "String",
-      init: null,
-      nullable: false,
-      apply: "__populateLayout"
-    }
   },
 
   members: {
@@ -69,21 +102,31 @@ qx.Class.define("osparc.node.ProbeView", {
       if (!node.isProbe()) {
         console.error("Only Probe nodes are supported");
       }
-      this.__populateLayout();
+      this.__populateLayout(node);
     },
 
-    __populateLayout: function() {
-      const node = this.getNode();
-      const portId = this.getPortId();
-      if (!node) {
-        return;
-      }
-
+    __populateLayout: function(node) {
       this._removeAll();
-      const outputValues = this.self().getOutputValues(node.getStudy(), node, portId);
-      outputValues.forEach(outputValue => {
-        this._add(new qx.ui.basic.Label(outputValue));
+
+      const inputs = new osparc.desktop.PanelView(this.tr("Input"), node.getPropsForm());
+      this._add(inputs);
+
+      const valueContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(16)).set({
+        paddingTop: 8,
       });
-    }
+      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/thermometer/14");
+      const valueLabel = osparc.node.ProbeView.createProbeValueLabel(node);
+      valueContainer.add(icon);
+      valueContainer.add(valueLabel, {
+        flex: 1
+      });
+      const outputPanel = new osparc.desktop.PanelView(this.tr("Value"), valueContainer);
+      this._add(outputPanel);
+      // Hide the value panel when the probe is not connected
+      valueLabel.addListener("changeVisibility", e => {
+        outputPanel.setVisibility(e.getData());
+      });
+      outputPanel.setVisibility(valueLabel.getVisibility());
+    },
   }
 });

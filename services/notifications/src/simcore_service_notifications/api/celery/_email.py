@@ -9,9 +9,9 @@ from celery import (  # type: ignore[import-untyped]
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from servicelib.logging_utils import log_context
-from settings_library.email import SMTPSettings
 
 from ...clients.smtp import create_session
+from ...core.settings import ApplicationSettings
 from ...services.email import add_attachments, compose_email
 
 _logger = logging.getLogger(__name__)
@@ -39,7 +39,10 @@ async def send_email_message(
     )
 
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
-        settings = SMTPSettings.create_from_envs()
+        app_settings = ApplicationSettings.create_from_envs()
+        assert app_settings.NOTIFICATIONS_SMTP_SETTINGS is not None  # nosec
+
+        settings = app_settings.NOTIFICATIONS_SMTP_SETTINGS.get_settings_for_email(msg.from_.email)
 
         async with create_session(settings=settings) as smtp:
             email_msg = compose_email(

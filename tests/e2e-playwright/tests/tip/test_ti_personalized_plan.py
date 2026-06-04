@@ -24,7 +24,7 @@ from pytest_simcore.helpers.playwright import (
     app_mode_trigger_next_app,
     expected_service_running,
 )
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, stop_after_delay, wait_fixed
 
 _OPEN_PROJECT_WAIT_TIME: Final[int] = 20 * SECOND
 
@@ -150,7 +150,7 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
 
 
 @retry(
-    stop=stop_after_attempt(_SIMULATION_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_SIMULATION_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),  # wait 1 minute between retries to avoid spamming the page with checks
     reraise=True,
 )
@@ -167,7 +167,7 @@ def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: Frame
 
 
 @retry(
-    stop=stop_after_attempt(_SIMULATION_EXPORT_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_SIMULATION_EXPORT_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),
     reraise=True,
 )
@@ -220,7 +220,7 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
 
 
 @retry(
-    stop=stop_after_attempt(_POST_PRO_RUN_OPTIMIZATION_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_POST_PRO_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),
     reraise=True,
 )
@@ -236,7 +236,7 @@ def _wait_for_postpro_optimization_complete(run_optimization_button: Locator) ->
 
 
 @retry(
-    stop=stop_after_attempt(_POST_PRO_LOAD_ANALYSIS_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_POST_PRO_LOAD_ANALYSIS_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),
     reraise=True,
 )
@@ -252,7 +252,7 @@ def _wait_for_postpro_analysis_load(run_optimization_button: Locator) -> None:
 
 
 @retry(
-    stop=stop_after_attempt(_POST_PRO_LOAD_RESULT_MAX_TIME // (10 * SECOND)),
+    stop=stop_after_delay(_POST_PRO_LOAD_RESULT_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(10),
     reraise=True,
 )
@@ -486,6 +486,7 @@ def test_personalized_classic_ti_plan(
         # press + button
         project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
 
+    assert project_data
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])

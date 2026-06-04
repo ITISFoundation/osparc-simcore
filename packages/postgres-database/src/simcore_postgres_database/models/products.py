@@ -60,7 +60,6 @@ class Vendor(TypedDict):
     ui: NotRequired[VendorUI]
 
     footer_social_links: NotRequired[list[tuple[str, str]]]  # list of (social_media_name, social_media_url)
-    footer_share_links: NotRequired[list[tuple[str, str, str]]]  # list of (share_name, share_label, share_url)
     company_name: NotRequired[str]
     company_address: NotRequired[str]
     company_links: NotRequired[list[tuple[str, str]]]  # list of (link_name, link_url)
