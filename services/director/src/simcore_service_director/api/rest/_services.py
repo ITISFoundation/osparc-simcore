@@ -8,8 +8,8 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel
 from servicelib.fastapi.dependencies import get_app
 
-from ... import registry_proxy
 from ...core.errors import RegistryConnectionError, ServiceNotAvailableError
+from ...modules.docker_registry import client as registry_proxy
 
 router = APIRouter()
 
@@ -52,7 +52,6 @@ async def list_services(
             services = await registry_proxy.list_services(the_app, registry_proxy.ServiceType.DYNAMIC)
         # NOTE: the validation is done in the catalog. This entrypoint IS and MUST BE only used by the catalog!!
         # NOTE2: the catalog will directly talk to the registry see case #2165 [https://github.com/ITISFoundation/osparc-simcore/issues/2165]
-        # services = node_validator.validate_nodes(services)
         return Envelope[list[dict[str, Any]]](data=services)
     except RegistryConnectionError as err:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
