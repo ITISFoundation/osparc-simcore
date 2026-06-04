@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.background_task import create_periodic_task
 
 from ...core.settings import get_application_settings
@@ -30,3 +30,9 @@ async def registry_lifespan(app: FastAPI) -> AsyncIterator[State]:
             await cancel_wait_task(app.state.auto_cache_task)
         if app.state.registry_cache_memory:
             await app.state.registry_cache_memory.close()
+
+
+def configure_registry_lifespans(
+    app_lifespan: LifespanManager[FastAPI],
+) -> None:
+    app_lifespan.add(registry_lifespan)

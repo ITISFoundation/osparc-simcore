@@ -24,7 +24,7 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_api_routes
 from ..instrumentation import director_instrumentation_lifespan
-from ..modules.docker_registry import registry_lifespan
+from ..modules.docker_registry import configure_registry_lifespans
 from ..modules.redis import redis_clients_manager_lifespan
 from .settings import ApplicationSettings
 
@@ -48,16 +48,6 @@ def _create_app_lifespan(
     if tracing_config.tracing_enabled:
         app_lifespan.add(tracing_instrumentation_lifespan(tracing_config=tracing_config))
     return app_lifespan
-
-
-def _configure_registry_lifespans(
-    app_lifespan: LifespanManager[FastAPI],
-    *,
-    settings: ApplicationSettings,
-) -> None:
-    if settings.DIRECTOR_REGISTRY_CACHING:
-        app_lifespan.add(redis_clients_manager_lifespan)
-    app_lifespan.add(registry_lifespan)
 
 
 def _configure_director_lifespans(app_lifespan: LifespanManager[FastAPI]) -> None:
@@ -102,7 +92,9 @@ def create_app(
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
         tracing_config=tracing_config,
     )
-    _configure_registry_lifespans(app_lifespan, settings=settings)
+    if settings.DIRECTOR_REGISTRY_CACHING:
+        app_lifespan.add(redis_clients_manager_lifespan)
+    configure_registry_lifespans(app_lifespan)
 
     configure_prometheus_instrumentation(
         app,
