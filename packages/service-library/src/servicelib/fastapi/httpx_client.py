@@ -1,11 +1,11 @@
 import datetime
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from enum import StrEnum
 
 import httpx
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 
 from servicelib.tracing import TracingConfig
 
@@ -49,11 +49,12 @@ def create_httpx_lifespan(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
-) -> Callable[[FastAPI, State], AsyncIterator[State]]:
-    async def _lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
+) -> LifespanManager[FastAPI]:
+    async def _lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
         _lifespan_name = f"{__name__}.{_lifespan.__name__}"
 
         with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
+            client = None
             try:
                 client = httpx.AsyncClient(
                     transport=httpx.AsyncHTTPTransport(http2=True),
@@ -68,11 +69,13 @@ def create_httpx_lifespan(
                     **called_state,
                 }
             finally:
-                client = app.state.httpx_client
-                assert isinstance(client, httpx.AsyncClient)  # nosec
-                await client.aclose()
+                if client is not None:
+                    assert isinstance(client, httpx.AsyncClient)  # nosec
+                    await client.aclose()
 
-    return _lifespan
+    httpx_lifespan_manager = LifespanManager()
+    httpx_lifespan_manager.add(_lifespan)
+    return httpx_lifespan_manager
 
 
 def get_httpx_client(app: FastAPI) -> httpx.AsyncClient:
