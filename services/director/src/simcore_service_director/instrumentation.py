@@ -1,16 +1,14 @@
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from prometheus_client import CollectorRegistry, Counter
-from servicelib.fastapi.monitoring import (
-    setup_prometheus_instrumentation,
-)
 from servicelib.instrumentation import MetricsBase, get_metrics_namespace
 
 from ._meta import APP_NAME
 from .core.errors import ConfigurationError
-from .core.settings import get_application_settings
 
 MONITOR_SERVICE_STARTED_LABELS: list[str] = [
     "service_key",
@@ -53,22 +51,14 @@ class DirectorV0Instrumentation(MetricsBase):
         )
 
 
-def setup(app: FastAPI) -> None:
-    app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_MONITORING_ENABLED:
-        return
-
-    # NOTE: this must be setup before application startup
-    registry = setup_prometheus_instrumentation(app)
-
-    async def on_startup() -> None:
+async def director_instrumentation_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    try:
+        registry = app.state.prometheus_metrics.registry
         metrics_subsystem = ""
         app.state.instrumentation = DirectorV0Instrumentation(registry=registry, subsystem=metrics_subsystem)
-
-    async def on_shutdown() -> None: ...
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+        yield {}
+    finally:
+        ...
 
 
 def get_instrumentation(app: FastAPI) -> DirectorV0Instrumentation:

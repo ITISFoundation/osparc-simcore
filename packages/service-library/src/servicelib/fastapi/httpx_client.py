@@ -44,16 +44,20 @@ def setup_httpx_client(
 class HttpxLifespanState(StrEnum):
     HTTPX_DEFAULT_TIMEOUT = "httpx.default_timeout"
     HTTPX_MAX_KEEPALIVE_CONNECTIONS = "httpx.max_keepalive_connections"
+    HTTPX_TRACING_CONFIG = "httpx.tracing_config"
     HTTPX_CLIENT = "httpx_client"
 
 
 def create_httpx_settings_state(
+    *,
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
+    tracing_config: TracingConfig | None,
 ) -> State:
     return {
         HttpxLifespanState.HTTPX_DEFAULT_TIMEOUT: default_timeout,
         HttpxLifespanState.HTTPX_MAX_KEEPALIVE_CONNECTIONS: max_keepalive_connections,
+        HttpxLifespanState.HTTPX_TRACING_CONFIG: tracing_config,
     }
 
 
@@ -63,6 +67,7 @@ async def httpx_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
         default_timeout = state[HttpxLifespanState.HTTPX_DEFAULT_TIMEOUT]
         max_keepalive_connections = state[HttpxLifespanState.HTTPX_MAX_KEEPALIVE_CONNECTIONS]
+        tracing_config = state[HttpxLifespanState.HTTPX_TRACING_CONFIG]
 
         try:
             client = httpx.AsyncClient(
@@ -70,6 +75,8 @@ async def httpx_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
                 limits=httpx.Limits(max_keepalive_connections=max_keepalive_connections),
                 timeout=default_timeout.total_seconds(),
             )
+            if tracing_config:
+                setup_httpx_client_tracing(client, tracing_config=tracing_config)
             app.state.httpx_client = client
             yield {
                 HttpxLifespanState.HTTPX_CLIENT: client,

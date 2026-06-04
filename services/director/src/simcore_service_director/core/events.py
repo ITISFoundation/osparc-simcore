@@ -4,8 +4,14 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.httpx_client import create_httpx_settings_state, httpx_lifespan
 from servicelib.fastapi.lifespan_utils import Lifespan
+from servicelib.fastapi.monitoring import (
+    create_prometheus_instrumentationmain_input_state,
+    prometheus_instrumentation_lifespan,
+)
+from servicelib.fastapi.tracing import get_tracing_config
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
+from ..instrumentation import director_instrumentation_lifespan
 from ..modules.docker_registry import registry_lifespan
 from .settings import ApplicationSettings
 
@@ -23,7 +29,9 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
         **create_httpx_settings_state(
             max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
             default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
+            tracing_config=get_tracing_config(app),
         ),
+        **create_prometheus_instrumentationmain_input_state(enabled=settings.DIRECTOR_MONITORING_ENABLED),
     }
 
 
@@ -40,7 +48,8 @@ def create_app_lifespan(logging_lifespan: Lifespan | None = None) -> LifespanMan
 
     app_lifespan.add(registry_lifespan)
 
-    # last one
+    app_lifespan.add(prometheus_instrumentation_lifespan)
+    app_lifespan.add(director_instrumentation_lifespan)
     app_lifespan.add(_banners_lifespan)
 
     return app_lifespan

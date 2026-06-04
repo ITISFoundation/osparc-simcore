@@ -3,8 +3,8 @@ import logging
 from fastapi import FastAPI
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
-from servicelib.fastapi.httpx_client import setup_httpx_client
 from servicelib.fastapi.lifespan_utils import Lifespan
+from servicelib.fastapi.monitoring import initialize_prometheus_instrumentation
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
@@ -18,7 +18,6 @@ from .._meta import (
     APP_NAME,
 )
 from ..api.rest.routes import setup_api_routes
-from ..instrumentation import setup as setup_instrumentation
 from ..modules.redis import setup as setup_redis
 from . import events
 from .settings import ApplicationSettings
@@ -49,22 +48,17 @@ def create_app(
 
     # PLUGINS SETUP
     if tracing_config.tracing_enabled:
-        setup_tracing(app, tracing_config)
+        setup_tracing(app, tracing_config=tracing_config)
 
     setup_api_routes(app)
 
-    setup_instrumentation(app)
-
-    setup_httpx_client(
-        app,
-        max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
-        default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
-        tracing_config=tracing_config,
-    )
     if settings.DIRECTOR_REGISTRY_CACHING:
         setup_redis(app)
 
     app.add_middleware(RequestCancellationMiddleware)
+
+    if settings.DIRECTOR_MONITORING_ENABLED:
+        initialize_prometheus_instrumentation(app)
 
     if tracing_config.tracing_enabled:
         initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
