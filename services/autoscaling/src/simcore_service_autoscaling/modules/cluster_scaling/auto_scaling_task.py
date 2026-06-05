@@ -4,7 +4,7 @@ from typing import Final
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 
@@ -20,7 +20,7 @@ _TASK_NAME: Final[str] = "Autoscaling EC2 instances"
 _logger = logging.getLogger(__name__)
 
 
-async def auto_scaling_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _auto_scaling_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app_settings: ApplicationSettings = app.state.settings
     if any(
         s is None
@@ -57,3 +57,7 @@ async def auto_scaling_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
         yield {}
     finally:
         await cancel_wait_task(app.state.autoscaler_task)
+
+
+def configure_auto_scaling_task(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_auto_scaling_task_lifespan)

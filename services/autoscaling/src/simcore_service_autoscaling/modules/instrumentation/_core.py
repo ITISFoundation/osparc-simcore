@@ -2,14 +2,14 @@ from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 
 from ...core.errors import ConfigurationError
 from ...core.settings import get_application_settings
 from ._models import AutoscalingInstrumentation
 
 
-async def autoscaling_instrumentation_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _autoscaling_instrumentation_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app_settings = get_application_settings(app)
     metrics_subsystem = "dynamic" if app_settings.AUTOSCALING_NODES_MONITORING else "computational"
     registry = app.state.prometheus_metrics.registry
@@ -20,6 +20,10 @@ async def autoscaling_instrumentation_lifespan(app: FastAPI) -> AsyncIterator[St
         yield {}
     finally:
         pass
+
+
+def configure_autoscaling_instrumentation(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_autoscaling_instrumentation_lifespan)
 
 
 def get_instrumentation(app: FastAPI) -> AutoscalingInstrumentation:

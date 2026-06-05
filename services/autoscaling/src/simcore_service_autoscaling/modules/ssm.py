@@ -5,7 +5,7 @@ from typing import cast
 from aws_library.ssm import SimcoreSSMAPI
 from aws_library.ssm._errors import SSMNotConnectedError
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from settings_library.ssm import SSMSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -18,7 +18,7 @@ from ..core.settings import get_application_settings
 _logger = logging.getLogger(__name__)
 
 
-async def ssm_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _ssm_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.ssm_client = None
     settings: SSMSettings | None = get_application_settings(app).AUTOSCALING_SSM_ACCESS
 
@@ -45,6 +45,10 @@ async def ssm_lifespan(app: FastAPI) -> AsyncIterator[State]:
     finally:
         if app.state.ssm_client:
             await cast(SimcoreSSMAPI, app.state.ssm_client).close()
+
+
+def configure_ssm_client(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_ssm_lifespan)
 
 
 def get_ssm_client(app: FastAPI) -> SimcoreSSMAPI:

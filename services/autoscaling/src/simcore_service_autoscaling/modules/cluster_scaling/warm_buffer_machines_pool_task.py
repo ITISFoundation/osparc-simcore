@@ -4,7 +4,7 @@ from typing import Final
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 
@@ -19,7 +19,7 @@ _TASK_NAME_BUFFER: Final[str] = "Autoscaling Buffer Machines Pool"
 _logger = logging.getLogger(__name__)
 
 
-async def warm_buffer_machines_pool_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _warm_buffer_machines_pool_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app_settings: ApplicationSettings = app.state.settings
     if (
         any(
@@ -68,3 +68,7 @@ async def warm_buffer_machines_pool_lifespan(app: FastAPI) -> AsyncIterator[Stat
     finally:
         if hasattr(app.state, "buffers_pool_task"):
             await cancel_wait_task(app.state.buffers_pool_task)
+
+
+def configure_warm_buffer_machines_pool(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_warm_buffer_machines_pool_lifespan)

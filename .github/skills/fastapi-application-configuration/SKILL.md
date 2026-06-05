@@ -50,6 +50,7 @@ Use this skill when a service:
 - Create a local `LifespanManager` in `create_app`.
 - Add `_configure_plugins(...)` and call it after app state assignment.
 - Add banner lifespan (`_banners_lifespan`) in application module.
+- If a module still exposes only a lifespan function, add a public `configure_*` wrapper for it and call that wrapper from `_configure_plugins(...)` instead of registering the lifespan directly.
 
 4. Convert old setup calls to configure APIs.
 - Prefer `configure_prometheus_instrumentation(app, app_lifespan)`.
@@ -90,6 +91,7 @@ Use this skill when a service:
 - `create_app` uses `LifespanManager` directly.
 - Tracing/prometheus use configure APIs.
 - Internal lifespan implementation functions are private where applicable.
+- `_configure_plugins(...)` only composes `configure_*` entry points, not raw lifespan callables.
 - Diagnostics are clean on touched files.
 - Targeted service tests pass.
 

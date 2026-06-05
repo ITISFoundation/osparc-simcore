@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
@@ -15,7 +15,7 @@ from ..core.errors import ConfigurationError
 logger = logging.getLogger(__name__)
 
 
-async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.rabbitmq_client = None
     settings: RabbitSettings | None = app.state.settings.AUTOSCALING_RABBITMQ
     if not settings:
@@ -29,6 +29,10 @@ async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     finally:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
+
+
+def configure_rabbitmq_client(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_rabbitmq_lifespan)
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

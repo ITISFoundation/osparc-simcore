@@ -5,7 +5,7 @@ from typing import cast
 from aws_library.ec2 import SimcoreEC2API
 from aws_library.ec2._errors import EC2NotConnectedError
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from settings_library.ec2 import EC2Settings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -18,7 +18,7 @@ from .instrumentation import has_instrumentation, instrument_ec2_client_methods
 _logger = logging.getLogger(__name__)
 
 
-async def ec2_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _ec2_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.ec2_client = None
     settings: EC2Settings | None = app.state.settings.AUTOSCALING_EC2_ACCESS
 
@@ -49,6 +49,10 @@ async def ec2_lifespan(app: FastAPI) -> AsyncIterator[State]:
     finally:
         if app.state.ec2_client:
             await cast(SimcoreEC2API, app.state.ec2_client).close()
+
+
+def configure_ec2_client(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_ec2_lifespan)
 
 
 def get_ec2_client(app: FastAPI) -> SimcoreEC2API:

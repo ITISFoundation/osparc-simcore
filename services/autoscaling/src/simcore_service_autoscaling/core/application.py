@@ -21,16 +21,16 @@ from .._meta import (
     APP_STARTED_DYNAMIC_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
-from ..modules.cluster_scaling.auto_scaling_task import auto_scaling_task_lifespan
+from ..modules.cluster_scaling.auto_scaling_task import configure_auto_scaling_task
 from ..modules.cluster_scaling.warm_buffer_machines_pool_task import (
-    warm_buffer_machines_pool_lifespan,
+    configure_warm_buffer_machines_pool,
 )
-from ..modules.docker import docker_lifespan
-from ..modules.ec2 import ec2_lifespan
-from ..modules.instrumentation import autoscaling_instrumentation_lifespan
-from ..modules.rabbitmq import rabbitmq_lifespan
-from ..modules.redis import redis_lifespan
-from ..modules.ssm import ssm_lifespan
+from ..modules.docker import configure_docker_client
+from ..modules.ec2 import configure_ec2_client
+from ..modules.instrumentation import configure_autoscaling_instrumentation
+from ..modules.rabbitmq import configure_rabbitmq_client
+from ..modules.redis import configure_redis_client
+from ..modules.ssm import configure_ssm_client
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -60,18 +60,19 @@ def _configure_plugins(
         app_lifespan.add(logging_lifespan)
 
     if settings.AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        configure_prometheus_instrumentation(app, app_lifespan, autoscaling_instrumentation_lifespan)
+        configure_prometheus_instrumentation(app, app_lifespan)
+        configure_autoscaling_instrumentation(app_lifespan)
 
     if tracing_config.tracing_enabled:
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
 
-    app_lifespan.add(docker_lifespan)
-    app_lifespan.add(rabbitmq_lifespan)
-    app_lifespan.add(ec2_lifespan)
-    app_lifespan.add(ssm_lifespan)
-    app_lifespan.add(redis_lifespan)
-    app_lifespan.add(auto_scaling_task_lifespan)
-    app_lifespan.add(warm_buffer_machines_pool_lifespan)
+    configure_docker_client(app_lifespan)
+    configure_rabbitmq_client(app_lifespan)
+    configure_ec2_client(app_lifespan)
+    configure_ssm_client(app_lifespan)
+    configure_redis_client(app_lifespan)
+    configure_auto_scaling_task(app_lifespan)
+    configure_warm_buffer_machines_pool(app_lifespan)
 
     app_lifespan.add(_banners_lifespan)
 

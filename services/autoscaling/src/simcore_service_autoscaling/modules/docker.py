@@ -4,7 +4,7 @@ from typing import cast
 
 import aiodocker
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -22,7 +22,7 @@ class AutoscalingDocker(aiodocker.Docker):
             return False
 
 
-async def docker_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _docker_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.docker_client = client = AutoscalingDocker()
 
     async for attempt in AsyncRetrying(
@@ -40,6 +40,10 @@ async def docker_lifespan(app: FastAPI) -> AsyncIterator[State]:
     finally:
         if app.state.docker_client:
             await cast(AutoscalingDocker, app.state.docker_client).close()
+
+
+def configure_docker_client(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_docker_lifespan)
 
 
 def get_docker_client(app: FastAPI) -> AutoscalingDocker:
