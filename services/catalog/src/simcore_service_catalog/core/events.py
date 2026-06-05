@@ -9,7 +9,7 @@ from servicelib.fastapi.monitoring import (
     prometheus_instrumentation_lifespan,
 )
 from servicelib.fastapi.postgres_lifespan import (
-    create_postgres_database_input_state,
+    configure_postgres_database,
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
@@ -44,19 +44,26 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
-        **create_postgres_database_input_state(settings.CATALOG_POSTGRES),
         **create_prometheus_instrumentationmain_input_state(
             enabled=settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED
         ),
     }
 
 
-def create_app_lifespan(logging_lifespan: Lifespan | None = None) -> LifespanManager:
+def create_app_lifespan(
+    settings: ApplicationSettings,
+    logging_lifespan: Lifespan | None = None,
+) -> LifespanManager:
     # WARNING: order matters
     app_lifespan = LifespanManager()
     if logging_lifespan:
         app_lifespan.add(logging_lifespan)
     app_lifespan.add(_settings_lifespan)
+
+    configure_postgres_database(
+        app_lifespan,
+        settings=settings.CATALOG_POSTGRES,
+    )
 
     # - postgres
     app_lifespan.include(repository_lifespan_manager)

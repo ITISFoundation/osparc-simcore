@@ -8,8 +8,7 @@ from servicelib.fastapi.monitoring import (
     prometheus_instrumentation_lifespan,
 )
 from servicelib.fastapi.postgres_lifespan import (
-    create_postgres_database_input_state,
-    postgres_database_lifespan,
+    configure_postgres_database,
 )
 
 from .._meta import (
@@ -38,7 +37,6 @@ async def _app_banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
 async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     yield {
-        **create_postgres_database_input_state(settings.NOTIFICATIONS_POSTGRES),
         **create_prometheus_instrumentationmain_input_state(
             enabled=settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED
         ),
@@ -56,7 +54,10 @@ def create_app_lifespan(
     app_lifespan.add(_settings_lifespan)
 
     # - postgres
-    app_lifespan.add(postgres_database_lifespan)
+    configure_postgres_database(
+        app_lifespan,
+        settings=settings.NOTIFICATIONS_POSTGRES,
+    )
     app_lifespan.add(postgres_lifespan)
 
     if not settings.NOTIFICATIONS_WORKER_MODE:

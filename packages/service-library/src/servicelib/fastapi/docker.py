@@ -9,43 +9,86 @@ import aiohttp
 import tenacity
 from aiohttp import ClientSession
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from pydantic import NonNegativeInt
 from settings_library.docker_api_proxy import DockerApiProxysettings
+
+from .lifespan_utils import PublisherLifespan
 
 _logger = logging.getLogger(__name__)
 
 _DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT: Final[NonNegativeInt] = 5
 
 
-_DOCKER_API_PROXY_SETTINGS: Final[str] = "docker_api_proxy_settings"
+_REMOTE_DOCKER_CLIENT_STATE_KEY: Final[str] = "remote_docker_client"
 
 
-def create_remote_docker_client_input_state(settings: DockerApiProxysettings) -> State:
-    return {_DOCKER_API_PROXY_SETTINGS: settings}
-
-
-async def remote_docker_client_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
-    settings: DockerApiProxysettings = state[_DOCKER_API_PROXY_SETTINGS]
-
-    async with AsyncExitStack() as exit_stack:
-        session = await exit_stack.enter_async_context(
-            ClientSession(
-                auth=aiohttp.BasicAuth(
-                    login=settings.DOCKER_API_PROXY_USER,
-                    password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+def _create_remote_docker_client_lifespan(settings: DockerApiProxysettings) -> PublisherLifespan:
+    async def _lifespan(app: FastAPI, _: State) -> AsyncIterator[State]:
+        async with AsyncExitStack() as exit_stack:
+            session = await exit_stack.enter_async_context(
+                ClientSession(
+                    auth=aiohttp.BasicAuth(
+                        login=settings.DOCKER_API_PROXY_USER,
+                        password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+                    )
                 )
             )
-        )
 
-        app.state.remote_docker_client = await exit_stack.enter_async_context(
-            aiodocker.Docker(url=settings.base_url, session=session)
-        )
+            remote_docker_client = await exit_stack.enter_async_context(
+                aiodocker.Docker(url=settings.base_url, session=session)
+            )
 
-        await wait_till_docker_api_proxy_is_responsive(app)
+            app.state.remote_docker_client = remote_docker_client
+            await wait_till_docker_api_proxy_is_responsive(app)
 
-        # NOTE this has to be inside exit_stack scope
+            # NOTE this has to be inside exit_stack scope
+            yield {
+                _REMOTE_DOCKER_CLIENT_STATE_KEY: remote_docker_client,
+            }
+
+    return _lifespan
+
+
+def _create_remote_docker_default_publisher_lifespan(
+    *,
+    state_key: str = _REMOTE_DOCKER_CLIENT_STATE_KEY,
+    app_state_attr: str = "remote_docker_client",
+) -> PublisherLifespan:
+    async def _publisher_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
+        remote_docker_client = state.get(state_key)
+        if not isinstance(remote_docker_client, aiodocker.Docker):
+            msg = f"Remote docker client not found in lifespan state under key '{state_key}'"
+            raise TypeError(msg)
+
+        setattr(app.state, app_state_attr, remote_docker_client)
         yield {}
+
+    return _publisher_lifespan
+
+
+def _create_remote_docker_lifespan_manager(
+    settings: DockerApiProxysettings,
+    publisher_lifespan: PublisherLifespan | None = None,
+) -> LifespanManager[FastAPI]:
+    remote_docker_lifespan_manager = LifespanManager()
+    remote_docker_lifespan_manager.add(_create_remote_docker_client_lifespan(settings=settings))
+    remote_docker_lifespan_manager.add(publisher_lifespan or _create_remote_docker_default_publisher_lifespan())
+    return remote_docker_lifespan_manager
+
+
+def configure_remote_docker_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: DockerApiProxysettings,
+    publisher_lifespan: PublisherLifespan | None = None,
+) -> None:
+    app_lifespan.include(
+        _create_remote_docker_lifespan_manager(
+            settings=settings,
+            publisher_lifespan=publisher_lifespan,
+        )
+    )
 
 
 @tenacity.retry(

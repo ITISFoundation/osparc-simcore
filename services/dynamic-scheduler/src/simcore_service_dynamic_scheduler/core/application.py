@@ -3,8 +3,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.docker import (
-    create_remote_docker_client_input_state,
-    remote_docker_client_lifespan,
+    configure_remote_docker_client,
 )
 from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
@@ -50,14 +49,6 @@ async def _banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    settings: ApplicationSettings = app.state.settings
-
-    yield {
-        **create_remote_docker_client_input_state(settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY),
-    }
-
-
 def _configure_plugins(
     app: FastAPI,
     app_lifespan: LifespanManager,
@@ -67,11 +58,14 @@ def _configure_plugins(
 ) -> None:
     if logging_lifespan:
         app_lifespan.add(logging_lifespan)
-    app_lifespan.add(_settings_lifespan)
 
     configure_postgres_database(
         app_lifespan,
         settings=settings.DYNAMIC_SCHEDULER_POSTGRES,
+    )
+    configure_remote_docker_client(
+        app_lifespan,
+        settings=settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY,
     )
 
     app_lifespan.add(fire_and_forget_lifespan)
@@ -88,8 +82,6 @@ def _configure_plugins(
     app_lifespan.add(service_tracker_lifespan)
     app_lifespan.add(deferred_manager_lifespan)
     app_lifespan.add(status_monitor_lifespan)
-
-    app_lifespan.add(remote_docker_client_lifespan)
 
     if settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)

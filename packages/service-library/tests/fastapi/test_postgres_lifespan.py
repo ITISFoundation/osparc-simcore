@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import AsyncIterator
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import pytest
 import servicelib.fastapi.postgres_lifespan
@@ -19,7 +19,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.postgres_lifespan import (
     PostgresConfigurationError,
     PostgresLifespanState,
-    postgres_database_lifespan,
+    configure_postgres_database,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.postgres import PostgresSettings
@@ -52,10 +52,12 @@ def app_lifespan(
             Field(json_schema_extra={"auto_default_from_env": True}),
         ]
 
-    async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
-        app.state.settings = AppSettings.create_from_envs()
+    settings = AppSettings.create_from_envs()
 
-        yield {PostgresLifespanState.POSTGRES_SETTINGS: app.state.settings.CATALOG_POSTGRES}
+    async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
+        app.state.settings = settings
+
+        yield {}
 
     async def my_database_setup(app: FastAPI, state: State) -> AsyncIterator[State]:
         app.state.my_db_engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
@@ -67,8 +69,11 @@ def app_lifespan(
     app_lifespan.add(my_app_settings)
 
     # postgres
-    app_lifespan.add(postgres_database_lifespan)
-    app_lifespan.add(my_database_setup)
+    configure_postgres_database(
+        app_lifespan,
+        settings=settings.CATALOG_POSTGRES,
+        publisher_lifespan=my_database_setup,
+    )
 
     return app_lifespan
 
@@ -145,12 +150,11 @@ async def test_lifespan_postgres_database_dispose_engine_on_failure(
 async def test_setup_postgres_database_with_empty_pg_settings(
     is_pdb_enabled: bool,
 ):
-    async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
-        yield {PostgresLifespanState.POSTGRES_SETTINGS: None}
-
     app_lifespan = LifespanManager()
-    app_lifespan.add(my_app_settings)
-    app_lifespan.add(postgres_database_lifespan)
+    configure_postgres_database(
+        app_lifespan,
+        settings=cast(PostgresSettings, None),
+    )
 
     app = FastAPI(lifespan=app_lifespan)
 

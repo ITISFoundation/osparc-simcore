@@ -51,7 +51,7 @@ def create_app(
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=events.create_app_lifespan(logging_lifespan=logging_lifespan),
+        lifespan=events.create_app_lifespan(settings=settings, logging_lifespan=logging_lifespan),
     )
     override_fastapi_openapi_method(app)
 

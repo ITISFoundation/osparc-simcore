@@ -23,8 +23,9 @@ from simcore_service_notifications.api.rest.dependencies import (
 
 @pytest.fixture
 def mock_lifespans(mocker: MockerFixture) -> None:
+    mocker.patch("simcore_service_notifications.core.events.configure_postgres_database")
+
     for lifespan in (
-        "postgres_database_lifespan",
         "postgres_lifespan",
         "rabbitmq_lifespan",
         "rpc_api_routes_lifespan",

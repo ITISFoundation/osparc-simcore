@@ -16,7 +16,6 @@ _logger = logging.getLogger(__name__)
 
 
 class PostgresLifespanState(StrEnum):
-    POSTGRES_SETTINGS = "postgres_settings"
     POSTGRES_ASYNC_ENGINE = "postgres.async_engine"
 
 
@@ -24,10 +23,6 @@ class PostgresConfigurationError(LifespanOnStartupError):
     msg_template = (
         "Invalid postgres settings [={settings}] on startup. Note that postgres cannot be disabled using settings"
     )
-
-
-def create_postgres_database_input_state(settings: PostgresSettings) -> State:
-    return {PostgresLifespanState.POSTGRES_SETTINGS: settings}
 
 
 def _create_postgres_database_lifespan(settings: PostgresSettings) -> PublisherLifespan:
@@ -96,30 +91,3 @@ def configure_postgres_database(
             publisher_lifespan=publisher_lifespan,
         )
     )
-
-
-async def postgres_database_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
-    """Backward-compatible postgres lifespan that expects settings in input state."""
-    _lifespan_name = f"{__name__}.{postgres_database_lifespan.__name__}"
-
-    with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-        # Validate input state
-        settings = state[PostgresLifespanState.POSTGRES_SETTINGS]
-
-        if settings is None or not isinstance(settings, PostgresSettings):
-            raise PostgresConfigurationError(settings=settings)
-
-        assert isinstance(settings, PostgresSettings)  # nosec
-
-        # connect to database
-        async_engine: AsyncEngine = await create_async_engine_and_database_ready(settings, app.title)
-
-        try:
-            yield {
-                PostgresLifespanState.POSTGRES_ASYNC_ENGINE: async_engine,
-                **called_state,
-            }
-
-        finally:
-            with log_catch(_logger, reraise=False):
-                await asyncio.wait_for(async_engine.dispose(), timeout=10)
