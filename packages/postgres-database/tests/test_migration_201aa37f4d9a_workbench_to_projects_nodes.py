@@ -175,7 +175,7 @@ def test_unknown_key_is_error_not_silently_dropped():
 
 
 def test_position_key_is_silently_ignored():
-    # position is already migrated to projects.ui by _migrate_position_to_projects_ui
+    # position is deprecated and dropped (not migrated)
     node = _required_minimal() | {"position": {"x": 1, "y": 2}}
     row, errors = _workbench_node_to_db_values(_PROJECT, _NODE, node)
     assert errors == []

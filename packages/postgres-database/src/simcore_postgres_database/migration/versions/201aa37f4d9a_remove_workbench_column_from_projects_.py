@@ -25,7 +25,7 @@ _logger = logging.getLogger("alembic.runtime.migration")
 
 # --- projects_nodes column inventory (frozen at this migration) --------------
 # Scalar columns persisted as-is.
-_SCALAR_COLUMNS: frozenset[str] = frozenset({"key", "version", "label", "progress", "thumbnail", "run_hash", "parent"})
+_SCALAR_COLUMNS: frozenset[str] = frozenset({"key", "version", "label", "progress", "thumbnail", "run_hash"})
 # JSONB columns: values are serialized with json.dumps when not None.
 _JSONB_COLUMNS: frozenset[str] = frozenset(
     {
@@ -34,7 +34,6 @@ _JSONB_COLUMNS: frozenset[str] = frozenset(
         "inputs",
         "inputs_required",
         "inputs_units",
-        "output_nodes",
         "outputs",
         "state",
         "boot_options",
@@ -54,74 +53,7 @@ def _snake_to_camel(s: str) -> str:
 _ALIAS_TO_COLUMN: dict[str, str] = {_snake_to_camel(c): c for c in _ALL_NODE_COLUMNS if "_" in c}
 # Workbench keys deliberately not migrated into projects_nodes
 # (handled elsewhere or no longer persisted).
-_IGNORED_WORKBENCH_KEYS: frozenset[str] = frozenset({"position", "outputNode"})
-
-
-def _migrate_position_to_projects_ui() -> None:
-    """Migrate position data from projects.workbench[*].position to projects.ui.workbench[*].position."""
-
-    connection = op.get_bind()
-
-    projects_result = connection.execute(
-        sa.text("SELECT uuid, workbench, ui FROM projects WHERE workbench IS NOT NULL")
-    )
-
-    migrated_count = 0
-
-    for project_uuid, workbench_json, ui_json in projects_result:
-        if not workbench_json:
-            continue
-
-        try:
-            workbench_data = workbench_json if isinstance(workbench_json, dict) else json.loads(workbench_json)
-        except (json.JSONDecodeError, TypeError):
-            continue
-
-        if not isinstance(workbench_data, dict):
-            continue
-
-        # Collect position data from workbench nodes
-        positions: dict[str, Any] = {}
-        for node_id, node_data in workbench_data.items():
-            if isinstance(node_data, dict) and "position" in node_data:
-                pos = node_data["position"]
-                if isinstance(pos, dict) and "x" in pos and "y" in pos:
-                    positions[node_id] = {"position": pos}
-
-        if not positions:
-            continue
-
-        # Merge into existing projects.ui
-        try:
-            if isinstance(ui_json, dict):
-                ui_data = ui_json
-            elif ui_json:
-                ui_data = json.loads(ui_json)
-            else:
-                ui_data = {}
-        except (json.JSONDecodeError, TypeError):
-            ui_data = {}
-
-        existing_workbench_ui = ui_data.get("workbench", {})
-        if not isinstance(existing_workbench_ui, dict):
-            existing_workbench_ui = {}
-
-        # Only add position if the node doesn't already have one in ui
-        for node_id, pos_data in positions.items():
-            if node_id not in existing_workbench_ui:
-                existing_workbench_ui[node_id] = pos_data
-            elif "position" not in existing_workbench_ui[node_id]:
-                existing_workbench_ui[node_id]["position"] = pos_data["position"]
-
-        ui_data["workbench"] = existing_workbench_ui
-
-        connection.execute(
-            sa.text("UPDATE projects SET ui = :ui_data WHERE uuid = :project_uuid"),
-            {"ui_data": json.dumps(ui_data), "project_uuid": project_uuid},
-        )
-        migrated_count += 1
-
-    _logger.info("Position migration: %d projects had position data migrated to projects.ui", migrated_count)
+_IGNORED_WORKBENCH_KEYS: frozenset[str] = frozenset({"position", "outputNode", "outputNodes", "parent"})
 
 
 def _workbench_node_to_db_values(
@@ -240,13 +172,13 @@ def _flush_node_batch(connection, batch: list[dict]) -> int:
         INSERT INTO projects_nodes (
             project_uuid, node_id, key, version, label, progress, thumbnail,
             input_access, input_nodes, inputs, inputs_required, inputs_units,
-            output_nodes, outputs, run_hash, state, parent, boot_options,
+            outputs, run_hash, state, boot_options,
             required_resources, created, modified
         ) VALUES (
             :project_uuid, :node_id, :key, :version, :label, :progress, :thumbnail,
             :input_access::jsonb, :input_nodes::jsonb, :inputs::jsonb,
-            :inputs_required::jsonb, :inputs_units::jsonb, :output_nodes::jsonb,
-            :outputs::jsonb, :run_hash, :state::jsonb, :parent, :boot_options::jsonb,
+            :inputs_required::jsonb, :inputs_units::jsonb,
+            :outputs::jsonb, :run_hash, :state::jsonb, :boot_options::jsonb,
             '{}'::jsonb, NOW(), NOW()
         )
         ON CONFLICT (project_uuid, node_id) DO UPDATE SET
@@ -260,11 +192,9 @@ def _flush_node_batch(connection, batch: list[dict]) -> int:
             inputs = EXCLUDED.inputs,
             inputs_required = EXCLUDED.inputs_required,
             inputs_units = EXCLUDED.inputs_units,
-            output_nodes = EXCLUDED.output_nodes,
             outputs = EXCLUDED.outputs,
             run_hash = EXCLUDED.run_hash,
             state = EXCLUDED.state,
-            parent = EXCLUDED.parent,
             boot_options = EXCLUDED.boot_options,
             modified = NOW()
     """
@@ -301,7 +231,7 @@ def _restore_workbench_from_projects_nodes() -> None:
                 """
                 SELECT node_id, key, version, label, progress, thumbnail,
                        input_access, input_nodes, inputs, inputs_required, inputs_units,
-                       output_nodes, outputs, run_hash, state, parent, boot_options
+                       outputs, run_hash, state, boot_options
                 FROM projects_nodes
                 WHERE project_uuid = :project_uuid
                 ORDER BY node_id
@@ -309,19 +239,6 @@ def _restore_workbench_from_projects_nodes() -> None:
             ),
             {"project_uuid": project_uuid},
         )
-
-        # Fetch UI data to restore position
-        ui_result = connection.execute(
-            sa.text("SELECT ui FROM projects WHERE uuid = :project_uuid"),
-            {"project_uuid": project_uuid},
-        ).fetchone()
-        ui_data: dict[str, Any] = {}
-        if ui_result and ui_result[0]:
-            try:
-                ui_data = ui_result[0] if isinstance(ui_result[0], dict) else json.loads(ui_result[0])
-            except (json.JSONDecodeError, TypeError):
-                pass
-        workbench_ui: dict[str, Any] = ui_data.get("workbench", {}) if isinstance(ui_data, dict) else {}
 
         workbench_data: dict[str, Any] = {}
 
@@ -351,23 +268,14 @@ def _restore_workbench_from_projects_nodes() -> None:
                 node_data["inputsRequired"] = row.inputs_required
             if row.inputs_units is not None:
                 node_data["inputsUnits"] = row.inputs_units
-            if row.output_nodes is not None:
-                node_data["outputNodes"] = row.output_nodes
             if row.outputs is not None:
                 node_data["outputs"] = row.outputs
             if row.run_hash is not None:
                 node_data["runHash"] = row.run_hash
             if row.state is not None:
                 node_data["state"] = row.state
-            if row.parent is not None:
-                node_data["parent"] = row.parent
             if row.boot_options is not None:
                 node_data["bootOptions"] = row.boot_options
-
-            # Restore position from projects.ui
-            node_ui = workbench_ui.get(node_id, {})
-            if isinstance(node_ui, dict) and "position" in node_ui:
-                node_data["position"] = node_ui["position"]
 
             workbench_data[node_id] = node_data
 
@@ -402,9 +310,6 @@ def _restore_workbench_from_projects_nodes() -> None:
 
 def upgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-
-    # Migrate position data to projects.ui before dropping workbench
-    _migrate_position_to_projects_ui()
 
     # Migrate workbench data to projects_nodes before dropping the column
     _migrate_workbench_to_projects_nodes()
