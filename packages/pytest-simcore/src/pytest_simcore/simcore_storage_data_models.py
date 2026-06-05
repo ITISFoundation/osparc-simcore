@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import contextlib
-import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
@@ -24,8 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from .helpers.faker_factories import DEFAULT_FAKER, random_project
 from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
-
-_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -255,8 +252,6 @@ def share_with_collaborator(
 async def create_project_node(
     user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[tuple[NodeID, dict[str, Any]]]]]:
-    created_node_entries: list[tuple[NodeID, ProjectID]] = []
-
     async with contextlib.AsyncExitStack() as stack:
 
         async def _creator(
@@ -282,7 +277,6 @@ async def create_project_node(
                 )
             )
 
-            created_node_entries.append((new_node_id, project_id))
             return new_node_id, node_row
 
         yield _creator

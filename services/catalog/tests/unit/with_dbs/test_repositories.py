@@ -764,8 +764,8 @@ async def test_list_services_from_published_templates(
                     version="1.0.0",
                     label="jupyterlab",
                 ),
-                pk_col=projects_nodes.c.node_id,
-                pk_value="node-1.1",
+                pk_cols=[projects_nodes.c.project_uuid, projects_nodes.c.node_id],
+                pk_values=["template-1", "node-1.1"],
             )
         )
         await stack.enter_async_context(
@@ -779,8 +779,8 @@ async def test_list_services_from_published_templates(
                     version="1.0.0",
                     label="file-picker",
                 ),
-                pk_col=projects_nodes.c.node_id,
-                pk_value="node-1.2",
+                pk_cols=[projects_nodes.c.project_uuid, projects_nodes.c.node_id],
+                pk_values=["template-1", "node-1.2"],
             )
         )
         await stack.enter_async_context(
@@ -808,8 +808,8 @@ async def test_list_services_from_published_templates(
                     version="2.0.0",
                     label="some-service",
                 ),
-                pk_col=projects_nodes.c.node_id,
-                pk_value="node-2.1",
+                pk_cols=[projects_nodes.c.project_uuid, projects_nodes.c.node_id],
+                pk_values=["template-2", "node-2.1"],
             )
         )
 
@@ -855,8 +855,8 @@ async def test_list_services_from_published_templates_with_invalid_service(
                     version="1.0.0",
                     label="file-picker",
                 ),
-                pk_col=projects_nodes.c.node_id,
-                pk_value="node-1.1",
+                pk_cols=[projects_nodes.c.project_uuid, projects_nodes.c.node_id],
+                pk_values=["template-1", "node-1.1"],
             )
         )
         await stack.enter_async_context(
@@ -870,8 +870,8 @@ async def test_list_services_from_published_templates_with_invalid_service(
                     version="invalid",  # NOTE: invalid version
                     label="invalid-service",
                 ),
-                pk_col=projects_nodes.c.node_id,
-                pk_value="node-1.2",
+                pk_cols=[projects_nodes.c.project_uuid, projects_nodes.c.node_id],
+                pk_values=["template-1", "node-1.2"],
             )
         )
 
