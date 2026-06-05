@@ -870,8 +870,8 @@ async def test_list_services_from_published_templates_with_invalid_service(
                     version="invalid",  # NOTE: invalid version
                     label="invalid-service",
                 ),
-                pk_col=projects_nodes.c.node_id,
-                pk_value="node-1.2",
+                pk_cols=[projects_nodes.c.project_uuid, projects_nodes.c.node_id],
+                pk_values=["template-1", "node-1.2"],
             )
         )
 
