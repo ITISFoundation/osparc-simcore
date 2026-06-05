@@ -21,7 +21,7 @@ Recommended usage in a Dockerfile (fast — skips site-packages scanning):
 
 Legacy usage (still works but slow due to full Python startup):
 ```
-    CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/"]
+    HEALTHCHECK CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/"]
 ```
 
 Worker-mode (heartbeat) usage:
