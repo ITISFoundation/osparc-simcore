@@ -11,7 +11,7 @@ from servicelib.fastapi.monitoring import (
     configure_prometheus_instrumentation,
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.postgres_lifespan import create_postgres_database_input_state
+from servicelib.fastapi.postgres_lifespan import configure_postgres_database
 from servicelib.fastapi.profiler import configure_profiler
 from servicelib.fastapi.tracing import (
     configure_fastapi_app_tracing,
@@ -30,7 +30,6 @@ from .._meta import (
 from ..api.frontend import configure_frontend
 from ..api.rest.routes import configure_rest_api
 from ..api.rpc.routes import rpc_api_routes_lifespan
-from ..repository.events import repository_lifespan_manager
 from ..services.catalog import catalog_lifespan
 from ..services.deferred_manager import deferred_manager_lifespan
 from ..services.director_v0 import director_v0_lifespan
@@ -55,7 +54,6 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
 
     yield {
-        **create_postgres_database_input_state(settings.DYNAMIC_SCHEDULER_POSTGRES),
         **create_remote_docker_client_input_state(settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY),
     }
 
@@ -71,7 +69,11 @@ def _configure_plugins(
         app_lifespan.add(logging_lifespan)
     app_lifespan.add(_settings_lifespan)
 
-    app_lifespan.include(repository_lifespan_manager)
+    configure_postgres_database(
+        app_lifespan,
+        settings=settings.DYNAMIC_SCHEDULER_POSTGRES,
+    )
+
     app_lifespan.add(fire_and_forget_lifespan)
     app_lifespan.add(director_v2_lifespan)
     app_lifespan.add(director_v0_lifespan)
