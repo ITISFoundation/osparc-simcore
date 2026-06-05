@@ -47,13 +47,24 @@ async def update_project_nodes_map(
 ) -> dict[NodeID, Node]:
     repo = ProjectNodesRepo(project_uuid=project_id)
 
+    # Use aliases so nested JSON (e.g. PortLink/NodeState) is serialized in camelCase,
+    # then map top-level aliases back to DB column names.
+    alias_to_column = {
+        field_info.alias: field_name
+        for field_name, field_info in PartialNode.model_fields.items()
+        if field_info.alias and field_info.alias != field_name
+    }
+
     workbench: dict[NodeID, Node] = {}
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         for node_id, node in partial_nodes_map.items():
+            values = node.model_dump(mode="json", by_alias=True, exclude_none=True, exclude_unset=True)
+            values = {alias_to_column.get(k, k): v for k, v in values.items()}
+
             project_node = await repo.update(
                 conn,
                 node_id=node_id,
-                **node.model_dump(exclude_none=True, exclude_unset=True),
+                **values,
             )
             workbench[node_id] = _nodes_models_adapters.node_from_project_node(project_node)
 
