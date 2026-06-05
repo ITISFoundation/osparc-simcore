@@ -5,7 +5,7 @@ from celery_library.app import create_app
 from celery_library.backends import RedisTaskStore
 from celery_library.types import register_celery_types
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.celery.task_manager import TaskManager
 from settings_library.celery import CelerySettings
 
@@ -13,7 +13,7 @@ from ..core.settings import ApplicationSettings
 from .redis import get_redis_client
 
 
-async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     assert settings.NOTIFICATIONS_CELERY is not None  # nosec
     celery_settings: CelerySettings = settings.NOTIFICATIONS_CELERY
@@ -25,6 +25,10 @@ async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     register_celery_types()
 
     yield {}
+
+
+def configure_task_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_task_manager_lifespan)
 
 
 def get_task_manager(app: FastAPI) -> TaskManager:
