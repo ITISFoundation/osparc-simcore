@@ -24,7 +24,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..api.rest.routes import initialize_rest_api
+from ..api.rest.routes import configure_rest_api
 from ..api.rpc.routes import configure_rpc_api
 from ..clients.celery import configure_task_manager
 from ..clients.postgres import configure_postgres_liveness
@@ -109,6 +109,6 @@ def create_app(
 
     _configure_plugins(app, app_lifespan, settings, tracing_config, logging_lifespan)
 
-    initialize_rest_api(app)
+    configure_rest_api(app)
 
     return app
