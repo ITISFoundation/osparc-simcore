@@ -93,33 +93,33 @@ _EVENTS_MODULE: Final[str] = "simcore_service_dynamic_scheduler.core.application
 
 @pytest.fixture
 def disable_rabbitmq_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_EVENTS_MODULE}.rabbitmq_lifespan")
-    mocker.patch(f"{_EVENTS_MODULE}.rpc_api_routes_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_rabbitmq_client")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_rpc_api")
 
 
 @pytest.fixture
 def disable_redis_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_EVENTS_MODULE}.redis_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_redis_clients")
 
 
 @pytest.fixture
 def disable_service_tracker_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_EVENTS_MODULE}.service_tracker_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_service_tracker")
 
 
 @pytest.fixture
 def disable_deferred_manager_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_EVENTS_MODULE}.deferred_manager_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_deferred_manager")
 
 
 @pytest.fixture
 def disable_notifier_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_EVENTS_MODULE}.get_notifier_lifespans")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_notifier")
 
 
 @pytest.fixture
 def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
-    mocker.patch(f"{_EVENTS_MODULE}.status_monitor_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_status_monitor")
 
 
 @pytest.fixture

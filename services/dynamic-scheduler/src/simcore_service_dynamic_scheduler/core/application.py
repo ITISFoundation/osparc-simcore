@@ -28,17 +28,17 @@ from .._meta import (
 )
 from ..api.frontend import configure_frontend
 from ..api.rest.routes import configure_rest_api
-from ..api.rpc.routes import rpc_api_routes_lifespan
-from ..services.catalog import catalog_lifespan
-from ..services.deferred_manager import deferred_manager_lifespan
-from ..services.director_v0 import director_v0_lifespan
-from ..services.director_v2 import director_v2_lifespan
-from ..services.fire_and_forget import fire_and_forget_lifespan
-from ..services.notifier import get_notifier_lifespans
-from ..services.rabbitmq import rabbitmq_lifespan
-from ..services.redis import redis_lifespan
-from ..services.service_tracker import service_tracker_lifespan
-from ..services.status_monitor import status_monitor_lifespan
+from ..api.rpc.routes import configure_rpc_api
+from ..services.catalog import configure_catalog
+from ..services.deferred_manager import configure_deferred_manager
+from ..services.director_v0 import configure_director_v0
+from ..services.director_v2 import configure_director_v2
+from ..services.fire_and_forget import configure_fire_and_forget
+from ..services.notifier import configure_notifier
+from ..services.rabbitmq import configure_rabbitmq_client
+from ..services.redis import configure_redis_clients
+from ..services.service_tracker import configure_service_tracker
+from ..services.status_monitor import configure_status_monitor
 from .settings import ApplicationSettings
 
 
@@ -51,7 +51,7 @@ async def _banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 def _configure_plugins(
     app: FastAPI,
-    app_lifespan: LifespanManager,
+    app_lifespan: LifespanManager[FastAPI],
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
     logging_lifespan: Lifespan | None,
@@ -68,20 +68,17 @@ def _configure_plugins(
         settings=settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY,
     )
 
-    app_lifespan.add(fire_and_forget_lifespan)
-    app_lifespan.add(director_v2_lifespan)
-    app_lifespan.add(director_v0_lifespan)
-    app_lifespan.add(catalog_lifespan)
-    app_lifespan.add(rabbitmq_lifespan)
-    app_lifespan.add(rpc_api_routes_lifespan)
-    app_lifespan.add(redis_lifespan)
-
-    for lifespan in get_notifier_lifespans():
-        app_lifespan.add(lifespan)
-
-    app_lifespan.add(service_tracker_lifespan)
-    app_lifespan.add(deferred_manager_lifespan)
-    app_lifespan.add(status_monitor_lifespan)
+    configure_fire_and_forget(app_lifespan)
+    configure_director_v2(app_lifespan)
+    configure_director_v0(app_lifespan)
+    configure_catalog(app_lifespan)
+    configure_rabbitmq_client(app_lifespan)
+    configure_rpc_api(app_lifespan)
+    configure_redis_clients(app_lifespan)
+    configure_notifier(app_lifespan)
+    configure_service_tracker(app_lifespan)
+    configure_deferred_manager(app_lifespan)
+    configure_status_monitor(app_lifespan)
 
     if settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
