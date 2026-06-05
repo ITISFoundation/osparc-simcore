@@ -164,7 +164,7 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
 RUN chmod +x services/web/server/docker/*.sh
 
-# Copies healthcheck script for fast execution (python3 --no-site skips site-packages)
+# Copies healthcheck script for fast execution (python3 -S skips site-packages)
 COPY --chown=scu:scu \
   scripts/docker/docker_healthcheck.py \
   docker/healthcheck.py
@@ -176,7 +176,7 @@ HEALTHCHECK \
   --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "--no-site", "docker/healthcheck.py", "http://localhost:8080/v0/health"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
 # no need to rebuild everything if just these changed
 ARG BUILD_DATE

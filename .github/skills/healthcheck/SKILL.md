@@ -58,7 +58,7 @@ HEALTHCHECK \
   --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "--no-site", "docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/"]
 ```
 
 
@@ -191,7 +191,7 @@ HEALTHCHECK \
   --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "--no-site", "docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/"]
 ```
 
 Rules:
@@ -241,7 +241,7 @@ Implementation for `target_service` is complete when all are true:
 1. Health endpoint returns `200` when healthy.
 2. Health endpoint returns `503` when dependency checks fail.
 3. `HealthCheckError` is mapped to `503` via handler (explicit or via `set_app_default_http_error_handlers`).
-4. Dockerfile `HEALTHCHECK` is bound to `python3 --no-site docker/healthcheck.py`.
+4. Dockerfile `HEALTHCHECK` is bound to `python3 -S docker/healthcheck.py`.
 5. If worker containers exist: `HEALTHCHECK_MODE=heartbeat` set in compose + `update_heartbeat()` called in task loop.
 6. Tests for healthy/unhealthy health endpoint behavior pass.
 7. If this introduces a new service healthcheck, the per-service table in `services/README.md` is updated.

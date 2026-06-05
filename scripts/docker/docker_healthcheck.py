@@ -2,7 +2,7 @@
 """Healthcheck script to run inside docker containers.
 
 This script is designed to be **standalone** — it only uses the Python standard
-library so that it can be invoked with ``python3 --no-site`` (skipping site-packages)
+library so that it can be invoked with ``python3 -S`` (skipping site-packages)
 for near-instant startup even in containers with hundreds of installed packages.
 
 Recommended usage in a Dockerfile (fast — skips site-packages scanning):
@@ -16,7 +16,7 @@ Recommended usage in a Dockerfile (fast — skips site-packages scanning):
                 --start-period=20s \
                 --start-interval=1s \
                 --retries=3 \
-                CMD ["python3", "--no-site", "docker/healthcheck.py", "http://localhost:8080/v0/"]
+                CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8080/v0/"]
 ```
 
 Worker-mode (heartbeat) usage:
