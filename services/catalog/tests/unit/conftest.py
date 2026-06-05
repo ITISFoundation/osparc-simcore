@@ -37,6 +37,7 @@ from servicelib.tracing import TracingConfig
 from simcore_service_catalog._meta import APP_NAME
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
+from simcore_service_catalog.service import manifest
 
 pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
@@ -162,6 +163,11 @@ async def app(
     ):
         assert spy_app.on_startup.call_count == 1
         assert spy_app.on_shutdown.call_count == 0
+
+        # NOTE: manifest API caches are process-global (keyed only by the registry),
+        # so reset them to keep tests isolated from each other
+        await manifest.get_service.cache.clear()
+        await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
 
         yield app_under_test
 

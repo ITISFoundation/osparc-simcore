@@ -6,6 +6,8 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
+
 import pytest
 import toolz
 from fastapi import FastAPI
@@ -13,6 +15,7 @@ from models_library.function_services_catalog.api import is_function_service
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
+from simcore_service_catalog._constants import DEFAULT_DIRECTOR_BULK_FETCH_LEASE
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
 from simcore_service_catalog.service import manifest
@@ -39,6 +42,11 @@ async def director_client(
     _client = get_director_client(app)
     assert app.state.director_api == _client
     assert isinstance(_client, DirectorClient)
+
+    # ensures manifest API caches are reset
+    assert await manifest.get_service.cache.clear()
+    assert await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+
     return _client
 
 
@@ -131,3 +139,74 @@ async def test_get_batch_services(
         # NOTE: simpler to visualize
         for got, expected in zip(got_services, expected_services, strict=True):
             assert got == expected
+
+
+async def test_get_batch_services_uses_single_bulk_director_call(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    # a batch spanning several (non function) services
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    # NOTE: `all_services_map` fixture warms up the bulk fetch via `get_services_map`,
+    # whereas `get_batch_services` goes through the cached `_get_cached_services_map`
+    await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    mocked_director_rest_api["list_services"].reset()
+    mocked_director_rest_api["get_service"].reset()
+
+    got_services = await manifest.get_batch_services(selection, director_client)
+
+    assert [(s.key, s.version) for s in got_services] == selection
+
+    # resolves the whole selection with a single bulk director call ...
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    # ... and never fans out to the per-service endpoint
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_coalesces_concurrent_cold_cache_calls(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    # ensure a cold cache so all concurrent calls race on the populate step
+    await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    mocked_director_rest_api["list_services"].reset()
+    mocked_director_rest_api["get_service"].reset()
+
+    # a burst of concurrent callers on a cold cache
+    results = await asyncio.gather(*(manifest.get_batch_services(selection, director_client) for _ in range(10)))
+
+    for got_services in results:
+        assert [(s.key, s.version) for s in got_services] == selection
+
+    # the stampede lock collapses the burst into a single bulk director call
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_returns_keyerror_for_missing(
+    director_client: DirectorClient,
+):
+    selection = [("simcore/services/comp/does-not-exist", "1.0.0")]
+
+    got_services = await manifest.get_batch_services(selection, director_client)
+
+    assert len(got_services) == 1
+    assert isinstance(got_services[0], KeyError)
+
+
+def test_set_services_cache_lease_reconfigures_both_caches():
+    try:
+        manifest.set_services_cache_lease(123)
+
+        assert manifest._get_service_cache.lease == 123  # noqa: SLF001
+        assert manifest._get_cached_services_map_cache.lease == 123  # noqa: SLF001
+    finally:
+        # restore the import-time default to keep other tests isolated
+        manifest.set_services_cache_lease(DEFAULT_DIRECTOR_BULK_FETCH_LEASE)
