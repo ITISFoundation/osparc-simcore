@@ -135,13 +135,11 @@ def configure_prometheus_instrumentation(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     *additional_lifespans: PrometheusAdditionalLifespan,
-    enabled: bool,
 ) -> None:
-    if enabled:
-        initialize_prometheus_instrumentation(app)
-        app_lifespan.include(create_prometheus_instrumentation_lifespan_manager())
-        for additional_lifespan in additional_lifespans:
-            app_lifespan.add(additional_lifespan)
+    initialize_prometheus_instrumentation(app)
+    app_lifespan.include(create_prometheus_instrumentation_lifespan_manager())
+    for additional_lifespan in additional_lifespans:
+        app_lifespan.add(additional_lifespan)
 
 
 async def prometheus_instrumentation_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:

@@ -56,12 +56,12 @@ def _configure_plugins(
 
     configure_registry_lifespans(app_lifespan)
 
-    configure_prometheus_instrumentation(
-        app,
-        app_lifespan,
-        director_instrumentation_lifespan,
-        enabled=settings.DIRECTOR_MONITORING_ENABLED,
-    )
+    if settings.DIRECTOR_MONITORING_ENABLED:
+        configure_prometheus_instrumentation(
+            app,
+            app_lifespan,
+            director_instrumentation_lifespan,
+        )
 
     configure_fastapi_app_tracing(
         app,
