@@ -14,7 +14,7 @@ from servicelib.tracing import SourceOrigin, create_standard_attributes
 
 from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_config
-from .settings import ApplicationSettings, UserServiceTracingSettings
+from .settings import ApplicationSettings, UserServicesTracingSettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
@@ -178,7 +178,7 @@ def parse_compose_spec(compose_file_content: str) -> Any:
 
 
 def _generate_otel_collector_config(
-    tracing_settings: UserServiceTracingSettings,
+    user_services_tracing_settings: UserServicesTracingSettings,
     settings: ApplicationSettings,
 ) -> str:
     """Generates the OTEL Collector YAML config for the injected collector container."""
@@ -209,11 +209,11 @@ def _generate_otel_collector_config(
             "file": {
                 "path": "/traces/spans.jsonl",
                 "rotation": {
-                    "max_megabytes": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB,
-                    "max_backups": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS,
+                    "max_megabytes": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB,
+                    "max_backups": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS,
                 },
                 "flush_interval": (
-                    f"{int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL.total_seconds())}s"
+                    f"{int(user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL.total_seconds())}s"
                 ),
             }
         },
@@ -245,7 +245,7 @@ def _build_otel_resource_attributes(settings: ApplicationSettings) -> str:
 def _inject_otel_collector(
     parsed_compose_spec: dict[str, Any],
     settings: ApplicationSettings,
-    tracing_settings: UserServiceTracingSettings,
+    user_services_tracing_settings: UserServicesTracingSettings,
     traces_volume_mount: str,
     user_service_names: list[str],
 ) -> str:
@@ -253,7 +253,7 @@ def _inject_otel_collector(
 
     Returns the collector's container name for use in OTEL_EXPORTER_OTLP_ENDPOINT.
     """
-    collector_config_yaml = _generate_otel_collector_config(tracing_settings, settings)
+    collector_config_yaml = _generate_otel_collector_config(user_services_tracing_settings, settings)
 
     collector_container_name = _assemble_container_name(
         settings,
@@ -263,7 +263,7 @@ def _inject_otel_collector(
     )
 
     collector_service: dict[str, Any] = {
-        "image": tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE,
+        "image": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE,
         "container_name": collector_container_name,
         "user": f"{os.getuid()}:{os.getgid()}",
         "command": ["--config=env:OTEL_COLLECTOR_CONFIG"],
@@ -277,7 +277,7 @@ def _inject_otel_collector(
         "cpus": "0.30",
         "cpu_shares": 16,
         "stop_grace_period": (
-            f"{int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD.total_seconds())}s"
+            f"{int(user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD.total_seconds())}s"
         ),
     }
 
@@ -383,7 +383,7 @@ async def _inject_tracing(
     spec_services_to_container_name: dict[str, str],
 ) -> None:
     """Injects OTEL collector and env vars into user services when tracing is enabled."""
-    tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
+    user_services_tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_SETTINGS
     spec_services = parsed_compose_spec["services"]
 
     traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
@@ -392,7 +392,7 @@ async def _inject_tracing(
     collector_container_name = _inject_otel_collector(
         parsed_compose_spec,
         settings,
-        tracing_settings,
+        user_services_tracing_settings,
         traces_volume_mount,
         user_service_keys,
     )

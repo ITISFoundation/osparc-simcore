@@ -22,7 +22,7 @@ from servicelib.logging_utils import log_catch
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
-from ..core.settings import ApplicationSettings, UserServiceTracingSettings
+from ..core.settings import ApplicationSettings, UserServicesTracingSettings
 from .mounted_fs import MountedVolumes
 
 _logger = logging.getLogger(__name__)
@@ -35,11 +35,11 @@ class UserServicesTraceForwarder:
     def __init__(
         self,
         traces_directory: Path,
-        tracing_settings: UserServiceTracingSettings,
+        user_services_tracing_settings: UserServicesTracingSettings,
         platform_tracing_settings: TracingSettings,
     ) -> None:
         self._traces_directory = traces_directory
-        self._tracing_settings = tracing_settings
+        self._user_services_tracing_settings = user_services_tracing_settings
         self._scrape_task: asyncio.Task | None = None
         self._active_file_offset: int = 0
 
@@ -48,7 +48,9 @@ class UserServicesTraceForwarder:
             .with_port(platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT)
             .with_path('/v1/traces')
         }"
-        self._client = httpx.AsyncClient(timeout=tracing_settings.USER_SERVICES_TRACING_FORWARD_TIMEOUT.total_seconds())
+        self._client = httpx.AsyncClient(
+            timeout=user_services_tracing_settings.USER_SERVICES_TRACING_FORWARD_TIMEOUT.total_seconds()
+        )
 
     @property
     def _checkpoint_path(self) -> Path:
@@ -80,7 +82,7 @@ class UserServicesTraceForwarder:
             self._active_file_offset,
         )
 
-        interval = self._tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL
+        interval = self._user_services_tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL
         self._scrape_task = create_periodic_task(
             self._scrape_once,
             interval=interval,
@@ -102,7 +104,7 @@ class UserServicesTraceForwarder:
 
     async def drain_remaining_traces(self) -> None:
         """Drains all remaining trace files after user services have stopped."""
-        timeout = self._tracing_settings.USER_SERVICES_TRACING_DRAIN_TIMEOUT.total_seconds()
+        timeout = self._user_services_tracing_settings.USER_SERVICES_TRACING_DRAIN_TIMEOUT.total_seconds()
         _logger.info("Draining remaining trace files (timeout=%.1fs)", timeout)
         try:
             await asyncio.wait_for(self._forward_all_files(), timeout=timeout)
@@ -227,7 +229,7 @@ class UserServicesTraceForwarder:
 
     async def _forward_content(self, content: bytes) -> bool:
         """Forwards content to the platform OTLP endpoint. Returns True on success."""
-        max_batch_size = self._tracing_settings.USER_SERVICES_TRACING_MAX_BATCH_SIZE
+        max_batch_size = self._user_services_tracing_settings.USER_SERVICES_TRACING_MAX_BATCH_SIZE
 
         chunks: list[bytes]
         if len(content) <= max_batch_size:
@@ -271,7 +273,7 @@ def setup_user_services_tracing(app: FastAPI) -> None:
 
     app.state.user_services_trace_forwarder = forwarder = UserServicesTraceForwarder(
         traces_directory=mounted_volumes.disk_traces_path,
-        tracing_settings=settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING,
+        user_services_tracing_settings=settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_SETTINGS,
         platform_tracing_settings=platform_tracing_settings,
     )
 

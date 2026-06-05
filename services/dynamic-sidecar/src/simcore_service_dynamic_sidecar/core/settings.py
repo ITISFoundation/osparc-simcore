@@ -54,7 +54,7 @@ class SystemMonitorSettings(BaseApplicationSettings):
     ] = False
 
 
-class UserServiceTracingSettings(BaseApplicationSettings):
+class UserServicesTracingSettings(BaseApplicationSettings):
     USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL: Annotated[
         timedelta,
         Field(
@@ -254,9 +254,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    DYNAMIC_SIDECAR_USER_SERVICES_TRACING: Annotated[
-        UserServiceTracingSettings,
-        Field(json_schema_extra={"auto_default_from_env": True}),
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING_SETTINGS: Annotated[
+        UserServicesTracingSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 
     DY_SIDECAR_USER_SERVICES_TRACING_ENABLED: Annotated[
@@ -265,7 +264,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description=(
                 "per-service opt-in flag for OTEL trace collection "
                 "(set by director-v2 from simcore.service.tracing label)"
-            ),
+            )
         ),
     ] = False
 
