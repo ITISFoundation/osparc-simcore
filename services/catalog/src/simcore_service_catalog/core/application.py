@@ -1,33 +1,75 @@
 import logging
+from collections.abc import AsyncIterator
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from fastapi.middleware.gzip import GZipMiddleware
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.basic_types import BootModeEnum
-from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.lifespan_utils import Lifespan
-from servicelib.fastapi.monitoring import (
-    setup_prometheus_instrumentation,
-)
+from servicelib.fastapi.monitoring import configure_prometheus_instrumentation
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.tracing import (
-    initialize_fastapi_app_tracing,
-    setup_tracing,
-)
+from servicelib.fastapi.postgres_lifespan import configure_postgres_database
+from servicelib.fastapi.tracing import configure_fastapi_app_tracing
 from servicelib.tracing import TracingConfig
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
     API_VERSION,
     API_VTAG,
+    APP_FINISHED_BANNER_MSG,
+    APP_STARTED_BANNER_MSG,
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.rest import initialize_rest_api
-from . import events
+from ..api.rest import configure_rest_api
+from ..api.rpc.events import configure_rpc_api
+from ..clients.director import configure_director
+from ..clients.rabbitmq import configure_rabbitmq_client
+from ..repository.events import configure_default_product_name
+from ..service.function_services import configure_function_services
+from .background_tasks import configure_background_tasks
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
+
+
+async def _banners_lifespan(_: FastAPI) -> AsyncIterator[State]:
+    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+    yield {}
+    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
+
+
+def _configure_plugins(
+    app: FastAPI,
+    app_lifespan: LifespanManager,
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+    logging_lifespan: Lifespan | None,
+) -> None:
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
+
+    configure_postgres_database(
+        app_lifespan,
+        settings=settings.CATALOG_POSTGRES,
+    )
+    configure_default_product_name(app_lifespan)
+    configure_rabbitmq_client(app_lifespan)
+    configure_rpc_api(app_lifespan)
+    configure_director(app_lifespan)
+    configure_function_services(app_lifespan)
+    configure_background_tasks(app_lifespan)
+
+    if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        configure_prometheus_instrumentation(app, app_lifespan)
+
+    if tracing_config.tracing_enabled:
+        configure_fastapi_app_tracing(
+            app,
+            app_lifespan,
+            tracing_config=tracing_config,
+        )
+
+    app_lifespan.add(_banners_lifespan)
 
 
 def create_app(
@@ -43,6 +85,8 @@ def create_app(
             json_dumps(settings, indent=2, sort_keys=True),
         )
 
+    app_lifespan = LifespanManager()
+
     app = FastAPI(
         debug=settings.SC_BOOT_MODE in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
         title=PROJECT_NAME,
@@ -51,7 +95,7 @@ def create_app(
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=events.create_app_lifespan(settings=settings, logging_lifespan=logging_lifespan),
+        lifespan=app_lifespan,
     )
     override_fastapi_openapi_method(app)
 
@@ -59,22 +103,9 @@ def create_app(
     app.state.settings = settings
     app.state.tracing_config = tracing_config
 
-    # MIDDLEWARES
-    if tracing_config.tracing_enabled:
-        setup_tracing(app, tracing_config=tracing_config)
-    if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
-
-    if tracing_config.tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
-
-    if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
-        # middleware to time requests (ONLY for development)
-        app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
-
-    app.add_middleware(GZipMiddleware)
+    _configure_plugins(app, app_lifespan, settings, tracing_config, logging_lifespan)
 
     # ROUTES & ERROR HANDLERS
-    initialize_rest_api(app)
+    configure_rest_api(app)
 
     return app

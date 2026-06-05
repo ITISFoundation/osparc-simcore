@@ -1,4 +1,3 @@
-import logging
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
@@ -7,10 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .products import ProductsRepository
 
-_logger = logging.getLogger(__name__)
 
-
-async def _database_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _default_product_name_lifespan(app: FastAPI) -> AsyncIterator[State]:
     assert isinstance(app.state.engine, AsyncEngine)  # nosec
 
     repo = ProductsRepository(db_engine=app.state.engine)
@@ -20,5 +17,5 @@ async def _database_lifespan(app: FastAPI) -> AsyncIterator[State]:
     yield {}
 
 
-repository_lifespan_manager = LifespanManager()
-repository_lifespan_manager.add(_database_lifespan)
+def configure_default_product_name(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_default_product_name_lifespan)
