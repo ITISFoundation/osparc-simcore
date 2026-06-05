@@ -6,6 +6,7 @@ from unittest import mock
 from fastapi import FastAPI
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
+from simcore_service_director.modules.redis import get_redis_client_manager
 
 
 async def test_redis_module_initializes_and_shuts_down(
@@ -17,4 +18,4 @@ async def test_redis_module_initializes_and_shuts_down(
     app: FastAPI,
     app_settings: EnvVarsDict,
 ):
-    print(app_settings)
+    get_redis_client_manager(app)  # should not raise
