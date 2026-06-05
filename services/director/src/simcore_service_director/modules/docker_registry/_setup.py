@@ -27,6 +27,7 @@ async def registry_lifespan(app: FastAPI) -> AsyncIterator[State]:
                 app=app,
             )
         yield {}
+
     finally:
         if app.state.registry_cache_auto_refresh_task:
             await cancel_wait_task(app.state.registry_cache_auto_refresh_task)
