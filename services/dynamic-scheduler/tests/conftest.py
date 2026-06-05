@@ -88,7 +88,7 @@ def app_environment(
     )
 
 
-_EVENTS_MODULE: Final[str] = "simcore_service_dynamic_scheduler.core.events"
+_EVENTS_MODULE: Final[str] = "simcore_service_dynamic_scheduler.core.application"
 
 
 @pytest.fixture
