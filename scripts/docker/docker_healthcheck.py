@@ -8,7 +8,7 @@ for near-instant startup even in containers with hundreds of installed packages.
 Recommended usage in a Dockerfile (fast — skips site-packages scanning):
 ```
     COPY --chown=scu:scu \
-        packages/common-library/src/common_library/docker_healthcheck.py \
+        scripts/docker/docker_healthcheck.py \
         docker/healthcheck.py
 
     HEALTHCHECK --interval=30s \

@@ -150,7 +150,7 @@ RUN chmod +x services/director-v2/docker/*.sh
 
 # Copies healthcheck script for fast execution (python3 --no-site skips site-packages)
 COPY --chown=scu:scu \
-  packages/common-library/src/common_library/docker_healthcheck.py \
+  scripts/docker/docker_healthcheck.py \
   docker/healthcheck.py
 
 # https://docs.docker.com/reference/dockerfile/#healthcheck

@@ -183,7 +183,7 @@ COPY services/efs-guardian/docker services/efs-guardian/docker
 RUN chmod +x services/efs-guardian/docker/*.sh
 
 # Copies healthcheck script for fast execution (python3 --no-site skips site-packages)
-COPY packages/common-library/src/common_library/docker_healthcheck.py \
+COPY scripts/docker/docker_healthcheck.py \
   docker/healthcheck.py
 
 # https://docs.docker.com/reference/dockerfile/#healthcheck
