@@ -325,6 +325,34 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
+    output_node: Annotated[
+        bool | None,
+        Field(
+            deprecated=True,
+            alias="outputNode",
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
+        ),
+    ] = None
+
+    output_nodes: Annotated[
+        list[NodeID] | None,
+        Field(
+            description="Used in group-nodes. Node IDs of those connected to the output",
+            alias="outputNodes",
+            deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
+        ),
+    ] = None
+
+    parent: Annotated[
+        NodeID | None,
+        Field(
+            description="Parent's (group-nodes') node ID s. Used to group",
+            deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
+        ),
+    ] = None
+
     position: Annotated[
         Position | None,
         Field(
