@@ -36,7 +36,7 @@ def _banners_lifespan(_: FastAPI) -> Iterator[State]:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-def _setup_rest_api(app: FastAPI) -> None:
+def _configure_rest_api(app: FastAPI) -> None:
     setup_api_routes(app)
     app.add_middleware(RequestCancellationMiddleware)
     set_app_default_http_error_handlers(app)
@@ -96,7 +96,7 @@ def create_app(
     app.state.settings = settings
     app.state.tracing_config = tracing_config
 
-    _setup_rest_api(app)
+    _configure_rest_api(app)
     _configure_plugins(app, app_lifespan, settings, tracing_config)
     # comes last to have the banner printed after all the setup is done
     app_lifespan.add(_banners_lifespan)
