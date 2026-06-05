@@ -41,11 +41,8 @@ async def _redis_clients_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 def configure_redis_clients_manager(
     app_lifespan: LifespanManager[FastAPI],
-    *,
-    enabled: bool,
 ) -> None:
-    if enabled:
-        app_lifespan.add(_redis_clients_manager_lifespan)
+    app_lifespan.add(_redis_clients_manager_lifespan)
 
 
 def get_redis_client_manager(app: FastAPI) -> RedisClientsManager:

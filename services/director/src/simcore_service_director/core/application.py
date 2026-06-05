@@ -51,8 +51,8 @@ def _configure_plugins(
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
         tracing_config=tracing_config,
     )
-
-    configure_redis_clients_manager(app_lifespan, enabled=settings.DIRECTOR_REGISTRY_CACHING)
+    if settings.DIRECTOR_REGISTRY_CACHING:
+        configure_redis_clients_manager(app_lifespan)
 
     configure_registry_lifespans(app_lifespan)
 
