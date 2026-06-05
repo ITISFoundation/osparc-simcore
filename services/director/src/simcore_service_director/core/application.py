@@ -43,8 +43,15 @@ def _configure_rest_api(app: FastAPI) -> None:
 
 
 def _configure_plugins(
-    app: FastAPI, app_lifespan: LifespanManager, settings: ApplicationSettings, tracing_config: TracingConfig
+    app: FastAPI,
+    app_lifespan: LifespanManager,
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+    logging_lifespan: Lifespan | None,
 ) -> None:
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
+
     configure_httpx_client(
         app_lifespan,
         max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
@@ -77,8 +84,6 @@ def create_app(
     logging_lifespan: Lifespan | None,
 ) -> FastAPI:
     app_lifespan = LifespanManager()
-    if logging_lifespan:
-        app_lifespan.add(logging_lifespan)
 
     app = FastAPI(
         debug=settings.DIRECTOR_DEBUG,
@@ -97,7 +102,7 @@ def create_app(
     app.state.tracing_config = tracing_config
 
     _configure_rest_api(app)
-    _configure_plugins(app, app_lifespan, settings, tracing_config)
+    _configure_plugins(app, app_lifespan, settings, tracing_config, logging_lifespan)
     # comes last to have the banner printed after all the setup is done
     app_lifespan.add(_banners_lifespan)
 
