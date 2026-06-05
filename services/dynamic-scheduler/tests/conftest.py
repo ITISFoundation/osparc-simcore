@@ -134,7 +134,7 @@ def disable_postgres_lifespan(mocker: MockerFixture, monkeypatch: pytest.MonkeyP
         },
     )
 
-    mocker.patch(f"{_EVENTS_MODULE}.repository_lifespan_manager")
+    mocker.patch(f"{_EVENTS_MODULE}.configure_postgres_database")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP: Final[float] = 10
