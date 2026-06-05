@@ -186,7 +186,7 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# Copies healthcheck script for fast execution (python3 -S skips site-packages)
+# Copies healthcheck script for fast execution (python3 --no-site skips site-packages)
 COPY --chown=scu:scu \
   packages/common-library/src/common_library/docker_healthcheck.py \
   docker/healthcheck.py
@@ -198,7 +198,7 @@ HEALTHCHECK \
   --start-period=64s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/health"]
+  CMD ["python3", "--no-site", "docker/healthcheck.py", "http://localhost:8000/health"]
 
 EXPOSE 8000
 
