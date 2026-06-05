@@ -83,6 +83,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __personalInfoRenderer: null,
     __countryInfoModel: null,
     __countryInfoRenderer: null,
+    __countrySection: null,
 
     __fetchMyProfile: function() {
       this.__userProfileRenderer.setEnabled(false);
@@ -126,6 +127,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             "country": contact["country"] || "",
           });
         }
+        const hasCountry = Boolean(data && data["contact"] && data["contact"]["country"]);
+        this.__countrySection.setVisibility(hasCountry ? "visible" : "excluded");
       }
       this.__updateProfileBtn.setEnabled(false);
 
@@ -655,7 +658,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     __createCountrySection: function() {
       // layout
-      const box = this.self().createSectionBox(this.tr("Country of Residence"));
+      const box = this.__countrySection = this.self().createSectionBox(this.tr("Country of Residence")).set({
+        visibility: "excluded",
+      });
       box.addHelper(this.tr("Tax and VAT regulations depend on the country of residence."));
 
       const country = new qx.ui.form.TextField().set({
