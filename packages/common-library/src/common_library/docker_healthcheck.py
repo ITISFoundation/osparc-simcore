@@ -19,11 +19,6 @@ Recommended usage in a Dockerfile (fast — skips site-packages scanning):
                 CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8080/v0/"]
 ```
 
-Legacy usage (still works but slow due to full Python startup):
-```
-    HEALTHCHECK CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/"]
-```
-
 Worker-mode (heartbeat) usage:
     When a container runs as a Celery worker (no HTTP server), set
     ``HEALTHCHECK_MODE=heartbeat`` in the environment. The script will
