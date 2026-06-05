@@ -9,7 +9,7 @@ from fastapi_lifespan_manager import State
 from ..logging_utils import log_context
 
 type Lifespan = Callable[[FastAPI], AsyncIterator[None]]
-type StatefulLifespan = Callable[[FastAPI, State], AsyncIterator[State]]
+type PublisherLifespan = Callable[[FastAPI, State], AsyncIterator[State]]
 
 
 class LifespanError(OsparcErrorMixin, RuntimeError): ...

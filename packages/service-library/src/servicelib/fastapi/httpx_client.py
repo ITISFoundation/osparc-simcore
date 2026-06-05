@@ -10,7 +10,7 @@ from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.tracing import TracingConfig
 
 from ..tracing import setup_httpx_client_tracing
-from .lifespan_utils import StatefulLifespan, lifespan_context
+from .lifespan_utils import PublisherLifespan, lifespan_context
 
 _logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def _create_httpx_client_lifespan(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
-) -> StatefulLifespan:
+) -> PublisherLifespan:
     async def _lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
         _lifespan_name = f"{__name__}.{_lifespan.__name__}"
 
@@ -78,7 +78,7 @@ def _create_httpx_client_lifespan(
 def _create_httpx_default_publisher_lifespan(
     state_key: HttpxLifespanState = HttpxLifespanState.HTTPX_CLIENT,
     app_state_attr: str = "httpx_client",
-) -> StatefulLifespan:
+) -> PublisherLifespan:
     async def _publisher_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
         _lifespan_name = f"{__name__}.{_publisher_lifespan.__name__}"
 
@@ -98,7 +98,7 @@ def _create_httpx_lifespan_manager(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
-    publisher_lifespan: StatefulLifespan | None = None,
+    publisher_lifespan: PublisherLifespan | None = None,
 ) -> LifespanManager[FastAPI]:
     httpx_lifespan_manager = LifespanManager()
     httpx_lifespan_manager.add(
@@ -118,7 +118,7 @@ def configure_httpx_client(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
-    publisher_lifespan: StatefulLifespan | None = None,
+    publisher_lifespan: PublisherLifespan | None = None,
 ) -> None:
     app_lifespan.include(
         _create_httpx_lifespan_manager(
