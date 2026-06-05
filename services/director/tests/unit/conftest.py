@@ -12,8 +12,7 @@ import pytest
 import redis.asyncio as redis_asyncio
 import simcore_service_director
 from asgi_lifespan import LifespanManager
-from fakeredis import FakeServer
-from fakeredis.aioredis import FakeConnection
+from fakeredis import FakeAsyncRedisConnection, FakeServer
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -178,7 +177,7 @@ async def app(app_settings: ApplicationSettings, is_pdb_enabled: bool) -> AsyncI
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )
-    the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
+    the_test_app = create_app(settings=app_settings, tracing_config=tracing_config, logging_lifespan=None)
     async with LifespanManager(
         the_test_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
@@ -236,7 +235,7 @@ def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
     OriginalPool = redis_asyncio.ConnectionPool
 
     def fake_connection_pool(*args, **kwargs) -> redis_asyncio.ConnectionPool:
-        kwargs["connection_class"] = FakeConnection
+        kwargs["connection_class"] = FakeAsyncRedisConnection
         kwargs["server"] = fake_server
         return OriginalPool(*args, **kwargs)
 
