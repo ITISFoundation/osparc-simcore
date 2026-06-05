@@ -41,7 +41,7 @@ make up-latest
 
 | Component                       | Location                                                        | Role                                                                                                           |
 | ------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `common_library.docker_healthcheck` | `packages/common-library/src/common_library/docker_healthcheck.py` | Docker HEALTHCHECK CMD entry-point. HTTP GET (default) or heartbeat file check (`HEALTHCHECK_MODE=heartbeat`). |
+| `docker_healthcheck.py` | `scripts/docker/docker_healthcheck.py` | Docker HEALTHCHECK CMD entry-point. HTTP GET (default) or heartbeat file check (`HEALTHCHECK_MODE=heartbeat`). |
 | `servicelib.fastapi.health`     | `packages/service-library/src/servicelib/fastapi/health.py`     | `HealthCheckError` exception + `health_check_error_handler` → 503 plain-text response.                         |
 | `common_library.heartbeat`      | `packages/common-library/src/common_library/heartbeat.py`       | File-based heartbeat for worker (non-HTTP) processes.                                                          |
 | `models_library.healthchecks`   | `packages/models-library/src/models_library/healthchecks.py`    | `LivenessResult = IsResponsive \| IsNonResponsive` type alias.                                                 |
