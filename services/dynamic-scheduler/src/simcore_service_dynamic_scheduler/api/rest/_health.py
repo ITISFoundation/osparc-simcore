@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Final
 
 import arrow
 from fastapi import APIRouter, Depends, FastAPI
@@ -14,14 +14,18 @@ from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
+from ...services.t_scheduler import TemporalHealthCheck
 from ._dependencies import (
     get_app,
     get_rabbitmq_client_from_request,
     get_rabbitmq_rpc_client_from_request,
     get_redis_clients_from_request,
+    get_temporalio_health_check_from_request,
 )
 
 router = APIRouter()
+
+_TEMPORALIO_CLIENT_UNHEALTHY_MSG: Final[str] = "Temporalio cannot be reached!"
 
 
 @router.get("/health", response_class=PlainTextResponse)
@@ -33,6 +37,10 @@ async def healthcheck(
         dict[RedisDatabase, RedisClientSDK],
         Depends(get_redis_clients_from_request),
     ],
+    temporal_health_check: Annotated[
+        TemporalHealthCheck,
+        Depends(get_temporalio_health_check_from_request),
+    ],
 ):
     if not await is_docker_api_proxy_ready(app, timeout=1):
         raise HealthCheckError(DOCKER_API_PROXY_UNHEALTHY_MSG)
@@ -42,5 +50,8 @@ async def healthcheck(
 
     if not all(redis_client_sdk.is_healthy for redis_client_sdk in redis_client_sdks.values()):
         raise HealthCheckError(REDIS_CLIENT_UNHEALTHY_MSG)
+
+    if not temporal_health_check.is_healthy:
+        raise HealthCheckError(_TEMPORALIO_CLIENT_UNHEALTHY_MSG)
 
     return f"{__name__}@{arrow.utcnow().isoformat()}"

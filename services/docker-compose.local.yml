@@ -233,6 +233,10 @@ services:
       # scheduler API
       - "8786:8786"
 
+  temporal:
+    ports:
+      - "7233:7233"
+
   postgres:
     ports:
       - "5432:5432"

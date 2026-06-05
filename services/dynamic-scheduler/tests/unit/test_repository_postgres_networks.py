@@ -52,6 +52,7 @@ def app_environment(
     disable_notifier_lifespan: None,
     disable_status_monitor_lifespan: None,
     monkeypatch: pytest.MonkeyPatch,
+    disable_t_scheduler_lifespan: None,
 ) -> EnvVarsDict:
     setenvs_from_dict(
         monkeypatch,

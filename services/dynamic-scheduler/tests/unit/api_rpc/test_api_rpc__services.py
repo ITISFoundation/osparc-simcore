@@ -167,6 +167,7 @@ def app_environment(
 async def rpc_client(
     disable_postgres_lifespan: None,
     app_environment: EnvVarsDict,
+    disable_t_scheduler_lifespan: None,
     mock_director_v2_service_state: None,
     mock_director_v0_service_state: None,
     app: FastAPI,

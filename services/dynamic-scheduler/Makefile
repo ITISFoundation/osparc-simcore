@@ -16,3 +16,7 @@ openapi.json: .env-ignore ## produces openapi.json
 	source $<; \
 	set +o allexport; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app_factory().openapi(), indent=2) )" > $@
+
+.PHONY: workflows_signatures.json
+workflows_signatures.json: ## produces workflows_signatures.json
+	$(APP_CLI_NAME) workflows-signatures > $@
