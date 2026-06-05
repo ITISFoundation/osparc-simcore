@@ -1324,13 +1324,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     setPosition: function(pos) {
       const {x, y} = pos;
-      if (x === this.__posX && y === this.__posY) {
-        return; // no change
-      }
 
       // keep positions positive
-      this.__posX = parseInt(x) < 0 ? 0 : parseInt(x);
-      this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);
+      const newX = parseInt(x) < 0 ? 0 : parseInt(x);
+      const newY = parseInt(y) < 0 ? 0 : parseInt(y);
+      if (newX === this.__posX && newY === this.__posY) {
+        return; // no change
+      }
+      this.__posX = newX;
+      this.__posY = newY;
 
       const nodeId = this.getNodeId();
       this.fireDataEvent("projectDocumentChanged", {
