@@ -124,7 +124,6 @@ async def app(
     """
 
     # create instance
-    assert app_environment
     tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
@@ -151,7 +150,6 @@ def client(app_settings: ApplicationSettings, capfd: pytest.CaptureFixture[str])
     # NOTE: DO NOT add `app` as a dependency since it is already initialized
 
     # create instance
-    assert app_environment
     tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
@@ -206,21 +204,6 @@ def repository_lifespan_disabled(mocker: MockerFixture):
 
 @pytest.fixture
 def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
-    class MockedBackgroundTaskContextManager:
-        async def __aenter__(self):
-            print(
-                "TEST",
-                background_task_lifespan_disabled.__name__,
-                "Disabled background tasks. Skipping execution of __aenter__",
-            )
-
-        async def __aexit__(self, exc_type, exc_value, traceback):
-            print(
-                "TEST",
-                background_task_lifespan_disabled.__name__,
-                "Disabled background tasks. Skipping execution of __aexit__",
-            )
-
     mocker.patch.object(
         simcore_service_catalog.core.application,
         "configure_background_tasks",
