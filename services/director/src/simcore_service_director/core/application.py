@@ -63,11 +63,12 @@ def _configure_plugins(
             director_instrumentation_lifespan,
         )
 
-    configure_fastapi_app_tracing(
-        app,
-        app_lifespan,
-        tracing_config=tracing_config,
-    )
+    if tracing_config.tracing_enabled:
+        configure_fastapi_app_tracing(
+            app,
+            app_lifespan,
+            tracing_config=tracing_config,
+        )
 
 
 def create_app(

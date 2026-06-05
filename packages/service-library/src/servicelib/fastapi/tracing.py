@@ -211,9 +211,6 @@ def configure_fastapi_app_tracing(
     tracing_config: TracingConfig,
     add_response_trace_id_header: bool = False,
 ) -> None:
-    if not tracing_config.tracing_enabled:
-        return
-
     app_lifespan.add(get_tracing_instrumentation_lifespan(tracing_config=tracing_config))
     initialize_fastapi_app_tracing(
         app,
