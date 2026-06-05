@@ -892,9 +892,32 @@ qx.Class.define("osparc.data.model.Workbench", {
           }
         });
         this.__addNodesFromPatches(nodesAdded, workbenchPatchesByNode, workbenchUiPatchesByNode);
-      } else {
-        // third, update nodes
-        this.__updateNodesFromPatches(workbenchPatchesByNode);
+      }
+
+      // update existing nodes (patches for nodes that were not just added)
+      const nodesAddedSet = new Set(nodesAdded);
+      const nodesRemovedSet = new Set(nodesRemoved);
+      const updatePatchesByNode = {};
+      Object.keys(workbenchPatchesByNode).forEach(nodeId => {
+        if (!nodesAddedSet.has(nodeId) && workbenchPatchesByNode[nodeId].length > 0) {
+          // Filter out inputNodes patches that are already handled by __removeNodesFromPatches.
+          // When nodes are removed, __nodeRemoved already removes the connected edges and updates
+          // inputNodes of the remaining nodes. Applying the inputNodes patches again would operate
+          // on stale indices and incorrectly remove additional connections.
+          const filteredPatches = nodesRemovedSet.size > 0
+            ? workbenchPatchesByNode[nodeId].filter(patch => {
+              const pathParts = patch.path.split("/");
+              const nodeProperty = pathParts[3];
+              return nodeProperty !== "inputNodes";
+            })
+            : workbenchPatchesByNode[nodeId];
+          if (filteredPatches.length > 0) {
+            updatePatchesByNode[nodeId] = filteredPatches;
+          }
+        }
+      });
+      if (Object.keys(updatePatchesByNode).length > 0) {
+        this.__updateNodesFromPatches(updatePatchesByNode);
       }
     },
 
