@@ -46,7 +46,7 @@ def mock_environment_with_tracing(
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://otel-collector.internal",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
             "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": "1.0",
-            "DY_SIDECAR_USER_SERVICES_TRACING_ENABLED": "True",
+            "DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN": "True",
         },
     )
 
@@ -235,7 +235,7 @@ async def test_validate_compose_spec_with_tracing_injects_otel(
     simple_compose_spec: str,
     fake_mounted_volumes: MountedVolumes,
 ):
-    assert app_settings_with_tracing.DY_SIDECAR_USER_SERVICES_TRACING_ENABLED
+    assert app_settings_with_tracing.DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN
 
     result = await get_and_validate_compose_spec(
         app_settings_with_tracing,

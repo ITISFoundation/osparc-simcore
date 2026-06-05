@@ -181,7 +181,7 @@ def _get_environment_variables(
         "DYNAMIC_SIDECAR_TRACING": (
             app_settings.DIRECTOR_V2_TRACING.model_dump_json() if app_settings.DIRECTOR_V2_TRACING else "null"
         ),
-        "DY_SIDECAR_USER_SERVICES_TRACING_ENABLED": f"{scheduler_data.tracing}",
+        "DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN": f"{scheduler_data.tracing}",
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "STORAGE_HOST": storage_config.host,
         "STORAGE_PASSWORD": storage_config.password,

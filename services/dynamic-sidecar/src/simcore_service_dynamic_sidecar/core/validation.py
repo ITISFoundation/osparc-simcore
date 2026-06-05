@@ -383,7 +383,7 @@ async def _inject_tracing(
     spec_services_to_container_name: dict[str, str],
 ) -> None:
     """Injects OTEL collector and env vars into user services when tracing is enabled."""
-    user_services_tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_SETTINGS
+    user_services_tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
     spec_services = parsed_compose_spec["services"]
 
     traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)

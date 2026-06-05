@@ -254,16 +254,18 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    DYNAMIC_SIDECAR_USER_SERVICES_TRACING_SETTINGS: Annotated[
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG: Annotated[
         UserServicesTracingSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 
-    DY_SIDECAR_USER_SERVICES_TRACING_ENABLED: Annotated[
+    DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN: Annotated[
         bool,
         Field(
             description=(
                 "per-service opt-in flag for OTEL trace collection "
-                "(set by director-v2 from simcore.service.tracing label)"
+                "(set by director-v2 from simcore.service.tracing label) "
+                "used together with DYNAMIC_SIDECAR_TRACING to determine if the OTEL Collector should "
+                "be injected and run for user services"
             )
         ),
     ] = False

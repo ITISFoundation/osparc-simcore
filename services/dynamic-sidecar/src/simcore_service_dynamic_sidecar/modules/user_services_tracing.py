@@ -273,7 +273,7 @@ def setup_user_services_tracing(app: FastAPI) -> None:
 
     app.state.user_services_trace_forwarder = forwarder = UserServicesTraceForwarder(
         traces_directory=mounted_volumes.disk_traces_path,
-        user_services_tracing_settings=settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_SETTINGS,
+        user_services_tracing_settings=settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG,
         platform_tracing_settings=platform_tracing_settings,
     )
 
@@ -296,4 +296,4 @@ def get_user_services_trace_forwarder(app: FastAPI) -> UserServicesTraceForwarde
 def is_user_services_tracing_enabled(app: FastAPI) -> bool:
     settings: ApplicationSettings = app.state.settings
     tracing_config = get_tracing_config(app)
-    return tracing_config.tracing_enabled and settings.DY_SIDECAR_USER_SERVICES_TRACING_ENABLED
+    return tracing_config.tracing_enabled and settings.DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN
