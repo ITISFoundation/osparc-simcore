@@ -17,6 +17,7 @@ from pydantic import (
     StrictInt,
     StringConstraints,
     field_validator,
+    model_serializer,
     model_validator,
 )
 from pydantic.config import JsonDict
@@ -396,6 +397,14 @@ class Node(BaseModel):
             running_state_value = _convert_old_enum_name(v)
             return NodeState(current_status=running_state_value)
         return v
+
+    @model_serializer(mode="wrap")
+    def _exclude_deprecated_fields(self, handler, info):
+        data = handler(self, info)
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
+        for key in ("output_node", "output_nodes", "parent", "outputNode", "outputNodes"):
+            data.pop(key, None)
+        return data
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
