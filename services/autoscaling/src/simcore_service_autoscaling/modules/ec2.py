@@ -56,6 +56,6 @@ def configure_ec2_client(app_lifespan: LifespanManager[FastAPI]) -> None:
 
 
 def get_ec2_client(app: FastAPI) -> SimcoreEC2API:
-    if not app.state.ec2_client:
+    if not hasattr(app.state, "ec2_client") or not app.state.ec2_client:
         raise ConfigurationError(msg="EC2 client is not available. Please check the configuration.")
     return cast(SimcoreEC2API, app.state.ec2_client)

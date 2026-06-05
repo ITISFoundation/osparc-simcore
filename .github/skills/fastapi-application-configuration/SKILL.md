@@ -61,6 +61,7 @@ Use this skill when a service:
 - Keep `configure_*` functions public.
 - Rename lifespan implementation functions to private (`_..._lifespan`) when used only through `configure_*`.
 - If needed, add missing configure wrappers in client/rpc modules.
+- For integrations backed by optional settings (`... | None`) or disabled-mode flags, guard calls in `_configure_plugins(...)` and invoke `configure_*` only when enabled; avoid registering plugins that only log a "disabled by settings" warning.
 
 6. Remove legacy events module when fully migrated.
 - Delete `core/events.py` only after references are gone.
@@ -92,6 +93,7 @@ Use this skill when a service:
 - Tracing/prometheus use configure APIs.
 - Internal lifespan implementation functions are private where applicable.
 - `_configure_plugins(...)` only composes `configure_*` entry points, not raw lifespan callables.
+- Optional/disabled integrations are conditionally configured in `_configure_plugins(...)` (no unconditional configure call when settings are `None` or feature mode is off).
 - Diagnostics are clean on touched files.
 - Targeted service tests pass.
 

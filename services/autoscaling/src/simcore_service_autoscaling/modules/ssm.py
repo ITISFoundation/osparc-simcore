@@ -52,6 +52,6 @@ def configure_ssm_client(app_lifespan: LifespanManager[FastAPI]) -> None:
 
 
 def get_ssm_client(app: FastAPI) -> SimcoreSSMAPI:
-    if not app.state.ssm_client:
+    if not hasattr(app.state, "ssm_client") or not app.state.ssm_client:
         raise ConfigurationError(msg="SSM client is not available. Please check the configuration.")
     return cast(SimcoreSSMAPI, app.state.ssm_client)

@@ -67,12 +67,29 @@ def _configure_plugins(
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
 
     configure_docker_client(app_lifespan)
-    configure_rabbitmq_client(app_lifespan)
-    configure_ec2_client(app_lifespan)
-    configure_ssm_client(app_lifespan)
+    if settings.AUTOSCALING_RABBITMQ is not None:
+        configure_rabbitmq_client(app_lifespan)
+    if settings.AUTOSCALING_EC2_ACCESS is not None:
+        configure_ec2_client(app_lifespan)
+    if settings.AUTOSCALING_SSM_ACCESS is not None:
+        configure_ssm_client(app_lifespan)
     configure_redis_client(app_lifespan)
-    configure_auto_scaling_task(app_lifespan)
-    configure_warm_buffer_machines_pool(app_lifespan)
+
+    if (
+        settings.AUTOSCALING_EC2_ACCESS is not None
+        and settings.AUTOSCALING_EC2_INSTANCES is not None
+        and (settings.AUTOSCALING_NODES_MONITORING is not None or settings.AUTOSCALING_DASK is not None)
+    ):
+        configure_auto_scaling_task(app_lifespan)
+
+    if (
+        settings.AUTOSCALING_EC2_ACCESS is not None
+        and settings.AUTOSCALING_EC2_INSTANCES is not None
+        and settings.AUTOSCALING_SSM_ACCESS is not None
+        and settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
+        and settings.AUTOSCALING_NODES_MONITORING is not None
+    ):
+        configure_warm_buffer_machines_pool(app_lifespan)
 
     app_lifespan.add(_banners_lifespan)
 

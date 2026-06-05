@@ -87,8 +87,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
-    assert hasattr(initialized_app.state, "rabbitmq_client")
-    assert initialized_app.state.rabbitmq_client is None
+    assert not hasattr(initialized_app.state, "rabbitmq_client")
     with pytest.raises(ConfigurationError):
         get_rabbitmq_client(initialized_app)
 
