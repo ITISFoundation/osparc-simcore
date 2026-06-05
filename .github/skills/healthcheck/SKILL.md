@@ -18,7 +18,7 @@ For the given `target_service`, produce:
 
 1. A health endpoint that returns `200` when healthy, `503` when unhealthy
 2. Error handling that maps `HealthCheckError` → `503 PlainTextResponse`
-3. A Dockerfile `HEALTHCHECK` bound to that endpoint via `common_library.docker_healthcheck`
+3. A Dockerfile `HEALTHCHECK` bound to that endpoint via `docker_healthcheck.py`
 4. If the service has worker containers (no HTTP server): heartbeat-mode healthcheck
 5. Tests proving healthcheck behavior works as expected
 6. If this is a new service healthcheck, update the healthcheck table in `services/README.md`
@@ -46,7 +46,7 @@ For the given `target_service`, produce:
 
 ### Two Healthcheck Modes
 
-1. **HTTP mode** (default): `common_library.docker_healthcheck` does HTTP GET to a URL. Returns healthy if status=200.
+1. **HTTP mode** (default): `docker_healthcheck.py` does HTTP GET to a URL. Returns healthy if status=200.
 2. **Heartbeat mode**: Set `HEALTHCHECK_MODE=heartbeat` in environment. Script checks file-based heartbeat instead of HTTP. Used for worker containers with no HTTP server.
 
 ### Standard Dockerfile HEALTHCHECK Parameters
@@ -177,7 +177,7 @@ update_heartbeat()
       HEALTHCHECK_MODE: heartbeat
 ```
 
-The Dockerfile `HEALTHCHECK` CMD stays unchanged — `common_library.docker_healthcheck` reads `HEALTHCHECK_MODE` at runtime and switches to heartbeat file check.
+The Dockerfile `HEALTHCHECK` CMD stays unchanged — `docker_healthcheck.py` reads `HEALTHCHECK_MODE` at runtime and switches to heartbeat file check.
 
 ### Step 5: Bind Docker HEALTHCHECK to Shared Script
 
