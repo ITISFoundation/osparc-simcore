@@ -362,12 +362,14 @@ class Node(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _strip_deprecated_fields(cls, data):
-        if isinstance(data, dict):
-            # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
-            for key in ("outputNode", "outputNodes", "parent"):
-                data.pop(key, None)
-        return data
+def _strip_deprecated_fields(cls, data):
+    if isinstance(data, dict):
+        cleaned = dict(data)
+        # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
+        for key in ("outputNode", "outputNodes", "parent"):
+            cleaned.pop(key, None)
+        return cleaned
+    return data
 
     @field_validator("state", mode="before")
     @classmethod
