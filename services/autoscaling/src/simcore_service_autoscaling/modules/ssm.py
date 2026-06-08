@@ -27,20 +27,20 @@ async def _ssm_lifespan(app: FastAPI) -> AsyncIterator[State]:
         yield {}
         return
 
-    app.state.ssm_client = client = await SimcoreSSMAPI.create(settings)
-
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        stop=stop_after_delay(120),
-        wait=wait_random_exponential(max=30),
-        before_sleep=before_sleep_log(_logger, logging.WARNING),
-    ):
-        with attempt:
-            connected = await client.ping()
-            if not connected:
-                raise SSMNotConnectedError  # pragma: no cover
-
     try:
+        app.state.ssm_client = client = await SimcoreSSMAPI.create(settings)
+
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            stop=stop_after_delay(120),
+            wait=wait_random_exponential(max=30),
+            before_sleep=before_sleep_log(_logger, logging.WARNING),
+        ):
+            with attempt:
+                connected = await client.ping()
+                if not connected:
+                    raise SSMNotConnectedError  # pragma: no cover
+
         yield {}
     finally:
         if app.state.ssm_client:

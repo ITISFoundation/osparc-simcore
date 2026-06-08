@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 async def _redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.redis_client_sdk = None
     settings: RedisSettings = app.state.settings.AUTOSCALING_REDIS
-    redis_locks_dsn = settings.build_redis_dsn(RedisDatabase.LOCKS)
-    app.state.redis_client_sdk = RedisClientSDK(redis_locks_dsn, client_name=APP_NAME)
-    await app.state.redis_client_sdk.setup()
     try:
+        redis_locks_dsn = settings.build_redis_dsn(RedisDatabase.LOCKS)
+        app.state.redis_client_sdk = RedisClientSDK(redis_locks_dsn, client_name=APP_NAME)
+        await app.state.redis_client_sdk.setup()
+
         yield {}
     finally:
         redis_client_sdk: None | RedisClientSDK = app.state.redis_client_sdk

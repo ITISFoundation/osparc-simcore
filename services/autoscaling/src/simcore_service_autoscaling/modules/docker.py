@@ -23,19 +23,20 @@ class AutoscalingDocker(aiodocker.Docker):
 
 
 async def _docker_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.docker_client = client = AutoscalingDocker()
-
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        stop=stop_after_delay(120),
-        wait=wait_random_exponential(max=30),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    ):
-        with attempt:
-            # this will raise if the connection is not working
-            await client.version()
-
+    app.state.docker_client = None
     try:
+        app.state.docker_client = client = AutoscalingDocker()
+
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            stop=stop_after_delay(120),
+            wait=wait_random_exponential(max=30),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
+        ):
+            with attempt:
+                # this will raise if the connection is not working
+                await client.version()
+
         yield {}
     finally:
         if app.state.docker_client:

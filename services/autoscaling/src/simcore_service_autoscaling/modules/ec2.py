@@ -27,24 +27,24 @@ async def _ec2_lifespan(app: FastAPI) -> AsyncIterator[State]:
         yield {}
         return
 
-    if has_instrumentation(app):
-        client = instrument_ec2_client_methods(app, await SimcoreEC2API.create(settings))
-    else:
-        client = await SimcoreEC2API.create(settings)
-    app.state.ec2_client = client
-
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        stop=stop_after_delay(120),
-        wait=wait_random_exponential(max=30),
-        before_sleep=before_sleep_log(_logger, logging.WARNING),
-    ):
-        with attempt:
-            connected = await client.ping()
-            if not connected:
-                raise EC2NotConnectedError  # pragma: no cover
-
     try:
+        if has_instrumentation(app):
+            client = instrument_ec2_client_methods(app, await SimcoreEC2API.create(settings))
+        else:
+            client = await SimcoreEC2API.create(settings)
+        app.state.ec2_client = client
+
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            stop=stop_after_delay(120),
+            wait=wait_random_exponential(max=30),
+            before_sleep=before_sleep_log(_logger, logging.WARNING),
+        ):
+            with attempt:
+                connected = await client.ping()
+                if not connected:
+                    raise EC2NotConnectedError  # pragma: no cover
+
         yield {}
     finally:
         if app.state.ec2_client:
