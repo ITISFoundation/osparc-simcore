@@ -610,9 +610,8 @@ promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-G
 		fi
 		# upgrading uv
 		@if [ "${GITHUB_ACTIONS}" != "true" ]; then \
-			-uv self --quiet update; \
+			uv self --quiet update; \
 		fi
-
 
 .venv: .check-uv-installed
 	@uv venv $@
