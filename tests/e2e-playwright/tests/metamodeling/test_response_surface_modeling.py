@@ -257,8 +257,9 @@ def _assert_sampling_completed(
 
 
 @pytest.fixture
-def create_function_from_project(  # noqa: C901, PLR0912, PLR0915
+def create_function_from_project(  # noqa: C901
     api_request_context: APIRequestContext,
+    api_key_and_secret: tuple[str, str],
     is_product_billable: bool,
     product_url: AnyUrl,
 ) -> Iterator[Callable[[Page, str], dict[str, Any]]]:
@@ -301,89 +302,68 @@ def create_function_from_project(  # noqa: C901, PLR0912, PLR0915
     # --- Teardown: runs even if the test fails ---
     # Delete function_jobs + their comp projects, the functions, and the source studies.
     api_server_url = _get_api_server_url(product_url)
+    api_key, api_secret = api_key_and_secret
+    credentials = base64.b64encode(f"{api_key}:{api_secret}".encode()).decode()
+    auth_headers = {"Authorization": f"Basic {credentials}"}
 
-    # Create a temporary API key for the api.* endpoint (function_jobs use Basic auth)
-    api_key_id: str | None = None
-    auth_headers: dict[str, str] = {}
-    api_key_resp = api_request_context.post(
-        f"{product_url}v0/auth/api-keys",
-        data=json.dumps({"displayName": "e2e-teardown-cleanup"}),
-        headers={"Content-Type": "application/json"},
-    )
-    if api_key_resp.ok:
-        api_key_data = api_key_resp.json()["data"]
-        credentials = base64.b64encode(f"{api_key_data['apiKey']}:{api_key_data['apiSecret']}".encode()).decode()
-        auth_headers = {"Authorization": f"Basic {credentials}"}
-        api_key_id = api_key_data.get("id")
-    else:
-        logging.warning("Could not create API key for teardown cleanup: %s", api_key_resp.text()[:200])
+    for function_data in created_functions:
+        function_uuid = function_data["uuid"]
+        template_id = function_data.get("templateId")
 
-    try:
-        for function_data in created_functions:
-            function_uuid = function_data["uuid"]
-            template_id = function_data.get("templateId")
-
-            # 1. Delete all function_jobs and their associated comp projects
-            if auth_headers:
-                offset = 0
-                limit = 50
-                while True:
-                    jobs_resp = api_request_context.get(
-                        f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+        # 1. Delete all function_jobs and their associated comp projects
+        if auth_headers:
+            limit = 50
+            for offset in range(0, 100_000, limit):
+                jobs_resp = api_request_context.get(
+                    f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+                    headers=auth_headers,
+                )
+                if not jobs_resp.ok:
+                    if jobs_resp.status == 404:
+                        logging.info(
+                            "function_jobs endpoint not available on %s — skipping",
+                            api_server_url,
+                        )
+                    else:
+                        logging.warning(
+                            "Could not list function_jobs for %s: %s",
+                            function_uuid,
+                            jobs_resp.text()[:200],
+                        )
+                    break
+                jobs = jobs_resp.json().get("items", [])
+                for job in jobs:
+                    job_uid = job["uid"]
+                    project_job_id = job.get("project_job_id")
+                    _delete_with_retry(
+                        api_request_context,
+                        f"{api_server_url}v0/function_jobs/{job_uid}",
+                        f"function_job {job_uid}",
                         headers=auth_headers,
                     )
-                    if not jobs_resp.ok:
-                        if jobs_resp.status == 404:
-                            logging.info(
-                                "function_jobs endpoint not available on %s — skipping",
-                                api_server_url,
-                            )
-                        else:
-                            logging.warning(
-                                "Could not list function_jobs for %s: %s",
-                                function_uuid,
-                                jobs_resp.text()[:200],
-                            )
-                        break
-                    jobs = jobs_resp.json().get("items", [])
-                    if not jobs:
-                        break
-                    for job in jobs:
-                        job_uid = job["uid"]
-                        project_job_id = job.get("project_job_id")
+                    if project_job_id:
                         _delete_with_retry(
                             api_request_context,
-                            f"{api_server_url}v0/function_jobs/{job_uid}",
-                            f"function_job {job_uid}",
-                            headers=auth_headers,
+                            f"{product_url}v0/projects/{project_job_id}",
+                            f"comp project {project_job_id}",
                         )
-                        if project_job_id:
-                            _delete_with_retry(
-                                api_request_context,
-                                f"{product_url}v0/projects/{project_job_id}",
-                                f"comp project {project_job_id}",
-                            )
-                    if len(jobs) < limit:
-                        break
-                    offset += limit
+                if len(jobs) < limit:
+                    break
 
-            # 2. Delete the function itself
+        # 2. Delete the function itself
+        _delete_with_retry(
+            api_request_context,
+            f"{product_url}v0/functions/{function_uuid}",
+            f"function {function_uuid}",
+        )
+
+        # 3. Delete the source study (templateId) the function was created from
+        if template_id:
             _delete_with_retry(
                 api_request_context,
-                f"{product_url}v0/functions/{function_uuid}",
-                f"function {function_uuid}",
+                f"{product_url}v0/projects/{template_id}",
+                f"source study {template_id}",
             )
-
-            # 3. Delete the source study (templateId) the function was created from
-            if template_id:
-                _delete_with_retry(
-                    api_request_context,
-                    f"{product_url}v0/projects/{template_id}",
-                    f"source study {template_id}",
-                )
-    finally:
-        if api_key_id:
-            api_request_context.delete(f"{product_url}v0/auth/api-keys/{api_key_id}")
 
 
 def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: disable=too-many-branches
@@ -395,6 +375,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
     is_service_legacy: bool,
     create_function_from_project: Callable[[Page, str], dict[str, Any]],
     api_request_context: APIRequestContext,
+    api_key_and_secret: tuple[str, str],
 ):
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
@@ -836,14 +817,8 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
         with log_context(logging.INFO, f"Verifying sampling results for {local_service_key}..."):
             api_server_url = _get_api_server_url(product_url)
-            api_key_response = api_request_context.post(
-                f"{product_url}v0/auth/api-keys",
-                data=json.dumps({"displayName": f"e2e-test-{local_service_key}"}),
-                headers={"Content-Type": "application/json"},
-            )
-            assert api_key_response.ok, f"Failed to create API key: {api_key_response.status}"
-            api_key_data = api_key_response.json()["data"]
-            credentials = base64.b64encode(f"{api_key_data['apiKey']}:{api_key_data['apiSecret']}".encode()).decode()
+            _api_key, _api_secret = api_key_and_secret
+            credentials = base64.b64encode(f"{_api_key}:{_api_secret}".encode()).decode()
             auth_headers = {"Authorization": f"Basic {credentials}"}
 
             jobs_response = api_request_context.get(
