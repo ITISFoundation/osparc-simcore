@@ -30,10 +30,12 @@ def compose_email(
 
     msg["Subject"] = subject
 
-    # Always set Date and Message-ID explicitly:
+    # NOTE: Always set Date and Message-ID explicitly:
     # - Postal SMTP: does not add them automatically (github.com/postalserver/postal/issues/153)
     # - AWS SES SMTP: silently overwrites both with its own values regardless — no side effect
     # - Other providers: behaviour varies; setting them here is always safe
+    #  
+    # If not defined, emails may land in spam (if email server used does not configure them automatically)
     if extra_headers:
         for name, value in extra_headers.items():
             # Prevent duplicates/overrides of required RFC 5322 headers
