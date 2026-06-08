@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ...celery import GroupUUID, OwnerMetadata, TaskUUID
+from ...products import ProductName
 from ._email import Addressing, Message
 from ._template import TemplateRef
 
@@ -57,6 +58,7 @@ class SendMessageRequest(BaseModel):
 
 
 class SendMessageFromTemplateRequest(BaseModel):
+    product_name: ProductName
     addressing: Annotated[
         Addressing,
         Field(

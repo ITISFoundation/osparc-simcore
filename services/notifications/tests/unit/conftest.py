@@ -22,13 +22,6 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jinja2 import DictLoader, Environment, select_autoescape
-from notifications_library._models import (
-    CompanyLink,
-    ProductData,
-    ProductFooterData,
-    ProductUIData,
-    SocialLink,
-)
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.celery.task_manager import TaskManager
@@ -44,9 +37,18 @@ from simcore_service_notifications.api.rpc import dependencies as rpc_dependenci
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.main import app_factory
+from simcore_service_notifications.models.product import (
+    CompanyLink,
+    ProductData,
+    ProductFooterData,
+    ProductUIData,
+    SocialLink,
+)
 
 pytest_plugins = [
+    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
 ]
 

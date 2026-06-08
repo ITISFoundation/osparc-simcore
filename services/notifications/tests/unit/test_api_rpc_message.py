@@ -19,6 +19,7 @@ from models_library.notifications.rpc import (
     SendMessageResponse,
     TemplateRef,
 )
+from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
@@ -152,7 +153,8 @@ async def test_send_message_multiple_recipients(
 
 
 async def test_send_message_from_template_with_empty_template(
-    fake_product_data: dict[str, Any],
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_single_recipient: EmailAddressing,
 ):
@@ -160,11 +162,11 @@ async def test_send_message_from_template_with_empty_template(
     context = {
         "subject": "Test Email",
         "body": "This is a test email.",
-        "product": fake_product_data,
     }
 
     response = await send_message_from_template(
         rpc_client,
+        product_name=product_name,
         addressing=email_addressing_single_recipient,
         template_ref=ref,
         context=context,
@@ -175,7 +177,8 @@ async def test_send_message_from_template_with_empty_template(
 
 
 async def test_send_message_from_template_with_multiple_recipients(
-    fake_product_data: dict[str, Any],
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_multiple_recipients: EmailAddressing,
 ):
@@ -183,11 +186,11 @@ async def test_send_message_from_template_with_multiple_recipients(
     context = {
         "subject": "Multi-recipient Test",
         "body": "Sent to multiple recipients.",
-        "product": fake_product_data,
     }
 
     response = await send_message_from_template(
         rpc_client,
+        product_name=product_name,
         addressing=email_addressing_multiple_recipients,
         template_ref=ref,
         context=context,
@@ -198,6 +201,8 @@ async def test_send_message_from_template_with_multiple_recipients(
 
 
 async def test_send_message_from_template_not_found(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_single_recipient: EmailAddressing,
 ):
@@ -207,6 +212,7 @@ async def test_send_message_from_template_not_found(
     with pytest.raises(NotificationsTemplateNotFoundError):
         await send_message_from_template(
             rpc_client,
+            product_name=product_name,
             addressing=email_addressing_single_recipient,
             template_ref=ref,
             context=context,
@@ -214,7 +220,8 @@ async def test_send_message_from_template_not_found(
 
 
 async def test_send_message_from_template_invalid_context(
-    fake_product_data: dict[str, Any],
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_single_recipient: EmailAddressing,
 ):
@@ -222,12 +229,12 @@ async def test_send_message_from_template_invalid_context(
     # Missing required fields 'user' and 'link'
     context = {
         "invalid_key": "invalid_value",
-        "product": fake_product_data,
     }
 
     with pytest.raises(NotificationsTemplateContextValidationError):
         await send_message_from_template(
             rpc_client,
+            product_name=product_name,
             addressing=email_addressing_single_recipient,
             template_ref=ref,
             context=context,

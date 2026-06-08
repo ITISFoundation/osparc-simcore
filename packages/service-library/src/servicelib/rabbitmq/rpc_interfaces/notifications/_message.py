@@ -11,6 +11,7 @@ from models_library.notifications.rpc import (
     SendMessageResponse,
     TemplateRef,
 )
+from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter, validate_call
 
@@ -45,6 +46,7 @@ async def send_message(
 async def send_message_from_template(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
+    product_name: ProductName,
     addressing: Addressing,
     template_ref: TemplateRef,
     context: dict[str, Any],
@@ -54,6 +56,7 @@ async def send_message_from_template(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("send_message_from_template"),
         request=SendMessageFromTemplateRequest(
+            product_name=product_name,
             template_ref=template_ref,
             addressing=addressing,
             context=context,

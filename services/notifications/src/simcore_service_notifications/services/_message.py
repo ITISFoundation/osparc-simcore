@@ -13,6 +13,7 @@ from models_library.notifications.errors import (
     NotificationsTooManyRecipientsError,
 )
 from models_library.notifications.rpc import Addressing, EmailMessage, Message
+from models_library.products import ProductName
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
     submit_send_messages_task,
@@ -93,12 +94,13 @@ class MessageService:
     async def send_message_from_template(
         self,
         *,
+        product_name: ProductName,
         addressing: Addressing,
         ref: TemplateRef,
         context: dict[str, Any],
         owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
-        preview = self.template_service.preview_template(ref=ref, context=context)
+        preview = await self.template_service.preview_template(product_name=product_name, ref=ref, context=context)
         message = EmailMessage(
             addressing=addressing,
             content=preview.message_content.model_dump(),

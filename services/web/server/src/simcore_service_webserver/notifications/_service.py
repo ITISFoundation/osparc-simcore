@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from typing import Any, Final
 
 from aiohttp import web
@@ -34,7 +33,6 @@ from ..models import WebServerOwnerMetadata
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
-from ._helpers import get_product_data
 from ._models import (
     Contact,
     EmailAddressing,
@@ -150,14 +148,11 @@ async def preview_template(
     ref: TemplateRef,
     context: dict[str, Any],
 ) -> TemplatePreview:
-    product_data = get_product_data(app, product_name=product_name)
-
-    enriched_context = {**context, "product": asdict(product_data)}
-
     rpc_response = await remote_preview_template(
         get_rabbitmq_rpc_client(app),
+        product_name=product_name,
         ref=_RPC_TEMPLATE_REF_ADAPTER.validate_python(ref.model_dump()),
-        context=enriched_context,
+        context=context,
     )
     return TemplatePreview(**rpc_response.model_dump())
 
@@ -234,16 +229,14 @@ async def send_message_from_template(
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
-    product_data = get_product_data(app, product_name=product_name)
-    enriched_context = {**context, "product": asdict(product_data)}
-
     response = await remote_send_message_from_template(
         get_rabbitmq_rpc_client(app),
+        product_name=product_name,
         addressing=_RPC_ADDRESSING_ADAPTER.validate_python(addressing.model_dump()),
         template_ref=_RPC_TEMPLATE_REF_ADAPTER.validate_python(
             TemplateRef(channel=channel, template_name=template_name).model_dump()
         ),
-        context=enriched_context,
+        context=context,
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,

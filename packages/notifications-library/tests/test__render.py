@@ -2,12 +2,12 @@ import shutil
 from pathlib import Path
 
 from models_library.products import ProductName
-from notifications_library._models import ProductData
 from notifications_library._render import (
     create_render_environment_from_folder,
     create_render_environment_from_notifications_library,
 )
 from notifications_library._templates import _print_tree, _templates_dir
+from simcore_service_notifications.models.product import ProductData
 
 
 def test_render_env_from_folder(tmp_path: Path, product_name: ProductName, product_data: ProductData):

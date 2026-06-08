@@ -48,6 +48,7 @@ async def send_message_from_template(
 
     message_service = get_message_service(app)
     task_or_group_uuid, task_name = await message_service.send_message_from_template(
+        product_name=request.product_name,
         addressing=request.addressing,
         ref=TemplateRef(**request.template_ref.model_dump()),
         context=request.context,

@@ -33,12 +33,14 @@ def get_renderer(template_repository: TemplateRepository | None = None) -> Rende
 
 
 def get_template_service(
+    app: FastAPI,
     template_repository: TemplateRepository | None = None,
     renderer: Renderer | None = None,
 ) -> TemplateService:
     repo = template_repository if template_repository is not None else get_template_repository()
     rend = renderer if renderer is not None else get_renderer(repo)
-    return TemplateService(repo, rend)
+    product_repo = get_product_repository(app)
+    return TemplateService(repo, rend, product_repo)
 
 
 def get_message_service(
@@ -48,7 +50,7 @@ def get_message_service(
     settings: ApplicationSettings = app.state.settings
 
     return MessageService(
-        template_service if template_service is not None else get_template_service(),
+        template_service if template_service is not None else get_template_service(app),
         get_task_manager(app),
         settings,
     )

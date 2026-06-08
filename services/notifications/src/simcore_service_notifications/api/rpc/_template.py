@@ -34,9 +34,10 @@ async def preview_template(
     request: PreviewTemplateRequest,
 ) -> PreviewTemplateResponse:
     assert app  # nosec
-    service = get_template_service()
+    service = get_template_service(app)
 
-    preview = service.preview_template(
+    preview = await service.preview_template(
+        product_name=request.product_name,
         ref=TemplateRef(**request.ref.model_dump()),
         context=request.context,
     )
@@ -68,7 +69,7 @@ async def search_templates(
     """
     assert app  # nosec
 
-    service = get_template_service()
+    service = get_template_service(app)
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [
