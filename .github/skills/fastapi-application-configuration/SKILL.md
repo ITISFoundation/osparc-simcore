@@ -1,6 +1,6 @@
 ---
 name: fastapi-application-configuration
-description: 'Use this skill whenever modifying any FastAPI service application.py bootstrap file in this monorepo (for example services/*/src/*/core/application.py). Standardizes lifecycle wiring by migrating legacy startup/shutdown event handlers to LifespanManager, moving core/events.py orchestration into core/application.py, introducing configure_* plugin orchestration, privatizing internal lifespan functions, and updating tests after lifecycle refactors.'
+description: 'Use this skill whenever modifying any FastAPI service application.py bootstrap file in this monorepo (for example services/*/src/*/core/application.py). Standardizes lifecycle wiring by migrating legacy startup/shutdown event handlers to LifespanManager, moving core/events.py orchestration into core/application.py, introducing configure_* plugin orchestration, using servicelib.fastapi.lifespan_utils.configure_app_lifespan for ordered app banners/logging lifecycle, privatizing internal lifespan functions, and updating tests after lifecycle refactors.'
 argument-hint: 'Target service path (e.g. services/notifications) and migration type (events->lifespan or events.py->application.py)'
 user-invocable: true
 ---
@@ -11,6 +11,7 @@ user-invocable: true
 Apply a consistent FastAPI bootstrap pattern across services:
 - lifecycle orchestration lives in `core/application.py`
 - no legacy startup/shutdown event wiring remains (`@app.on_event`, `add_event_handler`)
+- app lifecycle is wrapped with `configure_app_lifespan(...)` from `servicelib.fastapi.lifespan_utils`
 - `configure_*` functions are the public integration surface
 - internal lifespan functions are private (`_...`)
 - tracing and prometheus use `configure_*` APIs
@@ -46,10 +47,17 @@ Use this skill when a service:
 - For shutdown-only behavior, keep setup as no-op and run cleanup after `yield`.
 - If code currently mutates `app.state`, keep that behavior identical.
 
+2.1 Prefer the shared app lifecycle wrapper for service application bootstrap.
+- In `create_app`, use `with configure_app_lifespan(...) as app_lifespan:`.
+- Pass `logging_lifespan` (if provided by caller), `starting_banner`, `started_banner`, and `shutdown_complete_banner`.
+- Create `FastAPI(..., lifespan=app_lifespan)` inside the `with` block.
+- Register plugins via `_configure_plugins(...)` inside the `with` block.
+- Do not keep local `_banners_lifespan` in service `application.py` once migrated.
+
 3. Move lifecycle orchestration into `core/application.py` when needed.
-- Create a local `LifespanManager` in `create_app`.
+- If using `configure_app_lifespan`, do not instantiate `LifespanManager` directly in `create_app`.
 - Add `_configure_plugins(...)` and call it after app state assignment.
-- Add banner lifespan (`_banners_lifespan`) in application module.
+- Keep `_configure_plugins(...)` focused on plugin wiring (do not add logging/banner lifespans there).
 - If a module still exposes only a lifespan function, add a public `configure_*` wrapper for it and call that wrapper from `_configure_plugins(...)` instead of registering the lifespan directly.
 
 4. Convert old setup calls to configure APIs.
@@ -61,17 +69,24 @@ Use this skill when a service:
 - Keep `configure_*` functions public.
 - Rename lifespan implementation functions to private (`_..._lifespan`) when used only through `configure_*`.
 - If needed, add missing configure wrappers in client/rpc modules.
+- For lifecycle publishers that only map values from lifespan state to `app.state`, use the generic `create_publisher_lifespan(...)` helper from `lifespan_utils.py` instead of module-local duplicated publisher lifespans.
 - For integrations backed by optional settings (`... | None`) or disabled-mode flags, guard calls in `_configure_plugins(...)` and invoke `configure_*` only when enabled; avoid registering plugins that only log a "disabled by settings" warning.
 
-6. Remove legacy events module when fully migrated.
+6. Update service metadata banners to match the shared lifecycle wrapper.
+- In service `_meta.py`, keep service-specific `APP_STARTED_BANNER_MSG` (ascii art, if present).
+- Add `APP_STARTING_BANNER_MSG = info.get_starting_banner()` when using `PackageInfo`-based metadata.
+- Keep `APP_FINISHED_BANNER_MSG = info.get_finished_banner()` and pass it as `shutdown_complete_banner`.
+- In services with mode-dependent started banners (for example worker vs server), compute the selected `started_banner` in `create_app` before calling `configure_app_lifespan(...)`.
+
+7. Remove legacy events module when fully migrated.
 - Delete `core/events.py` only after references are gone.
 - Ensure `core/application.py` no longer imports `core.events`.
 
-7. Update tests.
+8. Update tests.
 - Repoint monkeypatches from old symbols (often in `core.events`) to new `core.application` or module-level `configure_*` symbols.
 - For unit tests that should not hit external infra, patch the relevant `configure_*` entry points.
 
-8. Validate behavioral parity and finish.
+9. Validate behavioral parity and finish.
 - Run diagnostics for all touched files.
 - Run targeted unit tests for the service, then broader unit suite if practical.
 - Fix import ordering and formatting issues (for example with Ruff import rules).
@@ -89,10 +104,12 @@ Use this skill when a service:
 - No remaining references to `@app.on_event("startup")` / `@app.on_event("shutdown")`.
 - No remaining references to `add_event_handler("startup"|"shutdown", ...)`.
 - No remaining references to `core.events.create_app_lifespan`.
-- `create_app` uses `LifespanManager` directly.
+- `create_app` uses `configure_app_lifespan(...)` for app bootstrap lifecycle orchestration.
 - Tracing/prometheus use configure APIs.
 - Internal lifespan implementation functions are private where applicable.
 - `_configure_plugins(...)` only composes `configure_*` entry points, not raw lifespan callables.
+- `application.py` does not define service-local banner lifespan helpers when using `configure_app_lifespan(...)`.
+- service `_meta.py` exposes `APP_STARTING_BANNER_MSG`, `APP_STARTED_BANNER_MSG`, and `APP_FINISHED_BANNER_MSG` (or equivalent mode-aware started banner selection in `create_app`).
 - Optional/disabled integrations are conditionally configured in `_configure_plugins(...)` (no unconditional configure call when settings are `None` or feature mode is off).
 - Diagnostics are clean on touched files.
 - Targeted service tests pass.
