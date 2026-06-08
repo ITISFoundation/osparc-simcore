@@ -10,6 +10,7 @@ from ._template import TemplateRef
 
 
 class SendMessageRequest(BaseModel):
+    product_name: ProductName
     message: Annotated[
         Message,
         Field(
@@ -24,13 +25,11 @@ class SendMessageRequest(BaseModel):
             {
                 "examples": [
                     {
+                        "product_name": "osparc",
                         "message": {
                             "channel": "email",
                             "addressing": {
-                                "from": {
-                                    "name": "osparc support",
-                                    "email": "support@osparc.io",
-                                },
+                                "from_identity": "SUPPORT",
                                 "to": [
                                     {
                                         "name": "John Doe",
@@ -85,10 +84,7 @@ class SendMessageFromTemplateRequest(BaseModel):
                     {
                         "addressing": {
                             "channel": "email",
-                            "from": {
-                                "name": "osparc support",
-                                "email": "support@osparc.io",
-                            },
+                            "from_identity": "SUPPORT",
                             "to": [
                                 {
                                     "name": "John Doe",

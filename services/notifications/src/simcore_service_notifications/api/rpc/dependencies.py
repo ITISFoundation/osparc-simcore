@@ -51,6 +51,7 @@ def get_message_service(
 
     return MessageService(
         template_service if template_service is not None else get_template_service(app),
+        get_product_repository(app),
         get_task_manager(app),
         settings,
     )

@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 async def send_message(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
+    product_name: ProductName,
     message: Message,
     owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
@@ -33,6 +34,7 @@ async def send_message(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("send_message"),
         request=SendMessageRequest(
+            product_name=product_name,
             message=message,
             owner_metadata=OwnerMetadata.model_validate(owner_metadata.model_dump()) if owner_metadata else None,
         ),

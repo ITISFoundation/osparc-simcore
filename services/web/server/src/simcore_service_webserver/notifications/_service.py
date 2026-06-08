@@ -30,7 +30,6 @@ from servicelib.rabbitmq.rpc_interfaces.notifications import (
 )
 
 from ..models import WebServerOwnerMetadata
-from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._models import (
@@ -89,12 +88,7 @@ async def _create_email_addressing(
     Raises:
         NotificationsNoActiveRecipientsError: If no active recipients found.
     """
-    product = products_service.get_product(app, product_name)
-
-    from_contact = EmailContact(
-        name=f"{product.display_name} Support",
-        email=product.support_email,
-    )
+    _ = product_name  # from_ is now resolved by the notifications service
 
     to_contacts: list[EmailContact] = []
 
@@ -108,7 +102,6 @@ async def _create_email_addressing(
         raise NotificationsNoActiveRecipientsError
 
     return EmailAddressing(
-        from_=from_contact,
         to=to_contacts,
         reply_to=reply_to,
     )
@@ -195,6 +188,7 @@ async def send_message(
 
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
+        product_name=product_name,
         message=_RPC_MESSAGE_ADAPTER.validate_python(message.model_dump()),
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,

@@ -39,7 +39,6 @@ pytest_simcore_core_services_selection = [
 def single_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
         addressing=EmailAddressing(
-            from_=EmailContact(name="Sender", email=faker.email()),
             to=[EmailContact(name="Recipient", email=faker.email())],
         ),
         content=EmailContent(
@@ -54,7 +53,6 @@ def single_recipient_email_message(faker: Faker) -> EmailMessage:
 def multi_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
         addressing=EmailAddressing(
-            from_=EmailContact(name="Sender", email=faker.email()),
             to=[
                 EmailContact(name="First", email=faker.email()),
                 EmailContact(name="Second", email=faker.email()),
@@ -71,32 +69,29 @@ def multi_recipient_email_message(faker: Faker) -> EmailMessage:
 @pytest.fixture
 def email_addressing_single_recipient(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
-        **{
-            "from": {"name": "Sender", "email": faker.email()},
-            "to": [{"name": "Recipient", "email": faker.email()}],
-        }
+        to=[{"name": "Recipient", "email": faker.email()}],
     )
 
 
 @pytest.fixture
 def email_addressing_multiple_recipients(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
-        **{
-            "from": {"name": "Sender", "email": faker.email()},
-            "to": [
-                {"name": "First Recipient", "email": faker.email()},
-                {"name": "Second Recipient", "email": faker.email()},
-            ],
-        }
+        to=[
+            {"name": "First Recipient", "email": faker.email()},
+            {"name": "Second Recipient", "email": faker.email()},
+        ],
     )
 
 
 async def test_send_message_single_recipient(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     single_recipient_email_message: EmailMessage,
 ):
     response = await send_message(
         rpc_client,
+        product_name=product_name,
         message=single_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
@@ -105,6 +100,8 @@ async def test_send_message_single_recipient(
 
 
 async def test_send_message_with_owner_metadata(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     single_recipient_email_message: EmailMessage,
     mocker: MockerFixture,
@@ -124,6 +121,7 @@ async def test_send_message_with_owner_metadata(
 
     response = await send_message(
         rpc_client,
+        product_name=product_name,
         message=single_recipient_email_message,
         owner_metadata=owner_metadata,
     )
@@ -140,11 +138,14 @@ async def test_send_message_with_owner_metadata(
 
 
 async def test_send_message_multiple_recipients(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     multi_recipient_email_message: EmailMessage,
 ):
     response = await send_message(
         rpc_client,
+        product_name=product_name,
         message=multi_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
@@ -242,13 +243,14 @@ async def test_send_message_from_template_invalid_context(
 
 
 async def test_send_message_too_many_recipients(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     faker: Faker,
 ):
     too_many_recipients = [EmailContact(name=f"Recipient {i}", email=faker.email()) for i in range(21)]
     message = EmailMessage(
         addressing=EmailAddressing(
-            from_=EmailContact(name="Sender", email=faker.email()),
             to=too_many_recipients,
         ),
         content=EmailContent(
@@ -261,5 +263,6 @@ async def test_send_message_too_many_recipients(
     with pytest.raises(NotificationsTooManyRecipientsError):
         await send_message(
             rpc_client,
+            product_name=product_name,
             message=message,
         )

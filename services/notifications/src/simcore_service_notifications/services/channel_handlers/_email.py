@@ -19,9 +19,13 @@ class EmailChannelHandler(ChannelHandler):
     """Handles email channel: validates and fans out into per-recipient payloads."""
 
     @staticmethod
-    def prepare_messages(message: EmailMessage) -> list[dict[str, Any]]:
+    def prepare_messages(message: EmailMessage, *, resolved_from: EmailContact | None = None) -> list[dict[str, Any]]:
+        if resolved_from is None:
+            msg = "resolved_from is required for email messages"
+            raise ValueError(msg)
+
         content_dict = message.content.model_dump()
-        from_dict = message.addressing.from_.model_dump()
+        from_dict = resolved_from.model_dump()
         bcc_dict = message.addressing.bcc.model_dump() if message.addressing.bcc else None
         reply_to_dict = message.addressing.reply_to.model_dump() if message.addressing.reply_to else None
 

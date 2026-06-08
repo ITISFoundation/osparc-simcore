@@ -202,10 +202,6 @@ class EmailProvider(NotificationProvider):
         full_name = " ".join(part for part in (data.first_name, data.last_name) if part) or (data.user_name or "")
 
         addressing = EmailAddressing(
-            from_=EmailContact(
-                name=f"{data.display_name} support",
-                email=data.support_email,
-            ),
             to=[
                 EmailContact(
                     name=full_name,

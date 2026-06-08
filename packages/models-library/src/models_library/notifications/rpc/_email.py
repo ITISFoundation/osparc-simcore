@@ -1,8 +1,16 @@
+from enum import auto
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from models_library.utils.enums import StrAutoEnum
+
 from .. import Channel
+
+
+class FromIdentity(StrAutoEnum):
+    SUPPORT = auto()
+    NO_REPLY = auto()
 
 
 class EmailContact(BaseModel):
@@ -22,7 +30,7 @@ class EmailContent(BaseModel):
 
 
 class EmailAddressing(BaseModel):
-    from_: Annotated[EmailContact, Field(alias="from")]
+    from_identity: FromIdentity = FromIdentity.SUPPORT
     to: list[EmailContact]
     bcc: EmailContact | None = None
     reply_to: EmailContact | None = None
@@ -31,8 +39,6 @@ class EmailAddressing(BaseModel):
 
     model_config = ConfigDict(
         frozen=True,
-        validate_by_alias=True,
-        validate_by_name=True,
     )
 
 

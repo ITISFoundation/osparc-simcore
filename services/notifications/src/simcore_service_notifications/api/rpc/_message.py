@@ -27,6 +27,7 @@ async def send_message(
 
     message_service = get_message_service(app)
     task_or_group_uuid, task_name = await message_service.send_message(
+        product_name=request.product_name,
         message=request.message,
         owner_metadata=request.owner_metadata,
     )
