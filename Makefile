@@ -608,9 +608,9 @@ promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-G
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
-		@if [ "$$CI" != "true" ]; then \
-			# upgrading uv
-			-@uv self --quiet update
+		# upgrading uv
+		@if [ "${GITHUB_ACTIONS}" != "true" ]; then \
+			-uv self --quiet update; \
 		fi
 
 
