@@ -1,6 +1,6 @@
 ---
 name: healthcheck
-description: 'Single-service guide to add a FastAPI health endpoint and bind Docker HEALTHCHECK to it using common_library.docker_healthcheck. Use when: implementing health route behavior (200/503), wiring HealthCheckError handler, updating one target service Dockerfile, adding worker-mode healthchecks, and adding focused health tests.'
+description: 'Single-service guide to add a FastAPI health endpoint and bind Docker HEALTHCHECK to it using scripts/docker/docker_healthcheck.py. Use when: implementing health route behavior (200/503), wiring HealthCheckError handler, updating one target service Dockerfile, adding worker-mode healthchecks, and adding focused health tests.'
 argument-hint: target_service=<service-name>
 ---
 
@@ -18,7 +18,7 @@ For the given `target_service`, produce:
 
 1. A health endpoint that returns `200` when healthy, `503` when unhealthy
 2. Error handling that maps `HealthCheckError` → `503 PlainTextResponse`
-3. A Dockerfile `HEALTHCHECK` bound to that endpoint via `common_library.docker_healthcheck`
+3. A Dockerfile `HEALTHCHECK` bound to that endpoint via `docker_healthcheck.py`
 4. If the service has worker containers (no HTTP server): heartbeat-mode healthcheck
 5. Tests proving healthcheck behavior works as expected
 6. If this is a new service healthcheck, update the healthcheck table in `services/README.md`
@@ -38,7 +38,7 @@ For the given `target_service`, produce:
 
 | Component | Location | Role |
 |---|---|---|
-| `common_library.docker_healthcheck` | `packages/common-library/src/common_library/docker_healthcheck.py` | Docker HEALTHCHECK CMD entry-point. HTTP GET (default) or heartbeat file check (`HEALTHCHECK_MODE=heartbeat`). |
+| `docker_healthcheck.py` | `scripts/docker/docker_healthcheck.py` | Docker HEALTHCHECK CMD entry-point. HTTP GET (default) or heartbeat file check (`HEALTHCHECK_MODE=heartbeat`). |
 | `servicelib.fastapi.health` | `packages/service-library/src/servicelib/fastapi/health.py` | `HealthCheckError` exception + `health_check_error_handler` → 503 plain-text response. |
 | `servicelib.fastapi.http_error` | `packages/service-library/src/servicelib/fastapi/http_error.py` | `set_app_default_http_error_handlers` — auto-registers `HealthCheckError` handler alongside other defaults. |
 | `common_library.heartbeat` | `packages/common-library/src/common_library/heartbeat.py` | File-based heartbeat for worker (non-HTTP) processes: `update_heartbeat()` writes timestamp, `is_healthy()` checks recency. |
@@ -46,7 +46,7 @@ For the given `target_service`, produce:
 
 ### Two Healthcheck Modes
 
-1. **HTTP mode** (default): `common_library.docker_healthcheck` does HTTP GET to a URL. Returns healthy if status=200.
+1. **HTTP mode** (default): `docker_healthcheck.py` does HTTP GET to a URL. Returns healthy if status=200.
 2. **Heartbeat mode**: Set `HEALTHCHECK_MODE=heartbeat` in environment. Script checks file-based heartbeat instead of HTTP. Used for worker containers with no HTTP server.
 
 ### Standard Dockerfile HEALTHCHECK Parameters
@@ -58,7 +58,7 @@ HEALTHCHECK \
   --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/"]
 ```
 
 
@@ -177,7 +177,7 @@ update_heartbeat()
       HEALTHCHECK_MODE: heartbeat
 ```
 
-The Dockerfile `HEALTHCHECK` CMD stays unchanged — `common_library.docker_healthcheck` reads `HEALTHCHECK_MODE` at runtime and switches to heartbeat file check.
+The Dockerfile `HEALTHCHECK` CMD stays unchanged — `docker_healthcheck.py` reads `HEALTHCHECK_MODE` at runtime and switches to heartbeat file check.
 
 ### Step 5: Bind Docker HEALTHCHECK to Shared Script
 
@@ -191,7 +191,7 @@ HEALTHCHECK \
   --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/"]
 ```
 
 Rules:
@@ -228,7 +228,7 @@ async def test_healthcheck_unhealthy_rabbitmq(
 
 1. Run `target_service` health tests: `pytest tests/unit -k health`
 2. Confirm unhealthy path returns `503` (not `500`).
-3. Confirm Dockerfile uses `common_library.docker_healthcheck` with correct endpoint URL.
+3. Confirm Dockerfile uses `scripts/docker/docker_healthcheck.py` with correct endpoint URL.
 4. If worker-mode: verify `HEALTHCHECK_MODE: heartbeat` is set in compose for worker services.
 5. If a new service healthcheck was added, update the per-service healthcheck table in `services/README.md`.
 
@@ -241,7 +241,7 @@ Implementation for `target_service` is complete when all are true:
 1. Health endpoint returns `200` when healthy.
 2. Health endpoint returns `503` when dependency checks fail.
 3. `HealthCheckError` is mapped to `503` via handler (explicit or via `set_app_default_http_error_handlers`).
-4. Dockerfile `HEALTHCHECK` is bound to `python3 -m common_library.docker_healthcheck`.
+4. Dockerfile `HEALTHCHECK` is bound to `python3 -S docker/healthcheck.py`.
 5. If worker containers exist: `HEALTHCHECK_MODE=heartbeat` set in compose + `update_heartbeat()` called in task loop.
 6. Tests for healthy/unhealthy health endpoint behavior pass.
 7. If this introduces a new service healthcheck, the per-service table in `services/README.md` is updated.

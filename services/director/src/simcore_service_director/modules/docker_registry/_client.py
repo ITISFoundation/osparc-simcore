@@ -7,14 +7,13 @@ from collections.abc import AsyncGenerator, Mapping
 from typing import Any, Final, cast
 
 import httpx
-from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
-from servicelib.background_task import create_periodic_task
+from models_library.basic_regex import SIMPLE_VERSION_RE
 from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.tracing import traced
 from servicelib.utils import limited_as_completed
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -23,33 +22,32 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 from yarl import URL
 
-from .constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
-from .core.errors import (
+from ...constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
+from ...core.errors import (
     DirectorRuntimeError,
     DockerRegistryUnsupportedManifestSchemaVersionError,
     RegistryConnectionError,
     ServiceNotAvailableError,
 )
-from .core.settings import ApplicationSettings, get_application_settings
+from ...core.settings import ApplicationSettings, get_application_settings
 
-DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
+_DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
 
-VERSION_REG = re.compile(
-    r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
-)
+_VERSION_REG: Final[re.Pattern] = re.compile(SIMPLE_VERSION_RE)
 
 _logger = logging.getLogger(__name__)
-
-#
-# NOTE: if you are refactoring this module,
-# please consider reusing packages/pytest-simcore/src/pytest_simcore/helpers/docker_registry.py
-#
 
 
 class ServiceType(enum.Enum):
     ALL = ""
     COMPUTATIONAL = "comp"
     DYNAMIC = "dynamic"
+
+
+def _normalize_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
+    if not headers:
+        return {}
+    return {str(k).lower(): str(v) for k, v in headers.items()}
 
 
 async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **request_kwargs) -> tuple[dict, Mapping]:
@@ -200,11 +198,11 @@ async def registry_request(
     use_cache: bool,
     **request_kwargs,
 ) -> tuple[dict, Mapping]:
-    cache: SimpleMemoryCache = app.state.registry_cache_memory
+    cache: BaseCache | None = app.state.registry_cache
     cache_key = f"{method}_{path}"
-    if use_cache and (cached_response := await cache.get(cache_key)):
-        assert isinstance(cached_response, tuple)  # nosec
-        return cast(tuple[dict, Mapping], cached_response)
+    if use_cache and cache and (cached_response := await cache.get(cache_key)):
+        cached_body, cached_headers = cast(tuple[dict, Mapping], cached_response)
+        return cached_body, _normalize_headers(cached_headers)
     # Add proper Accept headers for manifest requests for accepting both v1 and v2
     if "manifests/" in path and method.upper() == "GET":
         headers = request_kwargs.get("headers", {})
@@ -232,16 +230,20 @@ async def registry_request(
         raise DirectorRuntimeError(msg=msg) from exc
 
     if app_settings.DIRECTOR_REGISTRY_CACHING and method.upper() == "GET":
+        normalized_headers = _normalize_headers(response_headers)
+        assert cache is not None  # nosec
         await cache.set(
             cache_key,
-            (response, response_headers),
-            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
+            (response, normalized_headers),
+            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds()
+            * 2,  # cache TTL should be longer than refresh interval to avoid cache misses
         )
+        return response, normalized_headers
 
-    return response, response_headers
+    return response, _normalize_headers(response_headers)
 
 
-async def _setup_registry(app: FastAPI) -> None:
+async def setup_registry_connection(app: FastAPI) -> None:
     @retry(
         wait=wait_fixed(1),
         before_sleep=before_sleep_log(_logger, logging.WARNING),
@@ -253,36 +255,6 @@ async def _setup_registry(app: FastAPI) -> None:
 
     with log_context(_logger, logging.INFO, msg="Connecting to docker registry"):
         await _wait_until_registry_responsive(app)
-
-
-@traced
-async def _list_all_services_task(*, app: FastAPI) -> None:
-    with log_context(_logger, logging.INFO, msg="Updating cache with services"):
-        await list_services(app, ServiceType.ALL, update_cache=True)
-
-
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        cache = Cache(Cache.MEMORY)
-        assert isinstance(cache, SimpleMemoryCache)  # nosec
-        app.state.registry_cache_memory = cache
-        await _setup_registry(app)
-        app_settings = get_application_settings(app)
-        app.state.auto_cache_task = None
-        if app_settings.DIRECTOR_REGISTRY_CACHING:
-            app.state.auto_cache_task = create_periodic_task(
-                _list_all_services_task,
-                interval=app_settings.DIRECTOR_REGISTRY_CACHING_TTL / 2,
-                task_name="director-auto-cache-task",
-                app=app,
-            )
-
-    async def on_shutdown() -> None:
-        if app.state.auto_cache_task:
-            await cancel_wait_task(app.state.auto_cache_task)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
 
 
 def _get_prefix(service_type: ServiceType) -> str:
@@ -311,8 +283,8 @@ async def _list_repositories_gen(
         prefetch_task: asyncio.Task | None = None
         try:
             while True:
-                if "Link" in headers:
-                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                if link_header := headers.get("link"):
+                    next_path = str(link_header).split(";")[0].strip("<>").removeprefix("/v2/")
                     prefetch_task = asyncio.create_task(
                         registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
                     )
@@ -345,8 +317,8 @@ async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=Fals
         prefetch_task: asyncio.Task | None = None
         try:
             while True:
-                if "Link" in headers:
-                    next_path = str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                if link_header := headers.get("link"):
+                    next_path = str(link_header).split(";")[0].strip("<>").removeprefix("/v2/")
                     prefetch_task = asyncio.create_task(
                         registry_request(app, path=next_path, method="GET", use_cache=not update_cache)
                     )
@@ -356,7 +328,7 @@ async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=Fals
                 yield (
                     list(
                         filter(
-                            VERSION_REG.match,
+                            _VERSION_REG.match,
                             tags["tags"],
                         )
                     )
@@ -381,7 +353,7 @@ async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     return image_tags
 
 
-_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "Docker-Content-Digest"
+_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "docker-content-digest"
 
 
 async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
@@ -421,12 +393,12 @@ async def get_image_labels(
                     "application/vnd.docker.distribution.manifest.list.v2+json",
                     "application/vnd.oci.image.index.v1+json",
                 ):
-                    # default to x86_64 architecture
-                    _logger.info(
-                        "Docker image %s:%s contains multiple architectures. "
+                    _logger.debug(
+                        "Docker image %s:%s contains multiple architectures %s. "
                         "Currently defaulting to first architecture",
                         image,
                         tag,
+                        [manifest.get("platform", {}) for manifest in request_result.get("manifests", [])],
                     )
                     manifests = request_result.get("manifests", [])
                     if not manifests:
@@ -534,15 +506,15 @@ async def list_services(app: FastAPI, service_type: ServiceType, *, update_cache
 async def list_interactive_service_dependencies(app: FastAPI, service_key: str, service_tag: str) -> list[dict]:
     image_labels, _ = await get_image_labels(app, service_key, service_tag)
     dependency_keys = []
-    if DEPENDENCIES_LABEL_KEY in image_labels:
+    if _DEPENDENCIES_LABEL_KEY in image_labels:
         try:
-            dependencies = json_loads(image_labels[DEPENDENCIES_LABEL_KEY])
+            dependencies = json_loads(image_labels[_DEPENDENCIES_LABEL_KEY])
             dependency_keys = [{"key": dependency["key"], "tag": dependency["tag"]} for dependency in dependencies]
 
         except json.decoder.JSONDecodeError:
             logging.exception(
                 "Incorrect json formatting in %s, skipping...",
-                image_labels[DEPENDENCIES_LABEL_KEY],
+                image_labels[_DEPENDENCIES_LABEL_KEY],
             )
 
     return dependency_keys
