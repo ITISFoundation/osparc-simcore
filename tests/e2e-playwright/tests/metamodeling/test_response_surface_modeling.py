@@ -379,11 +379,12 @@ def create_function_from_project(  # noqa: C901, PLR0912, PLR0915
             if len(jobs) < limit:
                 break
 
-        # 3. Delete the function itself
+        # 3. Delete the function itself (functions live on the api-server, not web-server)
         _delete_with_retry(
             api_request_context,
-            f"{product_url}v0/functions/{function_uuid}",
+            f"{api_server_url}v0/functions/{function_uuid}",
             f"function {function_uuid}",
+            headers=auth_headers,
         )
 
         # 4. Delete the source study (templateId) the function was created from
