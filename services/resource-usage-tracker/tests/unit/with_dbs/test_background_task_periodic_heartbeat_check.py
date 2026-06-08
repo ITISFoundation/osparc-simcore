@@ -329,11 +329,6 @@ async def test_close_unhealthy_computational_service_sends_reimbursement_notific
         f"{background_task_periodic_heartbeat_check.__name__}.notify_user_of_credit_reimbursement",
         autospec=True,
     )
-    mocker.patch(
-        f"{background_task_periodic_heartbeat_check.__name__}.get_product_email_info",
-        autospec=True,
-        return_value=ProductEmailInfo(display_name="osparc", support_email="support@osparc.io"),
-    )
 
     await _run_checks_until_service_deemed_unhealthy(initialized_app, postgres_db)
 
