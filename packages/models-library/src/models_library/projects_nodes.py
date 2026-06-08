@@ -356,7 +356,7 @@ class Node(BaseModel):
     @field_validator("thumbnail", mode="before")
     @classmethod
     def _convert_empty_str_to_none(cls, v):
-        if isinstance(v, str) and v == "":
+        if isinstance(v, str) and not v:
             return None
         return v
 
