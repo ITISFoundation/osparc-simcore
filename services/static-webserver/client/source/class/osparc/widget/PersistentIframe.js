@@ -186,6 +186,11 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     },
 
     maximizeIFrame: function(maximize) {
+      if (maximize === this.hasState("maximized")) {
+        // Already in the desired state, just sync the button
+        this.__syncZoomButton(maximize);
+        return;
+      }
       if (maximize) {
         this.fireEvent("maximize");
         this.addState("maximized");
@@ -193,13 +198,17 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         this.fireEvent("restore");
         this.removeState("maximized");
       }
+      this.__syncZoomButton(maximize);
+      qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
+    },
+
+    __syncZoomButton: function(maximize) {
       const actionButton = this.__zoomButton;
       actionButton.set({
         label: this.self().getZoomLabel(maximize),
         icon: this.self().getZoomIcon(maximize)
       });
       osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
-      qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     },
 
     __syncIframePos: function() {
@@ -231,6 +240,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         });
 
         this.__buttonsContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__syncZoomButton(this.hasState("maximized"));
       }, 0);
     },
 
