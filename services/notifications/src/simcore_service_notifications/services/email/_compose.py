@@ -1,6 +1,7 @@
 import mimetypes
 from email.headerregistry import Address
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid
 
 
 def compose_email(
@@ -28,6 +29,15 @@ def compose_email(
         msg["Bcc"] = bcc
 
     msg["Subject"] = subject
+
+    # Always set Date and Message-ID explicitly:
+    # - Postal SMTP: does not add them automatically (github.com/postalserver/postal/issues/153)
+    # - AWS SES SMTP: silently overwrites both with its own values regardless — no side effect
+    # - Other providers: behaviour varies; setting them here is always safe
+    msg["Date"] = formatdate(localtime=True)
+    sender = from_.addr_spec
+    sender_domain = sender.split("@", 1)[1]
+    msg["Message-ID"] = make_msgid(domain=sender_domain)
 
     if extra_headers:
         for name, value in extra_headers.items():
