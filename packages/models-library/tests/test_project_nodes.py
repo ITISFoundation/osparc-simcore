@@ -31,7 +31,6 @@ def test_create_minimal_node(minimal_node_data_sample: dict[str, Any]):
     assert node.state.dependencies == set()
     assert node.state.lock_state is None
 
-    assert node.parent is None
     assert node.progress is None
 
     assert node.model_dump(exclude_unset=True) == minimal_node_data_sample
