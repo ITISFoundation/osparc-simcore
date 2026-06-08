@@ -1,9 +1,8 @@
 import logging
-from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
-from servicelib.fastapi.lifespan_utils import Lifespan
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.monitoring import (
     configure_prometheus_instrumentation,
 )
@@ -20,6 +19,7 @@ from .._meta import (
     APP_NAME,
     APP_SHUTDOWN_BANNER_MSG,
     APP_STARTED_BANNER_MSG,
+    APP_STARTING_BANNER_MSG,
     APP_WORKER_STARTED_BANNER_MSG,
     SUMMARY,
     VERSION,
@@ -35,26 +35,12 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-async def _banners_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    settings: ApplicationSettings = app.state.settings
-    if settings.NOTIFICATIONS_WORKER_MODE:
-        print(APP_WORKER_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-    else:
-        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-    yield {}
-    print(APP_SHUTDOWN_BANNER_MSG, flush=True)  # noqa: T201
-
-
 def _configure_plugins(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
-    logging_lifespan: Lifespan | None,
 ) -> None:
-    if logging_lifespan:
-        app_lifespan.add(logging_lifespan)
-
     configure_postgres_database(
         app_lifespan,
         settings=settings.NOTIFICATIONS_POSTGRES,
@@ -78,8 +64,6 @@ def _configure_plugins(
             tracing_config=tracing_config,
         )
 
-    app_lifespan.add(_banners_lifespan)
-
 
 def create_app(
     settings: ApplicationSettings | None = None,
@@ -91,23 +75,29 @@ def create_app(
         service_name=APP_NAME, tracing_settings=settings.NOTIFICATIONS_TRACING
     )
 
-    app_lifespan = LifespanManager()
+    started_banner = APP_WORKER_STARTED_BANNER_MSG if settings.NOTIFICATIONS_WORKER_MODE else APP_STARTED_BANNER_MSG
 
     assert settings.SC_BOOT_MODE  # nosec
-    app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
-        title=APP_NAME,
-        description=SUMMARY,
-        version=f"{VERSION}",
-        openapi_url=f"/api/{API_VTAG}/openapi.json",
-        lifespan=app_lifespan,
-        **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
-    )
-    override_fastapi_openapi_method(app)
-    app.state.settings = settings
-    app.state.tracing_config = tracing_config
+    with configure_app_lifespan(
+        logging_lifespan=logging_lifespan,
+        starting_banner=APP_STARTING_BANNER_MSG,
+        started_banner=started_banner,
+        shutdown_complete_banner=APP_SHUTDOWN_BANNER_MSG,
+    ) as app_lifespan:
+        app = FastAPI(
+            debug=settings.SC_BOOT_MODE.is_devel_mode(),
+            title=APP_NAME,
+            description=SUMMARY,
+            version=f"{VERSION}",
+            openapi_url=f"/api/{API_VTAG}/openapi.json",
+            lifespan=app_lifespan,
+            **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
+        )
+        override_fastapi_openapi_method(app)
+        app.state.settings = settings
+        app.state.tracing_config = tracing_config
 
-    _configure_plugins(app, app_lifespan, settings, tracing_config, logging_lifespan)
+        _configure_plugins(app, app_lifespan, settings, tracing_config)
 
     configure_rest_api(app)
 

@@ -1,11 +1,9 @@
-from collections.abc import AsyncIterator
-
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.docker import (
     configure_remote_docker_client,
 )
-from servicelib.fastapi.lifespan_utils import Lifespan
+from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.monitoring import (
     configure_prometheus_instrumentation,
 )
@@ -23,6 +21,7 @@ from .._meta import (
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTED_BANNER_MSG,
+    APP_STARTING_BANNER_MSG,
     PROJECT_NAME,
     SUMMARY,
 )
@@ -42,23 +41,12 @@ from ..services.status_monitor import configure_status_monitor
 from .settings import ApplicationSettings
 
 
-async def _banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    _ = app
-    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-    yield {}
-    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
-
-
 def _configure_plugins(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
-    logging_lifespan: Lifespan | None,
 ) -> None:
-    if logging_lifespan:
-        app_lifespan.add(logging_lifespan)
-
     configure_postgres_database(
         app_lifespan,
         settings=settings.DYNAMIC_SCHEDULER_POSTGRES,
@@ -90,8 +78,6 @@ def _configure_plugins(
             tracing_config=tracing_config,
         )
 
-    app_lifespan.add(_banner_lifespan)
-
 
 def create_app(
     settings: ApplicationSettings | None = None,
@@ -104,30 +90,34 @@ def create_app(
         service_name=APP_NAME,
     )
 
-    app_lifespan = LifespanManager()
+    with configure_app_lifespan(
+        logging_lifespan=logging_lifespan,
+        starting_banner=APP_STARTING_BANNER_MSG,
+        started_banner=APP_STARTED_BANNER_MSG,
+        shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
+    ) as app_lifespan:
+        app = FastAPI(
+            title=f"{PROJECT_NAME} web API",
+            description=SUMMARY,
+            version=API_VERSION,
+            openapi_url=f"/api/{API_VTAG}/openapi.json",
+            docs_url=("/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None),
+            redoc_url=None,
+            lifespan=app_lifespan,
+        )
+        override_fastapi_openapi_method(app)
 
-    app = FastAPI(
-        title=f"{PROJECT_NAME} web API",
-        description=SUMMARY,
-        version=API_VERSION,
-        openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url=("/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None),
-        redoc_url=None,
-        lifespan=app_lifespan,
-    )
-    override_fastapi_openapi_method(app)
+        # STATE
+        app.state.settings = app_settings
+        app.state.tracing_config = app_tracing_config
+        assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
-    # STATE
-    app.state.settings = app_settings
-    app.state.tracing_config = app_tracing_config
-    assert app.state.settings.API_VERSION == API_VERSION  # nosec
+        configure_rest_api(app)
+        configure_frontend(app)
 
-    configure_rest_api(app)
-    configure_frontend(app)
+        if app_settings.DYNAMIC_SCHEDULER_PROFILING:
+            configure_profiler(app)
 
-    if app_settings.DYNAMIC_SCHEDULER_PROFILING:
-        configure_profiler(app)
-
-    _configure_plugins(app, app_lifespan, app_settings, app_tracing_config, logging_lifespan)
+        _configure_plugins(app, app_lifespan, app_settings, app_tracing_config)
 
     return app

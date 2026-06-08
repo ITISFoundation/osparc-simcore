@@ -1,11 +1,10 @@
 import logging
-from collections.abc import AsyncIterator
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
+from fastapi_lifespan_manager import LifespanManager
 from models_library.basic_types import BootModeEnum
-from servicelib.fastapi.lifespan_utils import Lifespan
+from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.monitoring import configure_prometheus_instrumentation
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.postgres_lifespan import configure_postgres_database
@@ -17,6 +16,7 @@ from .._meta import (
     API_VTAG,
     APP_FINISHED_BANNER_MSG,
     APP_STARTED_BANNER_MSG,
+    APP_STARTING_BANNER_MSG,
     PROJECT_NAME,
     SUMMARY,
 )
@@ -32,22 +32,12 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-async def _banners_lifespan(_: FastAPI) -> AsyncIterator[State]:
-    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-    yield {}
-    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
-
-
 def _configure_plugins(
     app: FastAPI,
     app_lifespan: LifespanManager,
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
-    logging_lifespan: Lifespan | None,
 ) -> None:
-    if logging_lifespan:
-        app_lifespan.add(logging_lifespan)
-
     configure_postgres_database(
         app_lifespan,
         settings=settings.CATALOG_POSTGRES,
@@ -69,8 +59,6 @@ def _configure_plugins(
             tracing_config=tracing_config,
         )
 
-    app_lifespan.add(_banners_lifespan)
-
 
 def create_app(
     *,
@@ -85,25 +73,29 @@ def create_app(
             json_dumps(settings, indent=2, sort_keys=True),
         )
 
-    app_lifespan = LifespanManager()
+    with configure_app_lifespan(
+        logging_lifespan=logging_lifespan,
+        starting_banner=APP_STARTING_BANNER_MSG,
+        started_banner=APP_STARTED_BANNER_MSG,
+        shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
+    ) as app_lifespan:
+        app = FastAPI(
+            debug=settings.SC_BOOT_MODE in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+            title=PROJECT_NAME,
+            description=SUMMARY,
+            version=API_VERSION,
+            openapi_url=f"/api/{API_VTAG}/openapi.json",
+            docs_url="/dev/doc",
+            redoc_url=None,  # default disabled
+            lifespan=app_lifespan,
+        )
+        override_fastapi_openapi_method(app)
 
-    app = FastAPI(
-        debug=settings.SC_BOOT_MODE in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
-        title=PROJECT_NAME,
-        description=SUMMARY,
-        version=API_VERSION,
-        openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
-        redoc_url=None,  # default disabled
-        lifespan=app_lifespan,
-    )
-    override_fastapi_openapi_method(app)
+        # STATE
+        app.state.settings = settings
+        app.state.tracing_config = tracing_config
 
-    # STATE
-    app.state.settings = settings
-    app.state.tracing_config = tracing_config
-
-    _configure_plugins(app, app_lifespan, settings, tracing_config, logging_lifespan)
+        _configure_plugins(app, app_lifespan, settings, tracing_config)
 
     # ROUTES & ERROR HANDLERS
     configure_rest_api(app)
