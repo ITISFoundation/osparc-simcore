@@ -147,6 +147,10 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 RUN chmod +x services/dask-sidecar/docker/*.sh
 
+# Copies healthcheck script for fast execution (python3 -S skips site-packages)
+COPY --chown=scu:scu \
+  scripts/docker/docker_healthcheck.py \
+  docker/healthcheck.py
 
 # WARNING: This image is used for dask-scheduler and dask-worker.
 # In order to have the same healthy entrypoint port
@@ -159,7 +163,7 @@ HEALTHCHECK \
   --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://127.0.0.1:8787/health"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://127.0.0.1:8787/health"]
 
 ENTRYPOINT [ "/bin/sh", "services/dask-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]

@@ -1,25 +1,28 @@
 #!/bin/python
 """Healthcheck script to run inside docker containers.
 
-Example of usage in a Dockerfile:
+This script is designed to be **standalone** — it only uses the Python standard
+library so that it can be invoked with ``python3 -S`` (skipping site-packages)
+for near-instant startup even in containers with hundreds of installed packages.
+
+Recommended usage in a Dockerfile (fast — skips site-packages scanning):
 ```
+    COPY --chown=scu:scu \
+        scripts/docker/docker_healthcheck.py \
+        docker/healthcheck.py
+
     HEALTHCHECK --interval=30s \
                 --timeout=30s \
                 --start-period=20s \
                 --start-interval=1s \
                 --retries=3 \
-                CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8080/v0/"]
-```
-
-Alternative script invocation (same module):
-```
-    CMD ["python3", "-c", "from common_library.docker_healthcheck import main; raise SystemExit(main())", "http://localhost:8080/v0/"]
+                CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8080/v0/"]
 ```
 
 Worker-mode (heartbeat) usage:
     When a container runs as a Celery worker (no HTTP server), set
     ``HEALTHCHECK_MODE=heartbeat`` in the environment. The script will
-    check the heartbeat file written by ``common_library.heartbeat.update_heartbeat()``
+    check a heartbeat file (written by ``common_library.heartbeat.update_heartbeat()``)
     instead of making an HTTP request.
 
 Q&A:
@@ -29,7 +32,10 @@ Q&A:
 
 import os
 import sys
+import tempfile
+import time
 from contextlib import suppress
+from pathlib import Path
 from typing import Final
 from urllib.request import urlopen
 
@@ -45,11 +51,16 @@ HEALTHCHECK_MODE: Final = os.environ.get("HEALTHCHECK_MODE", "")
 HTTP_STATUS_OK: Final = 200
 MIN_REQUIRED_ARGS: Final = 2
 
+_HEARTBEAT_FILE: Final[Path] = Path(tempfile.gettempdir()) / "heartbeat"
+_HEARTBEAT_THRESHOLD_SECONDS: Final = 10
+
 
 def _is_heartbeat_healthy() -> bool:
-    from .heartbeat import is_healthy  # noqa: PLC0415
-
-    return is_healthy()
+    try:
+        heartbeat = float(_HEARTBEAT_FILE.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return False
+    return (time.time() - heartbeat) <= _HEARTBEAT_THRESHOLD_SECONDS
 
 
 def is_service_healthy() -> bool:
