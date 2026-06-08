@@ -3,9 +3,11 @@
 # pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-branches
 # pylint:disable=too-many-statements
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
+# pylint:disable=broad-exception-caught
 
 import base64
 import json
@@ -45,6 +47,8 @@ _SELECT_FUNCTION_RETRY_WAIT_SECONDS: Final[int] = 2
 _SAMPLING_STATUS_POLL_SECONDS: Final[int] = 5
 _TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
 _TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
+_TEARDOWN_FULL_ATTEMPTS: Final[int] = 3
+_TEARDOWN_FULL_WAIT_SECONDS: Final[float] = 10.0
 _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
@@ -306,9 +310,6 @@ def create_function_from_project(  # noqa: C901, PLR0912, PLR0915
     credentials = base64.b64encode(f"{api_key}:{api_secret}".encode()).decode()
     auth_headers = {"Authorization": f"Basic {credentials}"}
 
-    _TEARDOWN_FULL_ATTEMPTS = 3
-    _TEARDOWN_FULL_WAIT_SECONDS = 10.0
-
     for function_data in created_functions:
         function_uuid = function_data["uuid"]
         template_id = function_data.get("templateId")
@@ -431,7 +432,7 @@ def create_function_from_project(  # noqa: C901, PLR0912, PLR0915
                 )
 
 
-def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: disable=too-many-branches
+def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
