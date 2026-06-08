@@ -4,7 +4,7 @@ from .._meta import API_VTAG
 from . import _health, _invitations, _meta
 
 
-def setup_api_routes(app: FastAPI):
+def configure_rest_api(app: FastAPI):
     """
     Composes resources/sub-resources routers
     """
