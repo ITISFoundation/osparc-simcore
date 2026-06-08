@@ -8,7 +8,7 @@ from fastapi_lifespan_manager import LifespanManager, State
 
 from ..logging_utils import log_context
 
-type Lifespan = Callable[[FastAPI], AsyncIterator[None]]
+type Lifespan = Callable[[FastAPI], AsyncIterator[State | None]]
 type PublisherLifespan = Callable[[FastAPI, State], AsyncIterator[State]]
 
 
