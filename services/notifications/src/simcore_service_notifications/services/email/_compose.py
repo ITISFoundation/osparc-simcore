@@ -1,6 +1,7 @@
 import mimetypes
 from email.headerregistry import Address
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid
 
 
 def compose_email(
@@ -29,9 +30,28 @@ def compose_email(
 
     msg["Subject"] = subject
 
+    # NOTE: Always set Date and Message-ID explicitly:
+    # - Postal SMTP: does not add them automatically (github.com/postalserver/postal/issues/153)
+    # - AWS SES SMTP: silently overwrites both with its own values regardless — no side effect
+    # - Other providers: behaviour varies; setting them here is always safe
+    #  
+    # If not defined, emails may land in spam (if email server used does not configure them automatically)
     if extra_headers:
         for name, value in extra_headers.items():
+            # Prevent duplicates/overrides of required RFC 5322 headers
+            if name.lower() in {"date", "message-id"}:
+                continue
             msg[name] = value
+
+    _local_part, at, sender_domain = from_.addr_spec.rpartition("@")
+    if not at or not sender_domain:
+        err_msg = (
+            f"Invalid sender address (missing domain) for Message-ID generation: {from_.addr_spec}"
+        )
+        raise ValueError(err_msg)
+
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain=sender_domain)
 
     if not content_text and not content_html:
         # NOTE: the RFC 5322 standard requires that the email message must have a content, either text or HTML.
