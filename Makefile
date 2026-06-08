@@ -608,8 +608,10 @@ promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-G
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
-		# upgrading uv
-		-@uv self --quiet update
+		@if [ "$$CI" != "true" ]; then \
+			# upgrading uv
+			-@uv self --quiet update
+		fi
 
 
 .venv: .check-uv-installed
