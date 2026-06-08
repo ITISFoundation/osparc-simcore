@@ -32,7 +32,7 @@ mdurl==0.1.2
     # via markdown-it-py
 nest-asyncio==1.6.0
     # via osparc
-orjson==3.11.7
+orjson==3.11.9
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt

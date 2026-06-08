@@ -8,13 +8,12 @@ import aiodocker
 import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
+from fastapi_lifespan_manager import LifespanManager
 from pydantic import Field
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.docker import (
-    create_remote_docker_client_input_state,
+    configure_remote_docker_client,
     get_remote_docker_client,
-    remote_docker_client_lifespan,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_api_proxy import DockerApiProxysettings
@@ -41,20 +40,14 @@ class ApplicationSetting(BaseApplicationSettings):
     ]
 
 
-async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    settings: ApplicationSetting = app.state.settings
-
-    yield {
-        **create_remote_docker_client_input_state(settings.DOCKER_API_PROXY),
-    }
-
-
 def _get_test_app() -> FastAPI:
     settings = ApplicationSetting.create_from_envs()
 
     lifespan_manager = LifespanManager()
-    lifespan_manager.add(_settings_lifespan)
-    lifespan_manager.add(remote_docker_client_lifespan)
+    configure_remote_docker_client(
+        lifespan_manager,
+        settings=settings.DOCKER_API_PROXY,
+    )
 
     app = FastAPI(lifespan=lifespan_manager)
     app.state.settings = settings

@@ -325,34 +325,6 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    output_node: Annotated[
-        bool | None,
-        Field(
-            deprecated=True,
-            alias="outputNode",
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    output_nodes: Annotated[  # <-- (DEPRECATED) Can be removed
-        list[NodeID] | None,
-        Field(
-            description="Used in group-nodes. Node IDs of those connected to the output",
-            alias="outputNodes",
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    parent: Annotated[
-        NodeID | None,
-        Field(
-            description="Parent's (group-nodes') node ID s. Used to group",
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
     position: Annotated[
         Position | None,
         Field(
@@ -383,10 +355,21 @@ class Node(BaseModel):
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    def _convert_empty_str_to_none(cls, v):
-        if isinstance(v, str) and v == "":
+    def _convert_empty_str_to_none(cls, v: Any) -> Any:
+        if isinstance(v, str) and not v:
             return None
         return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def _strip_deprecated_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            cleaned = dict(data)
+            # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
+            for key in ("outputNode", "outputNodes", "parent"):
+                cleaned.pop(key, None)
+            return cleaned
+        return data
 
     @field_validator("state", mode="before")
     @classmethod

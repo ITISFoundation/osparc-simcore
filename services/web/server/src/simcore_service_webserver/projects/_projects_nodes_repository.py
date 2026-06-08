@@ -26,11 +26,9 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.inputs,
     projects_nodes.c.inputs_required,
     projects_nodes.c.inputs_units,
-    projects_nodes.c.output_nodes,
     projects_nodes.c.outputs,
     projects_nodes.c.run_hash,
     projects_nodes.c.state,
-    projects_nodes.c.parent,
     projects_nodes.c.boot_options,
 ]
 

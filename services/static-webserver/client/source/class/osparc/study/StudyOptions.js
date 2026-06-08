@@ -182,18 +182,30 @@ qx.Class.define("osparc.study.StudyOptions", {
             flex: 1
           });
           break;
-        case "tiers-checkbox":
-          control = new qx.ui.form.CheckBox().set({
-            label: this.tr("Tiers & Costs"),
-            value: false,
+        case "tiers-toggle-button":
+          control = new qx.ui.form.ToggleButton().set({
+            label: this.tr("Show Tiers & Costs"),
+            icon: "@FontAwesome5Solid/chevron-right/12",
             font: "text-14",
+            appearance: "form-button-text",
+            textColor: "text",
+            backgroundColor: "transparent",
+            allowGrowX: false,
+            alignX: "left",
+            value: false,
+          });
+          control.bind("value", control, "label", {
+            converter: expanded => expanded ? this.tr("Hide Tiers & Costs") : this.tr("Show Tiers & Costs")
+          });
+          control.bind("value", control, "icon", {
+            converter: expanded => expanded ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-right/12"
           });
           this.getChildControl("advanced-layout").add(control);
           break;
         case "tiers-container":
           control = new qx.ui.container.Scroll();
-          this.getChildControl("tiers-checkbox").bind("value", control, "visibility", {
-            converter: checked => checked ? "visible" : "excluded"
+          this.getChildControl("tiers-toggle-button").bind("value", control, "visibility", {
+            converter: expanded => expanded ? "visible" : "excluded"
           });
           this.getChildControl("advanced-layout").add(control, {
             flex: 1
@@ -415,7 +427,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __addTierSelector: function() {
-      this.getChildControl("tiers-checkbox");
+      this.getChildControl("tiers-toggle-button");
       this.getChildControl("study-pricing-units");
     },
 
