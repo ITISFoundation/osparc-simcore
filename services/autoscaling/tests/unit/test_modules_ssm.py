@@ -17,6 +17,7 @@ async def test_ssm_does_not_initialize_if_deactivated(
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
-    assert not hasattr(initialized_app.state, "ssm_client")
+    assert hasattr(initialized_app.state, "ssm_client")
+    assert initialized_app.state.ssm_client is None
     with pytest.raises(ConfigurationError):
         get_ssm_client(initialized_app)
