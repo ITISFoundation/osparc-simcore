@@ -136,40 +136,6 @@ async def _download_invoice_pdf(
     return response.content, _extract_file_name(response, url)
 
 
-def _build_product_context(
-    *,
-    product_name: str,
-    display_name: str,
-    support_email: str,
-    vendor: dict[str, Any] | None,
-) -> dict[str, Any]:
-    """Build the product template context from the product's vendor JSON.
-
-    Mirrors the shape produced by ``services/web/server`` so the shared email
-    templates render identically when emails are sent from the payments service.
-    """
-    vendor = vendor or {}
-    ui = vendor.get("ui") or {}
-    vendor_name = vendor.get("name")
-    return {
-        "product_name": product_name,
-        "display_name": display_name,
-        "vendor_display_inline": f"{vendor_name}" if vendor_name is not None else "IT'IS Foundation",
-        "support_email": support_email,
-        "homepage_url": vendor.get("url"),
-        "ui": {
-            "logo_url": ui.get("logo_url"),
-            "strong_color": ui.get("strong_color"),
-        },
-        "footer": {
-            "social_links": [{"name": name, "url": url} for name, url in vendor.get("footer_social_links", []) or []],
-            "company_name": vendor.get("company_name", "") or "",
-            "company_address": vendor.get("company_address", "") or "",
-            "company_links": [{"name": name, "url": url} for name, url in vendor.get("company_links", []) or []],
-        },
-    }
-
-
 class EmailProvider(NotificationProvider):
     def __init__(
         self,
@@ -262,17 +228,12 @@ class EmailProvider(NotificationProvider):
                 "osparc_credits": f"{payment.osparc_credits:.2f}",
                 "invoice_url": f"{payment.invoice_url}",
             },
-            "product": _build_product_context(
-                product_name=data.product_name,
-                display_name=data.display_name,
-                support_email=data.support_email,
-                vendor=data.vendor,
-            ),
         }
 
         try:
             await send_message_from_template(
                 self._rabbitmq_rpc_client,
+                product_name=data.product_name,
                 addressing=addressing,
                 template_ref=TemplateRef(
                     channel=Channel.email,
