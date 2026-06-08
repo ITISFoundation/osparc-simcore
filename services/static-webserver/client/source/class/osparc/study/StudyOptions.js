@@ -183,7 +183,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           break;
         case "tiers-toggle-button":
-          control = new qx.ui.form.Button().set({
+          control = new qx.ui.form.ToggleButton().set({
             label: this.tr("Show Tiers & Costs"),
             icon: "@FontAwesome5Solid/chevron-right/12",
             font: "text-14",
@@ -192,26 +192,21 @@ qx.Class.define("osparc.study.StudyOptions", {
             backgroundColor: "transparent",
             allowGrowX: false,
             alignX: "left",
+            value: false,
           });
-          control.addListener("execute", () => {
-            const expanded = !control.getUserData("expanded");
-            control.setUserData("expanded", expanded);
-            control.setLabel(expanded ? this.tr("Hide Tiers & Costs") : this.tr("Show Tiers & Costs"));
-            control.setIcon(expanded ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-right/12");
+          control.bind("value", control, "label", {
+            converter: expanded => expanded ? this.tr("Hide Tiers & Costs") : this.tr("Show Tiers & Costs")
           });
-          control.setUserData("expanded", false);
+          control.bind("value", control, "icon", {
+            converter: expanded => expanded ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-right/12"
+          });
           this.getChildControl("advanced-layout").add(control);
           break;
         case "tiers-container":
           control = new qx.ui.container.Scroll();
-          control.setVisibility("excluded");
-          {
-            const toggleBtn = this.getChildControl("tiers-toggle-button");
-            toggleBtn.addListener("execute", () => {
-              const expanded = toggleBtn.getUserData("expanded");
-              control.setVisibility(expanded ? "visible" : "excluded");
-            });
-          }
+          this.getChildControl("tiers-toggle-button").bind("value", control, "visibility", {
+            converter: expanded => expanded ? "visible" : "excluded"
+          });
           this.getChildControl("advanced-layout").add(control, {
             flex: 1
           });
