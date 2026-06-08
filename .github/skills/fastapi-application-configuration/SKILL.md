@@ -46,6 +46,7 @@ Use this skill when a service:
 - For startup-only behavior, use lifespan that yields immediately after setup.
 - For shutdown-only behavior, keep setup as no-op and run cleanup after `yield`.
 - If code currently mutates `app.state`, keep that behavior identical.
+- For client/rpc integrations, include resource creation/connection checks in the same `try/finally` block as `yield` so cleanup runs even if startup fails before `yield`.
 
 2.1 Prefer the shared app lifecycle wrapper for service application bootstrap.
 - In `create_app`, use `with configure_app_lifespan(...) as app_lifespan:`.
@@ -71,6 +72,10 @@ Use this skill when a service:
 - If needed, add missing configure wrappers in client/rpc modules.
 - For lifecycle publishers that only map values from lifespan state to `app.state`, use the generic `create_publisher_lifespan(...)` helper from `lifespan_utils.py` instead of module-local duplicated publisher lifespans.
 - For integrations backed by optional settings (`... | None`) or disabled-mode flags, guard calls in `_configure_plugins(...)` and invoke `configure_*` only when enabled; avoid registering plugins that only log a "disabled by settings" warning.
+- For client/rpc `configure_*` modules, ensure lifespan functions are startup-failure safe:
+	- Initialize state slots to `None` before setup.
+	- Wrap setup + connectivity checks + `yield` in one `try/finally`.
+	- In `finally`, close/shutdown clients when present.
 
 6. Update service metadata banners to match the shared lifecycle wrapper.
 - In service `_meta.py`, keep service-specific `APP_STARTED_BANNER_MSG` (ascii art, if present).
@@ -92,10 +97,12 @@ Use this skill when a service:
 - Fix import ordering and formatting issues (for example with Ruff import rules).
 - Confirm there are no remaining startup/shutdown event registrations.
 - Confirm startup side effects and shutdown cleanup still happen in the same order.
+- Explicitly verify that exceptions during startup of client/rpc lifespans still trigger resource cleanup (no leaked partially initialized clients).
 
 ## Decision Points
 - If legacy code uses `add_event_handler` with sync callables: keep callables sync; do not force async conversion.
 - If teardown must always run (network clients, background tasks): use `try/finally` around `yield`.
+- If setup itself can fail after allocating resources (for example client create + ping retry), put setup inside the same `try/finally` that surrounds `yield`.
 - If the service has no client/rpc lifespan modules: keep refactor limited to `core/application.py` + `core/events.py` removal.
 - If lifecycle helpers are imported outside their module: keep them public until callsites are migrated, then privatize.
 - If prometheus enablement is already gated before configure call: avoid redundant settings lifespans that only pass `enabled=True`.
@@ -111,6 +118,7 @@ Use this skill when a service:
 - `application.py` does not define service-local banner lifespan helpers when using `configure_app_lifespan(...)`.
 - service `_meta.py` exposes `APP_STARTING_BANNER_MSG`, `APP_STARTED_BANNER_MSG`, and `APP_FINISHED_BANNER_MSG` (or equivalent mode-aware started banner selection in `create_app`).
 - Optional/disabled integrations are conditionally configured in `_configure_plugins(...)` (no unconditional configure call when settings are `None` or feature mode is off).
+- Client/rpc lifespans are startup-failure safe: resources allocated before `yield` are closed in `finally` when startup raises.
 - Diagnostics are clean on touched files.
 - Targeted service tests pass.
 
