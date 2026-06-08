@@ -10,7 +10,7 @@ from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.tracing import TracingConfig
 
 from ..tracing import setup_httpx_client_tracing
-from .lifespan_utils import PublisherLifespan, lifespan_context
+from .lifespan_utils import PublisherLifespan, create_publisher_lifespan, lifespan_context
 
 _logger = logging.getLogger(__name__)
 
@@ -75,30 +75,10 @@ def _create_httpx_client_lifespan(
     return _lifespan
 
 
-def _create_httpx_default_publisher_lifespan(
-    state_key: HttpxLifespanState = HttpxLifespanState.HTTPX_CLIENT,
-    app_state_attr: str = "httpx_client",
-) -> PublisherLifespan:
-    async def _publisher_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
-        _lifespan_name = f"{__name__}.{_publisher_lifespan.__name__}"
-
-        with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-            client = state.get(state_key)
-            if not isinstance(client, httpx.AsyncClient):
-                msg = f"HTTPX client not found in lifespan state under key '{state_key}'"
-                raise TypeError(msg)
-
-            setattr(app.state, app_state_attr, client)
-            yield called_state
-
-    return _publisher_lifespan
-
-
 def _create_httpx_lifespan_manager(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
-    publisher_lifespan: PublisherLifespan | None = None,
 ) -> LifespanManager[FastAPI]:
     httpx_lifespan_manager = LifespanManager()
     httpx_lifespan_manager.add(
@@ -108,7 +88,12 @@ def _create_httpx_lifespan_manager(
             tracing_config=tracing_config,
         )
     )
-    httpx_lifespan_manager.add(publisher_lifespan or _create_httpx_default_publisher_lifespan())
+    httpx_lifespan_manager.add(
+        create_publisher_lifespan(
+            state_key=HttpxLifespanState.HTTPX_CLIENT,
+            app_state_attr="httpx_client",
+        )
+    )
     return httpx_lifespan_manager
 
 
@@ -118,14 +103,12 @@ def configure_httpx_client(
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
     tracing_config: TracingConfig | None = None,
-    publisher_lifespan: PublisherLifespan | None = None,
 ) -> None:
     app_lifespan.include(
         _create_httpx_lifespan_manager(
             default_timeout=default_timeout,
             max_keepalive_connections=max_keepalive_connections,
             tracing_config=tracing_config,
-            publisher_lifespan=publisher_lifespan,
         )
     )
 

@@ -40,4 +40,5 @@ APP_WORKER_STARTED_BANNER_MSG = rf"""
     {API_VTAG}"""
 
 
+APP_STARTING_BANNER_MSG = "{:=^100}".format(f"🚀 Starting {APP_NAME}=={VERSION} ... 🚀")
 APP_SHUTDOWN_BANNER_MSG = "{:=^100}".format(f"🎉 App {APP_NAME}=={VERSION} shutdown completed 🎉")
