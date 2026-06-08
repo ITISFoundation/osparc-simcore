@@ -54,11 +54,9 @@ class ProjectNodeCreate(BaseModel):
     inputs: dict[str, Any] | None = None
     inputs_required: list[str] | None = None
     inputs_units: dict[str, Any] | None = None
-    output_nodes: list[str] | None = None
     outputs: dict[str, Any] | None = None
     run_hash: str | None = None
     state: dict[str, Any] | None = None
-    parent: str | None = None
     boot_options: dict[str, Any] | None = None
 
     @classmethod
