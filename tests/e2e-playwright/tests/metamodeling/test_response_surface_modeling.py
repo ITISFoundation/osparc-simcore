@@ -257,7 +257,7 @@ def _assert_sampling_completed(
 
 
 @pytest.fixture
-def create_function_from_project(  # noqa: C901
+def create_function_from_project(  # noqa: C901, PLR0912, PLR0915
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
     is_product_billable: bool,
@@ -310,54 +310,83 @@ def create_function_from_project(  # noqa: C901
         function_uuid = function_data["uuid"]
         template_id = function_data.get("templateId")
 
-        # 1. Delete all function_jobs and their associated comp projects
-        if auth_headers:
-            limit = 50
-            for offset in range(0, 100_000, limit):
-                jobs_resp = api_request_context.get(
-                    f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+        # 1. Delete all function_job_collections for this function
+        limit = 50
+        for offset in range(0, 100_000, limit):
+            collections_resp = api_request_context.get(
+                f"{api_server_url}v0/function_job_collections?has_function_id={function_uuid}&limit={limit}&offset={offset}",
+                headers=auth_headers,
+            )
+            if not collections_resp.ok:
+                if collections_resp.status == 404:
+                    logging.info(
+                        "function_job_collections endpoint not available on %s — skipping",
+                        api_server_url,
+                    )
+                else:
+                    logging.warning(
+                        "Could not list function_job_collections for %s: %s",
+                        function_uuid,
+                        collections_resp.text()[:200],
+                    )
+                break
+            collections = collections_resp.json().get("items", [])
+            for collection in collections:
+                _delete_with_retry(
+                    api_request_context,
+                    f"{api_server_url}v0/function_job_collections/{collection['uid']}",
+                    f"function_job_collection {collection['uid']}",
                     headers=auth_headers,
                 )
-                if not jobs_resp.ok:
-                    if jobs_resp.status == 404:
-                        logging.info(
-                            "function_jobs endpoint not available on %s — skipping",
-                            api_server_url,
-                        )
-                    else:
-                        logging.warning(
-                            "Could not list function_jobs for %s: %s",
-                            function_uuid,
-                            jobs_resp.text()[:200],
-                        )
-                    break
-                jobs = jobs_resp.json().get("items", [])
-                for job in jobs:
-                    job_uid = job["uid"]
-                    project_job_id = job.get("project_job_id")
+            if len(collections) < limit:
+                break
+
+        # 2. Delete all function_jobs and their associated comp projects
+        for offset in range(0, 100_000, limit):
+            jobs_resp = api_request_context.get(
+                f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+                headers=auth_headers,
+            )
+            if not jobs_resp.ok:
+                if jobs_resp.status == 404:
+                    logging.info(
+                        "function_jobs endpoint not available on %s — skipping",
+                        api_server_url,
+                    )
+                else:
+                    logging.warning(
+                        "Could not list function_jobs for %s: %s",
+                        function_uuid,
+                        jobs_resp.text()[:200],
+                    )
+                break
+            jobs = jobs_resp.json().get("items", [])
+            for job in jobs:
+                job_uid = job["uid"]
+                project_job_id = job.get("project_job_id")
+                _delete_with_retry(
+                    api_request_context,
+                    f"{api_server_url}v0/function_jobs/{job_uid}",
+                    f"function_job {job_uid}",
+                    headers=auth_headers,
+                )
+                if project_job_id:
                     _delete_with_retry(
                         api_request_context,
-                        f"{api_server_url}v0/function_jobs/{job_uid}",
-                        f"function_job {job_uid}",
-                        headers=auth_headers,
+                        f"{product_url}v0/projects/{project_job_id}",
+                        f"comp project {project_job_id}",
                     )
-                    if project_job_id:
-                        _delete_with_retry(
-                            api_request_context,
-                            f"{product_url}v0/projects/{project_job_id}",
-                            f"comp project {project_job_id}",
-                        )
-                if len(jobs) < limit:
-                    break
+            if len(jobs) < limit:
+                break
 
-        # 2. Delete the function itself
+        # 3. Delete the function itself
         _delete_with_retry(
             api_request_context,
             f"{product_url}v0/functions/{function_uuid}",
             f"function {function_uuid}",
         )
 
-        # 3. Delete the source study (templateId) the function was created from
+        # 4. Delete the source study (templateId) the function was created from
         if template_id:
             _delete_with_retry(
                 api_request_context,
