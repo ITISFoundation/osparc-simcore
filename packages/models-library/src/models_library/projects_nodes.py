@@ -17,7 +17,6 @@ from pydantic import (
     StrictInt,
     StringConstraints,
     field_validator,
-    model_serializer,
     model_validator,
 )
 from pydantic.config import JsonDict
@@ -326,34 +325,6 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    output_node: Annotated[
-        bool | None,
-        Field(
-            deprecated=True,
-            alias="outputNode",
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    output_nodes: Annotated[
-        list[NodeID] | None,
-        Field(
-            description="Used in group-nodes. Node IDs of those connected to the output",
-            alias="outputNodes",
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    parent: Annotated[
-        NodeID | None,
-        Field(
-            description="Parent's (group-nodes') node ID s. Used to group",
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
     position: Annotated[
         Position | None,
         Field(
@@ -389,6 +360,15 @@ class Node(BaseModel):
             return None
         return v
 
+    @model_validator(mode="before")
+    @classmethod
+    def _strip_deprecated_fields(cls, data):
+        if isinstance(data, dict):
+            # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
+            for key in ("outputNode", "outputNodes", "parent"):
+                data.pop(key, None)
+        return data
+
     @field_validator("state", mode="before")
     @classmethod
     def _convert_from_enum(cls, v):
@@ -397,14 +377,6 @@ class Node(BaseModel):
             running_state_value = _convert_old_enum_name(v)
             return NodeState(current_status=running_state_value)
         return v
-
-    @model_serializer(mode="wrap")
-    def _exclude_deprecated_fields(self, handler, info):
-        data = handler(self, info)
-        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        for key in ("output_node", "output_nodes", "parent", "outputNode", "outputNodes"):
-            data.pop(key, None)
-        return data
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
