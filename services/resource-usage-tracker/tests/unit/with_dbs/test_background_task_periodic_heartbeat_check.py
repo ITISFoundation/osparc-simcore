@@ -20,7 +20,6 @@ from simcore_postgres_database.models.resource_tracker_credit_transactions impor
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
-from simcore_postgres_database.utils_products import ProductEmailInfo
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 from simcore_service_resource_usage_tracker.models.credit_transactions import (
     CreditTransactionDB,
@@ -349,11 +348,6 @@ async def test_close_unhealthy_dynamic_service_does_not_send_reimbursement_notif
     mock_notify = mocker.patch(
         f"{background_task_periodic_heartbeat_check.__name__}.notify_user_of_credit_reimbursement",
         autospec=True,
-    )
-    mocker.patch(
-        f"{background_task_periodic_heartbeat_check.__name__}.get_product_email_info",
-        autospec=True,
-        return_value=ProductEmailInfo(display_name="osparc", support_email="support@osparc.io"),
     )
 
     await _run_checks_until_service_deemed_unhealthy(initialized_app, postgres_db)
