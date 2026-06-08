@@ -10,7 +10,7 @@ from typing import Any, Final
 import httpx
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, HTTPException
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -297,3 +297,7 @@ async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
         if client:
             with log_catch(_logger, reraise=False):
                 await asyncio.wait_for(client.close(), timeout=10)
+
+
+def configure_director(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(director_lifespan)

@@ -814,3 +814,23 @@ def playwright_test_results_dir() -> Path:
     results_dir = Path.cwd() / "test-results"
     results_dir.mkdir(parents=True, exist_ok=True)
     return results_dir
+
+
+@pytest.fixture
+def api_key_and_secret(
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+) -> Iterator[tuple[str, str]]:
+    """Creates a temporary API key/secret pair and deletes it on teardown."""
+    resp = api_request_context.post(
+        f"{product_url}v0/auth/api-keys",
+        data=json.dumps({"displayName": "e2e-temp-api-key"}),
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.ok, f"Failed to create API key: {resp.status} {resp.text()}"
+    data = resp.json()["data"]
+    api_key_id = data["id"]
+
+    yield data["apiKey"], data["apiSecret"]
+
+    api_request_context.delete(f"{product_url}v0/auth/api-keys/{api_key_id}")

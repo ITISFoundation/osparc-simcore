@@ -64,7 +64,7 @@ mdurl==0.1.2
     # via markdown-it-py
 multidict==6.7.1
     # via yarl
-orjson==3.11.7
+orjson==3.11.9
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
