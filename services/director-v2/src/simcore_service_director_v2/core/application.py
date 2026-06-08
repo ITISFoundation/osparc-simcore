@@ -11,7 +11,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.profiler import initialize_profiler
+from servicelib.fastapi.profiler import configure_profiler
 from servicelib.fastapi.tracing import (
     get_tracing_config,
     initialize_fastapi_app_tracing,
@@ -218,7 +218,7 @@ def create_app(  # noqa: C901
     resource_usage_tracker_client.setup(app)
 
     if settings.DIRECTOR_V2_PROFILING:
-        initialize_profiler(app)
+        configure_profiler(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)
