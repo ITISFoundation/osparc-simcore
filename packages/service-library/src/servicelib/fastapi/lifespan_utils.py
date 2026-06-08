@@ -4,7 +4,7 @@ from typing import Final
 
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 
 from ..logging_utils import log_context
 
@@ -76,3 +76,63 @@ def lifespan_context(logger, level, lifespan_name: str, state: State) -> Iterato
         called_state = mark_lifespace_called(state, lifespan_name)
 
         yield called_state
+
+
+def _make_starting_shutdown_complete_lifespan(
+    starting_banner: str,
+    shutdown_complete_banner: str,
+) -> Lifespan:
+    # NOTE: uses print because startup/shutdown messages should be emitted even without logging
+    async def _starting_shutdown_complete_lifespan(_: FastAPI) -> AsyncIterator[State]:
+        print(starting_banner, flush=True)  # noqa: T201
+        yield {}
+        print(shutdown_complete_banner, flush=True)  # noqa: T201
+
+    return _starting_shutdown_complete_lifespan
+
+
+def _make_started_shutting_down_lifespan(
+    started_banner: str,
+    shutting_down_banner: str,
+) -> Lifespan:
+    async def _started_shutting_down_lifespan(_: FastAPI) -> AsyncIterator[State]:
+        print(started_banner, flush=True)  # noqa: T201
+        yield {}
+        print(shutting_down_banner, flush=True)  # noqa: T201
+
+    return _started_shutting_down_lifespan
+
+
+@contextlib.contextmanager
+def configure_app_lifespan(
+    *,
+    logging_lifespan: Lifespan | None = None,
+    starting_banner: str,
+    started_banner: str,
+    shutting_down_banner: str = "Shutting down service...",
+    shutdown_complete_banner: str = "Service shut down.",
+) -> Iterator[LifespanManager]:
+    """Creates and configures a LifespanManager with enforced ordering.
+
+    Startup order:  starting/shutdown-complete → logging → [plugins yielded to caller] → started/shutting-down
+    Shutdown order: started/shutting-down → [plugins] → logging → starting/shutdown-complete
+
+    Yields:
+        LifespanManager to pass as `lifespan=` to FastAPI and to register plugin lifespans.
+    """
+    app_lifespan = LifespanManager()
+
+    # Added first → prints on startup before anything else and on shutdown as absolute last message
+    app_lifespan.add(
+        _make_starting_shutdown_complete_lifespan(
+            starting_banner,
+            shutdown_complete_banner,
+        )
+    )
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
+
+    yield app_lifespan
+
+    # Added last → runs last on startup, first on shutdown
+    app_lifespan.add(_make_started_shutting_down_lifespan(started_banner, shutting_down_banner))
