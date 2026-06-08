@@ -198,7 +198,7 @@ async def registry_request(
     use_cache: bool,
     **request_kwargs,
 ) -> tuple[dict, Mapping]:
-    cache: BaseCache | None = app.state.registry_cache_memory
+    cache: BaseCache | None = app.state.registry_cache
     cache_key = f"{method}_{path}"
     if use_cache and cache and (cached_response := await cache.get(cache_key)):
         cached_body, cached_headers = cast(tuple[dict, Mapping], cached_response)
@@ -243,7 +243,7 @@ async def registry_request(
     return response, _normalize_headers(response_headers)
 
 
-async def _setup_registry(app: FastAPI) -> None:
+async def setup_registry_connection(app: FastAPI) -> None:
     @retry(
         wait=wait_fixed(1),
         before_sleep=before_sleep_log(_logger, logging.WARNING),
@@ -255,10 +255,6 @@ async def _setup_registry(app: FastAPI) -> None:
 
     with log_context(_logger, logging.INFO, msg="Connecting to docker registry"):
         await _wait_until_registry_responsive(app)
-
-
-async def setup_registry_connection(app: FastAPI) -> None:
-    await _setup_registry(app)
 
 
 def _get_prefix(service_type: ServiceType) -> str:

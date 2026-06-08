@@ -11,7 +11,7 @@ from . import _health, _running_interactive_services, _services
 _V0_VTAG: Final[str] = "v0"
 
 
-def setup_api_routes(app: FastAPI):
+def setup_api_routes(app: FastAPI) -> None:
     """
     Composes resources/sub-resources routers
     """
