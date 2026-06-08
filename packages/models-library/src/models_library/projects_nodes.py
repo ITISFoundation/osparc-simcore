@@ -355,14 +355,14 @@ class Node(BaseModel):
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    def _convert_empty_str_to_none(cls, v):
+    def _convert_empty_str_to_none(cls, v: Any) -> Any:
         if isinstance(v, str) and not v:
             return None
         return v
 
     @model_validator(mode="before")
     @classmethod
-    def _strip_deprecated_fields(cls, data):
+    def _strip_deprecated_fields(cls, data: Any) -> Any:
         if isinstance(data, dict):
             cleaned = dict(data)
             # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
