@@ -13,7 +13,7 @@ from fastapi_lifespan_manager import LifespanManager, State
 from pydantic import NonNegativeInt
 from settings_library.docker_api_proxy import DockerApiProxysettings
 
-from .lifespan_utils import PublisherLifespan
+from .lifespan_utils import PublisherLifespan, create_publisher_lifespan
 
 _logger = logging.getLogger(__name__)
 
@@ -48,30 +48,17 @@ def _create_remote_docker_client_lifespan(settings: DockerApiProxysettings) -> P
     return _lifespan
 
 
-def _create_remote_docker_default_publisher_lifespan(
-    *,
-    state_key: str = _REMOTE_DOCKER_CLIENT_STATE_KEY,
-    app_state_attr: str = "remote_docker_client",
-) -> PublisherLifespan:
-    async def _publisher_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
-        remote_docker_client = state.get(state_key)
-        if not isinstance(remote_docker_client, aiodocker.Docker):
-            msg = f"Remote docker client not found in lifespan state under key '{state_key}'"
-            raise TypeError(msg)
-
-        setattr(app.state, app_state_attr, remote_docker_client)
-        yield {}
-
-    return _publisher_lifespan
-
-
 def _create_remote_docker_lifespan_manager(
     settings: DockerApiProxysettings,
-    publisher_lifespan: PublisherLifespan | None = None,
 ) -> LifespanManager[FastAPI]:
     remote_docker_lifespan_manager = LifespanManager()
     remote_docker_lifespan_manager.add(_create_remote_docker_client_lifespan(settings=settings))
-    remote_docker_lifespan_manager.add(publisher_lifespan or _create_remote_docker_default_publisher_lifespan())
+    remote_docker_lifespan_manager.add(
+        create_publisher_lifespan(
+            state_key=_REMOTE_DOCKER_CLIENT_STATE_KEY,
+            app_state_attr="remote_docker_client",
+        )
+    )
     return remote_docker_lifespan_manager
 
 
@@ -79,14 +66,8 @@ def configure_remote_docker_client(
     app_lifespan: LifespanManager[FastAPI],
     *,
     settings: DockerApiProxysettings,
-    publisher_lifespan: PublisherLifespan | None = None,
 ) -> None:
-    app_lifespan.include(
-        _create_remote_docker_lifespan_manager(
-            settings=settings,
-            publisher_lifespan=publisher_lifespan,
-        )
-    )
+    app_lifespan.include(_create_remote_docker_lifespan_manager(settings=settings))
 
 
 @tenacity.retry(

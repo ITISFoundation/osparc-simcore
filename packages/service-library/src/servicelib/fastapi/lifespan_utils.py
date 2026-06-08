@@ -12,6 +12,24 @@ type Lifespan = Callable[[FastAPI], AsyncIterator[None]]
 type PublisherLifespan = Callable[[FastAPI, State], AsyncIterator[State]]
 
 
+def create_publisher_lifespan(state_key: str, app_state_attr: str) -> PublisherLifespan:
+    """Creates a generic publisher lifespan that reads a value from the lifespan
+    state and stores it on app.state under the given attribute name.
+
+    Raises:
+        KeyError: If `state_key` is not present in the lifespan state.
+    """
+
+    async def _publisher_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
+        if state_key not in state:
+            msg = f"Expected lifespan state key '{state_key}' not found"
+            raise KeyError(msg)
+        setattr(app.state, app_state_attr, state[state_key])
+        yield {}
+
+    return _publisher_lifespan
+
+
 class LifespanError(OsparcErrorMixin, RuntimeError): ...
 
 

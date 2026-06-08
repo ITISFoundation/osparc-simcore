@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_catch
-from .lifespan_utils import LifespanOnStartupError, PublisherLifespan, lifespan_context
+from .lifespan_utils import LifespanOnStartupError, PublisherLifespan, create_publisher_lifespan, lifespan_context
 
 _logger = logging.getLogger(__name__)
 
@@ -50,32 +50,17 @@ def _create_postgres_database_lifespan(settings: PostgresSettings) -> PublisherL
     return _lifespan
 
 
-def _create_postgres_default_publisher_lifespan(
-    state_key: PostgresLifespanState = PostgresLifespanState.POSTGRES_ASYNC_ENGINE,
-    app_state_attr: str = "engine",
-) -> PublisherLifespan:
-    async def _publisher_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
-        _lifespan_name = f"{__name__}.{_publisher_lifespan.__name__}"
-
-        with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-            async_engine = state.get(state_key)
-            if not isinstance(async_engine, AsyncEngine):
-                msg = f"Postgres async engine not found in lifespan state under key '{state_key}'"
-                raise TypeError(msg)
-
-            setattr(app.state, app_state_attr, async_engine)
-            yield called_state
-
-    return _publisher_lifespan
-
-
 def _create_postgres_lifespan_manager(
     settings: PostgresSettings,
-    publisher_lifespan: PublisherLifespan | None = None,
 ) -> LifespanManager[FastAPI]:
     postgres_lifespan_manager = LifespanManager()
     postgres_lifespan_manager.add(_create_postgres_database_lifespan(settings=settings))
-    postgres_lifespan_manager.add(publisher_lifespan or _create_postgres_default_publisher_lifespan())
+    postgres_lifespan_manager.add(
+        create_publisher_lifespan(
+            state_key=PostgresLifespanState.POSTGRES_ASYNC_ENGINE,
+            app_state_attr="engine",
+        )
+    )
     return postgres_lifespan_manager
 
 
@@ -83,11 +68,5 @@ def configure_postgres_database(
     app_lifespan: LifespanManager[FastAPI],
     *,
     settings: PostgresSettings,
-    publisher_lifespan: PublisherLifespan | None = None,
 ) -> None:
-    app_lifespan.include(
-        _create_postgres_lifespan_manager(
-            settings=settings,
-            publisher_lifespan=publisher_lifespan,
-        )
-    )
+    app_lifespan.include(_create_postgres_lifespan_manager(settings=settings))
