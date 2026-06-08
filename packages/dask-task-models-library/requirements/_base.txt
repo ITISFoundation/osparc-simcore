@@ -58,7 +58,7 @@ mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.1.2
     # via distributed
-orjson==3.11.7
+orjson==3.11.9
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
