@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.rabbitmq import RabbitMQRPCClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
@@ -31,6 +31,10 @@ async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
         if app.state.rabbitmq_rpc_client:
             await app.state.rabbitmq_rpc_client.close()
             app.state.rabbitmq_rpc_client = None
+
+
+def configure_rabbitmq_client(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(rabbitmq_lifespan)
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
