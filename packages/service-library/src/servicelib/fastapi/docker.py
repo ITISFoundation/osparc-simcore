@@ -24,7 +24,7 @@ _REMOTE_DOCKER_CLIENT_STATE_KEY: Final[str] = "remote_docker_client"
 
 
 def _create_remote_docker_client_lifespan(settings: DockerApiProxysettings) -> PublisherLifespan:
-    async def _lifespan(app: FastAPI, _: State) -> AsyncIterator[State]:
+    async def _lifespan(_app: FastAPI, _state: State) -> AsyncIterator[State]:
         async with AsyncExitStack() as exit_stack:
             session = await exit_stack.enter_async_context(
                 ClientSession(
@@ -39,7 +39,7 @@ def _create_remote_docker_client_lifespan(settings: DockerApiProxysettings) -> P
                 aiodocker.Docker(url=settings.base_url, session=session)
             )
 
-            await wait_till_docker_api_proxy_is_responsive(app)
+            await wait_till_docker_api_proxy_is_responsive(remote_docker_client)
 
             yield {
                 _REMOTE_DOCKER_CLIENT_STATE_KEY: remote_docker_client,
@@ -95,17 +95,17 @@ def configure_remote_docker_client(
     before_sleep=tenacity.before_sleep_log(_logger, logging.WARNING),
     reraise=True,
 )
-async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:
-    await is_docker_api_proxy_ready(app)
+async def wait_till_docker_api_proxy_is_responsive(client: aiodocker.Docker) -> None:
+    await is_docker_api_proxy_ready(client)
 
 
 async def is_docker_api_proxy_ready(
-    app: FastAPI,
+    client: aiodocker.Docker,
     *,
     timeout=_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT,  # noqa: ASYNC109
 ) -> bool:
     try:
-        await asyncio.wait_for(get_remote_docker_client(app).version(), timeout=timeout)
+        await asyncio.wait_for(client.version(), timeout=timeout)
     except (aiodocker.DockerError, TimeoutError):
         return False
     return True
