@@ -72,3 +72,30 @@ def test_backwards_compatibility_node_data(minimal_node_data_sample: dict[str, A
     assert node.state.dependencies == set()
 
     assert node.model_dump(exclude_unset=True) != old_node_data
+
+
+def test_deprecated_fields_are_stripped_without_mutating_input(
+    minimal_node_data_sample: dict[str, Any],
+):
+    """Regression: old workbench data containing deprecated keys must be accepted
+    and the original payload must not be mutated (side-effect free)."""
+    old_node_data = {
+        **minimal_node_data_sample,
+        "outputNode": True,
+        "outputNodes": ["f2700a54-adcf-45d4-9881-01ec30fd75a2"],
+        "parent": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+    }
+    original_keys = set(old_node_data.keys())
+
+    node = Node(**old_node_data)
+
+    # deprecated fields are silently stripped
+    assert not hasattr(node, "output_node")
+    assert not hasattr(node, "output_nodes")
+    assert not hasattr(node, "parent")
+
+    # input payload is not mutated
+    assert set(old_node_data.keys()) == original_keys
+    assert old_node_data["outputNode"] is True
+    assert old_node_data["outputNodes"] == ["f2700a54-adcf-45d4-9881-01ec30fd75a2"]
+    assert old_node_data["parent"] == "42838344-03de-4ce2-8d93-589a5dcdfd05"
