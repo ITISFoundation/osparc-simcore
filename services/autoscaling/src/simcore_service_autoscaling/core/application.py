@@ -60,12 +60,9 @@ def _configure_plugins(
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
 
     configure_docker_client(app_lifespan)
-    if settings.AUTOSCALING_RABBITMQ is not None:
-        configure_rabbitmq_client(app_lifespan)
-    if settings.AUTOSCALING_EC2_ACCESS is not None:
-        configure_ec2_client(app_lifespan)
-    if settings.AUTOSCALING_SSM_ACCESS is not None:
-        configure_ssm_client(app_lifespan)
+    configure_rabbitmq_client(app_lifespan)
+    configure_ec2_client(app_lifespan)
+    configure_ssm_client(app_lifespan)
     configure_redis_client(app_lifespan)
 
     if (
