@@ -191,6 +191,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             textColor: "text",
             backgroundColor: "transparent",
             allowGrowX: false,
+            alignX: "left",
           });
           control.addListener("execute", () => {
             const expanded = !control.getUserData("expanded");
