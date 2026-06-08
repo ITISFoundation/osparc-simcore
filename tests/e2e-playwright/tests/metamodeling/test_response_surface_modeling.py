@@ -397,9 +397,9 @@ def create_function_from_project(
         ) as ctx:
             with page.expect_response(re.compile(rf"/projects/{project_uuid}")):
                 page.get_by_test_id(f"studyBrowserListItem_{project_uuid}").click()
-            page.wait_for_timeout(2000)
+            page.get_by_text("create function").first.wait_for(state="visible", timeout=10 * SECOND)
             page.get_by_text("create function").first.click()
-            page.wait_for_timeout(2000)
+            page.get_by_test_id("create_function_page_btn").wait_for(state="visible", timeout=10 * SECOND)
 
             with page.expect_response(
                 lambda response: (
@@ -470,7 +470,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
         # Select the first jsonifier (it's the second "jsonifier" in the tree
         # because the study itself has "jsonifier" in its name)
         page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[1].click()
-        page.wait_for_timeout(3 * SECOND)
+        page.get_by_test_id("connect_input_btn_number_1").wait_for(state="visible", timeout=10 * SECOND)
 
         with log_context(logging.INFO, "Create parameter on jsonifier_1.number_1"):
             page.get_by_test_id("connect_input_btn_number_1").click()
@@ -811,10 +811,9 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 page.wait_for_timeout(2 * SECOND)
                 next_button.click(timeout=30 * SECOND)
 
-        page.wait_for_timeout(1 * SECOND)
-
         with log_context(logging.INFO, "Waiting for the AI model to be created..."):
             creating_ai_model_text = service_iframe.get_by_text("Creating AI model...")
+            creating_ai_model_text.wait_for(state="visible", timeout=30 * SECOND)
             # wait for it to disappear, which means the model is created and we can proceed
             creating_ai_model_text.wait_for(state="hidden", timeout=2 * MINUTE)
 
@@ -823,13 +822,11 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             extend_sampling_btn.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             extend_sampling_btn.scroll_into_view_if_needed()
             extend_sampling_btn.click(timeout=30 * SECOND)
-            page.wait_for_timeout(2 * SECOND)
 
             new_sampling_btn = service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]')
             new_sampling_btn.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             new_sampling_btn.scroll_into_view_if_needed()
             new_sampling_btn.click(timeout=30 * SECOND)
-            page.wait_for_timeout(2 * SECOND)
 
             samplingInput = service_iframe.locator('input[placeholder="Number of sampling points"]')
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
@@ -944,7 +941,4 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
         ):
             page.get_by_test_id("dashboardBtn").click()
             page.get_by_test_id("confirmDashboardBtn").click()
-            assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
-            page.wait_for_timeout(2000)
-            assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
-            page.wait_for_timeout(2000)
+        assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
