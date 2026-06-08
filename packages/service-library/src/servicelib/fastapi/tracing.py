@@ -4,7 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, Request
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
@@ -202,6 +202,21 @@ def initialize_fastapi_app_tracing(
     if add_response_trace_id_header:
         app.add_middleware(ResponseTraceIdHeaderMiddleware)
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracing_config.tracer_provider)
+
+
+def configure_fastapi_app_tracing(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    tracing_config: TracingConfig,
+    add_response_trace_id_header: bool = False,
+) -> None:
+    app_lifespan.add(get_tracing_instrumentation_lifespan(tracing_config=tracing_config))
+    initialize_fastapi_app_tracing(
+        app,
+        tracing_config=tracing_config,
+        add_response_trace_id_header=add_response_trace_id_header,
+    )
 
 
 def setup_tracing(app: FastAPI, tracing_config: TracingConfig) -> None:
