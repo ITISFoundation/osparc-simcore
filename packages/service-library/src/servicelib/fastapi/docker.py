@@ -39,10 +39,8 @@ def _create_remote_docker_client_lifespan(settings: DockerApiProxysettings) -> P
                 aiodocker.Docker(url=settings.base_url, session=session)
             )
 
-            app.state.remote_docker_client = remote_docker_client
             await wait_till_docker_api_proxy_is_responsive(app)
 
-            # NOTE this has to be inside exit_stack scope
             yield {
                 _REMOTE_DOCKER_CLIENT_STATE_KEY: remote_docker_client,
             }
