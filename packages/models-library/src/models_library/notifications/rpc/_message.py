@@ -82,6 +82,7 @@ class SendMessageFromTemplateRequest(BaseModel):
             {
                 "examples": [
                     {
+                        "product_name": "osparc",
                         "addressing": {
                             "channel": "email",
                             "from_identity": "SUPPORT",
