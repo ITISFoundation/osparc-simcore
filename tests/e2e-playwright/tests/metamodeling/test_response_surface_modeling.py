@@ -11,6 +11,7 @@ import base64
 import json
 import logging
 import re
+import time
 from collections.abc import Callable, Iterator
 from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
@@ -42,6 +43,8 @@ _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
 _SELECT_FUNCTION_RETRY_WAIT_SECONDS: Final[int] = 2
 _SAMPLING_STATUS_POLL_SECONDS: Final[int] = 5
+_TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
+_TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
 _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
@@ -84,6 +87,52 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     9.6906882977,
     9.7291886695,
 ]
+
+
+def _delete_with_retry(
+    api_request_context: APIRequestContext,
+    url: str,
+    label: str,
+    *,
+    headers: dict[str, str] | None = None,
+    max_attempts: int = _TEARDOWN_MAX_ATTEMPTS,
+    wait_seconds: float = _TEARDOWN_RETRY_WAIT_SECONDS,
+    retry_statuses: frozenset[int] = frozenset({409, 423}),
+    ok_statuses: frozenset[int] = frozenset({200, 204, 404}),
+) -> None:
+    """DELETE url with retries, treating 404 as success, retrying on busy statuses."""
+    kwargs: dict[str, Any] = {}
+    if headers:
+        kwargs["headers"] = headers
+    for attempt in range(1, max_attempts + 1):
+        try:
+            resp = api_request_context.delete(url, **kwargs)
+            if resp.status in ok_statuses:
+                if resp.status != 404:
+                    logging.info("Deleted %s (attempt %d)", label, attempt)
+                return
+            if resp.status in retry_statuses:
+                logging.warning(
+                    "Delete %s returned %d (resource busy?), attempt %d/%d, retrying...",
+                    label,
+                    resp.status,
+                    attempt,
+                    max_attempts,
+                )
+            else:
+                logging.warning(
+                    "Delete %s returned unexpected status %d (attempt %d/%d): %s",
+                    label,
+                    resp.status,
+                    attempt,
+                    max_attempts,
+                    resp.text()[:200],
+                )
+        except Exception:
+            logging.warning("Error deleting %s (attempt %d/%d)", label, attempt, max_attempts, exc_info=True)
+        if attempt < max_attempts:
+            time.sleep(wait_seconds)
+    logging.error("Gave up deleting %s after %d attempts", label, max_attempts)
 
 
 def _get_api_server_url(product_url: AnyUrl) -> str:
@@ -208,12 +257,13 @@ def _assert_sampling_completed(
 
 
 @pytest.fixture
-def create_function_from_project(
+def create_function_from_project(  # noqa: C901, PLR0912, PLR0915
     api_request_context: APIRequestContext,
     is_product_billable: bool,
     product_url: AnyUrl,
 ) -> Iterator[Callable[[Page, str], dict[str, Any]]]:
-    created_function_uuids: list[str] = []
+    # Store full function data (including templateId for source study cleanup)
+    created_functions: list[dict[str, Any]] = []
 
     def _create_function_from_project(
         page: Page,
@@ -243,19 +293,97 @@ def create_function_from_project(
             ctx.logger.info("Created function: %s", f"{json.dumps(function_data['data'], indent=2)}")
 
             page.keyboard.press("Escape")
-            created_function_uuids.append(function_data["data"]["uuid"])
+            created_functions.append(function_data["data"])
         return function_data["data"]
 
     yield _create_function_from_project
 
-    for function_uuid in created_function_uuids:
-        with log_context(
-            logging.INFO,
-            f"Delete function with {function_uuid=} in {product_url=} as {is_product_billable=}",
-        ):
-            response = api_request_context.delete(f"{product_url}v0/functions/{function_uuid}")
-            if response.status != 204:
-                logging.warning("Could not delete function %s: %s", function_uuid, response.text())
+    # --- Teardown: runs even if the test fails ---
+    # Delete function_jobs + their comp projects, the functions, and the source studies.
+    api_server_url = _get_api_server_url(product_url)
+
+    # Create a temporary API key for the api.* endpoint (function_jobs use Basic auth)
+    api_key_id: str | None = None
+    auth_headers: dict[str, str] = {}
+    api_key_resp = api_request_context.post(
+        f"{product_url}v0/auth/api-keys",
+        data=json.dumps({"displayName": "e2e-teardown-cleanup"}),
+        headers={"Content-Type": "application/json"},
+    )
+    if api_key_resp.ok:
+        api_key_data = api_key_resp.json()["data"]
+        credentials = base64.b64encode(f"{api_key_data['apiKey']}:{api_key_data['apiSecret']}".encode()).decode()
+        auth_headers = {"Authorization": f"Basic {credentials}"}
+        api_key_id = api_key_data.get("id")
+    else:
+        logging.warning("Could not create API key for teardown cleanup: %s", api_key_resp.text()[:200])
+
+    try:
+        for function_data in created_functions:
+            function_uuid = function_data["uuid"]
+            template_id = function_data.get("templateId")
+
+            # 1. Delete all function_jobs and their associated comp projects
+            if auth_headers:
+                offset = 0
+                limit = 50
+                while True:
+                    jobs_resp = api_request_context.get(
+                        f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+                        headers=auth_headers,
+                    )
+                    if not jobs_resp.ok:
+                        if jobs_resp.status == 404:
+                            logging.info(
+                                "function_jobs endpoint not available on %s — skipping",
+                                api_server_url,
+                            )
+                        else:
+                            logging.warning(
+                                "Could not list function_jobs for %s: %s",
+                                function_uuid,
+                                jobs_resp.text()[:200],
+                            )
+                        break
+                    jobs = jobs_resp.json().get("items", [])
+                    if not jobs:
+                        break
+                    for job in jobs:
+                        job_uid = job["uid"]
+                        project_job_id = job.get("project_job_id")
+                        _delete_with_retry(
+                            api_request_context,
+                            f"{api_server_url}v0/function_jobs/{job_uid}",
+                            f"function_job {job_uid}",
+                            headers=auth_headers,
+                        )
+                        if project_job_id:
+                            _delete_with_retry(
+                                api_request_context,
+                                f"{product_url}v0/projects/{project_job_id}",
+                                f"comp project {project_job_id}",
+                            )
+                    if len(jobs) < limit:
+                        break
+                    offset += limit
+
+            # 2. Delete the function itself
+            _delete_with_retry(
+                api_request_context,
+                f"{product_url}v0/functions/{function_uuid}",
+                f"function {function_uuid}",
+            )
+
+            # 3. Delete the source study (templateId) the function was created from
+            if template_id:
+                _delete_with_retry(
+                    api_request_context,
+                    f"{product_url}v0/projects/{template_id}",
+                    f"source study {template_id}",
+                )
+    finally:
+        if api_key_id:
+            api_request_context.delete(f"{product_url}v0/auth/api-keys/{api_key_id}")
 
 
 def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: disable=too-many-branches
