@@ -59,11 +59,6 @@ def app_lifespan(
 
         yield {}
 
-    async def my_database_setup(app: FastAPI, state: State) -> AsyncIterator[State]:
-        app.state.my_db_engine = state[PostgresLifespanState.POSTGRES_ASYNC_ENGINE]
-
-        yield {}
-
     # compose lifespans
     app_lifespan = LifespanManager()
     app_lifespan.add(my_app_settings)
@@ -72,7 +67,6 @@ def app_lifespan(
     configure_postgres_database(
         app_lifespan,
         settings=settings.CATALOG_POSTGRES,
-        publisher_lifespan=my_database_setup,
     )
 
     return app_lifespan
@@ -100,15 +94,15 @@ async def test_lifespan_postgres_database_in_an_app(
         assert (
             PostgresLifespanState.POSTGRES_ASYNC_ENGINE in asgi_manager._state  # noqa: SLF001
         )
-        assert app.state.my_db_engine
+        assert app.state.engine
         assert (
-            app.state.my_db_engine
+            app.state.engine
             == asgi_manager._state[  # noqa: SLF001
                 PostgresLifespanState.POSTGRES_ASYNC_ENGINE
             ]
         )
 
-        assert app.state.my_db_engine == mock_create_async_engine_and_database_ready.return_value
+        assert app.state.engine == mock_create_async_engine_and_database_ready.return_value
 
     # Verify that the engine was disposed
     async_engine: Any = mock_create_async_engine_and_database_ready.return_value
