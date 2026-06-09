@@ -56,21 +56,20 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       const container = this.__getContainer();
       const bounds = osparc.utils.Utils.getBounds(anchor);
       const baseTop = bounds.top + bounds.height + 4;
-      // Anchor center is where the arrow points
-      const anchorCenter = bounds.left + Math.round(bounds.width / 2);
 
-      // Delay to allow container to compute its width after content changes
-      qx.event.Timer.once(() => {
-        const containerBounds = container.getBounds();
-        const containerWidth = containerBounds ? containerBounds.width : 300;
-        // Position so the arrow (12px from right edge) points at anchor center
-        // Container grows to the left
-        const left = anchorCenter - containerWidth + 12;
-        container.setLayoutProperties({
-          left: Math.max(0, left),
-          top: baseTop,
-        });
-      }, this, 50);
+      // Anchor by the RIGHT edge so the stack never shifts horizontally when
+      // message widths change (the credits button is fixed at the top-right).
+      // The arrow sits ~12px from the container's right edge; align it under the anchor center.
+      const root = qx.core.Init.getApplication().getRoot();
+      const rootBounds = root.getBounds();
+      const rootWidth = rootBounds ? rootBounds.width : (bounds.left + bounds.width);
+      const anchorCenter = bounds.left + Math.round(bounds.width / 2);
+      const right = rootWidth - anchorCenter - 12;
+
+      container.setLayoutProperties({
+        right: Math.max(0, right),
+        top: baseTop,
+      });
     },
 
     __updateArrowVisibility: function() {
@@ -106,7 +105,6 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         allowGrowY: false,
         alignX: "right",
         marginRight: 4,
-        marginBottom: -1,
       });
       arrowWrapper.setUserData("isArrow", true);
       arrowWrapper.addListenerOnce("appear", () => {
@@ -114,8 +112,9 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         if (dom) {
           dom.style.position = "relative";
           dom.style.overflow = "visible";
-          // Outer border triangle + inner fill that matches bubble background
-          dom.innerHTML = `<div style="position:absolute;top:0;left:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid ${color}"></div><div style="position:absolute;top:1px;left:1px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid ${bgColor}"></div>`;
+          // A 45deg-rotated square whose top+left borders form the arrow outline.
+          // Its background covers the bubble's top border underneath, so no line shows.
+          dom.innerHTML = `<div style="position:absolute;top:3px;right:4px;width:11px;height:11px;background:${bgColor};border-top:1px solid ${color};border-left:1px solid ${color};transform:rotate(45deg)"></div>`;
         }
       });
       container.add(arrowWrapper);
