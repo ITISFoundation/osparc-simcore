@@ -98,8 +98,6 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         font: "text-14",
         padding: 8,
         backgroundColor: "background-main",
-        alignX: "right",
-        allowGrowX: false,
         rich: false,
       });
       bubble.getContentElement().setStyles({
