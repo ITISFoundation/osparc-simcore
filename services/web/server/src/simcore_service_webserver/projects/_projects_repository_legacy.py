@@ -52,6 +52,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 from simcore_postgres_database.utils_projects_nodes import (
+    COLUMN_TO_WORKBENCH_NODE_ALIAS,
     WORKBENCH_NODE_ALIAS_TO_COLUMN,
     ProjectNode,
     ProjectNodeCreate,
@@ -309,7 +310,12 @@ class ProjectDBAPI(BaseProjectDB):
             project_nodes=project_nodes,
         )
 
-        inserted_project["workbench"] = workbench
+        # Rebuild workbench from effective project_nodes so the response matches persisted data
+        rebuilt_workbench: dict[str, Any] = {}
+        for nid, node_create in project_nodes.items():
+            node_dict = node_create.model_dump(mode="json", exclude={"node_id"}, exclude_none=True)
+            rebuilt_workbench[f"{nid}"] = {COLUMN_TO_WORKBENCH_NODE_ALIAS.get(k, k): v for k, v in node_dict.items()}
+        inserted_project["workbench"] = rebuilt_workbench
 
         async with self.engine.connect() as conn:
             # Returns created project with names as in the project schema

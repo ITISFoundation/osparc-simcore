@@ -82,6 +82,9 @@ WORKBENCH_NODE_ALIAS_TO_COLUMN: dict[str, str] = {
     if "_" in name
 }
 
+# Reverse mapping: snake_case column names → camelCase workbench-JSON keys.
+COLUMN_TO_WORKBENCH_NODE_ALIAS: dict[str, str] = {v: k for k, v in WORKBENCH_NODE_ALIAS_TO_COLUMN.items()}
+
 
 class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
