@@ -28,6 +28,7 @@ qx.Class.define("osparc.store.Study", {
     __nodeResources: null,
     __nodePricingUnit: null,
     __studiesInDebt: null,
+    __closingCreditsWatch: null,
 
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
@@ -221,6 +222,49 @@ qx.Class.define("osparc.store.Study", {
       this.fireDataEvent("studyStateChanged", {
         studyId,
         state,
+      });
+    },
+
+    // After closing a study, its dynamic services are stopped on the backend.
+    // The credits are only computed once the services are fully stopped, so we register
+    // the running services here and flash their used credits once the project is reported
+    // as closed (released), or after a fallback timeout.
+    watchClosingStudyCredits: function(studyId, walletId, nodes) {
+      if (!walletId || !nodes || !nodes.length) {
+        return;
+      }
+      if (this.__closingCreditsWatch === null) {
+        this.__closingCreditsWatch = {};
+        this.addListener("studyStateChanged", e => this.__onStudyStateChangedForCredits(e.getData()), this);
+      }
+      this.__closingCreditsWatch[studyId] = {
+        walletId,
+        nodes,
+      };
+      // fallback in case the closed state is never received
+      setTimeout(() => this.__flushClosingStudyCredits(studyId), 60000);
+    },
+
+    __onStudyStateChangedForCredits: function(data) {
+      const studyId = data["studyId"];
+      if (this.__closingCreditsWatch === null || !(studyId in this.__closingCreditsWatch)) {
+        return;
+      }
+      // wait until the project is no longer open (services stopped/released)
+      if (osparc.study.Utils.state.isProjectOpen(data["state"])) {
+        return;
+      }
+      this.__flushClosingStudyCredits(studyId);
+    },
+
+    __flushClosingStudyCredits: function(studyId) {
+      if (this.__closingCreditsWatch === null || !(studyId in this.__closingCreditsWatch)) {
+        return;
+      }
+      const watch = this.__closingCreditsWatch[studyId];
+      delete this.__closingCreditsWatch[studyId];
+      watch.nodes.forEach(node => {
+        osparc.data.model.NodeStatus.flashCreditsUsed(watch.walletId, studyId, node["nodeId"], node["label"]);
       });
     },
 

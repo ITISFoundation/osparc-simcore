@@ -149,6 +149,37 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         );
       }
       return false;
+    },
+
+    // Fetches the resource usage of a finished/stopped service and flashes the credits used.
+    // The backend computes the credits only once the service is fully stopped, so when the
+    // final (non-RUNNING) usage is not available yet, it retries a few times before giving up.
+    flashCreditsUsed: function(walletId, studyId, nodeId, label, retriesLeft = 5) {
+      if (!walletId) {
+        return;
+      }
+      const params = {
+        url: {
+          offset: 0,
+          limit: 20,
+          walletId,
+        }
+      };
+      osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
+        .then(usageData => {
+          const nodeUsage = usageData.find(entry =>
+            entry["project_id"] === studyId &&
+            entry["node_id"] === nodeId &&
+            entry["service_run_status"] !== "RUNNING"
+          );
+          if (nodeUsage && nodeUsage["credit_cost"]) {
+            const cost = Math.abs(nodeUsage["credit_cost"]).toFixed(2);
+            const msg = `${label} used ${cost} credits`;
+            qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
+          } else if (retriesLeft > 0) {
+            setTimeout(() => osparc.data.model.NodeStatus.flashCreditsUsed(walletId, studyId, nodeId, label, retriesLeft - 1), 3000);
+          }
+        });
     }
   },
 
@@ -255,28 +286,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
       const walletId = osparc.store.Store.getInstance().getContextWallet() ?
         osparc.store.Store.getInstance().getContextWallet().getWalletId() : null;
-      if (walletId) {
-        const params = {
-          url: {
-            offset: 0,
-            limit: 10,
-            walletId,
-          }
-        };
-        osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
-          .then(usageData => {
-            const nodeUsage = usageData.find(entry =>
-              entry["project_id"] === studyId &&
-              entry["node_id"] === nodeId &&
-              entry["service_run_status"] !== "RUNNING"
-            );
-            if (nodeUsage && nodeUsage["credit_cost"]) {
-              const cost = Math.abs(nodeUsage["credit_cost"]).toFixed(2);
-              const msg = `${label} used ${cost} credits`;
-              qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
-            }
-          });
-      }
+      osparc.data.model.NodeStatus.flashCreditsUsed(walletId, studyId, nodeId, label);
     },
   }
 });
