@@ -249,7 +249,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         osparc.store.Jobs.getInstance().getNodeLastSubJob(studyId, nodeId)
           .then(subJob => {
             if (subJob) {
-              const cost = subJob.getCreditCost();
+              const cost = subJob.getOsparcCredits();
               if (cost) {
                 this.fireDataEvent("creditsUsed", {
                   nodeId,

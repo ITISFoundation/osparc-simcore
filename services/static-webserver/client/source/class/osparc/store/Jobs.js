@@ -172,7 +172,6 @@ qx.Class.define("osparc.store.Jobs", {
         direction: "desc"
       };
       const jobs = await osparc.store.Jobs.getInstance().fetchJobsHistory(projectId, 0, 5, orderBy);
-      console.log("Jobs history", jobs);
       let found = null;
       for (let i=0; i<jobs.length && !found; i++) {
         const job = jobs[i];
@@ -180,6 +179,7 @@ qx.Class.define("osparc.store.Jobs", {
         if (subJobs) {
           const found = subJobs.find(subJob => subJob.getNodeId() === nodeId);
           if (found) {
+            console.log("NodeLastSubJob found", found);
             return found;
           }
         }
