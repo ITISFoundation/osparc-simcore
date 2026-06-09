@@ -453,7 +453,7 @@ qx.Class.define("osparc.utils.Utils", {
       button._blinkingIntervalId = blinkInterval;
     },
 
-    makeButtonBlink2: function(element) {
+    makeButtonBlinkInOut: function(element) {
       if (element) {
         qx.bom.element.Animation.animate(element, {
           duration: 600,
@@ -461,7 +461,7 @@ qx.Class.define("osparc.utils.Utils", {
           timing: "ease-in-out",
           keyFrames: {
             0: { "transform": "scale(1)", "opacity": 1 },
-            50: { "transform": "scale(1.3)", "opacity": 0.7 },
+            50: { "transform": "scale(1.2)", "opacity": 0.7 },
             100: { "transform": "scale(1)", "opacity": 1 },
           }
         });

@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     __onCreditsUsed: function(msg) {
       this.flashCreditsUsed(msg.getData());
       const el = this.getChildControl("image").getContentElement().getDomElement();
-      osparc.utils.Utils.makeButtonBlink2(el);
+      osparc.utils.Utils.makeButtonBlinkInOut(el);
     },
 
     /**
