@@ -16,82 +16,34 @@
 ************************************************************************ */
 
 /**
- * A speech-bubble style flash message that appears below a target widget,
- * with an arrow pointing up and a product-colored border.
- * Only the topmost message in the stack shows the arrow.
+ * Singleton that manages a stack of speech-bubble style flash messages.
+ * Each message appears below a target widget, with an arrow pointing up and a
+ * product-colored border. Only the topmost message in the stack shows the arrow.
  */
 qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
-  extend: qx.ui.core.Widget,
+  extend: qx.core.Object,
+  type: "singleton",
 
-  /**
-   * @param {String} message Text to display in the bubble
-   */
-  construct: function(message) {
+  construct: function() {
     this.base(arguments);
 
-    this.__message = message;
+    this.__activeMessages = [];
   },
 
   statics: {
     AUTO_DISMISS_MS: 5000,
-    __activeMessages: [],
+  },
+
+  members: {
+    __activeMessages: null,
     __container: null,
-    __arrowEl: null,
 
-    __getContainer: function() {
-      if (!this.__container) {
-        this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
-          zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
-        });
-        const root = qx.core.Init.getApplication().getRoot();
-        root.add(this.__container);
-      }
-      return this.__container;
-    },
-
-    __positionContainer: function(anchor) {
-      if (!anchor || !anchor.getBounds()) {
-        return;
-      }
-      const container = this.__getContainer();
-      const bounds = osparc.utils.Utils.getBounds(anchor);
-      const baseTop = bounds.top + bounds.height + 4;
-
-      // Anchor by the RIGHT edge so the stack never shifts horizontally when
-      // message widths change (the credits button is fixed at the top-right).
-      // The arrow sits ~12px from the container's right edge; align it under the anchor center.
-      const root = qx.core.Init.getApplication().getRoot();
-      const rootBounds = root.getBounds();
-      const rootWidth = rootBounds ? rootBounds.width : (bounds.left + bounds.width);
-      const anchorCenter = bounds.left + Math.round(bounds.width / 2);
-      const right = rootWidth - anchorCenter - 12;
-
-      container.setLayoutProperties({
-        right: Math.max(0, right),
-        top: baseTop,
-      });
-    },
-
-    __updateArrowVisibility: function() {
-      const container = this.__getContainer();
-      const children = container.getChildren();
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i];
-        if (child.getUserData && child.getUserData("isArrow")) {
-          child.setVisibility(i === 0 ? "visible" : "excluded");
-        }
-      }
-    },
-
-    __updateBubbleMargins: function() {
-      // Overlap borders between adjacent bubbles, but keep the last bubble's bottom border intact
-      const messages = this.__activeMessages;
-      for (let i = 0; i < messages.length; i++) {
-        const isLast = (i === messages.length - 1);
-        messages[i].bubble.setMarginBottom(isLast ? 0 : -1);
-      }
-    },
-
+    /**
+     * Show a flash message anchored below the given widget.
+     *
+     * @param {String} message Text to display in the bubble
+     * @param {qx.ui.core.Widget} anchor Widget to position the bubble below
+     */
     addMessage: function(message, anchor) {
       const container = this.__getContainer();
       const color = qx.theme.manager.Color.getInstance().resolve("strong-main");
@@ -151,40 +103,84 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       this.__positionContainer(anchor);
 
       // Auto-dismiss
-      qx.event.Timer.once(() => {
-        const idx = this.__activeMessages.indexOf(entry);
-        if (idx > -1) {
-          this.__activeMessages.splice(idx, 1);
-        }
-        container.remove(arrowWrapper);
-        container.remove(bubble);
-        arrowWrapper.dispose();
-        bubble.dispose();
-
-        this.__updateArrowVisibility();
-        this.__updateBubbleMargins();
-        this.__positionContainer(anchor);
-
-        // Hide container if empty
-        if (this.__activeMessages.length === 0) {
-          container.exclude();
-        }
-      }, this, this.AUTO_DISMISS_MS);
+      qx.event.Timer.once(() => this.__dismissMessage(entry, anchor), this, this.self().AUTO_DISMISS_MS);
 
       container.show();
     },
-  },
 
-  members: {
-    __message: null,
+    __getContainer: function() {
+      if (!this.__container) {
+        this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
+          zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
+        });
+        const root = qx.core.Init.getApplication().getRoot();
+        root.add(this.__container);
+      }
+      return this.__container;
+    },
 
-    /**
-     * Show the flash message anchored below the given widget.
-     *
-     * @param {qx.ui.core.Widget} anchor Widget to position below
-     */
-    showBelow: function(anchor) {
-      this.self().addMessage(this.__message, anchor);
+    __positionContainer: function(anchor) {
+      if (!anchor || !anchor.getBounds()) {
+        return;
+      }
+      const container = this.__getContainer();
+      const bounds = osparc.utils.Utils.getBounds(anchor);
+      const baseTop = bounds.top + bounds.height + 4;
+
+      // Anchor by the RIGHT edge so the stack never shifts horizontally when
+      // message widths change (the credits button is fixed at the top-right).
+      // The arrow sits ~12px from the container's right edge; align it under the anchor center.
+      const root = qx.core.Init.getApplication().getRoot();
+      const rootBounds = root.getBounds();
+      const rootWidth = rootBounds ? rootBounds.width : (bounds.left + bounds.width);
+      const anchorCenter = bounds.left + Math.round(bounds.width / 2);
+      const right = rootWidth - anchorCenter - 12;
+
+      container.setLayoutProperties({
+        right: Math.max(0, right),
+        top: baseTop,
+      });
+    },
+
+    __updateArrowVisibility: function() {
+      const container = this.__getContainer();
+      const children = container.getChildren();
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        if (child.getUserData && child.getUserData("isArrow")) {
+          child.setVisibility(i === 0 ? "visible" : "excluded");
+        }
+      }
+    },
+
+    __updateBubbleMargins: function() {
+      // Overlap borders between adjacent bubbles, but keep the last bubble's bottom border intact
+      const messages = this.__activeMessages;
+      for (let i = 0; i < messages.length; i++) {
+        const isLast = (i === messages.length - 1);
+        messages[i].bubble.setMarginBottom(isLast ? 0 : -1);
+      }
+    },
+
+    __dismissMessage: function(entry, anchor) {
+      const container = this.__getContainer();
+      const idx = this.__activeMessages.indexOf(entry);
+      if (idx > -1) {
+        this.__activeMessages.splice(idx, 1);
+      }
+      container.remove(entry.arrowWrapper);
+      container.remove(entry.bubble);
+      entry.arrowWrapper.dispose();
+      entry.bubble.dispose();
+
+      this.__updateArrowVisibility();
+      this.__updateBubbleMargins();
+      this.__positionContainer(anchor);
+
+      // Hide container if empty
+      if (this.__activeMessages.length === 0) {
+        container.exclude();
+      }
     },
   }
 });

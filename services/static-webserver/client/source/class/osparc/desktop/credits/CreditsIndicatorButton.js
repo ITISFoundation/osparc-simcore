@@ -102,8 +102,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     },
 
     flashCreditsUsed: function(message) {
-      const flash = new osparc.desktop.credits.CreditsFlashMessage(message);
-      flash.showBelow(this);
+      osparc.desktop.credits.CreditsFlashMessage.getInstance().addMessage(message, this);
     },
   }
 });
