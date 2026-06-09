@@ -150,9 +150,11 @@ qx.Class.define("osparc.store.Jobs", {
       let job = this.getJob(collectionRunId);
       if (!job) {
         const jobs = this.getJobs();
-        job = new osparc.data.Job({
+        const mergedData = {
           collectionRunId,
-        });
+          "projectIds": [subJobData["project_id"]],
+        };
+        job = new osparc.data.Job(mergedData);
         jobs.push(job);
       }
       const subJob = job.addSubJob(collectionRunId, subJobData);
@@ -163,5 +165,26 @@ qx.Class.define("osparc.store.Jobs", {
       const jobs = this.getJobs();
       return jobs.find(job => job.getCollectionRunId() === collectionRunId);
     },
+
+    getNodeLastSubJob: async function(projectId, nodeId) {
+      const orderBy = {
+        field: "ended_at",
+        direction: "desc"
+      };
+      const jobs = await osparc.store.Jobs.getInstance().fetchJobsHistory(projectId, 0, 5, orderBy);
+      console.log("Jobs history", jobs);
+      let found = null;
+      for (let i=0; i<jobs.length && !found; i++) {
+        const job = jobs[i];
+        const subJobs = await osparc.store.Jobs.getInstance().fetchSubJobs(job.getCollectionRunId(), orderBy)
+        if (subJobs) {
+          const found = subJobs.find(subJob => subJob.getNodeId() === nodeId);
+          if (found) {
+            return found;
+          }
+        }
+      }
+      return null;
+    }
   }
 });

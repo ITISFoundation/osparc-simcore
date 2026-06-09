@@ -246,9 +246,18 @@ qx.Class.define("osparc.data.model.NodeStatus", {
           nodeId: nodeId,
           label: label,
         });
-        osparc.store.Jobs.getInstance().fetchJobsHistory(studyId, 0, 20)
-          .then(jobs => {
-            console.log("Jobs history", jobs);
+        osparc.store.Jobs.getInstance().getNodeLastSubJob(studyId, nodeId)
+          .then(subJob => {
+            if (subJob) {
+              const cost = subJob.getCreditCost();
+              if (cost) {
+                this.fireDataEvent("creditsUsed", {
+                  nodeId,
+                  label,
+                  cost
+                });
+              }
+            }
           });
       } else if (node.isDynamic()) {
         this.fireDataEvent("dynamicNodeFinished", {
