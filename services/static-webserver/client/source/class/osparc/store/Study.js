@@ -264,7 +264,7 @@ qx.Class.define("osparc.store.Study", {
       const watch = this.__closingCreditsWatch[studyId];
       delete this.__closingCreditsWatch[studyId];
       watch.nodes.forEach(node => {
-        osparc.data.model.NodeStatus.flashCreditsUsed(watch.walletId, studyId, node["nodeId"], node["label"]);
+        osparc.desktop.credits.CreditsIndicatorButton.flashCreditsUsed(watch.walletId, studyId, node["nodeId"], node["label"]);
       });
     },
 

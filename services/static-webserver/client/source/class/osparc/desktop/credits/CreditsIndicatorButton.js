@@ -33,12 +33,47 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     qx.event.message.Bus.getInstance().subscribe("creditsUsed", this.__onCreditsUsed, this);
   },
 
+  statics: {
+    // Fetches the resource usage of a finished/stopped service and flashes the credits used.
+    // The credits are only shown if a CreditsIndicatorButton is mounted (subscribed to the
+    // "creditsUsed" message); otherwise the dispatched message is simply ignored.
+    // The backend computes the credits only once the service is fully stopped, so when the
+    // final (non-RUNNING) usage is not available yet, it retries a few times before giving up.
+    flashCreditsUsed: function(walletId, studyId, nodeId, label, retriesLeft = 5) {
+      if (!walletId) {
+        return;
+      }
+      const params = {
+        url: {
+          offset: 0,
+          limit: 20,
+          walletId,
+        }
+      };
+      osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
+        .then(usageData => {
+          const nodeUsage = usageData.find(entry =>
+            entry["project_id"] === studyId &&
+            entry["node_id"] === nodeId &&
+            entry["service_run_status"] !== "RUNNING"
+          );
+          if (nodeUsage && nodeUsage["credit_cost"]) {
+            const cost = Math.abs(nodeUsage["credit_cost"]).toFixed(2);
+            const msg = `${label} used ${cost} credits`;
+            qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
+          } else if (retriesLeft > 0) {
+            setTimeout(() => osparc.desktop.credits.CreditsIndicatorButton.flashCreditsUsed(walletId, studyId, nodeId, label, retriesLeft - 1), 3000);
+          }
+        });
+    },
+  },
+
   members: {
     __creditsContainer: null,
     __tapListener: null,
 
     __onCreditsUsed: function(msg) {
-      this.flashCreditsUsed(msg.getData());
+      osparc.desktop.credits.CreditsFlashMessage.getInstance().addMessage(msg.getData(), this);
       const el = this.getChildControl("image").getContentElement().getDomElement();
       osparc.utils.Utils.makeButtonBlinkInOut(el);
     },
@@ -99,10 +134,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
 
       // Remove listeners for outside clicks/taps
       document.removeEventListener("mousedown", this.__onTapOutsideMouse.bind(this), true);
-    },
-
-    flashCreditsUsed: function(message) {
-      osparc.desktop.credits.CreditsFlashMessage.getInstance().addMessage(message, this);
     },
   }
 });
