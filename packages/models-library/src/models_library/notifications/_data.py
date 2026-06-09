@@ -3,17 +3,6 @@ from typing import NamedTuple
 
 from models_library.products import ProductName
 
-#
-# *Data are models used for rendering
-#
-
-
-@dataclass(frozen=True)
-class JinjaTemplateDbGet:
-    product_name: ProductName
-    name: str
-    content: str
-
 
 @dataclass(frozen=True)
 class UserData:
