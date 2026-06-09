@@ -6,7 +6,7 @@ from . import routes_external_scheduler, routes_internal_scheduler
 from ._utils import set_parent_app
 
 
-def initialize_frontend(app: FastAPI) -> None:
+def configure_frontend(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
 
     if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:

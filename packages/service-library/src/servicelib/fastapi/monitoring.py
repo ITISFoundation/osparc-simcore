@@ -1,13 +1,12 @@
 # pylint: disable=protected-access
 
 import asyncio
-import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from time import perf_counter
 from typing import Final
 
 from fastapi import FastAPI, Request, Response, status
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from opentelemetry.instrumentation.fastapi import _get_route_details
 from prometheus_client import CollectorRegistry
 from prometheus_client.openmetrics.exposition import (
@@ -29,8 +28,9 @@ from ..prometheus_metrics import (
     record_response_metrics,
 )
 
-_logger = logging.getLogger(__name__)
-_PROMETHEUS_METRICS = "prometheus_metrics"
+type PrometheusAdditionalLifespan = (
+    Callable[[FastAPI], AsyncIterator[State]] | Callable[[FastAPI, State], AsyncIterator[State]]
+)
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
@@ -125,13 +125,40 @@ def create_prometheus_instrumentationmain_input_state(*, enabled: bool) -> State
     return {_PROMETHEUS_INSTRUMENTATION_ENABLED: enabled}
 
 
+def create_prometheus_instrumentation_lifespan_manager() -> LifespanManager[FastAPI]:
+    instrumentation_lifespan_manager = LifespanManager()
+    instrumentation_lifespan_manager.add(prometheus_instrumentation_lifespan)
+    return instrumentation_lifespan_manager
+
+
+def configure_prometheus_instrumentation(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    *additional_lifespans: PrometheusAdditionalLifespan,
+) -> None:
+    initialize_prometheus_instrumentation(app)
+    app_lifespan.include(create_prometheus_instrumentation_lifespan_manager())
+    for additional_lifespan in additional_lifespans:
+        app_lifespan.add(additional_lifespan)
+
+
 async def prometheus_instrumentation_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     # NOTE: requires ``initialize_prometheus_instrumentation`` to be called before the
     # lifespan of the application runs, usually right after the ``FastAPI`` instance is created
 
-    instrumentation_enabled = state.get(_PROMETHEUS_INSTRUMENTATION_ENABLED, False)
-    if instrumentation_enabled:
-        _startup(app)
+    instrumentation_enabled = state.get(_PROMETHEUS_INSTRUMENTATION_ENABLED, True)
+    if not instrumentation_enabled:
+        yield {}
+        return
+
+    if not hasattr(app.state, "prometheus_metrics"):
+        msg = (
+            "Prometheus instrumentation is enabled but not initialized. "
+            "Call configure_prometheus_instrumentation(...) or initialize_prometheus_instrumentation(...) "
+            "before app startup."
+        )
+        raise RuntimeError(msg)
+
+    _startup(app)
     yield {}
-    if instrumentation_enabled:
-        _shutdown(app)
+    _shutdown(app)

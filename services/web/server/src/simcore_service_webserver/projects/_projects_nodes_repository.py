@@ -33,11 +33,9 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.inputs,
     projects_nodes.c.inputs_required,
     projects_nodes.c.inputs_units,
-    projects_nodes.c.output_nodes,
     projects_nodes.c.outputs,
     projects_nodes.c.run_hash,
     projects_nodes.c.state,
-    projects_nodes.c.parent,
     projects_nodes.c.boot_options,
 ]
 
@@ -50,9 +48,9 @@ _ALIAS_TO_COLUMN: dict[str, str] = {
 
 
 # Columns that actually exist in `projects_nodes` and are writable
-_WRITABLE_COLUMNS: frozenset[str] = frozenset(
-    c.name for c in projects_nodes.columns
-) - frozenset({"created", "modified"})
+_WRITABLE_COLUMNS: frozenset[str] = frozenset(c.name for c in projects_nodes.columns) - frozenset(
+    {"created", "modified"}
+)
 
 
 def _node_dump_for_db(node_model: Node | PartialNode, *, exclude_unset: bool) -> dict:

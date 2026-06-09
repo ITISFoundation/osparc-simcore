@@ -17,7 +17,7 @@ markupsafe==3.0.3
     # via mako
 multidict==6.7.1
     # via yarl
-orjson==3.11.7
+orjson==3.11.9
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt

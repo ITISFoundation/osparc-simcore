@@ -1,13 +1,13 @@
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 
 from ._public_client import CatalogPublicClient
 from ._thin_client import CatalogThinClient
 
 
-async def catalog_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _catalog_lifespan(app: FastAPI) -> AsyncIterator[State]:
     thin_client = CatalogThinClient(app)
     thin_client.set_to_app_state(app)
     thin_client.attach_lifespan_to(app)
@@ -19,3 +19,7 @@ async def catalog_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     CatalogPublicClient.pop_from_app_state(app)
     CatalogThinClient.pop_from_app_state(app)
+
+
+def configure_catalog(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_catalog_lifespan)
