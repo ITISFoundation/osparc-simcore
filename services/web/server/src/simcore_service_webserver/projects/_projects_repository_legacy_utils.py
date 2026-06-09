@@ -373,7 +373,7 @@ async def get_project_workbench(
     connection: AsyncConnection,
     project_uuid: str,
 ) -> dict[str, Any]:
-    project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+    project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(f"{project_uuid}"))
     exclude_fields = {"node_id", "required_resources", "created", "modified"}
     workbench: dict[str, Any] = {}
 

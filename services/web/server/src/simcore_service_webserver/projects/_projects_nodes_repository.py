@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -53,7 +54,7 @@ _WRITABLE_COLUMNS: frozenset[str] = frozenset(c.name for c in projects_nodes.col
 )
 
 
-def _node_dump_for_db(node_model: Node | PartialNode, *, exclude_unset: bool) -> dict:
+def _node_dump_for_db(node_model: Node | PartialNode, *, exclude_unset: bool) -> dict[str, Any]:
     """Serializes a Node/PartialNode for DB storage.
 
     Uses by_alias=True so nested JSONB values (inputs, outputs, state)
@@ -73,7 +74,7 @@ async def add(
     project_id: ProjectID,
     node_id: NodeID,
     node: Node,
-    required_resources: dict | None = None,
+    required_resources: dict[str, Any] | None = None,
 ) -> None:
     values = _node_dump_for_db(node, exclude_unset=True)
     if required_resources is not None:
@@ -136,7 +137,7 @@ async def get_by_project(
 
         result: list[tuple[NodeID, Node]] = []
         async for row in stream:
-            result.append((NodeID(row.node_id), Node.model_validate(row, from_attributes=True)))
+            result.append((row.node_id, Node.model_validate(row, from_attributes=True)))
 
         return result
 
@@ -161,7 +162,7 @@ async def get_by_projects(
 
         async for row in stream:
             node = Node.model_validate(row, from_attributes=True)
-            projects_to_nodes[ProjectID(row.project_uuid)].append((NodeID(row.node_id), node))
+            projects_to_nodes[row.project_uuid].append((row.node_id, node))
 
         return projects_to_nodes
 
