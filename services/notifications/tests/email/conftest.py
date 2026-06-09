@@ -13,11 +13,11 @@ from notifications_library._models import (
     SharerData,
     UserData,
 )
-from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
+from simcore_service_notifications.models.payments import PaymentData
 from simcore_service_notifications.models.product import (
     CompanyLink,
     ProductData,

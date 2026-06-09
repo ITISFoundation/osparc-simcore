@@ -5,7 +5,6 @@
 
 
 from pathlib import Path
-from typing import Any
 
 import notifications_library
 import pytest
@@ -14,7 +13,6 @@ from notifications_library._models import (
     SharerData,
     UserData,
 )
-from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 
@@ -65,14 +63,4 @@ def sharer_data(user_name: str, faker: Faker) -> SharerData:
     return SharerData(
         user_name=user_name,
         message=faker.random_element(elements=(faker.sentence(), "")),
-    )
-
-
-@pytest.fixture
-def payment_data(successful_transaction: dict[str, Any]) -> PaymentData:
-    return PaymentData(
-        price_dollars=successful_transaction["price_dollars"],
-        osparc_credits=successful_transaction["osparc_credits"],
-        invoice_url=successful_transaction["invoice_url"],
-        invoice_pdf_url=successful_transaction["invoice_pdf_url"],
     )

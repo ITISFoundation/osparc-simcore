@@ -31,13 +31,13 @@ from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.products import ProductName
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from notifications_library._models import SharerData, UserData
-from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
 from simcore_service_notifications.api.rpc.dependencies import get_jinja_env
 from simcore_service_notifications.clients.smtp import create_session
+from simcore_service_notifications.models.payments import PaymentData
 from simcore_service_notifications.models.product import ProductData
 from simcore_service_notifications.renderers._email_render import (
     get_support_address,
