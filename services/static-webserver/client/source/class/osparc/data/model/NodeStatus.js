@@ -251,11 +251,8 @@ qx.Class.define("osparc.data.model.NodeStatus", {
             if (subJob) {
               const cost = subJob.getOsparcCredits();
               if (cost) {
-                this.fireDataEvent("creditsUsed", {
-                  nodeId,
-                  label,
-                  cost
-                });
+                const msg = `${label} used ${cost} credits`;
+                osparc.FlashMessenger.logAs(msg, "INFO", 5000);
               }
             }
           });
