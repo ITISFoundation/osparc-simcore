@@ -341,10 +341,7 @@ async def test_create_node(
         with postgres_db.connect() as conn:
             result = conn.execute(
                 sa.select(sa.literal(1))
-                .where(
-                    (projects_nodes.c.project_uuid == user_project["uuid"])
-                    & (projects_nodes.c.node_id == node_id)
-                )
+                .where((projects_nodes.c.project_uuid == user_project["uuid"]) & (projects_nodes.c.node_id == node_id))
                 .limit(1)
             )
         assert result.scalar() is not None
@@ -679,7 +676,11 @@ async def test_delete_node(
 
         # ensure the node is gone
         with postgres_db.connect() as conn:
-            result = conn.execute(sa.select(sa.literal(1)).where(projects_nodes.c.node_id == node_id).limit(1))
+            result = conn.execute(
+                sa.select(sa.literal(1))
+                .where((projects_nodes.c.project_uuid == user_project["uuid"]) & (projects_nodes.c.node_id == node_id))
+                .limit(1)
+            )
             assert result.scalar() is None
 
 
