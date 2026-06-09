@@ -1456,8 +1456,9 @@ async def _trigger_connected_service_retrieve(
             if not isinstance(port_value, dict):
                 continue
 
-            # FIXME: hack to support both field and alias names because cannot guarantee which one is stored in workbench
-            input_node_uuid = port_value.get("nodeUuid", port_value.get("node_uuid"))
+            # NOTE: workbench data always uses the camelCase alias `nodeUuid` (PortLink serialization).
+            # Fallback to `node_uuid` is kept as a safety net for any legacy rows not yet re-serialized.
+            input_node_uuid = port_value.get("nodeUuid") or port_value.get("node_uuid")
             if input_node_uuid != updated_node_uuid:
                 continue
 
