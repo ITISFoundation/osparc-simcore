@@ -106,11 +106,6 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     }
   },
 
-  events: {
-    "computationalNodeFinished": "qx.event.type.Data",
-    "dynamicNodeFinished": "qx.event.type.Data",
-  },
-
   statics: {
     getValidProgress: function(value) {
       if (value !== null && !Number.isNaN(value) && value >= 0 && value <= 100) {
@@ -269,23 +264,12 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       if (!node) {
         return;
       }
-      const nodeId = node.getNodeId();
-      const studyId = node.getStudy().getUuid();
-      const label = node.getLabel();
-      if (node.isComputational()) {
-        this.fireDataEvent("computationalNodeFinished", {
-          nodeId: nodeId,
-          label: label,
-        });
-      } else if (node.isDynamic()) {
-        this.fireDataEvent("dynamicNodeFinished", {
-          nodeId: node.getNodeId(),
-          label: node.getLabel(),
-        });
-      }
 
       const walletId = osparc.store.Store.getInstance().getContextWallet() ?
         osparc.store.Store.getInstance().getContextWallet().getWalletId() : null;
+      const nodeId = node.getNodeId();
+      const studyId = node.getStudy().getUuid();
+      const label = node.getLabel();
       osparc.data.model.NodeStatus.flashCreditsUsed(walletId, studyId, nodeId, label);
     },
   }
