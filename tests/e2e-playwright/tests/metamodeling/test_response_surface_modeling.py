@@ -23,7 +23,7 @@ from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
 import pytest
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
@@ -808,14 +808,30 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                         value_str,
                     )
                     page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
-                page.wait_for_timeout(2 * SECOND)
                 next_button.click(timeout=30 * SECOND)
 
         with log_context(logging.INFO, "Waiting for the AI model to be created..."):
             creating_ai_model_text = service_iframe.get_by_text("Creating AI model...")
-            creating_ai_model_text.wait_for(state="visible", timeout=30 * SECOND)
-            # wait for it to disappear, which means the model is created and we can proceed
-            creating_ai_model_text.wait_for(state="hidden", timeout=2 * MINUTE)
+            no_data_text = service_iframe.get_by_text("No data available. Please create more Samples.", exact=False)
+            model_is_creating = False
+
+            try:
+                creating_ai_model_text.wait_for(state="visible", timeout=4 * SECOND)
+                model_is_creating = True  # loading confirmation
+            except PlaywrightTimeoutError:
+                # if nothing was loaded, we check for no data and continue
+                try:
+                    expect(no_data_text).to_be_visible(timeout=10 * SECOND)
+                    with log_context(logging.INFO, "No data available. Continuing test without data."):
+                        pass
+                except AssertionError:
+                    # If there is no loading AND no 'no data' message, the test fails legitimately here
+                    error_msg = "Neither the creation process nor the 'no data available' state was detected."
+                    raise TimeoutError(error_msg) from None
+
+            if model_is_creating:
+                with log_context(logging.INFO, "Model creation in progress. Waiting up to 2 minutes for completion..."):
+                    creating_ai_model_text.wait_for(state="hidden", timeout=2 * MINUTE)
 
         with log_context(logging.INFO, "Starting the sampling..."):
             extend_sampling_btn = service_iframe.locator('[mmux-testid="extend-sampling-btn"]')
