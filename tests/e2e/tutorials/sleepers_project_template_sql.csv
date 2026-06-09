@@ -1,2 +1,2 @@
-id,type,uuid,name,description,thumbnail,prj_owner,creation_date,last_change_date,published,access_rights,dev,classifiers,ui,quality,hidden,workspace_id,trashed,trashed_explicitly,trashed_by,template_type
-10,TEMPLATE,ed6c2f58-dc16-445d-bb97-e989e2611603,Sleepers,5 sleepers interconnected,"",,2019-06-06 14:34:19.631,2019-06-06 14:34:28.647,t,"{""1"": {""read"": true, ""write"": false, ""delete"": false}}",{},{},{},{},f,,,f,,TEMPLATE
+id,type,uuid,name,description,thumbnail,prj_owner,creation_date,last_change_date,published,access_rights,dev,classifiers,ui,quality,hidden,workspace_id,trashed,trashed_explicitly,trashed_by,template_type,product_name
+10,TEMPLATE,ed6c2f58-dc16-445d-bb97-e989e2611603,Sleepers,5 sleepers interconnected,"",,2019-06-06 14:34:19.631,2019-06-06 14:34:28.647,t,"{""1"": {""read"": true, ""write"": false, ""delete"": false}}",{},{},{},{},f,,,f,,TEMPLATE,osparc

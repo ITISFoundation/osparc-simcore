@@ -99,7 +99,6 @@ async def create_project(
                             "thumbnail": ("thumbnail",),
                             "run_hash": ("run_hash", "runHash"),
                             "state": ("state",),
-                            "parent": ("parent",),
                             "boot_options": ("boot_options", "bootOptions"),
                             "required_resources": (
                                 "required_resources",

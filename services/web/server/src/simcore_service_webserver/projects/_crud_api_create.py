@@ -23,6 +23,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
+    WORKBENCH_NODE_ALIAS_TO_COLUMN,
     ProjectNode,
     ProjectNodeCreate,
 )
@@ -231,8 +232,6 @@ async def _compose_project_data(
         # when predefined_project is ProjectCreateNew
         # when predefined_project is ProjectCreateNew
         # Convert workbench JSON (camelCase aliases) to ProjectNodeCreate fields (snake_case columns)
-        from simcore_postgres_database.utils_projects_nodes import WORKBENCH_NODE_ALIAS_TO_COLUMN
-
         valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
         project_nodes = {}
