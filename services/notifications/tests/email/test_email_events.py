@@ -1,7 +1,7 @@
 """
 These tests can be run against external configuration
 
-cd packages/notifications-library
+cd services/notifications
 make install-dev
 
 pytest \
@@ -28,9 +28,9 @@ from unittest.mock import AsyncMock
 import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
+from models_library.notifications import SharerData, UserData
 from models_library.products import ProductName
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from notifications_library._models import SharerData, UserData
 from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict

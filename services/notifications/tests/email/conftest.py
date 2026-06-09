@@ -2,17 +2,12 @@
 # pylint: disable=unused-argument
 
 import json
-from pathlib import Path
 from typing import Any
 
-import notifications_library
 import pytest
 from faker import Faker
+from models_library.notifications import SharerData, UserData
 from models_library.products import ProductName
-from notifications_library._models import (
-    SharerData,
-    UserData,
-)
 from pydantic import EmailStr
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -31,13 +26,6 @@ pytest_plugins = [
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
 ]
-
-
-@pytest.fixture(scope="session")
-def package_dir() -> Path:
-    pdir = Path(notifications_library.__file__).resolve().parent
-    assert pdir.exists()
-    return pdir
 
 
 @pytest.fixture

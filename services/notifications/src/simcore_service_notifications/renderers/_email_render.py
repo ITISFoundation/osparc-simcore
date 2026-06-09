@@ -4,7 +4,7 @@ from typing import Any, NamedTuple
 
 from jinja2 import Environment
 from jinja2.exceptions import TemplateNotFound
-from notifications_library._models import UserData
+from models_library.notifications import UserData
 
 from ..models.product import ProductData
 

@@ -1,7 +1,7 @@
 """Helper functions for creating notification data models."""
 
 from models_library.emails import LowerCaseEmailStr
-from notifications_library._models import UserData
+from models_library.notifications import UserData
 
 
 def create_user_data(
