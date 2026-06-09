@@ -611,6 +611,8 @@ promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-G
 		# upgrading uv
 		@if [ "${CI}" != "true" ]; then \
 			uv self --quiet update; \
+		else \
+			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
 		fi
 
 .venv: .check-uv-installed
