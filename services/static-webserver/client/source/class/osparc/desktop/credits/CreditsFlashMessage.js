@@ -37,6 +37,30 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
 
   statics: {
     AUTO_DISMISS_MS: 5000,
+    __activeMessages: [],
+
+    getActiveMessages: function() {
+      return this.__activeMessages;
+    },
+
+    __repositionAll: function(anchor) {
+      if (!anchor || !anchor.getBounds()) {
+        return;
+      }
+      const bounds = osparc.utils.Utils.getBounds(anchor);
+      const baseTop = bounds.top + bounds.height + 4;
+      let offsetY = 0;
+      for (const msg of this.__activeMessages) {
+        msg.setLayoutProperties({
+          left: bounds.left + bounds.width - 200,
+          top: baseTop + offsetY,
+        });
+        const msgBounds = msg.getBounds();
+        if (msgBounds) {
+          offsetY += msgBounds.height + 4;
+        }
+      }
+    },
   },
 
   members: {
@@ -45,19 +69,21 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
 
       // Arrow pointing up
       const arrow = new qx.ui.core.Widget().set({
-        width: 0,
-        height: 0,
+        height: 8,
         allowGrowX: false,
+        allowGrowY: false,
         alignX: "right",
         marginRight: 12,
       });
-      arrow.getContentElement().setStyles({
-        "width": "0",
-        "height": "0",
-        "border-left": "8px solid transparent",
-        "border-right": "8px solid transparent",
-        "border-bottom": "8px solid",
-        "border-bottom-color": color,
+      arrow.addListenerOnce("appear", () => {
+        const el = arrow.getContentElement().getDomElement();
+        if (el) {
+          el.style.width = "0";
+          el.style.height = "0";
+          el.style.borderLeft = "8px solid transparent";
+          el.style.borderRight = "8px solid transparent";
+          el.style.borderBottom = "8px solid " + color;
+        }
       });
       this.add(arrow);
 
@@ -68,7 +94,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         backgroundColor: "background-main",
       });
       bubble.getContentElement().setStyles({
-        "border": "2px solid " + color,
+        "border": "1px solid " + color,
         "border-radius": "6px",
       });
       this.add(bubble);
@@ -76,6 +102,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
 
     /**
      * Show the flash message anchored below the given widget.
+     * Stacks below any already-visible messages.
      * Auto-dismisses after the configured duration.
      *
      * @param {qx.ui.core.Widget} anchor Widget to position below
@@ -84,26 +111,33 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       const root = qx.core.Init.getApplication().getRoot();
       root.add(this);
 
+      const activeMessages = this.self().getActiveMessages();
+      activeMessages.push(this);
+      this.__anchor = anchor;
+
       const position = () => {
-        const bounds = osparc.utils.Utils.getBounds(anchor);
-        this.setLayoutProperties({
-          left: bounds.left + bounds.width - 200,
-          top: bounds.top + bounds.height + 4,
-        });
+        this.self().__repositionAll(anchor);
       };
 
       if (anchor.getBounds()) {
-        position();
+        // Delay slightly to allow this widget to render and get bounds
+        qx.event.Timer.once(() => position(), this, 50);
       } else {
         anchor.addListenerOnce("appear", () => position());
       }
 
       // Auto-dismiss
       qx.event.Timer.once(() => {
+        const idx = activeMessages.indexOf(this);
+        if (idx > -1) {
+          activeMessages.splice(idx, 1);
+        }
         if (root.indexOf(this) > -1) {
           root.remove(this);
           this.dispose();
         }
+        // Reposition remaining messages
+        this.self().__repositionAll(anchor);
       }, this, this.self().AUTO_DISMISS_MS);
     },
   }
