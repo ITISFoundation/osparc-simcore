@@ -184,10 +184,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     __applyRunning: function(value, oldValue) {
       if (value === "SUCCESS" && oldValue === "STARTED") {
         // when a comp node finishes, show the credits used
-        this.fireDataEvent("computationalNodeFinished", {
-          nodeId: this.getNode().getId(),
-          label: this.getNode().getLabel(),
-        });
+        this.__displayCreditsUsed();
       }
       this.__recomputeOutput();
     },
@@ -195,10 +192,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     __applyInteractive: function(value, oldValue) {
       if (value === "ready" && oldValue === "idle") {
         // when a dynamic node finishes, show the credits used
-        this.fireDataEvent("dynamicNodeFinished", {
-          nodeId: this.getNode().getId(),
-          label: this.getNode().getLabel(),
-        });
+        this.__displayCreditsUsed();
       }
       if (value === "failed") {
         this.getProgressSequence().resetSequence();
@@ -236,6 +230,31 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       this.setModified("modified" in state ? state.modified : null);
       if ("lock_state" in state) {
         this.getLockState().stateReceived(state.lock_state);
+      }
+    },
+
+    __displayCreditsUsed: function() {
+      const node = this.getNode();
+      if (!node) {
+        return;
+      }
+      const nodeId = node.getNodeId();
+      const studyId = node.getStudy().getUuid();
+      const label = node.getLabel();
+      if (node.isComputational()) {
+        this.fireDataEvent("computationalNodeFinished", {
+          nodeId: nodeId,
+          label: label,
+        });
+        osparc.store.Jobs.getInstance().fetchJobsHistory(studyId, 0, 20)
+          .then(jobs => {
+            console.log("Jobs history", jobs);
+          });
+      } else if (node.isDynamic()) {
+        this.fireDataEvent("dynamicNodeFinished", {
+          nodeId: node.getNodeId(),
+          label: node.getLabel(),
+        });
       }
     },
   }
