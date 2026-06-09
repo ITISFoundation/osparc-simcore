@@ -92,7 +92,6 @@ async def create_project(
                             "inputs_required": ("inputs_required", "inputsRequired"),
                             "outputs": ("outputs",),
                             "input_nodes": ("input_nodes", "inputNodes"),
-                            # "output_nodes"/"outputNodes" are deprecated and not persisted in `projects_nodes`
                             "input_access": ("input_access", "inputAccess"),
                             "inputs_units": ("inputs_units", "inputsUnits"),
                             "progress": ("progress",),
