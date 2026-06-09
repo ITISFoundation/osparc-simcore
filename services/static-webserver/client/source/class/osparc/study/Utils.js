@@ -352,6 +352,11 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     state: {
+      STATUS: {
+        OPENED: "OPENED",
+        CLOSED: "CLOSED",
+      },
+
       __getShareState: function(state) {
         if (state && "shareState" in state) {
           return state["shareState"];
@@ -377,7 +382,7 @@ qx.Class.define("osparc.study.Utils", {
 
       isProjectOpen: function(state) {
         const projectStatus = this.getProjectStatus(state);
-        return projectStatus === "OPENED";
+        return projectStatus === this.STATUS.OPENED;
       },
 
       getCurrentGroupIds: function(state) {
