@@ -29,11 +29,17 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     });
 
     this.addListener("tap", this.__buttonTapped, this);
+
+    qx.event.message.Bus.getInstance().subscribe("creditsUsed", this.__onCreditsUsed, this);
   },
 
   members: {
     __creditsContainer: null,
     __tapListener: null,
+
+    __onCreditsUsed: function(msg) {
+      this.flashCreditsUsed(msg.getData());
+    },
 
     /**
      * Used by the guided tours via "action": "toggle".
@@ -91,6 +97,42 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
 
       // Remove listeners for outside clicks/taps
       document.removeEventListener("mousedown", this.__onTapOutsideMouse.bind(this), true);
+    },
+
+    flashCreditsUsed: function(message) {
+      const flash = new qx.ui.basic.Label(message).set({
+        font: "text-14",
+        padding: 8,
+        appearance: "floating-menu",
+        zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
+      });
+
+      const root = qx.core.Init.getApplication().getRoot();
+      root.add(flash);
+
+      // Position below the button
+      this.addListenerOnce("appear", () => this.__positionFlash(flash));
+      if (this.getBounds()) {
+        this.__positionFlash(flash);
+      }
+
+      // Auto-dismiss after 5 seconds
+      qx.event.Timer.once(() => {
+        if (root.indexOf(flash) > -1) {
+          root.remove(flash);
+          flash.dispose();
+        }
+      }, this, 5000);
+    },
+
+    __positionFlash: function(flash) {
+      const bounds = osparc.utils.Utils.getBounds(this);
+      const right = bounds.left + bounds.width;
+      const bottom = bounds.top + bounds.height + 4;
+      flash.setLayoutProperties({
+        left: right - 200,
+        top: bottom
+      });
     }
   }
 });

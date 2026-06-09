@@ -190,8 +190,8 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     __applyInteractive: function(value, oldValue) {
-      if (value === "ready" && oldValue === "idle") {
-        // when a dynamic node finishes, show the credits used
+      if (value === "idle" && ["ready", "stopping"].includes(oldValue)) {
+        // when a dynamic node is stopped, show the credits used
         this.__displayCreditsUsed();
       }
       if (value === "failed") {
@@ -252,7 +252,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
               const cost = subJob.getOsparcCredits();
               if (cost) {
                 const msg = `${label} used ${cost} credits`;
-                osparc.FlashMessenger.logAs(msg, "INFO", 5000);
+                qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
               }
             }
           });
@@ -261,6 +261,31 @@ qx.Class.define("osparc.data.model.NodeStatus", {
           nodeId: node.getNodeId(),
           label: node.getLabel(),
         });
+        // Dynamic services: fetch usage from resource usage API
+        const walletId = osparc.store.Store.getInstance().getContextWallet() ?
+          osparc.store.Store.getInstance().getContextWallet().getWalletId() : null;
+        if (walletId) {
+          const params = {
+            url: {
+              offset: 0,
+              limit: 10,
+              walletId,
+            }
+          };
+          osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
+            .then(usageData => {
+              const nodeUsage = usageData.find(entry =>
+                entry["project_id"] === studyId &&
+                entry["node_id"] === nodeId &&
+                entry["service_run_status"] !== "RUNNING"
+              );
+              if (nodeUsage && nodeUsage["credit_cost"]) {
+                const cost = Math.abs(nodeUsage["credit_cost"]).toFixed(2);
+                const msg = `${label} used ${cost} credits`;
+                qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
+              }
+            });
+        }
       }
     },
   }
