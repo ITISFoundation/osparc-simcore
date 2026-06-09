@@ -134,10 +134,6 @@ class Product(BaseModel):
         ),
     ]
 
-    registration_email_template: Annotated[
-        str | None, Field(json_schema_extra={"x_template_name": "registration_email"})
-    ] = None
-
     max_open_studies_per_user: Annotated[
         PositiveInt | None,
         Field(
@@ -226,7 +222,6 @@ class Product(BaseModel):
                         "host_regex": r"([\.-]{0,1}osparc[\.-])",
                         "base_url": "https://osparc.io",
                         "twilio_messaging_sid": "1" * 34,
-                        "registration_email_template": "osparc_registration_email",
                         "login_settings": {
                             "LOGIN_2FA_REQUIRED": False,
                         },
