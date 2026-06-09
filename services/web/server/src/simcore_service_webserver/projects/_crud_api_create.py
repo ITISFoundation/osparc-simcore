@@ -229,22 +229,18 @@ async def _compose_project_data(
                 new_project[key] = non_null_value
     else:
         # when predefined_project is ProjectCreateNew
-        # Mapping from camelCase (workbench JSON) to snake_case (DB columns)
-        _camel_to_snake = {
-            "inputAccess": "input_access",
-            "inputNodes": "input_nodes",
-            "inputsRequired": "inputs_required",
-            "inputsUnits": "inputs_units",
-            "outputNodes": "output_nodes",
-            "runHash": "run_hash",
-            "bootOptions": "boot_options",
-        }
+        # when predefined_project is ProjectCreateNew
+        # Convert workbench JSON (camelCase aliases) to ProjectNodeCreate fields (snake_case columns)
+        from simcore_postgres_database.utils_projects_nodes import WORKBENCH_NODE_ALIAS_TO_COLUMN
+
         valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
         project_nodes = {}
         for node_id, node_data in predefined_project.get("workbench", {}).items():
             create_kwargs = {
-                _camel_to_snake.get(k, k): v for k, v in node_data.items() if _camel_to_snake.get(k, k) in valid_fields
+                WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
+                for k, v in node_data.items()
+                if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
             }
             create_kwargs["required_resources"] = jsonable_encoder(
                 await catalog_service.get_service_resources(
