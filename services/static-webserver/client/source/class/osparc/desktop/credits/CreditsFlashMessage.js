@@ -56,14 +56,15 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       const container = this.__getContainer();
       const bounds = osparc.utils.Utils.getBounds(anchor);
       const baseTop = bounds.top + bounds.height + 4;
-      // Align the right edge of the container to the center of the anchor
+      // Anchor center is where the arrow points
       const anchorCenter = bounds.left + Math.round(bounds.width / 2);
 
-      // Delay to allow container to compute its width
+      // Delay to allow container to compute its width after content changes
       qx.event.Timer.once(() => {
         const containerBounds = container.getBounds();
-        const containerWidth = containerBounds ? containerBounds.width : 250;
-        // Arrow is ~12px from the right edge of the container
+        const containerWidth = containerBounds ? containerBounds.width : 300;
+        // Position so the arrow (12px from right edge) points at anchor center
+        // Container grows to the left
         const left = anchorCenter - containerWidth + 12;
         container.setLayoutProperties({
           left: Math.max(0, left),
@@ -118,12 +119,12 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         paddingLeft: 12,
         paddingRight: 12,
         backgroundColor: "background-main",
-        maxWidth: 300,
-        rich: true,
+        rich: false,
       });
       bubble.getContentElement().setStyles({
         "border": "1px solid " + color,
         "border-radius": "4px",
+        "white-space": "nowrap",
       });
       container.add(bubble);
 
