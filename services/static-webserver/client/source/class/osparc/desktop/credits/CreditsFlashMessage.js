@@ -119,13 +119,20 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         paddingLeft: 12,
         paddingRight: 12,
         backgroundColor: "background-main",
-        rich: false,
+        rich: true,
+        wrap: false,
+        alignX: "right",
+        allowGrowX: false,
       });
       bubble.getContentElement().setStyles({
         "border": "1px solid " + color,
         "border-radius": "4px",
         "white-space": "nowrap",
       });
+      // Measure the text so the bubble sizes to a single line
+      const font = qx.theme.manager.Font.getInstance().resolve("text-14");
+      const textSize = qx.bom.Label.getTextSize(message, font.getStyles());
+      bubble.setWidth(textSize.width + 24 + 2); // padding (12*2) + border (1*2)
       container.add(bubble);
 
       const entry = { arrowWrapper, bubble };
