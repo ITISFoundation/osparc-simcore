@@ -210,7 +210,7 @@ class ProjectJobsRepository(BaseRepository):
             projects_list = []
             for project_row in rows:
                 workbench = workbenches.get(project_row.uuid, {})
-                projects_list.append(ProjectJobDBGet.model_validate({**project_row, "workbench": workbench}))
+                projects_list.append(ProjectJobDBGet.model_validate({**project_row._asdict(), "workbench": workbench}))
 
             return total_count, projects_list
 
@@ -251,4 +251,4 @@ class ProjectJobsRepository(BaseRepository):
                 return None
 
             workbench = await get_project_workbench(conn, row.uuid)
-            return ProjectJobDBGet.model_validate({**row, "workbench": workbench})
+            return ProjectJobDBGet.model_validate({**row._asdict(), "workbench": workbench})
