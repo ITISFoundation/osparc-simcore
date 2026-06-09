@@ -51,7 +51,6 @@ _PRODUCTS_COLUMNS = [
     products.c.manuals,
     products.c.support,
     products.c.login_settings,
-    products.c.registration_email_template,
     products.c.max_open_studies_per_user,
     products.c.group_id,
     products.c.support_standard_group_id,
