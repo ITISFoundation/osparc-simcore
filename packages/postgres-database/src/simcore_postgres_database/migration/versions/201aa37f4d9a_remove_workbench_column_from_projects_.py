@@ -1,7 +1,7 @@
 """Remove workbench column from projects_table
 
 Revision ID: 201aa37f4d9a
-Revises: 06eafd25d004
+Revises: 447db39c5455
 Create Date: 2025-07-22 19:25:42.125196+00:00
 
 """
