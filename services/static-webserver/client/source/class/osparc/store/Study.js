@@ -251,8 +251,8 @@ qx.Class.define("osparc.store.Study", {
         return;
       }
       // wait until the project is no longer open (services stopped/released)
-      const projectStatus = osparc.study.Utils.getProjectStatus(data["state"]);
-      if (projectStatus === osparc.study.Utils.State.STATUS.CLOSED) {
+      const projectStatus = osparc.study.Utils.state.getProjectStatus(data["state"]);
+      if (projectStatus === osparc.study.Utils.state.STATUS.CLOSED) {
         this.__flushClosingStudyCredits(studyId);
       }
     },
