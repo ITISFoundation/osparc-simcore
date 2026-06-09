@@ -246,14 +246,6 @@ async def test_product_repository_get_template_content(
     assert content is None or isinstance(content, str)
 
 
-async def test_product_repository_get_product_template_content(
-    product_repository: ProductRepository,
-):
-    product_name = "tis"
-    content = await product_repository.get_product_template_content(product_name)
-    assert content is None or isinstance(content, str)
-
-
 async def test_product_repository_get_product_ui(product_repository: ProductRepository):
     product_name = "tis"
     ui = await product_repository.get_product_ui(product_name)

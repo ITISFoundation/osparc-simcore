@@ -609,8 +609,10 @@ promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-G
 				uv --version; \
 		fi
 		# upgrading uv
-		@if [ "${GITHUB_ACTIONS}" != "true" ]; then \
+		@if [ "${CI}" != "true" ]; then \
 			uv self --quiet update; \
+		else \
+			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
 		fi
 
 .venv: .check-uv-installed

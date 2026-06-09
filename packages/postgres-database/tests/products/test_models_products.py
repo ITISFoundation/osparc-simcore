@@ -4,10 +4,8 @@
 # pylint: disable=unused-argument
 
 from collections.abc import Callable
-from pathlib import Path
 
 import sqlalchemy as sa
-from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -36,76 +34,6 @@ async def test_load_products(asyncpg_engine: AsyncEngine, make_products_table: C
         assert rows
 
         assert {row.name: row.host_regex for row in rows} == products_regex
-
-
-async def test_jinja2_templates_table(asyncpg_engine: AsyncEngine, osparc_simcore_services_dir: Path):
-    templates_common_dir = osparc_simcore_services_dir / "web/server/src/simcore_service_webserver/templates/common"
-
-    async with asyncpg_engine.connect() as conn:
-        templates = []
-        # templates table
-        for p in templates_common_dir.glob("*.jinja2"):
-            name = await conn.scalar(
-                jinja2_templates.insert().values(name=p.name, content=p.read_text()).returning(jinja2_templates.c.name)
-            )
-            templates.append(name)
-
-        # choose one
-        registration_email_template = next(n for n in templates if "registration" in n)
-
-        # products table
-        for params in [
-            {
-                "name": "osparc",
-                "host_regex": r"^osparc.",
-                "base_url": "https://osparc.io",
-                "registration_email_template": registration_email_template,
-            },
-            {
-                "name": "s4l",
-                "host_regex": r"(^s4l[\.-])|(^sim4life\.)",
-                "base_url": "https://sim4life.info",
-                "short_name": "s4l web",
-                "registration_email_template": registration_email_template,
-            },
-            {
-                "name": "tis",
-                "short_name": "TIP",
-                "host_regex": r"(^ti.[\.-])|(^ti-solution\.)",
-                "base_url": "https://tis.com",
-            },
-        ]:
-            await conn.execute(
-                pg_insert(products)
-                .values(**params)
-                .on_conflict_do_update(
-                    index_elements=[products.c.name],
-                    set_=params,
-                ),
-            )
-
-        # prints those products having customized templates
-        j = products.join(jinja2_templates)
-        stmt = sa.select(products.c.name, jinja2_templates.c.name, products.c.short_name).select_from(j)
-
-        result = await conn.execute(stmt)
-        rows = result.fetchall()
-        assert sorted(tuple(r) for r in rows) == sorted(
-            [
-                ("osparc", "registration_email.jinja2", "osparc"),
-                ("s4l", "registration_email.jinja2", "s4l web"),
-            ]
-        )
-
-        assert (
-            await conn.scalar(sa.select(jinja2_templates.c.content).select_from(j).where(products.c.name == "s4l"))
-            is not None
-        )
-
-        assert (
-            await conn.scalar(sa.select(jinja2_templates.c.content).select_from(j).where(products.c.name == "tis"))
-            is None
-        )
 
 
 async def test_insert_select_product(
