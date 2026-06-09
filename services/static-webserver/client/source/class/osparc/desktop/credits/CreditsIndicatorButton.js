@@ -100,39 +100,8 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     },
 
     flashCreditsUsed: function(message) {
-      const flash = new qx.ui.basic.Label(message).set({
-        font: "text-14",
-        padding: 8,
-        appearance: "floating-menu",
-        zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
-      });
-
-      const root = qx.core.Init.getApplication().getRoot();
-      root.add(flash);
-
-      // Position below the button
-      this.addListenerOnce("appear", () => this.__positionFlash(flash));
-      if (this.getBounds()) {
-        this.__positionFlash(flash);
-      }
-
-      // Auto-dismiss after 5 seconds
-      qx.event.Timer.once(() => {
-        if (root.indexOf(flash) > -1) {
-          root.remove(flash);
-          flash.dispose();
-        }
-      }, this, 5000);
+      const flash = new osparc.desktop.credits.CreditsFlashMessage(message);
+      flash.showBelow(this);
     },
-
-    __positionFlash: function(flash) {
-      const bounds = osparc.utils.Utils.getBounds(this);
-      const right = bounds.left + bounds.width;
-      const bottom = bounds.top + bounds.height + 4;
-      flash.setLayoutProperties({
-        left: right - 200,
-        top: bottom
-      });
-    }
   }
 });
