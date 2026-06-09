@@ -335,7 +335,6 @@ def downgrade():
     # Restore workbench NOT NULL constraint
     op.alter_column("projects", "workbench", nullable=False, server_default=sa.text("'{}'::jsonb"))
 
-    # Clear projects_nodes rows that were migrated from workbench
-    connection.execute(sa.text("DELETE FROM projects_nodes"))
+    # NOTE: Do not delete from projects_nodes on downgrade; old application versions still rely on this table.
 
     # ### end Alembic commands ###
