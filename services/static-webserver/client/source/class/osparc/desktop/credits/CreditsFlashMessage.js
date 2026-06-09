@@ -42,8 +42,6 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       if (!this.__container) {
         this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
           zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
-          backgroundColor: "background-main",
-          padding: 0,
         });
         const root = qx.core.Init.getApplication().getRoot();
         root.add(this.__container);
@@ -58,19 +56,20 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       const container = this.__getContainer();
       const bounds = osparc.utils.Utils.getBounds(anchor);
       const baseTop = bounds.top + bounds.height + 4;
+      // Align the right edge of the container to the center of the anchor
       const anchorCenter = bounds.left + Math.round(bounds.width / 2);
 
-      // Position after a brief delay to get container width
+      // Delay to allow container to compute its width
       qx.event.Timer.once(() => {
         const containerBounds = container.getBounds();
         const containerWidth = containerBounds ? containerBounds.width : 250;
-        // Align so the arrow (16px from right edge) points at anchor center
-        const left = anchorCenter - containerWidth + 16;
+        // Arrow is ~12px from the right edge of the container
+        const left = anchorCenter - containerWidth + 12;
         container.setLayoutProperties({
           left: Math.max(0, left),
           top: baseTop,
         });
-      }, this, 30);
+      }, this, 50);
     },
 
     __updateArrowVisibility: function() {
@@ -105,6 +104,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         if (dom) {
           dom.style.position = "relative";
           dom.style.overflow = "visible";
+          // Outer border triangle + inner fill that matches bubble background
           dom.innerHTML = `<div style="position:absolute;top:0;left:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid ${color}"></div><div style="position:absolute;top:1px;left:1px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid ${bgColor}"></div>`;
         }
       });
@@ -118,11 +118,12 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         paddingLeft: 12,
         paddingRight: 12,
         backgroundColor: "background-main",
+        maxWidth: 300,
+        rich: true,
       });
       bubble.getContentElement().setStyles({
         "border": "1px solid " + color,
         "border-radius": "4px",
-        "white-space": "nowrap",
       });
       container.add(bubble);
 

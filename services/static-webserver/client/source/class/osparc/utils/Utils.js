@@ -453,6 +453,21 @@ qx.Class.define("osparc.utils.Utils", {
       button._blinkingIntervalId = blinkInterval;
     },
 
+    makeButtonBlink2: function(element) {
+      if (element) {
+        qx.bom.element.Animation.animate(element, {
+          duration: 600,
+          repeat: 2,
+          timing: "ease-in-out",
+          keyFrames: {
+            0: { "transform": "scale(1)", "opacity": 1 },
+            50: { "transform": "scale(1.3)", "opacity": 0.7 },
+            100: { "transform": "scale(1)", "opacity": 1 },
+          }
+        });
+      }
+    },
+
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // No cigar. Tried:
