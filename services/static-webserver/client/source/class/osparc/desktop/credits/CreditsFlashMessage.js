@@ -106,7 +106,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       });
       bubble.getContentElement().setStyles({
         "border": "1px solid " + color,
-        "border-radius": "6px",
+        "border-radius": "4px",
       });
       this.add(bubble);
     },
