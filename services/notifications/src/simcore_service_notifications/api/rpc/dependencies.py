@@ -1,6 +1,7 @@
+from typing import Any
+
 from fastapi import FastAPI
-from jinja2 import Environment
-from notifications_library._render import create_render_environment_from_notifications_library
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 from ...clients.celery import get_task_manager
 from ...core.settings import ApplicationSettings
@@ -9,8 +10,12 @@ from ...repositories import FileTemplateRepository, TemplateRepository
 from ...services import MessageService, TemplateService
 
 
-def get_jinja_env() -> Environment:
-    return create_render_environment_from_notifications_library()
+def get_jinja_env(**kwargs: Any) -> Environment:
+    return Environment(
+        loader=PackageLoader("simcore_service_notifications", "templates"),
+        autoescape=select_autoescape(["html", "xml"]),
+        **kwargs,
+    )
 
 
 def get_template_repository(env: Environment | None = None) -> TemplateRepository:

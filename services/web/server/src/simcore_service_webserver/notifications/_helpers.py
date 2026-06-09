@@ -2,8 +2,7 @@
 
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
-from models_library.products import ProductName
-from notifications_library._models import (
+from models_library.notifications import (
     CompanyLink,
     ProductData,
     ProductFooterData,
@@ -11,6 +10,7 @@ from notifications_library._models import (
     SocialLink,
     UserData,
 )
+from models_library.products import ProductName
 
 from ..products.products_service import get_product
 
