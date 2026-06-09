@@ -171,7 +171,7 @@ async def test_send_message_from_template_passes_correct_template_ref(
 
     # Verify addressing has from and to
     addressing = call_kwargs["addressing"]
-    assert addressing.from_ is not None
+    assert addressing.from_identity is not None
     assert len(addressing.to) == 1
     assert addressing.to[0].email == external_contacts[0].email
 
