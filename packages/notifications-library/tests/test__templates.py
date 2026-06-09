@@ -1,53 +1,38 @@
-from pathlib import Path
-
 import pytest
 from notifications_library._templates import (
-    _templates_dir,
-    get_default_named_templates,
+    NamedTemplateTuple,
     split_template_name,
 )
 
 
 @pytest.mark.parametrize(
-    "template_name",
+    "template_name,expected",
     [
-        "account_requested",
-        "change_email",
-        "new_2fa_code",
-        "new_invitation",
-        "paid",
-        "registered",
-        "reset_password",
-        "share_project",
-        "support_reply",
-        "unregister",
+        (
+            "email/paid/body_html.j2",
+            NamedTemplateTuple(channel="email", template_name="paid", part="body_html", ext="j2"),
+        ),
+        (
+            "email/registered/subject.j2",
+            NamedTemplateTuple(channel="email", template_name="registered", part="subject", ext="j2"),
+        ),
     ],
 )
-def test_email_templates_are_complete(template_name: str):
-    event_templates = set(get_default_named_templates(template_name=template_name, channel="email"))
-
-    assert event_templates
-
-    with_html = {f"email/{template_name}/{suffix}" for suffix in ["subject.j2", "body_html.j2", "body_text.j2"]}
-    without_html = {f"email/{template_name}/{suffix}" for suffix in ["subject.j2", "body_text.j2"]}
-
-    assert event_templates in (with_html, without_html)
-
-
-@pytest.mark.parametrize("template_name,template_path", get_default_named_templates().items())
-def test_named_templates(template_name: str, template_path: Path):
-    parts = split_template_name(template_name)
-    assert get_default_named_templates(*parts) == {template_name: template_path}
+def test_split_template_name(template_name: str, expected: NamedTemplateTuple):
+    assert split_template_name(template_name) == expected
 
 
 @pytest.mark.parametrize(
-    "channel",
+    "invalid_template_name",
     [
+        "email/paid",
         "email",
+        "email/paid/body_html/extra.j2",
     ],
 )
-def test_generic_templates(channel: str):
-    assert (_templates_dir / channel / "_base" / "body_html.j2").exists()
+def test_split_template_name_raises_on_invalid(invalid_template_name: str):
+    with pytest.raises(TypeError):
+        split_template_name(invalid_template_name)
 
     with pytest.raises(TypeError):
         split_template_name("base.html")

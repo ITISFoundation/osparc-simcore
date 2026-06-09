@@ -1,6 +1,10 @@
+from functools import partial
+
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from jinja2 import Environment
-from notifications_library._render import create_render_environment_from_notifications_library
+from jinja2 import Environment, PackageLoader, select_autoescape
+
+import simcore_service_notifications
 
 from ...clients.celery import get_task_manager
 from ...core.settings import ApplicationSettings
@@ -9,9 +13,16 @@ from ...repositories.product import ProductRepository
 from ...repositories.template import FileTemplateRepository, TemplateRepository
 from ...services import MessageService, TemplateService
 
+_json_dumps_indented = partial(json_dumps, indent=2)
+
 
 def get_jinja_env() -> Environment:
-    return create_render_environment_from_notifications_library()
+    env = Environment(
+        loader=PackageLoader(simcore_service_notifications.__name__, "templates"),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+    env.globals["dumps"] = _json_dumps_indented
+    return env
 
 
 # Repositories

@@ -14,7 +14,6 @@ from models_library.basic_types import IDStr
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.users import UserID
-from notifications_library._templates import get_default_named_templates
 from pydantic import validate_call
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.postgres_users import (
@@ -125,11 +124,13 @@ async def email_templates(
 ) -> AsyncIterator[dict[str, Any]]:
     all_templates = {"other.html": f"Fake template {email_template_mark}"}
 
-    # only subjects are overridden in db
-    subject_templates = get_default_named_templates(channel="email", part="subject")
-    for name, path in subject_templates.items():
+    # Create some test subject templates to override in db
+    test_subject_templates = {
+        "email/test_event/subject.j2": "Test Subject {{ name }}",
+    }
+    for name, content in test_subject_templates.items():
         assert "subject" in name
-        all_templates[name] = f"{email_template_mark} {path.read_text()}"
+        all_templates[name] = f"{email_template_mark} {content}"
 
     async with sqlalchemy_async_engine.begin() as conn:
         pk_to_row = {

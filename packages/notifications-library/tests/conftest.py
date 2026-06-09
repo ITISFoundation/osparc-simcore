@@ -10,7 +10,6 @@ from typing import Any
 import notifications_library
 import pytest
 from faker import Faker
-from models_library.products import ProductName
 from notifications_library._models import (
     SharerData,
     UserData,
@@ -18,14 +17,6 @@ from notifications_library._models import (
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_postgres_database.models.products import Vendor
-from simcore_service_notifications.models.product import (
-    CompanyLink,
-    ProductData,
-    ProductFooterData,
-    ProductUIData,
-    SocialLink,
-)
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -57,42 +48,6 @@ def external_envfile_dict(external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
 #
 # mock data for templates
 #
-
-
-@pytest.fixture
-def product_data(
-    product_name: ProductName,
-    product: dict[str, Any],
-) -> ProductData:
-    vendor: Vendor = product["vendor"]
-
-    vendor_ui = vendor.get("ui", {})
-
-    product_ui = ProductUIData(
-        logo_url=vendor_ui.get("logo_url"),
-        strong_color=vendor_ui.get("strong_color"),
-    )
-
-    footer_data = ProductFooterData(
-        social_links=[
-            SocialLink(name=link_name, url=link_url) for link_name, link_url in vendor.get("footer_social_links", [])
-        ],
-        company_name=vendor.get("company_name", ""),
-        company_address=vendor.get("company_address", ""),
-        company_links=[
-            CompanyLink(name=link_name, url=link_url) for link_name, link_url in vendor.get("company_links", [])
-        ],
-    )
-
-    return ProductData(  # type: ignore
-        product_name=product_name,
-        display_name=product["display_name"],
-        vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
-        support_email=product["support_email"],
-        homepage_url=vendor.get("url"),
-        ui=product_ui,
-        footer=footer_data,
-    )
 
 
 @pytest.fixture

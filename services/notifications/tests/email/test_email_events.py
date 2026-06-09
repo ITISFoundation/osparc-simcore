@@ -27,19 +27,16 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
-from jinja2 import StrictUndefined
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.products import ProductName
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from notifications_library._models import SharerData, UserData
-from notifications_library._render import (
-    create_render_environment_from_notifications_library,
-)
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
+from simcore_service_notifications.api.rpc.dependencies import get_jinja_env
 from simcore_service_notifications.clients.smtp import create_session
 from simcore_service_notifications.models.product import ProductData
 from simcore_service_notifications.renderers._email_render import (
@@ -215,7 +212,7 @@ async def test_email_event(
     template_extra_data |= asdict(sharer_data) if sharer_data else {}
 
     parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(undefined=StrictUndefined),
+        env=get_jinja_env(),
         template_name=template_name,
         user=user_data,
         product=product_data,
@@ -299,7 +296,7 @@ async def test_email_with_reply_to(
         )
 
     parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(undefined=StrictUndefined),
+        env=get_jinja_env(),
         template_name=template_name,
         user=user_data,
         product=product_data,

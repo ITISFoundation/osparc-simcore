@@ -52,6 +52,15 @@ SETUP = {
         "": "src",
     },
     "include_package_data": True,
+    "package_data": {
+        "": [
+            "py.typed",
+            "templates/**/*.j2",
+            "templates/**/*.jinja2",
+            "templates/**/*.html",
+            "templates/**/*.txt",
+        ]
+    },
     "install_requires": PROD_REQUIREMENTS,
     "test_suite": "tests",
     "tests_require": TEST_REQUIREMENTS,

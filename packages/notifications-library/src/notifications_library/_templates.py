@@ -1,6 +1,4 @@
-import importlib.resources
 import logging
-import os
 import shutil
 from pathlib import Path
 from typing import Final, NamedTuple
@@ -9,15 +7,9 @@ import aiofiles
 from aiofiles.os import wrap as sync_to_async
 from models_library.products import ProductName
 
-import notifications_library
-
 from ._repository import TemplatesRepo
 
 _logger = logging.getLogger(__name__)
-
-
-_templates = importlib.resources.files(notifications_library.__name__).joinpath("templates")
-_templates_dir = Path(os.fspath(_templates))  # type:ignore
 
 # Templates are organised as:
 #
@@ -54,12 +46,21 @@ def split_template_name(template_name: str) -> NamedTemplateTuple:
 
 
 def get_default_named_templates(
-    channel: str = "*", template_name: str = "*", part: str = "*", ext: str = "*"
+    templates_dir: Path, channel: str = "*", template_name: str = "*", part: str = "*", ext: str = "*"
 ) -> dict[str, Path]:
+    """Find named templates within a given templates directory.
+
+    Args:
+        templates_dir: Root directory containing template files.
+        channel: Channel filter (e.g. "email"). Use "*" for all.
+        template_name: Template name filter. Use "*" for all.
+        part: Part filter (e.g. "subject", "body_html"). Use "*" for all.
+        ext: Extension filter (e.g. "j2"). Use "*" for all.
+    """
     # If all parameters are specific (no wildcards), try direct path first
     if channel != "*" and template_name != "*" and part != "*" and ext != "*":
         filename = f"{part}.{ext}"
-        direct_path = _templates_dir / channel / template_name / filename
+        direct_path = templates_dir / channel / template_name / filename
         if direct_path.exists():
             template_id = _TEMPLATE_NAME_SEPARATOR.join([channel, template_name, filename])
             return {template_id: direct_path}
@@ -67,9 +68,9 @@ def get_default_named_templates(
     # Otherwise use glob pattern matching
     pattern = _TEMPLATE_NAME_SEPARATOR.join([channel, template_name, f"{part}.{ext}"])
     result = {}
-    for p in _templates_dir.glob(pattern):
+    for p in templates_dir.glob(pattern):
         # Build the template name as channel/template_name/filename
-        relative_path = p.relative_to(_templates_dir)
+        relative_path = p.relative_to(templates_dir)
         template_id = _TEMPLATE_NAME_SEPARATOR.join(relative_path.parts)
         result[template_id] = p
     return result
@@ -100,14 +101,16 @@ async def _copy_files(src: Path, dst: Path):
             await _aioshutil_copy(p, dst / p.name, follow_symlinks=False)
 
 
-async def consolidate_templates(new_dir: Path, product_names: list[ProductName], repo: TemplatesRepo):
+async def consolidate_templates(
+    templates_dir: Path, new_dir: Path, product_names: list[ProductName], repo: TemplatesRepo
+):
     """Consolidates all templates in new_dir folder for each product
 
     Builds a structure under new_dir and dump all templates (T) for each product (P) with the following
     precedence rules:
         1. T found in *database* associated to P in products_to_templates.join(jinja2_templates), otherwise
-        2. found in notifications_library/templates/P/T *file*, otherwise
-        3. found in notifications_library/T *file*
+        2. found in templates_dir/P/T *file*, otherwise
+        3. found in templates_dir/T *file*
 
     After consolidation, the tree dir would have the follow structure
         new_dir:
@@ -126,11 +129,11 @@ async def consolidate_templates(new_dir: Path, product_names: list[ProductName],
         product_folder.mkdir(parents=True, exist_ok=True)
 
         # takes common as defaults
-        await _copy_files(_templates_dir, product_folder)
+        await _copy_files(templates_dir, product_folder)
 
         # overrides with customs in-place
-        if (_templates_dir / product_name).exists():
-            await _copy_files(_templates_dir / product_name, product_folder)
+        if (templates_dir / product_name).exists():
+            await _copy_files(templates_dir / product_name, product_folder)
 
         # overrides with customs in database
         async for custom_template in repo.iter_product_templates(product_name):
