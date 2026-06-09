@@ -6,20 +6,21 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.notifications import SharerData, UserData
+from models_library.notifications import (
+    CompanyLink,
+    ProductData,
+    ProductFooterData,
+    ProductUIData,
+    SharerData,
+    SocialLink,
+    UserData,
+)
 from models_library.products import ProductName
 from pydantic import EmailStr
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
 from simcore_service_notifications.models.payments import PaymentData
-from simcore_service_notifications.models.product import (
-    CompanyLink,
-    ProductData,
-    ProductFooterData,
-    ProductUIData,
-    SocialLink,
-)
 
 pytest_plugins = [
     "pytest_simcore.faker_payments_data",

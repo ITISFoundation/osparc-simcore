@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class PaymentData:
     price_dollars: str
     osparc_credits: str

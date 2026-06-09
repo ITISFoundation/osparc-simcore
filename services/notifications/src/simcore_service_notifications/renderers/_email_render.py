@@ -4,9 +4,7 @@ from typing import Any, NamedTuple
 
 from jinja2 import Environment
 from jinja2.exceptions import TemplateNotFound
-from models_library.notifications import UserData
-
-from ..models.product import ProductData
+from models_library.notifications import ProductData, UserData
 
 _logger = logging.getLogger(__name__)
 

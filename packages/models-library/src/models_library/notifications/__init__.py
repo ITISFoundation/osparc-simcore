@@ -1,5 +1,12 @@
 from ._data import (
+    CompanyLink,
+    CompanyLinks,
+    FooterSocialLinks,
+    ProductData,
+    ProductFooterData,
+    ProductUIData,
     SharerData,
+    SocialLink,
     UserData,
 )
 from ._notifications import (
@@ -7,4 +14,16 @@ from ._notifications import (
     TemplateName,
 )
 
-__all__: tuple[str, ...] = ("Channel", "SharerData", "TemplateName", "UserData")
+__all__: tuple[str, ...] = (
+    "Channel",
+    "CompanyLink",
+    "CompanyLinks",
+    "FooterSocialLinks",
+    "ProductData",
+    "ProductFooterData",
+    "ProductUIData",
+    "SharerData",
+    "SocialLink",
+    "TemplateName",
+    "UserData",
+)
