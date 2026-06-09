@@ -164,29 +164,6 @@ class ProductRepository(BaseRepository):
             template_content: str | None = await conn.scalar(query)
             return template_content
 
-    async def get_product_template_content(
-        self,
-        product_name: str,
-        product_template: sa.Column = products.c.registration_email_template,
-        connection: AsyncConnection | None = None,
-    ) -> str | None:
-        query = (
-            sa.select(jinja2_templates.c.content)
-            .select_from(
-                sa.join(
-                    products,
-                    jinja2_templates,
-                    product_template == jinja2_templates.c.name,
-                    isouter=True,
-                )
-            )
-            .where(products.c.name == product_name)
-        )
-
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
-            template_content: str | None = await conn.scalar(query)
-            return template_content
-
     async def get_product_ui(
         self, product_name: ProductName, connection: AsyncConnection | None = None
     ) -> dict[str, Any] | None:
