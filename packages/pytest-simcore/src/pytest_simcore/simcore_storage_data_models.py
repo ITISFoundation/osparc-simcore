@@ -89,11 +89,11 @@ async def create_project(
                         # representations are provided.
                         _optional_field_aliases: dict[str, tuple[str, ...]] = {
                             "inputs": ("inputs",),
+                            "inputs": ("inputs",),
                             "outputs": ("outputs",),
                             "input_nodes": ("input_nodes", "inputNodes"),
-                            "output_nodes": ("output_nodes", "outputNodes"),
+                            # "output_nodes"/"outputNodes" are deprecated and not persisted in `projects_nodes`
                             "input_access": ("input_access", "inputAccess"),
-                            "inputs_required": ("inputs_required", "inputsRequired"),
                             "inputs_units": ("inputs_units", "inputsUnits"),
                             "progress": ("progress",),
                             "thumbnail": ("thumbnail",),
