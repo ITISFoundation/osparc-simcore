@@ -40,8 +40,10 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
 
     __getContainer: function() {
       if (!this.__container) {
-        this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(4)).set({
+        this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
           zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
+          backgroundColor: "background-main",
+          padding: 0,
         });
         const root = qx.core.Init.getApplication().getRoot();
         root.add(this.__container);
@@ -87,14 +89,15 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       const color = qx.theme.manager.Color.getInstance().resolve("strong-main");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
 
-      // Arrow (only visible on the first message group)
+      // Arrow (only visible on the first message)
       const arrowWrapper = new qx.ui.core.Widget().set({
-        height: 9,
+        height: 8,
         width: 16,
         allowGrowX: false,
         allowGrowY: false,
         alignX: "right",
         marginRight: 4,
+        marginBottom: -1,
       });
       arrowWrapper.setUserData("isArrow", true);
       arrowWrapper.addListenerOnce("appear", () => {
@@ -102,7 +105,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         if (dom) {
           dom.style.position = "relative";
           dom.style.overflow = "visible";
-          dom.innerHTML = `<div style="position:absolute;top:0;left:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:9px solid ${color}"></div><div style="position:absolute;top:2px;left:1px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:8px solid ${bgColor}"></div>`;
+          dom.innerHTML = `<div style="position:absolute;top:0;left:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid ${color}"></div><div style="position:absolute;top:1px;left:1px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid ${bgColor}"></div>`;
         }
       });
       container.add(arrowWrapper);
@@ -110,9 +113,11 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       // Message bubble
       const bubble = new qx.ui.basic.Label(message).set({
         font: "text-14",
-        padding: 8,
+        paddingTop: 10,
+        paddingBottom: 10,
+        paddingLeft: 12,
+        paddingRight: 12,
         backgroundColor: "background-main",
-        alignX: "right",
       });
       bubble.getContentElement().setStyles({
         "border": "1px solid " + color,
