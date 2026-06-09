@@ -355,7 +355,8 @@ qx.Class.define("osparc.study.Utils", {
       STATUS: {
         OPENED: "OPENED",
         CLOSED: "CLOSED",
-      },
+        CLOSING: "CLOSING",
+      }
 
       __getShareState: function(state) {
         if (state && "shareState" in state) {
