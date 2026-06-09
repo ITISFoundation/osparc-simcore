@@ -59,7 +59,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       nullable: true,
       init: null,
       event: "changeRunning",
-      apply: "__applyRunning"
+      apply: "__applyRunning",
     },
 
     interactive: {
@@ -67,7 +67,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       nullable: true,
       init: null,
       event: "changeInteractive",
-      apply: "__applyInteractive"
+      apply: "__applyInteractive",
     },
 
     dependencies: {
@@ -104,6 +104,11 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       init: null,
       event: "changeLockState"
     }
+  },
+
+  events: {
+    "computationalNodeFinished": "qx.event.type.Data",
+    "dynamicNodeFinished": "qx.event.type.Data",
   },
 
   statics: {
@@ -176,14 +181,25 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       return !!(dependencies && dependencies.length);
     },
 
-    __applyRunning: function(value) {
-      if (value === "FAILED") {
-        // ask why it failed
+    __applyRunning: function(value, oldValue) {
+      if (value === "SUCCESS" && oldValue === "STARTED") {
+        // when a comp node finishes, show the credits used
+        this.fireDataEvent("computationalNodeFinished", {
+          nodeId: this.getNode().getId(),
+          label: this.getNode().getLabel(),
+        });
       }
       this.__recomputeOutput();
     },
 
-    __applyInteractive: function(value) {
+    __applyInteractive: function(value, oldValue) {
+      if (value === "ready" && oldValue === "idle") {
+        // when a dynamic node finishes, show the credits used
+        this.fireDataEvent("dynamicNodeFinished", {
+          nodeId: this.getNode().getId(),
+          label: this.getNode().getLabel(),
+        });
+      }
       if (value === "failed") {
         this.getProgressSequence().resetSequence();
       }
