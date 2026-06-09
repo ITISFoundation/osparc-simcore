@@ -179,7 +179,6 @@ qx.Class.define("osparc.store.Jobs", {
         if (subJobs) {
           const found = subJobs.find(subJob => subJob.getNodeId() === nodeId);
           if (found) {
-            console.log("NodeLastSubJob found", found);
             return found;
           }
         }
