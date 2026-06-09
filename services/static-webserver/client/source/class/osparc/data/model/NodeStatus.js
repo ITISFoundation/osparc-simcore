@@ -246,46 +246,36 @@ qx.Class.define("osparc.data.model.NodeStatus", {
           nodeId: nodeId,
           label: label,
         });
-        osparc.store.Jobs.getInstance().getNodeLastSubJob(studyId, nodeId)
-          .then(subJob => {
-            if (subJob) {
-              const cost = subJob.getOsparcCredits();
-              if (cost) {
-                const msg = `${label} used ${cost} credits`;
-                qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
-              }
-            }
-          });
       } else if (node.isDynamic()) {
         this.fireDataEvent("dynamicNodeFinished", {
           nodeId: node.getNodeId(),
           label: node.getLabel(),
         });
-        // Dynamic services: fetch usage from resource usage API
-        const walletId = osparc.store.Store.getInstance().getContextWallet() ?
-          osparc.store.Store.getInstance().getContextWallet().getWalletId() : null;
-        if (walletId) {
-          const params = {
-            url: {
-              offset: 0,
-              limit: 10,
-              walletId,
+      }
+
+      const walletId = osparc.store.Store.getInstance().getContextWallet() ?
+        osparc.store.Store.getInstance().getContextWallet().getWalletId() : null;
+      if (walletId) {
+        const params = {
+          url: {
+            offset: 0,
+            limit: 10,
+            walletId,
+          }
+        };
+        osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
+          .then(usageData => {
+            const nodeUsage = usageData.find(entry =>
+              entry["project_id"] === studyId &&
+              entry["node_id"] === nodeId &&
+              entry["service_run_status"] !== "RUNNING"
+            );
+            if (nodeUsage && nodeUsage["credit_cost"]) {
+              const cost = Math.abs(nodeUsage["credit_cost"]).toFixed(2);
+              const msg = `${label} used ${cost} credits`;
+              qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
             }
-          };
-          osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
-            .then(usageData => {
-              const nodeUsage = usageData.find(entry =>
-                entry["project_id"] === studyId &&
-                entry["node_id"] === nodeId &&
-                entry["service_run_status"] !== "RUNNING"
-              );
-              if (nodeUsage && nodeUsage["credit_cost"]) {
-                const cost = Math.abs(nodeUsage["credit_cost"]).toFixed(2);
-                const msg = `${label} used ${cost} credits`;
-                qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
-              }
-            });
-        }
+          });
       }
     },
   }
