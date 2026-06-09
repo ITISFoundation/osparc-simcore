@@ -30,6 +30,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
 
     this.set({
       zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
+      allowGrowX: false,
     });
 
     this.__buildLayout(message);
@@ -49,13 +50,16 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       }
       const bounds = osparc.utils.Utils.getBounds(anchor);
       const baseTop = bounds.top + bounds.height + 4;
+      // Right-align: anchor right edge is the reference
+      const anchorRight = bounds.left + bounds.width;
       let offsetY = 0;
       for (const msg of this.__activeMessages) {
+        const msgBounds = msg.getBounds();
+        const msgWidth = msgBounds ? msgBounds.width : 200;
         msg.setLayoutProperties({
-          left: bounds.left + bounds.width - 200,
+          left: anchorRight - msgWidth,
           top: baseTop + offsetY,
         });
-        const msgBounds = msg.getBounds();
         if (msgBounds) {
           offsetY += msgBounds.height + 4;
         }
@@ -66,32 +70,39 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
   members: {
     __buildLayout: function(message) {
       const color = qx.theme.manager.Color.getInstance().resolve("strong-main");
+      const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
 
-      // Arrow pointing up
-      const arrow = new qx.ui.core.Widget().set({
+      // Arrow pointing up (outline style using two overlapping triangles)
+      const arrowContainer = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
         height: 8,
-        allowGrowX: false,
         allowGrowY: false,
         alignX: "right",
-        marginRight: 12,
+        width: 16,
+        marginRight: 8,
       });
-      arrow.addListenerOnce("appear", () => {
-        const el = arrow.getContentElement().getDomElement();
+      arrowContainer.addListenerOnce("appear", () => {
+        const el = arrowContainer.getContentElement().getDomElement();
         if (el) {
-          el.style.width = "0";
-          el.style.height = "0";
-          el.style.borderLeft = "8px solid transparent";
-          el.style.borderRight = "8px solid transparent";
-          el.style.borderBottom = "8px solid " + color;
+          // Outer triangle (border color)
+          const outer = document.createElement("div");
+          outer.style.cssText = `position:absolute;right:0;top:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid ${color};`;
+          // Inner triangle (background color, 1px smaller)
+          const inner = document.createElement("div");
+          inner.style.cssText = `position:absolute;right:1px;top:2px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid ${bgColor};`;
+          el.style.position = "relative";
+          el.appendChild(outer);
+          el.appendChild(inner);
         }
       });
-      this.add(arrow);
+      this.add(arrowContainer);
 
       // Message bubble
       const bubble = new qx.ui.basic.Label(message).set({
         font: "text-14",
         padding: 8,
         backgroundColor: "background-main",
+        alignX: "right",
+        allowGrowX: false,
       });
       bubble.getContentElement().setStyles({
         "border": "1px solid " + color,
