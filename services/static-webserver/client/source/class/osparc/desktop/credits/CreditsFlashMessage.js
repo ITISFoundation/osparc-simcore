@@ -84,6 +84,15 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       }
     },
 
+    __updateBubbleMargins: function() {
+      // Overlap borders between adjacent bubbles, but keep the last bubble's bottom border intact
+      const messages = this.__activeMessages;
+      for (let i = 0; i < messages.length; i++) {
+        const isLast = (i === messages.length - 1);
+        messages[i].bubble.setMarginBottom(isLast ? 0 : -1);
+      }
+    },
+
     addMessage: function(message, anchor) {
       const container = this.__getContainer();
       const color = qx.theme.manager.Color.getInstance().resolve("strong-main");
@@ -139,6 +148,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       this.__activeMessages.push(entry);
 
       this.__updateArrowVisibility();
+      this.__updateBubbleMargins();
       this.__positionContainer(anchor);
 
       // Auto-dismiss
@@ -153,6 +163,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         bubble.dispose();
 
         this.__updateArrowVisibility();
+        this.__updateBubbleMargins();
         this.__positionContainer(anchor);
 
         // Hide container if empty
