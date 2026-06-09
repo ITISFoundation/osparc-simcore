@@ -43,6 +43,9 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
       if (!walletId) {
         return;
       }
+      if (!osparc.store.StaticInfo.isBillableProduct()) {
+        return;
+      }
       const params = {
         url: {
           offset: 0,
