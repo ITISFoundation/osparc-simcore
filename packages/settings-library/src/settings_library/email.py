@@ -52,18 +52,18 @@ class SMTPSettings(BaseCustomSettings):
     product-dependent and therefore can be found in the product table of the database
     """
 
-    SMTP_HOST: str
-    SMTP_PORT: PortInt
-    SMTP_PROTOCOL: Annotated[
+    host: str
+    port: PortInt
+    protocol: Annotated[
         EmailProtocol,
         Field(
             description="Select between TLS, STARTTLS Secure Mode or unencrypted communication",
         ),
     ] = EmailProtocol.UNENCRYPTED
 
-    SMTP_USERNAME: Annotated[str | None, Field(min_length=1)] = None
-    SMTP_PASSWORD: Annotated[SecretStr | None, Field(min_length=1)] = None
-    SMTP_EXTRA_HEADERS: Annotated[
+    username: Annotated[str | None, Field(min_length=1)] = None
+    password: Annotated[SecretStr | None, Field(min_length=1)] = None
+    extra_headers: Annotated[
         dict[str, str],
         Field(
             default_factory=dict,
@@ -71,9 +71,9 @@ class SMTPSettings(BaseCustomSettings):
         ),
     ] = DEFAULT_FACTORY
 
-    SMTP_DOMAIN: str
+    domain: str
 
-    SMTP_LOCAL_PARTS: Annotated[
+    local_parts: Annotated[
         SMTPLocals,
         Field(
             default_factory=SMTPLocals,
@@ -89,8 +89,8 @@ class SMTPSettings(BaseCustomSettings):
 
     @model_validator(mode="after")
     def _both_credentials_must_be_set(self) -> Self:
-        username = self.SMTP_USERNAME
-        password = self.SMTP_PASSWORD
+        username = self.username
+        password = self.password
 
         if (username is None and password) or (username and password is None):
             msg = f"Please provide both {username=} and {password=} not just one"
@@ -100,13 +100,13 @@ class SMTPSettings(BaseCustomSettings):
 
     @model_validator(mode="after")
     def _enabled_tls_required_authentication(self) -> Self:
-        smtp_protocol = self.SMTP_PROTOCOL
+        protocol = self.protocol
 
-        username = self.SMTP_USERNAME
-        password = self.SMTP_PASSWORD
+        username = self.username
+        password = self.password
 
-        tls_enabled = smtp_protocol == EmailProtocol.TLS
-        starttls_enabled = smtp_protocol == EmailProtocol.STARTTLS
+        tls_enabled = protocol == EmailProtocol.TLS
+        starttls_enabled = protocol == EmailProtocol.STARTTLS
 
         if (tls_enabled or starttls_enabled) and not (username or password):
             msg = "when using SMTP_PROTOCOL other than UNENCRYPTED username and password are required"
@@ -115,10 +115,10 @@ class SMTPSettings(BaseCustomSettings):
 
     @model_validator(mode="after")
     def _validate_extra_headers_allowed(self) -> Self:
-        disallowed = {k for k in self.SMTP_EXTRA_HEADERS if k.lower() not in ALLOWED_HEADERS}
+        disallowed = {k for k in self.extra_headers if k.lower() not in ALLOWED_HEADERS}
         if disallowed:
             msg = (
-                f"SMTP_EXTRA_HEADERS contains non-permitted headers: {sorted(disallowed)}. "
+                f"extra_headers contains non-permitted headers: {sorted(disallowed)}. "
                 f"Allowed (case-insensitive): {sorted(ALLOWED_HEADERS)}"
             )
             raise ValueError(msg)
@@ -126,4 +126,4 @@ class SMTPSettings(BaseCustomSettings):
 
     @property
     def has_credentials(self) -> bool:
-        return self.SMTP_USERNAME is not None and self.SMTP_PASSWORD is not None
+        return self.username is not None and self.password is not None

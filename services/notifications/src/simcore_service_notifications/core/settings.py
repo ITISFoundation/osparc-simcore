@@ -25,6 +25,8 @@ type ProfileName = str
 class _ProductSMTPSettings(BaseModel):
     """Per-product SMTP configuration with named profiles."""
 
+    model_config = {"frozen": True}
+
     smtp_profiles: dict[ProfileName, SMTPSettings]
     product_to_profile: dict[ProductName, ProfileName]
 
