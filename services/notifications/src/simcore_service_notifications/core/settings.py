@@ -13,11 +13,12 @@ from pydantic import (
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
-from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+
+from ..models.smtp import SMTPSettings
 
 type ProfileName = str
 

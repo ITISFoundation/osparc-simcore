@@ -2,13 +2,9 @@ from enum import StrEnum
 from typing import Annotated, Final, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
-from pydantic import model_validator
-from pydantic.fields import Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.types import SecretStr
-from pydantic_settings import SettingsConfigDict
-
-from .base import BaseCustomSettings
-from .basic_types import PortInt
+from settings_library.basic_types import PortInt
 
 ALLOWED_HEADERS: Final[frozenset[str]] = frozenset(
     {
@@ -35,22 +31,22 @@ class EmailProtocol(StrEnum):
     STARTTLS = "STARTTLS"
 
 
-class SMTPLocals(BaseCustomSettings):
+class SMTPLocals(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     SUPPORT: str
     NO_REPLY: str
 
-    model_config = SettingsConfigDict(
-        extra="ignore",
-    )
 
-
-class SMTPSettings(BaseCustomSettings):
+class SMTPSettings(BaseModel):
     """Settings for Simple Mail Transfer Protocol (SMTP)
 
     NOTE: These settings are only intended to login and access an email server.
     Extra info necessary to send an email such as sender email 'from' or 'reply-to' are now
     product-dependent and therefore can be found in the product table of the database
     """
+
+    model_config = ConfigDict(frozen=True)
 
     host: str
     port: PortInt
@@ -76,8 +72,7 @@ class SMTPSettings(BaseCustomSettings):
     local_parts: Annotated[
         SMTPLocals,
         Field(
-            default_factory=SMTPLocals,
-            description=("A mapping of local email identifiers to actual email addresses."),
+            description="A mapping of local email identifiers to actual email addresses.",
             examples=[
                 {
                     "SUPPORT": "support",
@@ -85,7 +80,7 @@ class SMTPSettings(BaseCustomSettings):
                 }
             ],
         ),
-    ] = DEFAULT_FACTORY
+    ]
 
     @model_validator(mode="after")
     def _both_credentials_must_be_set(self) -> Self:

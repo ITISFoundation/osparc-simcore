@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import json
+import os
 from typing import Any
 
 import pytest
@@ -21,6 +22,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
 from simcore_service_notifications.models.payments import PaymentData
+from simcore_service_notifications.models.smtp import SMTPSettings
 
 pytest_plugins = [
     "pytest_simcore.faker_payments_data",
@@ -51,6 +53,23 @@ def with_smtp_extra_headers(
     headers = {"x-ses-tenant": "test-tenant"}
     setenvs_from_dict(monkeypatch, {"SMTP_EXTRA_HEADERS": json.dumps(headers)})
     return headers
+
+
+@pytest.fixture
+def smtp_settings(
+    app_environment: EnvVarsDict,
+    with_smtp_extra_headers: dict[str, str],
+) -> SMTPSettings:
+    return SMTPSettings(
+        host=os.environ.get("SMTP_HOST", "localhost"),
+        port=int(os.environ.get("SMTP_PORT", "1025")),
+        protocol=os.environ.get("SMTP_PROTOCOL", "UNENCRYPTED"),
+        username=os.environ.get("SMTP_USERNAME"),
+        password=os.environ.get("SMTP_PASSWORD"),
+        extra_headers=json.loads(os.environ.get("SMTP_EXTRA_HEADERS", "{}")),
+        domain=os.environ.get("SMTP_DOMAIN", "osparc.io"),
+        local_parts=json.loads(os.environ.get("SMTP_LOCAL_PARTS", '{"SUPPORT": "support", "NO_REPLY": "no-reply"}')),
+    )
 
 
 #

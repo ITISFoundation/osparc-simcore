@@ -8,11 +8,11 @@ from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
 )
-from settings_library.email import SMTPSettings
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
     _ProductSMTPSettings,
 )
+from simcore_service_notifications.models.smtp import SMTPSettings
 
 
 def test_valid_application_settings(mock_environment: EnvVarsDict):
