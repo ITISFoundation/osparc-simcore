@@ -4,7 +4,7 @@
 # pinned requirements across the monorepo.
 #
 # Usage:
-#   .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh [--yes] <package> <constraint> [<cve-id>]
+#   requirements/scripts/propagate-security-fix.sh [--yes] <package> <constraint> [<cve-id>]
 #
 # Options:
 #   -y, --yes, --force   Replace an existing constraint without prompting
@@ -16,8 +16,8 @@
 #   cve-id      Optional CVE or GHSA id, e.g. "CVE-2024-12345" or "GHSA-xxxx"
 #
 # Examples:
-#   .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
-#   .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh cryptography ">=43.0.1"
+#   requirements/scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
+#   requirements/scripts/propagate-security-fix.sh cryptography ">=43.0.1"
 #
 # What this script does:
 #   1. Validates inputs.
