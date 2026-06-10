@@ -44,7 +44,7 @@ def test_product_smtp_settings_rejects_undefined_profile_reference():
         )
 
 
-def test_product_smtp_settings_get_settings_for_product():
+def test_product_smtp_settings_get_smtp_settings_for_product():
     product_smtp = _ProductSMTPSettings.model_validate(
         {
             "profiles": {"profile_a": _SMTP_PAYLOAD},
@@ -52,7 +52,7 @@ def test_product_smtp_settings_get_settings_for_product():
         }
     )
 
-    settings = product_smtp.get_settings_for_product("osparc")
+    settings = product_smtp.get_smtp_settings_for_product("osparc")
 
     assert isinstance(settings, SMTPSettings)
     assert settings.host == "mailpit"
@@ -67,7 +67,7 @@ def test_product_smtp_settings_unknown_product_raises():
     )
 
     with pytest.raises(ValueError, match="No SMTP profile configured for product"):
-        product_smtp.get_settings_for_product("unknown_product")
+        product_smtp.get_smtp_settings_for_product("unknown_product")
 
 
 def test_product_smtp_settings_multiple_products_same_profile():
@@ -78,7 +78,7 @@ def test_product_smtp_settings_multiple_products_same_profile():
         }
     )
 
-    assert product_smtp.get_settings_for_product("osparc") == product_smtp.get_settings_for_product("s4l")
+    assert product_smtp.get_smtp_settings_for_product("osparc") == product_smtp.get_smtp_settings_for_product("s4l")
 
 
 def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
