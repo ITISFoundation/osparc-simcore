@@ -928,23 +928,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
         })
         .finally(() => {
           switch (projectStatus) {
-            case "CLOSING":
+            case osparc.study.Utils.state.STATUS.CLOSING:
               image = "@FontAwesome5Solid/key/";
               toolTip += this.tr("Closing...");
               break;
-            case "CLONING":
+            case osparc.study.Utils.state.STATUS.CLONING:
               image = "@FontAwesome5Solid/clone/";
               toolTip += this.tr("Cloning...");
               break;
-            case "EXPORTING":
+            case osparc.study.Utils.state.STATUS.EXPORTING:
               image = osparc.task.Export.ICON+"/";
               toolTip += this.tr("Exporting...");
               break;
-            case "OPENING":
+            case osparc.study.Utils.state.STATUS.OPENING:
               image = "@FontAwesome5Solid/key/";
               toolTip += this.tr("Opening...");
               break;
-            case "OPENED":
+            case osparc.study.Utils.state.STATUS.OPENED:
               image = "@FontAwesome5Solid/lock/";
               toolTip += this.tr("In use...");
               break;
