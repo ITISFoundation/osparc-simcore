@@ -16,9 +16,10 @@
 ************************************************************************ */
 
 /**
- * Singleton that manages a stack of speech-bubble style flash messages.
- * Each message appears below a target widget, with an arrow pointing up and a
- * product-colored border. Only the topmost message in the stack shows the arrow.
+ * Singleton that manages a stack of card-style flash messages.
+ * Each message appears below a target widget as an elevated card with a coin icon,
+ * a brand-colored left accent and a soft shadow. Cards slide and fade in/out, and only
+ * the topmost card shows an arrow pointing up to the anchor.
  */
 qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
   extend: qx.core.Object,
@@ -34,6 +35,7 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
   statics: {
     AUTO_DISMISS_MS: 5000,
     MAX_VISIBLE_MESSAGES: 4,
+    ANIMATION_MS: 220,
   },
 
   members: {
@@ -44,13 +46,12 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
     /**
      * Show a flash message anchored below the given widget.
      *
-     * @param {String} message Text to display in the bubble
-     * @param {qx.ui.core.Widget} anchor Widget to position the bubble below
+     * @param {String} message Text to display in the card
+     * @param {qx.ui.core.Widget} anchor Widget to position the card below
      */
     addMessage: function(message, anchor) {
       const container = this.__getContainer();
       const color = qx.theme.manager.Color.getInstance().resolve("strong-main");
-      const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
 
       // Keep at most MAX_VISIBLE_MESSAGES entries: queue the rest and show them
       // as slots free up (see __dismissMessage).
@@ -59,58 +60,52 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
         return;
       }
 
-      // Arrow (only visible on the first message)
-      const arrowWrapper = new qx.ui.core.Widget().set({
-        height: 8,
-        width: 16,
-        allowGrowX: false,
-        allowGrowY: false,
-        alignX: "right",
-        marginRight: 4,
-      });
-      arrowWrapper.setUserData("isArrow", true);
-      arrowWrapper.addListenerOnce("appear", () => {
-        const dom = arrowWrapper.getContentElement().getDomElement();
-        if (dom) {
-          dom.style.position = "relative";
-          dom.style.overflow = "visible";
-          // A 45deg-rotated square whose top+left borders form the arrow outline.
-          // Its background covers the bubble's top border underneath, so no line shows.
-          dom.innerHTML = `<div style="position:absolute;top:3px;right:4px;width:11px;height:11px;background:${bgColor};border-top:1px solid ${color};border-left:1px solid ${color};transform:rotate(45deg)"></div>`;
-        }
-      });
+      // Arrow (only visible on the topmost card)
+      const arrowWrapper = this.__createArrow();
       container.add(arrowWrapper);
 
-      // Message bubble
-      const bubble = new qx.ui.basic.Label(message).set({
-        font: "text-14",
+      // Card: message
+      const card = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+        alignY: "middle",
+      })).set({
         paddingTop: 10,
         paddingBottom: 10,
-        paddingLeft: 12,
-        paddingRight: 12,
+        paddingLeft: 14,
+        paddingRight: 16,
         backgroundColor: "background-main",
-        rich: true,
-        wrap: false,
         alignX: "right",
         allowGrowX: false,
       });
-      bubble.getContentElement().setStyles({
-        "border": "1px solid " + color,
+      card.getContentElement().setStyles({
+        "border-left": "4px solid " + color,
         "border-radius": "4px",
+        "box-shadow": "0 6px 18px rgba(0, 0, 0, 0.28)",
+      });
+
+      const label = new qx.ui.basic.Label(message).set({
+        font: "text-14",
+        rich: true,
+        wrap: false,
+        alignY: "middle",
+      });
+      label.getContentElement().setStyles({
         "white-space": "nowrap",
       });
-      // Measure the text so the bubble sizes to a single line
+      // Measure the text so the label stays on a single line
       const font = qx.theme.manager.Font.getInstance().resolve("text-14");
       const textSize = qx.bom.Label.getTextSize(message, font.getStyles());
-      bubble.setWidth(textSize.width + 24 + 2); // padding (12*2) + border (1*2)
-      container.add(bubble);
+      label.setWidth(textSize.width);
+      card.add(label);
 
-      const entry = { arrowWrapper, bubble };
+      container.add(card);
+
+      const entry = { arrowWrapper, card };
       this.__activeMessages.push(entry);
 
       this.__updateArrowVisibility();
-      this.__updateBubbleMargins();
       this.__positionContainer(anchor);
+      this.__animateIn(arrowWrapper);
+      this.__animateIn(card);
 
       // Auto-dismiss
       qx.event.Timer.once(() => this.__dismissMessage(entry, anchor), this, this.self().AUTO_DISMISS_MS);
@@ -118,9 +113,54 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       container.show();
     },
 
+    __createArrow: function() {
+      const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
+      const arrowWrapper = new qx.ui.core.Widget().set({
+        height: 7,
+        width: 16,
+        allowGrowX: false,
+        allowGrowY: false,
+        alignX: "right",
+        marginRight: 6,
+      });
+      arrowWrapper.setUserData("isArrow", true);
+      arrowWrapper.addListenerOnce("appear", () => {
+        const dom = arrowWrapper.getContentElement().getDomElement();
+        if (dom) {
+          dom.style.position = "relative";
+          dom.style.overflow = "visible";
+          // A clean solid triangle (CSS borders) pointing up, in the card's background
+          // color, sitting flush against the top card.
+          dom.innerHTML = `<div style="position:absolute;bottom:-1px;right:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid ${bgColor}"></div>`;
+        }
+      });
+      return arrowWrapper;
+    },
+
+    __animateIn: function(widget) {
+      const apply = () => {
+        const dom = widget.getContentElement().getDomElement();
+        if (!dom) {
+          return;
+        }
+        dom.style.opacity = "0";
+        dom.style.transform = "translateY(-8px)";
+        // force reflow so the transition runs from the initial state
+        void dom.offsetHeight;
+        dom.style.transition = `opacity ${this.self().ANIMATION_MS}ms ease, transform ${this.self().ANIMATION_MS}ms ease`;
+        dom.style.opacity = "1";
+        dom.style.transform = "translateY(0)";
+      };
+      if (widget.getContentElement().getDomElement()) {
+        apply();
+      } else {
+        widget.addListenerOnce("appear", apply);
+      }
+    },
+
     __getContainer: function() {
       if (!this.__container) {
-        this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
+        this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(4)).set({
           zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
         });
         const root = qx.core.Init.getApplication().getRoot();
@@ -163,39 +203,50 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       }
     },
 
-    __updateBubbleMargins: function() {
-      // Overlap borders between adjacent bubbles, but keep the last bubble's bottom border intact
-      const messages = this.__activeMessages;
-      for (let i = 0; i < messages.length; i++) {
-        const isLast = (i === messages.length - 1);
-        messages[i].bubble.setMarginBottom(isLast ? 0 : -1);
-      }
-    },
-
     __dismissMessage: function(entry, anchor) {
       const container = this.__getContainer();
       const idx = this.__activeMessages.indexOf(entry);
-      if (idx > -1) {
-        this.__activeMessages.splice(idx, 1);
+      if (idx === -1) {
+        // already dismissed
+        return;
       }
-      container.remove(entry.arrowWrapper);
-      container.remove(entry.bubble);
-      entry.arrowWrapper.dispose();
-      entry.bubble.dispose();
+      this.__activeMessages.splice(idx, 1);
 
-      this.__updateArrowVisibility();
-      this.__updateBubbleMargins();
-      this.__positionContainer(anchor);
+      const cleanup = () => {
+        container.remove(entry.arrowWrapper);
+        container.remove(entry.card);
+        entry.arrowWrapper.dispose();
+        entry.card.dispose();
 
-      // Hide container if empty
-      if (this.__activeMessages.length === 0) {
-        container.exclude();
-      }
+        this.__updateArrowVisibility();
+        this.__positionContainer(anchor);
 
-      // A slot freed up: show the next queued message, if any.
-      if (this.__pendingMessages.length) {
-        const next = this.__pendingMessages.shift();
-        this.addMessage(next.message, next.anchor);
+        // Hide container if empty
+        if (this.__activeMessages.length === 0) {
+          container.exclude();
+        }
+
+        // A slot freed up: show the next queued message, if any.
+        if (this.__pendingMessages.length) {
+          const next = this.__pendingMessages.shift();
+          this.addMessage(next.message, next.anchor);
+        }
+      };
+
+      // Fade + slide out, then remove
+      const cardDom = entry.card.getContentElement().getDomElement();
+      const arrowDom = entry.arrowWrapper.getContentElement().getDomElement();
+      [cardDom, arrowDom].forEach(dom => {
+        if (dom) {
+          dom.style.transition = `opacity ${this.self().ANIMATION_MS}ms ease, transform ${this.self().ANIMATION_MS}ms ease`;
+          dom.style.opacity = "0";
+          dom.style.transform = "translateY(-8px)";
+        }
+      });
+      if (cardDom) {
+        qx.event.Timer.once(cleanup, this, this.self().ANIMATION_MS);
+      } else {
+        cleanup();
       }
     },
   }
