@@ -75,7 +75,6 @@
   - changed-files:
       - any-glob-to-any-file:
           - services/notifications/**
-          - packages/notifications-library/**
 
 "a:payments":
   - changed-files:

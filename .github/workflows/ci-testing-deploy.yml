@@ -52,7 +52,6 @@ jobs:
       models-library: ${{ steps.filter.outputs.models-library }}
       pytest-simcore: ${{ steps.filter.outputs.pytest-simcore }}
       common-library: ${{ steps.filter.outputs.common-library }}
-      notifications-library: ${{ steps.filter.outputs.notifications-library }}
       postgres-database: ${{ steps.filter.outputs.postgres-database }}
       service-integration: ${{ steps.filter.outputs.service-integration }}
       service-library: ${{ steps.filter.outputs.service-library }}
@@ -122,13 +121,6 @@ jobs:
               - 'mypy.ini'
             common-library:
               - 'packages/common-library/**'
-              - 'packages/pytest-simcore/**'
-              - 'services/docker-compose*'
-              - 'scripts/mypy/*'
-              - 'mypy.ini'
-            notifications-library:
-              - 'packages/notifications-library/**'
-              - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
@@ -1345,36 +1337,6 @@ jobs:
           flags: unittests #optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  unit-test-notifications-library:
-    needs: changes
-    if: ${{ needs.changes.outputs.notifications-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] notifications-library"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.13"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-      - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
-      - name: install
-        run: ./ci/github/unit-testing/notifications-library.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/notifications-library.bash typecheck
-      - name: test
-        run: ./ci/github/unit-testing/notifications-library.bash test
-      - uses: codecov/codecov-action@v7
-        with:
-          flags: unittests #optional
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   unit-test-simcore-sdk:
     needs: changes
     if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1430,7 +1392,6 @@ jobs:
         unit-test-models-library,
         unit-test-pytest-simcore,
         unit-test-common-library,
-        unit-test-notifications-library,
         unit-test-payments,
         unit-test-notifications,
         unit-test-dynamic-scheduler,

@@ -22,7 +22,7 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jinja2 import DictLoader, Environment, select_autoescape
-from notifications_library._models import (
+from models_library.notifications import (
     CompanyLink,
     ProductData,
     ProductFooterData,
