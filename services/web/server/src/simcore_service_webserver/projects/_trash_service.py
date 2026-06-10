@@ -16,8 +16,7 @@ from servicelib.utils import fire_and_forget_task
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from . import _crud_api_read, _projects_repository, _projects_service, _projects_service_delete
-from ._access_rights_service import check_user_project_permission
+from . import _access_rights_service, _crud_api_read, _projects_repository, _projects_service, _projects_service_delete
 from .exceptions import (
     ProjectNotFoundError,
     ProjectNotTrashedError,
@@ -55,7 +54,7 @@ async def trash_project(
         ProjectStopError:
         ProjectRunningConflictError:
     """
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -175,9 +174,9 @@ async def list_explicitly_trashed_projects(
         # This filtering couldn't be handled at the database level when `projects_repo`
         # was refactored, as defining a custom trash_filter was needed to allow more
         # flexibility in filtering options.
-        trashed_projects.extend(
-            [project["uuid"] for project in projects if _can_delete(project, user_id, until_equal_datetime)]
-        )
+        trashed_projects.extend([
+            project["uuid"] for project in projects if _can_delete(project, user_id, until_equal_datetime)
+        ])
     return trashed_projects
 
 

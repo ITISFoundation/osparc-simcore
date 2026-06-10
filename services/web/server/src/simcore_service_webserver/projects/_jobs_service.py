@@ -7,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import AfterValidator, validate_call
 
-from ._access_rights_service import check_user_project_permission
+from . import _access_rights_service
 from ._jobs_repository import ProjectJobsRepository
 from .exceptions import ProjectNotFoundError
 from .models import ProjectJobDBGet
@@ -32,7 +32,7 @@ async def set_project_as_job(
     job_parent_resource_name: Annotated[str, AfterValidator(_validate_job_parent_resource_name)],
     storage_assets_deleted: bool,
 ) -> None:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
@@ -104,7 +104,7 @@ async def get_project_marked_as_job(
     Raises:
         web.HTTPNotFound: if no project is found.
     """
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
