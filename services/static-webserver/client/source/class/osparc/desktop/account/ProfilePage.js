@@ -206,6 +206,10 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true
       });
 
+      // Prevent the browser from autofilling these fields (e.g. email),
+      // which would otherwise leak into other inputs like the search bar.
+      [userName, firstName, lastName, email, phoneNumber].forEach(field => osparc.utils.Utils.disableAutocomplete(field));
+
       const profileForm = this.__userProfileForm = new qx.ui.form.Form();
       profileForm.add(userName, "UserName", null, "userName");
       profileForm.add(firstName, "First Name", null, "firstName");
