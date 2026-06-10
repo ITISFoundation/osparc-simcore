@@ -138,23 +138,25 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 {
                     "profiles": {
                         "aws_ses_sim4life": {
-                            "SMTP_HOST": "email-smtp.us-east-1.amazonaws.com",
-                            "SMTP_PORT": 465,
-                            "SMTP_PROTOCOL": "TLS",
-                            "SMTP_USERNAME": "AKIA...",
-                            "SMTP_PASSWORD": "secret",
-                            "SMTP_DOMAIN": "sim4life.io",
-                            "SMTP_LOCAL_PARTS": {
+                            "host": "email-smtp.us-east-1.amazonaws.com",
+                            "port": 465,
+                            "protocol": "TLS",
+                            "username": "AKIA...",
+                            "password": "***",
+                            "extra_headers": {},
+                            "domain": "sim4life.io",
+                            "local_parts": {
                                 "NO_REPLY": "no-reply",
                                 "SUPPORT": "support",
                             },
                         },
                         "postal_osparc": {
-                            "SMTP_HOST": "smtp.osparc.io",
-                            "SMTP_PORT": 25,
-                            "SMTP_PROTOCOL": "UNENCRYPTED",
-                            "SMTP_DOMAIN": "osparc.io",
-                            "SMTP_LOCAL_PARTS": {
+                            "host": "smtp.osparc.io",
+                            "port": 25,
+                            "protocol": "UNENCRYPTED",
+                            "extra_headers": {},
+                            "domain": "osparc.io",
+                            "local_parts": {
                                 "NO_REPLY": "no-reply",
                                 "SUPPORT": "support",
                             },
