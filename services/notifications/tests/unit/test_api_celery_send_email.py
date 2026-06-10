@@ -90,7 +90,7 @@ async def test_send_mail_with_bcc_and_attachment(
     attachment_filename = "invoice.pdf"
 
     task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=send_email_message.__name__),
+        TaskExecutionMetadata(name=send_email_message_task.__name__),
         owner_metadata=owner_metadata,
         message=EmailMessage(
             from_=EmailContact(email="support@test-domain.com"),

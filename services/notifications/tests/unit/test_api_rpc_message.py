@@ -96,7 +96,7 @@ async def test_send_message_single_recipient(
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_with_owner_metadata(
@@ -127,7 +127,7 @@ async def test_send_message_with_owner_metadata(
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
     spy.assert_awaited_once()
     call_kwargs = spy.call_args.kwargs
@@ -150,7 +150,7 @@ async def test_send_message_multiple_recipients(
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_from_template_with_empty_template(
@@ -174,7 +174,7 @@ async def test_send_message_from_template_with_empty_template(
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_from_template_with_multiple_recipients(
@@ -198,7 +198,7 @@ async def test_send_message_from_template_with_multiple_recipients(
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_from_template_not_found(
