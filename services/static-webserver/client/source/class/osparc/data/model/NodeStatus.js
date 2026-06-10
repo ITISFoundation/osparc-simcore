@@ -239,7 +239,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       const nodeId = node.getNodeId();
       const studyId = node.getStudy().getUuid();
       const label = node.getLabel();
-      osparc.desktop.credits.CreditsIndicatorButton.flashCreditsUsed(walletId, studyId, nodeId, label);
+      osparc.desktop.credits.CreditsIndicatorButton.flashNodeCreditsUsed(walletId, studyId, nodeId, label);
     },
   }
 });

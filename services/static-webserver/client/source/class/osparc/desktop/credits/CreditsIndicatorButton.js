@@ -78,8 +78,8 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     },
 
     // Flashes the credits used by a single finished/stopped service.
-    flashCreditsUsed: function(walletId, studyId, nodeId, label) {
-      this.__flashCreditsUsed(walletId, studyId, [nodeId], totalCost => `${label} used ${totalCost.toFixed(2)} credits`);
+    flashNodeCreditsUsed: function(walletId, studyId, nodeId, nodeLabel) {
+      this.__flashCreditsUsed(walletId, studyId, [nodeId], totalCost => `${nodeLabel} used ${totalCost.toFixed(2)} credits`);
     },
 
     // Flashes the summed up credits used by all the given services of a study being closed.
