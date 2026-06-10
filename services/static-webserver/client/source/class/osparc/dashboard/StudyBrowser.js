@@ -507,7 +507,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       resourcesList.forEach(study => {
         const state = study["state"];
         const projectStatus = osparc.study.Utils.state.getProjectStatus(state);
-        if (projectStatus === "CLOSING") {
+        if (projectStatus === osparc.study.Utils.state.STATUS.CLOSING) {
           // websocket might have already notified that the state was closed.
           // But the /projects calls response got after the ws message. Ask again to make sure
           const delay = 2000;
