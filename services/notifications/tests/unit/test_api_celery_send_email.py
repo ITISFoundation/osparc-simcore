@@ -125,3 +125,8 @@ async def test_send_mail_with_bcc_and_attachment(
         assert len(attachments) == 1
         assert attachments[0].get_filename() == attachment_filename
         assert attachments[0].get_content() == attachment_content
+
+        # RFC 5322 required headers
+        assert sent_msg["Date"] is not None
+        assert sent_msg["Message-ID"] is not None
+        assert "@test-domain.com>" in sent_msg["Message-ID"]

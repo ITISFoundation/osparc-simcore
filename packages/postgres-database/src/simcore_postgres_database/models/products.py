@@ -19,7 +19,6 @@ from sqlalchemy.sql import func
 from ._common import RefActions
 from .base import metadata
 from .groups import groups
-from .jinja2_templates import jinja2_templates
 from .users import users
 
 # NOTE: a default entry is created in the table Product
@@ -60,7 +59,6 @@ class Vendor(TypedDict):
     ui: NotRequired[VendorUI]
 
     footer_social_links: NotRequired[list[tuple[str, str]]]  # list of (social_media_name, social_media_url)
-    footer_share_links: NotRequired[list[tuple[str, str, str]]]  # list of (share_name, share_label, share_url)
     company_name: NotRequired[str]
     company_address: NotRequired[str]
     company_links: NotRequired[list[tuple[str, str]]]  # list of (link_name, link_url)
@@ -236,18 +234,6 @@ products = sa.Table(
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
         doc="Front-end owned UI configuration",
-    ),
-    sa.Column(
-        "registration_email_template",
-        sa.String,
-        sa.ForeignKey(
-            jinja2_templates.c.name,
-            name="fk_jinja2_templates_name",
-            ondelete=RefActions.SET_NULL,
-            onupdate=RefActions.CASCADE,
-        ),
-        nullable=True,
-        doc="Custom jinja2 template for registration email",
     ),
     # lifecycle
     sa.Column(

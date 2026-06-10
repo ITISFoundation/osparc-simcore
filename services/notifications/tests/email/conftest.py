@@ -2,41 +2,31 @@
 # pylint: disable=unused-argument
 
 import json
-from pathlib import Path
 from typing import Any
 
-import notifications_library
 import pytest
 from faker import Faker
-from models_library.products import ProductName
-from notifications_library._models import (
+from models_library.notifications import (
     CompanyLink,
     ProductData,
     ProductFooterData,
     ProductUIData,
-    ShareLink,
     SharerData,
     SocialLink,
     UserData,
 )
-from notifications_library.payments import PaymentData
+from models_library.products import ProductName
 from pydantic import EmailStr
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
+from simcore_service_notifications.models.payments import PaymentData
 
 pytest_plugins = [
     "pytest_simcore.faker_payments_data",
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
 ]
-
-
-@pytest.fixture(scope="session")
-def package_dir() -> Path:
-    pdir = Path(notifications_library.__file__).resolve().parent
-    assert pdir.exists()
-    return pdir
 
 
 @pytest.fixture
@@ -85,10 +75,6 @@ def product_data(
     footer_data = ProductFooterData(
         social_links=[
             SocialLink(name=link_name, url=link_url) for link_name, link_url in vendor.get("footer_social_links", [])
-        ],
-        share_links=[
-            ShareLink(name=share_name, label=share_label, url=share_url)
-            for share_name, share_label, share_url in vendor.get("footer_share_links", [])
         ],
         company_name=vendor.get("company_name", ""),
         company_address=vendor.get("company_address", ""),

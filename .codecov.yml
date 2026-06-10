@@ -45,9 +45,6 @@ component_management:
     - component_id: pkg_models_library
       paths:
         - packages/models-library/**
-    - component_id: pkg_notifications_library
-      paths:
-        - packages/notifications-library/**
     - component_id: pkg_postgres_database
       paths:
         - packages/postgres-database/**

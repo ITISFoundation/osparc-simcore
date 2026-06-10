@@ -1,3 +1,3 @@
-from ._setup import initialize_frontend
+from ._setup import configure_frontend
 
-__all__: tuple[str, ...] = ("initialize_frontend",)
+__all__: tuple[str, ...] = ("configure_frontend",)

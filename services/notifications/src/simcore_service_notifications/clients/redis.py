@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
@@ -9,7 +9,7 @@ from settings_library.redis import RedisDatabase
 from ..core.settings import ApplicationSettings
 
 
-async def redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     assert settings.NOTIFICATIONS_CELERY is not None  # nosec
     celery_settings: CelerySettings = settings.NOTIFICATIONS_CELERY
@@ -23,6 +23,10 @@ async def redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
     yield {}
 
     await redis_client_sdk.shutdown()
+
+
+def configure_redis_client(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_redis_lifespan)
 
 
 def get_redis_client(app: FastAPI) -> RedisClientSDK:
