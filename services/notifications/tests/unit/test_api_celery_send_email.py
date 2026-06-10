@@ -53,6 +53,7 @@ async def test_send_mail(
             name=send_email_message_task.__name__,
         ),
         owner_metadata=owner_metadata,
+        product_name="test_product",
         message=EmailMessage(
             from_=EmailContact(email="support@test-domain.com"),
             to=EmailContact(email=user_email),
@@ -92,6 +93,7 @@ async def test_send_mail_with_bcc_and_attachment(
     task_uuid = await task_manager.submit_task(
         TaskExecutionMetadata(name=send_email_message_task.__name__),
         owner_metadata=owner_metadata,
+        product_name="test_product",
         message=EmailMessage(
             from_=EmailContact(email="support@test-domain.com"),
             to=EmailContact(email=faker.email()),

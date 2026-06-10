@@ -14,7 +14,7 @@ from models_library.products import ProductName
 from ..task_manager import TaskManager
 
 NOTIFICATIONS_SERVICE_QUEUE_NAME: Final[str] = "notifications"
-SEND_MESSAGE_TASK_NAME_TEMPLATE: Final[TaskName] = "send_{}_message"
+SEND_MESSAGE_TASK_NAME_TEMPLATE: Final[TaskName] = "send_{}_message_task"
 
 
 async def submit_send_message_task(
