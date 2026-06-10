@@ -38,7 +38,7 @@ class _ProductSMTPSettings(BaseModel):
             raise ValueError(msg)
         return self
 
-    def get_settings_for_product(self, product_name: ProductName) -> SMTPSettings:
+    def get_smtp_settings_for_product(self, product_name: ProductName) -> SMTPSettings:
         profile_name = self.product_to_profile.get(product_name)
         if profile_name is None:
             msg = f"No SMTP profile configured for product {product_name!r}"

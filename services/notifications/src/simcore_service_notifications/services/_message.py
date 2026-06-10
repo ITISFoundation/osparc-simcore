@@ -104,6 +104,7 @@ class MessageService:
             task_uuid, task_name = await submit_send_message_task(
                 self.task_manager,
                 owner_metadata=resolved_owner,
+                product_name=product_name,
                 message=messages[0],
                 description=description,
             )
