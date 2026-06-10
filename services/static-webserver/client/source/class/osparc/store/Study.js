@@ -227,10 +227,10 @@ qx.Class.define("osparc.store.Study", {
 
     // After closing a study, its dynamic services are stopped on the backend.
     // The credits are only computed once the services are fully stopped, so we register
-    // the running services here and flash their used credits once the project is reported
-    // as closed (released), or after a fallback timeout.
-    watchClosingStudyCredits: function(studyId, walletId, nodes) {
-      if (!walletId || !nodes || !nodes.length) {
+    // the running services here and flash their summed up used credits once the project is
+    // reported as closed (released), or after a fallback timeout.
+    watchClosingStudyCredits: function(studyId, studyName, walletId, nodeIds) {
+      if (!walletId || !nodeIds || !nodeIds.length) {
         return;
       }
       if (this.__closingCreditsWatch === null) {
@@ -238,8 +238,9 @@ qx.Class.define("osparc.store.Study", {
         this.addListener("studyStateChanged", e => this.__onStudyStateChangedForCredits(e.getData()), this);
       }
       this.__closingCreditsWatch[studyId] = {
+        studyName,
         walletId,
-        nodes,
+        nodeIds,
       };
       // fallback in case the closed state is never received
       setTimeout(() => this.__flushClosingStudyCredits(studyId), 60000);
@@ -263,9 +264,7 @@ qx.Class.define("osparc.store.Study", {
       }
       const watch = this.__closingCreditsWatch[studyId];
       delete this.__closingCreditsWatch[studyId];
-      watch.nodes.forEach(node => {
-        osparc.desktop.credits.CreditsIndicatorButton.flashCreditsUsed(watch.walletId, studyId, node["nodeId"], node["label"]);
-      });
+      osparc.desktop.credits.CreditsIndicatorButton.flashStudyCreditsUsed(watch.walletId, studyId, watch.studyName, watch.nodeIds);
     },
 
     setStudyDebt: function(studyId, debt) {

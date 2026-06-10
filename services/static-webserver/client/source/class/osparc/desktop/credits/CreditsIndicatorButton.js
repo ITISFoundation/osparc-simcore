@@ -69,6 +69,44 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
           }
         });
     },
+
+    // Like flashCreditsUsed, but for a whole study being closed: sums up the credits used by
+    // all the given services and flashes a single "<study> used <X> credits" message.
+    // Retries until every service has a finalized (non-RUNNING) usage, then sums what is available.
+    flashStudyCreditsUsed: function(walletId, studyId, studyName, nodeIds, retriesLeft = 5) {
+      if (!walletId || !nodeIds || !nodeIds.length) {
+        return;
+      }
+      const params = {
+        url: {
+          offset: 0,
+          limit: 20,
+          walletId,
+        }
+      };
+      osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
+        .then(usageData => {
+          const nodeCosts = nodeIds.map(nodeId => {
+            const nodeUsage = usageData.find(entry =>
+              entry["project_id"] === studyId &&
+              entry["node_id"] === nodeId &&
+              entry["service_run_status"] !== "RUNNING" &&
+              entry["credit_cost"]
+            );
+            return nodeUsage ? Math.abs(nodeUsage["credit_cost"]) : null;
+          });
+          const allFinalized = nodeCosts.every(cost => cost !== null);
+          if (!allFinalized && retriesLeft > 0) {
+            setTimeout(() => osparc.desktop.credits.CreditsIndicatorButton.flashStudyCreditsUsed(walletId, studyId, studyName, nodeIds, retriesLeft - 1), 3000);
+            return;
+          }
+          const totalCost = nodeCosts.reduce((sum, cost) => sum + (cost || 0), 0);
+          if (totalCost > 0) {
+            const msg = `${studyName} used ${totalCost.toFixed(2)} credits`;
+            qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
+          }
+        });
+    },
   },
 
   members: {

@@ -652,20 +652,17 @@ qx.Class.define("osparc.data.model.Study", {
       // On study close the dynamic services are stopped but their interactive state won't
       // transition to "idle" (status polling is stopped). The backend computes the credits
       // only once the services are fully stopped, so register the running services and let
-      // the Study store flash their used credits once the project is reported as closed.
+      // the Study store flash their (summed up) used credits once the project is reported as closed.
       const walletId = osparc.store.Store.getInstance().getContextWallet() ?
         osparc.store.Store.getInstance().getContextWallet().getWalletId() : null;
       if (!walletId) {
         return;
       }
       const nodes = this.getWorkbench().getNodes();
-      const runningNodes = Object.values(nodes)
+      const runningNodeIds = Object.values(nodes)
         .filter(node => node.isDynamic() && node.getStatus().getInteractive() === "ready")
-        .map(node => ({
-          nodeId: node.getNodeId(),
-          label: node.getLabel(),
-        }));
-      osparc.store.Study.getInstance().watchClosingStudyCredits(this.getUuid(), walletId, runningNodes);
+        .map(node => node.getNodeId());
+      osparc.store.Study.getInstance().watchClosingStudyCredits(this.getUuid(), this.getName(), walletId, runningNodeIds);
     },
 
     __stopRequestingStatus: function() {
