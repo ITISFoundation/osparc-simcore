@@ -4,6 +4,7 @@ from common_library.network import extract_email_domain
 from common_library.sequence_tools import interleave_by_key
 from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
 from models_library.notifications.rpc import EmailContact, EmailMessage
+from models_library.products import ProductName
 
 from ._base import ChannelHandler
 
@@ -19,7 +20,12 @@ class EmailChannelHandler(ChannelHandler):
     """Handles email channel: validates and fans out into per-recipient payloads."""
 
     @staticmethod
-    def prepare_messages(message: EmailMessage, *, resolved_from: EmailContact | None = None) -> list[dict[str, Any]]:
+    def prepare_messages(
+        message: EmailMessage,
+        *,
+        resolved_from: EmailContact | None = None,
+        product_name: ProductName,
+    ) -> list[dict[str, Any]]:
         if resolved_from is None:
             msg = "resolved_from is required for email messages"
             raise ValueError(msg)
@@ -37,6 +43,7 @@ class EmailChannelHandler(ChannelHandler):
 
         payload_base: dict[str, Any] = {
             "channel": message.channel,
+            "product_name": product_name,
             "from": from_dict,
             "content": content_dict,
         }

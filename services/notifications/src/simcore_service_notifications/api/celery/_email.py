@@ -42,7 +42,7 @@ async def send_email_message(
         app_settings = ApplicationSettings.create_from_envs()
         assert app_settings.NOTIFICATIONS_SMTP_SETTINGS is not None  # nosec
 
-        settings = app_settings.NOTIFICATIONS_SMTP_SETTINGS.get_settings_for_email(msg.from_.email)
+        settings = app_settings.NOTIFICATIONS_SMTP_SETTINGS.get_settings_for_product(msg.product_name)
 
         async with create_session(settings=settings) as smtp:
             email_msg = compose_email(

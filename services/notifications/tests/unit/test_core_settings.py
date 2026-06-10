@@ -11,7 +11,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 from settings_library.email import SMTPSettings
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
-    _DomainToSMTPSettings,
+    _ProductSMTPSettings,
 )
 
 
@@ -28,29 +28,56 @@ _SMTP_PAYLOAD = {
     "SMTP_HOST": "mailpit",
     "SMTP_PORT": 1025,
     "SMTP_PROTOCOL": "UNENCRYPTED",
+    "SMTP_DOMAIN": "osparc.io",
     "SMTP_LOCAL_PARTS": {"SUPPORT": "support", "NO_REPLY": "no-reply"},
 }
 
 
-def test_per_domain_smtp_settings_rejects_invalid_domain_keys():
-    with pytest.raises(ValidationError):
-        _DomainToSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
+def test_product_smtp_settings_rejects_undefined_profile_reference():
+    with pytest.raises(ValidationError, match="undefined SMTP profiles"):
+        _ProductSMTPSettings.model_validate(
+            {
+                "smtp_profiles": {"profile_a": _SMTP_PAYLOAD},
+                "product_to_profile": {"osparc": "nonexistent_profile"},
+            }
+        )
 
 
-def test_per_domain_smtp_settings_for_email_is_case_insensitive():
-    per_domain = _DomainToSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
+def test_product_smtp_settings_get_settings_for_product():
+    product_smtp = _ProductSMTPSettings.model_validate(
+        {
+            "smtp_profiles": {"profile_a": _SMTP_PAYLOAD},
+            "product_to_profile": {"osparc": "profile_a"},
+        }
+    )
 
-    settings = per_domain.get_settings_for_email("Someone <USER@Osparc.IO>")
+    settings = product_smtp.get_settings_for_product("osparc")
 
     assert isinstance(settings, SMTPSettings)
     assert settings.SMTP_HOST == "mailpit"
 
 
-def test_per_domain_smtp_settings_for_email_unknown_domain_raises():
-    per_domain = _DomainToSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
+def test_product_smtp_settings_unknown_product_raises():
+    product_smtp = _ProductSMTPSettings.model_validate(
+        {
+            "smtp_profiles": {"profile_a": _SMTP_PAYLOAD},
+            "product_to_profile": {"osparc": "profile_a"},
+        }
+    )
 
-    with pytest.raises(ValueError, match="No SMTP settings configured for domain"):
-        per_domain.get_settings_for_email("user@unknown.example")
+    with pytest.raises(ValueError, match="No SMTP profile configured for product"):
+        product_smtp.get_settings_for_product("unknown_product")
+
+
+def test_product_smtp_settings_multiple_products_same_profile():
+    product_smtp = _ProductSMTPSettings.model_validate(
+        {
+            "smtp_profiles": {"shared_profile": _SMTP_PAYLOAD},
+            "product_to_profile": {"osparc": "shared_profile", "s4l": "shared_profile"},
+        }
+    )
+
+    assert product_smtp.get_settings_for_product("osparc") == product_smtp.get_settings_for_product("s4l")
 
 
 def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):

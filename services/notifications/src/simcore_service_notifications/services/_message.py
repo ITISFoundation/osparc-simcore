@@ -54,14 +54,16 @@ def _resolve_from_contact(product_data: ProductData, from_identity: FromIdentity
             )
 
 
-def _prepare_celery_messages(message: Message, *, resolved_from: EmailContact | None = None) -> list[dict[str, Any]]:
+def _prepare_celery_messages(
+    message: Message, *, resolved_from: EmailContact | None = None, product_name: ProductName
+) -> list[dict[str, Any]]:
     """Dispatches to channel handler to fan out into per-recipient celery payloads.
 
     Raises:
         NotificationsUnsupportedChannelError: If the channel is not supported.
     """
     handler = for_channel(message.channel)
-    return handler.prepare_messages(message, resolved_from=resolved_from)
+    return handler.prepare_messages(message, resolved_from=resolved_from, product_name=product_name)
 
 
 def _get_task_description(message: Message) -> str | None:
@@ -93,7 +95,7 @@ class MessageService:
             product_data = await self.product_repository.get_product_data(product_name)
             resolved_from = _resolve_from_contact(product_data, message.addressing.from_identity)
 
-        messages = _prepare_celery_messages(message, resolved_from=resolved_from)
+        messages = _prepare_celery_messages(message, resolved_from=resolved_from, product_name=product_name)
 
         num_recipients = len(messages)
         description = _get_task_description(message)

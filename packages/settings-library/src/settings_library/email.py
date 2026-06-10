@@ -71,6 +71,8 @@ class SMTPSettings(BaseCustomSettings):
         ),
     ] = DEFAULT_FACTORY
 
+    SMTP_DOMAIN: str
+
     SMTP_LOCAL_PARTS: Annotated[
         SMTPLocals,
         Field(

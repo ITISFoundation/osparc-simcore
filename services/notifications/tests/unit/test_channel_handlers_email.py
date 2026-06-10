@@ -112,7 +112,9 @@ _RESOLVED_FROM = EmailContact(name="Sender", email="sender@example.com")
 
 def test_prepare_messages_includes_bcc():
     bcc = EmailContact(name="Billing", email="billing@example.com")
-    payloads = EmailChannelHandler.prepare_messages(_make_message(bcc=bcc), resolved_from=_RESOLVED_FROM)
+    payloads = EmailChannelHandler.prepare_messages(
+        _make_message(bcc=bcc), resolved_from=_RESOLVED_FROM, product_name="osparc"
+    )
 
     assert len(payloads) == 1
     assert payloads[0]["bcc"]["email"] == "billing@example.com"
@@ -121,7 +123,7 @@ def test_prepare_messages_includes_bcc():
 def test_prepare_messages_includes_attachments():
     attachment = EmailAttachment(content=b"%PDF-1.4", filename="invoice.pdf")
     payloads = EmailChannelHandler.prepare_messages(
-        _make_message(attachments=[attachment]), resolved_from=_RESOLVED_FROM
+        _make_message(attachments=[attachment]), resolved_from=_RESOLVED_FROM, product_name="osparc"
     )
 
     assert len(payloads) == 1
@@ -131,7 +133,9 @@ def test_prepare_messages_includes_attachments():
 
 
 def test_prepare_messages_without_bcc_and_attachments():
-    payloads = EmailChannelHandler.prepare_messages(_make_message(), resolved_from=_RESOLVED_FROM)
+    payloads = EmailChannelHandler.prepare_messages(
+        _make_message(), resolved_from=_RESOLVED_FROM, product_name="osparc"
+    )
 
     assert len(payloads) == 1
     assert "bcc" not in payloads[0]
