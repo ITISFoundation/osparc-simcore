@@ -12,7 +12,7 @@ from models_library.notifications.celery import (
 )
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api.celery.tasks import (
-    send_email_message,
+    send_email_message_task,
 )
 from tenacity import (
     AsyncRetrying,
@@ -50,7 +50,7 @@ async def test_send_mail(
     user_email = faker.email()
     task_uuid = await task_manager.submit_task(
         TaskExecutionMetadata(
-            name=send_email_message.__name__,
+            name=send_email_message_task.__name__,
         ),
         owner_metadata=owner_metadata,
         message=EmailMessage(
