@@ -112,7 +112,7 @@ def app_environment(
                         }
                     },
                     "product_to_profile": {
-                        "osparc": "test_profile",
+                        "test_product": "test_profile",
                     },
                 }
             ),
