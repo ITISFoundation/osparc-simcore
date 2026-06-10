@@ -303,8 +303,16 @@ class ProjectDBAPI(BaseProjectDB):
         # Rebuild workbench from effective project_nodes so the response matches persisted data
         rebuilt_workbench: dict[str, Any] = {}
         for nid, node_create in project_nodes.items():
-            node_dict = node_create.model_dump(mode="json", exclude={"node_id"}, exclude_none=True)
-            rebuilt_workbench[f"{nid}"] = {COLUMN_TO_WORKBENCH_NODE_ALIAS.get(k, k): v for k, v in node_dict.items()}
+            node_dict = node_create.model_dump(
+                mode="json", exclude={"node_id", "required_resources"}, exclude_none=True
+            )
+            rebuilt_node = {COLUMN_TO_WORKBENCH_NODE_ALIAS.get(k, k): v for k, v in node_dict.items()}
+            # Preserve non-DB fields (e.g. position) from the original workbench
+            original_node = workbench.get(f"{nid}", {})
+            for key in original_node:
+                if key not in rebuilt_node and WORKBENCH_NODE_ALIAS_TO_COLUMN.get(key, key) not in valid_fields:
+                    rebuilt_node[key] = original_node[key]
+            rebuilt_workbench[f"{nid}"] = rebuilt_node
         inserted_project["workbench"] = rebuilt_workbench
 
         async with self.engine.connect() as conn:
