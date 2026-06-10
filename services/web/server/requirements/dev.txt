@@ -15,7 +15,6 @@
 --editable ../../../packages/celery-library/
 --editable ../../../packages/common-library/
 --editable ../../../packages/models-library/
---editable ../../../packages/notifications-library/
 --editable ../../../packages/postgres-database/
 --editable ../../../packages/settings-library/
 --editable ../../../packages/service-library[aiohttp]

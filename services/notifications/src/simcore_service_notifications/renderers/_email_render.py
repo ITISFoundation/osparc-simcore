@@ -1,11 +1,10 @@
 import logging
 from email.headerregistry import Address
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from jinja2 import Environment
 from jinja2.exceptions import TemplateNotFound
-
-from ._models import ProductData, UserData
+from models_library.notifications import ProductData, UserData
 
 _logger = logging.getLogger(__name__)
 
@@ -38,14 +37,12 @@ def render_email_parts(
     *,
     user: UserData,
     product: ProductData,
-    **other_data,
+    **other_data: Any,
 ) -> EmailPartsTuple:
     data = other_data | {"user": user, "product": product}
 
-    # NOTE: assumes template convention!
     subject = env.get_template(f"email/{template_name}/subject.j2").render(data)
 
-    # Body
     text_template = env.get_template(f"email/{template_name}/body_text.j2")
     text_content = text_template.render(data)
 
