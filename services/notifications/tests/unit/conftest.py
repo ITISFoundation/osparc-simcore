@@ -98,13 +98,14 @@ def app_environment(
             "NOTIFICATIONS_TRACING": "null",
             "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
                 {
-                    "smtp_profiles": {
+                    "profiles": {
                         "test_profile": {
-                            "SMTP_HOST": "mailpit",
-                            "SMTP_PORT": 1025,
-                            "SMTP_PROTOCOL": "UNENCRYPTED",
-                            "SMTP_DOMAIN": "test-domain.com",
-                            "SMTP_LOCAL_PARTS": {
+                            "host": "mailpit",
+                            "port": 1025,
+                            "protocol": "UNENCRYPTED",
+                            "extra_headers": {},
+                            "domain": "test-domain.com",
+                            "local_parts": {
                                 "SUPPORT": "support",
                                 "NO_REPLY": "no-reply",
                             },

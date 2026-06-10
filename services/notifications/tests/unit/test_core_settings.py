@@ -25,11 +25,12 @@ def test_valid_application_settings(mock_environment: EnvVarsDict):
 
 
 _SMTP_PAYLOAD = {
-    "SMTP_HOST": "mailpit",
-    "SMTP_PORT": 1025,
-    "SMTP_PROTOCOL": "UNENCRYPTED",
-    "SMTP_DOMAIN": "osparc.io",
-    "SMTP_LOCAL_PARTS": {"SUPPORT": "support", "NO_REPLY": "no-reply"},
+    "host": "mailpit",
+    "port": 1025,
+    "protocol": "UNENCRYPTED",
+    "domain": "osparc.io",
+    "extra_headers": {},
+    "local_parts": {"SUPPORT": "support", "NO_REPLY": "no-reply"},
 }
 
 
@@ -37,7 +38,7 @@ def test_product_smtp_settings_rejects_undefined_profile_reference():
     with pytest.raises(ValidationError, match="undefined SMTP profiles"):
         _ProductSMTPSettings.model_validate(
             {
-                "smtp_profiles": {"profile_a": _SMTP_PAYLOAD},
+                "profiles": {"profile_a": _SMTP_PAYLOAD},
                 "product_to_profile": {"osparc": "nonexistent_profile"},
             }
         )
@@ -46,7 +47,7 @@ def test_product_smtp_settings_rejects_undefined_profile_reference():
 def test_product_smtp_settings_get_settings_for_product():
     product_smtp = _ProductSMTPSettings.model_validate(
         {
-            "smtp_profiles": {"profile_a": _SMTP_PAYLOAD},
+            "profiles": {"profile_a": _SMTP_PAYLOAD},
             "product_to_profile": {"osparc": "profile_a"},
         }
     )
@@ -54,13 +55,13 @@ def test_product_smtp_settings_get_settings_for_product():
     settings = product_smtp.get_settings_for_product("osparc")
 
     assert isinstance(settings, SMTPSettings)
-    assert settings.SMTP_HOST == "mailpit"
+    assert settings.host == "mailpit"
 
 
 def test_product_smtp_settings_unknown_product_raises():
     product_smtp = _ProductSMTPSettings.model_validate(
         {
-            "smtp_profiles": {"profile_a": _SMTP_PAYLOAD},
+            "profiles": {"profile_a": _SMTP_PAYLOAD},
             "product_to_profile": {"osparc": "profile_a"},
         }
     )
@@ -72,7 +73,7 @@ def test_product_smtp_settings_unknown_product_raises():
 def test_product_smtp_settings_multiple_products_same_profile():
     product_smtp = _ProductSMTPSettings.model_validate(
         {
-            "smtp_profiles": {"shared_profile": _SMTP_PAYLOAD},
+            "profiles": {"shared_profile": _SMTP_PAYLOAD},
             "product_to_profile": {"osparc": "shared_profile", "s4l": "shared_profile"},
         }
     )

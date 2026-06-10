@@ -27,12 +27,12 @@ class _ProductSMTPSettings(BaseModel):
 
     model_config = {"frozen": True}
 
-    smtp_profiles: dict[ProfileName, SMTPSettings]
+    profiles: dict[ProfileName, SMTPSettings]
     product_to_profile: dict[ProductName, ProfileName]
 
     @model_validator(mode="after")
     def _all_profiles_exist(self) -> "_ProductSMTPSettings":
-        missing = {profile for profile in self.product_to_profile.values() if profile not in self.smtp_profiles}
+        missing = {profile for profile in self.product_to_profile.values() if profile not in self.profiles}
         if missing:
             msg = f"product_to_profile references undefined SMTP profiles: {sorted(missing)}"
             raise ValueError(msg)
@@ -43,7 +43,7 @@ class _ProductSMTPSettings(BaseModel):
         if profile_name is None:
             msg = f"No SMTP profile configured for product {product_name!r}"
             raise ValueError(msg)
-        return self.smtp_profiles[profile_name]
+        return self.profiles[profile_name]
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -136,7 +136,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ),
             examples=[
                 {
-                    "smtp_profiles": {
+                    "profiles": {
                         "aws_ses_sim4life": {
                             "SMTP_HOST": "email-smtp.us-east-1.amazonaws.com",
                             "SMTP_PORT": 465,

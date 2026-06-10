@@ -71,13 +71,14 @@ def mock_environment(
             "SC_BOOT_MODE": BootModeEnum.DEBUG,
             "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
                 {
-                    "smtp_profiles": {
+                    "profiles": {
                         "test_profile": {
-                            "SMTP_HOST": "mailpit",
-                            "SMTP_PORT": 1025,
-                            "SMTP_PROTOCOL": "UNENCRYPTED",
-                            "SMTP_DOMAIN": "test-domain.com",
-                            "SMTP_LOCAL_PARTS": {
+                            "host": "mailpit",
+                            "port": 1025,
+                            "protocol": "UNENCRYPTED",
+                            "domain": "test-domain.com",
+                            "extra_headers": {},
+                            "local_parts": {
                                 "SUPPORT": "support",
                                 "NO_REPLY": "no-reply",
                             },
