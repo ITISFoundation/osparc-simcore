@@ -1,5 +1,7 @@
+from functools import partial
 from typing import Any
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from jinja2 import Environment, PackageLoader, select_autoescape
 
@@ -9,13 +11,17 @@ from ...renderers import JinjaRenderer, Renderer
 from ...repositories import FileTemplateRepository, TemplateRepository
 from ...services import MessageService, TemplateService
 
+_json_dumps_indented = partial(json_dumps, indent=2)
+
 
 def get_jinja_env(**kwargs: Any) -> Environment:
-    return Environment(
+    env = Environment(
         loader=PackageLoader("simcore_service_notifications", "templates"),
-        autoescape=select_autoescape(["html", "xml"]),
+        autoescape=select_autoescape(["html", "xml", "j2"]),
         **kwargs,
     )
+    env.globals["dumps"] = _json_dumps_indented
+    return env
 
 
 def get_template_repository(env: Environment | None = None) -> TemplateRepository:

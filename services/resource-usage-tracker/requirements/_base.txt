@@ -291,7 +291,7 @@ kiwisolver==1.4.9
     # via
     #   -c requirements/./constraints.txt
     #   matplotlib
-mako==1.3.10
+mako==1.3.12
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
