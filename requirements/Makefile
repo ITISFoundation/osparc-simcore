@@ -208,6 +208,202 @@ _check-uv:
 	fi
 
 # ═════════════════════════════════════════════════════════════════════════════
+# prune-deps: Detect and remove unused Python dependencies
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# Three-phase workflow to identify and safely remove unused dependencies:
+#   1. detect  — Run deptry to find unused deps, store findings
+#   2. confirm — Review findings, manually approve removals
+#   3. finalize — Recompile and propagate to downstream packages
+#
+# Parameters:
+#   SCOPE       Optional: single package/service path (e.g., packages/common-library)
+#   ALL         Optional: set to "true" to scan all packages (defaults to false)
+#   INTERACTIVE Optional: set to "false" to skip prompts (defaults to true)
+#
+# Single package (default):
+#   make prune-deps SCOPE=packages/common-library
+#   make prune-deps SCOPE=services/catalog
+#
+# Repo-wide (all packages and services):
+#   make prune-deps ALL=true
+#
+# Non-interactive (for CI/agents):
+#   make prune-deps SCOPE=packages/common-library INTERACTIVE=false
+#
+
+.PHONY: prune-deps
+prune-deps: _validate-prune-deps-params _prune-deps-detect
+
+.PHONY: prune-deps-all
+prune-deps-all: _prune-deps-detect-all
+
+.PHONY: _validate-prune-deps-params
+_validate-prune-deps-params:
+	@echo "🔍 Validating prune-deps parameters..."
+	@if [ "$(ALL)" = "true" ]; then \
+		echo "  Mode:         Repo-wide (all packages and services)"; \
+	elif [ -n "$(SCOPE)" ]; then \
+		if [ ! -d "$(REPO_ROOT)/$(SCOPE)" ]; then \
+			echo "Error: SCOPE='$(SCOPE)' does not exist"; \
+			exit 1; \
+		fi; \
+		if [ ! -f "$(REPO_ROOT)/$(SCOPE)/requirements/_base.in" ]; then \
+			echo "Error: SCOPE='$(SCOPE)' does not have requirements/_base.in"; \
+			exit 1; \
+		fi; \
+		echo "  SCOPE:        $(SCOPE)"; \
+	else \
+		echo "Error: SCOPE is required (or set ALL=true for repo-wide)"; \
+		exit 1; \
+	fi
+	@if [ "$(INTERACTIVE)" = "false" ]; then \
+		echo "  Interactive:  false (skip all prompts)"; \
+	else \
+		echo "  Interactive:  true (prompt at each phase)"; \
+	fi
+	@echo "  ✓ Validation passed"
+
+.PHONY: _prune-deps-detect
+_prune-deps-detect: _check-uv
+	@echo ""
+	@echo "▶ Phase 1: Detect unused dependencies..."
+	@echo ""
+	@SCOPE_PATH="$(REPO_ROOT)/$(SCOPE)"; \
+	if [ ! -d "$$SCOPE_PATH" ]; then \
+		echo "❌ Error: Path does not exist: $$SCOPE_PATH"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "$$SCOPE_PATH/requirements/_base.in" ]; then \
+		echo "❌ Error: No requirements/_base.in found in $(SCOPE)"; \
+		exit 1; \
+	fi; \
+	cd "$$SCOPE_PATH" || exit 1; \
+	PKG_NAME=$$(basename $$SCOPE_PATH | sed 's/-/_/g'); \
+	echo "  📦 Package: $(SCOPE)"; \
+	echo "  🔎 Running deptry..."; \
+	echo ""; \
+	if uvx deptry src tests \
+		--requirements-files requirements/_base.in \
+		--requirements-files-dev requirements/_test.in \
+		--known-first-party $$PKG_NAME 2>&1 | tee /tmp/deptry-output.txt; then \
+		echo ""; \
+		echo "  ✓ No unused dependencies found."; \
+	else \
+		UNUSED_FOUND=$$(grep -c "DEP002" /tmp/deptry-output.txt 2>/dev/null || echo 0); \
+		if [ $$UNUSED_FOUND -gt 0 ]; then \
+			echo ""; \
+			echo "  ⚠️  Found unused dependencies (DEP002):"; \
+			grep "DEP002" /tmp/deptry-output.txt | head -20; \
+			echo ""; \
+			if [ "$(INTERACTIVE)" = "true" ]; then \
+				read -p "  Continue to confirmation phase? (y/n) " CONT; \
+				if [ "$$CONT" != "y" ]; then \
+					echo "  Cancelled by user."; \
+					exit 0; \
+				fi; \
+			fi; \
+			$(MAKE) _prune-deps-confirm SCOPE="$(SCOPE)" INTERACTIVE="$(INTERACTIVE)"; \
+		else \
+			echo "  ✓ No unused dependencies found."; \
+		fi; \
+	fi
+
+.PHONY: _prune-deps-detect-all
+_prune-deps-detect-all: _check-uv
+	@echo ""
+	@echo "▶ Phase 1: Detect unused dependencies (repo-wide)..."
+	@echo ""
+	@PKG_COUNT=0; \
+	UNUSED_COUNT=0; \
+	for pkg_dir in $$(find $(REPO_ROOT)/packages $(REPO_ROOT)/services -maxdepth 2 -name _base.in -path '*/requirements/*' 2>/dev/null | xargs dirname | sort); do \
+		PKG_PATH=$$(echo $$pkg_dir | sed 's|/requirements||'); \
+		SCOPE=$${PKG_PATH#$(REPO_ROOT)/}; \
+		PKG_COUNT=$$((PKG_COUNT + 1)); \
+		echo ""; \
+		echo "  [$$PKG_COUNT] Scanning: $$SCOPE"; \
+		$(MAKE) _prune-deps-detect SCOPE="$$SCOPE" INTERACTIVE="false" || true; \
+		UNUSED_COUNT=$$((UNUSED_COUNT + 1)); \
+	done; \
+	echo ""; \
+	echo "✓ Repo-wide scan complete (checked $$PKG_COUNT packages)"
+
+.PHONY: _prune-deps-confirm
+_prune-deps-confirm:
+	@echo ""
+	@echo "▶ Phase 2: Confirm removals..."
+	@echo ""
+	@SCOPE_PATH="$(REPO_ROOT)/$(SCOPE)"; \
+	echo "  📝 To remove unused dependencies from $(SCOPE):"; \
+	echo ""; \
+	echo "  1. Edit file: $$SCOPE_PATH/requirements/_base.in"; \
+	echo "     Remove lines corresponding to DEP002 findings above."; \
+	echo ""; \
+	echo "  2. Also check: $$SCOPE_PATH/requirements/_test.in"; \
+	echo "     Remove any unused test-only dependencies."; \
+	echo ""; \
+	if [ "$(INTERACTIVE)" = "true" ]; then \
+		read -p "  Press Enter when done editing files, or Ctrl+C to cancel..."; \
+	fi; \
+	echo ""; \
+	echo "  Proceeding to finalization phase..."; \
+	$(MAKE) _prune-deps-finalize SCOPE="$(SCOPE)" INTERACTIVE="$(INTERACTIVE)"
+
+.PHONY: _prune-deps-finalize
+_prune-deps-finalize: _check-uv
+	@echo ""
+	@echo "▶ Phase 3: Finalize and propagate..."
+	@echo ""
+	@SCOPE_PATH="$(REPO_ROOT)/$(SCOPE)"; \
+	cd "$$SCOPE_PATH/requirements" || exit 1; \
+	echo "  🔄 Recompiling requirements..."; \
+	if make touch reqs 2>&1 | tail -10; then \
+		echo ""; \
+		echo "  ✓ Recompilation successful."; \
+	else \
+		echo ""; \
+		echo "  ⚠️  Recompilation failed. Check removed dependencies."; \
+		exit 1; \
+	fi; \
+	echo ""; \
+	echo "  🔍 Detecting downstream packages..."; \
+	DEPENDENTS=$$(grep -l "$(SCOPE)/requirements/_base.in" $(REPO_ROOT)/packages/*/requirements/_base.in $(REPO_ROOT)/services/*/requirements/_base.in 2>/dev/null | xargs dirname | sed 's|/requirements||' | sed "s|$(REPO_ROOT)/||" | sort); \
+	if [ -z "$$DEPENDENTS" ]; then \
+		echo "  ℹ️  No downstream dependencies found."; \
+	else \
+		echo "  Found downstream packages:"; \
+		echo "$$DEPENDENTS" | sed 's/^/    - /'; \
+		echo ""; \
+		if [ "$(INTERACTIVE)" = "true" ]; then \
+			echo "  Downstream packages will be regenerated with minimal changes."; \
+			echo "  (Only updated transitive dependencies from the pruned package.)"; \
+			echo ""; \
+			read -p "  Regenerate downstream packages? (y/n) " REGEN; \
+			if [ "$$REGEN" = "y" ]; then \
+				for dep in $$DEPENDENTS; do \
+					echo ""; \
+					echo "    ↻ Regenerating: $$dep"; \
+					DEP_PKG=$$(echo "$$dep" | sed 's|.*/||'); \
+					cd "$(REPO_ROOT)/$$dep/requirements" 2>/dev/null && make touch reqs upgrade="$$(echo $(SCOPE) | sed 's|.*/||')" || true; \
+				done; \
+			fi; \
+		else \
+			for dep in $$DEPENDENTS; do \
+				echo "    ↻ Regenerating: $$dep"; \
+				cd "$(REPO_ROOT)/$$dep/requirements" 2>/dev/null && make touch reqs upgrade="$$(echo $(SCOPE) | sed 's|.*/||')" || true; \
+			done; \
+		fi; \
+	fi; \
+	echo ""; \
+	echo "✓ Pruning workflow complete!"; \
+	echo ""; \
+	echo "Next steps:"; \
+	echo "  1. Review the diff:  git diff requirements/"; \
+	echo "  2. Run tests:        make install-dev && make tests-unit"; \
+	echo "  3. Commit:           git add requirements/ && git commit -m 'chore(deps): prune unused from $(SCOPE)'"; \
+	echo ""
+
+# ═════════════════════════════════════════════════════════════════════════════
 # help: Display available workflows and usage
 # ═════════════════════════════════════════════════════════════════════════════
 
@@ -275,10 +471,45 @@ help: ## Display help for Python dependency workflows
 	@echo ""
 	@echo "───────────────────────────────────────────────────────────────────────────────"
 	@echo ""
+	@echo "  3. prune-deps — Detect and remove unused dependencies (via deptry)"
+	@echo "     Usage:"
+	@echo "       make prune-deps SCOPE=<pkg>         # Single package (3 phases, interactive)"
+	@echo "       make prune-deps-all                 # Repo-wide scan (detect phase only)"
+	@echo ""
+	@echo "     Workflow Phases:"
+	@echo "       Phase 1 (detect)   — Run deptry to find unused deps (DEP002)"
+	@echo "       Phase 2 (confirm)  — Manually edit *.in files to approve removals"
+	@echo "       Phase 3 (finalize) — Recompile and propagate to downstream packages"
+	@echo ""
+	@echo "     Required Parameters:"
+	@echo "       SCOPE     Package/service path (e.g., packages/common-library, services/catalog)"
+	@echo ""
+	@echo "     Optional Parameters:"
+	@echo "       ALL         Set to 'true' to scan all packages (default: false)"
+	@echo "       INTERACTIVE Set to 'false' to skip prompts (default: true)"
+	@echo ""
+	@echo "     Notes:"
+	@echo "       - Phases run automatically in sequence"
+	@echo "       - Phase 2 pauses to let you edit _base.in and _test.in files"
+	@echo "       - Phase 3 auto-detects and regenerates affected downstream packages"
+	@echo "       - Uses 'uvx deptry' (no installation required)"
+	@echo "       - Requires: uv >= 0.1.0 (already part of repo setup)"
+	@echo ""
+	@echo "     Examples:"
+	@echo "       # Prune single package (interactive, 3 phases)"
+	@echo "       make prune-deps SCOPE=packages/common-library"
+	@echo ""
+	@echo "       # Scan repo-wide for unused deps (detection only, non-interactive)"
+	@echo "       make prune-deps-all"
+	@echo ""
+	@echo "       # Non-interactive (for CI/agents)"
+	@echo "       make prune-deps SCOPE=packages/service-library INTERACTIVE=false"
+	@echo ""
+	@echo "───────────────────────────────────────────────────────────────────────────────"
+	@echo ""
 	@echo "FUTURE WORKFLOWS (coming soon):"
 	@echo ""
 	@echo "  - python-upgrade    Update Python version across repo"
-	@echo "  - prune-deps        Remove unused dependencies"
 	@echo "  - test-deps-update  Update test-only dependencies"
 	@echo ""
 	@echo "───────────────────────────────────────────────────────────────────────────────"
@@ -306,12 +537,6 @@ help: ## Display help for Python dependency workflows
 #   # Update Python version repo-wide
 #   # Parameters: PYTHON_VERSION (required)
 #   # Example: make python-upgrade PYTHON_VERSION=3.14
-#
-# .PHONY: prune-deps
-# prune-deps: _validate-prune-deps-params _run-prune-deps
-#   # Detect and remove unused dependencies
-#   # Parameters: SCOPE (optional, defaults to repo-wide)
-#   # Example: make prune-deps SCOPE=packages/service-library
 #
 # .PHONY: test-deps-update
 # test-deps-update: _validate-test-deps-update-params _run-test-deps-update
