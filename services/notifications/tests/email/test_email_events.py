@@ -192,7 +192,7 @@ def template_attachments(
         "unregister",
     ],
 )
-async def test_email_event(
+async def test_email_event(  # pylint: disable=too-many-positional-arguments
     app_environment: EnvVarsDict,
     with_smtp_extra_headers: dict[str, str],
     smtp_settings: SMTPSettings,
