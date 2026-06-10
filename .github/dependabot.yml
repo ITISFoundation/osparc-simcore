@@ -8,9 +8,9 @@ updates:
   #
   # Security update workflow:
   #   1. pip-audit CI workflow detects CVEs in _base.txt files.
-  #   2. Developer adds a constraint to requirements/constraints.txt.
-  #   3. `.github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh <pkg> <version>`
-  #      regenerates all *.txt files repo-wide via `make reqs-all upgrade=<pkg>`.
+  #   2. Developer runs: make -C requirements audit-prod (to verify locally)
+  #   3. Developer applies fix: make -C requirements security-fix PKG=<pkg> VERSION=<constraint>
+  #      which updates requirements/constraints.txt and regenerates all *.txt files repo-wide.
   #
   # Cool-down / N-1 policy (for manual upgrades):
   #   - Security:  no cool-down (apply immediately)

@@ -231,16 +231,20 @@ Security SLA:
 When a CVE is found in a production dependency:
 
 1. Check the fix version on PyPI / the CVE advisory.
-2. Run the propagation script (bundled with the `propagate-security-fix` skill):
+2. Run the security fix workflow from `requirements/Makefile` (recommended):
    ```console
-   $ .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh <package> <constraint> [<CVE-id>]
-   # Example:
-   $ .github/skills/chore-propagate-security-fix/scripts/propagate-security-fix.sh aiohttp ">=3.11.14" CVE-2024-23334
+   $ cd requirements/
+   $ make security-fix PKG=aiohttp VERSION=">=3.11.14" CVE_ID=CVE-2024-23334
    ```
-   The script:
-   - Adds or updates the pin in `requirements/constraints.txt`.
+   Or repo-wide from the repo root:
+   ```console
+   $ make -C requirements security-fix PKG=aiohttp VERSION=">=3.11.14" CVE_ID=CVE-2024-23334
+   ```
+   The workflow:
+   - Validates package name and version constraint.
+   - Calls the propagation script which adds or updates the pin in `requirements/constraints.txt`.
    - Runs `make -C requirements/tools reqs-all upgrade=<package>` which re-pins the package across all `*.txt` files in the repo.
-   - Prints the changed files and a ready-made `git commit` command.
+   - Prints the changed files and next steps (review, test, commit).
 3. Review the diff (`git diff requirements/`), run unit tests, then commit.
 
 For an isolated single-service fix use `make reqs upgrade=<package>` inside that service's `requirements/` folder instead of `reqs-all`.
