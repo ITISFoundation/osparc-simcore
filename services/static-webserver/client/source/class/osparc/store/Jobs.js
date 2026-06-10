@@ -77,7 +77,7 @@ qx.Class.define("osparc.store.Jobs", {
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
-        field: "submitted_at",
+        field: "ended_at",
         direction: "desc"
       },
       resolveWResponse = false
