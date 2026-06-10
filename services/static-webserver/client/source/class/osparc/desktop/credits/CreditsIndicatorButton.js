@@ -34,47 +34,17 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
   },
 
   statics: {
-    // Fetches the resource usage of a finished/stopped service and flashes the credits used.
+    // Fetches the resource usage of the given (finished/stopped) services and flashes a single
+    // message with the summed up credits used (built by `buildMessage`).
     // The credits are only shown if a CreditsIndicatorButton is mounted (subscribed to the
     // "creditsUsed" message); otherwise the dispatched message is simply ignored.
-    // The backend computes the credits only once the service is fully stopped, so when the
-    // final (non-RUNNING) usage is not available yet, it retries a few times before giving up.
-    flashCreditsUsed: function(walletId, studyId, nodeId, label, retriesLeft = 5) {
-      if (!walletId) {
+    // The backend computes the credits only once a service is fully stopped, so while some
+    // service still has no finalized (non-RUNNING) usage, it retries a few times before giving up.
+    __flashCreditsUsed: function(walletId, studyId, nodeIds, buildMessage, retriesLeft = 5) {
+      if (!walletId || !nodeIds || !nodeIds.length) {
         return;
       }
       if (!osparc.store.StaticInfo.isBillableProduct()) {
-        return;
-      }
-      const params = {
-        url: {
-          offset: 0,
-          limit: 20,
-          walletId,
-        }
-      };
-      osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
-        .then(usageData => {
-          const nodeUsage = usageData.find(entry =>
-            entry["project_id"] === studyId &&
-            entry["node_id"] === nodeId &&
-            entry["service_run_status"] !== "RUNNING"
-          );
-          if (nodeUsage && nodeUsage["credit_cost"]) {
-            const cost = Math.abs(nodeUsage["credit_cost"]).toFixed(2);
-            const msg = `${label} used ${cost} credits`;
-            qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
-          } else if (retriesLeft > 0) {
-            setTimeout(() => osparc.desktop.credits.CreditsIndicatorButton.flashCreditsUsed(walletId, studyId, nodeId, label, retriesLeft - 1), 3000);
-          }
-        });
-    },
-
-    // Like flashCreditsUsed, but for a whole study being closed: sums up the credits used by
-    // all the given services and flashes a single "<study> used <X> credits" message.
-    // Retries until every service has a finalized (non-RUNNING) usage, then sums what is available.
-    flashStudyCreditsUsed: function(walletId, studyId, studyName, nodeIds, retriesLeft = 5) {
-      if (!walletId || !nodeIds || !nodeIds.length) {
         return;
       }
       const params = {
@@ -97,15 +67,24 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
           });
           const allFinalized = nodeCosts.every(cost => cost !== null);
           if (!allFinalized && retriesLeft > 0) {
-            setTimeout(() => osparc.desktop.credits.CreditsIndicatorButton.flashStudyCreditsUsed(walletId, studyId, studyName, nodeIds, retriesLeft - 1), 3000);
+            setTimeout(() => osparc.desktop.credits.CreditsIndicatorButton.__flashCreditsUsed(walletId, studyId, nodeIds, buildMessage, retriesLeft - 1), 3000);
             return;
           }
           const totalCost = nodeCosts.reduce((sum, cost) => sum + (cost || 0), 0);
           if (totalCost > 0) {
-            const msg = `${studyName} used ${totalCost.toFixed(2)} credits`;
-            qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", msg);
+            qx.event.message.Bus.getInstance().dispatchByName("creditsUsed", buildMessage(totalCost));
           }
         });
+    },
+
+    // Flashes the credits used by a single finished/stopped service.
+    flashCreditsUsed: function(walletId, studyId, nodeId, label) {
+      this.__flashCreditsUsed(walletId, studyId, [nodeId], totalCost => `${label} used ${totalCost.toFixed(2)} credits`);
+    },
+
+    // Flashes the summed up credits used by all the given services of a study being closed.
+    flashStudyCreditsUsed: function(walletId, studyId, studyName, nodeIds) {
+      this.__flashCreditsUsed(walletId, studyId, nodeIds, totalCost => `${studyName} used ${totalCost.toFixed(2)} credits`);
     },
   },
 
