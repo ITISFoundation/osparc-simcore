@@ -121,10 +121,16 @@ _run-security-fix:
 # Runs security scanning on production and/or test dependencies.
 # Mirrors the CI workflow from .github/workflows/pip-audit.yml for local testing.
 #
+# Parameters:
+#   SCOPE    Optional: scan only specific project/service (e.g., services/catalog,
+#            services/*, packages/models-library). If omitted, scans all projects.
+#
 # Examples:
-#   make audit              # Scan all (prod + test)
-#   make audit-prod         # Scan production deps only (_base.txt) — fails on CVE
-#   make audit-test         # Scan test deps only (_test.txt) — warnings only
+#   make audit                          # Scan all (prod + test)
+#   make audit-prod                     # Scan production deps only — fails on CVE
+#   make audit-test                     # Scan test deps only — warnings only
+#   make audit SCOPE=services/catalog   # Scan catalog service only
+#   make audit SCOPE=services/*         # Scan all services
 #
 
 .PHONY: audit
@@ -133,19 +139,34 @@ audit: audit-prod audit-test ## Scan all dependencies for CVEs (prod + test)
 .PHONY: audit-prod
 audit-prod: _check-uv ## Scan production deps (_base.txt) — fails on CVE
 	@echo ""
-	@echo "🔍 Scanning production dependencies for CVEs (CI will fail if found)..."
+	@if [ -n "$(SCOPE)" ]; then \
+		echo "🔍 Scanning production dependencies for CVEs in $(SCOPE) (CI will fail if found)..."; \
+	else \
+		echo "🔍 Scanning production dependencies for CVEs (CI will fail if found)..."; \
+	fi
 	@echo ""
-	@BASE_FILES=$$(find $(REPO_ROOT) -name '_base.txt' -path '*/requirements/*' | sort); \
+	@FIND_PATH="$(REPO_ROOT)"; \
+	if [ -n "$(SCOPE)" ]; then \
+		FIND_PATH="$(REPO_ROOT)/$(SCOPE)"; \
+	fi; \
+	BASE_FILES=$$(find $$FIND_PATH -name '_base.txt' -path '*/requirements/*' 2>/dev/null | sort); \
 	if [ -z "$$BASE_FILES" ]; then \
 		echo "⚠️  No _base.txt files found"; \
 		exit 0; \
 	fi; \
 	UV_CMD=$$(command -v uv || echo "$(HOME)/.local/bin/uv"); \
-	REQ_ARGS=""; \
+	FAILED=0; \
 	for f in $$BASE_FILES; do \
-		REQ_ARGS="$$REQ_ARGS -r $$f"; \
+		echo "  📋 Auditing: $$f"; \
+		if ! "$$UV_CMD" run --with pip-audit pip-audit -r "$$f" --skip-editable --no-deps; then \
+			FAILED=1; \
+		fi; \
 	done; \
-	"$$UV_CMD" run --with pip-audit pip-audit $$REQ_ARGS --skip-editable --no-deps || exit 1
+	if [ $$FAILED -eq 1 ]; then \
+		echo ""; \
+		echo "❌ CVEs found in production dependencies"; \
+		exit 1; \
+	fi
 	@echo ""
 	@echo "✅ No vulnerabilities found in production dependencies"
 	@echo ""
@@ -153,19 +174,26 @@ audit-prod: _check-uv ## Scan production deps (_base.txt) — fails on CVE
 .PHONY: audit-test
 audit-test: _check-uv ## Scan test deps (_test.txt) — warnings only
 	@echo ""
-	@echo "🔍 Scanning test dependencies for CVEs (warnings only, never blocks)..."
+	@if [ -n "$(SCOPE)" ]; then \
+		echo "🔍 Scanning test dependencies for CVEs in $(SCOPE) (warnings only, never blocks)..."; \
+	else \
+		echo "🔍 Scanning test dependencies for CVEs (warnings only, never blocks)..."; \
+	fi
 	@echo ""
-	@TEST_FILES=$$(find $(REPO_ROOT) -name '_test.txt' -path '*/requirements/*' | sort); \
+	@FIND_PATH="$(REPO_ROOT)"; \
+	if [ -n "$(SCOPE)" ]; then \
+		FIND_PATH="$(REPO_ROOT)/$(SCOPE)"; \
+	fi; \
+	TEST_FILES=$$(find $$FIND_PATH -name '_test.txt' -path '*/requirements/*' 2>/dev/null | sort); \
 	if [ -z "$$TEST_FILES" ]; then \
 		echo "ℹ️  No _test.txt files found"; \
 		exit 0; \
 	fi; \
 	UV_CMD=$$(command -v uv || echo "$(HOME)/.local/bin/uv"); \
-	REQ_ARGS=""; \
 	for f in $$TEST_FILES; do \
-		REQ_ARGS="$$REQ_ARGS -r $$f"; \
-	done; \
-	"$$UV_CMD" run --with pip-audit pip-audit $$REQ_ARGS --skip-editable --no-deps || true
+		echo "  📋 Auditing: $$f"; \
+		"$$UV_CMD" run --with pip-audit pip-audit -r "$$f" --skip-editable --no-deps || true; \
+	done
 	@echo ""
 	@echo "⚠️  Test-only CVEs are informational; they do not block CI"
 	@echo ""
@@ -197,6 +225,9 @@ help: ## Display help for Python dependency workflows
 	@echo "       make audit-prod         # Scan production deps only (fails on CVE)"
 	@echo "       make audit-test         # Scan test deps only (warnings only)"
 	@echo ""
+	@echo "     Optional Parameters:"
+	@echo "       SCOPE       Scan specific project/service (e.g., services/catalog, services/*, packages/models-library)"
+	@echo ""
 	@echo "     Notes:"
 	@echo "       - Uses 'uv run --with pip-audit' (no installation required)"
 	@echo "       - Requires: uv >= 0.1.0 (already part of repo setup)"
@@ -207,6 +238,12 @@ help: ## Display help for Python dependency workflows
 	@echo ""
 	@echo "       # CI-like check: production deps only"
 	@echo "       make audit-prod"
+	@echo ""
+	@echo "       # Audit specific service"
+	@echo "       make audit SCOPE=services/catalog"
+	@echo ""
+	@echo "       # Audit all services (production deps only)"
+	@echo "       make audit-prod SCOPE=services/*"
 	@echo ""
 	@echo "───────────────────────────────────────────────────────────────────────────────"
 	@echo ""
