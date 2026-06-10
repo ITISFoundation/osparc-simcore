@@ -82,7 +82,9 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
         });
         stack.setSelection([tasksLayout]);
 
-        this.addListener("backToRuns", () => stack.setSelection([runsHistoryLayout]));
+        if (!this.hasListener("backToRuns")) {
+          this.addListener("backToRuns", () => stack.setSelection([runsHistoryLayout]));
+        }
       }, this);
     },
 
