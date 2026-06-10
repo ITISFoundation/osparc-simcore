@@ -46,7 +46,7 @@ This is a multi-project monorepo with two main groups of projects in the folders
 
 ## How to Run Tests
 
-See the [`run-python-tests`](../skills/run-python-tests/SKILL.md) skill for the full step-by-step procedure.
+See the [`test-python`](../skills/test-python/SKILL.md) skill for the full step-by-step procedure.
 
 ---
 *Last updated: 2026-04-23*

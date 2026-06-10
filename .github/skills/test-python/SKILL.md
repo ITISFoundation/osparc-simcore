@@ -1,5 +1,5 @@
 ---
-name: run-python-tests
+name: test-python
 description: 'Run Python tests for any service or package in this monorepo. Use when: running pytest, executing unit tests, running integration tests, test failures, make install-dev, test setup, installing test dependencies.'
 ---
 
