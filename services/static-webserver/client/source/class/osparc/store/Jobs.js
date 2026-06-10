@@ -150,9 +150,11 @@ qx.Class.define("osparc.store.Jobs", {
       let job = this.getJob(collectionRunId);
       if (!job) {
         const jobs = this.getJobs();
-        job = new osparc.data.Job({
+        const mergedData = {
           collectionRunId,
-        });
+          "projectIds": [subJobData["project_id"]],
+        };
+        job = new osparc.data.Job(mergedData);
         jobs.push(job);
       }
       const subJob = job.addSubJob(collectionRunId, subJobData);
