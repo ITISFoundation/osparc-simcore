@@ -28,14 +28,17 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
     this.base(arguments);
 
     this.__activeMessages = [];
+    this.__pendingMessages = [];
   },
 
   statics: {
     AUTO_DISMISS_MS: 5000,
+    MAX_VISIBLE_MESSAGES: 4,
   },
 
   members: {
     __activeMessages: null,
+    __pendingMessages: null,
     __container: null,
 
     /**
@@ -48,6 +51,13 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       const container = this.__getContainer();
       const color = qx.theme.manager.Color.getInstance().resolve("strong-main");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
+
+      // Keep at most MAX_VISIBLE_MESSAGES entries: queue the rest and show them
+      // as slots free up (see __dismissMessage).
+      if (this.__activeMessages.length >= this.self().MAX_VISIBLE_MESSAGES) {
+        this.__pendingMessages.push({ message, anchor });
+        return;
+      }
 
       // Arrow (only visible on the first message)
       const arrowWrapper = new qx.ui.core.Widget().set({
@@ -180,6 +190,12 @@ qx.Class.define("osparc.desktop.credits.CreditsFlashMessage", {
       // Hide container if empty
       if (this.__activeMessages.length === 0) {
         container.exclude();
+      }
+
+      // A slot freed up: show the next queued message, if any.
+      if (this.__pendingMessages.length) {
+        const next = this.__pendingMessages.shift();
+        this.addMessage(next.message, next.anchor);
       }
     },
   }
