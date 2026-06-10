@@ -36,6 +36,7 @@ async def get_updated_project(sqlalchemy_async_engine: AsyncEngine, project_id: 
             node_dict.pop("project_uuid", None)
             node_dict.pop("created", None)
             node_dict.pop("modified", None)
+            node_dict.pop("required_resources", None)
             workbench[node_id] = node_dict
         project["workbench"] = workbench
         return project

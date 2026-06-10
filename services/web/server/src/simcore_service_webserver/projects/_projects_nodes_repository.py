@@ -50,7 +50,10 @@ _ALIAS_TO_COLUMN: dict[str, str] = {
 
 # Columns that actually exist in `projects_nodes` and are writable
 _WRITABLE_COLUMNS: frozenset[str] = frozenset(c.name for c in projects_nodes.columns) - frozenset(
-    {"created", "modified"}
+    {
+        "created",
+        "modified",
+    }
 )
 
 
@@ -137,7 +140,7 @@ async def get_by_project(
 
         result: list[tuple[NodeID, Node]] = []
         async for row in stream:
-            result.append((row.node_id, Node.model_validate(row, from_attributes=True)))
+            result.append((NodeID(row.node_id), Node.model_validate(row, from_attributes=True)))
 
         return result
 
@@ -162,7 +165,7 @@ async def get_by_projects(
 
         async for row in stream:
             node = Node.model_validate(row, from_attributes=True)
-            projects_to_nodes[row.project_uuid].append((row.node_id, node))
+            projects_to_nodes[ProjectID(row.project_uuid)].append((NodeID(row.node_id), node))
 
         return projects_to_nodes
 
