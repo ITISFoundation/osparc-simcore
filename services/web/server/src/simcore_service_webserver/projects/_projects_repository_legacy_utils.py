@@ -18,7 +18,6 @@ from simcore_postgres_database.models.projects_nodes import (
     projects_nodes as projects_nodes_table,
 )
 from simcore_postgres_database.utils_projects_nodes import (
-    ProjectNode,
     ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import (
@@ -394,17 +393,20 @@ async def get_projects_workbenches(
     if not project_uuids:
         return {}
 
-    exclude_fields = {"node_id", "required_resources", "created", "modified"}
+    _EXCLUDED_COLUMNS = {"project_node_id", "required_resources", "created", "modified"}
+    _selected_columns = [c for c in projects_nodes_table.columns if c.name not in _EXCLUDED_COLUMNS]
 
-    stmt = sa.select(*list(projects_nodes_table.columns)).where(projects_nodes_table.c.project_uuid.in_(project_uuids))
+    stmt = sa.select(*_selected_columns).where(projects_nodes_table.c.project_uuid.in_(project_uuids))
     result = await connection.execute(stmt)
     rows = result.mappings().all()
 
     workbenches: dict[str, dict[str, Any]] = {uuid: {} for uuid in project_uuids}
     for row in rows:
-        on = ProjectNode.model_validate(row)
-        node_data = on.model_dump(exclude=exclude_fields, exclude_none=True, exclude_unset=True)
-        node_data = {snake_to_camel(k): v for k, v in node_data.items()}
-        workbenches[row["project_uuid"]][f"{on.node_id}"] = node_data
+        node_id = row["node_id"]
+        project_uuid = row["project_uuid"]
+        node_data = {
+            snake_to_camel(k): v for k, v in row.items() if k not in ("node_id", "project_uuid") and v is not None
+        }
+        workbenches[project_uuid][node_id] = node_data
 
     return workbenches

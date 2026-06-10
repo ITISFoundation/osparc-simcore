@@ -367,10 +367,13 @@ async def test_update_project_nodes_concurrently(
         for _ in range(number_of_nodes)
     ]
 
+    _semaphore = asyncio.Semaphore(20)
+
     async def _update_node(node_uuid_str: str, outputs: dict) -> None:
-        repo = ProjectNodesRepo(project_uuid=ProjectID(new_project["uuid"]))
-        async with asyncpg_engine.begin() as conn:
-            await repo.update(conn, node_id=NodeID(node_uuid_str), outputs=outputs)
+        async with _semaphore:
+            repo = ProjectNodesRepo(project_uuid=ProjectID(new_project["uuid"]))
+            async with asyncpg_engine.begin() as conn:
+                await repo.update(conn, node_id=NodeID(node_uuid_str), outputs=outputs)
 
     await asyncio.gather(*[_update_node(node_uuids[n], randomly_created_outputs[n]) for n in range(number_of_nodes)])
 
