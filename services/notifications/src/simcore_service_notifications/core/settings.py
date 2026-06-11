@@ -129,7 +129,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
-        _ProductSMTPSettings | None,
+        _ProductSMTPSettings,
         Field(
             description=(
                 "Per-product SMTP settings with named profiles and product-to-profile mapping. "
@@ -170,7 +170,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 }
             ],
         ),
-    ] = None
+    ]
 
     @field_validator("LOG_LEVEL")
     @classmethod

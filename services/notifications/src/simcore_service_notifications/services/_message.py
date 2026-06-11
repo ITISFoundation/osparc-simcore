@@ -40,9 +40,9 @@ _logger = logging.getLogger(__name__)
 _OWNER_METADATA = OwnerMetadata(owner=APP_NAME)
 
 
-def get_email(identity: FromIdentity, domain: str) -> str:
-    local_part = identity.value
-    email = f"{local_part}@{domain}"
+def get_email(identity: FromIdentity, settings: SMTPSettings) -> str:
+    local_part = settings.get_local_part_for_identity(identity)
+    email = f"{local_part}@{settings.domain}"
     validate_email(email)  # Will raise if invalid
     return email
 
@@ -55,12 +55,12 @@ def _resolve_from_contact(
         case FromIdentity.SUPPORT:
             return EmailContact(
                 name=f"{product_data.display_name} support",
-                email=get_email(FromIdentity.SUPPORT, smtp_settings.domain),
+                email=get_email(FromIdentity.SUPPORT, smtp_settings),
             )
         case FromIdentity.NO_REPLY:
             return EmailContact(
                 name="",
-                email=get_email(FromIdentity.NO_REPLY, smtp_settings.domain),
+                email=get_email(FromIdentity.NO_REPLY, smtp_settings),
             )
 
 
@@ -104,7 +104,9 @@ class MessageService:
         if resolved_from is None:
             product_data = await self.product_repository.get_product_data(product_name)
             resolved_from = _resolve_from_contact(
-                product_data, message.addressing.from_identity, self.settings.NOTIFICATIONS_SMTP_SETTINGS
+                product_data,
+                message.addressing.from_identity,
+                self.settings.NOTIFICATIONS_SMTP_SETTINGS.get_smtp_settings_for_product(product_name),
             )
 
         messages = _prepare_celery_messages(message, resolved_from=resolved_from, product_name=product_name)
@@ -149,7 +151,11 @@ class MessageService:
         preview = await self.template_service.preview_template(product_name=product_name, ref=ref, context=context)
 
         product_data = await self.product_repository.get_product_data(product_name)
-        resolved_from = _resolve_from_contact(product_data, addressing.from_identity)
+        resolved_from = _resolve_from_contact(
+            product_data,
+            addressing.from_identity,
+            self.settings.NOTIFICATIONS_SMTP_SETTINGS.get_smtp_settings_for_product(product_name),
+        )
 
         message = EmailMessage(
             addressing=addressing,
