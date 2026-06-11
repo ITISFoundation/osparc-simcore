@@ -210,7 +210,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
     with log_context(logging.INFO, "Reduce 'Max Iterations' to the minimum (10)", logger=log_ctx.logger):
         max_iterations_input = ti_iframe.get_by_label("Max Iterations")
         expect(max_iterations_input).to_be_visible()
-        max_iterations_input.fill("10")
+        max_iterations_input.fill("1")  # it will be increased to 10 by the app, which is the minimum allowed
 
     with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
         run_button = ti_iframe.get_by_role("button", name="Run Optimization")
