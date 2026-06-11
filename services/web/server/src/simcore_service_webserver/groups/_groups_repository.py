@@ -32,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import groups, user_to_groups
 from ..db.plugin import get_asyncpg_engine
-from ..users.users_service import UserNotFoundError
+from ..users import users_service
 from .exceptions import (
     GroupNotFoundError,
     UserAlreadyInGroupError,
@@ -324,7 +324,7 @@ async def create_standard_group(
             ).where(users.c.id == user_id)
         )
         if not user:
-            raise UserNotFoundError(user_id=user_id)
+            raise users_service.UserNotFoundError(user_id=user_id)
 
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
@@ -428,7 +428,7 @@ async def get_user_from_email(
         )
         user = await result.fetchone()
         if not user:
-            raise UserNotFoundError(email=email)
+            raise users_service.UserNotFoundError(email=email)
         return user
 
 

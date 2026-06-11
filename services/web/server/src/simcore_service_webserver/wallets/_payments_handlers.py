@@ -27,23 +27,8 @@ from servicelib.utils import fire_and_forget_task
 from .._meta import API_VTAG as VTAG
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..login.decorators import login_required
-from ..payments.payments_service import (
-    cancel_creation_of_wallet_payment_method,
-    cancel_payment_to_wallet,
-    delete_wallet_payment_method,
-    get_payment_invoice_url,
-    get_wallet_payment_autorecharge,
-    get_wallet_payment_method,
-    init_creation_of_wallet_payment,
-    init_creation_of_wallet_payment_method,
-    list_user_payments_page,
-    list_wallet_payment_methods,
-    notify_payment_completed,
-    pay_with_payment_method,
-    replace_wallet_payment_autorecharge,
-)
+from ..payments import payments_service
 from ..products import products_service
-from ..products.products_service import CreditResult
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._handlers import (
@@ -80,13 +65,13 @@ async def _create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        credit_result: CreditResult = await products_service.get_credit_amount(
+        credit_result = await products_service.get_credit_amount(
             request.app,
             dollar_amount=body_params.price_dollars,
             product_name=req_ctx.product_name,
         )
 
-        payment: WalletPaymentInitiated = await init_creation_of_wallet_payment(
+        payment: WalletPaymentInitiated = await payments_service.init_creation_of_wallet_payment(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -117,7 +102,7 @@ async def _list_all_payments(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     query_params: PageQueryParameters = parse_request_query_parameters_as(PageQueryParameters, request)
 
-    payments, total_number_of_items = await list_user_payments_page(
+    payments, total_number_of_items = await payments_service.list_user_payments_page(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -150,7 +135,7 @@ async def _get_payment_invoice_link(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
 
-    payment_invoice = await get_payment_invoice_url(
+    payment_invoice = await payments_service.get_payment_invoice_url(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
@@ -176,7 +161,7 @@ async def _cancel_payment(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
 
-    await cancel_payment_to_wallet(
+    await payments_service.cancel_payment_to_wallet(
         request.app,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
@@ -218,7 +203,7 @@ async def _init_creation_of_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        initiated: PaymentMethodInitiated = await init_creation_of_wallet_payment_method(
+        initiated: PaymentMethodInitiated = await payments_service.init_creation_of_wallet_payment_method(
             request.app,
             user_id=req_ctx.user_id,
             wallet_id=path_params.wallet_id,
@@ -250,7 +235,7 @@ async def _cancel_creation_of_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        await cancel_creation_of_wallet_payment_method(
+        await payments_service.cancel_creation_of_wallet_payment_method(
             request.app,
             user_id=req_ctx.user_id,
             wallet_id=path_params.wallet_id,
@@ -272,7 +257,7 @@ async def _list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
-    payments_methods: list[PaymentMethodGet] = await list_wallet_payment_methods(
+    payments_methods: list[PaymentMethodGet] = await payments_service.list_wallet_payment_methods(
         request.app,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
@@ -292,7 +277,7 @@ async def _get_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
-    payment_method: PaymentMethodGet = await get_wallet_payment_method(
+    payment_method: PaymentMethodGet = await payments_service.get_wallet_payment_method(
         request.app,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
@@ -313,7 +298,7 @@ async def _delete_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
-    await delete_wallet_payment_method(
+    await payments_service.delete_wallet_payment_method(
         request.app,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
@@ -348,13 +333,13 @@ async def _pay_with_payment_method(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        credit_result: CreditResult = await products_service.get_credit_amount(
+        credit_result = await products_service.get_credit_amount(
             request.app,
             dollar_amount=body_params.price_dollars,
             product_name=req_ctx.product_name,
         )
 
-        payment: PaymentTransaction = await pay_with_payment_method(
+        payment: PaymentTransaction = await payments_service.pay_with_payment_method(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -372,7 +357,7 @@ async def _pay_with_payment_method(request: web.Request):
         async def _notify_payment_completed_after_response(app, user_id, payment):
             # NOTE: A small delay to send notification just after the response
             await asyncio.sleep(_TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH)
-            return (await notify_payment_completed(app, user_id=user_id, payment=payment),)
+            return (await payments_service.notify_payment_completed(app, user_id=user_id, payment=payment),)
 
         fire_and_forget_task(
             _notify_payment_completed_after_response(request.app, user_id=req_ctx.user_id, payment=payment),
@@ -405,7 +390,7 @@ async def _get_wallet_autorecharge(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
-    auto_recharge = await get_wallet_payment_autorecharge(
+    auto_recharge = await payments_service.get_wallet_payment_autorecharge(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
@@ -440,7 +425,7 @@ async def _replace_wallet_autorecharge(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    updated = await replace_wallet_payment_autorecharge(
+    updated = await payments_service.replace_wallet_payment_autorecharge(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,

@@ -27,7 +27,7 @@ from yarl import URL
 
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
-from ..resource_usage.resource_usage_service import add_credits_to_wallet
+from ..resource_usage import resource_usage_service
 from ..users import users_service
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _onetime_db, _rpc
@@ -115,7 +115,7 @@ async def _ack_creation_of_wallet_payment(
     notify_enabled: bool = True,
 ) -> PaymentTransaction:
     # NOTE: Deferred import is safe; happens at call time, not module import
-    from ..wallets.wallets_service import get_wallet_by_user  # noqa: PLC0415
+    from ..wallets import wallets_service  # noqa: PLC0415
 
     #
     # NOTE: implements endpoint in payment service hit by the gateway
@@ -142,10 +142,10 @@ async def _ack_creation_of_wallet_payment(
 
     if completion_state == PaymentTransactionState.SUCCESS:
         # notifying RUT
-        user_wallet = await get_wallet_by_user(
+        user_wallet = await wallets_service.get_wallet_by_user(
             app, transaction.user_id, transaction.wallet_id, transaction.product_name
         )
-        await add_credits_to_wallet(
+        await resource_usage_service.add_credits_to_wallet(
             app=app,
             product_name=transaction.product_name,
             wallet_id=transaction.wallet_id,
@@ -251,9 +251,9 @@ async def raise_for_wallet_payments_permissions(
 
     Deferred import (R0401) is safe; happens at call time, not module import.
     """
-    from ..wallets.wallets_service import get_wallet_with_permissions_by_user  # noqa: PLC0415
+    from ..wallets import wallets_service  # noqa: PLC0415
 
-    permissions = await get_wallet_with_permissions_by_user(
+    permissions = await wallets_service.get_wallet_with_permissions_by_user(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if not permissions.read or not permissions.write:
@@ -281,11 +281,13 @@ async def init_creation_of_wallet_payment(
 
     Deferred import (R0401) is safe; happens at call time, not module import.
     """
-    from ..wallets.wallets_service import get_wallet_by_user  # noqa: PLC0415
+    from ..wallets import wallets_service  # noqa: PLC0415
 
     # wallet: check permissions
     await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
-    user_wallet = await get_wallet_by_user(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
+    user_wallet = await wallets_service.get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # user info
@@ -361,11 +363,13 @@ async def pay_with_payment_method(
     comment: str | None,
 ) -> PaymentTransaction:
     # NOTE: Deferred import is safe; happens at call time, not module import
-    from ..wallets.wallets_service import get_wallet_by_user  # noqa: PLC0415
+    from ..wallets import wallets_service  # noqa: PLC0415
 
     # wallet: check permissions
     await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
-    user_wallet = await get_wallet_by_user(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
+    user_wallet = await wallets_service.get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # stripe info

@@ -15,10 +15,9 @@ from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
 from pydantic import TypeAdapter
 
-from ..resource_usage.resource_usage_service import get_wallet_total_available_credits
+from ..resource_usage import resource_usage_service
 from ..user_preferences import user_preferences_service
 from ..users import users_service
-from ..users.users_service import UserDefaultWalletNotFoundError
 from . import _db as db
 from .errors import WalletAccessForbiddenError
 
@@ -58,7 +57,7 @@ async def list_wallets_with_available_credits_for_user(
     # Now we return the user wallets with available credits
     wallets_api = []
     for wallet in user_wallets:
-        available_credits: WalletTotalCredits = await get_wallet_total_available_credits(
+        available_credits: WalletTotalCredits = await resource_usage_service.get_wallet_total_available_credits(
             app, product_name, wallet.wallet_id
         )
         wallets_api.append(
@@ -89,7 +88,7 @@ async def get_wallet_with_available_credits_by_user_and_wallet(
         app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    available_credits: WalletTotalCredits = await get_wallet_total_available_credits(
+    available_credits: WalletTotalCredits = await resource_usage_service.get_wallet_total_available_credits(
         app, product_name, user_wallet_db.wallet_id
     )
 
@@ -114,7 +113,7 @@ async def get_wallet_with_available_credits(
 ) -> WalletGetWithAvailableCredits:
     wallet_db: WalletDB = await db.get_wallet(app=app, wallet_id=wallet_id, product_name=product_name)
 
-    available_credits: WalletTotalCredits = await get_wallet_total_available_credits(
+    available_credits: WalletTotalCredits = await resource_usage_service.get_wallet_total_available_credits(
         app, product_name, wallet_db.wallet_id
     )
 
@@ -144,7 +143,7 @@ async def get_user_default_wallet_with_available_credits(
         preference_class=user_preferences_service.PreferredWalletIdFrontendUserPreference,
     )
     if user_default_wallet_preference is None:
-        raise UserDefaultWalletNotFoundError(uid=user_id)
+        raise users_service.UserDefaultWalletNotFoundError(uid=user_id)
     default_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
     return await get_wallet_with_available_credits_by_user_and_wallet(
         app, user_id=user_id, wallet_id=default_wallet_id, product_name=product_name

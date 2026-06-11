@@ -13,12 +13,12 @@ from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScop
 from pydantic import NonNegativeInt
 
 from ..projects.api import delete_project_by_user
-from ..users.users_service import get_user
+from ..users import users_service
+from ..workspaces import workspaces_service
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
 )
-from ..workspaces.workspaces_service import check_user_workspace_access
 from . import _folders_repository
 from .errors import FolderValueNotPermittedError
 
@@ -33,12 +33,12 @@ async def create_folder(
     product_name: ProductName,
     workspace_id: WorkspaceID | None,
 ) -> FolderTuple:
-    user = await get_user(app, user_id=user_id)
+    user = await users_service.get_user(app, user_id=user_id)
 
     workspace_is_private = True
     user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
     if workspace_id:
-        user_workspace_access_rights = await check_user_workspace_access(
+        user_workspace_access_rights = await workspaces_service.check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=workspace_id,
@@ -99,7 +99,7 @@ async def get_folder(
     workspace_is_private = True
     user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
     if folder_db.workspace_id:
-        user_workspace_access_rights = await check_user_workspace_access(
+        user_workspace_access_rights = await workspaces_service.check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
@@ -237,7 +237,7 @@ async def update_folder(
     workspace_is_private = True
     user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
     if folder_db.workspace_id:
-        user_workspace_access_rights = await check_user_workspace_access(
+        user_workspace_access_rights = await workspaces_service.check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
@@ -303,7 +303,7 @@ async def delete_folder_with_all_content(
 
     workspace_is_private = True
     if folder_db.workspace_id:
-        await check_user_workspace_access(
+        await workspaces_service.check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,

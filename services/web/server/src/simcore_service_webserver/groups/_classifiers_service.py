@@ -15,8 +15,8 @@ from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import TypeAdapter, ValidationError
 
+from ..scicrunch import scicrunch_service
 from ..scicrunch.errors import ScicrunchError
-from ..scicrunch.scicrunch_service import SCICRUNCH_SERVICE_APPKEY
 from . import models
 from ._classifiers_repository import GroupClassifierRepository
 
@@ -64,7 +64,7 @@ class GroupClassifiersService:
             msg = "Currently only 'std' option for the classifiers tree view is implemented"
             raise NotImplementedError(msg)
 
-        service = self.app[SCICRUNCH_SERVICE_APPKEY]
+        service = self.app[scicrunch_service.SCICRUNCH_SERVICE_APPKEY]
 
         flat_tree_view: dict[models.TreePath, models.ClassifierItem] = {}
         for resource in await service.list_research_resources():

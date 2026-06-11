@@ -36,22 +36,10 @@ from ..exception_handling import (
     create_error_response,
 )
 from ..login.decorators import login_required
-from ..payments.payments_service import (
-    InvalidPaymentMethodError,
-    PaymentCompletedError,
-    PaymentMethodAlreadyAckedError,
-    PaymentMethodNotFoundError,
-    PaymentMethodUniqueViolationError,
-    PaymentNotFoundError,
-    PaymentServiceUnavailableError,
-    PaymentUniqueViolationError,
-)
+from ..payments import payments_service
 from ..products.errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 from ..security.decorators import permission_required
-from ..users.users_service import (
-    BillingDetailsNotFoundError,
-    UserDefaultWalletNotFoundError,
-)
+from ..users import users_service
 from ..utils_aiohttp import envelope_json_response
 from . import _api
 from ._constants import (
@@ -106,9 +94,9 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
 
         except (
             WalletNotFoundError,
-            PaymentNotFoundError,
-            PaymentMethodNotFoundError,
-            UserDefaultWalletNotFoundError,
+            payments_service.PaymentNotFoundError,
+            payments_service.PaymentMethodNotFoundError,
+            users_service.UserDefaultWalletNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(text=f"{exc}") from exc
 
@@ -121,15 +109,15 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
             )
 
         except (
-            PaymentUniqueViolationError,
-            PaymentCompletedError,
-            PaymentMethodAlreadyAckedError,
-            PaymentMethodUniqueViolationError,
-            InvalidPaymentMethodError,
+            payments_service.PaymentUniqueViolationError,
+            payments_service.PaymentCompletedError,
+            payments_service.PaymentMethodAlreadyAckedError,
+            payments_service.PaymentMethodUniqueViolationError,
+            payments_service.InvalidPaymentMethodError,
         ) as exc:
             raise web.HTTPConflict(text=f"{exc}") from exc
 
-        except PaymentServiceUnavailableError as exc:
+        except payments_service.PaymentServiceUnavailableError as exc:
             return _create_error_response_with_support_id_and_logging(
                 request,
                 exc,
@@ -149,7 +137,7 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
         except WalletNotEnoughCreditsError as exc:
             raise web.HTTPPaymentRequired(text=f"{exc}") from exc
 
-        except BillingDetailsNotFoundError as exc:
+        except users_service.BillingDetailsNotFoundError as exc:
             raise web.HTTPServiceUnavailable(text=MSG_BILLING_DETAILS_NOT_DEFINED_ERROR) from exc
 
     return wrapper
