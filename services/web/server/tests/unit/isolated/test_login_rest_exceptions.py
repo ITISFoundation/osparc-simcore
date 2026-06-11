@@ -9,7 +9,6 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from simcore_service_webserver.constants import RQ_PRODUCT_KEY
-from simcore_service_webserver.groups import groups_service
 from simcore_service_webserver.login._controller.rest._rest_exceptions import (
     _handle_legacy_error_response,
     _try_show_login_fallbacks_on_wrong_password,
@@ -47,7 +46,7 @@ def mock_app() -> web.Application:
 def mock_is_user_in_group(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     mock = AsyncMock(return_value=False)
     monkeypatch.setattr(
-        f"{groups_service.__name__}.is_user_in_group",
+        "simcore_service_webserver.login._controller.rest._rest_exceptions.is_user_in_group",
         mock,
     )
     return mock
