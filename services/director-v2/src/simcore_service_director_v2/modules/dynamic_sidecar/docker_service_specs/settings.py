@@ -304,7 +304,7 @@ def _merge_resources_in_settings(
                 empty_resource_entry.value["Reservations"]["GenericResources"].extend([generic_resource])
     if not has_machine_specific_resources:
         # When no machine type is explicitly selected, services may not define CPU/RAM
-        # limitations (defaulting to 0.1% CPU). Enforce a minimum so the dynamic-sidecar
+        # limitations (defaulting to 0.1 CPU, i.e. 10%). Enforce a minimum so the dynamic-sidecar
         # can actually run. When a machine type IS selected the webserver already computed
         # the correct values; applying a floor here would make the service unschedulable
         # on the very node it was pinned to (e.g. 0.6 CPU on t3.large would be raised to
