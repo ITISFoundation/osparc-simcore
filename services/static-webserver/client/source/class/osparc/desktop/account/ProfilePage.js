@@ -539,15 +539,13 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       // autofills the saved email here instead of hijacking unrelated inputs such as the
       // dashboard search bar (osparc/dashboard/SearchBarFilter).
       const username = new qx.ui.form.TextField().set({
-        height: 0,
-        maxHeight: 0,
-        opacity: 0,
         focusable: false,
       });
       username.getContentElement().setAttribute("autocomplete", "username");
       username.getContentElement().setAttribute("aria-hidden", "true");
       username.getContentElement().setAttribute("tabindex", "-1");
-      box.add(username);
+      // add it off-screen so it does not introduce an extra vertical gap
+      box._add(username, { left: -10000, top: -10000 });
 
       const currentPassword = new osparc.ui.form.PasswordField().set({
         required: true,
