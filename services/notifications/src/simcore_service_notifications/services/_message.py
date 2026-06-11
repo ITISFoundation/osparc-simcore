@@ -20,6 +20,7 @@ from models_library.notifications.rpc import (
     Message,
 )
 from models_library.products import ProductName
+from pydantic import validate_email
 from servicelib.celery.async_jobs.notifications import (
     submit_send_message_task,
     submit_send_messages_task,
@@ -27,7 +28,7 @@ from servicelib.celery.async_jobs.notifications import (
 from servicelib.celery.task_manager import TaskManager
 
 from .._meta import APP_NAME
-from ..core.settings import ApplicationSettings
+from ..core.settings import ApplicationSettings, SMTPSettings
 from ..models.product import ProductData
 from ..models.template import TemplateRef
 from ..repositories.product import ProductRepository
@@ -39,18 +40,27 @@ _logger = logging.getLogger(__name__)
 _OWNER_METADATA = OwnerMetadata(owner=APP_NAME)
 
 
-def _resolve_from_contact(product_data: ProductData, from_identity: FromIdentity) -> EmailContact:
+def get_email(identity: FromIdentity, domain: str) -> str:
+    local_part = identity.value
+    email = f"{local_part}@{domain}"
+    validate_email(email)  # Will raise if invalid
+    return email
+
+
+def _resolve_from_contact(
+    product_data: ProductData, from_identity: FromIdentity, smtp_settings: SMTPSettings
+) -> EmailContact:
     """Resolve a from_identity into a concrete EmailContact using product data."""
     match from_identity:
         case FromIdentity.SUPPORT:
             return EmailContact(
                 name=f"{product_data.display_name} support",
-                email=product_data.support_email,
+                email=get_email(FromIdentity.SUPPORT, smtp_settings.domain),
             )
         case FromIdentity.NO_REPLY:
             return EmailContact(
-                name=product_data.display_name,
-                email=product_data.support_email,
+                name="",
+                email=get_email(FromIdentity.NO_REPLY, smtp_settings.domain),
             )
 
 
@@ -93,7 +103,9 @@ class MessageService:
 
         if resolved_from is None:
             product_data = await self.product_repository.get_product_data(product_name)
-            resolved_from = _resolve_from_contact(product_data, message.addressing.from_identity)
+            resolved_from = _resolve_from_contact(
+                product_data, message.addressing.from_identity, self.settings.NOTIFICATIONS_SMTP_SETTINGS
+            )
 
         messages = _prepare_celery_messages(message, resolved_from=resolved_from, product_name=product_name)
 

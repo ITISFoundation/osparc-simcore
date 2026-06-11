@@ -75,8 +75,8 @@ class SMTPSettings(BaseModel):
             description="A mapping of local email identifiers to actual email addresses.",
             examples=[
                 {
-                    "SUPPORT": "support",
-                    "NO_REPLY": "no-reply",
+                    "support": "support",
+                    "no_reply": "no-reply",
                 }
             ],
         ),
@@ -118,6 +118,13 @@ class SMTPSettings(BaseModel):
             )
             raise ValueError(msg)
         return self
+
+    def get_local_part_for_identity(self, identity: str) -> str:
+        try:
+            return getattr(self.local_parts, identity)
+        except AttributeError:
+            msg = f"Unknown local part identity: {identity}"
+            raise ValueError(msg) from None
 
     @property
     def has_credentials(self) -> bool:
