@@ -81,7 +81,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
-from pydantic import PositiveInt, TypeAdapter
+from pydantic import ByteSize, PositiveInt, TypeAdapter
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
@@ -656,7 +656,7 @@ async def update_project_node_resources_from_hardware_info(
                 0,
             )
 
-            new_ram_value = max(int(new_ram_value) - other_services_resources["RAM"], 128 * 1024 * 1024)
+            new_ram_value = ByteSize(max(int(new_ram_value) - other_services_resources["RAM"], 128 * 1024 * 1024))
 
         # scale the service
         node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
