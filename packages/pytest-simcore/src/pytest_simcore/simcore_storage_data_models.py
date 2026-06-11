@@ -58,8 +58,8 @@ async def create_project(
             prj_config = {"prj_owner": user_id, "product_name": with_product["name"]}
             prj_config.update(kwargs)
 
-            # workbench is no longer a column in the projects table;
-            # it is stored in the projects_nodes table instead
+            # `projects.workbench` is deprecated and kept as a safety-net;
+            # these tests store node data in the `projects_nodes` table instead
             workbench: dict[str, Any] = prj_config.pop("workbench", {})
 
             ctx = insert_and_get_row_lifespan(
