@@ -108,7 +108,7 @@ async def set_frontend_user_preference(
     frontend_preference_identifier: PreferenceIdentifier,
     value: Any,
 ) -> None:
-    from ..users.users_service import FrontendUserPreferenceIsNotDefinedError  # noqa: PLC0415
+    from ..users.exceptions import FrontendUserPreferenceIsNotDefinedError  # noqa: PLC0415
 
     try:
         preference_name: PreferenceName = get_preference_name(frontend_preference_identifier)
