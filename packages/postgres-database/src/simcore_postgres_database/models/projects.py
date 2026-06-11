@@ -97,8 +97,9 @@ projects = sa.Table(
     sa.Column(
         "workbench",
         sa.JSON,
-        nullable=False,
-        doc="Pipeline with the project's workflow. Schema in models_library.projects.Workbench",
+        nullable=True,
+        server_default=sa.text("'{}'::json"),
+        doc="DEPRECATED: kept as safety-net. Use projects_nodes table instead.",
     ),
     # FRONT-END ----------------------------
     sa.Column(

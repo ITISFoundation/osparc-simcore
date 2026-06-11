@@ -316,7 +316,7 @@ def upgrade():
     _migrate_workbench_to_projects_nodes()
 
     # Make workbench nullable so that new inserts (which no longer set workbench) succeed.
-    op.alter_column("projects", "workbench", nullable=True, server_default=None)
+    op.alter_column("projects", "workbench", nullable=True, server_default=sa.text("'{}'::json"))
 
     # ### end Alembic commands ###
 

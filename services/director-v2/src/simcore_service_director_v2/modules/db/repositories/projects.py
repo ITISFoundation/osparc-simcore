@@ -20,10 +20,14 @@ class ProjectsRepository(BaseRepository):
     async def get_project(self, project_id: ProjectID) -> ProjectAtDB:
         workbench_subquery = create_workbench_subquery(f"{project_id}")
 
+        # Select all project columns except 'workbench' (deprecated);
+        # workbench is reconstructed from projects_nodes via the subquery.
+        project_cols = [c for c in projects.c if c.name != "workbench"]
+
         async with self.db_engine.connect() as conn:
             query = (
                 sa.select(
-                    projects,
+                    *project_cols,
                     sa.func.coalesce(workbench_subquery.c.workbench, sa.text("'{}'::json")).label("workbench"),
                 )
                 .select_from(
