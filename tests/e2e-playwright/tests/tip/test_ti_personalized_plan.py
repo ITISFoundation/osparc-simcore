@@ -13,7 +13,11 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
-from _tip_steps import set_fast_optimization_settings, wait_and_select_target_tissue
+from _tip_steps import (
+    raise_if_button_spinner_running,
+    set_fast_optimization_settings,
+    wait_and_select_target_tissue,
+)
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
@@ -157,14 +161,7 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
 )
 def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: FrameLocator) -> None:
     _log_simulation_progress(simulator_iframe)
-    try:
-        icon_class = setup_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Setup button icon not found — simulation likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(setup_button, description="Simulation")
 
 
 @retry(
@@ -174,14 +171,7 @@ def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: Frame
 )
 def _wait_for_export_simulation_results(export_button: Locator) -> None:
     # Wait for the export to complete, spinner is on the button while exporting
-    try:
-        icon_class = export_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Export button icon not found — export likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation is being exported: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(export_button, description="Simulation export")
 
 
 def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
@@ -226,14 +216,7 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
     reraise=True,
 )
 def _wait_for_postpro_optimization_complete(run_optimization_button: Locator) -> None:
-    try:
-        icon_class = run_optimization_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Run Optimization button icon not found — optimization likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Post-pro optimization still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(run_optimization_button, description="Post-pro optimization")
 
 
 @retry(
@@ -242,14 +225,7 @@ def _wait_for_postpro_optimization_complete(run_optimization_button: Locator) ->
     reraise=True,
 )
 def _wait_for_postpro_analysis_load(run_optimization_button: Locator) -> None:
-    try:
-        icon_class = run_optimization_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Load Analysis button icon not found — analysis likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Post-pro analysis still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(run_optimization_button, description="Post-pro analysis")
 
 
 @retry(
@@ -258,14 +234,7 @@ def _wait_for_postpro_analysis_load(run_optimization_button: Locator) -> None:
     reraise=True,
 )
 def _wait_for_postpro_result_load(load_result_button: Locator) -> None:
-    try:
-        icon_class = load_result_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Load button icon not found — result likely loaded")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Result still loading: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(load_result_button, description="Post-pro result load")
 
 
 def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:

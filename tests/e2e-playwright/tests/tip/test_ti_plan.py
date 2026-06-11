@@ -13,8 +13,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Final
 
-from _tip_steps import set_fast_optimization_settings, wait_and_select_target_tissue
-from playwright.sync_api import Error as PlaywrightError
+from _tip_steps import (
+    raise_if_button_spinner_running,
+    set_fast_optimization_settings,
+    wait_and_select_target_tissue,
+)
 from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
@@ -144,14 +147,7 @@ def _wait_for_optimization_complete(run_button) -> None:
 )
 def _wait_for_export_complete(button) -> None:
     """Wait for an export button to finish by checking the fa-spinner icon."""
-    try:
-        icon_class = button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Export button icon not found — export likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Export still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(button, description="Export")
 
 
 def _run_classic_ti_step(  # noqa: PLR0915

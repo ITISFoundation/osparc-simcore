@@ -2,8 +2,25 @@
 
 import logging
 
-from playwright.sync_api import FrameLocator, expect
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import FrameLocator, Locator, expect
 from pytest_simcore.helpers.logging_tools import log_context
+
+
+def raise_if_button_spinner_running(button: Locator, *, description: str) -> None:
+    """Raises ``ValueError`` while the button still shows a ``fa-spinner`` icon
+    (i.e. the operation is in progress), and returns quietly once the icon is gone.
+
+    Meant to be wrapped by a ``tenacity.retry`` with the appropriate timeout.
+    """
+    try:
+        icon_class = button.locator("i").first.evaluate("el => el.className")
+    except PlaywrightError:
+        logging.info("%s button icon not found — operation likely completed", description)
+        return
+    if "fa-spinner" in icon_class:
+        msg = f"{description} still running: {icon_class=}"
+        raise ValueError(msg)
 
 
 def wait_and_select_target_tissue(
