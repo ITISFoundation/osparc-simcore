@@ -16,7 +16,9 @@ import json
 import pytest
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 
-MIGRATION_MODULE = "simcore_postgres_database.migration.versions.201aa37f4d9a_remove_workbench_column_from_projects_"
+MIGRATION_MODULE = (
+    "simcore_postgres_database.migration.versions.201aa37f4d9a_migrate_workbench_column_to_projects_nodes"
+)
 
 _migration = importlib.import_module(MIGRATION_MODULE)
 _workbench_node_to_db_values = _migration._workbench_node_to_db_values
