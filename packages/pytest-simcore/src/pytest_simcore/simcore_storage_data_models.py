@@ -78,8 +78,8 @@ async def create_project(
                         node_values = {
                             "project_uuid": project_uuid,
                             "node_id": node_id,
-                            "key": node_data.get("key", "simcore/services/frontend/file-picker"),
-                            "version": node_data.get("version", "1.0.0"),
+                            "key": node_data.get("key"),
+                            "version": node_data.get("version"),
                             "label": node_data.get("label", "unknown"),
                         }
                         # Copy optional fields that exist in projects_nodes.
