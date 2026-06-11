@@ -59,7 +59,7 @@ def _resolve_from_contact(
             )
         case FromIdentity.NO_REPLY:
             return EmailContact(
-                name="",
+                name="no-reply",
                 email=get_email(FromIdentity.NO_REPLY, smtp_settings),
             )
 
