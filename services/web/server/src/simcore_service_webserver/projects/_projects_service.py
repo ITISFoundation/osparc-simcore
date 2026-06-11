@@ -626,10 +626,9 @@ async def update_project_node_resources_from_hardware_info(
         new_cpus_value, new_ram_value = estimate_dynamic_sidecar_resources_from_ec2_instance(
             selected_ec2_instance_type.cpus,
             selected_ec2_instance_type.ram,
-            system_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_SYSTEM_OVERHEAD_CPUS,
-            ops_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_CPUS,
+            overhead_cpus=overhead_settings.DYNAMIC_SERVICES_OVERHEAD_CPUS,
             docker_node_available_ram_ratio=overhead_settings.DYNAMIC_SERVICES_DOCKER_NODE_AVAILABLE_RAM_RATIO,
-            ops_overhead_ram_bytes=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_RAM_BYTES,
+            overhead_ram_bytes=overhead_settings.DYNAMIC_SERVICES_OVERHEAD_RAM_BYTES,
         )
 
         if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
