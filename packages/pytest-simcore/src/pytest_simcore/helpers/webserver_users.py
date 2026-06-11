@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from .faker_factories import DEFAULT_TEST_PASSWORD
 from .postgres_users import insert_and_get_user_and_secrets_lifespan
 
-__all__ = (
+__all__: tuple[str, ...] = (
     "MixedUserTestData",
     "NewUser",
     "SortingUserTestData",
