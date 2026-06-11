@@ -1,3 +1,4 @@
+# pylint: disable=cyclic-import  # Deferred imports at function level only; safe
 import asyncio
 import logging
 from typing import Any
@@ -21,7 +22,6 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from yarl import URL
 
 from ..users import users_service
-from ..wallets.wallets_service import get_wallet_by_user
 from . import _rpc
 from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
@@ -234,7 +234,10 @@ async def init_creation_of_wallet_payment_method(
 
     Raises:
         WalletAccessForbiddenError
+
+    Deferred import (R0401) is safe; happens at call time, not module import.
     """
+    from ..wallets.wallets_service import get_wallet_by_user  # noqa: PLC0415
 
     # check permissions
     await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
