@@ -27,9 +27,9 @@ from servicelib.utils import fire_and_forget_task
 from .._meta import API_VTAG as VTAG
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..login.decorators import login_required
-from ..payments import api
-from ..payments.api import (
+from ..payments.payments_service import (
     cancel_creation_of_wallet_payment_method,
+    cancel_payment_to_wallet,
     delete_wallet_payment_method,
     get_payment_invoice_url,
     get_wallet_payment_autorecharge,
@@ -176,7 +176,7 @@ async def _cancel_payment(request: web.Request):
     req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
 
-    await api.cancel_payment_to_wallet(
+    await cancel_payment_to_wallet(
         request.app,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,

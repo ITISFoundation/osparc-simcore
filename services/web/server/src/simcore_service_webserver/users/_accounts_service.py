@@ -13,7 +13,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
-from ..invitations import api as invitations_service
+from ..invitations import invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service

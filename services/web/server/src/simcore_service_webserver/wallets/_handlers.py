@@ -36,7 +36,7 @@ from ..exception_handling import (
     create_error_response,
 )
 from ..login.decorators import login_required
-from ..payments.errors import (
+from ..payments.payments_service import (
     InvalidPaymentMethodError,
     PaymentCompletedError,
     PaymentMethodAlreadyAckedError,

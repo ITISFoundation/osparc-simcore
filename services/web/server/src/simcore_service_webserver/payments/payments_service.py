@@ -1,0 +1,53 @@
+"""Payments public facade per DESIGN.md §133-152."""
+
+from .api import (
+    cancel_creation_of_wallet_payment_method,
+    cancel_payment_to_wallet,
+    delete_wallet_payment_method,
+    get_payment_invoice_url,
+    get_wallet_payment_autorecharge,
+    get_wallet_payment_method,
+    init_creation_of_wallet_payment,
+    init_creation_of_wallet_payment_method,
+    list_user_payments_page,
+    list_wallet_payment_methods,
+    notify_payment_completed,
+    pay_with_payment_method,
+    replace_wallet_payment_autorecharge,
+)
+from .errors import (
+    InvalidPaymentMethodError,
+    PaymentCompletedError,
+    PaymentMethodAlreadyAckedError,
+    PaymentMethodNotFoundError,
+    PaymentMethodUniqueViolationError,
+    PaymentNotFoundError,
+    PaymentServiceUnavailableError,
+    PaymentUniqueViolationError,
+)
+
+__all__: tuple[str, ...] = (
+    # exceptions
+    "InvalidPaymentMethodError",
+    "PaymentCompletedError",
+    "PaymentMethodAlreadyAckedError",
+    "PaymentMethodNotFoundError",
+    "PaymentMethodUniqueViolationError",
+    "PaymentNotFoundError",
+    "PaymentServiceUnavailableError",
+    "PaymentUniqueViolationError",
+    # functions
+    "cancel_creation_of_wallet_payment_method",
+    "cancel_payment_to_wallet",
+    "delete_wallet_payment_method",
+    "get_payment_invoice_url",
+    "get_wallet_payment_autorecharge",
+    "get_wallet_payment_method",
+    "init_creation_of_wallet_payment",
+    "init_creation_of_wallet_payment_method",
+    "list_user_payments_page",
+    "list_wallet_payment_methods",
+    "notify_payment_completed",
+    "pay_with_payment_method",
+    "replace_wallet_payment_autorecharge",
+)  # nopycln: file
