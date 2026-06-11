@@ -29,7 +29,7 @@ from simcore_postgres_database.utils_users import UsersRepo
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..db.plugin import get_asyncpg_engine
-from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
+from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.groups_service import auto_add_user_to_product_group
 from ..login._login_service import GUEST
 from ..products import products_web
