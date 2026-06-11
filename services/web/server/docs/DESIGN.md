@@ -60,7 +60,7 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
   _repository.py                     # private: data access (postgres/redis/rabbit)
   _<backend>_client.py               # private: I/O to an EXTERNAL service (http/rpc)
   _<feature>_aggregation_service.py  # private: cross-domain feature glue (this domain primary)
-  _<other_domain>_service.py         # private: this domain's adapter to ANOTHER domain (satellite)
+  <other_domain>_service.py          # PUBLIC: this domain's reusable adapter to ANOTHER domain (satellite)
   _models.py                         # private: domain models (re-exported via facade)
   _errors.py                         # private: domain exceptions (re-exported via facade)
   settings.py                        # Pydantic settings for this domain
@@ -109,47 +109,60 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
   facade only makes *consumers of that feature* depend on A — its owner. The dependency graph must
   stay one-directional and acyclic: B or C must never import A's facade to reuse A's feature.
 
-#### Satellite service (`_<other_domain>_service.py`)
-- **Responsibility:** *this domain's adapter to another domain* — e.g. `projects/_tags_service.py`
-  is projects' use of the tags domain.
+#### Satellite service (`<other_domain>_service.py`)
+- **Responsibility:** *this domain's reusable adapter to another domain* — e.g. `projects/tags_service.py`
+  is projects' encapsulation of how it uses the tags domain.
 - **Invariants:**
-  - **Lives in the consuming domain** and stays co-located with its consumer.
+  - **Lives in the consuming domain** and stays co-located with its consumers.
   - Calls the other domain's **public facade**, passing scalar identifiers (IDs, names).
-  - It is **not** moved into the other domain. Extraction is warranted only when *multiple* domains
-    need *identical* cross-domain logic (rare).
+  - **Public by default** (no `_` prefix): other domains or controllers *may* import and reuse it
+    to avoid duplicating the same cross-domain adapter logic. This reduces coupling and centralizes
+    the adapter pattern.
+  - It is **not** moved into the other domain. Extraction into a shared location is warranted only
+    when the logic becomes truly generic (rare).
 
 ### Aggregation vs Satellite (at a glance)
 
 |            | Aggregation service                 | Satellite service                                    |
 | ---------- | ----------------------------------- | ---------------------------------------------------- |
-| Focus      | A feature for a controller          | This domain's use of another domain                  |
+| Focus      | A feature for a controller          | This domain's reusable adapter to another domain     |
 | Location   | Primary domain                      | Consuming domain                                     |
-| Naming     | `_<feature>_aggregation_service.py` | `_<other_domain>_service.py`                         |
+| Naming     | `_<feature>_aggregation_service.py` | `<other_domain>_service.py` (public, no `_` prefix)  |
 | Spans      | Several domains                     | One other domain                                     |
-| Moves out? | No                                  | No (only if multiple consumers need identical logic) |
+| Reusable?  | No (private to primary domain)      | Yes (other domains may import to reuse the pattern)  |
+| Moves out? | No                                  | No (stays in consuming domain, or extracted to shared package if truly generic) |
 
 ---
 
 ## Public Facade Rules
 
-- The single public surface of a domain is `<domain>_service.py`.
-- A `_` prefix marks a module as private to its domain — this applies to `_models.py` and
-  `_errors.py` just as much as `_repository.py` or `_service.py`.
-- Cross-domain imports go through `<domain>_service.py` only — functions, models, **and**
-  exceptions alike. Never reach through to any `_`-prefixed module of another domain.
+- The **primary public surface** of a domain is `<domain>_service.py` — the domain's public API.
+- **Secondary public surfaces** are satellite adapters named `<other_domain>_service.py` (no `_` prefix):
+  reusable encapsulations of how this domain uses another domain. Other domains may import these
+  to avoid duplicating the same cross-domain adapter logic, reducing coupling.
+- A `_` prefix marks a module as **private to its domain** — this applies to `_models.py`,
+  `_errors.py`, `_repository.py`, `_service.py`, and any implementation-level modules.
+- **Cross-domain imports go through public surfaces only:**
+  - For domain API (functions, models, exceptions): use `<domain>_service.py`.
+  - For reusable adapters: use `<other_domain>_service.py` (in the consuming domain that owns the adapter).
+  - Never reach through to any `_`-prefixed module of another domain.
 - Facades re-export with an explicit `__all__` and contain no implementation.
 - `__all__` entries must be **sorted alphabetically within each group**, with groups separated by
   comments (e.g. `# exceptions`, `# functions`).
 
 ```python
-# ✅ Correct — functions, models, and exceptions all via the facade
+# ✅ Correct — domain API via facade, satellite adapters reusable
 from ..users.users_service import get_users_in_group, UserID, UserNotFoundError
-group_members = await get_users_in_group(app, gid=gid)
+from ..projects.tags_service import get_project_tags  # satellite: reusable adapter
 
-# ❌ Wrong — bypasses the facade, couples to internals
+group_members = await get_users_in_group(app, gid=gid)
+tags = await get_project_tags(app, project_id=project_id)  # projects' encapsulation of tag usage
+
+# ❌ Wrong — bypasses facade, couples to internals
 from ..users._users_repository import get_users_ids_in_group
 from ..users._models import UserID          # _prefix = private
 from ..users._errors import UserNotFoundError  # _prefix = private
+from ..projects._tags_service import get_tags  # _prefix = private; should use public satellite
 ```
 
 ---
@@ -206,13 +219,20 @@ Flagged here so it is not forgotten; details and fixes are tracked in [MIGRATION
 
 - **`projects/` duplication** — orchestration logic duplicated between `projects/` adapters and
   other domains.
-- **`projects/` inverted dependencies** — some `projects/_X_service.py` files manipulate domain X's
+- **`projects/` inverted dependencies** — some `projects/<X>_service.py` files manipulate domain X's
   internal invariants instead of acting as a thin adapter to X's facade. This is not fixed by
-  renaming the file to `X/_projects_service.py` (that adapter points the opposite way, `X → projects`).
-  The logic that protects X's invariants belongs **in X** (behind `x_service`); projects then calls
-  it through the facade. Decide direction by: (1) who owns the invariants is the dependee;
-  (2) the consumer holds the thin adapter; (3) keep the graph acyclic — foundational domains
-  (e.g. tags, wallets) must not depend back on orchestration domains (e.g. projects).
+  the naming alone. The logic that protects X's invariants belongs **in X** (behind `x_service`);
+  projects then calls it through the facade. Decide direction by: (1) who owns the invariants is the
+  dependee; (2) the consumer holds the thin adapter; (3) keep the graph acyclic — foundational
+  domains (e.g. tags, wallets) must not depend back on orchestration domains (e.g. projects).
 
+---
 
-IMPORTANT: ADD items above with newly found Design Issues and/or Gotchas
+## Design Pattern Notes
+
+**Satellite services as public adapters:** Satellite services (e.g. `projects/tags_service.py`) are
+public by design — other domains may import them to reuse the same cross-domain adapter logic.
+This pattern reduces coupling (all callers converge on one unified way to interact with a domain),
+centers the adapter in its owner (projects), and avoids circular dependencies. Importing a satellite
+from another domain is **safe and encouraged** — it respects DESIGN.md invariants because it goes
+through a public surface of the consuming domain, not through the adapter's target domain.
