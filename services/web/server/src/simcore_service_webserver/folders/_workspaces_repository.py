@@ -11,8 +11,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..models import ClientSessionID
 from ..projects import _folders_repository as projects_folders_repository
 from ..projects import _groups_repository as projects_groups_repository
-from ..projects._access_rights_service import check_user_project_permission
-from ..projects.api import patch_project_and_notify_users
+from ..projects.api import check_user_project_permission, patch_project_and_notify_users
 from ..users import users_service
 from ..workspaces.workspaces_service import check_user_workspace_access
 from . import _folders_repository
