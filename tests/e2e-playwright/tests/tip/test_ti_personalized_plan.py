@@ -288,6 +288,15 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
                     break
             assert selected, "No non-empty target tissue option found"
 
+        # make it faster
+        with log_context(logging.INFO, "Select 'Low' Convergence"):
+            ti_postpro_iframe.get_by_role("button", name="Low").click()
+
+        with log_context(logging.INFO, "Reduce 'Max Iterations' to the minimum (10)"):
+            max_iterations_input = ti_postpro_iframe.get_by_label("Max Iterations")
+            expect(max_iterations_input).to_be_visible()
+            max_iterations_input.fill("10")
+
         with log_context(logging.INFO, "Run Optimization"):
             run_optimization_button = ti_postpro_iframe.get_by_role("button", name="Run Optimization")
             run_optimization_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
