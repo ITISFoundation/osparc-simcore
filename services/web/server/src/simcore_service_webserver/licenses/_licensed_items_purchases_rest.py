@@ -19,7 +19,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ..wallets.wallets_service import WalletsPathParams
+from ..wallets.models import WalletsPathParams
 from . import _licensed_items_purchases_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (

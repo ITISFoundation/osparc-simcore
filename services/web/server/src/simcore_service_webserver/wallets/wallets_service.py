@@ -6,10 +6,9 @@ from ._api import (
     list_wallets_for_user,
 )
 from ._groups_api import list_wallet_groups_with_read_access_by_wallet
-from ._handlers import WalletsPathParams
 
 __all__: tuple[str, ...] = (
-    "WalletsPathParams",
+    # functions
     "get_wallet_by_user",
     "get_wallet_with_available_credits",
     "get_wallet_with_available_credits_by_user_and_wallet",

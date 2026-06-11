@@ -6,11 +6,13 @@ from ._groups_handlers import (
     _WalletsGroupsBodyParams,
     _WalletsGroupsPathParams,
 )
+from ._handlers import WalletsPathParams
 
 __all__: tuple[str, ...] = (
     # models
     "WalletGroupGet",
     "WalletGroupGetDB",
+    "WalletsPathParams",
     "_WalletsGroupsBodyParams",
     "_WalletsGroupsPathParams",
 )

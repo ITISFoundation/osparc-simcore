@@ -80,9 +80,30 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
 - **Responsibility:** the domain's business logic; orchestrates repository and client calls.
 - **Invariants:**
   - `_service.py` holds the implementation; `<domain>_service.py` is a thin facade that re-exports
-    the public **functions** with an explicit `__all__`. It does **not** re-export models or exceptions
-    — those are imported from `models` and `errors` directly.
-  - Other domains call **only** the facade (`<domain>_service`), `models`, or `errors` — never `_service.py` or other private modules.
+    the public **functions only** with an explicit `__all__`. It does **not** re-export models or exceptions
+    — those are imported from `models.py` and `errors.py` directly by consumers.
+  - Other domains call the service facade for functions: `await users_service.create_user(...)`; they
+    import exceptions and types directly from their dedicated modules: `from ..users.errors import UserNotFoundError`
+    and `from ..users.models import UserID`.
+  - Example:
+    ```python
+    # ✅ Correct: import functions from service, types/exceptions from dedicated modules
+    from ..users import users_service
+    from ..users.models import UserID
+    from ..users.errors import UserNotFoundError
+
+    user_id: UserID = 123
+    try:
+        user = await users_service.get_user(app, user_id=user_id)
+    except UserNotFoundError:
+        pass
+
+    # ✅ Correct: users_service.py exports only functions
+    # users_service.py: __all__ = ("create_user", "get_user", "delete_user")
+
+    # ❌ Wrong: importing types/exceptions from service facade
+    from ..users.users_service import UserID, UserNotFoundError
+    ```
 
 #### Models (`models.py`) and Errors (`errors.py`)
 - **Responsibility:** pure type and exception definitions owned by this domain.

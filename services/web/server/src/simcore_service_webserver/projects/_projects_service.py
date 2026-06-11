@@ -141,7 +141,7 @@ from ..socketio.socketio_service import (
 )
 from ..storage import api as storage_service
 from ..user_preferences import user_preferences_service
-from ..user_preferences.user_preferences_service import (
+from ..user_preferences.models import (
     PreferredWalletIdFrontendUserPreference,
 )
 from ..users import users_service

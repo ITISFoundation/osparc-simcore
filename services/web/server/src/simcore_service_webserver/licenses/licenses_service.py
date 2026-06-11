@@ -23,26 +23,9 @@ from ._licensed_resources_service import (
     trash_licensed_resource,
     untrash_licensed_resource,
 )
-from .errors import (
-    LicensedItemNotFoundError,
-    LicensedItemNumOfSeatsMatchError,
-    LicensedItemPricingPlanConfigurationError,
-    LicensedItemPricingPlanMatchError,
-    LicensedKeyVersionNotFoundError,
-    LicensedResourceNotFoundError,
-    LicensesValueError,
-)
 
 __all__: tuple[str, ...] = (
-    # Exceptions
-    "LicensedItemNotFoundError",
-    "LicensedItemNumOfSeatsMatchError",
-    "LicensedItemPricingPlanConfigurationError",
-    "LicensedItemPricingPlanMatchError",
-    "LicensedKeyVersionNotFoundError",
-    "LicensedResourceNotFoundError",
-    "LicensesValueError",
-    # Functions
+    # functions
     "checkout_licensed_item_for_wallet",
     "get_category_items",
     "get_licensed_item",

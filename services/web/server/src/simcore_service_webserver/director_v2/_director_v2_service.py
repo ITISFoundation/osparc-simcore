@@ -29,6 +29,7 @@ from ..products import products_service
 from ..products.products_service import Product
 from ..projects import projects_wallets_service
 from ..user_preferences import user_preferences_service
+from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
 from ..users.users_service import UserDefaultWalletNotFoundError
 from ..wallets.wallets_service import (
     get_wallet_with_available_credits,
@@ -216,7 +217,7 @@ async def get_wallet_info(
             app,
             user_id=user_id,
             product_name=product_name,
-            preference_class=user_preferences_service.PreferredWalletIdFrontendUserPreference,
+            preference_class=PreferredWalletIdFrontendUserPreference,
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)

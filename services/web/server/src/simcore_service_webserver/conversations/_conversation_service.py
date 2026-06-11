@@ -32,7 +32,6 @@ from ..groups.groups_service import list_group_members, list_user_groups_ids_wit
 from ..products import products_service
 from ..projects._groups_repository import list_project_groups
 from ..users import users_service
-from ..users.users_service import get_users_in_group
 from . import _conversation_repository
 
 _logger = logging.getLogger(__name__)
@@ -40,7 +39,9 @@ _logger = logging.getLogger(__name__)
 
 async def get_recipients_from_project(app: web.Application, project_id: ProjectID) -> set[UserID]:
     groups = await list_project_groups(app, project_id=project_id)
-    return {user for group in groups if group.read for user in await get_users_in_group(app, gid=group.gid)}
+    return {
+        user for group in groups if group.read for user in await users_service.get_users_in_group(app, gid=group.gid)
+    }
 
 
 async def get_recipients_from_product_support_group(app: web.Application, product_name: ProductName) -> set[UserID]:

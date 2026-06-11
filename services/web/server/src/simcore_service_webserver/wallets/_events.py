@@ -10,6 +10,7 @@ from servicelib.aiohttp.observer import register_observer, setup_observer_regist
 from ..products import products_service
 from ..resource_usage import resource_usage_service
 from ..user_preferences import user_preferences_service
+from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
 from ..users import users_service
 from ._api import any_wallet_owned_by_user, create_wallet
 
@@ -51,7 +52,7 @@ async def _auto_add_default_wallet(
                 created_at=wallet.created,
             )
 
-        preference_id = user_preferences_service.PreferredWalletIdFrontendUserPreference().preference_identifier
+        preference_id = PreferredWalletIdFrontendUserPreference().preference_identifier
         await user_preferences_service.set_frontend_user_preference(
             app,
             user_id=user_id,

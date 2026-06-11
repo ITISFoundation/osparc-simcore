@@ -17,6 +17,7 @@ from pydantic import TypeAdapter
 
 from ..resource_usage import resource_usage_service
 from ..user_preferences import user_preferences_service
+from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
 from ..users import users_service
 from . import _db as db
 from .errors import WalletAccessForbiddenError
@@ -140,7 +141,7 @@ async def get_user_default_wallet_with_available_credits(
         app,
         user_id=user_id,
         product_name=product_name,
-        preference_class=user_preferences_service.PreferredWalletIdFrontendUserPreference,
+        preference_class=PreferredWalletIdFrontendUserPreference,
     )
     if user_default_wallet_preference is None:
         raise users_service.UserDefaultWalletNotFoundError(uid=user_id)
