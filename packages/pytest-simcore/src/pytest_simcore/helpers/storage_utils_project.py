@@ -1,30 +1,13 @@
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Any, overload
+from typing import Any
 
-from models_library.projects_nodes_io import NodeID, NodeIDStr
-
-
-@overload
-def clone_project_data(
-    project: dict[str, Any],
-) -> tuple[dict[str, Any], dict[NodeIDStr, NodeIDStr]]: ...
-
-
-@overload
-def clone_project_data(
-    project: dict[str, Any],
-    project_nodes: dict[NodeID, dict[str, Any]],
-) -> tuple[dict[str, Any], dict[NodeID, dict[str, Any]], dict[NodeID, NodeID]]: ...
+from models_library.projects_nodes_io import NodeIDStr
 
 
 def clone_project_data(
     project: dict[str, Any],
-    project_nodes: dict[NodeID, dict[str, Any]] | None = None,
-) -> (
-    tuple[dict[str, Any], dict[NodeIDStr, NodeIDStr]]
-    | tuple[dict[str, Any], dict[NodeID, dict[str, Any]], dict[NodeID, NodeID]]
-):
+) -> tuple[dict[str, Any], dict[NodeIDStr, NodeIDStr]]:
     project_copy = deepcopy(project)
 
     # Update project id
@@ -34,35 +17,6 @@ def clone_project_data(
     project_copy.pop("id", None)
     project_copy["name"] = f"{project['name']}-copy"
 
-    if project_nodes is not None:
-        # New calling convention: separate project_nodes dict
-        def _new_node_uuid(old: NodeID) -> NodeID:
-            return uuidlib.uuid5(project_copy_uuid, f"{old}")
-
-        nodes_map = {node_uuid: _new_node_uuid(node_uuid) for node_uuid in project_nodes}
-
-        # Build a string-based map for recursive UUID replacement
-        str_map: dict[str, str] = {f"{old}": f"{new}" for old, new in nodes_map.items()}
-
-        def _replace_refs(value: Any) -> Any:
-            """Recursively replace old node UUIDs in nested data structures."""
-            if isinstance(value, str):
-                return str_map.get(value, value)
-            if isinstance(value, list):
-                return [_replace_refs(item) for item in value]
-            if isinstance(value, dict):
-                return {_replace_refs(k): _replace_refs(v) for k, v in value.items()}
-            return value
-
-        project_nodes_copy = {}
-        for old_node_id, data in project_nodes.items():
-            new_data = _replace_refs(deepcopy(data))
-            new_data["node_id"] = nodes_map[old_node_id]
-            project_nodes_copy[nodes_map[old_node_id]] = new_data
-
-        return project_copy, project_nodes_copy, nodes_map
-
-    # Legacy calling convention: workbench embedded in project dict
     def _create_new_node_uuid(old_uuid: NodeIDStr) -> NodeIDStr:
         return NodeIDStr(uuidlib.uuid5(project_copy_uuid, old_uuid))
 
