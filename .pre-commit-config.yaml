@@ -10,7 +10,7 @@ repos:
     hooks:
       # Run the linter.
       - id: ruff-check
-        args: [ --fix ]
+        args: [--fix]
       # Run the formatter.
       - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -33,18 +33,26 @@ repos:
       - id: no-commit-to-branch
   - repo: local
     hooks:
-    - id: pytest-testit
-      name: pytest-testit
-      language: script
-      types: [file, python]
-      entry: scripts/precommit/pytest-testit.bash
+      - id: pytest-testit
+        name: pytest-testit
+        language: script
+        types: [file, python]
+        entry: scripts/precommit/pytest-testit.bash
   - repo: local
     hooks:
-    - id: validate-docker-compose
-      name: validate-docker-compose
-      language: script
-      types: [file]
-      entry: scripts/precommit/validate-docker-compose.bash
+      - id: validate-docker-compose
+        name: validate-docker-compose
+        language: script
+        types: [file]
+        entry: scripts/precommit/validate-docker-compose.bash
+  - repo: local
+    hooks:
+      - id: webserver-facade-imports
+        name: webserver-facade-imports
+        language: script
+        entry: scripts/check_webserver_facade_imports.bash
+        pass_filenames: false
+        files: ^services/web/server/src/.*\.py$
   - repo: https://github.com/crate-ci/typos
     rev: v1.40.0
     hooks:

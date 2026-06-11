@@ -61,9 +61,10 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
   _<backend>_client.py               # private: I/O to an EXTERNAL service (http/rpc)
   _<feature>_aggregation_service.py  # private: cross-domain feature glue (this domain primary)
   _<other_domain>_service.py         # private: this domain's adapter to ANOTHER domain (satellite)
+  _models.py                         # private: domain models (re-exported via facade)
+  _errors.py                         # private: domain exceptions (re-exported via facade)
   settings.py                        # Pydantic settings for this domain
   plugin.py                          # setup_<domain>(): wiring
-  models.py / errors.py              # domain models and exceptions
 ```
 
 ### Layer responsibilities and invariants
@@ -132,18 +133,21 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
 ## Public Facade Rules
 
 - The single public surface of a domain is `<domain>_service.py`.
-- A `_` prefix marks a module as private to its domain.
-- Cross-domain imports go through `<domain>_service.py` only — never a `_private` module of another
-  domain (no `_repository`, `_service`, `exceptions`, or `models` reach-through).
+- A `_` prefix marks a module as private to its domain — this applies to `_models.py` and
+  `_errors.py` just as much as `_repository.py` or `_service.py`.
+- Cross-domain imports go through `<domain>_service.py` only — functions, models, **and**
+  exceptions alike. Never reach through to any `_`-prefixed module of another domain.
 - Facades re-export with an explicit `__all__` and contain no implementation.
 
 ```python
-# ✅ Correct
-from ..users import users_service
-group_members = await users_service.get_users_in_group(app, gid=gid)
+# ✅ Correct — functions, models, and exceptions all via the facade
+from ..users.users_service import get_users_in_group, UserID, UserNotFoundError
+group_members = await get_users_in_group(app, gid=gid)
 
 # ❌ Wrong — bypasses the facade, couples to internals
 from ..users._users_repository import get_users_ids_in_group
+from ..users._models import UserID          # _prefix = private
+from ..users._errors import UserNotFoundError  # _prefix = private
 ```
 
 ---
