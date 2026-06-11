@@ -39,6 +39,9 @@ def _configure_plugins(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
+    if settings.PENNSIEVE.PENNSIEVE_ENABLED:
+        pennsieve.configure(app, app_lifespan, settings.PENNSIEVE)
+
     if settings.DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
 
@@ -86,9 +89,6 @@ def create_app(
 
     # Routing
     setup_rest_api_routes(app)
-
-    if settings.PENNSIEVE.PENNSIEVE_ENABLED:
-        pennsieve.setup(app, settings.PENNSIEVE)
 
     set_app_default_http_error_handlers(app)
 
