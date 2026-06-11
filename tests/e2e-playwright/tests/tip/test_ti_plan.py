@@ -13,6 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Final
 
+from _tip_steps import set_fast_optimization_settings, wait_and_select_target_tissue
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
@@ -178,23 +179,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
     restartable_jlab_websocket = RobustWebSocket(params.page, ws_info.value)
 
     with log_context(logging.INFO, "Wait for UI to load"):
-        target_tissue_label = ti_iframe.get_by_text("Target tissue:")
-        expect(target_tissue_label).to_be_visible(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-
-    with log_context(logging.INFO, "Select Target tissue"):
-        target_tissue_select = ti_iframe.get_by_label("Target tissue")
-        expect(target_tissue_select).to_be_visible()
-        # Pick the first non-empty option
-        options = target_tissue_select.locator("option").all()
-        selected = False
-        for option in options:
-            value = option.get_attribute("value") or ""
-            if value.strip():
-                target_tissue_select.select_option(value=value)
-                logging.info("Selected target tissue: %s", option.inner_text())
-                selected = True
-                break
-        assert selected, "No non-empty target tissue option found"
+        wait_and_select_target_tissue(ti_iframe, label_timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
 
     if params.is_product_lite:
         with log_context(logging.INFO, "Check species selector has only 2 options", logger=log_ctx.logger):
@@ -204,13 +189,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
             expect(options.nth(0)).to_have_attribute("value", "Human - MIDA anisotropic")
             expect(options.nth(1)).to_have_attribute("value", "Mouse")
 
-    with log_context(logging.INFO, "Select 'Low' Convergence", logger=log_ctx.logger):
-        ti_iframe.get_by_role("button", name="Low").click()
-
-    with log_context(logging.INFO, "Reduce 'Max Iterations' to the minimum (10)", logger=log_ctx.logger):
-        max_iterations_input = ti_iframe.get_by_label("Max Iterations")
-        expect(max_iterations_input).to_be_visible()
-        max_iterations_input.fill("1")  # it will be increased to 10 by the app, which is the minimum allowed
+    set_fast_optimization_settings(ti_iframe)
 
     with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
         run_button = ti_iframe.get_by_role("button", name="Run Optimization")

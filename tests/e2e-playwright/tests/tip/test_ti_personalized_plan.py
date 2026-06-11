@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
+from _tip_steps import set_fast_optimization_settings, wait_and_select_target_tissue
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
@@ -269,33 +270,14 @@ def _wait_for_postpro_result_load(load_result_button: Locator) -> None:
 
 def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Run TI and generate report"):
-        with log_context(logging.INFO, "Wait for UI to load"):
-            target_tissue_label = ti_postpro_iframe.get_by_text("Target tissue:")
-            expect(target_tissue_label).to_be_visible(timeout=_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Select Target tissue"):
-            target_tissue_select = ti_postpro_iframe.get_by_label("Target tissue")
-            expect(target_tissue_select).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-            # Pick the first non-empty option
-            options = target_tissue_select.locator("option").all()
-            selected = False
-            for option in options:
-                value = option.get_attribute("value") or ""
-                if value.strip():
-                    target_tissue_select.select_option(value=value)
-                    logging.info("Selected target tissue: %s", option.inner_text())
-                    selected = True
-                    break
-            assert selected, "No non-empty target tissue option found"
+        wait_and_select_target_tissue(
+            ti_postpro_iframe,
+            label_timeout=_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+            select_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
+        )
 
         # make it faster
-        with log_context(logging.INFO, "Select 'Low' Convergence"):
-            ti_postpro_iframe.get_by_role("button", name="Low").click()
-
-        with log_context(logging.INFO, "Reduce 'Max Iterations' to the minimum (10)"):
-            max_iterations_input = ti_postpro_iframe.get_by_label("Max Iterations")
-            expect(max_iterations_input).to_be_visible()
-            max_iterations_input.fill("10")
+        set_fast_optimization_settings(ti_postpro_iframe)
 
         with log_context(logging.INFO, "Run Optimization"):
             run_optimization_button = ti_postpro_iframe.get_by_role("button", name="Run Optimization")
