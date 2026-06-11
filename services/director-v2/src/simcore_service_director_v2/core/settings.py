@@ -30,6 +30,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.dynamic_services_resources import DynamicServicesResourceOverheadSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.node_ports import (
     NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
@@ -60,7 +61,8 @@ class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_PER_CLUSTER_MAX_DISTRIBUTED_CONCURRENT_CONNECTIONS: Annotated[
         PositiveInt,
         Field(
-            description="defines how many concurrent connections to each dask scheduler are allowed across all director-v2 replicas"
+            description="defines how many concurrent connections to each dask scheduler "
+            "are allowed across all director-v2 replicas"
         ),
     ] = 20
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: Annotated[
@@ -86,22 +88,26 @@ class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE: Annotated[
         FileLinkType,
         Field(
-            description=f"Default file link type to use with computational backend on-demand clusters '{list(FileLinkType)}'"
+            description="Default file link type to use with computational backend "
+            f"on-demand clusters '{list(FileLinkType)}'"
         ),
     ] = FileLinkType.PRESIGNED
     COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT: Annotated[
         datetime.timedelta,
         Field(
             description="maximum time a pipeline can wait for a cluster to start"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
+            "(default to seconds, "
+            "or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
         ),
     ] = datetime.timedelta(minutes=10)
 
     COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS: Annotated[
         datetime.timedelta,
         Field(
-            description="maximum time the computational scheduler waits until retrieving results from the computational backend is failed"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
+            description="maximum time the computational scheduler waits until retrieving "
+            "results from the computational backend is failed"
+            "(default to seconds, "
+            "or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
         ),
     ] = datetime.timedelta(minutes=10)
 
@@ -138,7 +144,8 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description="Enables local development log format. "
+            "WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ] = False
     DIRECTOR_V2_LOG_FILTER_MAPPING: Annotated[
@@ -146,7 +153,8 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("DIRECTOR_V2_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access')"
+            " to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
@@ -168,7 +176,8 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: Annotated[
         str,
         Field(
-            description="Filepath to self-signed osparc.crt file *as mounted inside the container*, empty strings disables it"
+            description="Filepath to self-signed osparc.crt file "
+            "*as mounted inside the container*, empty strings disables it"
         ),
     ] = ""
     DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
@@ -182,7 +191,8 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
-            " (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)"
+            " (default to seconds, "
+            "or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)"
         ),
     ] = DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL
 
@@ -220,6 +230,14 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         DynamicServicesSettings,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
+
+    DIRECTOR_V2_DYNAMIC_SERVICES_RESOURCE_OVERHEAD: Annotated[
+        DynamicServicesResourceOverheadSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="Shared dynamic services overhead settings",
+        ),
+    ] = DEFAULT_FACTORY
 
     POSTGRES: Annotated[PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 

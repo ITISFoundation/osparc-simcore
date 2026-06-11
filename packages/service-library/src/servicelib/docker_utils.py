@@ -443,23 +443,25 @@ _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC: Final[ByteSize] = TypeAdapter(ByteSize
 # "pull complete" event. If this cap is hit, the throughput constant may need adjustment.
 _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO: Final[float] = 0.99
 
-_CPUS_SAFE_MARGIN: Final[float] = 1.4  # accounts for machine overhead (ops + sidecar itself)
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
-DYNAMIC_SIDECAR_MIN_CPUS: Final[float] = 0.5
 
-
-def estimate_dynamic_sidecar_resources_from_ec2_instance(cpus: float, ram: int) -> tuple[float, int]:
+def estimate_dynamic_sidecar_resources_from_ec2_instance(
+    cpus: float,
+    ram: int,
+    *,
+    system_overhead_cpus: float,
+    ops_overhead_cpus: float,
+    docker_node_available_ram_ratio: float,
+    ops_overhead_ram_bytes: ByteSize,
+) -> tuple[float, ByteSize]:
     """Estimates the resources available to a dynamic-sidecar running in an EC2 instance,
     taking into account safe margins for CPU and RAM, as the EC2 full resources are not completely visible
 
     Returns:
         tuple: Estimated resources for the dynamic-sidecar (cpus, ram).
     """
-    # dynamic-sidecar usually needs less CPU
-    sidecar_cpus = max(DYNAMIC_SIDECAR_MIN_CPUS, cpus - _CPUS_SAFE_MARGIN)
-    sidecar_ram = int(ram - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * ram - _SIDECARS_OPS_SAFE_RAM_MARGIN)
+    sidecar_cpus = cpus - system_overhead_cpus - ops_overhead_cpus
+    sidecar_ram = TypeAdapter(ByteSize).validate_python(
+        int(ram * docker_node_available_ram_ratio - int(ops_overhead_ram_bytes))
+    )
 
     return (sidecar_cpus, sidecar_ram)

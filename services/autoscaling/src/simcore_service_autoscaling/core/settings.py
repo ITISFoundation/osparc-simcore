@@ -25,6 +25,7 @@ from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.dynamic_services_resources import DynamicServicesResourceOverheadSettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -366,6 +367,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         DaskMonitoringSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
+
+    AUTOSCALING_DYNAMIC_SERVICES_RESOURCE_OVERHEAD: Annotated[
+        DynamicServicesResourceOverheadSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="Shared dynamic services overhead settings used for capacity estimation",
+        ),
+    ] = DEFAULT_FACTORY
 
     AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 

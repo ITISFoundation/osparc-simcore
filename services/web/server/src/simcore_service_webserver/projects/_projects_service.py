@@ -81,14 +81,13 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
-from pydantic import ByteSize, PositiveInt, TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.docker_utils import (
-    DYNAMIC_SIDECAR_MIN_CPUS,
     estimate_dynamic_sidecar_resources_from_ec2_instance,
 )
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
@@ -587,14 +586,6 @@ async def _get_default_pricing_and_hardware_info(
     raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}")
 
 
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
-_CPUS_SAFE_MARGIN: Final[float] = 1.4
-_MIN_NUM_CPUS: Final[float] = 0.5
-
-
 async def update_project_node_resources_from_hardware_info(
     app: web.Application,
     *,
@@ -629,9 +620,16 @@ async def update_project_node_resources_from_hardware_info(
         node_resources = await get_project_node_resources(
             app, user_id, project_id, node_id, service_key, service_version, product_name
         )
+        app_settings = get_application_settings(app)
+        overhead_settings = app_settings.WEBSERVER_DYNAMIC_SERVICES_RESOURCE_OVERHEAD
         scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
         new_cpus_value, new_ram_value = estimate_dynamic_sidecar_resources_from_ec2_instance(
-            selected_ec2_instance_type.cpus, selected_ec2_instance_type.ram
+            selected_ec2_instance_type.cpus,
+            selected_ec2_instance_type.ram,
+            system_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_SYSTEM_OVERHEAD_CPUS,
+            ops_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_CPUS,
+            docker_node_available_ram_ratio=overhead_settings.DYNAMIC_SERVICES_DOCKER_NODE_AVAILABLE_RAM_RATIO,
+            ops_overhead_ram_bytes=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_RAM_BYTES,
         )
 
         if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
@@ -655,14 +653,14 @@ async def update_project_node_resources_from_hardware_info(
                     )
             new_cpus_value = max(
                 new_cpus_value - other_services_resources["CPU"],
-                DYNAMIC_SIDECAR_MIN_CPUS,
+                0,
             )
 
-            new_ram_value = max(int(new_ram_value - other_services_resources["RAM"]), 128 * 1024 * 1024)
+            new_ram_value = max(int(new_ram_value) - other_services_resources["RAM"], 128 * 1024 * 1024)
 
         # scale the service
         node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
-        node_resources[scalable_service_name].resources["RAM"].set_value(new_ram_value)
+        node_resources[scalable_service_name].resources["RAM"].set_value(int(new_ram_value))
         db = ProjectDBAPI.get_from_app_context(app)
         await db.update_project_node(
             user_id,

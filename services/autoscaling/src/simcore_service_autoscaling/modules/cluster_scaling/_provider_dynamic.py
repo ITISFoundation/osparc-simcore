@@ -5,7 +5,6 @@ from aws_library.ec2._models import EC2InstanceType
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
-from pydantic import ByteSize
 from servicelib.docker_utils import estimate_dynamic_sidecar_resources_from_ec2_instance
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -103,11 +102,18 @@ class DynamicAutoscalingProvider:
     def adjust_instance_type_resources(self, app: FastAPI, instance_type: EC2InstanceType) -> EC2InstanceType:
         assert self  # nosec
         assert app  # nosec
+        app_settings = get_application_settings(app)
+        overhead_settings = app_settings.AUTOSCALING_DYNAMIC_SERVICES_RESOURCE_OVERHEAD
         adjusted_cpus, adjusted_ram = estimate_dynamic_sidecar_resources_from_ec2_instance(
-            instance_type.resources.cpus, instance_type.resources.ram
+            instance_type.resources.cpus,
+            instance_type.resources.ram,
+            system_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_SYSTEM_OVERHEAD_CPUS,
+            ops_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_CPUS,
+            docker_node_available_ram_ratio=overhead_settings.DYNAMIC_SERVICES_DOCKER_NODE_AVAILABLE_RAM_RATIO,
+            ops_overhead_ram_bytes=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_RAM_BYTES,
         )
 
         return dataclasses.replace(
             instance_type,
-            resources=instance_type.resources.model_copy(update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}),
+            resources=instance_type.resources.model_copy(update={"cpus": adjusted_cpus, "ram": adjusted_ram}),
         )
