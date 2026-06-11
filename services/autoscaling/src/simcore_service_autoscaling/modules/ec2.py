@@ -1,9 +1,11 @@
 import logging
+from collections.abc import AsyncIterator
 from typing import cast
 
 from aws_library.ec2 import SimcoreEC2API
 from aws_library.ec2._errors import EC2NotConnectedError
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from settings_library.ec2 import EC2Settings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -16,15 +18,16 @@ from .instrumentation import has_instrumentation, instrument_ec2_client_methods
 _logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app.state.ec2_client = None
-        settings: EC2Settings | None = app.state.settings.AUTOSCALING_EC2_ACCESS
+async def _ec2_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    app.state.ec2_client = None
+    settings: EC2Settings | None = app.state.settings.AUTOSCALING_EC2_ACCESS
 
-        if not settings:
-            _logger.warning("EC2 client is de-activated in the settings")
-            return
+    if not settings:
+        _logger.warning("EC2 client is de-activated in the settings")
+        yield {}
+        return
 
+    try:
         if has_instrumentation(app):
             client = instrument_ec2_client_methods(app, await SimcoreEC2API.create(settings))
         else:
@@ -42,15 +45,17 @@ def setup(app: FastAPI) -> None:
                 if not connected:
                     raise EC2NotConnectedError  # pragma: no cover
 
-    async def on_shutdown() -> None:
+        yield {}
+    finally:
         if app.state.ec2_client:
             await cast(SimcoreEC2API, app.state.ec2_client).close()
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+
+def configure_ec2_client(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_ec2_lifespan)
 
 
 def get_ec2_client(app: FastAPI) -> SimcoreEC2API:
-    if not app.state.ec2_client:
+    if not hasattr(app.state, "ec2_client") or not app.state.ec2_client:
         raise ConfigurationError(msg="EC2 client is not available. Please check the configuration.")
     return cast(SimcoreEC2API, app.state.ec2_client)

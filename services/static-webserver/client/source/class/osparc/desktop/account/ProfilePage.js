@@ -206,10 +206,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true
       });
 
-      // Prevent the browser from autofilling these fields (e.g. email),
-      // which would otherwise leak into other inputs like the search bar.
-      [userName, firstName, lastName, email, phoneNumber].forEach(field => osparc.utils.Utils.disableAutocomplete(field));
-
       const profileForm = this.__userProfileForm = new qx.ui.form.Form();
       profileForm.add(userName, "UserName", null, "userName");
       profileForm.add(firstName, "First Name", null, "firstName");
@@ -538,20 +534,38 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       // layout
       const box = this.self().createSectionBox(this.tr("Password"));
 
+      // Dedicated (visually hidden) username field kept in the DOM next to the password
+      // fields. It gives the browser's password manager a proper "username" target so it
+      // autofills the saved email here instead of hijacking unrelated inputs such as the
+      // dashboard search bar (osparc/dashboard/SearchBarFilter).
+      const username = new qx.ui.form.TextField().set({
+        focusable: false,
+      });
+      username.getContentElement().setAttribute("autocomplete", "username");
+      username.getContentElement().setAttribute("aria-hidden", "true");
+      username.getContentElement().setAttribute("tabindex", "-1");
+      // add it off-screen so it does not introduce an extra vertical gap
+      box._add(username, { left: -10000, top: -10000 });
+
       const currentPassword = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your current password")
       });
+      // "new-password" (instead of "current-password") so the browser does not autofill
+      // the saved password into this change-password form.
+      currentPassword.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const newPassword = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your new password")
       });
+      newPassword.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const confirm = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype your new password")
       });
+      confirm.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const form = new qx.ui.form.Form();
       form.add(currentPassword, "Current Password", null, "curPassword");
