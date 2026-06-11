@@ -138,6 +138,8 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
 - Cross-domain imports go through `<domain>_service.py` only — functions, models, **and**
   exceptions alike. Never reach through to any `_`-prefixed module of another domain.
 - Facades re-export with an explicit `__all__` and contain no implementation.
+- `__all__` entries must be **sorted alphabetically within each group**, with groups separated by
+  comments (e.g. `# exceptions`, `# functions`).
 
 ```python
 # ✅ Correct — functions, models, and exceptions all via the facade
