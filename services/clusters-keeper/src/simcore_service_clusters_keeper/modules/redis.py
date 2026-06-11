@@ -17,13 +17,13 @@ async def _redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.redis_client_sdk = None
     settings: RedisSettings = get_application_settings(app).CLUSTERS_KEEPER_REDIS
     redis_locks_dsn = settings.build_redis_dsn(RedisDatabase.LOCKS)
-    app.state.redis_client_sdk = redis_client_sdk = RedisClientSDK(
+    redis_client_sdk = app.state.redis_client_sdk = RedisClientSDK(
         redis_locks_dsn,
         client_name=APP_NAME,
     )
-    await redis_client_sdk.setup()
 
     try:
+        await redis_client_sdk.setup()
         yield {}
     finally:
         if redis_client_sdk:

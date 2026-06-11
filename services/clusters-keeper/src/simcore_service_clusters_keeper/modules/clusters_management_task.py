@@ -20,20 +20,23 @@ logger = logging.getLogger(__name__)
 
 async def _clusters_management_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app_settings: ApplicationSettings = app.state.settings
+    app.state.clusters_cleaning_task = None
 
     lock_key = f"{APP_NAME}:clusters-management_lock"
     lock_value = json.dumps({})
-    app.state.clusters_cleaning_task = create_periodic_task(
-        exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(check_clusters),
-        interval=app_settings.CLUSTERS_KEEPER_TASK_INTERVAL,
-        task_name=_TASK_NAME,
-        app=app,
-    )
 
     try:
+        app.state.clusters_cleaning_task = create_periodic_task(
+            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(check_clusters),
+            interval=app_settings.CLUSTERS_KEEPER_TASK_INTERVAL,
+            task_name=_TASK_NAME,
+            app=app,
+        )
+
         yield {}
     finally:
-        await cancel_wait_task(app.state.clusters_cleaning_task, max_delay=5)
+        if app.state.clusters_cleaning_task:
+            await cancel_wait_task(app.state.clusters_cleaning_task, max_delay=5)
 
 
 def configure_clusters_management(
