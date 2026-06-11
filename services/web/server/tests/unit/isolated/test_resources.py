@@ -12,7 +12,7 @@ from simcore_service_webserver._resources import webserver_resources
 def app_resources(package_dir: Path) -> list[str]:
     resource_names = []
     base = package_dir
-    for name in ("api", "templates"):
+    for name in ("api",):
         folder = base / name
         resource_names += [
             f"{p.relative_to(base)}" for p in itertools.chain(folder.rglob("*.y*ml"), folder.rglob("*.jinja2"))
