@@ -26,11 +26,14 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 from ..application_settings import get_application_settings
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
-from ..products.models import Product
+from ..products.products_service import Product
 from ..projects import projects_wallets_service
 from ..user_preferences import user_preferences_service
-from ..users.exceptions import UserDefaultWalletNotFoundError
-from ..wallets import api as wallets_service
+from ..users.users_service import UserDefaultWalletNotFoundError
+from ..wallets.wallets_service import (
+    get_wallet_with_available_credits,
+    get_wallet_with_available_credits_by_user_and_wallet,
+)
 from ._client import DirectorV2RestClient
 from ._client_base import DataType, request_director_v2
 from .exceptions import ComputationNotFoundError, DirectorV2ServiceError
@@ -230,7 +233,7 @@ async def get_wallet_info(
 
     if check_user_wallet_permission:
         # Check whether user has access to the wallet
-        wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+        wallet = await get_wallet_with_available_credits_by_user_and_wallet(
             app,
             user_id=user_id,
             wallet_id=project_wallet_id,
@@ -242,9 +245,7 @@ async def get_wallet_info(
         # In situations where a project is connected to a wallet, but the user does not have access to it and
         # is performing an action such as
         # upgrading the service version, we still want to retrieve the wallet info and pass it to director-v2.
-        wallet = await wallets_service.get_wallet_with_available_credits(
-            app, wallet_id=project_wallet_id, product_name=product_name
-        )
+        wallet = await get_wallet_with_available_credits(app, wallet_id=project_wallet_id, product_name=product_name)
 
     return WalletInfo(
         wallet_id=project_wallet_id,

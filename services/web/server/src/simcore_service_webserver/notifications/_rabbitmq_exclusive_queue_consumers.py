@@ -37,7 +37,7 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
-from ..wallets import api as wallets_service
+from ..wallets.wallets_service import list_wallet_groups_with_read_access_by_wallet
 from . import project_logs
 from ._rabbitmq_consumers_common import SubscribeArgumentsTuple, subscribe_to_rabbitmq
 
@@ -179,9 +179,7 @@ async def _webserver_internal_events_message_parser(app: web.Application, data: 
 
 async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
-    wallet_groups = await wallets_service.list_wallet_groups_with_read_access_by_wallet(
-        app, wallet_id=rabbit_message.wallet_id
-    )
+    wallet_groups = await list_wallet_groups_with_read_access_by_wallet(app, wallet_id=rabbit_message.wallet_id)
     rooms_to_notify: Generator[GroupID] = (item.gid for item in wallet_groups)
     for room in rooms_to_notify:
         await send_message_to_standard_group(

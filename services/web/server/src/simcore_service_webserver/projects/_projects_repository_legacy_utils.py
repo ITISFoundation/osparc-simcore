@@ -26,7 +26,7 @@ from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
-from ..users.exceptions import UserNotFoundError
+from ..users.users_service import UserNotFoundError
 from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (

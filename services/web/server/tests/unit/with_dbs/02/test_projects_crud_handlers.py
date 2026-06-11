@@ -43,8 +43,8 @@ from simcore_postgres_database.models.products import products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups._groups_service import get_product_group_for_user
-from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.products.products_service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_permalink_service import (

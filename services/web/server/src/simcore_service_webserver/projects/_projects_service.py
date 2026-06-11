@@ -145,9 +145,9 @@ from ..user_preferences.user_preferences_service import (
     PreferredWalletIdFrontendUserPreference,
 )
 from ..users import users_service
-from ..users.exceptions import UserDefaultWalletNotFoundError, UserNotFoundError
-from ..wallets import api as wallets_service
+from ..users.users_service import UserDefaultWalletNotFoundError, UserNotFoundError
 from ..wallets.errors import WalletNotEnoughCreditsError
+from ..wallets.wallets_service import get_wallet_with_available_credits_by_user_and_wallet
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
 from . import (
     _crud_api_delete,
@@ -830,7 +830,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
             else:
                 project_wallet_id = project_wallet.wallet_id
             # Check whether user has access to the wallet
-            wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+            wallet = await get_wallet_with_available_credits_by_user_and_wallet(
                 request.app,
                 user_id=user_id,
                 wallet_id=project_wallet_id,

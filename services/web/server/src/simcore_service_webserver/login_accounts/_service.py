@@ -17,7 +17,7 @@ from servicelib.utils_secrets import generate_passcode
 
 from ..notifications._models import EmailContact
 from ..notifications._service import send_message_from_template
-from ..products.models import Product
+from ..products.products_service import Product
 from ..users import _accounts_service
 from ..users.schemas import UserAccountRestPreRegister
 

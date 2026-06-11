@@ -19,7 +19,7 @@ from simcore_service_webserver.application_settings_utils import (
 from simcore_service_webserver.users.exceptions import BillingDetailsNotFoundError
 
 from ...._meta import API_VTAG
-from ....groups import api as groups_service
+from ....groups.groups_service import get_user_profile_groups
 from ....login.decorators import login_required
 from ....products import products_web
 from ....products.models import Product
@@ -56,7 +56,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
         my_product_group,
         product_support_group,
         product_chatbot_primary_group,
-    ) = await groups_service.get_user_profile_groups(request.app, user_id=req_ctx.user_id, product=product)
+    ) = await get_user_profile_groups(request.app, user_id=req_ctx.user_id, product=product)
 
     assert groups_by_type.primary  # nosec
     assert groups_by_type.everyone  # nosec

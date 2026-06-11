@@ -43,7 +43,7 @@ from ..payments.api import (
     replace_wallet_payment_autorecharge,
 )
 from ..products import products_service
-from ..products._models import CreditResult
+from ..products.products_service import CreditResult
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._handlers import (

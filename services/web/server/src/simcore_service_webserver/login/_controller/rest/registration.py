@@ -12,7 +12,10 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
 from ...._meta import API_VTAG
-from ....groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
+from ....groups.groups_service import (
+    auto_add_user_to_groups,
+    auto_add_user_to_product_group,
+)
 from ....invitations.api import is_service_invitation_code
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact

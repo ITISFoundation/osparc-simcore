@@ -18,7 +18,7 @@ from pydantic import TypeAdapter
 from ..resource_usage.service import get_wallet_total_available_credits
 from ..user_preferences import user_preferences_service
 from ..users import users_service
-from ..users.exceptions import UserDefaultWalletNotFoundError
+from ..users.users_service import UserDefaultWalletNotFoundError
 from . import _db as db
 from .errors import WalletAccessForbiddenError
 

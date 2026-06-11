@@ -21,7 +21,7 @@ from servicelib.aiohttp.observer import emit
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.logging_utils import log_context
 
-from ..groups.api import list_user_groups_ids_with_read_access
+from ..groups.groups_service import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource

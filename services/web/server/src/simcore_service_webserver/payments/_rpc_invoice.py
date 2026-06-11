@@ -10,7 +10,7 @@ from servicelib.rabbitmq import RPCRouter
 
 from ..application_settings import get_application_settings
 from ..products import products_service
-from ..products.models import CreditResult
+from ..products.products_service import CreditResult
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 

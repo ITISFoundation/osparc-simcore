@@ -18,8 +18,8 @@ from ..invitations.plugin import setup_invitations
 from ..login_accounts.plugin import setup_login_account
 from ..login_auth.plugin import setup_login_auth
 from ..products import products_service
-from ..products.models import ProductName
 from ..products.plugin import setup_products
+from ..products.products_service import ProductName
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
 from ._confirmation_web import setup_confirmation

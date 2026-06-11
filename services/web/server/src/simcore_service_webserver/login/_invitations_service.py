@@ -29,7 +29,7 @@ from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
 from yarl import URL
 
-from ..groups.api import is_user_by_email_in_group
+from ..groups.groups_service import is_user_by_email_in_group
 from ..invitations.api import (
     extract_invitation,
     is_service_invitation_code,
@@ -39,7 +39,7 @@ from ..invitations.errors import (
     InvalidInvitationError,
     InvitationsServiceUnavailableError,
 )
-from ..products.models import Product
+from ..products.products_service import Product
 from ..users import users_service
 from . import _auth_service
 from ._application_keys import CONFIRMATION_SERVICE_APPKEY

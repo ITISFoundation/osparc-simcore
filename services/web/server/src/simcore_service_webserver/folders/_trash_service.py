@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
 from ..projects._trash_service import trash_project, untrash_project
-from ..workspaces.api import check_user_workspace_access
+from ..workspaces.workspaces_service import check_user_workspace_access
 from . import _folders_repository, _folders_service
 from .errors import FolderBatchDeleteError, FolderNotTrashedError
 

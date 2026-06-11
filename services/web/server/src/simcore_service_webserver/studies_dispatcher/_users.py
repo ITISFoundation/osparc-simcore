@@ -30,13 +30,13 @@ from simcore_postgres_database.utils_users import UsersRepo
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..db.plugin import get_asyncpg_engine
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
-from ..groups import api as groups_service
+from ..groups.groups_service import auto_add_user_to_product_group
 from ..login._login_service import GUEST
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client
 from ..security import security_service, security_web
 from ..users import users_service
-from ..users.exceptions import UserNotFoundError
+from ..users.users_service import UserNotFoundError
 from ._errors import GuestUserNotAllowedError, GuestUsersLimitError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
@@ -128,7 +128,7 @@ async def create_temporary_guest_user(request: web.Request):
             user_id = user_row.id
 
             user = await users_service.get_user(request.app, user_id)
-            await groups_service.auto_add_user_to_product_group(request.app, user_id=user_id, product_name=product_name)
+            await auto_add_user_to_product_group(request.app, user_id=user_id, product_name=product_name)
 
             # (2) read details above
             await redis_locks_client.lock(

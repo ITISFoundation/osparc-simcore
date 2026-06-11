@@ -32,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import groups, user_to_groups
 from ..db.plugin import get_asyncpg_engine
-from ..users.exceptions import UserNotFoundError
+from ..users.users_service import UserNotFoundError
 from .exceptions import (
     GroupNotFoundError,
     UserAlreadyInGroupError,

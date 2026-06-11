@@ -32,7 +32,7 @@ from simcore_service_webserver.groups._groups_service import (
     create_standard_group,
     delete_standard_group,
 )
-from simcore_service_webserver.groups.api import auto_add_user_to_groups
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_groups
 from simcore_service_webserver.security import security_service
 
 
@@ -74,7 +74,7 @@ def _assert__group_user(
 
 
 @pytest.mark.parametrize(*standard_role_response())
-async def test_add_remove_users_from_group(
+async def test_add_remove_users_from_group(  # noqa: C901, PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
@@ -277,7 +277,7 @@ async def test_group_access_rights(
     }
 
     resp = await client.post(f"{url}", json=new_group)
-    data, error = await assert_status(resp, expected.created)
+    data, _ = await assert_status(resp, expected.created)
     if not data:
         # role cannot create a group so stop here
         return

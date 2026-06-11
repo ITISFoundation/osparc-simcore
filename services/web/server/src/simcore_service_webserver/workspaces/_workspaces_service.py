@@ -17,7 +17,7 @@ from models_library.workspaces import (
     WorkspaceUpdates,
 )
 
-from ..folders.service import delete_folder_with_all_content, list_folders
+from ..folders.folders_service import delete_folder_with_all_content, list_folders
 from ..projects.api import delete_project_by_user, list_projects
 from ..projects.models import ProjectTypeAPI
 from ..users import users_service

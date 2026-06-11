@@ -15,7 +15,7 @@ from models_library.products import ProductName
 from models_library.users import UserID, UserNameID
 from pydantic import EmailStr
 
-from ..products.models import Product
+from ..products.products_service import Product
 from ..users import _users_service
 from . import _groups_repository
 from .exceptions import GroupNotFoundError, GroupsError

@@ -20,7 +20,6 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..db.plugin import get_asyncpg_engine
-from ..users.exceptions import FrontendUserPreferenceIsNotDefinedError
 from ._models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
@@ -108,6 +107,8 @@ async def set_frontend_user_preference(
     frontend_preference_identifier: PreferenceIdentifier,
     value: Any,
 ) -> None:
+    from ..users.users_service import FrontendUserPreferenceIsNotDefinedError  # noqa: PLC0415
+
     try:
         preference_name: PreferenceName = get_preference_name(frontend_preference_identifier)
     except KeyError as e:

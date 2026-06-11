@@ -48,7 +48,7 @@ from ..payments.errors import (
 )
 from ..products.errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 from ..security.decorators import permission_required
-from ..users.exceptions import (
+from ..users.users_service import (
     BillingDetailsNotFoundError,
     UserDefaultWalletNotFoundError,
 )

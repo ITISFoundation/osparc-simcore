@@ -9,7 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from simcore_service_webserver.constants import RQ_PRODUCT_KEY
-from simcore_service_webserver.groups import api as groups_service
+from simcore_service_webserver.groups import groups_service
 from simcore_service_webserver.login._controller.rest._rest_exceptions import (
     _handle_legacy_error_response,
     _try_show_login_fallbacks_on_wrong_password,

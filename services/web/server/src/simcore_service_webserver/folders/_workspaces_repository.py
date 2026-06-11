@@ -14,7 +14,7 @@ from ..projects import _groups_repository as projects_groups_repository
 from ..projects._access_rights_service import check_user_project_permission
 from ..projects.api import patch_project_and_notify_users
 from ..users import users_service
-from ..workspaces.api import check_user_workspace_access
+from ..workspaces.workspaces_service import check_user_workspace_access
 from . import _folders_repository
 
 _logger = logging.getLogger(__name__)
@@ -107,7 +107,8 @@ async def move_folder_into_workspace(
         )
 
         # 7. Remove all records of project to folders that are not in the folders that we are moving
-        # (ex. If we are moving from private workspace, the same project can be in different folders for different users)
+        # (ex. If we are moving from private workspace, the same
+        #  project can be in different folders for different users)
         await projects_folders_repository.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
             app,
             connection=conn,

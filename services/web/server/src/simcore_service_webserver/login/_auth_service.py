@@ -8,8 +8,8 @@ from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups import api as groups_service
-from ..products.models import Product
+from ..groups.groups_service import is_user_by_email_in_group
+from ..products.products_service import Product
 from ..security import security_service
 from . import _login_service
 from .constants import MSG_UNKNOWN_EMAIL
@@ -147,7 +147,7 @@ async def check_authorized_user_in_product(
     product_group_id = product.group_id
     assert product_group_id is not None  # nosec
 
-    if product_group_id is not None and not await groups_service.is_user_by_email_in_group(
+    if product_group_id is not None and not await is_user_by_email_in_group(
         app, user_email=user_email, group_id=product_group_id
     ):
         raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)

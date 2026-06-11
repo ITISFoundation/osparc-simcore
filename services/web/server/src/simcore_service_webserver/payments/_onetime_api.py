@@ -28,8 +28,8 @@ from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
 from ..users import users_service
-from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
+from ..wallets.wallets_service import get_wallet_by_user, get_wallet_with_permissions_by_user
 from . import _onetime_db, _rpc
 from ._socketio import notify_payment_completed
 from .settings import PaymentsSettings, get_plugin_settings
