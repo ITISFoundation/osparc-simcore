@@ -107,10 +107,9 @@ class DynamicAutoscalingProvider:
         adjusted_cpus, adjusted_ram = estimate_dynamic_sidecar_resources_from_ec2_instance(
             instance_type.resources.cpus,
             instance_type.resources.ram,
-            system_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_SYSTEM_OVERHEAD_CPUS,
-            ops_overhead_cpus=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_CPUS,
+            overhead_cpus=overhead_settings.DYNAMIC_SERVICES_OVERHEAD_CPUS,
             docker_node_available_ram_ratio=overhead_settings.DYNAMIC_SERVICES_DOCKER_NODE_AVAILABLE_RAM_RATIO,
-            ops_overhead_ram_bytes=overhead_settings.DYNAMIC_SERVICES_OPS_OVERHEAD_RAM_BYTES,
+            overhead_ram_bytes=overhead_settings.DYNAMIC_SERVICES_OVERHEAD_RAM_BYTES,
         )
 
         return dataclasses.replace(

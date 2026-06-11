@@ -448,20 +448,26 @@ def estimate_dynamic_sidecar_resources_from_ec2_instance(
     cpus: float,
     ram: int,
     *,
-    system_overhead_cpus: float,
-    ops_overhead_cpus: float,
+    overhead_cpus: float,
     docker_node_available_ram_ratio: float,
-    ops_overhead_ram_bytes: ByteSize,
+    overhead_ram_bytes: ByteSize,
 ) -> tuple[float, ByteSize]:
     """Estimates the resources available to a dynamic-sidecar running in an EC2 instance,
     taking into account safe margins for CPU and RAM, as the EC2 full resources are not completely visible
 
+    Args:
+        cpus: Total CPU cores available on the EC2 instance
+        ram: Total RAM bytes available on the EC2 instance
+        overhead_cpus: Total CPU cores reserved for host + ops overhead
+        docker_node_available_ram_ratio: Fraction of machine RAM available to Docker
+        overhead_ram_bytes: RAM bytes reserved for ops overhead
+
     Returns:
         tuple: Estimated resources for the dynamic-sidecar (cpus, ram).
     """
-    sidecar_cpus = cpus - system_overhead_cpus - ops_overhead_cpus
+    sidecar_cpus = cpus - overhead_cpus
     sidecar_ram = TypeAdapter(ByteSize).validate_python(
-        int(ram * docker_node_available_ram_ratio - int(ops_overhead_ram_bytes))
+        int(ram * docker_node_available_ram_ratio - int(overhead_ram_bytes))
     )
 
     return (sidecar_cpus, sidecar_ram)
