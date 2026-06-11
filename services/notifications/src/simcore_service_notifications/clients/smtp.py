@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 
 from aiosmtplib import SMTP
 
-from ..models.smtp import EmailProtocol, SMTPSettings
+from ..core.settings import SMTPSettings
+from ..models.smtp import EmailProtocol
 
 
 @asynccontextmanager
