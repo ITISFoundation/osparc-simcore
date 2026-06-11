@@ -1,4 +1,4 @@
-"""Remove workbench column from projects_table
+"""Migrate workbench column to projects_nodes
 
 Revision ID: 201aa37f4d9a
 Revises: 447db39c5455
