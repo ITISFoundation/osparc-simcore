@@ -58,4 +58,5 @@ APP_STARTED_DISABLED_BANNER_MSG = r"""
   \__,_||_||___/ \__,_||_.__/ |_| \___| \__,_|
 """
 
+APP_STARTING_BANNER_MSG = info.get_starting_banner()
 APP_FINISHED_BANNER_MSG = info.get_finished_banner()

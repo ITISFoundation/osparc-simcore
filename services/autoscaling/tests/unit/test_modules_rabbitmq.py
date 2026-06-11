@@ -128,7 +128,8 @@ async def test_post_message(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             mocked_message_handler.assert_called_once_with(rabbit_message.model_dump_json().encode())
             print("... message received")

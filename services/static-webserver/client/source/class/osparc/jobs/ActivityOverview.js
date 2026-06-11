@@ -38,6 +38,10 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
     },
   },
 
+  events: {
+    "backToRuns": "qx.event.type.Event",
+  },
+
   members: {
     __runsTable: null,
     __subRunsTable: null,
@@ -78,9 +82,9 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
         });
         stack.setSelection([tasksLayout]);
 
-        tasksLayout.addListener("backToRuns", () => {
-          stack.setSelection([runsHistoryLayout]);
-        });
+        if (!this.hasListener("backToRuns")) {
+          this.addListener("backToRuns", () => stack.setSelection([runsHistoryLayout]));
+        }
       }, this);
     },
 
@@ -134,7 +138,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });
-      prevBtn.addListener("execute", () => tasksLayout.fireEvent("backToRuns"));
+      prevBtn.addListener("execute", () => this.fireEvent("backToRuns"));
       latestTasksTitleLayout.add(prevBtn);
 
       const latestTasksTitle = new qx.ui.basic.Label(this.tr("Tasks")).set({
