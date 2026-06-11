@@ -333,7 +333,7 @@ def downgrade():
     connection.execute(sa.text("UPDATE projects SET workbench = '{}' WHERE workbench IS NULL"))
 
     # Restore workbench NOT NULL constraint
-    op.alter_column("projects", "workbench", nullable=False, server_default=sa.text("'{}'::jsonb"))
+    op.alter_column("projects", "workbench", nullable=False, server_default=sa.text("'{}'::json"))
 
     # NOTE: Do not delete from projects_nodes on downgrade; old application versions still rely on this table.
 
