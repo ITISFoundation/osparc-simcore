@@ -123,13 +123,13 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
 
 ### Aggregation vs Satellite (at a glance)
 
-|            | Aggregation service                 | Satellite service                                    |
-| ---------- | ----------------------------------- | ---------------------------------------------------- |
-| Focus      | A feature for a controller          | This domain's reusable adapter to another domain     |
-| Location   | Primary domain                      | Consuming domain                                     |
-| Naming     | `_<feature>_aggregation_service.py` | `<other_domain>_service.py` (public, no `_` prefix)  |
-| Spans      | Several domains                     | One other domain                                     |
-| Reusable?  | No (private to primary domain)      | Yes (other domains may import to reuse the pattern)  |
+|            | Aggregation service                 | Satellite service                                                               |
+| ---------- | ----------------------------------- | ------------------------------------------------------------------------------- |
+| Focus      | A feature for a controller          | This domain's reusable adapter to another domain                                |
+| Location   | Primary domain                      | Consuming domain                                                                |
+| Naming     | `_<feature>_aggregation_service.py` | `<other_domain>_service.py` (public, no `_` prefix)                             |
+| Spans      | Several domains                     | One other domain                                                                |
+| Reusable?  | No (private to primary domain)      | Yes (other domains may import to reuse the pattern)                             |
 | Moves out? | No                                  | No (stays in consuming domain, or extracted to shared package if truly generic) |
 
 ---
