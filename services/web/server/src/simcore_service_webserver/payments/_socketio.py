@@ -11,7 +11,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
-from ..socketio.messages import send_message_to_user
+from ..socketio.socketio_service import send_message_to_user
 
 
 async def notify_payment_completed(

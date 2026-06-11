@@ -24,7 +24,7 @@ from servicelib.logging_utils import log_context
 from ..groups.groups_service import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
-from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
+from ..resource_manager.resource_manager_service import PROJECT_ID_KEY, managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user
 

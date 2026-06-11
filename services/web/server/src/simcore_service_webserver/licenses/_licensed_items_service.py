@@ -30,7 +30,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..resource_usage.service import get_pricing_plan, get_pricing_plan_unit
+from ..resource_usage.resource_usage_service import get_pricing_plan, get_pricing_plan_unit
 from ..users import users_service
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..wallets.wallets_service import get_wallet_with_available_credits_by_user_and_wallet

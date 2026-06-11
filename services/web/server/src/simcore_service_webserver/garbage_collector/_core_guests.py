@@ -17,7 +17,7 @@ from ..projects._projects_service import (
 )
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
-from ..resource_manager.registry import RedisResourceRegistry
+from ..resource_manager.resource_manager_service import RedisResourceRegistry
 from ..users import exceptions, users_service
 from ..users.users_service import UserNotFoundError
 from ._core_utils import get_new_project_owner_gid, replace_current_owner

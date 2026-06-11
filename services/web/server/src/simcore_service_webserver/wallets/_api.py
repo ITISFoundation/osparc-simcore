@@ -15,7 +15,7 @@ from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
 from pydantic import TypeAdapter
 
-from ..resource_usage.service import get_wallet_total_available_credits
+from ..resource_usage.resource_usage_service import get_wallet_total_available_credits
 from ..user_preferences import user_preferences_service
 from ..users import users_service
 from ..users.users_service import UserDefaultWalletNotFoundError

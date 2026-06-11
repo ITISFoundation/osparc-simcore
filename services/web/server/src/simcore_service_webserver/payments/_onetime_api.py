@@ -26,7 +26,7 @@ from yarl import URL
 
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
-from ..resource_usage.service import add_credits_to_wallet
+from ..resource_usage.resource_usage_service import add_credits_to_wallet
 from ..users import users_service
 from ..wallets.errors import WalletAccessForbiddenError
 from ..wallets.wallets_service import get_wallet_by_user, get_wallet_with_permissions_by_user

@@ -20,7 +20,7 @@ from pydantic import AliasGenerator, BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from servicelib.utils import limited_as_completed
 
-from ..socketio.messages import send_message_to_user
+from ..socketio.socketio_service import send_message_to_user
 
 _MAX_CONCURRENT_SENDS: Final[int] = 3
 

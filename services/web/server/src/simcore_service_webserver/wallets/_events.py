@@ -8,7 +8,7 @@ from pydantic import PositiveInt
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
 from ..products import products_service
-from ..resource_usage.service import add_credits_to_wallet
+from ..resource_usage.resource_usage_service import add_credits_to_wallet
 from ..user_preferences import user_preferences_service
 from ..users import users_service
 from ._api import any_wallet_owned_by_user, create_wallet

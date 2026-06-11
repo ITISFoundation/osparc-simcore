@@ -124,21 +124,21 @@ from ..models import ClientSessionID
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
-from ..resource_manager.models import UserSession
-from ..resource_manager.registry import get_registry
-from ..resource_manager.user_sessions import (
+from ..resource_manager.resource_manager_service import (
     PROJECT_ID_KEY,
     SOCKET_ID_FIELDNAME,
+    UserSession,
+    get_registry,
     managed_resource,
 )
-from ..resource_usage import service as rut_api
-from ..socketio.messages import (
+from ..resource_usage import resource_usage_service as rut_api
+from ..socketio.socketio_service import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
+    get_socket_server,
     send_message_to_standard_group,
     send_message_to_user,
 )
-from ..socketio.server import get_socket_server
 from ..storage import api as storage_service
 from ..user_preferences import user_preferences_service
 from ..user_preferences.user_preferences_service import (
