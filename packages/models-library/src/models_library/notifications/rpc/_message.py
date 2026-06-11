@@ -29,7 +29,7 @@ class SendMessageRequest(BaseModel):
                         "message": {
                             "channel": "email",
                             "addressing": {
-                                "from_identity": "SUPPORT",
+                                "from_identity": "support",
                                 "to": [
                                     {
                                         "name": "John Doe",
@@ -85,7 +85,7 @@ class SendMessageFromTemplateRequest(BaseModel):
                         "product_name": "osparc",
                         "addressing": {
                             "channel": "email",
-                            "from_identity": "SUPPORT",
+                            "from_identity": "support",
                             "to": [
                                 {
                                     "name": "John Doe",

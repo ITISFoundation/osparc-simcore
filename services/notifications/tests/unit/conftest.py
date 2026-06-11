@@ -106,8 +106,8 @@ def app_environment(
                             "extra_headers": {},
                             "domain": "test-domain.com",
                             "local_parts": {
-                                "SUPPORT": "support",
-                                "NO_REPLY": "no-reply",
+                                "support": "support",
+                                "no_reply": "no-reply",
                             },
                         }
                     },

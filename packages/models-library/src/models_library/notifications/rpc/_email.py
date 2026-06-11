@@ -1,16 +1,14 @@
-from enum import auto
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from models_library.utils.enums import StrAutoEnum
-
 from .. import Channel
 
 
-class FromIdentity(StrAutoEnum):
-    SUPPORT = auto()
-    NO_REPLY = auto()
+class FromIdentity(StrEnum):
+    SUPPORT = "support"
+    NO_REPLY = "no-reply"
 
 
 class EmailContact(BaseModel):

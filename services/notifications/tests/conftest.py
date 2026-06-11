@@ -79,8 +79,8 @@ def mock_environment(
                             "domain": "test-domain.com",
                             "extra_headers": {},
                             "local_parts": {
-                                "SUPPORT": "support",
-                                "NO_REPLY": "no-reply",
+                                "support": "support",
+                                "no_reply": "no-reply",
                             },
                         }
                     },
