@@ -204,6 +204,14 @@ def _run_classic_ti_step(  # noqa: PLR0915
             expect(options.nth(0)).to_have_attribute("value", "Human - MIDA anisotropic")
             expect(options.nth(1)).to_have_attribute("value", "Mouse")
 
+    with log_context(logging.INFO, "Select 'Low' Convergence", logger=log_ctx.logger):
+        ti_iframe.get_by_role("button", name="Low").click()
+
+    with log_context(logging.INFO, "Reduce 'Max Iterations' to the minimum (10)", logger=log_ctx.logger):
+        max_iterations_input = ti_iframe.get_by_label("Max Iterations")
+        expect(max_iterations_input).to_be_visible()
+        max_iterations_input.fill("10")
+
     with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
         run_button = ti_iframe.get_by_role("button", name="Run Optimization")
         run_button.click()
