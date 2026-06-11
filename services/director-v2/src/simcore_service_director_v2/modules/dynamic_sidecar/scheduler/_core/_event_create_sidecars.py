@@ -177,6 +177,9 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_user_selection_boot_options=boot_options,
             service_resources=scheduler_data.service_resources,
             placement_substitutions=dynamic_services_placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS,
+            has_machine_specific_resources=bool(
+                scheduler_data.hardware_info and scheduler_data.hardware_info.aws_ec2_instances
+            ),
         )
 
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
