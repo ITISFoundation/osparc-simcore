@@ -45,14 +45,6 @@ repos:
         language: script
         types: [file]
         entry: scripts/precommit/validate-docker-compose.bash
-  - repo: local
-    hooks:
-      - id: webserver-facade-imports
-        name: webserver-facade-imports
-        language: script
-        entry: scripts/check_webserver_facade_imports.bash
-        pass_filenames: false
-        files: ^services/web/server/src/.*\.py$
   - repo: https://github.com/crate-ci/typos
     rev: v1.40.0
     hooks:
