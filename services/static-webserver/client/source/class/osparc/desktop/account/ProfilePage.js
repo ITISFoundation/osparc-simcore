@@ -553,7 +553,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         required: true,
         placeholder: this.tr("Your current password")
       });
-      currentPassword.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "current-password");
+      // "new-password" (instead of "current-password") so the browser does not autofill
+      // the saved password into this change-password form.
+      currentPassword.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const newPassword = new osparc.ui.form.PasswordField().set({
         required: true,
