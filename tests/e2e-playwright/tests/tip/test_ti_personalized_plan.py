@@ -15,6 +15,7 @@ from typing import Any, Final
 import pytest
 from _tip_steps import (
     raise_if_button_spinner_running,
+    run_optimization_and_load_analysis,
     set_fast_optimization_settings,
     wait_and_select_target_tissue,
 )
@@ -210,33 +211,6 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         _wait_for_export_simulation_results(export_button)
 
 
-@retry(
-    stop=stop_after_delay(_POST_PRO_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(60),
-    reraise=True,
-)
-def _wait_for_postpro_optimization_complete(run_optimization_button: Locator) -> None:
-    raise_if_button_spinner_running(run_optimization_button, description="Post-pro optimization")
-
-
-@retry(
-    stop=stop_after_delay(_POST_PRO_LOAD_ANALYSIS_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(60),
-    reraise=True,
-)
-def _wait_for_postpro_analysis_load(run_optimization_button: Locator) -> None:
-    raise_if_button_spinner_running(run_optimization_button, description="Post-pro analysis")
-
-
-@retry(
-    stop=stop_after_delay(_POST_PRO_LOAD_RESULT_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(10),
-    reraise=True,
-)
-def _wait_for_postpro_result_load(load_result_button: Locator) -> None:
-    raise_if_button_spinner_running(load_result_button, description="Post-pro result load")
-
-
 def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Run TI and generate report"):
         wait_and_select_target_tissue(
@@ -248,27 +222,14 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
         # make it faster
         set_fast_optimization_settings(ti_postpro_iframe)
 
-        with log_context(logging.INFO, "Run Optimization"):
-            run_optimization_button = ti_postpro_iframe.get_by_role("button", name="Run Optimization")
-            run_optimization_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for optimization to complete"):
-            _wait_for_postpro_optimization_complete(run_optimization_button)
-
-        with log_context(logging.INFO, "Load Analysis"):
-            load_analysis_button = ti_postpro_iframe.get_by_role("button", name="Load Analysis")
-            load_analysis_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for analysis to be loaded"):
-            _wait_for_postpro_analysis_load(load_analysis_button)
-
-        with log_context(logging.INFO, "Load first result"):
-            # nth(0) is the Settings "Load" button at the top; nth(1) might be Load Analysis, so go with nth(2)
-            load_result_button = ti_postpro_iframe.get_by_role("button", name="Load", exact=True).nth(2)
-            load_result_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for result to load"):
-            _wait_for_postpro_result_load(load_result_button)
+        run_optimization_and_load_analysis(
+            ti_postpro_iframe,
+            click_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
+            optimization_timeout=_POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+            optimization_start_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
+            analysis_timeout=_POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+            result_timeout=_POST_PRO_LOAD_RESULT_MAX_TIME,
+        )
 
         with log_context(
             logging.INFO,
