@@ -175,10 +175,10 @@ def _flush_node_batch(connection, batch: list[dict]) -> int:
             required_resources, created, modified
         ) VALUES (
             :project_uuid, :node_id, :key, :version, :label, :progress, :thumbnail,
-            :input_access::jsonb, :input_nodes::jsonb, :inputs::jsonb,
-            :inputs_required::jsonb, :inputs_units::jsonb,
-            :outputs::jsonb, :run_hash, :state::jsonb, :boot_options::jsonb,
-            '{}'::jsonb, NOW(), NOW()
+            CAST(:input_access AS jsonb), CAST(:input_nodes AS jsonb), CAST(:inputs AS jsonb),
+            CAST(:inputs_required AS jsonb), CAST(:inputs_units AS jsonb),
+            CAST(:outputs AS jsonb), :run_hash, CAST(:state AS jsonb), CAST(:boot_options AS jsonb),
+            CAST('{}' AS jsonb), NOW(), NOW()
         )
         ON CONFLICT (project_uuid, node_id) DO UPDATE SET
             key = EXCLUDED.key,
