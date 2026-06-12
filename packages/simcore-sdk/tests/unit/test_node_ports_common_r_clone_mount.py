@@ -4,6 +4,7 @@
 # pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 import asyncio
+import logging
 import os
 import tempfile
 from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterator
@@ -414,6 +415,33 @@ async def test_refresh_path_with_no_tracked_mount(
 ):
     with pytest.raises(NoMountFoundForRemotePathError):
         await r_clone_mount_manager.refresh_path(remote_path=remote_path)
+
+
+@pytest.mark.parametrize(
+    "invalid_remote_path",
+    [
+        "",
+        ".",
+        "proj",
+        "proj/node",
+        "/proj/node/file",
+        "proj//node/file",
+        "proj/node//file",
+    ],
+)
+async def test_refresh_path_with_invalid_remote_path_warns_and_returns(
+    r_clone_mount_manager: RCloneMountManager,
+    caplog: pytest.LogCaptureFixture,
+    invalid_remote_path: str,
+):
+    with caplog.at_level(
+        logging.WARNING,
+        logger="simcore_sdk.node_ports_common.r_clone_mount._manager",
+    ):
+        await r_clone_mount_manager.refresh_path(remote_path=cast(StorageFileID, invalid_remote_path))
+
+    assert "Skipping mount refresh for invalid remote_path" in caplog.text
+    assert f"'{invalid_remote_path}'" in caplog.text
 
 
 @pytest.mark.parametrize("file_count", [10])
