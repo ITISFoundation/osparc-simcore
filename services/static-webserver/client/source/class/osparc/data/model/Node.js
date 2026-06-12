@@ -803,7 +803,8 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
         this.getPropsForm().setInputLinks(inputLinks);
-        this.__settingsForm.setData(inputData);
+        const convertedData = this.getPropsForm().convertInputsToCurrentUnits(inputData);
+        this.__settingsForm.setData(convertedData);
       }
     },
 

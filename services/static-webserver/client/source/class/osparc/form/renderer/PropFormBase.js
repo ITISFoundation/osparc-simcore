@@ -302,6 +302,33 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       });
     },
 
+    // Incoming input values are expressed in the metadata (x_unit) unit. If a port is currently
+    // displayed in a different unit prefix, convert the value so it matches what the control expects.
+    // This is the inverse of the conversion done in getValues().
+    convertInputsToCurrentUnits: function(inputData) {
+      const converted = Object.assign({}, inputData);
+      const nodeMD = this.getNode().getMetadata();
+      Object.keys(converted).forEach(portId => {
+        const ctrl = this._form.getControl(portId);
+        if (!ctrl || !("unitPrefix" in ctrl)) {
+          return;
+        }
+        const portMD = (nodeMD && nodeMD.inputs) ? nodeMD.inputs[portId] : null;
+        if (!portMD || !("x_unit" in portMD)) {
+          return;
+        }
+        const metadataPrefix = osparc.utils.Units.decomposeXUnit(portMD["x_unit"]).unitPrefix;
+        if (metadataPrefix === ctrl.unitPrefix) {
+          return;
+        }
+        const value = converted[portId];
+        if (value !== null && value !== undefined && !osparc.utils.Ports.isDataALink(value)) {
+          converted[portId] = osparc.utils.Units.convertValue(value, metadataPrefix, ctrl.unitPrefix);
+        }
+      });
+      return converted;
+    },
+
     hasVisibleInputs: function() {
       const children = this._getChildren();
       for (let i=0; i<children.length; i++) {
