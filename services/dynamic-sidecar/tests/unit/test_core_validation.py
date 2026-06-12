@@ -5,8 +5,8 @@ from inspect import signature
 from pathlib import Path
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI
-from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
@@ -143,10 +143,10 @@ def no_internet_spec(project_tests_dir: Path) -> str:
 
 
 @pytest.fixture
-def fake_mounted_volumes() -> MountedVolumes:
+def fake_mounted_volumes(faker: Faker) -> MountedVolumes:
     return MountedVolumes(
         service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
-        node_id=NodeID("a019b83f-7cce-46bf-90cf-d02f7f0f089a"),
+        node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/"),
         outputs_path=Path("/"),
         user_preferences_path=None,
@@ -157,10 +157,17 @@ def fake_mounted_volumes() -> MountedVolumes:
     )
 
 
+@pytest.mark.parametrize("is_user_services_tracing_enabled", [True, False])
 async def test_regression_validate_compose_spec(
     mock_get_volume_by_label: None,
     app: FastAPI,
     no_internet_spec: str,
     fake_mounted_volumes: MountedVolumes,
+    is_user_services_tracing_enabled: bool,
 ):
-    await get_and_validate_compose_spec(app.state.settings, no_internet_spec, fake_mounted_volumes)
+    await get_and_validate_compose_spec(
+        app.state.settings,
+        no_internet_spec,
+        fake_mounted_volumes,
+        is_user_services_tracing_enabled=is_user_services_tracing_enabled,
+    )

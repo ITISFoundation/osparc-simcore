@@ -62,6 +62,7 @@ from .long_running_tasks_utils import (
     run_before_shutdown_actions,
 )
 from .resource_tracking import send_service_started, send_service_stopped
+from .user_services_tracing import get_user_services_trace_forwarder, is_user_services_tracing_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -263,6 +264,10 @@ async def remove_user_services(
 
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
+
+        # drain remaining traces after containers have stopped
+        if is_user_services_tracing_enabled(app):
+            await get_user_services_trace_forwarder(app).drain_remaining_traces()
 
         await progress.update(message="stopping logs", percent=0.9)
         for container_name in shared_store.container_names:

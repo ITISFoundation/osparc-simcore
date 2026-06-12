@@ -169,6 +169,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915
     from ..modules.resource_tracking import setup_resource_tracking
     from ..modules.system_monitor import setup_system_monitor
     from ..modules.user_services_preferences import setup_user_services_preferences
+    from ..modules.user_services_tracing import is_user_services_tracing_enabled, setup_user_services_tracing
     from .docker_logs import setup_background_log_fetcher
     from .external_dependencies import setup_check_dependencies
     from .rabbitmq import setup_rabbitmq
@@ -214,6 +215,9 @@ def create_app() -> FastAPI:  # noqa: PLR0915
             app,
             tracing_config=tracing_config,
         )
+
+    if is_user_services_tracing_enabled(app):
+        setup_user_services_tracing(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(

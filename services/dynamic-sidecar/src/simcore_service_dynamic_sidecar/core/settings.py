@@ -40,11 +40,8 @@ from settings_library.utils_logging import MixinLoggingSettings
 class ResourceTrackingSettings(BaseApplicationSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: Annotated[
         timedelta,
-        Field(
-            default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
-            description="each time the status of the service is propagated",
-        ),
-    ]
+        Field(description="each time the status of the service is propagated"),
+    ] = DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL
 
     _validate_resource_tracking_heartbeat_interval = validate_numeric_string_as_timedelta(
         "RESOURCE_TRACKING_HEARTBEAT_INTERVAL"
@@ -55,6 +52,58 @@ class SystemMonitorSettings(BaseApplicationSettings):
     DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE: Annotated[
         bool, Field(description="enabled/disabled disk usage monitoring")
     ] = False
+
+
+class UserServicesTracingSettings(BaseApplicationSettings):
+    USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL: Annotated[
+        timedelta,
+        Field(
+            description="how often the file exporter flushes buffered data to disk; "
+            "note: this does NOT trigger rotation, only ensures data reaches disk promptly for crash safety",
+        ),
+    ] = timedelta(seconds=10)
+    USER_SERVICES_TRACING_COLLECTOR_IMAGE: Annotated[
+        str,
+        Field(description="pinned official OTEL Collector image"),
+        # NOTE: don't use the `otel/opentelemetry-collector-contrib`` image as it has a much
+        # larger attack surface and we only need the file exporter
+        # Keep in sync with https://github.com/ITISFoundation/osparc-ops-environments/blob/main/services/jaeger/docker-compose.yml.j2
+    ] = "otel/opentelemetry-collector:0.144.0"
+    USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS: Annotated[
+        int,
+        Field(description="max rotated trace files kept by collector"),
+    ] = 5
+    USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB: Annotated[
+        int,
+        Field(description="file size in MB that triggers rotation"),
+    ] = 10
+    USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD: Annotated[
+        timedelta,
+        Field(description="time collector gets to flush on SIGTERM"),
+    ] = timedelta(seconds=15)
+    USER_SERVICES_TRACING_DRAIN_TIMEOUT: Annotated[
+        timedelta,
+        Field(description="max time for final drain on shutdown"),
+    ] = timedelta(seconds=30)
+    USER_SERVICES_TRACING_MAX_BATCH_SIZE: Annotated[
+        ByteSize,
+        Field(description="max data forwarded to platform collector per scrape cycle"),
+    ] = TypeAdapter(ByteSize).validate_python("5MiB")
+    USER_SERVICES_TRACING_SCRAPE_INTERVAL: Annotated[
+        timedelta, Field(description="how often to check for rotated trace files")
+    ] = timedelta(seconds=10)
+    USER_SERVICES_TRACING_FORWARD_TIMEOUT: Annotated[
+        timedelta,
+        Field(description="HTTP timeout when forwarding traces to the platform collector"),
+    ] = timedelta(seconds=30)
+
+    _validate_flush_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL")
+    _validate_stop_grace_period = validate_numeric_string_as_timedelta(
+        "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD"
+    )
+    _validate_drain_timeout = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_DRAIN_TIMEOUT")
+    _validate_scrape_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_SCRAPE_INTERVAL")
+    _validate_forward_timeout = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_FORWARD_TIMEOUT")
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -204,6 +253,22 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="settings for opentelemetry tracing",
         ),
     ]
+
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG: Annotated[
+        UserServicesTracingSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+
+    DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN: Annotated[
+        bool,
+        Field(
+            description=(
+                "per-service opt-in flag for OTEL trace collection "
+                "(set by director-v2 from simcore.service.tracing label) "
+                "used together with DYNAMIC_SIDECAR_TRACING to determine if the OTEL Collector should "
+                "be injected and run for user services"
+            )
+        ),
+    ] = False
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:

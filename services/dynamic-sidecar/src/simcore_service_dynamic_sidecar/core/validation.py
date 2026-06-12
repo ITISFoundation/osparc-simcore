@@ -2,7 +2,7 @@ import logging
 import os
 import re
 from collections.abc import Generator
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 import yaml
 from common_library.json_serialization import json_loads
@@ -10,12 +10,16 @@ from servicelib.docker_constants import (
     DEFAULT_USER_SERVICES_NETWORK_NAME,
     SUFFIX_EGRESS_PROXY_NAME,
 )
+from servicelib.tracing import SourceOrigin, create_standard_attributes
 
 from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_config
-from .settings import ApplicationSettings
+from .settings import ApplicationSettings, UserServicesTracingSettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
+
+_OTEL_COLLECTOR_SERVICE_NAME: Final[str] = "dy-otel-collector"
+_TEMPLATE_DIRECTIVE_NUM_PARTS: Final[int] = 2
 
 _logger = logging.getLogger(__name__)
 
@@ -83,7 +87,7 @@ def _apply_templating_directives(
     for match in matches:
         parts = match.split(".")
 
-        if len(parts) != 2:
+        if len(parts) != _TEMPLATE_DIRECTIVE_NUM_PARTS:
             continue  # templating will be skipped
 
         target_property = parts[0]
@@ -119,12 +123,12 @@ def _merge_env_vars(
             yield from env_vars.items()
 
     # pylint: disable=unnecessary-comprehension
-    dict_spec_env_vars = {k: v for k, v in _gen_parts_env_vars(compose_spec_env_vars)}
-    dict_settings_env_vars = {k: v for k, v in _gen_parts_env_vars(settings_env_vars)}
+    dict_spec_env_vars = dict(_gen_parts_env_vars(compose_spec_env_vars))
+    dict_settings_env_vars = dict(_gen_parts_env_vars(settings_env_vars))
 
     # overwrite spec vars with vars from settings
     for key, value in dict_settings_env_vars.items():
-        dict_spec_env_vars[key] = value
+        dict_spec_env_vars[key] = value  # noqa: PERF403
 
     # returns a single list of vars
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
@@ -173,30 +177,136 @@ def parse_compose_spec(compose_file_content: str) -> Any:
         raise InvalidComposeSpecError(msg) from e
 
 
+def _generate_otel_collector_config(
+    user_services_tracing_settings: UserServicesTracingSettings,
+    settings: ApplicationSettings,
+) -> str:
+    """Generates the OTEL Collector YAML config for the injected collector container."""
+
+    # NOTE: added to collector container so they are always present
+    attributes = create_standard_attributes(
+        user_id=settings.DY_SIDECAR_USER_ID,
+        project_id=settings.DY_SIDECAR_PROJECT_ID,
+        node_id=settings.DY_SIDECAR_NODE_ID,
+        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
+        run_id=settings.DY_SIDECAR_RUN_ID,
+        source_origin=SourceOrigin.USER_SERVICE,
+    )
+
+    config = {
+        "receivers": {
+            "otlp": {
+                "protocols": {
+                    "http": {"endpoint": "0.0.0.0:4318"},
+                }
+            }
+        },
+        "processors": {
+            "batch": {"timeout": "5s"},
+            "resource": {"attributes": [{"key": k, "value": v, "action": "upsert"} for k, v in attributes.items()]},
+        },
+        "exporters": {
+            "file": {
+                "path": "/traces/spans.jsonl",
+                "rotation": {
+                    "max_megabytes": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB,
+                    "max_backups": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS,
+                },
+                "flush_interval": (
+                    f"{int(user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL.total_seconds())}s"
+                ),
+            }
+        },
+        "service": {
+            "pipelines": {
+                "traces": {
+                    "receivers": ["otlp"],
+                    "processors": ["batch", "resource"],
+                    "exporters": ["file"],
+                }
+            }
+        },
+    }
+    return yaml.safe_dump(config, default_flow_style=False)
+
+
+def _build_otel_resource_attributes(settings: ApplicationSettings) -> str:
+    """Builds the OTEL_RESOURCE_ATTRIBUTES value with simcore.* prefixed keys."""
+    # NOTE: added to each service via env var, user could in therory overwrite them,
+    # but to do so they need to put in extra effor
+    attrs = create_standard_attributes(
+        service_key=settings.DY_SIDECAR_SERVICE_KEY,
+        service_version=settings.DY_SIDECAR_SERVICE_VERSION,
+        source_origin=None,
+    )
+    return ",".join(f"{k}={v}" for k, v in attrs.items() if v)
+
+
+def _inject_otel_collector(
+    parsed_compose_spec: dict[str, Any],
+    settings: ApplicationSettings,
+    user_services_tracing_settings: UserServicesTracingSettings,
+    traces_volume_mount: str,
+    user_service_names: list[str],
+) -> str:
+    """Injects the OTEL Collector service into the compose spec.
+
+    Returns the collector's container name for use in OTEL_EXPORTER_OTLP_ENDPOINT.
+    """
+    collector_config_yaml = _generate_otel_collector_config(user_services_tracing_settings, settings)
+
+    collector_container_name = _assemble_container_name(
+        settings,
+        _OTEL_COLLECTOR_SERVICE_NAME,
+        _OTEL_COLLECTOR_SERVICE_NAME,
+        len(parsed_compose_spec["services"]),
+    )
+
+    collector_service: dict[str, Any] = {
+        "image": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE,
+        "container_name": collector_container_name,
+        "user": f"{os.getuid()}:{os.getgid()}",
+        "command": ["--config=env:OTEL_COLLECTOR_CONFIG"],
+        "environment": [
+            f"OTEL_COLLECTOR_CONFIG={collector_config_yaml}",
+        ],
+        "volumes": [
+            traces_volume_mount,
+        ],
+        "mem_limit": "256m",
+        "cpus": "0.30",
+        "cpu_shares": 16,
+        "stop_grace_period": (
+            f"{int(user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD.total_seconds())}s"
+        ),
+    }
+
+    parsed_compose_spec["services"][_OTEL_COLLECTOR_SERVICE_NAME] = collector_service
+
+    # Make user services depend on collector so Docker Compose stops them FIRST
+    # (reverse dependency order), giving the collector time to receive final spans
+    # before it gets SIGTERM.
+    # NOTE: _remap_service_keys always flattens depends_on to a list (dropping
+    # long-form conditions), so we normalise to list here unconditionally.
+    for svc_name in user_service_names:
+        svc_data = parsed_compose_spec["services"][svc_name]
+        depends_on = svc_data.get("depends_on", [])
+        if isinstance(depends_on, dict):
+            depends_on = list(depends_on)
+        depends_on.append(_OTEL_COLLECTOR_SERVICE_NAME)
+        svc_data["depends_on"] = depends_on
+
+    return collector_container_name
+
+
 class ComposeSpecValidation(NamedTuple):
     compose_spec: str
     current_container_names: list[str]
     original_to_current_container_names: dict[str, str]
 
 
-async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
-    settings: ApplicationSettings,
-    compose_file_content: str,
-    mounted_volumes: MountedVolumes,
-) -> ComposeSpecValidation:
-    """
-    Validates what looks like a docker compose spec and injects
-    additional data to mainly make sure:
-    - no collisions occur between container names
-    - containers are located on the same docker network
-    - properly target environment variables formwarded via
-        settings on the service
-
-    Finally runs docker compose config to properly validate the result
-    """
-    _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
-    parsed_compose_spec = parse_compose_spec(compose_file_content)
-
+def _validate_compose_structure(parsed_compose_spec: Any, compose_file_content: str) -> None:
+    """Validates basic structure of parsed compose spec."""
     if parsed_compose_spec is None or not isinstance(parsed_compose_spec, dict):
         msg = f"{compose_file_content}\nProvided yaml is not valid!"
         raise InvalidComposeSpecError(msg)
@@ -210,12 +320,18 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
         msg = f"Provided spec version '{version}' is not supported"
         raise InvalidComposeSpecError(msg)
 
+
+async def _process_service_entries(
+    settings: ApplicationSettings,
+    spec_services: dict[str, Any],
+    mounted_volumes: MountedVolumes,
+) -> dict[str, str]:
+    """Processes each service: assigns container names, injects env vars and volumes.
+
+    Returns a mapping from service key to assigned container name.
+    """
     spec_services_to_container_name: dict[str, str] = {}
 
-    current_container_names: list[str] = []
-    original_to_current_container_names: dict[str, str] = {}
-
-    spec_services = parsed_compose_spec["services"]
     for index, service in enumerate(spec_services):
         service_content = spec_services[service]
 
@@ -225,9 +341,6 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
 
-        current_container_names.append(container_name)
-        original_to_current_container_names[service] = container_name
-
         # inject forwarded environment variables
         environment_entries = service_content.get("environment", [])
         service_settings_env_vars = _get_forwarded_env_vars(service)
@@ -236,8 +349,8 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
             settings_env_vars=service_settings_env_vars,
         )
 
-        # FIXME: tmp to comply with
-        #  https://github.com/linuxserver/docker-baseimage-ubuntu/blob/bionic/root/etc/cont-init.d/10-adduser
+        # LinuxServer.io base images use PUID/PGID to create a user with the host's UID/GID
+        # SEE https://github.com/linuxserver/docker-baseimage-ubuntu/blob/noble/root/etc/s6-overlay/s6-rc.d/init-adduser/run
         service_content["environment"].append(f"PUID={os.getuid()}")
         service_content["environment"].append(f"PGID={os.getgid()}")
 
@@ -260,28 +373,102 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
 
         service_content["volumes"] = service_volumes
 
-    _connect_user_services(
+    return spec_services_to_container_name
+
+
+async def _inject_tracing(
+    parsed_compose_spec: dict[str, Any],
+    settings: ApplicationSettings,
+    mounted_volumes: MountedVolumes,
+    spec_services_to_container_name: dict[str, str],
+) -> None:
+    """Injects OTEL collector and env vars into user services when tracing is enabled."""
+    user_services_tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
+    spec_services = parsed_compose_spec["services"]
+
+    traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
+    user_service_keys = list(spec_services.keys())
+
+    collector_container_name = _inject_otel_collector(
         parsed_compose_spec,
-        allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
+        settings,
+        user_services_tracing_settings,
+        traces_volume_mount,
+        user_service_keys,
     )
 
-    # replace service_key with the container_name int the dict
+    # inject OTEL env vars into each user service
+    resource_attributes = _build_otel_resource_attributes(settings)
+    for service_key in user_service_keys:
+        service_env = spec_services[service_key].get("environment", [])
+        otel_env_vars = [
+            f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{collector_container_name}:4318",
+            f"OTEL_SERVICE_NAME={spec_services_to_container_name[service_key]}",
+            f"OTEL_RESOURCE_ATTRIBUTES={resource_attributes}",
+        ]
+        service_env.extend(otel_env_vars)
+
+    # track the collector in container names
+    spec_services_to_container_name[_OTEL_COLLECTOR_SERVICE_NAME] = collector_container_name
+
+
+def _remap_service_keys(
+    spec_services: dict[str, Any],
+    spec_services_to_container_name: dict[str, str],
+) -> None:
+    """Replaces service keys with container names in the services dict (in-place)."""
     for service_key in list(spec_services.keys()):
         container_name_service_key = spec_services_to_container_name[service_key]
         service_data = spec_services.pop(service_key)
 
         depends_on = service_data.get("depends_on", None)
         if depends_on is not None:
-            service_data["depends_on"] = [
-                # replaces with the container name
-                # if not found it leaves the old value
-                spec_services_to_container_name.get(x, x)
-                for x in depends_on
-            ]
+            service_data["depends_on"] = [spec_services_to_container_name.get(x, x) for x in depends_on]
 
         spec_services[container_name_service_key] = service_data
 
-    # transform back to string and return
+
+async def get_and_validate_compose_spec(
+    settings: ApplicationSettings,
+    compose_file_content: str,
+    mounted_volumes: MountedVolumes,
+    *,
+    is_user_services_tracing_enabled: bool,
+) -> ComposeSpecValidation:
+    """
+    Validates what looks like a docker compose spec and injects
+    additional data to mainly make sure:
+    - no collisions occur between container names
+    - containers are located on the same docker network
+    - properly target environment variables formwarded via
+        settings on the service
+
+    Finally runs docker compose config to properly validate the result
+    """
+    _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
+    parsed_compose_spec = parse_compose_spec(compose_file_content)
+
+    _validate_compose_structure(parsed_compose_spec, compose_file_content)
+
+    spec_services = parsed_compose_spec["services"]
+
+    # Phase 1: Process each service (container names, env vars, volumes)
+    spec_services_to_container_name = await _process_service_entries(settings, spec_services, mounted_volumes)
+
+    # Phase 2: Inject OTEL collector if tracing enabled
+    if is_user_services_tracing_enabled:
+        await _inject_tracing(parsed_compose_spec, settings, mounted_volumes, spec_services_to_container_name)
+
+    # Phase 3: Connect all user services to the shared network
+    _connect_user_services(
+        parsed_compose_spec,
+        allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
+    )
+
+    # Phase 4: Remap service keys → container names
+    _remap_service_keys(spec_services, spec_services_to_container_name)
+
+    # Phase 5: Apply templating and validate with docker compose
     validated_compose_file_content = yaml.safe_dump(parsed_compose_spec)
 
     compose_spec = _apply_templating_directives(
@@ -290,7 +477,6 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
         spec_services_to_container_name=spec_services_to_container_name,
     )
 
-    # validate against docker compose config
     result = await docker_compose_config(compose_spec)
 
     if not result.success:
@@ -302,8 +488,10 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
         msg = f"Invalid compose-specs:\n{result.message}"
         raise InvalidComposeSpecError(msg)
 
+    current_container_names = list(spec_services_to_container_name.values())
+
     return ComposeSpecValidation(
         compose_spec=compose_spec,
         current_container_names=current_container_names,
-        original_to_current_container_names=original_to_current_container_names,
+        original_to_current_container_names=dict(spec_services_to_container_name),
     )
