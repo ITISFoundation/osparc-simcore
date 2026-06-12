@@ -43,7 +43,7 @@ class ClassifierItem(BaseModel):
 
     @field_validator("short_description", mode="before")
     @classmethod
-    def truncate_to_short(cls, v):
+    def truncate_to_short(cls, v: str | None) -> str | None:
         if v and len(v) >= MAX_SIZE_SHORT_MSG:
             return v[:MAX_SIZE_SHORT_MSG] + "…"
         return v

@@ -67,8 +67,10 @@ async def send_message_to_user(
 ) -> None:
     """
     Keyword Arguments:
-        ignore_queue -- set to True when this message is delivered from a server that has no direct connection to the user client (default: {False})
-        Be careful with this option, as it can lead to message loss if the user is not connected to this server!!
+        ignore_queue -- set to True when this message is delivered from a
+            server that has no direct connection to the user client (default: {False})
+            Be careful with this option, as it can lead to message loss if the user is
+            not connected to this server!!
     """
     sio: AsyncServer = get_socket_server(app)
 
@@ -116,3 +118,18 @@ async def send_message_to_project_room(
         message=message,
         ignore_queue=False,
     )
+
+
+__all__: tuple[str, ...] = (
+    # constants
+    "SOCKET_IO_EVENT",
+    "SOCKET_IO_HEARTBEAT_EVENT",
+    "SOCKET_IO_LOG_EVENT",
+    "SOCKET_IO_NODE_UPDATED_EVENT",
+    "SOCKET_IO_PROJECT_UPDATED_EVENT",
+    "SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT",
+    # functions
+    "send_message_to_project_room",
+    "send_message_to_standard_group",
+    "send_message_to_user",
+)
