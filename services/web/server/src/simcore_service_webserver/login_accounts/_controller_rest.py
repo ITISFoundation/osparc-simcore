@@ -29,7 +29,7 @@ from ..login.settings import get_plugin_settings
 from ..login_auth.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..products import products_web
-from ..products.products_service import Product
+from ..products.models import Product
 from ..security import security_service, security_web
 from ..security.decorators import permission_required
 from ..session import api as session_service

@@ -19,7 +19,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from ..application_settings import ApplicationSettings, get_application_settings
-from ..products.products_service import Product
+from ..products.models import Product
 from ..products.products_web import PRODUCTS_APPKEY
 from ._constants import (
     FRONTEND_APPS_AVAILABLE,

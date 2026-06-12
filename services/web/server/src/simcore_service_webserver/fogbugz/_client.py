@@ -21,7 +21,7 @@ from tenacity import (
 )
 
 from ..products import products_service
-from ..products.products_service import Product
+from ..products.models import Product
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)

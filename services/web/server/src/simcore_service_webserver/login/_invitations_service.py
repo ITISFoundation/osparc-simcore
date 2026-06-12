@@ -37,7 +37,7 @@ from ..invitations.invitations_service import (
     is_service_invitation_code,
     validate_invitation_url,
 )
-from ..products.products_service import Product
+from ..products.models import Product
 from ..users import users_service
 from . import _auth_service
 from ._application_keys import CONFIRMATION_SERVICE_APPKEY

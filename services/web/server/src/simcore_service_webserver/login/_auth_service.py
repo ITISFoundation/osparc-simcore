@@ -9,7 +9,7 @@ from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_asyncpg_engine
 from ..groups.groups_service import is_user_by_email_in_group
-from ..products.products_service import Product
+from ..products.models import Product
 from ..security import security_service
 from . import _login_service
 from .constants import MSG_UNKNOWN_EMAIL

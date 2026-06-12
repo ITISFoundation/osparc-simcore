@@ -12,7 +12,7 @@ from pydantic import AnyHttpUrl, HttpUrl, TypeAdapter, ValidationError
 from yarl import URL
 
 from ..groups.groups_service import is_user_by_email_in_group
-from ..products.products_service import Product
+from ..products.models import Product
 from ._client import get_invitations_service_api
 from .errors import (
     MSG_INVALID_INVITATION_URL,

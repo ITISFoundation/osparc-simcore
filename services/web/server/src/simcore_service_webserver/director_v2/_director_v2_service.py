@@ -26,7 +26,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 from ..application_settings import get_application_settings
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
-from ..products.products_service import Product
+from ..products.models import Product
 from ..projects import projects_wallets_service
 from ..user_preferences import user_preferences_service
 from ..user_preferences.models import PreferredWalletIdFrontendUserPreference

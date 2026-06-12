@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.base_repository import BaseRepository
 from ..db.models import tokens
-from ..users.users_service import TokenNotFoundError
+from ..users.exceptions import TokenNotFoundError
 
 
 class UserTokensRepository(BaseRepository):
