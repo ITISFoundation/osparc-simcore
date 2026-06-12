@@ -35,10 +35,10 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import EmailStr
 from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.email import SMTPSettings
 from simcore_service_notifications.api.rpc.dependencies import get_jinja_env
 from simcore_service_notifications.clients.smtp import create_session
 from simcore_service_notifications.models.payments import PaymentData
+from simcore_service_notifications.models.smtp import SMTPSettings
 from simcore_service_notifications.renderers._email_render import (
     get_support_address,
     get_user_address,
@@ -192,9 +192,10 @@ def template_attachments(
         "unregister",
     ],
 )
-async def test_email_event(
+async def test_email_event(  # pylint: disable=too-many-positional-arguments
     app_environment: EnvVarsDict,
     with_smtp_extra_headers: dict[str, str],
+    smtp_settings: SMTPSettings,
     smtp_mock_or_none: AsyncMock | None,
     user_data: UserData,
     user_email: EmailStr,
@@ -226,10 +227,8 @@ async def test_email_event(
     assert from_.addr_spec == product_data.support_email
     assert to.addr_spec == user_email
 
-    settings = SMTPSettings.create_from_envs()
-
     # Check that settings contain extra headers
-    assert with_smtp_extra_headers == settings.SMTP_EXTRA_HEADERS
+    assert with_smtp_extra_headers == smtp_settings.extra_headers
 
     msg = compose_email(
         from_,
@@ -237,7 +236,7 @@ async def test_email_event(
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
-        extra_headers=settings.SMTP_EXTRA_HEADERS,
+        extra_headers=smtp_settings.extra_headers,
     )
 
     # Check that headers were injected into the message
@@ -257,7 +256,7 @@ async def test_email_event(
         p = dump_path.with_suffix(".txt")
         p.write_text(parts.text_content)
 
-    async with create_session(settings=settings) as smtp:
+    async with create_session(settings=smtp_settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
@@ -282,6 +281,7 @@ async def test_email_event(
 async def test_email_with_reply_to(
     app_environment: EnvVarsDict,
     with_smtp_extra_headers: dict[str, str],
+    smtp_settings: SMTPSettings,
     smtp_mock_or_none: AsyncMock | None,
     user_data: UserData,
     user_email: EmailStr,
@@ -312,10 +312,8 @@ async def test_email_with_reply_to(
     assert from_.addr_spec == to.addr_spec
     assert to.addr_spec == support_email
 
-    settings = SMTPSettings.create_from_envs()
-
     # Check that settings contain extra headers from conftest
-    assert with_smtp_extra_headers == settings.SMTP_EXTRA_HEADERS
+    assert with_smtp_extra_headers == smtp_settings.extra_headers
 
     msg = compose_email(
         from_,
@@ -324,7 +322,7 @@ async def test_email_with_reply_to(
         content_text=parts.text_content,
         content_html=parts.html_content,
         reply_to=reply_to,
-        extra_headers=settings.SMTP_EXTRA_HEADERS,
+        extra_headers=smtp_settings.extra_headers,
     )
 
     # Check that headers were injected into the message
@@ -332,7 +330,7 @@ async def test_email_with_reply_to(
     for header, value in with_smtp_extra_headers.items():
         assert msg[header] == value
 
-    async with create_session(settings=settings) as smtp:
+    async with create_session(settings=smtp_settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent

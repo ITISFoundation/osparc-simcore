@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from jinja2 import Template as JinjaTemplate
 
-from ..models.template import Template
+from ...models.template import Template
 
 
 class TemplateRepository(ABC):

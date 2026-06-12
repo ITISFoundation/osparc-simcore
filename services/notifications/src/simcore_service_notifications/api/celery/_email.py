@@ -8,6 +8,7 @@ from celery import (  # type: ignore[import-untyped]
 )
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
+from models_library.products import ProductName
 from servicelib.logging_utils import log_context
 
 from ...clients.smtp import create_session
@@ -21,9 +22,10 @@ def _to_address(address: EmailContact) -> Address:
     return Address(display_name=address.name or "", addr_spec=address.email)
 
 
-async def send_email_message(
+async def send_email_message_task(
     task: Task,
     task_key: TaskKey,
+    product_name: ProductName,
     message: EmailMessage,
 ) -> None:
     assert task  # nosec
@@ -42,7 +44,7 @@ async def send_email_message(
         app_settings = ApplicationSettings.create_from_envs()
         assert app_settings.NOTIFICATIONS_SMTP_SETTINGS is not None  # nosec
 
-        settings = app_settings.NOTIFICATIONS_SMTP_SETTINGS.get_settings_for_email(msg.from_.email)
+        settings = app_settings.NOTIFICATIONS_SMTP_SETTINGS.get_smtp_settings_for_product(product_name)
 
         async with create_session(settings=settings) as smtp:
             email_msg = compose_email(
@@ -53,7 +55,7 @@ async def send_email_message(
                 content_html=msg.content.body_html,
                 reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
                 bcc=[_to_address(msg.bcc)] if msg.bcc else None,
-                extra_headers=settings.SMTP_EXTRA_HEADERS,
+                extra_headers=settings.extra_headers,
             )
             if msg.attachments:
                 add_attachments(

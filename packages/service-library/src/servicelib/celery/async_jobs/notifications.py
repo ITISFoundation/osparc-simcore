@@ -9,17 +9,19 @@ from models_library.celery import (
     TaskName,
     TaskUUID,
 )
+from models_library.products import ProductName
 
 from ..task_manager import TaskManager
 
 NOTIFICATIONS_SERVICE_QUEUE_NAME: Final[str] = "notifications"
-SEND_MESSAGE_TASK_NAME_TEMPLATE: Final[TaskName] = "send_{}_message"
+SEND_MESSAGE_TASK_NAME_TEMPLATE: Final[TaskName] = "send_{}_message_task"
 
 
 async def submit_send_message_task(
     task_manager: TaskManager,
     *,
     owner_metadata: OwnerMetadata,
+    product_name: ProductName,
     message: dict[str, Any],  # NOTE: validated internally
     description: str | None = None,
 ) -> tuple[TaskUUID, TaskName]:
@@ -30,6 +32,7 @@ async def submit_send_message_task(
             description=description,
         ),
         owner_metadata=owner_metadata,
+        product_name=product_name,
         message=message,
     ), SEND_MESSAGE_TASK_NAME_TEMPLATE.format(message["channel"])
 

@@ -15,9 +15,7 @@ class EmailPartsTuple(NamedTuple):
     html_content: str | None
 
 
-def get_user_address(
-    user: UserData,
-) -> Address:
+def get_user_address(user: UserData) -> Address:
     return Address(
         display_name=f"{user.first_name} {user.last_name}",
         addr_spec=user.email,

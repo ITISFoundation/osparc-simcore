@@ -55,7 +55,10 @@ SETUP = {
     "package_data": {
         "": [
             "templates/**/*.j2",
-        ],
+            "templates/**/*.jinja2",
+            "templates/**/*.html",
+            "templates/**/*.txt",
+        ]
     },
     "install_requires": PROD_REQUIREMENTS,
     "test_suite": "tests",
