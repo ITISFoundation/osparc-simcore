@@ -12,10 +12,10 @@ from ....exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ....groups.groups_service import is_user_in_group
+from ....groups import groups_service
 from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
-from ....users.exceptions import AlreadyPreRegisteredError
+from ....users.errors import AlreadyPreRegisteredError
 from ...constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_WRONG_PASSWORD,
@@ -70,7 +70,7 @@ async def _try_show_login_fallbacks_on_wrong_password(
                 check_product = products_service.get_product(app, product_name=check_product_name)
             except ProductNotFoundError:
                 continue
-            if check_product.group_id is not None and await is_user_in_group(
+            if check_product.group_id is not None and await groups_service.is_user_in_group(
                 app, user_id=user_id, group_id=check_product.group_id
             ):
                 return check_product.display_name

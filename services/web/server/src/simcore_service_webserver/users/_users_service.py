@@ -28,7 +28,7 @@ from ._models import (
     UserIdNamesTuple,
     UserModelAdapter,
 )
-from .exceptions import (
+from .errors import (
     MissingGroupExtraPropertiesForProductError,
     UserNotFoundError,
 )

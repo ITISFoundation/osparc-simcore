@@ -18,7 +18,7 @@ from servicelib.utils import fire_and_forget_task
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
-from ..users.exceptions import UserNotFoundError
+from ..users.errors import UserNotFoundError
 from . import _access_rights_service, _projects_repository
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (

@@ -143,7 +143,7 @@ from ..user_preferences.models import (
     PreferredWalletIdFrontendUserPreference,
 )
 from ..users import users_service
-from ..users.exceptions import UserDefaultWalletNotFoundError, UserNotFoundError
+from ..users.errors import UserDefaultWalletNotFoundError, UserNotFoundError
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..wallets.wallets_service import get_wallet_with_available_credits_by_user_and_wallet
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository

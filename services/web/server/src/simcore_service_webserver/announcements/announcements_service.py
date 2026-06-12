@@ -1,4 +1,3 @@
-# Functions
 from ._api import list_announcements
 
 __all__: tuple[str, ...] = (

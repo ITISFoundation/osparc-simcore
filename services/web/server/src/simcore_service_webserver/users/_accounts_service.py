@@ -20,7 +20,7 @@ from ..products import products_service
 from ..products.errors import ProductNotFoundError
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval, PreviewRejection
-from .exceptions import (
+from .errors import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
 )

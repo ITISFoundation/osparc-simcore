@@ -21,21 +21,10 @@ from ._users_service import (
     set_user_as_deleted,
     update_expired_users,
 )
-from .exceptions import (
-    BillingDetailsNotFoundError,
-    FrontendUserPreferenceIsNotDefinedError,
-    TokenNotFoundError,
-    UserDefaultWalletNotFoundError,
-    UserNotFoundError,
-)
 
 __all__: tuple[str, ...] = (
-    "BillingDetailsNotFoundError",
-    "FrontendUserPreferenceIsNotDefinedError",
     "FullNameDict",
-    "TokenNotFoundError",
-    "UserDefaultWalletNotFoundError",
-    "UserNotFoundError",
+    # functions
     "delete_user_without_projects",
     "get_active_users_email_data",
     "get_guest_user_ids_and_names",

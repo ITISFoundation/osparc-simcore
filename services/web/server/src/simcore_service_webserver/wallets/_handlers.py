@@ -47,7 +47,7 @@ from ..payments.errors import (
 )
 from ..products.errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 from ..security.decorators import permission_required
-from ..users.exceptions import BillingDetailsNotFoundError, UserDefaultWalletNotFoundError
+from ..users.errors import BillingDetailsNotFoundError, UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from . import _api
 from ._constants import (

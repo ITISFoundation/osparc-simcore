@@ -10,7 +10,7 @@ from ....exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ....users.exceptions import FrontendUserPreferenceIsNotDefinedError
+from ....users.errors import FrontendUserPreferenceIsNotDefinedError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     CouldNotCreateOrUpdateUserPreferenceError: HttpErrorInfo(
