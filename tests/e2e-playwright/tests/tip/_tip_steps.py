@@ -48,7 +48,7 @@ def raise_if_button_spinner_running(button: Locator, *, description: str) -> Non
     wait=wait_fixed(10),
     reraise=True,
 )
-def wait_for_export_complete(button) -> None:
+def wait_for_export_complete(button: Locator) -> None:
     """Wait for an export button to finish by checking the fa-spinner icon."""
     raise_if_button_spinner_running(button, description="Export")
 
