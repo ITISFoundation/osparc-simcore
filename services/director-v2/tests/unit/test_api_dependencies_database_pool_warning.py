@@ -29,7 +29,7 @@ def _create_mocked_engine(*, checked_out: int, pool_size: int, max_overflow: int
 def test_get_base_repository_does_not_warn_on_transient_spikes_with_available_overflow(
     caplog: pytest.LogCaptureFixture,
 ):
-    engine = _create_mocked_engine(checked_out=10, pool_size=10, max_overflow=20)
+    engine = _create_mocked_engine(checked_out=15, pool_size=10, max_overflow=20)
 
     with caplog.at_level(logging.WARNING, logger="simcore_service_director_v2.api.dependencies.database"):
         repository = get_base_repository(engine=engine, repo_type=DummyRepository)

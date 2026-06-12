@@ -1,7 +1,7 @@
 import logging
 import math
 from collections.abc import AsyncGenerator, Callable
-from typing import Annotated, TypeVar, cast
+from typing import Annotated, cast
 
 from fastapi import Depends
 from fastapi.requests import Request
@@ -12,9 +12,6 @@ from ...modules.db.repositories import BaseRepository
 _logger = logging.getLogger(__name__)
 
 _POOL_UTILIZATION_WARNING_RATIO = 0.9
-
-
-RepoType = TypeVar("RepoType", bound=BaseRepository)
 
 
 def _get_db_engine(request: Request) -> AsyncEngine:
@@ -30,8 +27,6 @@ def _pool_capacity_metrics(engine: AsyncEngine) -> tuple[int, int, int, float]:
     warning_threshold = math.ceil(total_capacity * _POOL_UTILIZATION_WARNING_RATIO)
     utilization = in_use / total_capacity if total_capacity > 0 else 0.0
     return in_use, warning_threshold, total_capacity, utilization
-
-
 
 
 def get_base_repository[RepoType: BaseRepository](engine: AsyncEngine, repo_type: type[RepoType]) -> RepoType:
