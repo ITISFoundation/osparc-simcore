@@ -29,5 +29,4 @@ __all__: tuple[str, ...] = (
     "list_group_members",
     "list_user_groups_ids_with_read_access",
     "list_user_groups_with_read_access",
-    # nopycln: file
-)
+)  # nopycln: file

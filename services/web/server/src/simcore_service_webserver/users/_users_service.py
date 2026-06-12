@@ -20,7 +20,6 @@ from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
-from ..user_preferences import user_preferences_service
 from . import _users_repository
 from ._models import (
     FullNameDict,
@@ -29,7 +28,7 @@ from ._models import (
     UserIdNamesTuple,
     UserModelAdapter,
 )
-from .exceptions import (
+from .errors import (
     MissingGroupExtraPropertiesForProductError,
     UserNotFoundError,
 )
@@ -242,7 +241,12 @@ async def get_my_profile(
 
     :raises UserNotFoundError:
     :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
+
+    NOTE: Deferred import to avoid circular dependency at runtime.
+    This is safe because the import happens at call time, not at module import time.
     """
+    from ..user_preferences import user_preferences_service  # noqa: PLC0415
+
     my_profile = await _users_repository.get_my_profile(app, user_id=user_id)
 
     try:

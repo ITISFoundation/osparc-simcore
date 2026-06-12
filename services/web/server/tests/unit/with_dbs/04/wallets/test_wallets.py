@@ -43,14 +43,14 @@ def mock_rut_sum_total_available_credits_in_the_wallet(
 ) -> mock.Mock:
     # NOTE: PC->MD should rather use aioresponse to mock RUT responses
     return mocker.patch(
-        "simcore_service_webserver.wallets._api.get_wallet_total_available_credits",
+        "simcore_service_webserver.resource_usage.resource_usage_service.get_wallet_total_available_credits",
         autospec=True,
-        return_value=WalletTotalCredits(wallet_id=1, available_osparc_credits=Decimal(10.2)),
+        return_value=WalletTotalCredits(wallet_id=1, available_osparc_credits=Decimal("10.2")),
     )
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_wallets_full_workflow(
+async def test_wallets_full_workflow(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -179,7 +179,7 @@ async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     assert product.name == osparc_product_name
 
     mock_add_credits_to_wallet = mocker.patch(
-        "simcore_service_webserver.wallets._events.add_credits_to_wallet",
+        "simcore_service_webserver.resource_usage.resource_usage_service.add_credits_to_wallet",
         spec=True,
         return_value=None,
     )

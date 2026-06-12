@@ -19,12 +19,12 @@ from models_library.workspaces import (
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
-from ..folders._trash_service import (
+from ..folders.folders_service import (
     batch_delete_folders_with_content_in_root_workspace_as_admin,
+    list_folders,
     trash_folder,
     untrash_folder,
 )
-from ..folders.service import list_folders
 from ..projects._trash_service import (
     batch_delete_projects_in_root_workspace_as_admin,
     trash_project,

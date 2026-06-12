@@ -8,8 +8,9 @@ from pydantic import PositiveInt
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
 from ..products import products_service
-from ..resource_usage.service import add_credits_to_wallet
+from ..resource_usage import resource_usage_service
 from ..user_preferences import user_preferences_service
+from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
 from ..users import users_service
 from ._api import any_wallet_owned_by_user, create_wallet
 
@@ -39,7 +40,7 @@ async def _auto_add_default_wallet(
 
         if extra_credits_in_usd and product.is_payment_enabled:
             assert product.credits_per_usd  # nosec
-            await add_credits_to_wallet(
+            await resource_usage_service.add_credits_to_wallet(
                 app,
                 product_name=product_name,
                 wallet_id=wallet.wallet_id,
@@ -51,7 +52,7 @@ async def _auto_add_default_wallet(
                 created_at=wallet.created,
             )
 
-        preference_id = user_preferences_service.PreferredWalletIdFrontendUserPreference().preference_identifier
+        preference_id = PreferredWalletIdFrontendUserPreference().preference_identifier
         await user_preferences_service.set_frontend_user_preference(
             app,
             user_id=user_id,

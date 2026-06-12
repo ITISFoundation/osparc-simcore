@@ -45,7 +45,7 @@ from simcore_service_webserver.projects.api import has_user_project_access_right
 from simcore_service_webserver.projects.exceptions import (
     ProjectNodeRequiredInputsNotSetError,
 )
-from simcore_service_webserver.users.exceptions import UserNotFoundError
+from simcore_service_webserver.users.errors import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
