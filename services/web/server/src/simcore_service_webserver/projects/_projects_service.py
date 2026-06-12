@@ -130,12 +130,10 @@ from ..resource_manager.resource_manager_service import (
     managed_resource,
 )
 from ..resource_usage import resource_usage_service as rut_api
-from ..socketio.socketio_service import (
+from ..socketio import socketio_service
+from ..socketio.constants import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
-    get_socket_server,
-    send_message_to_standard_group,
-    send_message_to_user,
 )
 from ..storage import api as storage_service
 from ..user_preferences import user_preferences_service
@@ -1533,7 +1531,7 @@ async def _leave_project_room(
             project_uuid,
             socket_id,
         )
-        sio = get_socket_server(app)
+        sio = socketio_service.get_socket_server(app)
         await sio.leave_room(socket_id, SocketIORoomStr.from_project_id(project_uuid))
     else:
         _logger.warning(
@@ -2162,7 +2160,7 @@ async def _send_message_to_project_groups(
 
     await limited_gather(
         *(
-            send_message_to_standard_group(
+            socketio_service.send_message_to_standard_group(
                 app,
                 room,
                 message,
@@ -2194,7 +2192,7 @@ async def notify_project_state_update(
     )
 
     if notify_only_user:
-        await send_message_to_user(
+        await socketio_service.send_message_to_user(
             app,
             user_id=notify_only_user,
             message=message,

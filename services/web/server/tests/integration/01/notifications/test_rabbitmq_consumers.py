@@ -55,7 +55,7 @@ from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio._utils import get_socket_server
-from simcore_service_webserver.socketio.messages import (
+from simcore_service_webserver.socketio.constants import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
 )
