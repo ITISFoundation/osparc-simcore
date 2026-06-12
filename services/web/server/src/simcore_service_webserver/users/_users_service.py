@@ -1,4 +1,3 @@
-# pylint: disable=cyclic-import  # Deferred imports at function level only; safe
 import logging
 from typing import Any
 

@@ -32,10 +32,10 @@ from ..products import products_service
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._handlers import (
-    WalletsPathParams,
     WalletsRequestContext,
     handle_wallets_exceptions,
 )
+from ._schemas import WalletsPathParams
 
 _logger = logging.getLogger(__name__)
 

@@ -1,4 +1,3 @@
-# pylint: disable=cyclic-import  # Deferred imports at function level only; safe
 from typing import Any, Final, cast
 
 from aiohttp import web
