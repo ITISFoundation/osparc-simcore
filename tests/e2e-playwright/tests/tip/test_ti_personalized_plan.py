@@ -26,6 +26,7 @@ from _tip_steps import (
     run_optimization_and_load_analysis,
     set_fast_optimization_settings,
     wait_and_select_target_tissue,
+    wait_for_export_complete,
 )
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
@@ -236,8 +237,9 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
             logging.INFO,
             f"Click button - `Export to S4L` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
-            ti_postpro_iframe.get_by_role("button", name="Export to S4L").click()
-            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
+            export_s4l_button = ti_postpro_iframe.get_by_role("button", name="Export to S4L")
+            export_s4l_button.click()
+            wait_for_export_complete(export_s4l_button)
         with log_context(
             logging.INFO,
             f"Click button - `Add to Report (1)` and wait for {POST_PRO_REPORTING_MAX_TIME}",
@@ -248,8 +250,9 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
             logging.INFO,
             f"Click button - `Export Report` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
-            ti_postpro_iframe.get_by_role("button", name="Export Report").click()
-            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
+            export_report_button = ti_postpro_iframe.get_by_role("button", name="Export Report")
+            export_report_button.click()
+            wait_for_export_complete(export_report_button)
 
 
 @dataclass(frozen=True)

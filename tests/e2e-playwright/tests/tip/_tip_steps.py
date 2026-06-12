@@ -11,7 +11,7 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
 )
-from tenacity import RetryError, Retrying, retry_if_result, stop_after_delay, wait_fixed
+from tenacity import RetryError, Retrying, retry, retry_if_result, stop_after_delay, wait_fixed
 
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
 POST_PRO_MAX_STARTUP_TIME: Final[int] = 5 * MINUTE
@@ -41,6 +41,16 @@ def raise_if_button_spinner_running(button: Locator, *, description: str) -> Non
     if "fa-spinner" in icon_class:
         msg = f"{description} still running: {icon_class=}"
         raise ValueError(msg)
+
+
+@retry(
+    stop=stop_after_delay(POST_PRO_REPORTING_MAX_TIME / 1000),  # seconds
+    wait=wait_fixed(10),
+    reraise=True,
+)
+def wait_for_export_complete(button) -> None:
+    """Wait for an export button to finish by checking the fa-spinner icon."""
+    raise_if_button_spinner_running(button, description="Export")
 
 
 def wait_and_select_target_tissue(
