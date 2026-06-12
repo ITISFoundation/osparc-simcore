@@ -119,6 +119,7 @@ from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
+from ..director_v2.exceptions import DirectorV2ServiceError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
 from ..products import products_web
@@ -991,13 +992,14 @@ async def add_project_node(
 
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
-    await director_v2_service.create_or_update_pipeline(
-        request.app,
-        user_id,
-        project["uuid"],
-        product_name,
-        product_api_base_url,
-    )
+    with suppress(DirectorV2ServiceError):
+        await director_v2_service.create_or_update_pipeline(
+            request.app,
+            user_id,
+            project["uuid"],
+            product_name,
+            product_api_base_url,
+        )
     await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
 
     if _is_node_dynamic(service_key):
@@ -1116,9 +1118,10 @@ async def delete_project_node(
     await db_legacy.remove_project_node(user_id, project_uuid, NodeID(node_uuid), client_session_id=client_session_id)
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
-    await director_v2_service.create_or_update_pipeline(
-        request.app, user_id, project_uuid, product_name, product_api_base_url
-    )
+    with suppress(DirectorV2ServiceError):
+        await director_v2_service.create_or_update_pipeline(
+            request.app, user_id, project_uuid, product_name, product_api_base_url
+        )
     await dynamic_scheduler_service.update_projects_networks(request.app, project_id=project_uuid)
 
 
@@ -1228,13 +1231,14 @@ async def patch_project_node(
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
-    await director_v2_service.create_or_update_pipeline(
-        app,
-        user_id,
-        project_id,
-        product_name=product_name,
-        product_api_base_url=product_api_base_url,
-    )
+    with suppress(DirectorV2ServiceError):
+        await director_v2_service.create_or_update_pipeline(
+            app,
+            user_id,
+            project_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+        )
     if _node_patch_exclude_unset.get("label"):
         await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 

@@ -53,6 +53,7 @@ from ._constants import (
 )
 from ._errors import GuestUsersLimitError
 from ._guards import check_studies_dispatcher_enabled
+from ._projects import rollback_project_on_error
 from ._users import create_temporary_guest_user, get_authorized_user
 
 _logger = logging.getLogger(__name__)
@@ -192,44 +193,47 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
             project = substitute_parameterized_inputs(project, template_parameters) or project
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = products_web.get_product_name(request)
-        await db.insert_project(
-            project,
-            user["id"],
-            product_name=product_name,
-            force_project_uuid=True,
-            project_nodes=None,
-        )
-        async for lr_task in copy_data_folders_from_project(
-            request.app,
-            source_project=template_project,
-            destination_project=project,
-            nodes_map=nodes_map,
-            user_id=user["id"],
-            product_name=product_name,
+        async with rollback_project_on_error(
+            request.app, user["id"], ProjectID(project["uuid"]), product_name=product_name
         ):
-            _logger.info(
-                "copying %s into %s for %s: %s",
-                f"{template_project['uuid']=}",
-                f"{project['uuid']}",
-                f"{user['id']}",
-                f"{lr_task.status.progress=}",
+            await db.insert_project(
+                project,
+                user["id"],
+                product_name=product_name,
+                force_project_uuid=True,
+                project_nodes=None,
             )
-            if lr_task.done:
-                await lr_task.result()
-        await director_v2_service.create_or_update_pipeline(
-            request.app,
-            user["id"],
-            project["uuid"],
-            product_name,
-            get_api_base_url(request),
-        )
-        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
+            async for lr_task in copy_data_folders_from_project(
+                request.app,
+                source_project=template_project,
+                destination_project=project,
+                nodes_map=nodes_map,
+                user_id=user["id"],
+                product_name=product_name,
+            ):
+                _logger.info(
+                    "copying %s into %s for %s: %s",
+                    f"{template_project['uuid']=}",
+                    f"{project['uuid']}",
+                    f"{user['id']}",
+                    f"{lr_task.status.progress=}",
+                )
+                if lr_task.done:
+                    await lr_task.result()
+            await director_v2_service.create_or_update_pipeline(
+                request.app,
+                user["id"],
+                project["uuid"],
+                product_name,
+                get_api_base_url(request),
+            )
+            await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
 
-        await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
-            request.app,
-            from_project_uuid=template_project["uuid"],
-            to_project_uuid=project["uuid"],
-        )
+            await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
+                request.app,
+                from_project_uuid=template_project["uuid"],
+                to_project_uuid=project["uuid"],
+            )
 
     return project_uuid
 

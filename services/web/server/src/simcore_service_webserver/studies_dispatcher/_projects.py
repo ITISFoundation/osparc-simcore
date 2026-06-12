@@ -7,6 +7,8 @@ Keeps functionality that couples with the following app modules
 """
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import NamedTuple
 
@@ -22,12 +24,13 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
-from ..projects._projects_repository_legacy import ProjectDBAPI
-from ..projects._projects_service import get_project_for_user
+from ..director_v2.director_v2_service import create_or_update_pipeline
+from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
+from ..projects._projects_service import delete_project_by_user, get_project_for_user
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..utils import now_str
 from . import _service
-from ._errors import ProjectWorkbenchMismatchError
+from ._errors import ProjectCreationAbortedError, ProjectWorkbenchMismatchError
 from ._models import FileParams, ServiceInfo, ViewerInfo
 from ._users import UserInfo
 
@@ -186,6 +189,39 @@ def _create_project_with_filepicker_and_service(
     )
 
 
+@asynccontextmanager
+async def rollback_project_on_error(
+    app: web.Application, user_id: int, project_uuid: ProjectID, *, product_name: str
+) -> AsyncIterator[None]:
+    """Schedules best-effort project cleanup and raises ProjectCreationAbortedError on `Exception`.
+
+    The rollback path submits project deletion asynchronously and does not wait
+    for cleanup completion before exiting the context manager.
+
+    Task cancellations and other `BaseException` subclasses are propagated as-is
+    and do not trigger rollback or wrapping.
+    """
+    try:
+        yield
+    except Exception as exc:
+        _logger.warning(
+            "Failed to complete project %s creation. Reverting project insertion.",
+            project_uuid,
+            exc_info=True,
+        )
+        try:
+            await delete_project_by_user(
+                app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                product_name=product_name,
+                wait_until_completed=False,
+            )
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception("Failed to rollback project %s during cleanup", project_uuid)
+        raise ProjectCreationAbortedError(project_uuid=project_uuid) from exc
+
+
 async def _add_new_project(
     app: web.Application,
     project: Project,
@@ -193,36 +229,29 @@ async def _add_new_project(
     *,
     product_name: str,
     product_api_base_url: str,
-):
-    # TODO: move this to projects_api
-    # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
+) -> None:
+    async with rollback_project_on_error(app, user.id, project.uuid, product_name=product_name):
+        # TODO: move this to projects_api  # noqa: FIX002
+        # TODO: this piece was taken from the end of projects.projects_handlers.create_projects  # noqa: FIX002
 
-    from ..director_v2.director_v2_service import create_or_update_pipeline
-    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY
+        db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
-    db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
+        # validated project is transform in dict via json to use only primitive types
+        project_in: dict = json_loads(project.model_dump_json(exclude_none=True, by_alias=True))
+        # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
+        #       so I need to set the templateType here if it was removed.
+        project_in["templateType"] = project_in.get("templateType")
 
-    # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json_loads(project.model_dump_json(exclude_none=True, by_alias=True))
-    # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
-    #       so I need to set the templateType here if it was removed.
-    project_in["templateType"] = project_in.get("templateType")
-
-    # update metadata (uuid, timestamps, ownership) and save
-    _project_db: dict = await db.insert_project(
-        project_in,
-        user.id,
-        product_name=product_name,
-        force_as_template=False,
-        project_nodes=None,
-    )
-    assert _project_db["uuid"] == str(project.uuid)  # nosec
-
-    # This is a new project and every new graph needs to be reflected in the pipeline db
-    #
-    # TODO: Ensure this user has access to these services!
-    #
-    await create_or_update_pipeline(app, user.id, project.uuid, product_name, product_api_base_url)
+        # update metadata (uuid, timestamps, ownership) and save
+        _project_db: dict = await db.insert_project(
+            project_in,
+            user.id,
+            product_name=product_name,
+            force_as_template=False,
+            project_nodes=None,
+        )
+        assert _project_db["uuid"] == f"{project.uuid}"  # nosec
+        await create_or_update_pipeline(app, user.id, project.uuid, product_name, product_api_base_url)
 
 
 async def _project_exists(
@@ -372,7 +401,9 @@ async def get_or_create_project_with_file(
         project = _create_project(
             project_id=project_uid,
             name=f"File {file_params.file_name[-20:]}",
-            description=f"Autogenerated study with a file-picker for {file_params.file_name} [{file_params.file_type} file]",
+            description=(
+                f"Autogenerated study with a file-picker for {file_params.file_name} [{file_params.file_type} file]"
+            ),
             thumbnail=project_thumbnail,
             owner=user,
             workbench={

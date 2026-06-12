@@ -38,3 +38,10 @@ class ProjectWorkbenchMismatchError(StudyDispatcherError):
         "Project {project_uuid} appears to be corrupted and cannot be accessed properly.",
         _version=1,
     )
+
+
+class ProjectCreationAbortedError(StudyDispatcherError):
+    msg_template = user_message(
+        "Project {project_uuid} creation was aborted due to an unexpected error.",
+        _version=1,
+    )
