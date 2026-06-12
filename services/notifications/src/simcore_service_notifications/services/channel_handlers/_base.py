@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from models_library.notifications.rpc import EmailContact, Message
+from models_library.notifications.rpc import Message
 from models_library.products import ProductName
+
+from ...core.settings import ProductSMTPSettings
+from ...models.product import ProductData
 
 
 class ChannelHandler(ABC):
@@ -13,7 +16,8 @@ class ChannelHandler(ABC):
     def prepare_messages(
         message: Message,
         *,
-        resolved_from: EmailContact | None = None,
         product_name: ProductName,
+        product_data: ProductData,
+        smtp_settings: ProductSMTPSettings,
     ) -> list[dict[str, Any]]:
         """Fan out a message model into per-recipient celery payloads."""
