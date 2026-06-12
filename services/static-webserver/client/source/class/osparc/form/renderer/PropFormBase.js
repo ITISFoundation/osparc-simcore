@@ -298,7 +298,11 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         if (!item) {
           return;
         }
-        this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(inputsUnits[portId]).unitPrefix);
+        const xUnit = inputsUnits[portId];
+        if (xUnit === undefined || xUnit === null) {
+          return;
+        }
+        this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(xUnit).unitPrefix);
       });
     },
 

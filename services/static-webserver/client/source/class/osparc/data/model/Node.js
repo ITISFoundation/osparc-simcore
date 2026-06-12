@@ -1558,14 +1558,36 @@ qx.Class.define("osparc.data.model.Node", {
           }
           case "inputsUnits": {
             const updatedPortKey = path.split("/")[4];
-            const currentInputUnits = this.__getInputUnits() || {};
+            const nodeMD = this.getMetadata();
+            const getDefaultXUnit = portKey => {
+              const portMD = (nodeMD && nodeMD.inputs) ? nodeMD.inputs[portKey] : null;
+              return (portMD && "x_unit" in portMD) ? portMD["x_unit"] : null;
+            };
             if (updatedPortKey === undefined) {
-              // the whole inputsUnits object was added/replaced
-              Object.assign(currentInputUnits, value);
+              // the whole inputsUnits object was added/replaced/removed
+              if (op === "remove" || value === undefined || value === null || Object.keys(value).length === 0) {
+                // units were cleared: switch every port back to its metadata default unit
+                const resetUnits = {};
+                if (nodeMD && nodeMD.inputs) {
+                  Object.keys(nodeMD.inputs).forEach(portKey => {
+                    const defaultXUnit = getDefaultXUnit(portKey);
+                    if (defaultXUnit) {
+                      resetUnits[portKey] = defaultXUnit;
+                    }
+                  });
+                }
+                this.__setInputUnits(resetUnits);
+              } else {
+                this.__setInputUnits(value);
+              }
             } else {
-              currentInputUnits[updatedPortKey] = value;
+              // a single port's unit changed or was removed
+              // on "remove" there is no value, so fall back to the metadata default unit
+              const targetXUnit = (op === "remove" || value === undefined || value === null) ? getDefaultXUnit(updatedPortKey) : value;
+              if (targetXUnit) {
+                this.__setInputUnits({ [updatedPortKey]: targetXUnit });
+              }
             }
-            this.__setInputUnits(currentInputUnits);
             break;
           }
           case "inputNodes":
