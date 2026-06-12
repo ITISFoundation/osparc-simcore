@@ -9,7 +9,7 @@ from pydantic import AliasGenerator, BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 from ..models import ClientSessionID
-from ..socketio.socketio_service import send_message_to_project_room
+from ..socketio import socketio_service
 
 SOCKET_IO_PROJECT_DOCUMENT_UPDATED_EVENT: Final[str] = "projectDocument:updated"
 
@@ -53,4 +53,4 @@ async def notify_project_document_updated(
             ).model_dump(mode="json", by_alias=True),
         },
     )
-    await send_message_to_project_room(app, project_id, notification_message)
+    await socketio_service.send_message_to_project_room(app, project_id, notification_message)
