@@ -2,12 +2,29 @@
 
 import contextlib
 import logging
+from typing import Final
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, expect
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import SECOND
+from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
+)
 from tenacity import RetryError, Retrying, retry_if_result, stop_after_delay, wait_fixed
+
+_EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
+POST_PRO_MAX_STARTUP_TIME: Final[int] = 5 * MINUTE
+_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 20 * MINUTE
+POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + POST_PRO_MAX_STARTUP_TIME
+)
+POST_PRO_TARGET_TISSUE_APPEARANCE_TIME: Final[int] = 10 * MINUTE
+POST_PRO_LOAD_APPEARANCE_TIME: Final[int] = 5 * MINUTE
+POST_PRO_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 25 * MINUTE
+POST_PRO_LOAD_ANALYSIS_MAX_TIME: Final[int] = 5 * MINUTE
+POST_PRO_LOAD_RESULT_MAX_TIME: Final[int] = 30 * SECOND
+POST_PRO_REPORTING_MAX_TIME: Final[int] = 30 * SECOND
 
 
 def raise_if_button_spinner_running(button: Locator, *, description: str) -> None:
