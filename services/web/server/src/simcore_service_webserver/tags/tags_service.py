@@ -1,5 +1,3 @@
-"""Tags public facade per DESIGN.md §133-152."""
-
 # Exceptions
 # Functions
 from ._service import (

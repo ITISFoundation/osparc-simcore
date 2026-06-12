@@ -1,5 +1,3 @@
-"""Socketio public facade per DESIGN.md §133-152."""
-
 from ._utils import (
     CLIENT_SOCKET_SERVER_APPKEY,
     EnvironDict,

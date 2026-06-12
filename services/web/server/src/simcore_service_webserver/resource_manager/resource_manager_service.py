@@ -1,5 +1,3 @@
-"""Resource Manager public facade per DESIGN.md §133-152."""
-
 from .models import UserSession
 from .registry import RedisResourceRegistry, get_registry
 from .service import list_opened_project_ids

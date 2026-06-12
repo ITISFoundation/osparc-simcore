@@ -1,5 +1,3 @@
-"""Studies Dispatcher public facade per DESIGN.md §133-152."""
-
 # Exceptions
 from ._errors import (
     FileToLargeError,

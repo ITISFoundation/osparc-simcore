@@ -1,5 +1,3 @@
-"""Resource Usage public facade per DESIGN.md §133-152."""
-
 from ._client import is_resource_usage_tracking_service_responsive
 from .errors import DefaultPricingPlanNotFoundError, ResourceUsageValueError
 from .service import (

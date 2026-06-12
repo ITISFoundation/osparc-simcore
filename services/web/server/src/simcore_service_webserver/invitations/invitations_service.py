@@ -1,5 +1,3 @@
-"""Invitations public facade per DESIGN.md §133-152."""
-
 from .api import (
     extract_invitation,
     generate_invitation,

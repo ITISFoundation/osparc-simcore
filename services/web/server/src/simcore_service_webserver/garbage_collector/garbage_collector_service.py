@@ -1,5 +1,3 @@
-"""Garbage collector public facade per DESIGN.md §133-152."""
-
 # Constants
 # Functions
 from ._core import collect_garbage

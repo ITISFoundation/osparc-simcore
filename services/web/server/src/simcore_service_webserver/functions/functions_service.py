@@ -1,5 +1,3 @@
-"""Functions public facade per DESIGN.md §133-152."""
-
 # Exceptions
 from ._functions_exceptions import FunctionGroupAccessRightsNotFoundError
 

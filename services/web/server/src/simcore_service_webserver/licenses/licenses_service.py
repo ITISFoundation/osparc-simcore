@@ -1,5 +1,3 @@
-"""Licenses public facade per DESIGN.md §133-152."""
-
 # Exceptions
 # Functions
 from ._itis_vip_service import get_category_items

@@ -1,5 +1,3 @@
-"""Payments public facade per DESIGN.md §133-152."""
-
 from .api import (
     cancel_creation_of_wallet_payment_method,
     cancel_payment_to_wallet,
