@@ -62,7 +62,7 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
   _<feature>_aggregation_service.py  # private: cross-domain feature glue (this domain primary)
   <other_domain>_service.py          # PUBLIC: this domain's reusable adapter to ANOTHER domain (satellite)
   models.py                          # PUBLIC: domain models — pure type definitions, no service imports
-  errors.py                          # PUBLIC: domain exceptions — pure definitions, no service imports
+  errors.py                          # PUBLIC: domain exceptions — pure definitions, no service imports (sometimes `exceptions.py`)
   settings.py                        # Pydantic settings for this domain
   plugin.py                          # setup_<domain>(): wiring
 ```

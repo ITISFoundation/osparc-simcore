@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..users import users_service
-from ..users.users_service import UserNotFoundError
+from ..users.errors import UserNotFoundError
 from ..workspaces.workspaces_service import get_workspace
 from ._access_rights_repository import get_project_owner, is_published_project
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI

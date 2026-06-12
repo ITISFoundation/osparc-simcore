@@ -19,7 +19,7 @@ from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
 from ..resource_manager.resource_manager_service import RedisResourceRegistry
 from ..users import errors, users_service
-from ..users.users_service import UserNotFoundError
+from ..users.errors import UserNotFoundError
 from ._core_utils import get_new_project_owner_gid, replace_current_owner
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 

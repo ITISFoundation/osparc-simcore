@@ -9,8 +9,7 @@ from models_library.wallets import UserWalletDB, WalletID
 from ..users import users_service
 from . import _db as wallets_db
 from . import _groups_db as wallets_groups_db
-from ._groups_db import WalletGroupGetDB
-from ._groups_models import WalletGroupGet
+from ._groups_models import WalletGroupGet, WalletGroupGetDB
 from .errors import WalletAccessForbiddenError
 
 log = logging.getLogger(__name__)

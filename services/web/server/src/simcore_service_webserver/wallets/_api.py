@@ -19,6 +19,7 @@ from ..resource_usage import resource_usage_service
 from ..user_preferences import user_preferences_service
 from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
 from ..users import users_service
+from ..users.errors import UserDefaultWalletNotFoundError
 from . import _db as db
 from .errors import WalletAccessForbiddenError
 
@@ -144,7 +145,7 @@ async def get_user_default_wallet_with_available_credits(
         preference_class=PreferredWalletIdFrontendUserPreference,
     )
     if user_default_wallet_preference is None:
-        raise users_service.UserDefaultWalletNotFoundError(uid=user_id)
+        raise UserDefaultWalletNotFoundError(uid=user_id)
     default_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
     return await get_wallet_with_available_credits_by_user_and_wallet(
         app, user_id=user_id, wallet_id=default_wallet_id, product_name=product_name

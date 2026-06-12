@@ -18,7 +18,7 @@ from ..projects.api import (
 )
 from ..projects.exceptions import ProjectNotFoundError
 from ..users import users_service
-from ..users.users_service import UserNotFoundError
+from ..users.errors import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
 

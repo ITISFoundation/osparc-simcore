@@ -22,7 +22,7 @@ from ..projects._projects_service import (
 from ..projects.api import has_user_project_access_rights
 from ..resource_manager.resource_manager_service import RedisResourceRegistry, list_opened_project_ids
 from ..users import users_service
-from ..users.users_service import UserNotFoundError
+from ..users.errors import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
 

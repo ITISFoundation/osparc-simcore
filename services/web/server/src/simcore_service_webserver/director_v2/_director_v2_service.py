@@ -30,7 +30,7 @@ from ..products.models import Product
 from ..projects import projects_wallets_service
 from ..user_preferences import user_preferences_service
 from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
-from ..users.users_service import UserDefaultWalletNotFoundError
+from ..users.errors import UserDefaultWalletNotFoundError
 from ..wallets.wallets_service import (
     get_wallet_with_available_credits,
     get_wallet_with_available_credits_by_user_and_wallet,

@@ -36,7 +36,7 @@ from ..products import products_web
 from ..redis import get_redis_lock_manager_client
 from ..security import security_service, security_web
 from ..users import users_service
-from ..users.users_service import UserNotFoundError
+from ..users.errors import UserNotFoundError
 from ._errors import GuestUserNotAllowedError, GuestUsersLimitError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 

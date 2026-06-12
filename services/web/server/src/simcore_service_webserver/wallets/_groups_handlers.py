@@ -17,13 +17,13 @@ from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
-from ._groups_api import WalletGroupGet
 from ._schemas import (
     WalletsPathParams,
     _WalletsGroupsBodyParams,
     _WalletsGroupsPathParams,
 )
 from .errors import WalletAccessForbiddenError, WalletGroupNotFoundError
+from .models import WalletGroupGet
 
 _logger = logging.getLogger(__name__)
 
