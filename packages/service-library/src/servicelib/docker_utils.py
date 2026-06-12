@@ -443,23 +443,31 @@ _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC: Final[ByteSize] = TypeAdapter(ByteSize
 # "pull complete" event. If this cap is hit, the throughput constant may need adjustment.
 _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO: Final[float] = 0.99
 
-_CPUS_SAFE_MARGIN: Final[float] = 1.4  # accounts for machine overhead (ops + sidecar itself)
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
-DYNAMIC_SIDECAR_MIN_CPUS: Final[float] = 0.5
 
-
-def estimate_dynamic_sidecar_resources_from_ec2_instance(cpus: float, ram: int) -> tuple[float, int]:
+def estimate_dynamic_sidecar_resources_from_ec2_instance(
+    cpus: float,
+    ram: int,
+    *,
+    overhead_cpus: float,
+    docker_node_available_ram_ratio: float,
+    overhead_ram_bytes: ByteSize,
+) -> tuple[float, ByteSize]:
     """Estimates the resources available to a dynamic-sidecar running in an EC2 instance,
     taking into account safe margins for CPU and RAM, as the EC2 full resources are not completely visible
+
+    Args:
+        cpus: Total CPU cores available on the EC2 instance
+        ram: Total RAM bytes available on the EC2 instance
+        overhead_cpus: Total CPU cores reserved for host + ops overhead
+        docker_node_available_ram_ratio: Fraction of machine RAM available to Docker
+        overhead_ram_bytes: RAM bytes reserved for ops overhead
 
     Returns:
         tuple: Estimated resources for the dynamic-sidecar (cpus, ram).
     """
-    # dynamic-sidecar usually needs less CPU
-    sidecar_cpus = max(DYNAMIC_SIDECAR_MIN_CPUS, cpus - _CPUS_SAFE_MARGIN)
-    sidecar_ram = int(ram - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * ram - _SIDECARS_OPS_SAFE_RAM_MARGIN)
+    sidecar_cpus = cpus - overhead_cpus
+    sidecar_ram = TypeAdapter(ByteSize).validate_python(
+        int(ram * docker_node_available_ram_ratio - int(overhead_ram_bytes))
+    )
 
     return (sidecar_cpus, sidecar_ram)
