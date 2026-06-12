@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...modules.db.repositories import BaseRepository
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _POOL_UTILIZATION_WARNING_RATIO = 0.9
 
@@ -32,9 +32,6 @@ def _pool_capacity_metrics(engine: AsyncEngine) -> tuple[int, int, int, float]:
     return in_use, warning_threshold, total_capacity, utilization
 
 
-def _warns_pool_near_limits(engine: AsyncEngine) -> bool:
-    in_use, warning_threshold, total_capacity, _ = _pool_capacity_metrics(engine)
-    return total_capacity > 0 and in_use >= warning_threshold
 
 
 def get_base_repository[RepoType: BaseRepository](engine: AsyncEngine, repo_type: type[RepoType]) -> RepoType:
@@ -44,9 +41,9 @@ def get_base_repository[RepoType: BaseRepository](engine: AsyncEngine, repo_type
     # the max amount of connections is reached
     # now the current solution is to acquire connection when needed.
 
-    if _warns_pool_near_limits(engine):
-        in_use, warning_threshold, total_capacity, utilization = _pool_capacity_metrics(engine)
-        logger.warning(
+    in_use, warning_threshold, total_capacity, utilization = _pool_capacity_metrics(engine)
+    if total_capacity > 0 and in_use >= warning_threshold:
+        _logger.warning(
             "Database connection pool near limits: checked_out=%s threshold=%s total_capacity=%s "
             "utilization=%.1f%% status=%s",
             in_use,
