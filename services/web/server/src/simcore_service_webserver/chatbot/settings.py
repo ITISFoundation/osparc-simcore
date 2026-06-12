@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Literal
 
 from aiohttp import web
 from models_library.basic_types import PortInt
@@ -14,8 +15,12 @@ class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):
 
     CHATBOT_HOST: str
     CHATBOT_PORT: PortInt
-    CHATBOT_MODEL: str = "gpt-4o-mini"
-    CHATBOT_GRAPH_NAME: str = "simple_rag"
+    CHATBOT_MODEL: Literal["gpt-3.5-turbo", "gpt-4o-mini", "gpt-5.2", "gpt-4.1-nano"]
+    CHATBOT_GRAPH_NAME: Literal[
+        "simple_rag",
+        "multi_query_rag",
+        "simple_agentic_rag",
+    ]
 
     @cached_property
     def base_url(self) -> str:
