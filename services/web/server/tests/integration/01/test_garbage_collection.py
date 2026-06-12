@@ -402,8 +402,10 @@ async def assert_projects_count(asyncpg_engine: AsyncEngine, expected_projects: 
         assert projects_count == expected_projects
 
 
-def assert_dicts_match_by_common_keys(first_dict, second_dict) -> None:
+def assert_dicts_match_by_common_keys(first_dict, second_dict, *, exclude_keys: set[str] | None = None) -> None:
     common_keys = set(first_dict.keys()) & set(second_dict.keys())
+    if exclude_keys:
+        common_keys -= exclude_keys
     for key in common_keys:
         assert first_dict[key] == second_dict[key], key
 
@@ -452,7 +454,8 @@ async def assert_project_in_db(asyncpg_engine: AsyncEngine, user_project: dict) 
     assert project
     project_as_dict = _enum_to_value(dict(project))
 
-    assert_dicts_match_by_common_keys(project_as_dict, user_project)
+    # NOTE: workbench is now stored in projects_nodes table, not in projects.workbench column
+    assert_dicts_match_by_common_keys(project_as_dict, user_project, exclude_keys={"workbench"})
 
 
 async def assert_user_is_owner_of_project(

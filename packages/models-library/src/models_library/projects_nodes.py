@@ -338,9 +338,6 @@ class Node(BaseModel):
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
 
-    # NOTE: requested_resources should be here! WARNING: this model is used both in database and rest api!
-    # Model for project_nodes table should NOT be Node but a different one !
-
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
         Field(
