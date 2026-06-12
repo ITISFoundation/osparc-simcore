@@ -114,12 +114,6 @@ async def create_node(request: web.Request) -> web.Response:
     ):
         raise web.HTTPNotAcceptable(text=f"Service {body.service_key}:{body.service_version} is deprecated")
 
-    # ensure the project exists
-    await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-    )
     data = {
         "node_id": await _projects_service.add_project_node(
             request,
