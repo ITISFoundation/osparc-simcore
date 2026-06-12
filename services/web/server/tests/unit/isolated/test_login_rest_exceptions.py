@@ -46,7 +46,7 @@ def mock_app() -> web.Application:
 def mock_is_user_in_group(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     mock = AsyncMock(return_value=False)
     monkeypatch.setattr(
-        "simcore_service_webserver.login._controller.rest._rest_exceptions.is_user_in_group",
+        "simcore_service_webserver.login._controller.rest._rest_exceptions.groups_service.is_user_in_group",
         mock,
     )
     return mock
