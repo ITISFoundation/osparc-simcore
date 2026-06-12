@@ -15,6 +15,7 @@ class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):
     CHATBOT_HOST: str
     CHATBOT_PORT: PortInt
     CHATBOT_MODEL: str = "gpt-4o-mini"
+    CHATBOT_GRAPH_NAME: str = "simple_rag"
 
     @cached_property
     def base_url(self) -> str:
