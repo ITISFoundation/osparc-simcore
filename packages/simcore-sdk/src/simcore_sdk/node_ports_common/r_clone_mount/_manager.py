@@ -223,6 +223,9 @@ class RCloneMountManager:
             await tracked_mount.stop_mount()
 
     async def refresh_path(self, remote_path: StorageFileID, *, recursive: bool = False) -> None:
+        # NOTE: always refreshes the containing directory, unless it's the top level directory if
+        # len(remote_path_parts) == _MIN_PATH_PARTS when this one is refreshed
+
         remote_path_parts = remote_path.split("/")
         if len(remote_path_parts) < _MIN_PATH_PARTS or any(not p for p in remote_path_parts[:_MIN_PATH_PARTS]):
             _logger.warning(
@@ -244,10 +247,15 @@ class RCloneMountManager:
                     break
 
             if tracked_mount is None:
+                # NOTE: if this is raised it is a bug in the code
                 raise NoMountFoundForRemotePathError(remote_path=remote_path)
 
-            dir_to_refresh = "/".join(remote_path_parts[_MIN_PATH_PARTS:])
-            await tracked_mount.refresh_path(dir_to_refresh=dir_to_refresh, recursive=recursive)
+            # Always refresh containing directory for nested paths. For the mount
+            # root or direct children, refresh the mount root (empty dir path).
+            target_to_refresh = (
+                remote_path if len(remote_path_parts) == _MIN_PATH_PARTS else f"{Path(remote_path).parent}"
+            )
+            await tracked_mount.refresh_path(dir_to_refresh=target_to_refresh, recursive=recursive)
 
     async def _worker_ensure_mount_is_responsive(self) -> None:
         mount_restored = False
