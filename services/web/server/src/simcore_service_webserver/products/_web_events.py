@@ -1,8 +1,5 @@
 import logging
-import tempfile
-from pathlib import Path
 from pprint import pformat
-from typing import Final
 
 from aiohttp import web
 from models_library.products import ProductName
@@ -12,8 +9,6 @@ from ._application_keys import DEFAULT_PRODUCT_APPKEY, PRODUCTS_APPKEY
 from ._models import Product
 
 _logger = logging.getLogger(__name__)
-
-PRODUCTS_TEMPLATES_DIR_APPKEY: Final = web.AppKey("PRODUCTS_TEMPLATES_DIR", Path)
 
 
 async def _auto_create_products_groups(app: web.Application) -> None:
@@ -54,22 +49,9 @@ async def _load_products_on_startup(app: web.Application):
     _logger.debug("Product loaded: %s", list(app_products))
 
 
-async def _setup_product_templates(app: web.Application):
-    """
-    builds a directory and download product templates
-    """
-    with tempfile.TemporaryDirectory(suffix="product_template_") as templates_dir:
-        app[PRODUCTS_TEMPLATES_DIR_APPKEY] = Path(templates_dir)
-
-        yield
-
-        # cleanup
-
-
 def setup_web_events(app: web.Application):
     app.on_startup.append(
         # NOTE: must go BEFORE _load_products_on_startup
         _auto_create_products_groups
     )
     app.on_startup.append(_load_products_on_startup)
-    app.cleanup_ctx.append(_setup_product_templates)

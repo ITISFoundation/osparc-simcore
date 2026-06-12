@@ -4,13 +4,16 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
+import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.sql.selectable import Subquery
 
+from .models.projects import projects
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
 from .utils_aiosqlalchemy import map_db_exception
@@ -66,11 +69,74 @@ class ProjectNodeCreate(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
+def _snake_to_camel(s: str) -> str:
+    head, *tail = s.split("_")
+    return head + "".join(p.title() for p in tail)
+
+
+# Mapping from workbench-JSON camelCase keys to projects_nodes snake_case columns.
+# Derived from ProjectNodeCreate to keep a single source of truth.
+WORKBENCH_NODE_ALIAS_TO_COLUMN: dict[str, str] = {
+    _snake_to_camel(name): name
+    for name in ProjectNodeCreate.model_fields  # pylint: disable=not-an-iterable
+    if "_" in name
+}
+
+# Reverse mapping: snake_case column names → camelCase workbench-JSON keys.
+COLUMN_TO_WORKBENCH_NODE_ALIAS: dict[str, str] = {v: k for k, v in WORKBENCH_NODE_ALIAS_TO_COLUMN.items()}
+
+
 class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+def create_workbench_subquery(project_id: str) -> Subquery:
+    workbench_obj = sa.func.json_strip_nulls(
+        sa.func.json_build_object(
+            "key",
+            projects_nodes.c.key,
+            "version",
+            projects_nodes.c.version,
+            "label",
+            projects_nodes.c.label,
+            "progress",
+            projects_nodes.c.progress,
+            "thumbnail",
+            projects_nodes.c.thumbnail,
+            "inputAccess",
+            projects_nodes.c.input_access,
+            "inputNodes",
+            projects_nodes.c.input_nodes,
+            "inputs",
+            projects_nodes.c.inputs,
+            "inputsRequired",
+            projects_nodes.c.inputs_required,
+            "inputsUnits",
+            projects_nodes.c.inputs_units,
+            "outputs",
+            projects_nodes.c.outputs,
+            "runHash",
+            projects_nodes.c.run_hash,
+            "state",
+            projects_nodes.c.state,
+            "bootOptions",
+            projects_nodes.c.boot_options,
+        )
+    )
+
+    return (
+        sa.select(
+            projects_nodes.c.project_uuid,
+            sa.func.json_object_agg(projects_nodes.c.node_id, workbench_obj).label("workbench"),
+        )
+        .select_from(projects_nodes.join(projects, projects_nodes.c.project_uuid == projects.c.uuid))
+        .where(projects.c.uuid == project_id)
+        .group_by(projects_nodes.c.project_uuid)
+        .subquery()
+    )
 
 
 @dataclass(frozen=True, kw_only=True)

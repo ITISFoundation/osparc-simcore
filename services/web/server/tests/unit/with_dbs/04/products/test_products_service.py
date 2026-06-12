@@ -22,7 +22,6 @@ from simcore_service_webserver.products.errors import (
     MissingStripeConfigError,
     ProductNotFoundError,
     ProductPriceNotDefinedError,
-    ProductTemplateNotFoundError,
 )
 from simcore_service_webserver.products.models import Product
 
@@ -147,12 +146,6 @@ async def test_get_product_stripe_info_with_repo_faking_data(default_product_nam
 
     stripe_info = await products_service.get_product_stripe_info(app, product_name=default_product_name)
     assert stripe_info == expected_stripe_info
-
-
-async def test_get_template_content(app: web.Application):
-    template_name = "some_template"
-    with pytest.raises(ProductTemplateNotFoundError):
-        await _service.get_template_content(app, template_name=template_name)
 
 
 async def test_auto_create_products_groups(app: web.Application):
