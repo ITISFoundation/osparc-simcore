@@ -30,7 +30,7 @@ folder that owns a cohesive piece of functionality and is structured in well-def
 
 ```python
 # application.py
-def create_application(tracing_config) -> web.Application:
+def create_application() -> web.Application:
     app = create_safe_application()
     setup_settings(app)          # assemble + freeze settings
     # ... setup_<domain>(app) for each enabled plugin
@@ -294,7 +294,7 @@ These strategies apply when a cycle exists that **cannot** be resolved by the th
 
 ### 1. Restore Module Purity (Almost Always Correct)
 - Check whether the cycle passes through `errors.py` or `models.py` that imported a service module.
-  If so, remove the service import from the leaf module — this is a design rule violation to fix.
+  If so, remove the service import from the *leaf* module — this is a design rule violation to fix.
 - Check whether the service facade (`<domain>_service.py`) is being imported only for a type or
   exception. If so, move that symbol to `errors.py` or `models.py` and import from there.
 - **Benefit:** Fixes root cause; no new abstractions needed.
@@ -304,10 +304,6 @@ These strategies apply when a cycle exists that **cannot** be resolved by the th
 - **Example:** `from typing import TYPE_CHECKING; if TYPE_CHECKING: from ..other_domain import SomeType`
 - **Benefit:** Type hints available to editor/mypy; no runtime import.
 
-### 3. Lazy Imports (Temporary Only)
-- If a genuine runtime mutual dependency exists, defer import to function body: `from ..other import x  # noqa: PLC0415`
-- **Must:** Document in "Known Design Debt" why the cycle cannot be resolved with strategies 1–2.
-- **Drawback:** Masks the structural problem; requires a proper fix within one sprint.
 
 ---
 
