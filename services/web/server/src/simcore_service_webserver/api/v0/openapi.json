@@ -14878,6 +14878,10 @@
         ],
         "title": "BootOption"
       },
+      "BootOptions": {
+        "additionalProperties": true,
+        "type": "object"
+      },
       "CatalogLatestServiceGet": {
         "properties": {
           "key": {
@@ -23252,7 +23256,7 @@
           },
           "serviceState": {
             "$ref": "#/components/schemas/ServiceState",
-            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start\n"
+            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start"
           },
           "serviceMessage": {
             "anyOf": [
@@ -23270,6 +23274,11 @@
             "type": "string",
             "title": "Userid",
             "description": "the user that started the service"
+          },
+          "productName": {
+            "type": "string",
+            "title": "Productname",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -23281,7 +23290,8 @@
           "serviceHost",
           "servicePort",
           "serviceState",
-          "userId"
+          "userId",
+          "productName"
         ],
         "title": "NodeGet"
       },
@@ -23429,14 +23439,12 @@
           "bootOptions": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/BootOptions"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Bootoptions"
+            ]
           },
           "outputs": {
             "anyOf": [
@@ -23462,8 +23470,7 @@
               "pattern": "^[-_a-zA-Z0-9]+$"
             },
             "type": "array",
-            "title": "Port Keys",
-            "default": []
+            "title": "Port Keys"
           }
         },
         "type": "object",
@@ -27207,6 +27214,11 @@
             "title": "Is Collaborative",
             "description": "True if service allows collaboration (multi-tenant access)",
             "default": false
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -27218,7 +27230,8 @@
           "service_uuid",
           "service_host",
           "service_port",
-          "service_state"
+          "service_state",
+          "product_name"
         ],
         "title": "RunningDynamicServiceDetails"
       },

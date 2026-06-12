@@ -375,6 +375,15 @@
             }
           },
           {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
+            }
+          },
+          {
             "name": "service_basepath",
             "in": "query",
             "required": false,
