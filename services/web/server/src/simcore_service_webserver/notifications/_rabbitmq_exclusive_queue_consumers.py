@@ -28,14 +28,16 @@ from simcore_sdk.node_ports_common.exceptions import ProjectNotFoundError
 
 from ..projects import _nodes_service, _projects_service
 from ..rabbitmq import get_rabbitmq_client
+from ..socketio.constants import (
+    SOCKET_IO_EVENT,
+    SOCKET_IO_LOG_EVENT,
+    SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
+)
 from ..socketio.models import (
     WebSocketNodeProgress,
     WebSocketProjectProgress,
 )
 from ..socketio.socketio_service import (
-    SOCKET_IO_EVENT,
-    SOCKET_IO_LOG_EVENT,
-    SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
     send_message_to_project_room,
     send_message_to_standard_group,
     send_message_to_user,

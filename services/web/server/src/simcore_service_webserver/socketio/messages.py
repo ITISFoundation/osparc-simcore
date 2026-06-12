@@ -3,7 +3,6 @@ This module takes care of sending events to the connected webclient through the 
 """
 
 import logging
-from typing import Final
 
 from aiohttp.web import Application
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
@@ -18,20 +17,6 @@ from socketio import AsyncServer  # type: ignore[import-untyped]
 from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
-
-
-#
-# List of socket-io event names
-#
-SOCKET_IO_EVENT: Final[str] = "event"
-SOCKET_IO_HEARTBEAT_EVENT: Final[str] = "set_heartbeat_emit_interval"
-SOCKET_IO_LOG_EVENT: Final[str] = "logger"
-
-SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
-
-SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
-
-SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
 
 
 async def _safe_emit(
@@ -121,13 +106,6 @@ async def send_message_to_project_room(
 
 
 __all__: tuple[str, ...] = (
-    # constants
-    "SOCKET_IO_EVENT",
-    "SOCKET_IO_HEARTBEAT_EVENT",
-    "SOCKET_IO_LOG_EVENT",
-    "SOCKET_IO_NODE_UPDATED_EVENT",
-    "SOCKET_IO_PROJECT_UPDATED_EVENT",
-    "SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT",
     # functions
     "send_message_to_project_room",
     "send_message_to_standard_group",
