@@ -280,10 +280,10 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       const changedXUnits = {};
       for (const portId in xUnits) {
         if (xUnits[portId] === null) {
-          break;
+          continue;
         }
         if (!("x_unit" in nodeMD.inputs[portId])) {
-          break;
+          continue;
         }
         if (xUnits[portId] !== nodeMD.inputs[portId].x_unit) {
           changedXUnits[portId] = xUnits[portId];
@@ -295,6 +295,9 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     setInputsUnits: function(inputsUnits) {
       Object.keys(inputsUnits).forEach(portId => {
         const item = this._form.getControl(portId);
+        if (!item) {
+          return;
+        }
         this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(inputsUnits[portId]).unitPrefix);
       });
     },
@@ -365,12 +368,27 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     },
 
     __switchPrefix: function(item, oldPrefix, newPrefix) {
+      const multiplier = osparc.utils.Units.getMultiplier(oldPrefix, newPrefix);
       let newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
       item.unitPrefix = newPrefix;
       if ("type" in item && item.type !== "integer") {
         newValue = String(newValue);
       }
-      item.setValue(newValue);
+      // scale the numeric range (e.g. integer Spinner min/max) so it stays consistent with the new unit
+      if (typeof item.getMaximum === "function" && typeof item.setMaximum === "function") {
+        const oldMax = item.getMaximum();
+        const oldMin = item.getMinimum();
+        const newMax = Math.ceil(oldMax * multiplier);
+        const newMin = Math.floor(oldMin * multiplier);
+        // widen the range first so setValue is not clamped, then apply the final scaled range
+        item.setMaximum(Math.max(oldMax, newMax));
+        item.setMinimum(Math.min(oldMin, newMin));
+        item.setValue(newValue);
+        item.setMaximum(newMax);
+        item.setMinimum(newMin);
+      } else {
+        item.setValue(newValue);
+      }
       this.self().updateUnitLabelPrefix(item);
       this.fireDataEvent("unitChanged", {
         portId: item.key,

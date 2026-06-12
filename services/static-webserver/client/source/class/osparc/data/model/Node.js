@@ -1556,10 +1556,14 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           }
           case "inputsUnits": {
-            // this is never transmitted by the frontend
             const updatedPortKey = path.split("/")[4];
             const currentInputUnits = this.__getInputUnits() || {};
-            currentInputUnits[updatedPortKey] = value;
+            if (updatedPortKey === undefined) {
+              // the whole inputsUnits object was added/replaced
+              Object.assign(currentInputUnits, value);
+            } else {
+              currentInputUnits[updatedPortKey] = value;
+            }
             this.__setInputUnits(currentInputUnits);
             break;
           }
@@ -1630,7 +1634,7 @@ qx.Class.define("osparc.data.model.Node", {
         version: this.getVersion(),
         label: this.getLabel(),
         inputs: this.__getInputData(),
-        inputsUnits: this.__getInputUnits(), // this is not working
+        inputsUnits: this.__getInputUnits(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()
