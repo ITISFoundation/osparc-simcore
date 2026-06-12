@@ -23,6 +23,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
+    WORKBENCH_NODE_ALIAS_TO_COLUMN,
     ProjectNode,
     ProjectNodeCreate,
 )
@@ -110,7 +111,9 @@ async def _prepare_project_copy(
 
     copy_project_nodes_coro = None
     if len(nodes_map) > 0:
-        copy_project_nodes_coro = _copy_project_nodes_from_source_project(app, source_project, nodes_map)
+        copy_project_nodes_coro = _copy_project_nodes_from_source_project(
+            app, source_project, nodes_map, clean_output_data=(deep_copy is False)
+        )
 
     copy_file_coro = None
     if deep_copy and len(nodes_map) > 0:
@@ -126,15 +129,23 @@ async def _prepare_project_copy(
     return new_project, copy_project_nodes_coro, copy_file_coro
 
 
+# Fields to clear when copying without data (snake_case names matching ProjectNodeCreate)
+_NODE_FIELDS_TO_CLEAN_ON_COPY = {"outputs", "progress", "run_hash"}
+
+
 async def _copy_project_nodes_from_source_project(
     app: web.Application,
     source_project: ProjectDict,
     nodes_map: NodesMap,
+    *,
+    clean_output_data: bool = False,
 ) -> dict[NodeID, ProjectNodeCreate]:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     def _mapped_node_id(node: ProjectNode) -> NodeID:
         return NodeID(nodes_map[f"{node.node_id}"])
+
+    valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
     return {
         _mapped_node_id(node): ProjectNodeCreate(
@@ -142,7 +153,7 @@ async def _copy_project_nodes_from_source_project(
             **{
                 k: v
                 for k, v in node.model_dump().items()
-                if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
+                if k in valid_fields and not (clean_output_data and k in _NODE_FIELDS_TO_CLEAN_ON_COPY)
             },
         )
         for node in await db.list_project_nodes(ProjectID(source_project["uuid"]))
@@ -220,20 +231,23 @@ async def _compose_project_data(
                 new_project[key] = non_null_value
     else:
         # when predefined_project is ProjectCreateNew
-        project_nodes = {
-            NodeID(node_id): ProjectNodeCreate(
-                node_id=NodeID(node_id),
-                required_resources=jsonable_encoder(
-                    await catalog_service.get_service_resources(
-                        app, user_id, node_data["key"], node_data["version"], product_name
-                    )
-                ),
-                key=node_data.get("key"),
-                version=node_data.get("version"),
-                label=node_data.get("label"),
+        # when predefined_project is ProjectCreateNew
+        # Convert workbench JSON (camelCase aliases) to ProjectNodeCreate fields (snake_case columns)
+        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+        project_nodes = {}
+        for node_id, node_data in predefined_project.get("workbench", {}).items():
+            create_kwargs = {
+                WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
+                for k, v in node_data.items()
+                if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
+            }
+            create_kwargs["required_resources"] = jsonable_encoder(
+                await catalog_service.get_service_resources(
+                    app, user_id, node_data["key"], node_data["version"], product_name
+                )
             )
-            for node_id, node_data in predefined_project.get("workbench", {}).items()
-        }
+            project_nodes[NodeID(node_id)] = ProjectNodeCreate(node_id=NodeID(node_id), **create_kwargs)
 
         new_project = predefined_project
 

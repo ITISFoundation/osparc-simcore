@@ -13,7 +13,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Final
 
-from playwright.sync_api import Error as PlaywrightError
+from _tip_steps import (
+    raise_if_button_spinner_running,
+    run_optimization_and_load_analysis,
+    set_fast_optimization_settings,
+    wait_and_select_target_tissue,
+)
 from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
@@ -27,7 +32,7 @@ from pytest_simcore.helpers.playwright import (
     expected_service_running,
     wait_for_service_running,
 )
-from tenacity import RetryError, retry, stop_after_delay, wait_fixed
+from tenacity import retry, stop_after_delay, wait_fixed
 
 _OUTER_EXPECT_TIMEOUT_RATIO: Final[float] = 1.1
 _EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
@@ -126,34 +131,16 @@ def _run_electrode_selector_step(
 
 
 @retry(
-    stop=stop_after_delay(_JLAB_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(10),
-    reraise=True,
-)
-def _wait_for_optimization_complete(run_button) -> None:
-    if not run_button.is_enabled():
-        msg = f"Optimization not finished yet: {run_button=}"
-        raise ValueError(msg)
-
-
-@retry(
     stop=stop_after_delay(_JLAB_EXPORTING_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(10),
     reraise=True,
 )
 def _wait_for_export_complete(button) -> None:
     """Wait for an export button to finish by checking the fa-spinner icon."""
-    try:
-        icon_class = button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Export button icon not found — export likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Export still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(button, description="Export")
 
 
-def _run_classic_ti_step(  # noqa: PLR0915
+def _run_classic_ti_step(
     params: _ServiceStepParams,
     node_id: str,
     log_ctx: SimpleNamespace,
@@ -178,23 +165,7 @@ def _run_classic_ti_step(  # noqa: PLR0915
     restartable_jlab_websocket = RobustWebSocket(params.page, ws_info.value)
 
     with log_context(logging.INFO, "Wait for UI to load"):
-        target_tissue_label = ti_iframe.get_by_text("Target tissue:")
-        expect(target_tissue_label).to_be_visible(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-
-    with log_context(logging.INFO, "Select Target tissue"):
-        target_tissue_select = ti_iframe.get_by_label("Target tissue")
-        expect(target_tissue_select).to_be_visible()
-        # Pick the first non-empty option
-        options = target_tissue_select.locator("option").all()
-        selected = False
-        for option in options:
-            value = option.get_attribute("value") or ""
-            if value.strip():
-                target_tissue_select.select_option(value=value)
-                logging.info("Selected target tissue: %s", option.inner_text())
-                selected = True
-                break
-        assert selected, "No non-empty target tissue option found"
+        wait_and_select_target_tissue(ti_iframe, label_timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
 
     if params.is_product_lite:
         with log_context(logging.INFO, "Check species selector has only 2 options", logger=log_ctx.logger):
@@ -204,31 +175,19 @@ def _run_classic_ti_step(  # noqa: PLR0915
             expect(options.nth(0)).to_have_attribute("value", "Human - MIDA anisotropic")
             expect(options.nth(1)).to_have_attribute("value", "Mouse")
 
-    with log_context(logging.INFO, "Run optimization", logger=log_ctx.logger) as ctx2:
-        run_button = ti_iframe.get_by_role("button", name="Run Optimization")
-        run_button.click()
-        try:
-            expect(run_button).to_be_disabled(timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME)
-            _wait_for_optimization_complete(run_button)
-            ctx2.logger.info("Optimization finished!")
-        except RetryError as e:
-            last_exc = e.last_attempt.exception()
-            ctx2.logger.warning("Optimization did not finish in time: %s", f"{last_exc}")
+    set_fast_optimization_settings(ti_iframe)
+
+    with log_context(logging.INFO, "Run optimization and load analysis", logger=log_ctx.logger):
+        run_optimization_and_load_analysis(
+            ti_iframe,
+            click_timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME,
+            optimization_timeout=_JLAB_RUN_OPTIMIZATION_MAX_TIME,
+            optimization_start_timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME,
+            analysis_timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME,
+            result_timeout=_JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME,
+        )
 
     with log_context(logging.INFO, "Create report", logger=log_ctx.logger):
-        with log_context(
-            logging.INFO,
-            f"Click button - `Load Analysis` and wait for {_JLAB_REPORTING_MAX_TIME}",
-        ):
-            ti_iframe.get_by_role("button", name="Load Analysis").click()
-            params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-        with log_context(
-            logging.INFO,
-            f"Click button - `Load` and wait for {_JLAB_REPORTING_MAX_TIME}",
-        ):
-            ti_iframe.get_by_role("button", name="Load").nth(2).click()
-            params.page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-
         if params.is_product_lite:
             assert (
                 ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).get_attribute("disabled") is not None

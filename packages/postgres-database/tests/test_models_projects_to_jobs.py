@@ -67,7 +67,7 @@ def _prepare_data(
 
     if default_values:
         for col, value in default_values.items():
-            prepared_params.setdefault(col, value)
+            prepared_params.setdefault(col, json.dumps(value) if isinstance(value, dict) else value)
 
     return prepared_params
 

@@ -13,6 +13,12 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
+from _tip_steps import (
+    raise_if_button_spinner_running,
+    run_optimization_and_load_analysis,
+    set_fast_optimization_settings,
+    wait_and_select_target_tissue,
+)
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
@@ -156,14 +162,7 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
 )
 def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: FrameLocator) -> None:
     _log_simulation_progress(simulator_iframe)
-    try:
-        icon_class = setup_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Setup button icon not found — simulation likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(setup_button, description="Simulation")
 
 
 @retry(
@@ -173,14 +172,7 @@ def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: Frame
 )
 def _wait_for_export_simulation_results(export_button: Locator) -> None:
     # Wait for the export to complete, spinner is on the button while exporting
-    try:
-        icon_class = export_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Export button icon not found — export likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation is being exported: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(export_button, description="Simulation export")
 
 
 def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
@@ -219,96 +211,25 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         _wait_for_export_simulation_results(export_button)
 
 
-@retry(
-    stop=stop_after_delay(_POST_PRO_RUN_OPTIMIZATION_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(60),
-    reraise=True,
-)
-def _wait_for_postpro_optimization_complete(run_optimization_button: Locator) -> None:
-    try:
-        icon_class = run_optimization_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Run Optimization button icon not found — optimization likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Post-pro optimization still running: {icon_class=}"
-        raise ValueError(msg)
-
-
-@retry(
-    stop=stop_after_delay(_POST_PRO_LOAD_ANALYSIS_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(60),
-    reraise=True,
-)
-def _wait_for_postpro_analysis_load(run_optimization_button: Locator) -> None:
-    try:
-        icon_class = run_optimization_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Load Analysis button icon not found — analysis likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Post-pro analysis still running: {icon_class=}"
-        raise ValueError(msg)
-
-
-@retry(
-    stop=stop_after_delay(_POST_PRO_LOAD_RESULT_MAX_TIME / 1000),  # seconds
-    wait=wait_fixed(10),
-    reraise=True,
-)
-def _wait_for_postpro_result_load(load_result_button: Locator) -> None:
-    try:
-        icon_class = load_result_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Load button icon not found — result likely loaded")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Result still loading: {icon_class=}"
-        raise ValueError(msg)
-
-
 def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Run TI and generate report"):
-        with log_context(logging.INFO, "Wait for UI to load"):
-            target_tissue_label = ti_postpro_iframe.get_by_text("Target tissue:")
-            expect(target_tissue_label).to_be_visible(timeout=_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME)
+        wait_and_select_target_tissue(
+            ti_postpro_iframe,
+            label_timeout=_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+            select_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
+        )
 
-        with log_context(logging.INFO, "Select Target tissue"):
-            target_tissue_select = ti_postpro_iframe.get_by_label("Target tissue")
-            expect(target_tissue_select).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-            # Pick the first non-empty option
-            options = target_tissue_select.locator("option").all()
-            selected = False
-            for option in options:
-                value = option.get_attribute("value") or ""
-                if value.strip():
-                    target_tissue_select.select_option(value=value)
-                    logging.info("Selected target tissue: %s", option.inner_text())
-                    selected = True
-                    break
-            assert selected, "No non-empty target tissue option found"
+        # make it faster
+        set_fast_optimization_settings(ti_postpro_iframe)
 
-        with log_context(logging.INFO, "Run Optimization"):
-            run_optimization_button = ti_postpro_iframe.get_by_role("button", name="Run Optimization")
-            run_optimization_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for optimization to complete"):
-            _wait_for_postpro_optimization_complete(run_optimization_button)
-
-        with log_context(logging.INFO, "Load Analysis"):
-            load_analysis_button = ti_postpro_iframe.get_by_role("button", name="Load Analysis")
-            load_analysis_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for analysis to be loaded"):
-            _wait_for_postpro_analysis_load(load_analysis_button)
-
-        with log_context(logging.INFO, "Load first result"):
-            # nth(0) is the Settings "Load" button at the top; nth(1) might be Load Analysis, so go with nth(2)
-            load_result_button = ti_postpro_iframe.get_by_role("button", name="Load", exact=True).nth(2)
-            load_result_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for result to load"):
-            _wait_for_postpro_result_load(load_result_button)
+        run_optimization_and_load_analysis(
+            ti_postpro_iframe,
+            click_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
+            optimization_timeout=_POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+            optimization_start_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
+            analysis_timeout=_POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+            result_timeout=_POST_PRO_LOAD_RESULT_MAX_TIME,
+        )
 
         with log_context(
             logging.INFO,
