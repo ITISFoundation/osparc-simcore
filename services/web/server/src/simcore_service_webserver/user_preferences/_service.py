@@ -27,6 +27,7 @@ from ._models import (
     get_preference_name,
 )
 from ._repository import UserPreferencesRepository
+from .errors import FrontendUserPreferenceIsNotDefinedError
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
 
@@ -107,8 +108,6 @@ async def set_frontend_user_preference(
     frontend_preference_identifier: PreferenceIdentifier,
     value: Any,
 ) -> None:
-    from ..users.errors import FrontendUserPreferenceIsNotDefinedError  # noqa: PLC0415
-
     try:
         preference_name: PreferenceName = get_preference_name(frontend_preference_identifier)
     except KeyError as e:

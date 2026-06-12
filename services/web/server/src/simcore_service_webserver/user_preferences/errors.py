@@ -1,11 +1,5 @@
 """Domain exceptions for user_preferences."""
 
-__all__: tuple[str, ...] = (
-    # exceptions
-    "CouldNotCreateOrUpdateUserPreferenceError",
-    "FrontendUserPreferenceIsNotDefinedError",
-)
-
 
 class UserPreferencesError(Exception):
     """Base exception for user_preferences domain."""
