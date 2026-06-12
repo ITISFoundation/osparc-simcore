@@ -349,17 +349,6 @@ class Product(BaseModel):
             exclude_unset=True,
         )
 
-    def get_template_name_for(self, filename: str) -> str | None:
-        """Checks for field marked with 'x_template_name' that fits the argument"""
-        template_name = filename.removesuffix(".jinja2")
-        for name, field in self.__class__.model_fields.items():
-            if (
-                field.json_schema_extra and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
-            ):
-                template_name_attribute: str = getattr(self, name)
-                return template_name_attribute
-        return None
-
 
 class ProductBaseUrl(BaseModel):
     scheme: str
