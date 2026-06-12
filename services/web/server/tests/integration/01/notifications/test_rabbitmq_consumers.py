@@ -267,7 +267,7 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
 
     """
     mocked_send_messages = mocker.patch(
-        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_message_to_user",
+        "simcore_service_webserver.socketio.socketio_service.send_message_to_user",
         autospec=True,
     )
 
