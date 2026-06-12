@@ -1,4 +1,5 @@
 import logging
+import math
 from collections.abc import AsyncGenerator, Callable
 from typing import Annotated, TypeVar, cast
 
@@ -10,6 +11,8 @@ from ...modules.db.repositories import BaseRepository
 
 logger = logging.getLogger(__name__)
 
+_POOL_UTILIZATION_WARNING_RATIO = 0.9
+
 
 RepoType = TypeVar("RepoType", bound=BaseRepository)
 
@@ -18,24 +21,45 @@ def _get_db_engine(request: Request) -> AsyncEngine:
     return cast(AsyncEngine, request.app.state.engine)
 
 
-def get_base_repository(engine: AsyncEngine, repo_type: type[RepoType]) -> RepoType:
+def _pool_capacity_metrics(engine: AsyncEngine) -> tuple[int, int, int, float]:
+    in_use = engine.pool.checkedout()  # type: ignore # connections in use
+    pool_size = engine.pool.size()  # type: ignore # configured pool size
+    max_overflow = max(int(getattr(engine.pool, "_max_overflow", 0)), 0)
+
+    total_capacity = pool_size + max_overflow
+    warning_threshold = math.ceil(total_capacity * _POOL_UTILIZATION_WARNING_RATIO)
+    utilization = in_use / total_capacity if total_capacity > 0 else 0.0
+    return in_use, warning_threshold, total_capacity, utilization
+
+
+def _warns_pool_near_limits(engine: AsyncEngine) -> bool:
+    in_use, warning_threshold, total_capacity, _ = _pool_capacity_metrics(engine)
+    return total_capacity > 0 and in_use >= warning_threshold
+
+
+def get_base_repository[RepoType: BaseRepository](engine: AsyncEngine, repo_type: type[RepoType]) -> RepoType:
     # NOTE: 2 different ideas were tried here with not so good
     # 1st one was acquiring a connection per repository which lead to the following issue https://github.com/ITISFoundation/osparc-simcore/pull/1966
     # 2nd one was acquiring a connection per request which works but blocks the director-v2 responsiveness once
     # the max amount of connections is reached
     # now the current solution is to acquire connection when needed.
 
-    # Get pool metrics
-    in_use = engine.pool.checkedout()  # type: ignore # connections in use
-    total_size = engine.pool.size()  # type: ignore # current total connections
-
-    if (total_size > 1) and (in_use > (total_size - 2)):
-        logger.warning("Database connection pool near limits: %s", engine.pool.status())
+    if _warns_pool_near_limits(engine):
+        in_use, warning_threshold, total_capacity, utilization = _pool_capacity_metrics(engine)
+        logger.warning(
+            "Database connection pool near limits: checked_out=%s threshold=%s total_capacity=%s "
+            "utilization=%.1f%% status=%s",
+            in_use,
+            warning_threshold,
+            total_capacity,
+            utilization * 100,
+            engine.pool.status(),
+        )
 
     return repo_type(db_engine=engine)
 
 
-def get_repository(
+def get_repository[RepoType: BaseRepository](
     repo_type: type[RepoType],
 ) -> Callable[..., AsyncGenerator[RepoType]]:
     async def _get_repo(
