@@ -30,6 +30,7 @@ from servicelib.logging_utils import log_context
 from servicelib.tracing import traced
 from settings_library.redis import RedisDatabase
 
+from ._reconciliation import run_reconciliation_passes
 from .core.settings import get_application_settings
 from .dsm import get_dsm_provider
 from .modules.redis import get_redis_client_manager
@@ -48,6 +49,7 @@ async def dsm_cleaner_task(app: FastAPI) -> None:
             SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
         )
         await simcore_s3_dsm.clean_expired_uploads()
+        await run_reconciliation_passes(app)
 
 
 def setup_dsm_cleaner(app: FastAPI) -> None:

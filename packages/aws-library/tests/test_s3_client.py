@@ -224,7 +224,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
         ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
         assert ongoing_multipart_uploads
         assert len(ongoing_multipart_uploads) == 1
-        ongoing_upload_id, ongoing_object_key = ongoing_multipart_uploads[0]
+        ongoing_upload_id, ongoing_object_key, _ = ongoing_multipart_uploads[0]
         assert ongoing_upload_id == upload_links.upload_id
         assert ongoing_object_key == object_key
 
@@ -243,7 +243,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
         ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
         assert ongoing_multipart_uploads
         assert len(ongoing_multipart_uploads) == 1
-        ongoing_upload_id, ongoing_object_key = ongoing_multipart_uploads[0]
+        ongoing_upload_id, ongoing_object_key, _ = ongoing_multipart_uploads[0]
         assert ongoing_upload_id == upload_links.upload_id
         assert ongoing_object_key == object_key
 
@@ -651,7 +651,7 @@ async def test_list_objects_pagination(
     assert len(first_level_files) == total_num_files
 
     # now we will fetch the file objects according to the given limit
-    num_fetch = int(round(total_num_files / limit + 0.5))
+    num_fetch = round(total_num_files / limit + 0.5)
     assert num_fetch >= 1
     start_after_key = None
     for i in range(num_fetch - 1):
@@ -1338,7 +1338,7 @@ async def test_break_completion_of_multipart_upload(
     ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
     assert ongoing_multipart_uploads
     assert len(ongoing_multipart_uploads) == 1
-    ongoing_upload_id, ongoing_file_id = ongoing_multipart_uploads[0]
+    ongoing_upload_id, ongoing_file_id, _ = ongoing_multipart_uploads[0]
     assert ongoing_upload_id == upload_links.upload_id
     assert ongoing_file_id == object_key
 

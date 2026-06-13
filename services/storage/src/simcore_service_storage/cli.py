@@ -1,7 +1,11 @@
+import asyncio
 import logging
 import os
+from typing import Annotated
 
 import typer
+from asgi_lifespan import LifespanManager
+from servicelib.tracing import TracingConfig
 from settings_library.postgres import PostgresSettings
 from settings_library.s3 import S3Settings
 from settings_library.utils_cli import (
@@ -10,7 +14,9 @@ from settings_library.utils_cli import (
     print_as_envfile,
 )
 
+from . import _reconciliation as recon
 from ._meta import PROJECT_NAME, __version__
+from .core.application import create_app
 from .core.settings import ApplicationSettings
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
@@ -49,8 +55,8 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
     # The idea here is to have a command that can generate a **valid** `.env` file that can be used
     # to initialized the app. For that reason we fill required fields of the `ApplicationSettings` with
     # "fake" but valid values (e.g. generating a password or adding tags as `replace-with-api-key).
-    # Nonetheless, if the caller of this CLI has already some **valid** env vars in the environment we want to use them ...
-    # and that is why we use `os.environ`.
+    # Nonetheless, if the caller of this CLI has already some **valid** env vars
+    # in the environment we want to use them ... and that is why we use `os.environ`.
 
     settings = ApplicationSettings.create_from_envs(
         STORAGE_POSTGRES=os.environ.get(
@@ -81,3 +87,41 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
         show_secrets=True,
         exclude_unset=minimal,
     )
+
+
+@main.command()
+def reconcile(
+    *,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run/--execute", help="Report what would be cleaned without actually deleting.")
+    ] = True,
+) -> None:
+    """One-shot ops command to run one full reconciliation v2 sweep.
+
+    This command bypasses the periodic tick cursor and runs a full in-process
+    pass using one consistent pass snapshot.
+    """
+    if dry_run:
+        typer.secho("[DRY-RUN] No changes will be made.", fg=typer.colors.CYAN)
+
+    async def _run() -> recon.ReconciliationCounts:
+        settings = ApplicationSettings.create_from_envs()
+        tracing_config = TracingConfig.create(tracing_settings=None, service_name="storage-cli")
+        app = create_app(settings, tracing_config=tracing_config)
+        async with LifespanManager(app):
+            return await recon.run_reconciliation_pass(app, force=True, dry_run=dry_run)
+
+    counts = asyncio.run(_run())
+
+    prefix = "[DRY-RUN] " if dry_run else ""
+    action_str = "found" if dry_run else "removed"
+    color = typer.colors.YELLOW if dry_run else typer.colors.BRIGHT_RED
+
+    for to_display in [
+        f"{prefix}Reconciliation complete:",
+        f"  Unreachable rows {action_str}:        {counts.unreachable_removed}",
+        f"  Dangling rows {action_str}:           {counts.dangling_removed}",
+        f"  Orphan project prefixes {action_str}: {counts.orphan_prefixes_removed}",
+        f"  Total {action_str}:                   {counts.total_removed}",
+    ]:
+        typer.secho(to_display, fg=color)
