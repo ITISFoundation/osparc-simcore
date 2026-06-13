@@ -1,5 +1,5 @@
 # mypy: disable-error-code=truthy-function
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal
 
 from pydantic import ConfigDict, Field
 from pydantic.config import JsonDict
@@ -9,7 +9,7 @@ from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
 from ..groups import GroupID
 from ..projects import ProjectID
-from ..projects_nodes import InputID, InputsDict, PartialNode
+from ..projects_nodes import InputID, InputsDict, PartialNode, UnitStr
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_base import ServiceKeyVersion
@@ -28,7 +28,7 @@ class NodeCreate(InputSchemaWithoutCamelCase):
     service_id: str | None = None
 
 
-BootOptions: TypeAlias = dict
+type BootOptions = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
@@ -45,6 +45,10 @@ class NodePatch(InputSchemaWithoutCamelCase):
     inputs_required: Annotated[
         list[InputID] | None,
         Field(alias="inputsRequired"),
+    ] = None
+    inputs_units: Annotated[
+        dict[InputID, UnitStr] | None,
+        Field(alias="inputsUnits"),
     ] = None
     input_nodes: Annotated[
         list[NodeID] | None,
@@ -106,7 +110,15 @@ class NodeGet(OutputSchema):
     )
     service_state: ServiceState = Field(
         ...,
-        description="the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start\n",
+        description=(
+            "the service state"
+            " * 'pending' - The service is waiting for resources to start"
+            " * 'pulling' - The service is being pulled from the registry"
+            " * 'starting' - The service is starting"
+            " * 'running' - The service is running"
+            " * 'complete' - The service completed"
+            " * 'failed' - The service failed to start\n"
+        ),
     )
     service_message: str | None = Field(
         None,
@@ -196,7 +208,7 @@ class NodeOutputs(InputSchemaWithoutCamelCase):
 
 
 class NodeRetrieve(InputSchemaWithoutCamelCase):
-    port_keys: list[ServicePortKey] = []
+    port_keys: Annotated[list[ServicePortKey], Field(default_factory=list)]
 
 
 class NodeRetrieved(RetrieveDataOut):
