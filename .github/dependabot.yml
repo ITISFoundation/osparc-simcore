@@ -1,11 +1,28 @@
 version: 2
 updates:
+  # ── Python pip ──────────────────────────────────────────────────────────────
+  # This repo uses uv pip-compile: *.in → *.txt. Dependabot cannot safely edit
+  # the generated *.txt files. Version updates are therefore DISABLED
+  # (open-pull-requests-limit: 0). Security *alerts* still work because they
+  # use a separate internal limit.
+  #
+  # Security update workflow:
+  #   1. pip-audit CI workflow detects CVEs in _base.txt files.
+  #   2. Developer runs: make -C requirements audit-prod (to verify locally)
+  #   3. Developer applies fix: make -C requirements security-fix PKG=<pkg> VERSION=<constraint>
+  #      which updates requirements/constraints.txt and regenerates all *.txt files repo-wide.
+  #
+  # Cool-down / N-1 policy (for manual upgrades):
+  #   - Security:  no cool-down (apply immediately)
+  #   - Major:     30 days
+  #   - Minor:     14 days
+  #   - Patch:      7 days
   - package-ecosystem: pip
     directory: "/"
     schedule:
       interval: weekly
       time: "04:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0 # Disable version-update PRs; use pip-audit instead
     reviewers:
       - pcrespov
       - sanderegg
@@ -14,34 +31,84 @@ updates:
       - sanderegg
     labels:
       - t:maintenance
-    ignore:
-      - dependency-name: docker-compose
-        versions:
-          - 1.28.2
-          - 1.28.4
-          - 1.28.5
-          - 1.28.6
-          - 1.29.0
-          - 1.29.1
-      - dependency-name: idna
-        versions:
-          - "3.1"
-      - dependency-name: httpx
-        versions:
-          - 0.17.0
-      - dependency-name: openapi-core
-        versions:
-          - "> 0.12.0, < 1"
 
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  # Cool-down avoids adopting broken releases immediately.
+  # Security updates bypass cool-down automatically.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      # Check for updates to GitHub Actions every weekday
       interval: "weekly"
+      time: "04:00"
+      day: "monday"
+    cooldown:
+      default-days: 7 # patch lag: wait 1 week before proposing any update
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+    open-pull-requests-limit: 10
+    groups:
+      github-actions-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
     reviewers:
       - sanderegg
       - pcrespov
     assignees:
       - sanderegg
+    labels:
+      - t:maintenance
+
+  # ── Docker base images ──────────────────────────────────────────────────────
+  # Tracks python:X.Y-slim-bookworm and other base images across all service
+  # Dockerfiles. Cool-down avoids adopting freshly released Python patch builds
+  # before they are validated upstream.
+  - package-ecosystem: "docker"
+    directories:
+      - "/services/agent"
+      - "/services/api-server"
+      - "/services/autoscaling"
+      - "/services/catalog"
+      - "/services/clusters-keeper"
+      - "/services/dask-sidecar"
+      - "/services/datcore-adapter"
+      - "/services/director"
+      - "/services/director-v2"
+      - "/services/docker-api-proxy"
+      - "/services/dynamic-scheduler"
+      - "/services/dynamic-sidecar"
+      - "/services/efs-guardian"
+      - "/services/invitations"
+      - "/services/migration"
+      - "/services/notifications"
+      - "/services/payments"
+      - "/services/resource-usage-tracker"
+      - "/services/storage"
+      - "/services/web"
+      - "/packages/service-integration"
+    schedule:
+      interval: "weekly"
+      time: "04:00"
+      day: "monday"
+    cooldown:
+      default-days: 7
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+    open-pull-requests-limit: 10
+    groups:
+      docker-base-images:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+        group-by: dependency-name
+    reviewers:
+      - pcrespov
+      - sanderegg
+    assignees:
+      - pcrespov
     labels:
       - t:maintenance
