@@ -4656,7 +4656,7 @@ msgstr "TUTORIALES"
 
 #: osparc/dashboard/Dashboard.js
 msgid "APPS"
-msgstr "APLICACIONES"
+msgstr "APPS"
 
 #: osparc/dashboard/StudyBrowser.js
 msgid "Loading Projects..."
