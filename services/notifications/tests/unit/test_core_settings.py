@@ -4,7 +4,7 @@
 
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
 )
@@ -22,16 +22,6 @@ def test_valid_application_settings(mock_environment: EnvVarsDict):
     assert settings
 
     assert settings == ApplicationSettings.create_from_envs()
-
-
-_SMTP_PAYLOAD = {
-    "host": "mailpit",
-    "port": 1025,
-    "protocol": "UNENCRYPTED",
-    "domain": "osparc.io",
-    "extra_headers": {},
-    "local_parts": {"support": "support", "no_reply": "no-reply"},
-}
 
 
 def test_product_smtp_settings_rejects_disallowed_headers():
@@ -61,8 +51,6 @@ def test_product_smtp_settings_valid():
 
 
 def test_notifications_smtp_settings_dict_structure():
-    from pydantic import TypeAdapter
-
     raw = {
         "osparc": {
             "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},

@@ -35,9 +35,10 @@ class EmailChannelHandler(ChannelHandler):
         settings: ApplicationSettings,
     ) -> EmailContact:
         """Resolve a from_identity into a concrete EmailContact using product data."""
-        assert settings.NOTIFICATIONS_SMTP_SETTINGS  # nosec
+        smtp_settings_map = settings.NOTIFICATIONS_SMTP_SETTINGS
+        assert smtp_settings_map  # nosec
 
-        smtp_settings = settings.NOTIFICATIONS_SMTP_SETTINGS[product.name]
+        smtp_settings = smtp_settings_map[product.name]
         match from_identity:
             case SenderIdentity.SUPPORT:
                 return EmailContact(

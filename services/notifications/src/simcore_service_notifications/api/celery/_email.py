@@ -12,7 +12,7 @@ from models_library.products import ProductName
 from servicelib.logging_utils import log_context
 
 from ...clients.smtp import create_session
-from ...core.settings import ApplicationSettings
+from ...core.settings import ApplicationSettings, ProductSMTPSettings
 from ...services.email import add_attachments, compose_email
 
 _logger = logging.getLogger(__name__)
@@ -43,8 +43,9 @@ async def send_email_message_task(
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
         app_settings = ApplicationSettings.create_from_envs()
         assert app_settings.NOTIFICATIONS_SMTP_SETTINGS is not None  # nosec
+        smtp_settings_map: dict[str, ProductSMTPSettings] = app_settings.NOTIFICATIONS_SMTP_SETTINGS
 
-        product_smtp = app_settings.NOTIFICATIONS_SMTP_SETTINGS[product_name]
+        product_smtp = smtp_settings_map[product_name]
 
         async with create_session(settings=product_smtp.smtp_settings) as smtp:
             email_msg = compose_email(
