@@ -17,9 +17,9 @@ from ..projects._projects_service import (
 )
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
-from ..resource_manager.registry import RedisResourceRegistry
-from ..users import exceptions, users_service
-from ..users.exceptions import UserNotFoundError
+from ..resource_manager.resource_manager_service import RedisResourceRegistry
+from ..users import errors, users_service
+from ..users.errors import UserNotFoundError
 from ._core_utils import get_new_project_owner_gid, replace_current_owner
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 
@@ -42,7 +42,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     # recover user's primary_gid
     try:
         project_owner_primary_gid = await users_service.get_user_primary_group_id(app=app, user_id=user_id)
-    except exceptions.UserNotFoundError:
+    except errors.UserNotFoundError:
         _logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
             f"{user_id=}",

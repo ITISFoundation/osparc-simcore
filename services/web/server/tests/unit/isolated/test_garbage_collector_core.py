@@ -22,7 +22,7 @@ from simcore_service_webserver.garbage_collector._core_orphans import (
     remove_orphaned_services,
 )
 from simcore_service_webserver.resource_manager.registry import UserSession
-from simcore_service_webserver.users.exceptions import UserNotFoundError
+from simcore_service_webserver.users.errors import UserNotFoundError
 
 MODULE_GC_CORE_ORPHANS: Final[str] = "simcore_service_webserver.garbage_collector._core_orphans"
 

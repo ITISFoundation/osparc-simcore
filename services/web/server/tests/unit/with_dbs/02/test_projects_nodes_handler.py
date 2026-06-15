@@ -59,7 +59,7 @@ from simcore_service_webserver.projects._controller.nodes_rest import (
     _ProjectNodePreview,
 )
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.socketio.messages import SOCKET_IO_NODE_UPDATED_EVENT
+from simcore_service_webserver.socketio.constants import SOCKET_IO_NODE_UPDATED_EVENT
 from tenacity import (
     AsyncRetrying,
     RetryError,

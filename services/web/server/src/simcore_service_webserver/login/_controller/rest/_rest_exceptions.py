@@ -12,10 +12,10 @@ from ....exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ....groups import api as groups_service
+from ....groups import groups_service
 from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
-from ....users.exceptions import AlreadyPreRegisteredError
+from ....users.errors import AlreadyPreRegisteredError
 from ...constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_WRONG_PASSWORD,

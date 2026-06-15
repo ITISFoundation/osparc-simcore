@@ -42,7 +42,7 @@ from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.garbage_collector._tasks_core import _GC_TASK_NAME
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
 from simcore_service_webserver.groups._groups_service import create_standard_group
-from simcore_service_webserver.groups.api import add_user_in_group
+from simcore_service_webserver.groups.groups_service import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects import _projects_repository
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks

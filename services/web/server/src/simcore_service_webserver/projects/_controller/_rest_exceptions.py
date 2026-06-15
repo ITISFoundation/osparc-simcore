@@ -25,7 +25,7 @@ from ...exception_handling import (
 from ...exception_handling._base import ExceptionHandlersMap
 from ...folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ...resource_usage.errors import DefaultPricingPlanNotFoundError
-from ...users.exceptions import UserDefaultWalletNotFoundError
+from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletAccessForbiddenError, WalletNotEnoughCreditsError
 from ...workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from ..exceptions import (
