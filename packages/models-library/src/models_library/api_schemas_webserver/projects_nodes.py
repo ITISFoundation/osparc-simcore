@@ -1,6 +1,7 @@
 # mypy: disable-error-code=truthy-function
 from typing import Annotated, Any, Literal
 
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import ConfigDict, Field
 from pydantic.config import JsonDict
 
@@ -208,7 +209,7 @@ class NodeOutputs(InputSchemaWithoutCamelCase):
 
 
 class NodeRetrieve(InputSchemaWithoutCamelCase):
-    port_keys: Annotated[list[ServicePortKey], Field(default_factory=list)]
+    port_keys: Annotated[list[ServicePortKey], Field(default_factory=list)] = DEFAULT_FACTORY
 
 
 class NodeRetrieved(RetrieveDataOut):
