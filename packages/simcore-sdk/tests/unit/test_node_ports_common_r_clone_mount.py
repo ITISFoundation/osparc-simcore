@@ -24,7 +24,7 @@ from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
@@ -331,6 +331,7 @@ async def test_workflow(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
         remote_path=remote_path,
+        mount_s3_link=TypeAdapter(AnyUrl).validate_python(f"s3://{bucket_name}/{remote_path}"),
         node_id=node_id,
         index=index,
     )
@@ -371,6 +372,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
     docker_swarm: None,
     moto_server: None,
     r_clone_mount_manager: RCloneMountManager,
+    bucket_name: S3BucketName,
     node_id: NodeID,
     remote_path: StorageFileID,
     local_mount_path: Path,
@@ -381,6 +383,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
         remote_path=remote_path,
+        mount_s3_link=TypeAdapter(AnyUrl).validate_python(f"s3://{bucket_name}/{remote_path}"),
         node_id=node_id,
         index=index,
     )
@@ -453,6 +456,7 @@ async def test_refresh_path(
             local_mount_path=local,
             remote_type=MountRemoteType.S3,
             remote_path=remote,
+            mount_s3_link=TypeAdapter(AnyUrl).validate_python(f"s3://{bucket_name}/{remote}"),
             node_id=node_id,
             index=index,
         )

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Final
@@ -7,7 +8,7 @@ from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
 from models_library.projects_nodes_io import NodeID, StorageFileID
-from pydantic import NonNegativeInt
+from pydantic import AnyUrl, NonNegativeInt
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.r_clone import RCloneSettings
@@ -38,6 +39,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         mount_remote_type: MountRemoteType,
         *,
         remote_path: StorageFileID,
+        mount_s3_path: str,
         local_mount_path: Path,
         index: NonNegativeInt,
         delegate: DelegateInterface,
@@ -70,7 +72,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             local_mount_path=self.local_mount_path,
             index=self.index,
             r_clone_config_content=get_config_content(r_clone_settings, mount_remote_type),
-            remote_path=f"{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
+            remote_path=mount_s3_path,
             rc_user=self._rc_user,
             rc_password=self._rc_password,
             delegate=self.delegate,
@@ -181,6 +183,7 @@ class RCloneMountManager:
         node_id: NodeID,
         remote_type: MountRemoteType,
         remote_path: StorageFileID,
+        mount_s3_link: AnyUrl,
     ) -> None:
         with log_context(
             _logger,
@@ -198,6 +201,7 @@ class RCloneMountManager:
                 self.r_clone_settings,
                 remote_type,
                 remote_path=remote_path,
+                mount_s3_path=re.sub(r"^s3://", "", f"{mount_s3_link}"),
                 local_mount_path=local_mount_path,
                 index=index,
                 delegate=self.delegate,
