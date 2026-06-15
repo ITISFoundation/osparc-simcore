@@ -81,7 +81,7 @@ async def test_regression_progress_message_parser(
     mocker: MockerFixture, raw_data: bytes, expected_socket_message: SocketMessageDict
 ):
     send_message_to_project_room_mock = mocker.patch(
-        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_message_to_project_room",
+        "simcore_service_webserver.socketio.socketio_service.send_message_to_project_room",
         autospec=True,
     )
 

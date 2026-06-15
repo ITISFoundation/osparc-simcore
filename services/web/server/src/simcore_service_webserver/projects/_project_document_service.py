@@ -27,9 +27,8 @@ from ..redis import (
     get_redis_document_manager_client_sdk,
     get_redis_lock_manager_client_sdk,
 )
-from ..resource_manager.registry import get_registry
-from ..resource_manager.service import list_opened_project_ids
-from ..socketio._utils import get_socket_server
+from ..resource_manager.resource_manager_service import get_registry, list_opened_project_ids
+from ..socketio.socketio_service import get_socket_server
 from . import _projects_repository
 
 _logger = logging.getLogger(__name__)
@@ -156,11 +155,16 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                 else:
                     # Create a synthetic exception for this unexpected state
                     unexpected_state_error = RuntimeError(
-                        f"Project {project_uuid} has {len(room_sessions)} connected users but is not in Redis Resources table"
+                        f"Project {project_uuid} has {len(room_sessions)} connected users but is not in "
+                        "Redis Resources table"
                     )
                     _logger.error(
                         **create_troubleshooting_log_kwargs(
-                            user_error_msg=f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
+                            user_error_msg=(
+                                f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io"
+                                " room (This is not expected, as project resource is not in the Redis Resources table),"
+                                "  keeping document just in case"
+                            ),
                             error=unexpected_state_error,
                             error_context={
                                 "project_uuid": str(project_uuid),
@@ -169,7 +173,11 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                                 "connected_users_count": len(room_sessions),
                                 "room_sessions": room_sessions[:5],  # Limit to first 5 sessions for debugging
                             },
-                            tip="This indicates a potential race condition or inconsistency between the Redis Resources table and socketio room state. Check if the project was recently closed but users are still connected, or if there's a synchronization issue between services.",
+                            tip=(
+                                "This indicates a potential race condition or inconsistency between the Redis Resources"
+                                " table and socketio room state. Check if the project was recently closed but users are"
+                                "still connected, or if there's a synchronization issue between services."
+                            ),
                         )
                     )
                     continue
@@ -184,7 +192,10 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                             "project_room": project_room,
                             "key_str": key_str,
                         },
-                        tip="Check if socketio server is properly initialized and the room exists. This could indicate a socketio manager issue or invalid room format.",
+                        tip=(
+                            "Check if socketio server is properly initialized and the room exists. "
+                            "This could indicate a socketio manager issue or invalid room format."
+                        ),
                     )
                 )
                 continue

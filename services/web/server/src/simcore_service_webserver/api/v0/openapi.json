@@ -14878,6 +14878,10 @@
         ],
         "title": "BootOption"
       },
+      "BootOptions": {
+        "additionalProperties": true,
+        "type": "object"
+      },
       "CatalogLatestServiceGet": {
         "properties": {
           "key": {
@@ -23398,6 +23402,23 @@
             ],
             "title": "Inputsrequired"
           },
+          "inputsUnits": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputsunits"
+          },
           "inputNodes": {
             "anyOf": [
               {
@@ -23429,14 +23450,12 @@
           "bootOptions": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/BootOptions"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Bootoptions"
+            ]
           },
           "outputs": {
             "anyOf": [
@@ -23462,8 +23481,7 @@
               "pattern": "^[-_a-zA-Z0-9]+$"
             },
             "type": "array",
-            "title": "Port Keys",
-            "default": []
+            "title": "Port Keys"
           }
         },
         "type": "object",

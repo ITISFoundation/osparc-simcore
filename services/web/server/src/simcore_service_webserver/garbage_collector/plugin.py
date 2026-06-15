@@ -8,7 +8,7 @@ from ..application_setup import ModuleCategory, app_setup_func
 from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
 from ..redis import setup_redis
-from ..socketio.plugin import setup_socketio
+from ..socketio.socketio_service import setup_socketio
 from . import _tasks_api_keys, _tasks_core, _tasks_documents, _tasks_trash, _tasks_users
 from .settings import get_plugin_settings
 
