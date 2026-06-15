@@ -1278,7 +1278,7 @@ msgstr ""
 msgid "Convert to Standalone"
 msgstr ""
 
-#: osparc/dashboard/FolderButtonItem.js
+#: osparc/dashboard/WorkspaceButtonItem.js
 msgid "Restore"
 msgstr ""
 
@@ -1474,7 +1474,7 @@ msgstr ""
 msgid "New Plan"
 msgstr ""
 
-#: osparc/dashboard/FolderButtonItem.js
+#: osparc/dashboard/WorkspaceButtonItem.js
 msgid "Delete permanently"
 msgstr ""
 
@@ -1590,7 +1590,7 @@ msgstr ""
 msgid "Something went wrong while importing the study"
 msgstr ""
 
-#: osparc/dashboard/FolderButtonItem.js
+#: osparc/dashboard/WorkspaceButtonItem.js
 msgid "Are you sure you want to delete"
 msgstr ""
 
@@ -2430,7 +2430,7 @@ msgstr ""
 msgid "Last modified"
 msgstr ""
 
-#: osparc/dashboard/FolderButtonItem.js
+#: osparc/dashboard/WorkspaceButtonItem.js
 msgid "Deleted"
 msgstr ""
 
