@@ -23,6 +23,7 @@ from aiodocker.types import JSONObject
 from botocore.client import Config
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize, NonNegativeInt, TypeAdapter
@@ -227,6 +228,11 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
 def moto_server() -> Iterator[None]:
     server = ThreadedMotoServer()
     server.start()
@@ -415,6 +421,42 @@ async def test_refresh_path_with_no_tracked_mount(
 ):
     with pytest.raises(NoMountFoundForRemotePathError):
         await r_clone_mount_manager.refresh_path(remote_path=remote_path)
+
+
+@pytest.mark.parametrize(
+    "remote_path, expected_dir_to_refresh",
+    [
+        ("{project_id}/{node_id}/base-dir", ""),
+        ("{project_id}/{node_id}/base-dir/file.txt", ""),
+        ("{project_id}/{node_id}/base-dir/subdir/file.txt", "subdir"),
+        ("{project_id}/{node_id}/base-dir/subdir/nested/file.txt", "subdir/nested"),
+    ],
+)
+async def test_refresh_path_refreshes_containing_directory(
+    remote_path: str,
+    expected_dir_to_refresh: str,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    manager = object.__new__(RCloneMountManager)
+    tracked_mount = AsyncMock()
+    mount_id = cast(Any, "mount-id")
+    manager._tracked_mounts = {mount_id: tracked_mount}  # noqa: SLF001
+    manager._reverse_path_search = {  # noqa: SLF001
+        mount_id: TypeAdapter(StorageFileID).validate_python(f"{project_id}/{node_id}/base-dir")
+    }
+
+    await manager.refresh_path(  # type: ignore[misc]
+        remote_path=TypeAdapter(StorageFileID).validate_python(
+            remote_path.format(project_id=project_id, node_id=node_id)
+        ),
+        recursive=False,
+    )
+
+    tracked_mount.refresh_path.assert_awaited_once_with(
+        dir_to_refresh=expected_dir_to_refresh,
+        recursive=False,
+    )
 
 
 @pytest.mark.parametrize(

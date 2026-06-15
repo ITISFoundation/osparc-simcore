@@ -27,10 +27,7 @@ _MIN_STORAGE_PATH_PARTS: Final[int] = 3
 _TIMEOUT_REMOVAL: Final[timedelta] = timedelta(seconds=5)
 
 
-def _resolve_local_path_from_storage_id(
-    mounted_volumes: MountedVolumes,
-    storage_path: StorageFileID,
-) -> Path | None:
+def _resolve_local_path_from_storage_id(mounted_volumes: MountedVolumes, storage_path: StorageFileID) -> Path | None:
     """Maps a StorageFileID to a local disk path within mounted volumes.
 
     Only state volumes are resolved. Inputs and outputs are intentionally ignored:
@@ -127,7 +124,7 @@ async def _notify_path_change(
     Informs that a path inside S3 changed and that an action needs to be taken in the container.
     """
     try:
-        await get_r_clone_mount_manager(app).refresh_path(f"{Path(path).parent}", recursive=recursive)
+        await get_r_clone_mount_manager(app).refresh_path(path, recursive=recursive)
     except NoMountFoundForRemotePathError:
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
         match event_type:
