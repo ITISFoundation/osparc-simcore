@@ -84,7 +84,7 @@ class MessageService:
         messages = _prepare_celery_messages(
             message,
             product=product,
-            settings=settings,
+            settings=self.settings,
         )
 
         num_recipients = len(messages)
