@@ -1214,7 +1214,7 @@ msgstr ""
 msgid "Skip phone registration and send code via email"
 msgstr ""
 
-#: osparc/auth/ui/Login2FAValidationCodeView.js
+#: osparc/auth/ui/VerifyPhoneNumberView.js
 msgid "Invalid code"
 msgstr ""
 
@@ -4518,7 +4518,7 @@ msgstr ""
 msgid "Something went wrong"
 msgstr ""
 
-#: osparc/ui/message/FlashMessageOEC.js
+#. NO LONGER USED
 msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
 msgstr ""
 
@@ -4754,7 +4754,7 @@ msgstr ""
 msgid "Request Apps Access"
 msgstr ""
 
-#: osparc/dashboard/ResourceDetails.js
+#. NO LONGER USED
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
 msgstr ""
 
@@ -5278,7 +5278,7 @@ msgstr ""
 msgid "Edit title"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
+#: osparc/info/StudyLarge.js
 msgid "Edit description"
 msgstr ""
 
@@ -5298,11 +5298,11 @@ msgstr ""
 msgid "Template type updated, please reload"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
+#: osparc/info/StudyLarge.js
 msgid "Edit thumbnail"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
+#: osparc/info/StudyLarge.js
 msgid "Access"
 msgstr ""
 
@@ -5374,7 +5374,7 @@ msgstr ""
 msgid "Description only"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
+#. NO LONGER USED
 msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
 msgstr ""
 
@@ -5977,3 +5977,16 @@ msgstr ""
 #: osparc/desktop/wallets/WalletsList.js
 msgid "Preferred"
 msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Please describe what you were doing before the error (optional).\\nThis will help our support team understand the context and resolve the issue faster."
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Some of your services are outdated. Please update to the latest version for better performance.\\n\\nDo you want to update now?"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "From all the metadata shown in this view,\\nonly the Description will be shown to Users."
+msgstr ""
+r ""
