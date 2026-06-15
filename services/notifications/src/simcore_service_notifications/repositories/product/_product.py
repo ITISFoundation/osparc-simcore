@@ -22,8 +22,12 @@ _PRODUCT_COLUMNS = (
 class ProductRepository(BaseRepository):
     async def get_product(self, product_name: ProductName) -> Product:
         async with self.engine.connect() as conn:
-            row = (await conn.execute(sa.select(*_PRODUCT_COLUMNS).where(products.c.name == product_name))).one()
+            result = await conn.execute(sa.select(*_PRODUCT_COLUMNS).where(products.c.name == product_name))
+            row = result.one_or_none()
 
+        if row is None:
+            msg = f"Product {product_name!r} not found"
+            raise ValueError(msg)
         vendor: dict = row.vendor or {}
         ui: dict = vendor.get("ui") or {}
 
