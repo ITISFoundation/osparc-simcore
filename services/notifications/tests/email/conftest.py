@@ -22,7 +22,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
 from simcore_service_notifications.models.payments import PaymentData
-from simcore_service_notifications.models.smtp import SMTPSettings
+from simcore_service_notifications.core.settings import SMTPSettings
 
 pytest_plugins = [
     "pytest_simcore.faker_payments_data",
