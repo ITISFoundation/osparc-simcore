@@ -10,9 +10,9 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 )
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
-    ProductSMTPSettings,
+    ProductToSMTPSettings,
+    SMTPSettings,
 )
-from simcore_service_notifications.models.smtp import SMTPSettings
 
 
 def test_valid_application_settings(mock_environment: EnvVarsDict):
@@ -36,21 +36,17 @@ _SMTP_PAYLOAD = {
 
 def test_product_smtp_settings_rejects_undefined_profile_reference():
     with pytest.raises(ValidationError, match="undefined SMTP profiles"):
-        ProductSMTPSettings.model_validate(
-            {
-                "profiles": {"profile_a": _SMTP_PAYLOAD},
-                "product_to_profile": {"osparc": "nonexistent_profile"},
-            }
-        )
+        ProductToSMTPSettings.model_validate({
+            "profiles": {"profile_a": _SMTP_PAYLOAD},
+            "product_to_profile": {"osparc": "nonexistent_profile"},
+        })
 
 
 def test_product_smtp_settings_get_smtp_settings_for_product():
-    product_smtp = ProductSMTPSettings.model_validate(
-        {
-            "profiles": {"profile_a": _SMTP_PAYLOAD},
-            "product_to_profile": {"osparc": "profile_a"},
-        }
-    )
+    product_smtp = ProductToSMTPSettings.model_validate({
+        "profiles": {"profile_a": _SMTP_PAYLOAD},
+        "product_to_profile": {"osparc": "profile_a"},
+    })
 
     settings = product_smtp.get_smtp_settings_for_product("osparc")
 
@@ -59,24 +55,20 @@ def test_product_smtp_settings_get_smtp_settings_for_product():
 
 
 def test_product_smtp_settings_unknown_product_raises():
-    product_smtp = ProductSMTPSettings.model_validate(
-        {
-            "profiles": {"profile_a": _SMTP_PAYLOAD},
-            "product_to_profile": {"osparc": "profile_a"},
-        }
-    )
+    product_smtp = ProductToSMTPSettings.model_validate({
+        "profiles": {"profile_a": _SMTP_PAYLOAD},
+        "product_to_profile": {"osparc": "profile_a"},
+    })
 
     with pytest.raises(ValueError, match="No SMTP profile configured for product"):
         product_smtp.get_smtp_settings_for_product("unknown_product")
 
 
 def test_product_smtp_settings_multiple_products_same_profile():
-    product_smtp = ProductSMTPSettings.model_validate(
-        {
-            "profiles": {"shared_profile": _SMTP_PAYLOAD},
-            "product_to_profile": {"osparc": "shared_profile", "s4l": "shared_profile"},
-        }
-    )
+    product_smtp = ProductToSMTPSettings.model_validate({
+        "profiles": {"shared_profile": _SMTP_PAYLOAD},
+        "product_to_profile": {"osparc": "shared_profile", "s4l": "shared_profile"},
+    })
 
     assert product_smtp.get_smtp_settings_for_product("osparc") == product_smtp.get_smtp_settings_for_product("s4l")
 

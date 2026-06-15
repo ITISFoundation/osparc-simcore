@@ -119,7 +119,7 @@ class SMTPSettings(BaseModel):
         return self.username is not None and self.password is not None
 
 
-class ProductSMTPSettings(BaseModel):
+class ProductToSMTPSettings(BaseModel):
     """Per-product SMTP configuration with named profiles."""
 
     model_config = {"frozen": True}
@@ -128,7 +128,7 @@ class ProductSMTPSettings(BaseModel):
     product_to_profile: dict[ProductName, ProfileName]
 
     @model_validator(mode="after")
-    def _all_profiles_exist(self) -> "ProductSMTPSettings":
+    def _all_profiles_exist(self) -> "ProductToSMTPSettings":
         missing = {profile for profile in self.product_to_profile.values() if profile not in self.profiles}
         if missing:
             msg = f"product_to_profile references undefined SMTP profiles: {sorted(missing)}"
@@ -225,7 +225,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
-        ProductSMTPSettings | None,
+        ProductToSMTPSettings | None,
         Field(
             description=(
                 "Per-product SMTP settings with named profiles and product-to-profile mapping. "

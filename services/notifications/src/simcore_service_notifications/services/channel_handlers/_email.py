@@ -7,7 +7,7 @@ from models_library.notifications.rpc import EmailContact, EmailMessage, SenderI
 from models_library.products import ProductName
 from pydantic import validate_email
 
-from ...core.settings import ProductSMTPSettings, SMTPSettings
+from ...core.settings import ProductToSMTPSettings, SMTPSettings
 from ...models.product import ProductData
 from ._base import ChannelHandler
 
@@ -33,7 +33,7 @@ class EmailChannelHandler(ChannelHandler):
     def resolve_from_contact(
         product_data: ProductData,
         from_identity: SenderIdentity,
-        smtp_settings: ProductSMTPSettings,
+        smtp_settings: ProductToSMTPSettings,
         product_name: ProductName,
     ) -> EmailContact:
         """Resolve a from_identity into a concrete EmailContact using product data."""
@@ -56,7 +56,7 @@ class EmailChannelHandler(ChannelHandler):
         *,
         product_name: ProductName,
         product_data: ProductData,
-        smtp_settings: ProductSMTPSettings,
+        smtp_settings: ProductToSMTPSettings,
     ) -> list[dict[str, Any]]:
         resolved_from = EmailChannelHandler.resolve_from_contact(
             product_data,

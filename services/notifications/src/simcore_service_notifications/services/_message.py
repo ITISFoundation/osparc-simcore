@@ -25,7 +25,7 @@ from servicelib.celery.async_jobs.notifications import (
 from servicelib.celery.task_manager import TaskManager
 
 from .._meta import APP_NAME
-from ..core.settings import ApplicationSettings, ProductSMTPSettings
+from ..core.settings import ApplicationSettings, ProductToSMTPSettings
 from ..models.product import ProductData
 from ..models.template import TemplateRef
 from ..repositories.product import ProductRepository
@@ -42,7 +42,7 @@ def _prepare_celery_messages(
     *,
     product_name: ProductName,
     product_data: ProductData,
-    smtp_settings: ProductSMTPSettings,
+    smtp_settings: ProductToSMTPSettings,
 ) -> list[dict[str, Any]]:
     """Dispatches to channel handler to fan out into per-recipient celery payloads.
 
