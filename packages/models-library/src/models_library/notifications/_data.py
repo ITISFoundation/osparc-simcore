@@ -51,7 +51,7 @@ class ProductFooter:
 
 @dataclass(frozen=True)
 class Product:
-    product_name: ProductName
+    name: ProductName
     display_name: str
     vendor_display_inline: str
     support_email: str

@@ -4,10 +4,9 @@ from common_library.network import extract_email_domain
 from common_library.sequence_tools import interleave_by_key
 from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
 from models_library.notifications.rpc import EmailContact, EmailMessage, SenderIdentity
-from models_library.products import ProductName
 from pydantic import validate_email
 
-from ...core.settings import ProductToSMTPSettings, SMTPSettings
+from ...core.settings import ApplicationSettings, SMTPSettings
 from ...models.product import Product
 from ._base import ChannelHandler
 
@@ -31,38 +30,37 @@ class EmailChannelHandler(ChannelHandler):
 
     @staticmethod
     def resolve_from_contact(
-        product_data: Product,
+        product: Product,
         from_identity: SenderIdentity,
-        smtp_settings: ProductToSMTPSettings,
-        product_name: ProductName,
+        settings: ApplicationSettings,
     ) -> EmailContact:
         """Resolve a from_identity into a concrete EmailContact using product data."""
-        settings = smtp_settings.get_smtp_settings_for_product(product_name)
+        assert settings.NOTIFICATIONS_SMTP_SETTINGS  # nosec
+
+        smtp_settings = settings.NOTIFICATIONS_SMTP_SETTINGS.get_smtp_settings_for_product(product.name)
         match from_identity:
             case SenderIdentity.SUPPORT:
                 return EmailContact(
-                    name=f"{product_data.display_name} support",
-                    email=get_email(SenderIdentity.SUPPORT, settings),
+                    name=f"{product.display_name} support",
+                    email=get_email(SenderIdentity.SUPPORT, smtp_settings),
                 )
             case SenderIdentity.NO_REPLY:
                 return EmailContact(
                     name="no-reply",
-                    email=get_email(SenderIdentity.NO_REPLY, settings),
+                    email=get_email(SenderIdentity.NO_REPLY, smtp_settings),
                 )
 
     @staticmethod
     def prepare_messages(
         message: EmailMessage,
         *,
-        product_name: ProductName,
-        product_data: Product,
-        smtp_settings: ProductToSMTPSettings,
+        product: Product,
+        settings: ApplicationSettings,
     ) -> list[dict[str, Any]]:
         resolved_from = EmailChannelHandler.resolve_from_contact(
-            product_data,
+            product,
             message.addressing.from_identity,
-            smtp_settings,
-            product_name,
+            settings,
         )
 
         content_dict = message.content.model_dump()
@@ -78,7 +76,7 @@ class EmailChannelHandler(ChannelHandler):
 
         payload_base: dict[str, Any] = {
             "channel": message.channel,
-            "product_name": product_name,
+            "product_name": product.name,
             "from": from_dict,
             "content": content_dict,
         }

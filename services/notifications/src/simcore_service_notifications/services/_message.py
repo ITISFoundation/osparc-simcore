@@ -25,7 +25,7 @@ from servicelib.celery.async_jobs.notifications import (
 from servicelib.celery.task_manager import TaskManager
 
 from .._meta import APP_NAME
-from ..core.settings import ApplicationSettings, ProductToSMTPSettings
+from ..core.settings import ApplicationSettings
 from ..models.product import Product
 from ..models.template import TemplateRef
 from ..repositories.product import ProductRepository
@@ -41,7 +41,7 @@ def _prepare_celery_messages(
     message: Message,
     *,
     product: Product,
-    smtp_settings: ProductToSMTPSettings,
+    settings: ApplicationSettings,
 ) -> list[dict[str, Any]]:
     """Dispatches to channel handler to fan out into per-recipient celery payloads.
 
@@ -51,8 +51,8 @@ def _prepare_celery_messages(
     handler = for_channel(message.channel)
     return handler.prepare_messages(
         message,
-        product_data=product,
-        smtp_settings=smtp_settings,
+        product=product,
+        settings=settings,
     )
 
 
@@ -81,13 +81,10 @@ class MessageService:
         resolved_owner = owner_metadata or _OWNER_METADATA
 
         product = await self.product_repository.get_product(product_name)
-        smtp_settings = self.settings.NOTIFICATIONS_SMTP_SETTINGS
-        assert smtp_settings is not None
-
         messages = _prepare_celery_messages(
             message,
             product=product,
-            smtp_settings=smtp_settings,
+            settings=settings,
         )
 
         num_recipients = len(messages)

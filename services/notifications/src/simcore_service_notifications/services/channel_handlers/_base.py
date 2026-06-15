@@ -3,7 +3,7 @@ from typing import Any
 
 from models_library.notifications.rpc import Message
 
-from ...core.settings import ProductToSMTPSettings
+from ...core.settings import ApplicationSettings
 from ...models.product import Product
 
 
@@ -15,7 +15,7 @@ class ChannelHandler(ABC):
     def prepare_messages(
         message: Message,
         *,
-        product_data: Product,
-        smtp_settings: ProductToSMTPSettings,
+        product: Product,
+        settings: ApplicationSettings,
     ) -> list[dict[str, Any]]:
         """Fan out a message model into per-recipient celery payloads."""
