@@ -25,6 +25,7 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: trailing-whitespace
+        exclude: '^services/static-webserver/client/source/translation/.*\.po$'
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
       - id: detect-aws-credentials
@@ -50,4 +51,4 @@ repos:
     hooks:
       - id: typos
         name: spellchecker
-        exclude: "(^|/)generated_models/"
+        exclude: "(^|/)generated_models/|^services/static-webserver/client/source/translation/.*\\.po$"
