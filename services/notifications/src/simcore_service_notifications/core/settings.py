@@ -3,6 +3,7 @@ from typing import Annotated, Self
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import LogLevel
+from models_library.notifications.rpc import SenderIdentity
 from models_library.products import ProductName
 from pydantic import (
     AliasChoices,
@@ -21,7 +22,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-from ..models.smtp import ALLOWED_HEADERS, EmailProtocol, SMTPLocals
+from ..models.smtp import ALLOWED_HEADERS, EmailProtocol
 
 type ProfileName = str
 
@@ -58,13 +59,13 @@ class SMTPSettings(BaseModel):
     domain: str
 
     local_parts: Annotated[
-        SMTPLocals,
+        dict[SenderIdentity, str],
         Field(
-            description="A mapping of local email identifiers to actual email addresses.",
+            description="A mapping of FromIdentity values to local-part strings used to build sender emails.",
             examples=[
                 {
                     "support": "support",
-                    "no_reply": "no-reply",
+                    "no-reply": "no-reply",
                 }
             ],
         ),
@@ -107,14 +108,11 @@ class SMTPSettings(BaseModel):
             raise ValueError(msg)
         return self
 
-    def get_local_part_for_identity(self, identity: str) -> str:
-        if identity not in self.local_parts.model_fields:
-            msg = (
-                f"Unknown local part identity: {identity!r}. Valid identities: {sorted(self.local_parts.model_fields)}"
-            )
+    def get_local_part_for_identity(self, identity: SenderIdentity) -> str:
+        if identity not in self.local_parts:
+            msg = f"No local-part configured for identity {identity!r}. Configured: {sorted(self.local_parts)}"
             raise ValueError(msg)
-        value: str = self.local_parts.model_dump()[identity]
-        return value
+        return self.local_parts[identity]
 
     @property
     def has_credentials(self) -> bool:
@@ -245,8 +243,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                             "extra_headers": {},
                             "domain": "sim4life.io",
                             "local_parts": {
-                                "NO_REPLY": "no-reply",
-                                "SUPPORT": "support",
+                                "no-reply": "no-reply",
+                                "support": "support",
                             },
                         },
                         "postal_osparc": {
@@ -256,8 +254,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                             "extra_headers": {},
                             "domain": "osparc.io",
                             "local_parts": {
-                                "NO_REPLY": "no-reply",
-                                "SUPPORT": "support",
+                                "no-reply": "no-reply",
+                                "support": "support",
                             },
                         },
                     },

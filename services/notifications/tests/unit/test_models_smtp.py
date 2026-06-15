@@ -10,9 +10,9 @@ from pydantic import ValidationError
 from simcore_service_notifications.core.settings import (
     SMTPSettings,
 )
-from simcore_service_notifications.models.smtp import EmailProtocol, SMTPLocals
+from simcore_service_notifications.models.smtp import EmailProtocol
 
-_LOCAL_PARTS = {"SUPPORT": "support", "NO_REPLY": "no-reply"}
+_LOCAL_PARTS = {"support": "support", "no_reply": "no-reply"}
 
 
 @pytest.mark.parametrize(
@@ -257,13 +257,27 @@ def test_smtp_extra_headers_case_insensitive_validation():
 
 
 def test_smtp_locals():
-    locals_ = SMTPLocals(SUPPORT="support", NO_REPLY="no-reply")
-    assert locals_.SUPPORT == "support"
-    assert locals_.NO_REPLY == "no-reply"
+    from models_library.notifications.rpc import SenderIdentity
+    from simcore_service_notifications.core.settings import SMTPSettings
+
+    settings = SMTPSettings(
+        host="localhost",
+        port=25,
+        domain="example.com",
+        local_parts={"support": "support", "no_reply": "no-reply"},
+    )
+    assert settings.get_local_part_for_identity(SenderIdentity.SUPPORT) == "support"
+    assert settings.get_local_part_for_identity(SenderIdentity.NO_REPLY) == "no-reply"
 
 
-def test_smtp_locals_extra_ignore():
-    """SMTPLocals should ignore extra fields"""
-    locals_ = SMTPLocals(SUPPORT="support", NO_REPLY="no-reply", EXTRA="ignored")
-    assert locals_.SUPPORT == "support"
-    assert locals_.NO_REPLY == "no-reply"
+def test_smtp_locals_unknown_identity():
+    from simcore_service_notifications.core.settings import SMTPSettings
+
+    settings = SMTPSettings(
+        host="localhost",
+        port=25,
+        domain="example.com",
+        local_parts={"support": "support", "no_reply": "no-reply"},
+    )
+    with pytest.raises(ValueError, match="No local-part configured"):
+        settings.get_local_part_for_identity("unknown")

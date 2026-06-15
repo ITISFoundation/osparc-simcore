@@ -6,9 +6,9 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from .. import Channel
 
 
-class FromIdentity(StrEnum):
+class SenderIdentity(StrEnum):
     SUPPORT = "support"
-    NO_REPLY = "no-reply"
+    NO_REPLY = "no_reply"
 
 
 class EmailContact(BaseModel):
@@ -28,7 +28,7 @@ class EmailContent(BaseModel):
 
 
 class EmailAddressing(BaseModel):
-    from_identity: FromIdentity = FromIdentity.SUPPORT
+    from_identity: SenderIdentity = SenderIdentity.SUPPORT
     to: list[EmailContact]
     bcc: EmailContact | None = None
     reply_to: EmailContact | None = None

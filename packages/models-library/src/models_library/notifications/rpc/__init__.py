@@ -10,8 +10,8 @@ from ._email import (
     EmailContact,
     EmailContent,
     EmailMessage,
-    FromIdentity,
     Message,
+    SenderIdentity,
 )
 from ._message import (
     SendMessageFromTemplateRequest,
@@ -34,7 +34,6 @@ __all__: tuple[str, ...] = (
     "EmailContact",
     "EmailContent",
     "EmailMessage",
-    "FromIdentity",
     "Message",
     "PreviewTemplateRequest",
     "PreviewTemplateResponse",
@@ -42,5 +41,6 @@ __all__: tuple[str, ...] = (
     "SendMessageFromTemplateRequest",
     "SendMessageRequest",
     "SendMessageResponse",
+    "SenderIdentity",
     "TemplateRef",
 )

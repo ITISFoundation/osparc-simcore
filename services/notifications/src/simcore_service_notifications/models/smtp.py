@@ -1,8 +1,6 @@
 from enum import StrEnum
 from typing import Final
 
-from pydantic import BaseModel, ConfigDict
-
 ALLOWED_HEADERS: Final[frozenset[str]] = frozenset(
     {
         # AWS SES routing/configuration
@@ -26,10 +24,3 @@ class EmailProtocol(StrEnum):
     UNENCRYPTED = "UNENCRYPTED"
     TLS = "TLS"
     STARTTLS = "STARTTLS"
-
-
-class SMTPLocals(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    SUPPORT: str
-    NO_REPLY: str

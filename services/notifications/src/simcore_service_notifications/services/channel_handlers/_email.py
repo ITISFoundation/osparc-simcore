@@ -3,7 +3,7 @@ from typing import Any
 from common_library.network import extract_email_domain
 from common_library.sequence_tools import interleave_by_key
 from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
-from models_library.notifications.rpc import EmailContact, EmailMessage, FromIdentity
+from models_library.notifications.rpc import EmailContact, EmailMessage, SenderIdentity
 from models_library.products import ProductName
 from pydantic import validate_email
 
@@ -19,7 +19,7 @@ def _interleave_recipients_by_domain(
     return interleave_by_key(recipients, key=lambda r: extract_email_domain(r.email))
 
 
-def get_email(identity: FromIdentity, settings: SMTPSettings) -> str:
+def get_email(identity: SenderIdentity, settings: SMTPSettings) -> str:
     local_part = settings.get_local_part_for_identity(identity)
     email = f"{local_part}@{settings.domain}"
     validate_email(email)  # Will raise if invalid
@@ -32,22 +32,22 @@ class EmailChannelHandler(ChannelHandler):
     @staticmethod
     def resolve_from_contact(
         product_data: ProductData,
-        from_identity: FromIdentity,
+        from_identity: SenderIdentity,
         smtp_settings: ProductSMTPSettings,
         product_name: ProductName,
     ) -> EmailContact:
         """Resolve a from_identity into a concrete EmailContact using product data."""
         settings = smtp_settings.get_smtp_settings_for_product(product_name)
         match from_identity:
-            case FromIdentity.SUPPORT:
+            case SenderIdentity.SUPPORT:
                 return EmailContact(
                     name=f"{product_data.display_name} support",
-                    email=get_email(FromIdentity.SUPPORT, settings),
+                    email=get_email(SenderIdentity.SUPPORT, settings),
                 )
-            case FromIdentity.NO_REPLY:
+            case SenderIdentity.NO_REPLY:
                 return EmailContact(
                     name="no-reply",
-                    email=get_email(FromIdentity.NO_REPLY, settings),
+                    email=get_email(SenderIdentity.NO_REPLY, settings),
                 )
 
     @staticmethod
