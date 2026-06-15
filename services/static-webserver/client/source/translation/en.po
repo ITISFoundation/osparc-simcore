@@ -622,7 +622,7 @@ msgstr ""
 msgid "Unsuccessful polling status"
 msgstr ""
 
-#: osparc/dashboard/ResourceBrowserFilter.js
+#: osparc/dashboard/WorkspacesAndFoldersTree.js
 msgid "My Workspace"
 msgstr ""
 
@@ -1214,7 +1214,7 @@ msgstr ""
 msgid "Skip phone registration and send code via email"
 msgstr ""
 
-#: osparc/auth/ui/VerifyPhoneNumberView.js
+#: osparc/auth/ui/Login2FAValidationCodeView.js
 msgid "Invalid code"
 msgstr ""
 
@@ -2798,7 +2798,7 @@ msgstr ""
 msgid "All items will be permanently deleted"
 msgstr ""
 
-#: osparc/dashboard/StudyBrowserHeader.js
+#: osparc/dashboard/WorkspacesAndFoldersTree.js
 msgid "Shared Workspaces"
 msgstr ""
 
@@ -4518,7 +4518,7 @@ msgstr ""
 msgid "Something went wrong"
 msgstr ""
 
-#. NO LONGER USED
+#: osparc/ui/message/FlashMessageOEC.js
 msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
 msgstr ""
 
@@ -4754,7 +4754,7 @@ msgstr ""
 msgid "Request Apps Access"
 msgstr ""
 
-#. NO LONGER USED
+#: osparc/dashboard/ResourceDetails.js
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
 msgstr ""
 
@@ -5374,7 +5374,7 @@ msgstr ""
 msgid "Description only"
 msgstr ""
 
-#. NO LONGER USED
+#: osparc/info/ServiceLarge.js
 msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
 msgstr ""
 
@@ -5978,15 +5978,22 @@ msgstr ""
 msgid "Preferred"
 msgstr ""
 
-#: osparc/ui/message/FlashMessageOEC.js
+#. NO LONGER USED
 msgid "Please describe what you were doing before the error (optional).\\nThis will help our support team understand the context and resolve the issue faster."
 msgstr ""
 
-#: osparc/dashboard/ResourceDetails.js
+#. NO LONGER USED
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\\n\\nDo you want to update now?"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
+#. NO LONGER USED
 msgid "From all the metadata shown in this view,\\nonly the Description will be shown to Users."
 msgstr ""
-r ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Language"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Translations are AI-generated and may contain errors. Please report any issues to help us improve them."
+msgstr ""

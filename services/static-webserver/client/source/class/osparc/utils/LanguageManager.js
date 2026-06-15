@@ -18,7 +18,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
     // Display names for the locales we want to expose
     __localeLabels: {
       "en": "English",
-      "es": "Español"
+      "es": "Español",
     },
 
     /**
