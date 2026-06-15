@@ -68,7 +68,7 @@ class SMTPSettings(BaseModel):
         starttls_enabled = protocol == EmailProtocol.STARTTLS
 
         if (tls_enabled or starttls_enabled) and not (username or password):
-            msg = "when using SMTP_PROTOCOL other than UNENCRYPTED username and password are required"
+            msg = "when using protocol other than UNENCRYPTED username and password are required"
             raise ValueError(msg)
         return self
 
