@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Final, Literal
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID
@@ -32,7 +32,7 @@ from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
-from ..users.exceptions import UserNotFoundError
+from ..users.errors import UserNotFoundError
 from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (
@@ -393,8 +393,8 @@ async def get_projects_workbenches(
     if not project_uuids:
         return {}
 
-    _EXCLUDED_COLUMNS = {"project_node_id", "required_resources", "created", "modified"}
-    _selected_columns = [c for c in projects_nodes_table.columns if c.name not in _EXCLUDED_COLUMNS]
+    _excluded_columns: Final = {"project_node_id", "required_resources", "created", "modified"}
+    _selected_columns = [c for c in projects_nodes_table.columns if c.name not in _excluded_columns]
 
     stmt = sa.select(*_selected_columns).where(projects_nodes_table.c.project_uuid.in_(project_uuids))
     result = await connection.execute(stmt)

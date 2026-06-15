@@ -1,10 +1,9 @@
 import logging
-from datetime import datetime
 
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, TypeAdapter
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.wallet_to_groups import wallet_to_groups
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -14,20 +13,10 @@ from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_asyncpg_engine
+from ._groups_models import WalletGroupGetDB
 from .errors import WalletGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-### Models
-
-
-class WalletGroupGetDB(BaseModel):
-    gid: GroupID
-    read: bool
-    write: bool
-    delete: bool
-    created: datetime
-    modified: datetime
 
 
 ## DB API

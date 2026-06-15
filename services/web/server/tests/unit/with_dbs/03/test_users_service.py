@@ -16,7 +16,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users.exceptions import UserNotFoundError
+from simcore_service_webserver.users.errors import UserNotFoundError
 from simcore_service_webserver.users.users_service import (
     delete_user_without_projects,
     get_guest_user_ids_and_names,
@@ -126,7 +126,7 @@ async def test_deleting_a_user(
         await get_user(client.app, user_id=user_id)
 
 
-_NOW = datetime.now()  # WARNING: UTC affects here since expires is not defined as UTC
+_NOW = datetime.now()  # WARNING: UTC affects here since expires is not defined as UTC  # noqa: DTZ005
 YESTERDAY = _NOW - timedelta(days=1)
 TOMORROW = _NOW + timedelta(days=1)
 

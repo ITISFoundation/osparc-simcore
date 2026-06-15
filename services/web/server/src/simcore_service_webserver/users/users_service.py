@@ -24,6 +24,7 @@ from ._users_service import (
 
 __all__: tuple[str, ...] = (
     "FullNameDict",
+    # functions
     "delete_user_without_projects",
     "get_active_users_email_data",
     "get_guest_user_ids_and_names",

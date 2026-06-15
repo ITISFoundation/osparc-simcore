@@ -13,7 +13,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer  # type: ignore[import-untyped]
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
-from ..resource_manager.user_sessions import managed_resource
+from ..resource_manager.resource_manager_service import managed_resource
 from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
