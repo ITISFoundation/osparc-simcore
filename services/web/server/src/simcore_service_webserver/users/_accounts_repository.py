@@ -29,7 +29,7 @@ from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
-from .exceptions import (
+from .errors import (
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,

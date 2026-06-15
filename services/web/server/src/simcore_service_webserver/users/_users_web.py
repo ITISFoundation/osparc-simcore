@@ -4,7 +4,7 @@ from typing import Literal, TypedDict
 from aiohttp_session import Session
 from models_library.users import UserID
 
-from .exceptions import (
+from .errors import (
     PhoneRegistrationCodeInvalidError,
     PhoneRegistrationPendingNotFoundError,
     PhoneRegistrationSessionInvalidError,

@@ -14,10 +14,19 @@ from typing import Any, Final
 
 import pytest
 from _tip_steps import (
+    POST_PRO_AUTOSCALED_MAX_STARTUP_TIME,
+    POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+    POST_PRO_LOAD_APPEARANCE_TIME,
+    POST_PRO_LOAD_RESULT_MAX_TIME,
+    POST_PRO_MAX_STARTUP_TIME,
+    POST_PRO_REPORTING_MAX_TIME,
+    POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+    POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
     raise_if_button_spinner_running,
     run_optimization_and_load_analysis,
     set_fast_optimization_settings,
     wait_and_select_target_tissue,
+    wait_for_export_complete,
 )
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
@@ -70,19 +79,6 @@ _SIM_COLOR_SUCCESS: Final[str] = "#0090D0"
 _SIM_COLOR_FAILED: Final[str] = "#FF0000"
 _SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
 _SIMULATION_EXPORT_MAX_TIME: Final[int] = 5 * MINUTE
-
-
-_POST_PRO_MAX_STARTUP_TIME: Final[int] = 5 * MINUTE
-_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 15 * MINUTE
-_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
-)
-_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME: Final[int] = 10 * MINUTE
-_POST_PRO_LOAD_APPEARANCE_TIME: Final[int] = 5 * MINUTE
-_POST_PRO_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 15 * MINUTE
-_POST_PRO_LOAD_ANALYSIS_MAX_TIME: Final[int] = 5 * MINUTE
-_POST_PRO_LOAD_RESULT_MAX_TIME: Final[int] = 30 * SECOND
-_POST_PRO_REPORTING_MAX_TIME: Final[int] = 30 * SECOND
 
 
 _SIM4LIFE_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
@@ -215,8 +211,8 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Run TI and generate report"):
         wait_and_select_target_tissue(
             ti_postpro_iframe,
-            label_timeout=_POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
-            select_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
+            label_timeout=POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+            select_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
         )
 
         # make it faster
@@ -224,37 +220,39 @@ def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
 
         run_optimization_and_load_analysis(
             ti_postpro_iframe,
-            click_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
-            optimization_timeout=_POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
-            optimization_start_timeout=_POST_PRO_LOAD_APPEARANCE_TIME,
-            analysis_timeout=_POST_PRO_LOAD_ANALYSIS_MAX_TIME,
-            result_timeout=_POST_PRO_LOAD_RESULT_MAX_TIME,
+            click_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+            optimization_timeout=POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+            optimization_start_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+            analysis_timeout=POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+            result_timeout=POST_PRO_LOAD_RESULT_MAX_TIME,
         )
 
         with log_context(
             logging.INFO,
-            f"Click button - `Add to Report (0)` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Add to Report (0)` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
             ti_postpro_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
         with log_context(
             logging.INFO,
-            f"Click button - `Export to S4L` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Export to S4L` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
-            ti_postpro_iframe.get_by_role("button", name="Export to S4L").click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            export_s4l_button = ti_postpro_iframe.get_by_role("button", name="Export to S4L")
+            export_s4l_button.click()
+            wait_for_export_complete(export_s4l_button)
         with log_context(
             logging.INFO,
-            f"Click button - `Add to Report (1)` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Add to Report (1)` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
             ti_postpro_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
         with log_context(
             logging.INFO,
-            f"Click button - `Export Report` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Export Report` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
-            ti_postpro_iframe.get_by_role("button", name="Export Report").click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            export_report_button = ti_postpro_iframe.get_by_role("button", name="Export Report")
+            export_report_button.click()
+            wait_for_export_complete(export_report_button)
 
 
 @dataclass(frozen=True)
@@ -342,13 +340,13 @@ def _run_classic_ti_step(
     with params.page.expect_websocket(
         _JLabWaitForWebSocket(),
         timeout=_OUTER_EXPECT_TIMEOUT_RATIO
-        * (_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _POST_PRO_MAX_STARTUP_TIME),
+        * (POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else POST_PRO_MAX_STARTUP_TIME),
     ) as ws_info:
         with expected_service_running(
             page=params.page,
             node_id=node_id,
             websocket=params.websocket,
-            timeout=(_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _POST_PRO_MAX_STARTUP_TIME),
+            timeout=(POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else POST_PRO_MAX_STARTUP_TIME),
             press_start_button=False,
             product_url=params.product_url,
             is_service_legacy=params.is_service_legacy,

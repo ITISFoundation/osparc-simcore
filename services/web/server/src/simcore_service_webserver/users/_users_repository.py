@@ -39,7 +39,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
 from ._models import FullNameDict
-from .exceptions import (
+from .errors import (
     BillingDetailsNotFoundError,
     UserNameDuplicateError,
     UserNotFoundError,

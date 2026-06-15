@@ -19,7 +19,7 @@ from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
-from simcore_service_webserver.groups.api import auto_add_user_to_product_group
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,

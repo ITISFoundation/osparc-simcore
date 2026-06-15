@@ -39,6 +39,6 @@ async def unsubscribe(app: web.Application, project_id: ProjectID) -> None:
     for exchange in _SUBSCRIBABLE_EXCHANGES:
         exchange_name = exchange.get_channel_name()
         with log_catch(_logger, reraise=False):
-            # NOTE: in case something bad happenned with the connection to the RabbitMQ server
+            # NOTE: in case something bad happened with the connection to the RabbitMQ server
             # such as a network disconnection. this call can fail.
             await rabbit_client.remove_topics(exchange_name, topics=[f"{project_id}.*"])

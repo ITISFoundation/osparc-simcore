@@ -1,7 +1,7 @@
 #
 # This is the old application config bug including defaults values
 # It sets a default config that is used as base for all tests
-# It can be overriden by redefining a fixture app_config (see tests for examples)
+# It can be overridden by redefining a fixture app_config (see tests for examples)
 # It disables all non-essential plugins for tests (e.g. remote_debug, diagnostics, et)
 # T
 version: "1.0"
