@@ -5,7 +5,7 @@ from simcore_postgres_database.models.products import products
 from ...models.product import (
     CompanyLink,
     Product,
-    ProductFooterData,
+    ProductFooter,
     ProductUI,
     SocialLink,
 )
@@ -20,7 +20,7 @@ _PRODUCT_COLUMNS = (
 
 
 class ProductRepository(BaseRepository):
-    async def get_product_data(self, product_name: ProductName) -> Product:
+    async def get_product(self, product_name: ProductName) -> Product:
         async with self.engine.connect() as conn:
             row = (await conn.execute(sa.select(*_PRODUCT_COLUMNS).where(products.c.name == product_name))).one()
 
@@ -43,7 +43,7 @@ class ProductRepository(BaseRepository):
                 logo_url=ui.get("logo_url"),
                 strong_color=ui.get("strong_color"),
             ),
-            footer=ProductFooterData(
+            footer=ProductFooter(
                 social_links=[SocialLink(name=name, url=url) for name, url in footer_social_links],
                 company_name=vendor.get("company_name") or "",
                 company_address=vendor.get("company_address") or "",

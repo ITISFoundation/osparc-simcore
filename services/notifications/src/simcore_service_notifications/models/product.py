@@ -3,7 +3,7 @@ from models_library.notifications import (
     CompanyLinks,
     FooterSocialLinks,
     Product,
-    ProductFooterData,
+    ProductFooter,
     ProductUI,
     SocialLink,
 )
@@ -13,7 +13,7 @@ __all__: tuple[str, ...] = (
     "CompanyLinks",
     "FooterSocialLinks",
     "Product",
-    "ProductFooterData",
+    "ProductFooter",
     "ProductUI",
     "SocialLink",
 )

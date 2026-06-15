@@ -42,7 +42,7 @@ type CompanyLinks = list[CompanyLink]
 
 
 @dataclass(frozen=True)
-class ProductFooterData:
+class ProductFooter:
     social_links: FooterSocialLinks
     company_name: str
     company_address: str
@@ -57,7 +57,7 @@ class Product:
     support_email: str
     homepage_url: str | None  # default_homepage = "https://osparc.io/" in base.html
     ui: ProductUI
-    footer: ProductFooterData
+    footer: ProductFooter
 
     @property
     def footer_social_links(self) -> FooterSocialLinks:

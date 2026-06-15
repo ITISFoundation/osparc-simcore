@@ -26,7 +26,7 @@ class TemplateService:
     async def preview_template(
         self, product_name: ProductName, ref: TemplateRef, context: dict[str, Any]
     ) -> TemplatePreview:
-        product_data = await self.product_repository.get_product_data(product_name)
+        product_data = await self.product_repository.get_product(product_name)
         context_with_product = {**context, "product": asdict(product_data)}
 
         templates = self.repository.search_templates(

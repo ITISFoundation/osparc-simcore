@@ -40,8 +40,7 @@ _OWNER_METADATA = OwnerMetadata(owner=APP_NAME)
 def _prepare_celery_messages(
     message: Message,
     *,
-    product_name: ProductName,
-    product_data: Product,
+    product: Product,
     smtp_settings: ProductToSMTPSettings,
 ) -> list[dict[str, Any]]:
     """Dispatches to channel handler to fan out into per-recipient celery payloads.
@@ -52,8 +51,7 @@ def _prepare_celery_messages(
     handler = for_channel(message.channel)
     return handler.prepare_messages(
         message,
-        product_name=product_name,
-        product_data=product_data,
+        product_data=product,
         smtp_settings=smtp_settings,
     )
 
@@ -82,14 +80,13 @@ class MessageService:
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         resolved_owner = owner_metadata or _OWNER_METADATA
 
-        product_data = await self.product_repository.get_product_data(product_name)
+        product = await self.product_repository.get_product(product_name)
         smtp_settings = self.settings.NOTIFICATIONS_SMTP_SETTINGS
         assert smtp_settings is not None
 
         messages = _prepare_celery_messages(
             message,
-            product_name=product_name,
-            product_data=product_data,
+            product=product,
             smtp_settings=smtp_settings,
         )
 

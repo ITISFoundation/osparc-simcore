@@ -10,7 +10,7 @@ from faker import Faker
 from models_library.notifications import (
     CompanyLink,
     Product,
-    ProductFooterData,
+    ProductFooter,
     ProductUI,
     Sharer,
     SocialLink,
@@ -91,7 +91,7 @@ def product_data(
         strong_color=vendor_ui.get("strong_color"),
     )
 
-    footer_data = ProductFooterData(
+    footer_data = ProductFooter(
         social_links=[
             SocialLink(name=link_name, url=link_url) for link_name, link_url in vendor.get("footer_social_links", [])
         ],
