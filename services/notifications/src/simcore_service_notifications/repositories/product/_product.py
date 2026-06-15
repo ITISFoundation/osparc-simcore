@@ -34,7 +34,7 @@ class ProductRepository(BaseRepository):
         company_links = vendor.get("company_links") or []
 
         return Product(
-            product_name=row.name,
+            name=row.name,
             display_name=row.display_name,
             vendor_display_inline=vendor_display_inline,
             support_email=row.support_email,
