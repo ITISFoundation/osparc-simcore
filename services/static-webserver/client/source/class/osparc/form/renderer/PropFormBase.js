@@ -326,7 +326,11 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
           return;
         }
         const value = converted[portId];
-        if (value !== null && value !== undefined && !osparc.utils.Ports.isDataALink(value)) {
+        if (
+          value !== null &&
+          value !== undefined &&
+          !osparc.utils.Ports.isDataALink(value)
+        ) {
           converted[portId] = osparc.utils.Units.convertValue(value, metadataPrefix, ctrl.unitPrefix);
         }
       });
@@ -406,7 +410,12 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         newValue = String(newValue);
       }
       // scale the numeric range (e.g. integer Spinner min/max) so it stays consistent with the new unit
-      if (typeof item.getMaximum === "function" && typeof item.setMaximum === "function") {
+      if (
+        typeof item.getMaximum === "function" &&
+        typeof item.setMaximum === "function" &&
+        typeof item.getMinimum === "function" &&
+        typeof item.setMinimum === "function"
+      ) {
         const oldMax = item.getMaximum();
         const oldMin = item.getMinimum();
         const newMax = Math.ceil(oldMax * multiplier);
