@@ -28,16 +28,17 @@ from simcore_sdk.node_ports_common.exceptions import ProjectNotFoundError
 
 from ..projects import _nodes_service, _projects_service
 from ..rabbitmq import get_rabbitmq_client
-from ..socketio.messages import (
+from ..socketio import socketio_service
+from ..socketio.constants import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
-    send_message_to_project_room,
-    send_message_to_standard_group,
-    send_message_to_user,
 )
-from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
-from ..wallets import api as wallets_service
+from ..socketio.models import (
+    WebSocketNodeProgress,
+    WebSocketProjectProgress,
+)
+from ..wallets.wallets_service import list_wallet_groups_with_read_access_by_wallet
 from . import project_logs
 from ._rabbitmq_consumers_common import SubscribeArgumentsTuple, subscribe_to_rabbitmq
 
@@ -71,7 +72,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
         message = WebSocketNodeProgress.from_rabbit_message(rabbit_message).to_socket_dict()
 
     if message:
-        await send_message_to_project_room(
+        await socketio_service.send_message_to_project_room(
             app,
             project_id=rabbit_message.project_id,
             message=message,
@@ -118,7 +119,7 @@ async def _computational_pipeline_status_message_parser(app: web.Application, da
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.model_validate_json(data)
-    await send_message_to_user(
+    await socketio_service.send_message_to_user(
         app,
         rabbit_message.user_id,
         message=SocketMessageDict(
@@ -131,7 +132,7 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
 
 async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = EventRabbitMessage.model_validate_json(data)
-    await send_message_to_user(
+    await socketio_service.send_message_to_user(
         app,
         rabbit_message.user_id,
         message=SocketMessageDict(
@@ -179,12 +180,10 @@ async def _webserver_internal_events_message_parser(app: web.Application, data: 
 
 async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
-    wallet_groups = await wallets_service.list_wallet_groups_with_read_access_by_wallet(
-        app, wallet_id=rabbit_message.wallet_id
-    )
+    wallet_groups = await list_wallet_groups_with_read_access_by_wallet(app, wallet_id=rabbit_message.wallet_id)
     rooms_to_notify: Generator[GroupID] = (item.gid for item in wallet_groups)
     for room in rooms_to_notify:
-        await send_message_to_standard_group(
+        await socketio_service.send_message_to_standard_group(
             app,
             room,
             message=SocketMessageDict(

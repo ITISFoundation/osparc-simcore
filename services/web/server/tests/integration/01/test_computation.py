@@ -56,7 +56,7 @@ from simcore_service_webserver.resource_manager.plugin import setup_resource_man
 from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
-from simcore_service_webserver.socketio.messages import SOCKET_IO_NODE_UPDATED_EVENT
+from simcore_service_webserver.socketio.constants import SOCKET_IO_NODE_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy.ext.asyncio import AsyncEngine

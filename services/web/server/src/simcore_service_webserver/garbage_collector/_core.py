@@ -6,7 +6,7 @@ from aiohttp import web
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import traced
 
-from ..resource_manager.registry import get_registry
+from ..resource_manager.resource_manager_service import get_registry
 from ._core_disconnected import remove_disconnected_user_resources
 from ._core_guests import remove_users_manually_marked_as_guests
 from ._core_orphans import remove_orphaned_services
