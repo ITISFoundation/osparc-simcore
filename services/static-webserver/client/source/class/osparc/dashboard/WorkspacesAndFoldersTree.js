@@ -175,7 +175,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = null;
       const folderId = null;
       const myWorkspaceData = this.__createItemData(
-        "My Workspace",
+        this.tr("My Workspace"),
         "home",
         workspaceId,
         folderId,
@@ -192,7 +192,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = -1;
       const folderId = null;
       const sharedWorkspaceData = this.__createItemData(
-        "Shared Workspaces",
+        this.tr("Shared Workspaces"),
         "shared",
         workspaceId,
         folderId,
@@ -216,7 +216,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = workspace.getWorkspaceId();
       const folderId = null;
       const workspaceData = this.__createItemData(
-        "",
+        this.tr(""),
         "shared",
         workspaceId,
         folderId,

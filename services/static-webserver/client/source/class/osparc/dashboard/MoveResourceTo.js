@@ -76,7 +76,7 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
           const intro = new qx.ui.basic.Label(this.tr("Current location:"));
           control.add(intro);
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.__currentWorkspaceId);
-          const workspaceText = workspace ? workspace.getName() : "My Workspace";
+          const workspaceText = workspace ? workspace.getName() : this.tr("My Workspace");
           const workspaceLabel = new qx.ui.basic.Label(this.tr("- Workspace: ") + workspaceText);
           control.add(workspaceLabel);
           const folder = osparc.store.Folders.getInstance().getFolder(this.__currentFolderId);
