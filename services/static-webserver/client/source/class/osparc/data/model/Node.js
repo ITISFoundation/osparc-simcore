@@ -615,7 +615,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __populateProgress: function(nodeData) {
       if ("progress" in nodeData) {
-        const progress = Number.parseInt(nodeData["progress"]);
+        const progress = osparc.data.model.NodeStatus.getValidProgress(nodeData["progress"]);
         const oldProgress = this.getStatus().getProgress();
         if (this.isFilePicker() && oldProgress > 0 && oldProgress < 100) {
           // file is being uploaded
@@ -803,7 +803,8 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
         this.getPropsForm().setInputLinks(inputLinks);
-        this.__settingsForm.setData(inputData);
+        const convertedData = this.getPropsForm().convertInputsToCurrentUnits(inputData);
+        this.__settingsForm.setData(convertedData);
       }
     },
 
@@ -1556,11 +1557,37 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           }
           case "inputsUnits": {
-            // this is never transmitted by the frontend
             const updatedPortKey = path.split("/")[4];
-            const currentInputUnits = this.__getInputUnits() || {};
-            currentInputUnits[updatedPortKey] = value;
-            this.__setInputUnits(currentInputUnits);
+            const nodeMD = this.getMetadata();
+            const getDefaultXUnit = portKey => {
+              const portMD = (nodeMD && nodeMD.inputs) ? nodeMD.inputs[portKey] : null;
+              return (portMD && "x_unit" in portMD) ? portMD["x_unit"] : null;
+            };
+            if (updatedPortKey === undefined) {
+              // the whole inputsUnits object was added/replaced/removed
+              if (op === "remove" || value === undefined || value === null || Object.keys(value).length === 0) {
+                // units were cleared: switch every port back to its metadata default unit
+                const resetUnits = {};
+                if (nodeMD && nodeMD.inputs) {
+                  Object.keys(nodeMD.inputs).forEach(portKey => {
+                    const defaultXUnit = getDefaultXUnit(portKey);
+                    if (defaultXUnit) {
+                      resetUnits[portKey] = defaultXUnit;
+                    }
+                  });
+                }
+                this.__setInputUnits(resetUnits);
+              } else {
+                this.__setInputUnits(value);
+              }
+            } else {
+              // a single port's unit changed or was removed
+              // on "remove" there is no value, so fall back to the metadata default unit
+              const targetXUnit = (op === "remove" || value === undefined || value === null) ? getDefaultXUnit(updatedPortKey) : value;
+              if (targetXUnit) {
+                this.__setInputUnits({ [updatedPortKey]: targetXUnit });
+              }
+            }
             break;
           }
           case "inputNodes":
@@ -1630,7 +1657,7 @@ qx.Class.define("osparc.data.model.Node", {
         version: this.getVersion(),
         label: this.getLabel(),
         inputs: this.__getInputData(),
-        inputsUnits: this.__getInputUnits(), // this is not working
+        inputsUnits: this.__getInputUnits(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()
