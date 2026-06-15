@@ -22,7 +22,7 @@ from simcore_service_webserver.users import _accounts_service
 from simcore_service_webserver.users._accounts_repository import (
     create_user_pre_registration,
 )
-from simcore_service_webserver.users.exceptions import (
+from simcore_service_webserver.users.errors import (
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,

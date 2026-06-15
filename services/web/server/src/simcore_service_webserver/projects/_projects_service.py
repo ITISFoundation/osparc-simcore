@@ -122,30 +122,28 @@ from ..models import ClientSessionID
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
-from ..resource_manager.models import UserSession
-from ..resource_manager.registry import get_registry
-from ..resource_manager.user_sessions import (
+from ..resource_manager.resource_manager_service import (
     PROJECT_ID_KEY,
     SOCKET_ID_FIELDNAME,
+    UserSession,
+    get_registry,
     managed_resource,
 )
-from ..resource_usage import service as rut_api
-from ..socketio.messages import (
+from ..resource_usage import resource_usage_service as rut_api
+from ..socketio import socketio_service
+from ..socketio.constants import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
-    send_message_to_standard_group,
-    send_message_to_user,
 )
-from ..socketio.server import get_socket_server
 from ..storage import api as storage_service
 from ..user_preferences import user_preferences_service
-from ..user_preferences.user_preferences_service import (
+from ..user_preferences.models import (
     PreferredWalletIdFrontendUserPreference,
 )
 from ..users import users_service
-from ..users.exceptions import UserDefaultWalletNotFoundError, UserNotFoundError
-from ..wallets import api as wallets_service
+from ..users.errors import UserDefaultWalletNotFoundError, UserNotFoundError
 from ..wallets.errors import WalletNotEnoughCreditsError
+from ..wallets.wallets_service import get_wallet_with_available_credits_by_user_and_wallet
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
 from . import (
     _crud_api_delete,
@@ -713,7 +711,7 @@ async def update_project_node_resources_from_hardware_info(
         raise ClustersKeeperNotAvailableError from exc
 
 
-async def _check_project_node_has_all_required_inputs(
+async def _check_project_node_has_all_required_inputs(  # noqa: C901
     app: web.Application,
     db: ProjectDBAPI,
     user_id: UserID,
@@ -866,7 +864,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
             else:
                 project_wallet_id = project_wallet.wallet_id
             # Check whether user has access to the wallet
-            wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+            wallet = await get_wallet_with_available_credits_by_user_and_wallet(
                 request.app,
                 user_id=user_id,
                 wallet_id=project_wallet_id,
@@ -1533,7 +1531,7 @@ async def _leave_project_room(
             project_uuid,
             socket_id,
         )
-        sio = get_socket_server(app)
+        sio = socketio_service.get_socket_server(app)
         await sio.leave_room(socket_id, SocketIORoomStr.from_project_id(project_uuid))
     else:
         _logger.warning(
@@ -2162,7 +2160,7 @@ async def _send_message_to_project_groups(
 
     await limited_gather(
         *(
-            send_message_to_standard_group(
+            socketio_service.send_message_to_standard_group(
                 app,
                 room,
                 message,
@@ -2194,7 +2192,7 @@ async def notify_project_state_update(
     )
 
     if notify_only_user:
-        await send_message_to_user(
+        await socketio_service.send_message_to_user(
             app,
             user_id=notify_only_user,
             message=message,

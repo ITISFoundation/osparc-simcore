@@ -40,8 +40,8 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
+from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
 from . import _folders_repository, _projects_repository, _projects_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
@@ -137,6 +137,7 @@ async def _copy_project_nodes_from_source_project(
     app: web.Application,
     source_project: ProjectDict,
     nodes_map: NodesMap,
+    *,
     clean_output_data: bool = False,
 ) -> dict[NodeID, ProjectNodeCreate]:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
