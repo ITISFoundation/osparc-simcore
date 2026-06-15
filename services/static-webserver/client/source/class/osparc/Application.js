@@ -54,6 +54,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
       this.__updateTabName();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        osparc.utils.LanguageManager.applyStoredLocale();
         this.__updateMetaTags();
         this.__setDeviceSpecificIcons();
       }
