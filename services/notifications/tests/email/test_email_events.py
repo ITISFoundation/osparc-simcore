@@ -38,7 +38,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_notifications.api.rpc.dependencies import get_jinja_env
 from simcore_service_notifications.clients.smtp import create_session
 from simcore_service_notifications.models.payments import PaymentData
-from simcore_service_notifications.models.smtp import SMTPSettings
 from simcore_service_notifications.renderers._email_render import (
     get_support_address,
     get_user_address,
@@ -48,6 +47,7 @@ from simcore_service_notifications.services.email import (
     add_attachments,
     compose_email,
 )
+from simcore_service_notifications.core.settings import SMTPSettings
 
 
 def _safe_json_dumps(obj: Any, **kwargs):
