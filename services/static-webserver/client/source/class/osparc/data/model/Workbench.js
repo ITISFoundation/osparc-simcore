@@ -814,6 +814,11 @@ qx.Class.define("osparc.data.model.Workbench", {
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
             // do not patch if it's undefined
             if (nodeData[changedFieldKey] === undefined) {
+              // a field that is in the diff but missing from the serialized node was reset to its default.
+              // inputsUnits must be explicitly sent as {} so the backend clears the previously stored override.
+              if (changedFieldKey === "inputsUnits") {
+                patchData[changedFieldKey] = {};
+              }
               return;
             }
             // if someone else is actively uploading (progress between NOT_STARTED and COMPLETED), don't patch it, the backend already knows
