@@ -750,10 +750,6 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Some of your services are outdated. Please update to the latest version for better performance.\\\\\\\\n\\\\\\\\nDo you want to update now?"
-msgstr ""
-
 #: osparc/workbench/ServiceCatalog.js
 msgid "Version"
 msgstr ""
@@ -2036,10 +2032,6 @@ msgstr ""
 
 #. NO LONGER USED
 msgid "Show Description only"
-msgstr ""
-
-#. NO LONGER USED
-msgid "From all the metadata shown in this view,\\\\\\\\nonly the Description will be shown to Users."
 msgstr ""
 
 #: osparc/info/ServiceLarge.js
@@ -4518,10 +4510,6 @@ msgstr ""
 msgid "Something went wrong"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
-msgstr ""
-
 #: osparc/ui/message/FlashMessageOEC.js
 msgid "Send Report"
 msgstr ""
@@ -4752,10 +4740,6 @@ msgstr ""
 
 #: osparc/share/RequestServiceAccess.js
 msgid "Request Apps Access"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
 msgstr ""
 
 #: osparc/dashboard/ResourceDetails.js
@@ -5374,10 +5358,6 @@ msgstr ""
 msgid "Description only"
 msgstr ""
 
-#. NO LONGER USED
-msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
-msgstr ""
-
 #: osparc/info/ServiceLarge.js
 msgid "Not set"
 msgstr ""
@@ -5978,18 +5958,6 @@ msgstr ""
 msgid "Preferred"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Please describe what you were doing before the error (optional).\\nThis will help our support team understand the context and resolve the issue faster."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Some of your services are outdated. Please update to the latest version for better performance.\\n\\nDo you want to update now?"
-msgstr ""
-
-#. NO LONGER USED
-msgid "From all the metadata shown in this view,\\nonly the Description will be shown to Users."
-msgstr ""
-
 #: osparc/desktop/preferences/pages/GeneralPage.js
 msgid "Language"
 msgstr ""
@@ -5998,16 +5966,38 @@ msgstr ""
 msgid "Translations are AI-generated and may contain errors. Please report any issues to help us improve them."
 msgstr ""
 
-#: osparc/ui/message/FlashMessageOEC.js
+#. NO LONGER USED
 msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
 msgstr ""
 
-#: osparc/dashboard/ResourceDetails.js
+#. NO LONGER USED
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
+#. NO LONGER USED
 msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
 msgstr ""
-"
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Some of your services are outdated. Please update to the latest version for better performance."
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Do you want to update them now?"
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Please describe what you were doing before the error (optional)."
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "This will help our support team understand the context and resolve the issue faster."
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "From all the metadata shown in this view,"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "only the Description will be shown to Users."
 msgstr ""
