@@ -16,7 +16,7 @@ from simcore_sdk.node_ports_common import filemanager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePathError
 
-from ..core.rabbitmq import get_rabbitmq_client
+from ..core.rabbitmq import get_rabbitmq_client, log_catch
 from ..core.settings import ApplicationSettings
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
@@ -139,7 +139,8 @@ async def _notify_path_change(
 async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
     message = FileNotificationMessage.model_validate_json(data)
     _logger.debug("Received file notification: %s for file_id=%s", message.event_type, message.file_id)
-    await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
+    with log_catch(_logger, reraise=False):
+        await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
     return True
 
 

@@ -4,7 +4,6 @@
 # pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 import asyncio
-import logging
 import os
 import tempfile
 from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterator
@@ -33,6 +32,7 @@ from servicelib.logging_utils import _dampen_noisy_loggers
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings
 from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
+    InvalidRemotePathError,
     MountActivity,
     MountRemoteType,
     NoMountFoundForRemotePathError,
@@ -471,19 +471,19 @@ async def test_refresh_path_refreshes_containing_directory(
         "proj/node//file",
     ],
 )
-async def test_refresh_path_with_invalid_remote_path_warns_and_returns(
-    r_clone_mount_manager: RCloneMountManager,
-    caplog: pytest.LogCaptureFixture,
+async def test_refresh_path_with_invalid_remote_path_raises(
     invalid_remote_path: str,
 ):
-    with caplog.at_level(
-        logging.WARNING,
-        logger="simcore_sdk.node_ports_common.r_clone_mount._manager",
-    ):
-        await r_clone_mount_manager.refresh_path(remote_path=cast(StorageFileID, invalid_remote_path))
+    manager = object.__new__(RCloneMountManager)
+    manager._tracked_mounts = {}  # noqa: SLF001
+    manager._reverse_path_search = {}  # noqa: SLF001
 
-    assert "Skipping mount refresh for invalid remote_path" in caplog.text
-    assert f"'{invalid_remote_path}'" in caplog.text
+    with pytest.raises(InvalidRemotePathError) as exc_info:
+        await manager.refresh_path(  # type: ignore[misc]
+            remote_path=cast(StorageFileID, invalid_remote_path)
+        )
+
+    assert exc_info.value.remote_path == invalid_remote_path
 
 
 @pytest.mark.parametrize("file_count", [10])

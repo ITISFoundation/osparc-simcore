@@ -15,6 +15,7 @@ from settings_library.r_clone import RCloneSettings
 from ._config_provider import MountRemoteType, get_config_content
 from ._container import ContainerManager, RemoteControlHttpClient
 from ._errors import (
+    InvalidRemotePathError,
     MountAlreadyStartedError,
     NoMountFoundForRemotePathError,
 )
@@ -228,14 +229,7 @@ class RCloneMountManager:
 
         remote_path_parts = remote_path.split("/")
         if len(remote_path_parts) < _MIN_PATH_PARTS or any(not p for p in remote_path_parts[:_MIN_PATH_PARTS]):
-            _logger.warning(
-                (
-                    "Skipping mount refresh for invalid remote_path '%s'. "
-                    "Expected '{project_id}/{node_id}/DIRECTORY_PATH'"
-                ),
-                remote_path,
-            )
-            return
+            raise InvalidRemotePathError(remote_path=remote_path)
 
         with log_context(_logger, logging.INFO, f"refreshing mount for {remote_path=}", log_duration=True):
             base_s3_path = "/".join(remote_path_parts[:_MIN_PATH_PARTS])
