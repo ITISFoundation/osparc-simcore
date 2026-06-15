@@ -4,7 +4,6 @@ from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import LogLevel
 from models_library.notifications.rpc import SenderIdentity
-from models_library.products import ProductName
 from pydantic import (
     AliasChoices,
     BaseModel,
@@ -48,28 +47,6 @@ class SMTPSettings(BaseModel):
 
     username: Annotated[str | None, Field(min_length=1)] = None
     password: Annotated[SecretStr | None, Field(min_length=1)] = None
-    extra_headers: Annotated[
-        dict[str, str],
-        Field(
-            default_factory=dict,
-            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
-        ),
-    ] = DEFAULT_FACTORY
-
-    domain: str
-
-    local_parts: Annotated[
-        dict[SenderIdentity, str],
-        Field(
-            description="A mapping of FromIdentity values to local-part strings used to build sender emails.",
-            examples=[
-                {
-                    "support": "support",
-                    "no-reply": "no-reply",
-                }
-            ],
-        ),
-    ]
 
     @model_validator(mode="after")
     def _both_credentials_must_be_set(self) -> Self:
@@ -97,6 +74,39 @@ class SMTPSettings(BaseModel):
             raise ValueError(msg)
         return self
 
+    @property
+    def has_credentials(self) -> bool:
+        return self.username is not None and self.password is not None
+
+
+class ProductSMTPSettings(BaseModel):
+    """Per-product SMTP configuration with named profiles."""
+
+    model_config = {"frozen": True}
+
+    smtp_settings: SMTPSettings
+    domain: str
+    extra_headers: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
+        ),
+    ] = DEFAULT_FACTORY
+
+    local_parts: Annotated[
+        dict[SenderIdentity, str],
+        Field(
+            description="A mapping of FromIdentity values to local-part strings used to build sender emails.",
+            examples=[
+                {
+                    "support": "support",
+                    "no-reply": "no-reply",
+                }
+            ],
+        ),
+    ]
+
     @model_validator(mode="after")
     def _validate_extra_headers_allowed(self) -> Self:
         disallowed = {k for k in self.extra_headers if k.lower() not in ALLOWED_HEADERS}
@@ -107,40 +117,6 @@ class SMTPSettings(BaseModel):
             )
             raise ValueError(msg)
         return self
-
-    def get_local_part_for_identity(self, identity: SenderIdentity) -> str:
-        if identity not in self.local_parts:
-            msg = f"No local-part configured for identity {identity!r}. Configured: {sorted(self.local_parts)}"
-            raise ValueError(msg)
-        return self.local_parts[identity]
-
-    @property
-    def has_credentials(self) -> bool:
-        return self.username is not None and self.password is not None
-
-
-class ProductToSMTPSettings(BaseModel):
-    """Per-product SMTP configuration with named profiles."""
-
-    model_config = {"frozen": True}
-
-    profiles: dict[ProfileName, SMTPSettings]
-    product_to_profile: dict[ProductName, ProfileName]
-
-    @model_validator(mode="after")
-    def _all_profiles_exist(self) -> "ProductToSMTPSettings":
-        missing = {profile for profile in self.product_to_profile.values() if profile not in self.profiles}
-        if missing:
-            msg = f"product_to_profile references undefined SMTP profiles: {sorted(missing)}"
-            raise ValueError(msg)
-        return self
-
-    def get_smtp_settings_for_product(self, product_name: ProductName) -> SMTPSettings:
-        profile_name = self.product_to_profile.get(product_name)
-        if profile_name is None:
-            msg = f"No SMTP profile configured for product {product_name!r}"
-            raise ValueError(msg)
-        return self.profiles[profile_name]
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -225,7 +201,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
-        ProductToSMTPSettings | None,
+        ProductSMTPSettings | None,
         Field(
             description=(
                 "Per-product SMTP settings with named profiles and product-to-profile mapping. "

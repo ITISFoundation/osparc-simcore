@@ -10,7 +10,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 )
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
-    ProductToSMTPSettings,
+    ProductSMTPSettings,
     SMTPSettings,
 )
 
@@ -36,7 +36,7 @@ _SMTP_PAYLOAD = {
 
 def test_product_smtp_settings_rejects_undefined_profile_reference():
     with pytest.raises(ValidationError, match="undefined SMTP profiles"):
-        ProductToSMTPSettings.model_validate(
+        ProductSMTPSettings.model_validate(
             {
                 "profiles": {"profile_a": _SMTP_PAYLOAD},
                 "product_to_profile": {"osparc": "nonexistent_profile"},
@@ -45,7 +45,7 @@ def test_product_smtp_settings_rejects_undefined_profile_reference():
 
 
 def test_product_smtp_settings_get_smtp_settings_for_product():
-    product_smtp = ProductToSMTPSettings.model_validate(
+    product_smtp = ProductSMTPSettings.model_validate(
         {
             "profiles": {"profile_a": _SMTP_PAYLOAD},
             "product_to_profile": {"osparc": "profile_a"},
@@ -59,7 +59,7 @@ def test_product_smtp_settings_get_smtp_settings_for_product():
 
 
 def test_product_smtp_settings_unknown_product_raises():
-    product_smtp = ProductToSMTPSettings.model_validate(
+    product_smtp = ProductSMTPSettings.model_validate(
         {
             "profiles": {"profile_a": _SMTP_PAYLOAD},
             "product_to_profile": {"osparc": "profile_a"},
@@ -71,7 +71,7 @@ def test_product_smtp_settings_unknown_product_raises():
 
 
 def test_product_smtp_settings_multiple_products_same_profile():
-    product_smtp = ProductToSMTPSettings.model_validate(
+    product_smtp = ProductSMTPSettings.model_validate(
         {
             "profiles": {"shared_profile": _SMTP_PAYLOAD},
             "product_to_profile": {"osparc": "shared_profile", "s4l": "shared_profile"},
