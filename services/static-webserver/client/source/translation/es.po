@@ -632,7 +632,7 @@ msgstr "Error al guardar el estudio"
 msgid "Unsuccessful polling status"
 msgstr "Error al consultar el estado"
 
-#: osparc/dashboard/ResourceBrowserFilter.js
+#: osparc/dashboard/WorkspacesAndFoldersTree.js
 msgid "My Workspace"
 msgstr "Mi espacio de trabajo"
 
@@ -1224,7 +1224,7 @@ msgstr "Validar"
 msgid "Skip phone registration and send code via email"
 msgstr "Omitir el registro del teléfono y enviar el código por correo electrónico"
 
-#: osparc/auth/ui/VerifyPhoneNumberView.js
+#: osparc/auth/ui/Login2FAValidationCodeView.js
 msgid "Invalid code"
 msgstr "Código no válido"
 
@@ -2808,7 +2808,7 @@ msgstr "Eliminar todo"
 msgid "All items will be permanently deleted"
 msgstr "Todos los elementos se eliminarán permanentemente"
 
-#: osparc/dashboard/StudyBrowserHeader.js
+#: osparc/dashboard/WorkspacesAndFoldersTree.js
 msgid "Shared Workspaces"
 msgstr "Espacios de trabajo compartidos"
 
@@ -3242,7 +3242,7 @@ msgstr "        2) Otras tarjetas: Cada tarjeta representa un proyecto existente
 
 #: osparc/product/quickStart/s4llite/Dashboard.js
 msgid "        3) TUTORIALS: A set of pre-built read-only tutorial projects with results is available to all Sim4Life.lite users. When a tutorial is selected, a         copy is automatically created and added to the user’s Projects tab. This new copy is editable and can be shared.      "
-msgstr "        3) TUTORIALS: Un conjunto de proyectos tutorials predefinidos de solo lectura con resultados está disponible para todos los usuarios de Sim4Life.lite. Cuando se selecciona un tutorial, se         crea automáticamente una copia que se añade a la pestaña Proyectos del usuario. Esta nueva copia es editable y se puede compartir.      "
+msgstr "        3) TUTORIALES: Un conjunto de proyectos tutorials predefinidos de solo lectura con resultados está disponible para todos los usuarios de Sim4Life.lite. Cuando se selecciona un tutorial, se         crea automáticamente una copia que se añade a la pestaña Proyectos del usuario. Esta nueva copia es editable y se puede compartir.      "
 
 #: osparc/product/quickStart/s4llite/Dashboard.js
 msgid "        4) To open an existing desktop project in Sim4Life.lite:         - Click the + Start Sim4Life.lite button to create a new project.<br>        - Click the menu and select “File Browser…”.<br>        - Click “Upload File” for the .smash project and select the file from your desktop. Repeat the same step, but this         time select “Upload Folder” and then select the result folder from your desktop. Close the window<br>        - Click the Menu again and click “Open” to select the file you just uploaded.<br>      "
@@ -4528,7 +4528,7 @@ msgstr "Contactar con el soporte"
 msgid "Something went wrong"
 msgstr "Algo salió mal"
 
-#. NO LONGER USED
+#: osparc/ui/message/FlashMessageOEC.js
 msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
 msgstr "Describe qué estabas haciendo antes del error (opcional).\nEsto ayudará a nuestro equipo de soporte a entender el contexto y resolver el problema más rápido."
 
@@ -4658,7 +4658,7 @@ msgstr "PROYECTOS"
 
 #: osparc/dashboard/Dashboard.js
 msgid "TUTORIALS"
-msgstr "TUTORIALS"
+msgstr "TUTORIALES"
 
 #: osparc/dashboard/Dashboard.js
 msgid "APPS"
@@ -4764,7 +4764,7 @@ msgstr "Datos no encontrados, inténtalo de nuevo"
 msgid "Request Apps Access"
 msgstr "Solicitar acceso a las aplicaciones"
 
-#. NO LONGER USED
+#: osparc/dashboard/ResourceDetails.js
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
 msgstr "Algunos de tus servicios están desactualizados. Actualiza a la última versión para un mejor rendimiento.\n\n¿Quieres actualizar ahora?"
 
@@ -5214,7 +5214,7 @@ msgstr "Resultados de archivos"
 
 #: osparc/widget/Renamer.js
 msgid "%1 characters max"
-msgstr "%1 characters máximo"
+msgstr "%1 caracteres máximo"
 
 #: osparc/task/Import.js
 msgid "Importing..."
@@ -5242,7 +5242,7 @@ msgstr "Tipo de aplicación"
 
 #: osparc/dashboard/SearchBarFilter.js
 msgid "Please enter at least 3 characters to search."
-msgstr "Introduce al menos 3 characters para buscar."
+msgstr "Introduce al menos 3 caracteres para buscar."
 
 #: osparc/dashboard/ResourceContainerManager.js
 msgid "No Resources found"
@@ -5384,7 +5384,7 @@ msgstr "Versión de integración"
 msgid "Description only"
 msgstr "Solo descripción"
 
-#. NO LONGER USED
+#: osparc/info/ServiceLarge.js
 msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
 msgstr "De todos los metadatos mostrados en esta vista,\nsolo la descripción se mostrará a los usuarios."
 
@@ -5988,14 +5988,22 @@ msgstr "Mensaje de prueba de mantenimiento"
 msgid "Preferred"
 msgstr "Preferido"
 
-#: osparc/ui/message/FlashMessageOEC.js
+#. NO LONGER USED
 msgid "Please describe what you were doing before the error (optional).\\nThis will help our support team understand the context and resolve the issue faster."
 msgstr "Describe qué estabas haciendo antes del error (opcional).\\nEsto ayudará a nuestro equipo de soporte a entender el contexto y resolver el problema más rápido."
 
-#: osparc/dashboard/ResourceDetails.js
+#. NO LONGER USED
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\\n\\nDo you want to update now?"
 msgstr "Algunos de tus servicios están desactualizados. Actualiza a la última versión para un mejor rendimiento.\\n\\n¿Quieres actualizar ahora?"
 
-#: osparc/info/ServiceLarge.js
+#. NO LONGER USED
 msgid "From all the metadata shown in this view,\\nonly the Description will be shown to Users."
 msgstr "De todos los metadatos mostrados en esta vista,\\nsolo la descripción se mostrará a los usuarios."
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Language"
+msgstr "Idioma"
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Translations are AI-generated and may contain errors. Please report any issues to help us improve them."
+msgstr "Las traducciones se generan con IA y pueden contener errores. Informa de cualquier problema para ayudarnos a mejorarlas."
