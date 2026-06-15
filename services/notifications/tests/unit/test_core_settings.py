@@ -30,7 +30,7 @@ _SMTP_PAYLOAD = {
     "protocol": "UNENCRYPTED",
     "domain": "osparc.io",
     "extra_headers": {},
-    "local_parts": {"SUPPORT": "support", "NO_REPLY": "no-reply"},
+    "local_parts": {"support": "support", "no_reply": "no-reply"},
 }
 
 
