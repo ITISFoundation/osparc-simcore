@@ -50,6 +50,9 @@ class EmailChannelHandler(ChannelHandler):
                     name="no-reply",
                     email=get_email(SenderIdentity.NO_REPLY, smtp_settings),
                 )
+            case _:
+                msg = f"Unsupported from_identity={from_identity!r}"
+                raise ValueError(msg)
 
     @staticmethod
     def prepare_messages(
