@@ -148,6 +148,10 @@ COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/payments/docker services/payments/docker
 RUN chmod +x services/payments/docker/*.sh
 
+# Copies healthcheck script for fast execution (python3 -S skips site-packages)
+COPY --chown=scu:scu \
+  scripts/docker/docker_healthcheck.py \
+  docker/healthcheck.py
 
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
@@ -156,7 +160,7 @@ HEALTHCHECK \
   --start-period=120s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/"]
 
 ENTRYPOINT [ "/bin/sh", "services/payments/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/payments/docker/boot.sh"]

@@ -39,7 +39,7 @@ APP_STARTED_BANNER_MSG = r"""
 | (____/\| (____/\| (___) |/\____) |   | |   | (____/\| ) \ \__/\____) |       |  /  \ \| (____/\| (____/\| )      | (____/\| ) \ \__
 (_______/(_______/(_______)\_______)   )_(   (_______/|/   \__/\_______)       |_/    \/(_______/(_______/|/       (_______/|/   \__/
                                                                                                                                     {}
-""".format(f"v{__version__}")
+""".format(f"v{__version__}")  # noqa: E501
 
 APP_STARTED_DISABLED_BANNER_MSG = r"""
       _  _              _      _            _
@@ -49,5 +49,7 @@ APP_STARTED_DISABLED_BANNER_MSG = r"""
  | (_| || |\__ \| (_| || |_) || ||  __/| (_| |
   \__,_||_||___/ \__,_||_.__/ |_| \___| \__,_|
 """
+
+APP_STARTING_BANNER_MSG = "{:=^100}".format(f"🚀 App {APP_NAME}=={__version__} starting up 🚀")
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format(f"🎉 App {APP_NAME}=={__version__} shutdown completed 🎉")

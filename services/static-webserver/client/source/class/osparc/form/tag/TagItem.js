@@ -122,7 +122,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
           control = new qx.ui.form.TextField().set({
             required: true
           });
-          osparc.utils.Utils.disableAutocomplete(control);
           this.__validationManager.add(control);
           break;
         case "description-input":

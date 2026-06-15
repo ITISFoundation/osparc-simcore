@@ -4,9 +4,6 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.groups import GroupID
-from models_library.wallets import WalletID
-from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -14,15 +11,19 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
-from ._groups_api import WalletGroupGet
-from ._handlers import WalletsPathParams
+from ._schemas import (
+    WalletsPathParams,
+    _WalletsGroupsBodyParams,
+    _WalletsGroupsPathParams,
+)
 from .errors import WalletAccessForbiddenError, WalletGroupNotFoundError
+from .models import WalletGroupGet
 
 _logger = logging.getLogger(__name__)
 
@@ -49,20 +50,7 @@ def _handle_wallets_groups_exceptions(handler: Handler):
 routes = web.RouteTableDef()
 
 
-class _WalletsGroupsPathParams(BaseModel):
-    wallet_id: WalletID
-    group_id: GroupID
-    model_config = ConfigDict(extra="forbid")
-
-
-class _WalletsGroupsBodyParams(BaseModel):
-    read: bool
-    write: bool
-    delete: bool
-    model_config = ConfigDict(extra="forbid")
-
-
-@routes.post(f"/{VTAG}/wallets/{{wallet_id}}/groups/{{group_id}}", name="create_wallet_group")
+@routes.post(f"/{API_VTAG}/wallets/{{wallet_id}}/groups/{{group_id}}", name="create_wallet_group")
 @login_required
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
@@ -85,7 +73,7 @@ async def create_wallet_group(request: web.Request):
     return envelope_json_response(wallet_groups, web.HTTPCreated)
 
 
-@routes.get(f"/{VTAG}/wallets/{{wallet_id}}/groups", name="list_wallet_groups")
+@routes.get(f"/{API_VTAG}/wallets/{{wallet_id}}/groups", name="list_wallet_groups")
 @login_required
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
@@ -104,7 +92,7 @@ async def list_wallet_groups(request: web.Request):
 
 
 @routes.put(
-    f"/{VTAG}/wallets/{{wallet_id}}/groups/{{group_id}}",
+    f"/{API_VTAG}/wallets/{{wallet_id}}/groups/{{group_id}}",
     name="update_wallet_group",
 )
 @login_required
@@ -128,7 +116,7 @@ async def update_wallet_group(request: web.Request):
 
 
 @routes.delete(
-    f"/{VTAG}/wallets/{{wallet_id}}/groups/{{group_id}}",
+    f"/{API_VTAG}/wallets/{{wallet_id}}/groups/{{group_id}}",
     name="delete_wallet_group",
 )
 @login_required

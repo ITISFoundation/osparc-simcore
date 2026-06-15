@@ -41,6 +41,9 @@ from simcore_service_webserver.login.constants import (
     MSG_LOGGED_IN,
 )
 from simcore_service_webserver.user_preferences import user_preferences_service
+from simcore_service_webserver.user_preferences.models import (
+    TwoFAFrontendUserPreference,
+)
 from twilio.base.exceptions import TwilioRestException
 from yarl import URL
 
@@ -261,7 +264,7 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
 
     # login (via EMAIL) ---------------------------------------------------------
     # Change 2fa user preference
-    _preference_id = user_preferences_service.TwoFAFrontendUserPreference().preference_identifier
+    _preference_id = TwoFAFrontendUserPreference().preference_identifier
     await user_preferences_service.set_frontend_user_preference(
         client.app,
         user_id=user["id"],

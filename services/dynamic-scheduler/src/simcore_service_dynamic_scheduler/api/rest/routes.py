@@ -9,7 +9,7 @@ from ..._meta import API_VTAG
 from . import _health, _meta, _ops
 
 
-def initialize_rest_api(app: FastAPI) -> None:
+def configure_rest_api(app: FastAPI) -> None:
     app.include_router(_health.router)
 
     api_router = APIRouter(prefix=f"/{API_VTAG}")

@@ -37,6 +37,14 @@ from sqlalchemy import Column
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 
+__all__ = (
+    "CreditResult",
+    "PaymentFields",
+    "Product",
+    "ProductName",
+    "ProductStripeInfo",
+)
+
 _logger = logging.getLogger(__name__)
 
 
@@ -134,10 +142,6 @@ class Product(BaseModel):
         ),
     ]
 
-    registration_email_template: Annotated[
-        str | None, Field(json_schema_extra={"x_template_name": "registration_email"})
-    ] = None
-
     max_open_studies_per_user: Annotated[
         PositiveInt | None,
         Field(
@@ -226,7 +230,6 @@ class Product(BaseModel):
                         "host_regex": r"([\.-]{0,1}osparc[\.-])",
                         "base_url": "https://osparc.io",
                         "twilio_messaging_sid": "1" * 34,
-                        "registration_email_template": "osparc_registration_email",
                         "login_settings": {
                             "LOGIN_2FA_REQUIRED": False,
                         },
@@ -353,17 +356,6 @@ class Product(BaseModel):
             exclude_none=True,
             exclude_unset=True,
         )
-
-    def get_template_name_for(self, filename: str) -> str | None:
-        """Checks for field marked with 'x_template_name' that fits the argument"""
-        template_name = filename.removesuffix(".jinja2")
-        for name, field in self.__class__.model_fields.items():
-            if (
-                field.json_schema_extra and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
-            ):
-                template_name_attribute: str = getattr(self, name)
-                return template_name_attribute
-        return None
 
 
 class ProductBaseUrl(BaseModel):
