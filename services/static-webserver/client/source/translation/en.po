@@ -6,14 +6,6 @@ msgstr ""
 msgid "New Version Released"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Privacy Policy"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Privacy Policy and License Terms"
-msgstr ""
-
 #: osparc/desktop/credits/Transactions.js
 msgid "Reload"
 msgstr ""
@@ -102,14 +94,6 @@ msgstr ""
 msgid "project"
 msgstr ""
 
-#. NO LONGER USED
-msgid "studies"
-msgstr ""
-
-#. NO LONGER USED
-msgid "study"
-msgstr ""
-
 #: osparc/product/Utils.js
 msgid "tutorials"
 msgstr ""
@@ -136,10 +120,6 @@ msgstr ""
 
 #: osparc/NewRelease.js
 msgid "We are pleased to announce that some new features were deployed for you!"
-msgstr ""
-
-#. NO LONGER USED
-msgid "What's new in "
 msgstr ""
 
 #: osparc/CookiePolicy.js
@@ -230,10 +210,6 @@ msgstr ""
 msgid "No snapshot found"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Study not found"
-msgstr ""
-
 #: osparc/desktop/MainPage.js
 msgid "Loading Iteration"
 msgstr ""
@@ -256,10 +232,6 @@ msgstr ""
 
 #: osparc/NewUITracker.js
 msgid "A new version of the application is now available."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Click the Reload button to get the latest features."
 msgstr ""
 
 #: osparc/ui/switch/ThemeSwitcher.js
@@ -290,10 +262,6 @@ msgstr ""
 msgid "Hits: "
 msgstr ""
 
-#. NO LONGER USED
-msgid "Inaccessible service(s):"
-msgstr ""
-
 #: osparc/dashboard/CardBase.js
 msgid "Service(s) retired, please update"
 msgstr ""
@@ -320,30 +288,6 @@ msgstr ""
 
 #: osparc/dashboard/CardBase.js
 msgid "Unsuccessful Run"
-msgstr ""
-
-#. NO LONGER USED
-msgid "A user"
-msgstr ""
-
-#. NO LONGER USED
-msgid " is closing it..."
-msgstr ""
-
-#. NO LONGER USED
-msgid " is cloning it..."
-msgstr ""
-
-#. NO LONGER USED
-msgid " is exporting it..."
-msgstr ""
-
-#. NO LONGER USED
-msgid " is opening it..."
-msgstr ""
-
-#. NO LONGER USED
-msgid " is using it."
 msgstr ""
 
 #: osparc/dashboard/CardBase.js
@@ -396,10 +340,6 @@ msgstr ""
 
 #: osparc/store/Data.js
 msgid "Unsuccessful file copy"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Unsuccessful file deletion"
 msgstr ""
 
 #: osparc/notification/RibbonNotification.js
@@ -528,26 +468,6 @@ msgstr ""
 
 #: osparc/snapshots/Loading.js
 msgid "Loading "
-msgstr ""
-
-#. NO LONGER USED
-msgid "is already open by"
-msgstr ""
-
-#. NO LONGER USED
-msgid "another user."
-msgstr ""
-
-#. NO LONGER USED
-msgid "We encountered an issue with the"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Please contact support."
-msgstr ""
-
-#. NO LONGER USED
-msgid "SERVICES"
 msgstr ""
 
 #: osparc/dashboard/Dashboard.js
@@ -730,14 +650,6 @@ msgstr ""
 msgid "Connecting..."
 msgstr ""
 
-#. NO LONGER USED
-msgid "Exporting "
-msgstr ""
-
-#. NO LONGER USED
-msgid "Details"
-msgstr ""
-
 #: osparc/dashboard/ResourceDetails.js
 msgid "Credits required"
 msgstr ""
@@ -754,10 +666,6 @@ msgstr ""
 msgid "Version"
 msgstr ""
 
-#. NO LONGER USED
-msgid " Files..."
-msgstr ""
-
 #: osparc/dashboard/ResourceDetails.js
 msgid "Overview"
 msgstr ""
@@ -772,10 +680,6 @@ msgstr ""
 
 #: osparc/dashboard/ResourceDetails.js
 msgid "Pipeline View"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Comments"
 msgstr ""
 
 #: osparc/dashboard/ResourceDetails.js
@@ -800,10 +704,6 @@ msgstr ""
 
 #: osparc/node/BootOptionsView.js
 msgid "Boot Options"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Publish "
 msgstr ""
 
 #: osparc/dashboard/ResourceBrowserBase.js
@@ -886,24 +786,12 @@ msgstr ""
 msgid "Restricted member: no Read access"
 msgstr ""
 
-#. NO LONGER USED
-msgid "- can access content shared within the Organization"
-msgstr ""
-
 #: osparc/data/Roles.js
 msgid "Member"
 msgstr ""
 
 #: osparc/data/Roles.js
 msgid "Member: Read access"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can see other members"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can share with other members"
 msgstr ""
 
 #: osparc/data/Roles.js
@@ -914,28 +802,12 @@ msgstr ""
 msgid "Manager: Read/Write access"
 msgstr ""
 
-#. NO LONGER USED
-msgid "- can Add/Delete members"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can Promote/Demote members"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can Edit Organization details"
-msgstr ""
-
 #: osparc/data/Roles.js
 msgid "Administrator"
 msgstr ""
 
 #: osparc/data/Roles.js
 msgid "Admin: Read/Write/Delete access"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can Delete the Organization"
 msgstr ""
 
 #: osparc/desktop/credits/CheckoutsTable.js
@@ -946,24 +818,12 @@ msgstr ""
 msgid "User: Read access"
 msgstr ""
 
-#. NO LONGER USED
-msgid "- can open it"
-msgstr ""
-
 #: osparc/editor/EmailContentEditor.js
 msgid "Editor"
 msgstr ""
 
 #: osparc/data/Roles.js
 msgid "Editor: Read/Write access"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can make changes"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can share it"
 msgstr ""
 
 #: osparc/share/RequestServiceAccess.js
@@ -974,28 +834,12 @@ msgstr ""
 msgid "Owner: Read/Write/Delete access"
 msgstr ""
 
-#. NO LONGER USED
-msgid "- can delete it"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can use it"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can use the credits"
-msgstr ""
-
 #: osparc/data/Roles.js
 msgid "Accountant"
 msgstr ""
 
 #: osparc/data/Roles.js
 msgid "Accountant: Read/Write access"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can Edit Credit Account details"
 msgstr ""
 
 #: osparc/data/Roles.js
@@ -1006,28 +850,8 @@ msgstr ""
 msgid "Viewer: Read access"
 msgstr ""
 
-#. NO LONGER USED
-msgid "- can inspect the content and open "
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can add "
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can add folders"
-msgstr ""
-
-#. NO LONGER USED
-msgid "- can rename workspace"
-msgstr ""
-
 #: osparc/data/Roles.js
 msgid "Roles"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Share with..."
 msgstr ""
 
 #: osparc/share/AddCollaborators.js
@@ -1174,10 +998,6 @@ msgstr ""
 msgid "Request"
 msgstr ""
 
-#. NO LONGER USED
-msgid "The request is being processed, you will hear from us in the coming hours"
-msgstr ""
-
 #: osparc/auth/ui/RequestAccount.js
 msgid "Reload Captcha"
 msgstr ""
@@ -1188,10 +1008,6 @@ msgstr ""
 
 #: osparc/auth/ui/VerifyPhoneNumberView.js
 msgid "Two-Factor Authentication (2FA)"
-msgstr ""
-
-#. NO LONGER USED
-msgid "A text message will be sent to your mobile phone for authentication each time you log in."
 msgstr ""
 
 #: osparc/auth/ui/VerifyPhoneNumberView.js
@@ -1270,10 +1086,6 @@ msgstr ""
 msgid "Convert to Pipeline"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Convert to Standalone"
-msgstr ""
-
 #: osparc/dashboard/FolderButtonItem.js
 msgid "Restore"
 msgstr ""
@@ -1284,10 +1096,6 @@ msgstr ""
 
 #: osparc/jobs/ActivityCenterWindow.js
 msgid "Tasks"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Jobs"
 msgstr ""
 
 #: osparc/navigation/UserMenu.js
@@ -1318,10 +1126,6 @@ msgstr ""
 msgid "Checkouts"
 msgstr ""
 
-#. NO LONGER USED
-msgid "username"
-msgstr ""
-
 #: osparc/desktop/account/ProfilePage.js
 msgid "Expiration date:"
 msgstr ""
@@ -1348,10 +1152,6 @@ msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
 msgid "Privacy"
-msgstr ""
-
-#. NO LONGER USED
-msgid "For Privacy reasons, you might want to hide some personal data."
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
@@ -1414,10 +1214,6 @@ msgstr ""
 msgid "Unsuccessful password reset"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Danger Zone"
-msgstr ""
-
 #: osparc/desktop/account/DeleteAccount.js
 msgid "Delete Account"
 msgstr ""
@@ -1462,10 +1258,6 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Start with an empty study"
-msgstr ""
-
 #: osparc/dashboard/StudyBrowser.js
 msgid "New Plan"
 msgstr ""
@@ -1500,10 +1292,6 @@ msgstr ""
 
 #: osparc/dashboard/FolderButtonItem.js
 msgid "Rename..."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Thumbnail..."
 msgstr ""
 
 #: osparc/info/MergedLarge.js
@@ -1622,14 +1410,6 @@ msgstr ""
 msgid "Are you sure you want to delete "
 msgstr ""
 
-#. NO LONGER USED
-msgid "Study to Template cancelled"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Something went wrong while publishing the study<br>"
-msgstr ""
-
 #: osparc/dashboard/ResourceBrowserBase.js
 msgid "Publishing "
 msgstr ""
@@ -1642,18 +1422,6 @@ msgstr ""
 msgid "Please contact us:"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Test with data"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Submit new service"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Submit a new service"
-msgstr ""
-
 #: osparc/desktop/WorkbenchView.js
 msgid "New Node"
 msgstr ""
@@ -1664,10 +1432,6 @@ msgstr ""
 
 #: osparc/desktop/WorkbenchView.js
 msgid "Storage"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Study options"
 msgstr ""
 
 #: osparc/desktop/WorkbenchView.js
@@ -1698,16 +1462,8 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Annotations"
-msgstr ""
-
 #: osparc/editor/AnnotationNoteCreator.js
 msgid "Note"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Rectangle"
 msgstr ""
 
 #: osparc/desktop/WorkbenchView.js
@@ -1824,10 +1580,6 @@ msgstr ""
 
 #: osparc/widget/NodesSlidesTree.js
 msgid "You can also display nodes by clicking on them on the Workbench or Nodes list."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Disable"
 msgstr ""
 
 #: osparc/pricing/UnitEditor.js
@@ -1974,10 +1726,6 @@ msgstr ""
 msgid "Cancel Task"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Ignore"
-msgstr ""
-
 #: osparc/dashboard/ResourceUpgradeHelper.js
 msgid "Outdated services"
 msgstr ""
@@ -1990,56 +1738,16 @@ msgstr ""
 msgid "Copy Service Id"
 msgstr ""
 
-#. NO LONGER USED
-msgid "SERVICE ID"
-msgstr ""
-
-#. NO LONGER USED
-msgid "KEY"
-msgstr ""
-
-#. NO LONGER USED
-msgid "INTEGRATION VERSION"
-msgstr ""
-
-#. NO LONGER USED
-msgid "VERSION"
-msgstr ""
-
-#. NO LONGER USED
-msgid "RELEASE DATE"
-msgstr ""
-
-#. NO LONGER USED
-msgid "CONTACT"
-msgstr ""
-
-#. NO LONGER USED
-msgid "AUTHORS"
-msgstr ""
-
 #: osparc/info/StudyMedium.js
 msgid "ACCESS RIGHTS"
-msgstr ""
-
-#. NO LONGER USED
-msgid "CLASSIFIERS"
 msgstr ""
 
 #: osparc/info/StudyMedium.js
 msgid "QUALITY"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Show Description only"
-msgstr ""
-
 #: osparc/info/ServiceLarge.js
 msgid "Edit Icon"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Edit Name"
 msgstr ""
 
 #: osparc/info/ServiceLarge.js
@@ -2052,54 +1760,6 @@ msgstr ""
 
 #: osparc/info/MergedLarge.js
 msgid "An issue occurred while updating the information."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Title:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Thumbnail:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Description:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Author:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Access:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Created:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Modified:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Tags:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Quality:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Classifiers:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Location:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Edit Title"
 msgstr ""
 
 #: osparc/study/BillingSettings.js
@@ -2160,26 +1820,6 @@ msgstr ""
 
 #: osparc/service/PricingUnitsList.js
 msgid "No Tiers found"
-msgstr ""
-
-#. NO LONGER USED
-msgid "0 Comments"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Load more comments..."
-msgstr ""
-
-#. NO LONGER USED
-msgid "1 Comment"
-msgstr ""
-
-#. NO LONGER USED
-msgid " Comments"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Add comment"
 msgstr ""
 
 #: osparc/editor/AnnotationNoteCreator.js
@@ -2338,10 +1978,6 @@ msgstr ""
 msgid "Up-to-date"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Here you can select in which mode the services will be started:"
-msgstr ""
-
 #: osparc/metadata/ServicesInStudyBootOpts.js
 msgid "Boot Mode"
 msgstr ""
@@ -2366,18 +2002,6 @@ msgstr ""
 msgid "Autostart services"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Disabling this will help opening and closing studies/projects faster"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Add tags"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Meta details"
-msgstr ""
-
 #: osparc/info/StudyUtils.js
 msgid "Share with Editors and Organizations"
 msgstr ""
@@ -2398,16 +2022,8 @@ msgstr ""
 msgid " Options"
 msgstr ""
 
-#. NO LONGER USED
-msgid "An issue occurred while selecting Credit Account"
-msgstr ""
-
 #: osparc/desktop/wallets/WalletEditor.js
 msgid "Title"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Advanced options"
 msgstr ""
 
 #: osparc/service/ServiceListItem.js
@@ -2434,28 +2050,12 @@ msgstr ""
 msgid "More..."
 msgstr ""
 
-#. NO LONGER USED
-msgid "All "
-msgstr ""
-
-#. NO LONGER USED
-msgid "My "
-msgstr ""
-
 #: osparc/dashboard/SearchBarFilter.js
 msgid "Shared with Me"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Shared with Everyone"
-msgstr ""
-
 #: osparc/dashboard/SearchBarFilter.js
 msgid "search"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Service Type"
 msgstr ""
 
 #: osparc/dashboard/ResourceBrowserFilter.js
@@ -2506,10 +2106,6 @@ msgstr ""
 msgid "Welcome onboard "
 msgstr ""
 
-#. NO LONGER USED
-msgid "        Sim4Life is a revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models, for directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment.        <br>        <br>        In order to facilitate the introduction to the platform, we have some Guided Tours that can be found under the User Menu.        <br>        <br>        For more specific technical information, please refer to the Manuals on the Navigation Bar.      "
-msgstr ""
-
 #: osparc/product/quickStart/s4lacad/Welcome.js
 msgid "Welcome to Sim4Life Science"
 msgstr ""
@@ -2544,22 +2140,6 @@ msgstr ""
 
 #: osparc/desktop/credits/BuyCreditsForm.js
 msgid "Enter card details in the next step..."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Share with"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Select users or organizations from the list below."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Select users from the list below."
-msgstr ""
-
-#. NO LONGER USED
-msgid "<br>Search them if they aren't listed."
 msgstr ""
 
 #: osparc/share/NewCollaboratorsManager.js
@@ -2794,10 +2374,6 @@ msgstr ""
 msgid "Shared Workspaces"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Search results"
-msgstr ""
-
 #: osparc/dashboard/WorkspaceButtonItem.js
 msgid "Edit..."
 msgstr ""
@@ -2850,10 +2426,6 @@ msgstr ""
 msgid "or pick one from the list below:"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Importing Study"
-msgstr ""
-
 #: osparc/task/Duplicate.js
 msgid "Duplicating:"
 msgstr ""
@@ -2882,18 +2454,6 @@ msgstr ""
 msgid "Collapse"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Study Information"
-msgstr ""
-
-#. NO LONGER USED
-msgid "DESCRIPTION"
-msgstr ""
-
-#. NO LONGER USED
-msgid "More Info"
-msgstr ""
-
 #: osparc/info/StudyMedium.js
 msgid "AUTHOR"
 msgstr ""
@@ -2908,10 +2468,6 @@ msgstr ""
 
 #: osparc/info/StudyMedium.js
 msgid "TAGS"
-msgstr ""
-
-#. NO LONGER USED
-msgid "To proceed with the following actions, the service needs to be Stopped."
 msgstr ""
 
 #: osparc/desktop/SlideshowToolbar.js
@@ -3030,10 +2586,6 @@ msgstr ""
 msgid "Write"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Execute"
-msgstr ""
-
 #: osparc/filter/CollaboratorToggleButton.js
 msgid "Public"
 msgstr ""
@@ -3086,18 +2638,6 @@ msgstr ""
 msgid "Could not retrieve service information"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Make the "
-msgstr ""
-
-#. NO LONGER USED
-msgid " also accessible to:"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Publish for..."
-msgstr ""
-
 #: osparc/dashboard/GroupedCardContainer.js
 msgid "Show less"
 msgstr ""
@@ -3116,10 +2656,6 @@ msgstr ""
 
 #: osparc/dashboard/WorkspaceButtonItem.js
 msgid "Delete Workspace"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Edit Folder"
 msgstr ""
 
 #: osparc/dashboard/FolderButtonItem.js
@@ -3282,10 +2818,6 @@ msgstr ""
 msgid "New Organization"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Organization Details Editor"
-msgstr ""
-
 #: osparc/desktop/organizations/OrganizationsList.js
 msgid "Delete Organization"
 msgstr ""
@@ -3318,20 +2850,8 @@ msgstr ""
 msgid "Members"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Job Id"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Solver"
-msgstr ""
-
 #: osparc/desktop/credits/TransactionsTableModel.js
 msgid "Status"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Submitted"
 msgstr ""
 
 #: osparc/jobs/RunsTable.js
@@ -3340,10 +2860,6 @@ msgstr ""
 
 #: osparc/jobs/RunsTable.js
 msgid "Info"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Instance"
 msgstr ""
 
 #: osparc/notification/NotificationUI.js
@@ -3380,14 +2896,6 @@ msgstr ""
 
 #: osparc/desktop/preferences/pages/GeneralPage.js
 msgid "Idle time before closing (in minutes)"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Job Concurrency"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Maximum number of concurrent jobs"
 msgstr ""
 
 #: osparc/desktop/preferences/pages/GeneralPage.js
@@ -3572,10 +3080,6 @@ msgstr ""
 
 #: osparc/desktop/wallets/WalletsList.js
 msgid "Something went wrong while updating the Credit Account"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Currently in use"
 msgstr ""
 
 #: osparc/desktop/wallets/WalletDetails.js
@@ -3806,14 +3310,6 @@ msgstr ""
 msgid "Items successfully deleted"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Externally managed items cannot be deleted"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Supports HTML"
-msgstr ""
-
 #: osparc/study/PricingUnitTier.js
 msgid "Credits/h"
 msgstr ""
@@ -3870,28 +3366,12 @@ msgstr ""
 msgid "Leave Organization"
 msgstr ""
 
-#. NO LONGER USED
-msgid "This is the list of "
-msgstr ""
-
-#. NO LONGER USED
-msgid " shared with this Organization"
-msgstr ""
-
-#. NO LONGER USED
-msgid "This is the list of services shared with this Organization"
-msgstr ""
-
 #: osparc/jobs/Info.js
 msgid "Job Info"
 msgstr ""
 
 #: osparc/desktop/preferences/window/CreateAPIKey.js
 msgid "Generate API Key"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Key names must be unique."
 msgstr ""
 
 #: osparc/desktop/preferences/window/CreateAPIKey.js
@@ -3950,10 +3430,6 @@ msgstr ""
 msgid "Announcements"
 msgstr ""
 
-#. NO LONGER USED
-msgid "Users"
-msgstr ""
-
 #: osparc/po/PreRegistration.js
 msgid "Pre-Registration"
 msgstr ""
@@ -3964,10 +3440,6 @@ msgstr ""
 
 #: osparc/po/POCenter.js
 msgid "Product Info"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Message Templates"
 msgstr ""
 
 #: osparc/tester/TesterCenter.js
@@ -4190,10 +3662,6 @@ msgstr ""
 msgid "There is no invitation required in this product/deployment."
 msgstr ""
 
-#. NO LONGER USED
-msgid "new.user@email.address"
-msgstr ""
-
 #: osparc/po/UsersPending.js
 msgid "User Email"
 msgstr ""
@@ -4220,10 +3688,6 @@ msgstr ""
 
 #: osparc/po/Invitations.js
 msgid "Data encrypted in the invitation"
-msgstr ""
-
-#. NO LONGER USED
-msgid "Template updated"
 msgstr ""
 
 #: osparc/tester/ConsoleErrors.js
@@ -5964,18 +5428,6 @@ msgstr ""
 
 #: osparc/desktop/preferences/pages/GeneralPage.js
 msgid "Translations are AI-generated and may contain errors. Please report any issues to help us improve them."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
-msgstr ""
-
-#. NO LONGER USED
-msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
-msgstr ""
-
-#. NO LONGER USED
-msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
 msgstr ""
 
 #: osparc/dashboard/ResourceDetails.js
