@@ -2,9 +2,9 @@ from models_library.notifications import (
     CompanyLink,
     CompanyLinks,
     FooterSocialLinks,
-    ProductData,
+    Product,
     ProductFooterData,
-    ProductUIData,
+    ProductUI,
     SocialLink,
 )
 
@@ -12,8 +12,8 @@ __all__: tuple[str, ...] = (
     "CompanyLink",
     "CompanyLinks",
     "FooterSocialLinks",
-    "ProductData",
+    "Product",
     "ProductFooterData",
-    "ProductUIData",
+    "ProductUI",
     "SocialLink",
 )

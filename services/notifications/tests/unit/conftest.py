@@ -39,9 +39,9 @@ from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.main import app_factory
 from simcore_service_notifications.models.product import (
     CompanyLink,
-    ProductData,
+    Product,
     ProductFooterData,
-    ProductUIData,
+    ProductUI,
     SocialLink,
 )
 
@@ -266,13 +266,13 @@ def fake_product_data(faker: Faker) -> dict[str, Any]:
     )
 
     return asdict(
-        ProductData(
+        Product(
             product_name=faker.company(),
             display_name=faker.company(),
             vendor_display_inline=faker.company_suffix(),
             support_email=faker.email(),
             homepage_url=faker.url(),
-            ui=ProductUIData(
+            ui=ProductUI(
                 logo_url=faker.image_url(),
                 strong_color=faker.color_name(),
             ),

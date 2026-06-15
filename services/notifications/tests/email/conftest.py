@@ -9,10 +9,10 @@ import pytest
 from faker import Faker
 from models_library.notifications import (
     CompanyLink,
-    ProductData,
+    Product,
     ProductFooterData,
-    ProductUIData,
-    SharerData,
+    ProductUI,
+    Sharer,
     SocialLink,
     UserData,
 )
@@ -81,12 +81,12 @@ def smtp_settings(
 def product_data(
     product_name: ProductName,
     product: dict[str, Any],
-) -> ProductData:
+) -> Product:
     vendor: Vendor = product["vendor"]
 
     vendor_ui = vendor.get("ui", {})
 
-    product_ui = ProductUIData(
+    product_ui = ProductUI(
         logo_url=vendor_ui.get("logo_url"),
         strong_color=vendor_ui.get("strong_color"),
     )
@@ -102,7 +102,7 @@ def product_data(
         ],
     )
 
-    return ProductData(
+    return Product(
         product_name=product_name,
         display_name=product["display_name"],
         vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
@@ -124,8 +124,8 @@ def user_data(user_name: str, user_email: EmailStr, user_first_name: str, user_l
 
 
 @pytest.fixture
-def sharer_data(user_name: str, faker: Faker) -> SharerData:
-    return SharerData(
+def sharer_data(user_name: str, faker: Faker) -> Sharer:
+    return Sharer(
         user_name=user_name,
         message=faker.random_element(elements=(faker.sentence(), "")),
     )

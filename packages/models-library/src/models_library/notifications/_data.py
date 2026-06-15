@@ -13,13 +13,13 @@ class UserData:
 
 
 @dataclass(frozen=True)
-class SharerData:
+class Sharer:
     user_name: str
     message: str
 
 
 @dataclass(frozen=True)
-class ProductUIData:
+class ProductUI:
     logo_url: str | None = (
         None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html  # noqa: E501
     )
@@ -50,13 +50,13 @@ class ProductFooterData:
 
 
 @dataclass(frozen=True)
-class ProductData:
+class Product:
     product_name: ProductName
     display_name: str
     vendor_display_inline: str
     support_email: str
     homepage_url: str | None  # default_homepage = "https://osparc.io/" in base.html
-    ui: ProductUIData
+    ui: ProductUI
     footer: ProductFooterData
 
     @property

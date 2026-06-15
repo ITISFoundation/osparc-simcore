@@ -29,7 +29,7 @@ import pytest
 from faker import Faker
 from jinja2 import StrictUndefined
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
-from models_library.notifications import ProductData, SharerData, UserData
+from models_library.notifications import Product, Sharer, UserData
 from models_library.products import ProductName
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import EmailStr
@@ -143,7 +143,7 @@ def template_extra_data(  # noqa: C901, PLR0911
             return {
                 "host": host_url,
                 "resource_alias": "Project",
-                "sharer": SharerData(
+                "sharer": Sharer(
                     user_name=faker.name(),
                     message=faker.random_element(elements=(faker.sentence(), "")),
                 ),
@@ -199,8 +199,8 @@ async def test_email_event(  # pylint: disable=too-many-positional-arguments
     smtp_mock_or_none: AsyncMock | None,
     user_data: UserData,
     user_email: EmailStr,
-    sharer_data: SharerData | None,
-    product_data: ProductData,
+    sharer_data: Sharer | None,
+    product_data: Product,
     product_name: ProductName,
     template_name: str,
     template_extra_data: dict[str, Any],
@@ -286,7 +286,7 @@ async def test_email_with_reply_to(
     user_data: UserData,
     user_email: EmailStr,
     support_email: EmailStr,
-    product_data: ProductData,
+    product_data: Product,
     template_name: str,
     template_extra_data: dict[str, Any],
 ):

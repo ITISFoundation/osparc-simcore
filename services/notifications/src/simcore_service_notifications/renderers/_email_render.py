@@ -4,7 +4,7 @@ from typing import Any, NamedTuple
 
 from jinja2 import Environment
 from jinja2.exceptions import TemplateNotFound
-from models_library.notifications import ProductData, UserData
+from models_library.notifications import Product, UserData
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def get_user_address(user: UserData) -> Address:
     )
 
 
-def get_support_address(product: ProductData) -> Address:
+def get_support_address(product: Product) -> Address:
     return Address(
         display_name=f"{product.display_name} support",
         addr_spec=product.support_email,
@@ -34,7 +34,7 @@ def render_email_parts(
     template_name: str,
     *,
     user: UserData,
-    product: ProductData,
+    product: Product,
     **other_data: Any,
 ) -> EmailPartsTuple:
     data = other_data | {"user": user, "product": product}

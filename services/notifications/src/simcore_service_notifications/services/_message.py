@@ -26,7 +26,7 @@ from servicelib.celery.task_manager import TaskManager
 
 from .._meta import APP_NAME
 from ..core.settings import ApplicationSettings, ProductToSMTPSettings
-from ..models.product import ProductData
+from ..models.product import Product
 from ..models.template import TemplateRef
 from ..repositories.product import ProductRepository
 from ._template import TemplateService
@@ -41,7 +41,7 @@ def _prepare_celery_messages(
     message: Message,
     *,
     product_name: ProductName,
-    product_data: ProductData,
+    product_data: Product,
     smtp_settings: ProductToSMTPSettings,
 ) -> list[dict[str, Any]]:
     """Dispatches to channel handler to fan out into per-recipient celery payloads.
