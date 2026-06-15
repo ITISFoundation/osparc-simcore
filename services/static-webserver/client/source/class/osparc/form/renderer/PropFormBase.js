@@ -280,10 +280,10 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       const changedXUnits = {};
       for (const portId in xUnits) {
         if (xUnits[portId] === null) {
-          break;
+          continue;
         }
         if (!("x_unit" in nodeMD.inputs[portId])) {
-          break;
+          continue;
         }
         if (xUnits[portId] !== nodeMD.inputs[portId].x_unit) {
           changedXUnits[portId] = xUnits[portId];
@@ -295,8 +295,46 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     setInputsUnits: function(inputsUnits) {
       Object.keys(inputsUnits).forEach(portId => {
         const item = this._form.getControl(portId);
-        this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(inputsUnits[portId]).unitPrefix);
+        if (!item) {
+          return;
+        }
+        const xUnit = inputsUnits[portId];
+        if (xUnit === undefined || xUnit === null) {
+          return;
+        }
+        this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(xUnit).unitPrefix);
       });
+    },
+
+    // Incoming input values are expressed in the metadata (x_unit) unit. If a port is currently
+    // displayed in a different unit prefix, convert the value so it matches what the control expects.
+    // This is the inverse of the conversion done in getValues().
+    convertInputsToCurrentUnits: function(inputData) {
+      const converted = Object.assign({}, inputData);
+      const nodeMD = this.getNode().getMetadata();
+      Object.keys(converted).forEach(portId => {
+        const ctrl = this._form.getControl(portId);
+        if (!ctrl || !("unitPrefix" in ctrl)) {
+          return;
+        }
+        const portMD = (nodeMD && nodeMD.inputs) ? nodeMD.inputs[portId] : null;
+        if (!portMD || !("x_unit" in portMD)) {
+          return;
+        }
+        const metadataPrefix = osparc.utils.Units.decomposeXUnit(portMD["x_unit"]).unitPrefix;
+        if (metadataPrefix === ctrl.unitPrefix) {
+          return;
+        }
+        const value = converted[portId];
+        if (
+          value !== null &&
+          value !== undefined &&
+          !osparc.utils.Ports.isDataALink(value)
+        ) {
+          converted[portId] = osparc.utils.Units.convertValue(value, metadataPrefix, ctrl.unitPrefix);
+        }
+      });
+      return converted;
     },
 
     hasVisibleInputs: function() {
@@ -365,12 +403,32 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     },
 
     __switchPrefix: function(item, oldPrefix, newPrefix) {
+      const multiplier = osparc.utils.Units.getMultiplier(oldPrefix, newPrefix);
       let newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
       item.unitPrefix = newPrefix;
       if ("type" in item && item.type !== "integer") {
         newValue = String(newValue);
       }
-      item.setValue(newValue);
+      // scale the numeric range (e.g. integer Spinner min/max) so it stays consistent with the new unit
+      if (
+        typeof item.getMaximum === "function" &&
+        typeof item.setMaximum === "function" &&
+        typeof item.getMinimum === "function" &&
+        typeof item.setMinimum === "function"
+      ) {
+        const oldMax = item.getMaximum();
+        const oldMin = item.getMinimum();
+        const newMax = Math.ceil(oldMax * multiplier);
+        const newMin = Math.floor(oldMin * multiplier);
+        // widen the range first so setValue is not clamped, then apply the final scaled range
+        item.setMaximum(Math.max(oldMax, newMax));
+        item.setMinimum(Math.min(oldMin, newMin));
+        item.setValue(newValue);
+        item.setMaximum(newMax);
+        item.setMinimum(newMin);
+      } else {
+        item.setValue(newValue);
+      }
       this.self().updateUnitLabelPrefix(item);
       this.fireDataEvent("unitChanged", {
         portId: item.key,
