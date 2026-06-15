@@ -216,7 +216,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = workspace.getWorkspaceId();
       const folderId = null;
       const workspaceData = this.__createItemData(
-        this.tr(""),
+        "",
         "shared",
         workspaceId,
         folderId,
