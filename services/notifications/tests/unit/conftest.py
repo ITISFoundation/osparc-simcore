@@ -98,19 +98,24 @@ def app_environment(
             "NOTIFICATIONS_TRACING": "null",
             "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
                 {
-                    "test_product": {
-                        "smtp_settings": {
+                    "mail_servers": {
+                        "local": {
                             "host": "mailpit",
                             "port": 1025,
                             "protocol": "UNENCRYPTED",
-                        },
-                        "extra_headers": {},
-                        "domain": "test-domain.com",
-                        "local_parts": {
-                            "support": "support",
-                            "no-reply": "no-reply",
-                        },
-                    }
+                        }
+                    },
+                    "products": {
+                        "test_product": {
+                            "mail_server": "local",
+                            "extra_headers": {},
+                            "domain": "test-domain.com",
+                            "local_parts": {
+                                "support": "support",
+                                "no_reply": "no-reply",
+                            },
+                        }
+                    },
                 }
             ),
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,

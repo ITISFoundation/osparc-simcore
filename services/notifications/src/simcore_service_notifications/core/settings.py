@@ -23,8 +23,6 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 from ..models.smtp import ALLOWED_HEADERS, EmailProtocol
 
-type ProfileName = str
-
 
 class SMTPSettings(BaseModel):
     """Settings for Simple Mail Transfer Protocol (SMTP)
@@ -80,20 +78,15 @@ class SMTPSettings(BaseModel):
 
 
 class ProductSMTPSettings(BaseModel):
-    """Per-product SMTP configuration with named profiles."""
+    """Per-product SMTP configuration referencing a named mail server profile."""
 
     model_config = {"frozen": True}
 
-    smtp_settings: SMTPSettings
+    mail_server: Annotated[
+        str,
+        Field(description="Name of the mail server profile from mail_servers dict"),
+    ]
     domain: str
-    extra_headers: Annotated[
-        dict[str, str],
-        Field(
-            default_factory=dict,
-            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
-        ),
-    ] = DEFAULT_FACTORY
-
     local_parts: Annotated[
         dict[SenderIdentity, str],
         Field(
@@ -101,11 +94,18 @@ class ProductSMTPSettings(BaseModel):
             examples=[
                 {
                     "support": "support",
-                    "no-reply": "no-reply",
+                    "no_reply": "no-reply",
                 }
             ],
         ),
     ]
+    extra_headers: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
+        ),
+    ] = DEFAULT_FACTORY
 
     @model_validator(mode="after")
     def _validate_extra_headers_allowed(self) -> Self:
@@ -117,6 +117,34 @@ class ProductSMTPSettings(BaseModel):
             )
             raise ValueError(msg)
         return self
+
+
+class NotificationsSMTPSettings(BaseModel):
+    """Root model for SMTP settings with named mail server profiles and per-product config."""
+
+    model_config = {"frozen": True}
+
+    mail_servers: dict[str, SMTPSettings]
+    products: dict[str, ProductSMTPSettings]
+
+    @model_validator(mode="after")
+    def _validate_mail_server_references(self) -> Self:
+        for product_name, product_settings in self.products.items():
+            if product_settings.mail_server not in self.mail_servers:
+                msg = (
+                    f"Product '{product_name}' references mail_server "
+                    f"'{product_settings.mail_server}' which is not defined in mail_servers. "
+                    f"Available: {sorted(self.mail_servers.keys())}"
+                )
+                raise ValueError(msg)
+        return self
+
+    def get_product_smtp_settings(self, product_name: str) -> ProductSMTPSettings:
+        return self.products[product_name]
+
+    def get_smtp_settings(self, product_name: str) -> SMTPSettings:
+        product = self.products[product_name]
+        return self.mail_servers[product.mail_server]
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -201,29 +229,34 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
-        dict[str, ProductSMTPSettings] | None,
+        NotificationsSMTPSettings | None,
         Field(
             description=(
-                "Per-product SMTP settings with named profiles and product-to-profile mapping. "
+                "Per-product SMTP settings with named mail server profiles and product-to-profile mapping. "
                 "Required by the notifications worker; unused by the API service."
             ),
             examples=[
                 {
-                    "osparc": {
-                        "smtp_settings": {
+                    "mail_servers": {
+                        "aws": {
                             "host": "email-smtp.us-east-1.amazonaws.com",
                             "port": 465,
                             "protocol": "TLS",
                             "username": "AKIA...",
                             "password": "***",
-                        },
-                        "extra_headers": {},
-                        "domain": "sim4life.io",
-                        "local_parts": {
-                            "no-reply": "no-reply",
-                            "support": "support",
-                        },
-                    }
+                        }
+                    },
+                    "products": {
+                        "osparc": {
+                            "mail_server": "aws",
+                            "domain": "sim4life.io",
+                            "extra_headers": {},
+                            "local_parts": {
+                                "no_reply": "no-reply",
+                                "support": "support",
+                            },
+                        }
+                    },
                 }
             ],
         ),

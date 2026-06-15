@@ -4,12 +4,13 @@
 
 
 import pytest
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
 )
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
+    NotificationsSMTPSettings,
     ProductSMTPSettings,
     SMTPSettings,
 )
@@ -28,10 +29,10 @@ def test_product_smtp_settings_rejects_disallowed_headers():
     with pytest.raises(ValidationError):
         ProductSMTPSettings.model_validate(
             {
-                "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+                "mail_server": "aws",
                 "domain": "osparc.io",
                 "extra_headers": {"x-invalid-header": "value"},
-                "local_parts": {"support": "support", "no-reply": "no-reply"},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
             }
         )
 
@@ -39,40 +40,64 @@ def test_product_smtp_settings_rejects_disallowed_headers():
 def test_product_smtp_settings_valid():
     product_smtp = ProductSMTPSettings.model_validate(
         {
-            "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+            "mail_server": "aws",
             "domain": "osparc.io",
             "extra_headers": {},
-            "local_parts": {"support": "support", "no-reply": "no-reply"},
+            "local_parts": {"support": "support", "no_reply": "no-reply"},
         }
     )
 
-    assert isinstance(product_smtp.smtp_settings, SMTPSettings)
-    assert product_smtp.smtp_settings.host == "mailpit"
+    assert product_smtp.mail_server == "aws"
+    assert product_smtp.domain == "osparc.io"
 
 
-def test_notifications_smtp_settings_dict_structure():
+def test_notifications_smtp_settings_structure():
     raw = {
-        "osparc": {
-            "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
-            "domain": "osparc.io",
-            "extra_headers": {},
-            "local_parts": {"support": "support", "no-reply": "no-reply"},
+        "mail_servers": {
+            "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
         },
-        "s4l": {
-            "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
-            "domain": "sim4life.io",
-            "extra_headers": {},
-            "local_parts": {"support": "support", "no-reply": "no-reply"},
+        "products": {
+            "osparc": {
+                "mail_server": "aws",
+                "domain": "osparc.io",
+                "extra_headers": {},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            },
+            "s4l": {
+                "mail_server": "aws",
+                "domain": "sim4life.io",
+                "extra_headers": {},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            },
         },
     }
 
-    adapter = TypeAdapter(dict[str, ProductSMTPSettings])
-    settings = adapter.validate_python(raw)
+    settings = NotificationsSMTPSettings.model_validate(raw)
 
-    assert "osparc" in settings
-    assert "s4l" in settings
-    assert settings["osparc"].domain == "osparc.io"
-    assert settings["s4l"].domain == "sim4life.io"
+    assert "osparc" in settings.products
+    assert "s4l" in settings.products
+    assert settings.products["osparc"].domain == "osparc.io"
+    assert settings.products["s4l"].domain == "sim4life.io"
+    assert isinstance(settings.get_smtp_settings("osparc"), SMTPSettings)
+
+
+def test_notifications_smtp_settings_rejects_invalid_mail_server_reference():
+    raw = {
+        "mail_servers": {
+            "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+        },
+        "products": {
+            "osparc": {
+                "mail_server": "nonexistent",
+                "domain": "osparc.io",
+                "extra_headers": {},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            },
+        },
+    }
+
+    with pytest.raises(ValidationError, match="nonexistent"):
+        NotificationsSMTPSettings.model_validate(raw)
 
 
 def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
