@@ -5456,4 +5456,3 @@ msgstr "De todos los metadatos mostrados en esta vista,"
 #: osparc/info/ServiceLarge.js
 msgid "only the Description will be shown to Users."
 msgstr "solo la descripción se mostrará a los usuarios."
-s."
