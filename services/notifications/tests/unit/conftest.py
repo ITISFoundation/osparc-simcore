@@ -106,7 +106,7 @@ def app_environment(
                         }
                     },
                     "products": {
-                        "test_product": {
+                        "thetestproduct": {
                             "mail_server": "local",
                             "extra_headers": {},
                             "domain": "test-domain.com",
