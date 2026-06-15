@@ -96,21 +96,23 @@ def app_environment(
             **mock_environment,
             **mock_env_devel_environment,
             "NOTIFICATIONS_TRACING": "null",
-            "NOTIFICATIONS_SMTP_SETTINGS": json.dumps({
-                "test_product": {
-                    "smtp_settings": {
-                        "host": "mailpit",
-                        "port": 1025,
-                        "protocol": "UNENCRYPTED",
-                    },
-                    "extra_headers": {},
-                    "domain": "test-domain.com",
-                    "local_parts": {
-                        "support": "support",
-                        "no-reply": "no-reply",
-                    },
+            "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
+                {
+                    "test_product": {
+                        "smtp_settings": {
+                            "host": "mailpit",
+                            "port": 1025,
+                            "protocol": "UNENCRYPTED",
+                        },
+                        "extra_headers": {},
+                        "domain": "test-domain.com",
+                        "local_parts": {
+                            "support": "support",
+                            "no-reply": "no-reply",
+                        },
+                    }
                 }
-            }),
+            ),
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",

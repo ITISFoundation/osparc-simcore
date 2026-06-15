@@ -71,22 +71,19 @@ def mock_environment(
             "SC_BOOT_MODE": BootModeEnum.DEBUG,
             "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
                 {
-                    "profiles": {
-                        "test_profile": {
+                    "osparc": {
+                        "smtp_settings": {
                             "host": "mailpit",
                             "port": 1025,
                             "protocol": "UNENCRYPTED",
-                            "domain": "test-domain.com",
-                            "extra_headers": {},
-                            "local_parts": {
-                                "support": "support",
-                                "no_reply": "no-reply",
-                            },
-                        }
-                    },
-                    "product_to_profile": {
-                        "osparc": "test_profile",
-                    },
+                        },
+                        "extra_headers": {},
+                        "domain": "test-domain.com",
+                        "local_parts": {
+                            "support": "support",
+                            "no-reply": "no-reply",
+                        },
+                    }
                 }
             ),
         },
