@@ -269,7 +269,7 @@ def fake_product_data(faker: Faker) -> dict[str, Any]:
 
     return asdict(
         Product(
-            product_name=faker.company(),
+            name=faker.company(),
             display_name=faker.company(),
             vendor_display_inline=faker.company_suffix(),
             support_email=faker.email(),
