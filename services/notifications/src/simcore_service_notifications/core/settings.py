@@ -108,11 +108,13 @@ class SMTPSettings(BaseModel):
         return self
 
     def get_local_part_for_identity(self, identity: str) -> str:
-        try:
-            return getattr(self.local_parts, identity)
-        except AttributeError:
-            msg = f"Unknown local part identity: {identity}"
-            raise ValueError(msg) from None
+        if identity not in self.local_parts.model_fields:
+            msg = (
+                f"Unknown local part identity: {identity!r}. Valid identities: {sorted(self.local_parts.model_fields)}"
+            )
+            raise ValueError(msg)
+        value: str = self.local_parts.model_dump()[identity]
+        return value
 
     @property
     def has_credentials(self) -> bool:
