@@ -7,11 +7,10 @@ from typing import Any
 
 import pytest
 from pydantic import ValidationError
-from simcore_service_notifications.models.smtp import (
-    EmailProtocol,
-    SMTPLocals,
+from simcore_service_notifications.core.settings import (
     SMTPSettings,
 )
+from simcore_service_notifications.models.smtp import EmailProtocol, SMTPLocals
 
 _LOCAL_PARTS = {"SUPPORT": "support", "NO_REPLY": "no-reply"}
 
