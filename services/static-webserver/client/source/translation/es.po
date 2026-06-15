@@ -4522,7 +4522,7 @@ msgstr "Contactar con el soporte"
 msgid "Something went wrong"
 msgstr "Algo salió mal"
 
-#: osparc/ui/message/FlashMessageOEC.js
+#. NO LONGER USED
 msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
 msgstr "Describe qué estabas haciendo antes del error (opcional).\nEsto ayudará a nuestro equipo de soporte a entender el contexto y resolver el problema más rápido."
 
@@ -4758,7 +4758,7 @@ msgstr "Datos no encontrados, inténtalo de nuevo"
 msgid "Request Apps Access"
 msgstr "Solicitar acceso a las aplicaciones"
 
-#: osparc/dashboard/ResourceDetails.js
+#. NO LONGER USED
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
 msgstr "Algunos de tus servicios están desactualizados. Actualiza a la última versión para un mejor rendimiento.\n\n¿Quieres actualizar ahora?"
 
@@ -5378,7 +5378,7 @@ msgstr "Versión de integración"
 msgid "Description only"
 msgstr "Solo descripción"
 
-#: osparc/info/ServiceLarge.js
+#. NO LONGER USED
 msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
 msgstr "De todos los metadatos mostrados en esta vista,\nsolo la descripción se mostrará a los usuarios."
 
@@ -6001,3 +6001,15 @@ msgstr "Idioma"
 #: osparc/desktop/preferences/pages/GeneralPage.js
 msgid "Translations are AI-generated and may contain errors. Please report any issues to help us improve them."
 msgstr "Las traducciones se generan con IA y pueden contener errores. Informa de cualquier problema para ayudarnos a mejorarlas."
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
+msgstr ""

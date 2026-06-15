@@ -1278,7 +1278,7 @@ msgstr ""
 msgid "Convert to Standalone"
 msgstr ""
 
-#: osparc/dashboard/WorkspaceButtonItem.js
+#: osparc/dashboard/FolderButtonItem.js
 msgid "Restore"
 msgstr ""
 
@@ -1474,7 +1474,7 @@ msgstr ""
 msgid "New Plan"
 msgstr ""
 
-#: osparc/dashboard/WorkspaceButtonItem.js
+#: osparc/dashboard/FolderButtonItem.js
 msgid "Delete permanently"
 msgstr ""
 
@@ -1590,7 +1590,7 @@ msgstr ""
 msgid "Something went wrong while importing the study"
 msgstr ""
 
-#: osparc/dashboard/WorkspaceButtonItem.js
+#: osparc/dashboard/FolderButtonItem.js
 msgid "Are you sure you want to delete"
 msgstr ""
 
@@ -2430,7 +2430,7 @@ msgstr ""
 msgid "Last modified"
 msgstr ""
 
-#: osparc/dashboard/WorkspaceButtonItem.js
+#: osparc/dashboard/FolderButtonItem.js
 msgid "Deleted"
 msgstr ""
 
@@ -4518,7 +4518,7 @@ msgstr ""
 msgid "Something went wrong"
 msgstr ""
 
-#: osparc/ui/message/FlashMessageOEC.js
+#. NO LONGER USED
 msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
 msgstr ""
 
@@ -4754,7 +4754,7 @@ msgstr ""
 msgid "Request Apps Access"
 msgstr ""
 
-#: osparc/dashboard/ResourceDetails.js
+#. NO LONGER USED
 msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
 msgstr ""
 
@@ -5374,7 +5374,7 @@ msgstr ""
 msgid "Description only"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
+#. NO LONGER USED
 msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
 msgstr ""
 
@@ -5996,4 +5996,18 @@ msgstr ""
 
 #: osparc/desktop/preferences/pages/GeneralPage.js
 msgid "Translations are AI-generated and may contain errors. Please report any issues to help us improve them."
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster."
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "From all the metadata shown in this view,\nonly the Description will be shown to Users."
+msgstr ""
+"
 msgstr ""
