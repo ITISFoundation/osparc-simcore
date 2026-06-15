@@ -24,7 +24,6 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    // PoC: language selection is only exposed on development platforms (dev/master)
     if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.utils.LanguageManager.isSwitchUseful()) {
       this.__addLanguageSetting();
     }
@@ -32,6 +31,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addCreditsIndicatorSettings();
     }
+
     const preferences = osparc.Preferences.getInstance();
     if (preferences.getLowDiskSpaceThreshold()) {
       this.__addLowDiskSpaceSetting();
