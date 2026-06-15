@@ -44,9 +44,9 @@ async def send_email_message_task(
         app_settings = ApplicationSettings.create_from_envs()
         assert app_settings.NOTIFICATIONS_SMTP_SETTINGS is not None  # nosec
 
-        settings = app_settings.NOTIFICATIONS_SMTP_SETTINGS.get_smtp_settings_for_product(product_name)
+        product_smtp = app_settings.NOTIFICATIONS_SMTP_SETTINGS[product_name]
 
-        async with create_session(settings=settings) as smtp:
+        async with create_session(settings=product_smtp.smtp_settings) as smtp:
             email_msg = compose_email(
                 from_=_to_address(msg.from_),
                 to=_to_address(msg.to),
@@ -55,7 +55,7 @@ async def send_email_message_task(
                 content_html=msg.content.body_html,
                 reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
                 bcc=[_to_address(msg.bcc)] if msg.bcc else None,
-                extra_headers=settings.extra_headers,
+                extra_headers=product_smtp.extra_headers,
             )
             if msg.attachments:
                 add_attachments(

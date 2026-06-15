@@ -6,7 +6,7 @@ from models_library.notifications.celery import EmailMessage as CeleryEmailMessa
 from models_library.notifications.rpc import EmailContact, EmailMessage, SenderIdentity
 from pydantic import validate_email
 
-from ...core.settings import ApplicationSettings, SMTPSettings
+from ...core.settings import ApplicationSettings, ProductSMTPSettings
 from ...models.product import Product
 from ._base import ChannelHandler
 
@@ -18,9 +18,9 @@ def _interleave_recipients_by_domain(
     return interleave_by_key(recipients, key=lambda r: extract_email_domain(r.email))
 
 
-def get_email(identity: SenderIdentity, settings: SMTPSettings) -> str:
-    local_part = settings.get_local_part_for_identity(identity)
-    email = f"{local_part}@{settings.domain}"
+def get_email(identity: SenderIdentity, product_smtp_settings: ProductSMTPSettings) -> str:
+    local_part = product_smtp_settings.local_parts[identity]
+    email = f"{local_part}@{product_smtp_settings.domain}"
     validate_email(email)  # Will raise if invalid
     return email
 
@@ -37,7 +37,7 @@ class EmailChannelHandler(ChannelHandler):
         """Resolve a from_identity into a concrete EmailContact using product data."""
         assert settings.NOTIFICATIONS_SMTP_SETTINGS  # nosec
 
-        smtp_settings = settings.NOTIFICATIONS_SMTP_SETTINGS.get_smtp_settings_for_product(product.name)
+        smtp_settings = settings.NOTIFICATIONS_SMTP_SETTINGS[product.name]
         match from_identity:
             case SenderIdentity.SUPPORT:
                 return EmailContact(

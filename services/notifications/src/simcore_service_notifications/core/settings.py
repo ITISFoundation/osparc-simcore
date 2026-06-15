@@ -201,7 +201,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
-        ProductSMTPSettings | None,
+        dict[str, ProductSMTPSettings] | None,
         Field(
             description=(
                 "Per-product SMTP settings with named profiles and product-to-profile mapping. "
@@ -209,36 +209,21 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ),
             examples=[
                 {
-                    "profiles": {
-                        "aws_ses_sim4life": {
+                    "osparc": {
+                        "smtp_settings": {
                             "host": "email-smtp.us-east-1.amazonaws.com",
                             "port": 465,
                             "protocol": "TLS",
                             "username": "AKIA...",
                             "password": "***",
-                            "extra_headers": {},
-                            "domain": "sim4life.io",
-                            "local_parts": {
-                                "no-reply": "no-reply",
-                                "support": "support",
-                            },
                         },
-                        "postal_osparc": {
-                            "host": "smtp.osparc.io",
-                            "port": 25,
-                            "protocol": "UNENCRYPTED",
-                            "extra_headers": {},
-                            "domain": "osparc.io",
-                            "local_parts": {
-                                "no-reply": "no-reply",
-                                "support": "support",
-                            },
+                        "extra_headers": {},
+                        "domain": "sim4life.io",
+                        "local_parts": {
+                            "no-reply": "no-reply",
+                            "support": "support",
                         },
-                    },
-                    "product_to_profile": {
-                        "s4l": "aws_ses_sim4life",
-                        "osparc": "postal_osparc",
-                    },
+                    }
                 }
             ],
         ),

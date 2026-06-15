@@ -34,51 +34,57 @@ _SMTP_PAYLOAD = {
 }
 
 
-def test_product_smtp_settings_rejects_undefined_profile_reference():
-    with pytest.raises(ValidationError, match="undefined SMTP profiles"):
+def test_product_smtp_settings_rejects_disallowed_headers():
+    with pytest.raises(ValidationError):
         ProductSMTPSettings.model_validate(
             {
-                "profiles": {"profile_a": _SMTP_PAYLOAD},
-                "product_to_profile": {"osparc": "nonexistent_profile"},
+                "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+                "domain": "osparc.io",
+                "extra_headers": {"x-invalid-header": "value"},
+                "local_parts": {"support": "support", "no-reply": "no-reply"},
             }
         )
 
 
-def test_product_smtp_settings_get_smtp_settings_for_product():
+def test_product_smtp_settings_valid():
     product_smtp = ProductSMTPSettings.model_validate(
         {
-            "profiles": {"profile_a": _SMTP_PAYLOAD},
-            "product_to_profile": {"osparc": "profile_a"},
+            "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+            "domain": "osparc.io",
+            "extra_headers": {},
+            "local_parts": {"support": "support", "no-reply": "no-reply"},
         }
     )
 
-    settings = product_smtp.get_smtp_settings_for_product("osparc")
-
-    assert isinstance(settings, SMTPSettings)
-    assert settings.host == "mailpit"
+    assert isinstance(product_smtp.smtp_settings, SMTPSettings)
+    assert product_smtp.smtp_settings.host == "mailpit"
 
 
-def test_product_smtp_settings_unknown_product_raises():
-    product_smtp = ProductSMTPSettings.model_validate(
-        {
-            "profiles": {"profile_a": _SMTP_PAYLOAD},
-            "product_to_profile": {"osparc": "profile_a"},
-        }
-    )
+def test_notifications_smtp_settings_dict_structure():
+    from pydantic import TypeAdapter
 
-    with pytest.raises(ValueError, match="No SMTP profile configured for product"):
-        product_smtp.get_smtp_settings_for_product("unknown_product")
+    raw = {
+        "osparc": {
+            "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+            "domain": "osparc.io",
+            "extra_headers": {},
+            "local_parts": {"support": "support", "no-reply": "no-reply"},
+        },
+        "s4l": {
+            "smtp_settings": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+            "domain": "sim4life.io",
+            "extra_headers": {},
+            "local_parts": {"support": "support", "no-reply": "no-reply"},
+        },
+    }
 
+    adapter = TypeAdapter(dict[str, ProductSMTPSettings])
+    settings = adapter.validate_python(raw)
 
-def test_product_smtp_settings_multiple_products_same_profile():
-    product_smtp = ProductSMTPSettings.model_validate(
-        {
-            "profiles": {"shared_profile": _SMTP_PAYLOAD},
-            "product_to_profile": {"osparc": "shared_profile", "s4l": "shared_profile"},
-        }
-    )
-
-    assert product_smtp.get_smtp_settings_for_product("osparc") == product_smtp.get_smtp_settings_for_product("s4l")
+    assert "osparc" in settings
+    assert "s4l" in settings
+    assert settings["osparc"].domain == "osparc.io"
+    assert settings["s4l"].domain == "sim4life.io"
 
 
 def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
