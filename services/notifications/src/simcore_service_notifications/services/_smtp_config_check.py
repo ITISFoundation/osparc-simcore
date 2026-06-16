@@ -22,15 +22,18 @@ def _build_status_table(
     status_header = "SMTP Configured"
     name_width = max([len(name_header), *(len(name) for name in product_names)])
 
+    border = f"{'-' * name_width}  {'-' * len(status_header)}"
     lines: list[str] = [
+        border,
         f"{name_header.ljust(name_width)}  {status_header}",
-        f"{'-' * name_width}  {'-' * len(status_header)}",
+        border,
     ]
     for name in product_names:
         is_configured = name in configured_products
         icon = _OK_ICON if is_configured else _WARNING_ICON
         status = f"{icon} {'yes' if is_configured else 'MISSING'}"
         lines.append(f"{name.ljust(name_width)}  {status}")
+    lines.append(border)
     return "\n".join(lines)
 
 
