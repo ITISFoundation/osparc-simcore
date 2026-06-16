@@ -3,6 +3,7 @@ from dataclasses import asdict
 from fastapi import FastAPI
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
+    NotificationsProductNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
@@ -24,6 +25,7 @@ router = RPCRouter()
 
 @router.expose(
     reraise_if_error_type=(
+        NotificationsProductNotFoundError,
         NotificationsTemplateContextValidationError,
         NotificationsTemplateNotFoundError,
     )

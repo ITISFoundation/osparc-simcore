@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from models_library.notifications.errors import NotificationsProductNotFoundError
 from models_library.products import ProductName
 from simcore_postgres_database.models.products import products
 
@@ -26,8 +27,7 @@ class ProductRepository(BaseRepository):
             row = result.one_or_none()
 
         if row is None:
-            msg = f"Product {product_name!r} not found"
-            raise ValueError(msg)
+            raise NotificationsProductNotFoundError(product_name=product_name)
         vendor: dict = row.vendor or {}
         ui: dict = vendor.get("ui") or {}
 

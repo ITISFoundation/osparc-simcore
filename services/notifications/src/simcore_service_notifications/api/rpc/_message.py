@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from models_library.notifications.errors import (
+    NotificationsProductNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -17,7 +18,12 @@ from .dependencies import get_message_service
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(NotificationsTooManyRecipientsError,))
+@router.expose(
+    reraise_if_error_type=(
+        NotificationsProductNotFoundError,
+        NotificationsTooManyRecipientsError,
+    )
+)
 async def send_message(
     app: FastAPI,
     *,
@@ -36,6 +42,7 @@ async def send_message(
 
 @router.expose(
     reraise_if_error_type=(
+        NotificationsProductNotFoundError,
         NotificationsTemplateNotFoundError,
         NotificationsTemplateContextValidationError,
     )

@@ -78,7 +78,6 @@ async def _collect_active_recipients(app: web.Application, group_ids: list[Group
 async def _create_email_addressing(
     app: web.Application,
     *,
-    product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     reply_to: Contact | None = None,
@@ -88,8 +87,6 @@ async def _create_email_addressing(
     Raises:
         NotificationsNoActiveRecipientsError: If no active recipients found.
     """
-    _ = product_name  # from_ is now resolved by the notifications service
-
     to_contacts: list[EmailContact] = []
 
     if group_ids:
@@ -110,7 +107,6 @@ async def _create_email_addressing(
 async def _create_email_message(
     app: web.Application,
     *,
-    product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
@@ -122,7 +118,6 @@ async def _create_email_message(
     """
     addressing = await _create_email_addressing(
         app,
-        product_name=product_name,
         group_ids=group_ids,
         external_contacts=external_contacts,
     )
@@ -178,7 +173,6 @@ async def send_message(
         case Channel.email:
             message = await _create_email_message(
                 app,
-                product_name=product_name,
                 group_ids=group_ids,
                 external_contacts=external_contacts,
                 content=content,
@@ -215,7 +209,6 @@ async def send_message_from_template(
         case Channel.email:
             addressing = await _create_email_addressing(
                 app,
-                product_name=product_name,
                 group_ids=group_ids,
                 external_contacts=external_contacts,
                 reply_to=reply_to,

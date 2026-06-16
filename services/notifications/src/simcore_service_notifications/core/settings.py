@@ -80,7 +80,7 @@ class SMTPSettings(BaseModel):
 class ProductSMTPSettings(BaseModel):
     """Per-product SMTP configuration referencing a named mail server profile."""
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True)
 
     mail_server: Annotated[
         str,
@@ -131,7 +131,7 @@ class ProductSMTPSettings(BaseModel):
 class NotificationsSMTPSettings(BaseModel):
     """Root model for SMTP settings with named mail server profiles and per-product config."""
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True)
 
     mail_servers: dict[str, SMTPSettings]
     products: dict[str, ProductSMTPSettings]
@@ -149,10 +149,16 @@ class NotificationsSMTPSettings(BaseModel):
         return self
 
     def get_product_smtp_settings(self, product_name: str) -> ProductSMTPSettings:
+        if product_name not in self.products:
+            msg = (
+                f"No SMTP settings configured for product {product_name!r}. "
+                f"Configured products: {sorted(self.products.keys())}"
+            )
+            raise ValueError(msg)
         return self.products[product_name]
 
     def get_smtp_settings(self, product_name: str) -> SMTPSettings:
-        product = self.products[product_name]
+        product = self.get_product_smtp_settings(product_name)
         return self.mail_servers[product.mail_server]
 
 
