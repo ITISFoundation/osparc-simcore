@@ -41,8 +41,8 @@ def _configure_plugins(
 ) -> None:
     configure_redis_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_REDIS)
     configure_rabbitmq_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_RABBITMQ)
-    configure_ec2_client(app_lifespan)
-    configure_ssm_client(app_lifespan)
+    configure_ec2_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_EC2_ACCESS)
+    configure_ssm_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_SSM_ACCESS)
     configure_rpc_routes(app_lifespan)
     configure_clusters_management(app_lifespan, settings=settings)
 
