@@ -23,14 +23,6 @@ updates:
       interval: weekly
       time: "04:00"
     open-pull-requests-limit: 0 # Disable version-update PRs; use pip-audit instead
-    reviewers:
-      - pcrespov
-      - sanderegg
-    assignees:
-      - pcrespov
-      - sanderegg
-    labels:
-      - t:maintenance
 
   # ── GitHub Actions ──────────────────────────────────────────────────────────
   # Cool-down avoids adopting broken releases immediately.
@@ -53,13 +45,6 @@ updates:
         update-types:
           - minor
           - patch
-    reviewers:
-      - sanderegg
-      - pcrespov
-    assignees:
-      - sanderegg
-    labels:
-      - t:maintenance
 
   # ── Docker base images ──────────────────────────────────────────────────────
   # Tracks python:X.Y-slim-bookworm and other base images across all service
@@ -105,10 +90,3 @@ updates:
           - minor
           - patch
         group-by: dependency-name
-    reviewers:
-      - pcrespov
-      - sanderegg
-    assignees:
-      - pcrespov
-    labels:
-      - t:maintenance
