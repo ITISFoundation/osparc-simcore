@@ -190,6 +190,64 @@ async def test_get_batch_services_coalesces_concurrent_cold_cache_calls(
     assert not mocked_director_rest_api["get_service"].called
 
 
+async def test_get_batch_services_when_director_slower_than_lease_keeps_results_correct(
+    monkeypatch: pytest.MonkeyPatch,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    # NOTE: documents the degraded behaviour when the director bulk fetch is slower than
+    # the stampede `lease`. The lock expires mid-flight (RedLock lets every waiter pass
+    # after `lease`), so request coalescing is defeated and each concurrent caller
+    # re-issues its own fetch. The guarantee that must still hold is correctness: despite
+    # the lost coalescing, every caller receives complete, correct results.
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    num_callers = 5
+    release_director = asyncio.Event()
+    all_callers_in_flight = asyncio.Event()
+    call_count = 0
+
+    async def _slow_get_services_map(_director_client: DirectorClient) -> manifest.ServiceMetaDataPublishedDict:
+        nonlocal call_count
+        call_count += 1
+        if call_count == num_callers:
+            # every caller has re-issued its own fetch (the lease expired for all waiters)
+            all_callers_in_flight.set()
+        # stays "in flight" until the test releases it, i.e. slower than the lease
+        await release_director.wait()
+        return all_services_map
+
+    monkeypatch.setattr(manifest, "get_services_map", _slow_get_services_map)
+
+    # a lease far shorter than the (blocked) director response time
+    short_lease = 0.05
+    manifest.set_services_cache_lease(short_lease)
+    try:
+        await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+
+        # a burst of concurrent callers racing on a cold cache
+        callers = asyncio.gather(*(manifest.get_batch_services(selection, director_client) for _ in range(num_callers)))
+
+        # wait until the lease has expired for every waiter so they have all re-issued
+        # their own fetch (signalled by the slow fetch itself, no fixed sleep needed)
+        async with asyncio.timeout(5):
+            await all_callers_in_flight.wait()
+
+        # all the in-flight fetches can now complete
+        release_director.set()
+        results = await callers
+
+        # correctness is preserved for every caller despite the expired lease ...
+        for got_services in results:
+            assert [(s.key, s.version) for s in got_services] == selection
+
+        # ... but the slow response defeated coalescing: every caller fetched on its own
+        assert call_count == num_callers
+    finally:
+        manifest.set_services_cache_lease(30)  # restore the import-time default
+
+
 async def test_get_batch_services_returns_keyerror_for_missing(
     director_client: DirectorClient,
 ):
