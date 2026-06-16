@@ -1,3 +1,4 @@
+#, fuzzy
 msgid ""
 msgstr "Project-Id-Version: osparc\nLanguage: es\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=(n != 1);\n"
 
