@@ -14,11 +14,9 @@ from aiohttp.web_exceptions import HTTPNotFound
 from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import PortLink
 from pydantic import TypeAdapter
-from pytest_simcore.helpers.webserver_parametrizations import (
-    MockedStorageSubsystem,
-    standard_role_response,
-)
+from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem, standard_role_response
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
@@ -69,14 +67,13 @@ async def test_clone_project_user_permissions(
     url = client.app.router["clone_project"].url_for(project_id=project["uuid"])
     assert f"/v0/projects/{project['uuid']}:clone" == url.path
 
-    try:
-        cloned_project = await _request_clone_project(client, url)
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        assert exc.status == expected.ok  # pylint: disable=no-member
-
     if expected.ok == status.HTTP_200_OK:
-        # check whether it's a clone
+        cloned_project = await _request_clone_project(client, url)
         assert ProjectID(project["uuid"]) != cloned_project.uuid
+    else:
+        with pytest.raises(ClientResponseError) as exc_info:
+            await _request_clone_project(client, url)
+        assert exc_info.value.status == expected.ok
 
 
 @pytest.mark.parametrize(
@@ -111,6 +108,19 @@ async def test_clone_project(
 
     assert len(project["workbench"]) == len(cloned_project.workbench)
     assert set(project["workbench"].keys()) != set(cloned_project.workbench.keys()), "clone does NOT preserve node ids"
+
+    # Verify PortLink references and input_nodes are remapped to new cloned node IDs
+    original_node_ids = set(project["workbench"].keys())
+    for new_node in cloned_project.workbench.values():
+        for ref_id in new_node.input_nodes or []:
+            assert str(ref_id) not in original_node_ids, (
+                f"Cloned input_nodes still references original node ID {ref_id}"
+            )
+        for port_val in (new_node.inputs or {}).values():
+            if isinstance(port_val, PortLink):
+                assert str(port_val.node_uuid) not in original_node_ids, (
+                    f"Cloned PortLink still references original node UUID {port_val.node_uuid}"
+                )
 
 
 @pytest.mark.parametrize(
