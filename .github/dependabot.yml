@@ -6,6 +6,11 @@ updates:
   # (open-pull-requests-limit: 0). Security *alerts* still work because they
   # use a separate internal limit.
   #
+  # Security *updates* (PRs) are unaffected: open-pull-requests-limit applies
+  # only to version-update PRs. Dependabot security updates use a separate,
+  # internal limit of 10 open PRs. Dependabot security *alerts* are independent
+  # of this file entirely.
+  #
   # Security update workflow:
   #   1. pip-audit CI workflow detects CVEs in _base.txt files.
   #   2. Developer runs: make -C requirements audit-prod (to verify locally)
@@ -34,10 +39,9 @@ updates:
       time: "04:00"
       day: "monday"
     cooldown:
-      default-days: 7 # patch lag: wait 1 week before proposing any update
-      semver-patch-days: 7
-      semver-minor-days: 14
-      semver-major-days: 30
+      # github-actions supports ONLY `default-days`; per-SemVer cooldown
+      # (semver-major/minor/patch-days) is NOT supported for this ecosystem.
+      default-days: 7 # wait 1 week before proposing any update
     open-pull-requests-limit: 10
     groups:
       github-actions-minor-patch:
@@ -78,10 +82,9 @@ updates:
       time: "04:00"
       day: "monday"
     cooldown:
-      default-days: 7
-      semver-patch-days: 7
-      semver-minor-days: 14
-      semver-major-days: 30
+      # docker supports ONLY `default-days`; per-SemVer cooldown
+      # (semver-major/minor/patch-days) is NOT supported for this ecosystem.
+      default-days: 7 # wait 1 week before proposing any update
     open-pull-requests-limit: 10
     groups:
       docker-base-images:
