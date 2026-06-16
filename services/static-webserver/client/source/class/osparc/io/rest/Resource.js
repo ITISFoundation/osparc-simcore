@@ -42,24 +42,12 @@ qx.Class.define("osparc.io.rest.Resource", {
         value: osparc.utils.LanguageManager.getStoredLocale() || qx.locale.Manager.getInstance().getLocale()
       }];
 
-      if (this.AUTHENTICATION !== undefined && this.AUTHENTICATION !== null) {
-        headers.concat(this.AUTHENTICATION.getAuthHeaders());
-      }
-
       headers.forEach(item => request.setRequestHeader(item.key, item.value));
 
       if (timeout) {
         request.setTimeout(timeout);
       }
     });
-  },
-
-  statics: {
-    AUTHENTICATION: null,
-
-    setAuthenticationHeader: function(userNameOrToken, password=null) {
-      osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(userNameOrToken, password);
-    }
   },
 
   members: {

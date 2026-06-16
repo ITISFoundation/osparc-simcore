@@ -23,13 +23,7 @@ qx.Class.define("osparc.io.rest.AbstractResource", {
   type: "abstract",
 
   statics: {
-    API: "/v0",
-    AUTHENTICATION: null,
-
-    setAutheticationHeader: function(userNameOrToken, password=null) {
-      osparc.io.rest.AbstractResource.AUTHENTICATION = new qx.io.request.authentication.Basic(userNameOrToken, password);
-    }
-
+    API: "/v0"
   },
 
   construct: function(description) {
@@ -41,13 +35,6 @@ qx.Class.define("osparc.io.rest.AbstractResource", {
         value: "application/json"
       }];
 
-      const auth = osparc.io.rest.AbstractResource.AUTHENTICATION;
-      if (auth === null) {
-        console.debug("Authentication missing");
-      } else {
-        headers.concat(auth.getAuthHeaders());
-      }
-
       headers.forEach(function(item, index, array) {
         request.setRequestHeader(item.key, item.value);
       });
@@ -57,7 +44,7 @@ qx.Class.define("osparc.io.rest.AbstractResource", {
   members:{
     /**
      * Default implementation
-     * Can be overriden in subclass to change prefix
+     * Can be overridden in subclass to change prefix
      */
     formatUrl: function(tail) {
       return osparc.io.rest.AbstractResource.API + tail;
