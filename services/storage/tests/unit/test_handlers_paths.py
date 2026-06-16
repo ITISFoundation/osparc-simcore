@@ -32,6 +32,7 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -456,25 +457,17 @@ async def test_list_paths_with_display_name_containing_slashes(
     node_name_with_non_ascii = "my node / is not ascii: éàèù"
     # adjust project to contain "difficult" characters
     async with sqlalchemy_async_engine.begin() as conn:
-        result = await conn.execute(
-            sa.update(projects)
-            .where(projects.c.uuid == project["uuid"])
-            .values(name=project_name_with_slashes)
-            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+        await conn.execute(
+            sa.update(projects).where(projects.c.uuid == project["uuid"]).values(name=project_name_with_slashes)
         )
-        row = result.one()
-        assert row.name == project_name_with_slashes
-        project_workbench = row.workbench
-        assert len(project_workbench) == 1
-        node = next(iter(project_workbench.values()))
-        node["label"] = node_name_with_non_ascii
-        result = await conn.execute(
-            sa.update(projects)
-            .where(projects.c.uuid == project["uuid"])
-            .values(workbench=project_workbench)
-            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+        # Update node label via projects_nodes table
+        assert len(project["workbench"]) == 1
+        node_id = next(iter(project["workbench"]))
+        await conn.execute(
+            sa.update(projects_nodes)
+            .where((projects_nodes.c.project_uuid == project["uuid"]) & (projects_nodes.c.node_id == node_id))
+            .values(label=node_name_with_non_ascii)
         )
-        row = result.one()
 
     # ls the root
     file_filter = None

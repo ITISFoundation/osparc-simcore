@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     }
     this._add(this.__createPasswordSection());
     this._add(this.__createContactSection());
+    this._add(this.__createCountrySection());
     this._add(this.__createTransferProjectsSection());
     this._add(this.__createDeleteAccount());
 
@@ -80,11 +81,15 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __sms2FAItem: null,
     __personalInfoModel: null,
     __personalInfoRenderer: null,
+    __countryInfoModel: null,
+    __countryInfoRenderer: null,
+    __countrySection: null,
 
     __fetchMyProfile: function() {
       this.__userProfileRenderer.setEnabled(false);
       this.__privacyRenderer.setEnabled(false);
       this.__personalInfoRenderer.setEnabled(false);
+      this.__countryInfoRenderer.setEnabled(false);
 
       osparc.data.Resources.getOne("profile", {}, null, false)
         .then(profile => {
@@ -93,6 +98,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           this.__userProfileRenderer.setEnabled(true);
           this.__privacyRenderer.setEnabled(true);
           this.__personalInfoRenderer.setEnabled(true);
+          this.__countryInfoRenderer.setEnabled(true);
         })
         .catch(err => console.error(err));
     },
@@ -115,10 +121,14 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
             "address": contact["address"] || "",
             "city": contact["city"] || "",
             "state": contact["state"] || "",
-            "country": contact["country"] || "",
             "postalCode": contact["postalCode"] || "",
           });
+          this.__countryInfoModel.set({
+            "country": contact["country"] || "",
+          });
         }
+        const hasCountry = Boolean(data && data["contact"] && data["contact"]["country"]);
+        this.__countrySection.setVisibility(hasCountry ? "visible" : "excluded");
       }
       this.__updateProfileBtn.setEnabled(false);
 
@@ -524,20 +534,38 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       // layout
       const box = this.self().createSectionBox(this.tr("Password"));
 
+      // Dedicated (visually hidden) username field kept in the DOM next to the password
+      // fields. It gives the browser's password manager a proper "username" target so it
+      // autofills the saved email here instead of hijacking unrelated inputs such as the
+      // dashboard search bar (osparc/dashboard/SearchBarFilter).
+      const username = new qx.ui.form.TextField().set({
+        focusable: false,
+      });
+      username.getContentElement().setAttribute("autocomplete", "username");
+      username.getContentElement().setAttribute("aria-hidden", "true");
+      username.getContentElement().setAttribute("tabindex", "-1");
+      // add it off-screen so it does not introduce an extra vertical gap
+      box._add(username, { left: -10000, top: -10000 });
+
       const currentPassword = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your current password")
       });
+      // "new-password" (instead of "current-password") so the browser does not autofill
+      // the saved password into this change-password form.
+      currentPassword.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const newPassword = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Your new password")
       });
+      newPassword.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const confirm = new osparc.ui.form.PasswordField().set({
         required: true,
         placeholder: this.tr("Retype your new password")
       });
+      confirm.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const form = new qx.ui.form.Form();
       form.add(currentPassword, "Current Password", null, "curPassword");
@@ -606,18 +634,13 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true,
       });
 
-      const state = new qx.ui.form.TextField().set({
-        placeholder: this.tr("State"),
-        readOnly: true,
-      });
-
-      const country = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Country"),
-        readOnly: true,
-      });
-
       const postalCode = new qx.ui.form.TextField().set({
         placeholder: this.tr("Postal Code"),
+        readOnly: true,
+      });
+
+      const state = new qx.ui.form.TextField().set({
+        placeholder: this.tr("State"),
         readOnly: true,
       });
 
@@ -625,9 +648,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       personalInfoForm.add(institution, osparc.product.Utils.getInstitutionAlias().label, null, "institution");
       personalInfoForm.add(address, this.tr("Address"), null, "address");
       personalInfoForm.add(city, this.tr("City"), null, "city");
-      personalInfoForm.add(state, this.tr("State"), null, "state");
-      personalInfoForm.add(country, this.tr("Country"), null, "country");
       personalInfoForm.add(postalCode, this.tr("Postal Code"), null, "postalCode");
+      personalInfoForm.add(state, this.tr("State"), null, "state");
       this.__personalInfoRenderer = new qx.ui.form.renderer.Single(personalInfoForm);
       box.add(this.__personalInfoRenderer);
 
@@ -636,9 +658,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         "institution": null,
         "address": null,
         "city": null,
-        "state": null,
-        "country": null,
         "postalCode": null,
+        "state": null,
       };
 
       const model = this.__personalInfoModel = qx.data.marshal.Json.createModel(raw);
@@ -647,9 +668,37 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       controller.addTarget(institution, "value", "institution", true);
       controller.addTarget(address, "value", "address", true);
       controller.addTarget(city, "value", "city", true);
-      controller.addTarget(state, "value", "state", true);
-      controller.addTarget(country, "value", "country", true);
       controller.addTarget(postalCode, "value", "postalCode", true);
+      controller.addTarget(state, "value", "state", true);
+
+      return box;
+    },
+
+    __createCountrySection: function() {
+      // layout
+      const box = this.__countrySection = this.self().createSectionBox(this.tr("Country of Residence")).set({
+        visibility: "excluded",
+      });
+      box.addHelper(this.tr("Tax and VAT regulations depend on the country of residence."));
+
+      const country = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Country"),
+        readOnly: true,
+      });
+
+      const countryInfoForm = new qx.ui.form.Form();
+      countryInfoForm.add(country, this.tr("Country"), null, "country");
+      this.__countryInfoRenderer = new qx.ui.form.renderer.Single(countryInfoForm);
+      box.add(this.__countryInfoRenderer);
+
+      // binding to a model
+      const raw = {
+        "country": null,
+      };
+
+      const model = this.__countryInfoModel = qx.data.marshal.Json.createModel(raw);
+      const controller = new qx.data.controller.Object(model);
+      controller.addTarget(country, "value", "country", true);
 
       return box;
     },

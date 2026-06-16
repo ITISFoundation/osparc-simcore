@@ -7,7 +7,7 @@ from ....exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ....users.exceptions import TokenNotFoundError
+from ....users.errors import TokenNotFoundError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     TokenNotFoundError: HttpErrorInfo(

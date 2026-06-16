@@ -26,9 +26,8 @@ from yarl import URL
 
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
-from ..resource_usage.service import add_credits_to_wallet
+from ..resource_usage import resource_usage_service
 from ..users import users_service
-from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _onetime_db, _rpc
 from ._socketio import notify_payment_completed
@@ -114,6 +113,9 @@ async def _ack_creation_of_wallet_payment(
     invoice_url: HttpUrl | None = None,
     notify_enabled: bool = True,
 ) -> PaymentTransaction:
+    # NOTE: Deferred import is safe; happens at call time, not module import
+    from ..wallets import wallets_service  # noqa: PLC0415
+
     #
     # NOTE: implements endpoint in payment service hit by the gateway
     # IMPORTANT: ONLY for testing or fake completion!
@@ -139,10 +141,10 @@ async def _ack_creation_of_wallet_payment(
 
     if completion_state == PaymentTransactionState.SUCCESS:
         # notifying RUT
-        user_wallet = await get_wallet_by_user(
+        user_wallet = await wallets_service.get_wallet_by_user(
             app, transaction.user_id, transaction.wallet_id, transaction.product_name
         )
-        await add_credits_to_wallet(
+        await resource_usage_service.add_credits_to_wallet(
             app=app,
             product_name=transaction.product_name,
             wallet_id=transaction.wallet_id,
@@ -245,8 +247,12 @@ async def raise_for_wallet_payments_permissions(
     we cannot allow users with read-only access to even read any
     payment information associated to this wallet.
     SEE some context about this in https://github.com/ITISFoundation/osparc-simcore/pull/4897
+
+    Deferred import (R0401) is safe; happens at call time, not module import.
     """
-    permissions = await get_wallet_with_permissions_by_user(
+    from ..wallets import wallets_service  # noqa: PLC0415
+
+    permissions = await wallets_service.get_wallet_with_permissions_by_user(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
     if not permissions.read or not permissions.write:
@@ -271,11 +277,16 @@ async def init_creation_of_wallet_payment(
         UserNotFoundError
         WalletAccessForbiddenError
         BillingDetailsNotFoundError
+
+    Deferred import (R0401) is safe; happens at call time, not module import.
     """
+    from ..wallets import wallets_service  # noqa: PLC0415
 
     # wallet: check permissions
     await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
-    user_wallet = await get_wallet_by_user(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
+    user_wallet = await wallets_service.get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # user info
@@ -350,9 +361,14 @@ async def pay_with_payment_method(
     payment_method_id: PaymentMethodID,
     comment: str | None,
 ) -> PaymentTransaction:
+    # NOTE: Deferred import is safe; happens at call time, not module import
+    from ..wallets import wallets_service  # noqa: PLC0415
+
     # wallet: check permissions
     await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
-    user_wallet = await get_wallet_by_user(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
+    user_wallet = await wallets_service.get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # stripe info

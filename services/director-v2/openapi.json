@@ -1257,6 +1257,10 @@
         "type": "object",
         "title": "CallbacksMapping"
       },
+      "ComposeSpecLabelDict": {
+        "additionalProperties": true,
+        "type": "object"
+      },
       "ComputationCreate": {
         "properties": {
           "user_id": {
@@ -2954,8 +2958,7 @@
           "simcore.service.compose-spec": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/ComposeSpecLabelDict"
               },
               {
                 "type": "null"

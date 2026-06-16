@@ -2,7 +2,7 @@ from asyncio import Task
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 
@@ -18,10 +18,14 @@ class FireAndForgetCollection(SingletonInAppStateMixin):
         return self._tasks_collection
 
 
-async def fire_and_forget_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _fire_and_forget_lifespan(app: FastAPI) -> AsyncIterator[State]:
     public_client = FireAndForgetCollection(app)
     public_client.set_to_app_state(app)
 
     yield {}
 
     public_client.pop_from_app_state(app)
+
+
+def configure_fire_and_forget(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_fire_and_forget_lifespan)

@@ -87,12 +87,21 @@ async def get_download_link_from_s3(
         return URL(f"{file_link}")
 
 
-async def create_r_clone_mounted_directory_entry(
+async def get_directory_mount_s3_link(
     *,
     user_id: UserID,
     s3_object: StorageFileID,
     store_id: LocationID | None,
-) -> None:
+) -> AnyUrl:
+    """Requests storage for the S3 link to be used when mounting a directory via rclone.
+
+    The link is provided by storage (``s3://<bucket>/<s3_object>``) so that the mount
+    targets the bucket actually used by storage.
+
+    NOTE: the upload is completed immediately to register the directory entry in
+    storage (file_meta_data) and avoid leaving a dangling pending entry behind. The
+    actual data transfer is then managed externally by the rclone mount.
+    """
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
         store_name=None,
@@ -104,6 +113,7 @@ async def create_r_clone_mounted_directory_entry(
         is_directory=True,
         sha256_checksum=None,
     )
+    assert upload_links.urls  # nosec
     async with ClientSessionContextManager(None) as session:
         await _filemanager_utils.complete_upload(
             session,
@@ -111,6 +121,7 @@ async def create_r_clone_mounted_directory_entry(
             [],
             is_directory=True,
         )
+    return upload_links.urls[0]
 
 
 async def get_upload_links_from_s3(

@@ -8,6 +8,7 @@
 import logging
 from collections.abc import AsyncIterator
 from typing import Any
+from unittest.mock import call
 
 import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
@@ -202,12 +203,24 @@ def failing_lifespan_manager(mocker: MockerFixture) -> dict[str, Any]:
                 handle_error(_name, exc)
                 raise LifespanOnShutdownError(lifespan_name=_name) from exc
 
+    async def lifespan_successful(app: FastAPI) -> AsyncIterator[State]:
+        _name = lifespan_successful.__name__
+
+        with log_context(logging.INFO, _name):
+            try:
+                startup_step(_name)
+                yield {}
+
+            finally:
+                shutdown_step(_name)
+
     return {
         "startup_step": startup_step,
         "shutdown_step": shutdown_step,
         "handle_error": handle_error,
         "lifespan_failing_on_startup": lifespan_failing_on_startup,
         "lifespan_failing_on_shutdown": lifespan_failing_on_shutdown,
+        "lifespan_successful": lifespan_successful,
     }
 
 
@@ -248,6 +261,64 @@ async def test_app_lifespan_with_error_on_shutdown(
     assert failing_lifespan_manager["handle_error"].called
     assert failing_lifespan_manager["startup_step"].called
     assert not failing_lifespan_manager["shutdown_step"].called
+    assert exception.error_context() == {
+        "lifespan_name": "lifespan_failing_on_shutdown",
+        "message": "Failed during shutdown of lifespan_failing_on_shutdown",
+        "code": "RuntimeError.LifespanError.LifespanOnShutdownError",
+    }
+
+
+async def test_app_lifespan_partial_failure(
+    failing_lifespan_manager: dict[str, Any],
+):
+    app_lifespan = LifespanManager()
+    app_lifespan.add(failing_lifespan_manager["lifespan_successful"])
+    app_lifespan.add(failing_lifespan_manager["lifespan_failing_on_startup"])
+    app = FastAPI(lifespan=app_lifespan)
+
+    with pytest.raises(LifespanOnStartupError) as err_info:
+        async with ASGILifespanManager(app):
+            ...
+
+    # is lifespan_successful shutdown called?
+    exception = err_info.value
+    assert failing_lifespan_manager["startup_step"].call_args_list == [
+        call("lifespan_successful"),
+    ]
+    failing_lifespan_manager["handle_error"].assert_called_once()
+
+    assert failing_lifespan_manager["shutdown_step"].call_args_list == [call("lifespan_successful")]
+    assert exception.error_context() == {
+        "lifespan_name": "lifespan_failing_on_startup",
+        "message": "Failed during startup of lifespan_failing_on_startup",
+        "code": "RuntimeError.LifespanError.LifespanOnStartupError",
+    }
+
+
+async def test_app_lifespan_partial_failure_on_shutdown(
+    failing_lifespan_manager: dict[str, Any],
+):
+    app_lifespan = LifespanManager()
+    app_lifespan.add(failing_lifespan_manager["lifespan_successful"])
+    app_lifespan.add(failing_lifespan_manager["lifespan_failing_on_shutdown"])
+    app = FastAPI(lifespan=app_lifespan)
+
+    with pytest.raises(LifespanOnShutdownError) as err_info:
+        async with ASGILifespanManager(app):
+            ...
+
+    # is lifespan_successful shutdown called?
+    exception = err_info.value
+    assert failing_lifespan_manager["startup_step"].call_args_list == [
+        call("lifespan_successful"),
+        call("lifespan_failing_on_shutdown"),
+    ]
+    assert failing_lifespan_manager["startup_step"].call_args_list == [
+        call("lifespan_successful"),
+        call("lifespan_failing_on_shutdown"),
+    ]
+    failing_lifespan_manager["handle_error"].assert_called_once()
+    assert failing_lifespan_manager["shutdown_step"].call_args_list == [call("lifespan_successful")]
     assert exception.error_context() == {
         "lifespan_name": "lifespan_failing_on_shutdown",
         "message": "Failed during shutdown of lifespan_failing_on_shutdown",

@@ -123,7 +123,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
       }
 
       const caption = this.tr("Something went wrong");
-      const introText = this.tr("Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster.");
+      const introText = this.tr("Please describe what you were doing before the error (optional).") + "\n" + this.tr("This will help our support team understand the context and resolve the issue faster.");
       const confirmationWindow = new osparc.ui.window.Confirmation(introText);
       confirmationWindow.setCaption(caption);
       confirmationWindow.getChildControl("message-label").setFont("text-13");

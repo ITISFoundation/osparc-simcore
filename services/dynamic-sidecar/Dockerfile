@@ -186,6 +186,11 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
+# Copies healthcheck script for fast execution (python3 -S skips site-packages)
+COPY --chown=scu:scu \
+  scripts/docker/docker_healthcheck.py \
+  docker/healthcheck.py
+
 # NOTE: sometimes docker network may take some time to resolve DNS, thus the longer start-period
 HEALTHCHECK \
   --interval=10s \
@@ -193,7 +198,7 @@ HEALTHCHECK \
   --start-period=64s \
   --start-interval=1s \
   --retries=5 \
-  CMD ["python3", "-m", "common_library.docker_healthcheck", "http://localhost:8000/health"]
+  CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/health"]
 
 EXPOSE 8000
 

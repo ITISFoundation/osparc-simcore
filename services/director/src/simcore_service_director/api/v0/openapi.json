@@ -169,7 +169,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Service Key"
             }
           },
@@ -222,7 +222,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Service Key"
             }
           },
@@ -360,7 +360,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Service Key"
             }
           },
