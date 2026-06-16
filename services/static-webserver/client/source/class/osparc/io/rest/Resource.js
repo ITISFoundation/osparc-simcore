@@ -37,6 +37,9 @@ qx.Class.define("osparc.io.rest.Resource", {
       }, {
         key: "X-Client-Session-Id",
         value: osparc.utils.Utils.getClientSessionID()
+      }, {
+        key: "X-Simcore-Language",
+        value: osparc.utils.LanguageManager.getStoredLocale() || qx.locale.Manager.getInstance().getLocale()
       }];
 
       if (this.AUTHENTICATION !== undefined && this.AUTHENTICATION !== null) {
@@ -54,7 +57,7 @@ qx.Class.define("osparc.io.rest.Resource", {
   statics: {
     AUTHENTICATION: null,
 
-    setAutheticationHeader: function(userNameOrToken, password=null) {
+    setAuthenticationHeader: function(userNameOrToken, password=null) {
       osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(userNameOrToken, password);
     }
   },
