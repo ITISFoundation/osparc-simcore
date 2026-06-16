@@ -4,6 +4,9 @@
 
 
 import pytest
+from models_library.notifications.errors import (
+    NotificationsProductSMTPSettingsNotFoundError,
+)
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
@@ -117,10 +120,10 @@ def test_notifications_smtp_settings_get_unknown_product_raises():
         }
     )
 
-    with pytest.raises(ValueError, match="unknown_product"):
+    with pytest.raises(NotificationsProductSMTPSettingsNotFoundError, match="unknown_product"):
         settings.get_product_smtp_settings("unknown_product")
 
-    with pytest.raises(ValueError, match="unknown_product"):
+    with pytest.raises(NotificationsProductSMTPSettingsNotFoundError, match="unknown_product"):
         settings.get_smtp_settings("unknown_product")
 
 

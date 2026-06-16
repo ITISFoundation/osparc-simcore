@@ -2,6 +2,8 @@ import sqlalchemy as sa
 from models_library.notifications.errors import NotificationsProductNotFoundError
 from models_library.products import ProductName
 from simcore_postgres_database.models.products import products
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...models.product import (
     CompanyLink,
@@ -21,8 +23,13 @@ _PRODUCT_COLUMNS = (
 
 
 class ProductRepository(BaseRepository):
-    async def get_product(self, product_name: ProductName) -> Product:
-        async with self.engine.connect() as conn:
+    async def list_product_names(self, connection: AsyncConnection | None = None) -> list[ProductName]:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(sa.select(products.c.name).order_by(products.c.name))
+            return [row.name for row in result]
+
+    async def get_product(self, product_name: ProductName, connection: AsyncConnection | None = None) -> Product:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(sa.select(*_PRODUCT_COLUMNS).where(products.c.name == product_name))
             row = result.one_or_none()
 

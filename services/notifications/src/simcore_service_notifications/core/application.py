@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
@@ -30,9 +28,8 @@ from ..clients.celery import configure_task_manager
 from ..clients.postgres import configure_postgres_liveness
 from ..clients.rabbitmq import configure_rabbitmq_client
 from ..clients.redis import configure_redis_client
+from ..services import configure_smtp_config_check
 from .settings import ApplicationSettings
-
-_logger = logging.getLogger(__name__)
 
 
 def _configure_plugins(
@@ -46,6 +43,7 @@ def _configure_plugins(
         settings=settings.NOTIFICATIONS_POSTGRES,
     )
     configure_postgres_liveness(app_lifespan)
+    configure_smtp_config_check(app_lifespan)
 
     if not settings.NOTIFICATIONS_WORKER_MODE:
         configure_rabbitmq_client(app_lifespan)

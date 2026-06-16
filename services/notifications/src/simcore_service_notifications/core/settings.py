@@ -3,6 +3,9 @@ from typing import Annotated, Self
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import LogLevel
+from models_library.notifications.errors import (
+    NotificationsProductSMTPSettingsNotFoundError,
+)
 from models_library.notifications.rpc import SenderIdentity
 from pydantic import (
     AliasChoices,
@@ -149,11 +152,7 @@ class NotificationsSMTPSettings(BaseModel):
 
     def get_product_smtp_settings(self, product_name: str) -> ProductSMTPSettings:
         if product_name not in self.products:
-            msg = (
-                f"No SMTP settings configured for product {product_name!r}. "
-                f"Configured products: {sorted(self.products.keys())}"
-            )
-            raise ValueError(msg)
+            raise NotificationsProductSMTPSettingsNotFoundError(product_name=product_name)
         return self.products[product_name]
 
     def get_smtp_settings(self, product_name: str) -> SMTPSettings:
