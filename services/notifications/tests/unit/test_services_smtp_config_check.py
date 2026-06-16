@@ -42,20 +42,22 @@ def product_repository() -> AsyncMock:
 async def test_check_smtp_configuration_all_configured(
     product_repository: AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    capsys: pytest.CaptureFixture[str],
 ):
     smtp_settings = _smtp_settings("osparc", "s4l", "tis")
 
     with caplog.at_level(logging.INFO):
         await check_smtp_configuration(product_repository, smtp_settings)
 
-    # A status table is logged
-    assert "SMTP configuration status per product" in caplog.text
-    assert "osparc" in caplog.text
+    # A status table is printed (before the started banner)
+    printed = capsys.readouterr().out
+    assert "SMTP configuration status per product" in printed
+    assert "osparc" in printed
     # Per-identity columns and resolved sender emails are shown
     for identity in SenderIdentity:
-        assert f"{identity}" in caplog.text
-    assert "support@osparc.test" in caplog.text
-    assert "no-reply@osparc.test" in caplog.text
+        assert f"{identity}" in printed
+    assert "support@osparc.test" in printed
+    assert "no-reply@osparc.test" in printed
     # No warnings emitted
     assert not [r for r in caplog.records if r.levelno == logging.WARNING]
 

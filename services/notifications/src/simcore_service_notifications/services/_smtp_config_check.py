@@ -85,15 +85,18 @@ async def check_smtp_configuration(
 ) -> None:
     """Checks on startup that every product has SMTP settings configured.
 
-    Logs a status table per product and a warning for each product missing
-    its SMTP configuration.
+    Prints a status table per product (so it is visible right before the
+    started banner, regardless of log level) and logs a warning for each
+    product missing its SMTP configuration.
     """
     product_names = await product_repository.list_product_names()
 
     configured_products: set[ProductName] = set(smtp_settings.products) if smtp_settings is not None else set()
 
     table = _build_status_table(product_names, smtp_settings)
-    _logger.info("SMTP configuration status per product:\n%s", table)
+    # NOTE: uses print (like the startup banners) so the table is always emitted
+    # before the started banner, even when logging level is above INFO.
+    print(f"SMTP configuration status per product:\n{table}", flush=True)  # noqa: T201
 
     missing_products = [name for name in product_names if name not in configured_products]
     for product_name in missing_products:
