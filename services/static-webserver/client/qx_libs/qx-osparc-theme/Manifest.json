@@ -1,0 +1,28 @@
+{
+  "info": {
+    "name": "qx-osparc-theme",
+    "summary": "theme for the osparc web ui",
+    "description": "a material design inspired dark theme for osparc",
+    "homepage": "https://github.com/ITISFoundation/qx-osparc-theme",
+    "license": "MIT license",
+    "authors": [
+      {
+        "name": "Tobias Oetiker (oetiker)",
+        "email": "tobi@itis.swiss"
+      }
+    ],
+    "version": "0.5.6"
+  },
+  "provides": {
+    "namespace": "osparc.theme",
+    "encoding": "utf-8",
+    "class": "source/class",
+    "resource": "source/resource",
+    "translation": "source/translation"
+  },
+  "requires": {
+    "@qooxdoo/compiler": "^1.0.0-beta",
+    "@qooxdoo/framework": "^6.0.0-beta"
+  },
+  "$schema": "https://raw.githubusercontent.com/qooxdoo/qooxdoo-compiler/master/source/resource/qx/tool/schema/Manifest-1-0-0.json"
+}

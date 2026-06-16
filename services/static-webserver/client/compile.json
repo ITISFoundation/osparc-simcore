@@ -1,4 +1,10 @@
 {
+  "libraries": [
+    ".",
+    "qx_libs/qx-osparc-theme",
+    "qx_libs/qx-iconfont-material",
+    "qx_libs/qx-iconfont-fontawesome5"
+  ],
   "targets": [
     {
       "type": "source",
