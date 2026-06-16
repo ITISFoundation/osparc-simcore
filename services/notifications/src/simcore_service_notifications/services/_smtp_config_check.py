@@ -55,7 +55,7 @@ def _build_status_table(
         identity_cells: list[tuple[str, int]] = []
         for identity in identities:
             local_part = product_settings.local_parts.get(identity) if product_settings is not None else None
-            if local_part is not None:
+            if product_settings is not None and local_part is not None:
                 identity_cells.append(_make_cell(f"{local_part}@{product_settings.domain}", icon=_OK_ICON))
             else:
                 identity_cells.append(_make_cell(_MISSING_VALUE, icon=_WARNING_ICON))
