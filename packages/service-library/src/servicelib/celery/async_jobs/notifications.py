@@ -41,6 +41,7 @@ async def submit_send_messages_task(
     task_manager: TaskManager,
     *,
     owner_metadata: OwnerMetadata,
+    product_name: ProductName,
     messages: list[dict[str, Any]],  # NOTE: validated internally
     description: str | None = None,
 ) -> tuple[GroupUUID, list[TaskUUID], TaskName]:
@@ -55,7 +56,7 @@ async def submit_send_messages_task(
                         queue=NOTIFICATIONS_SERVICE_QUEUE_NAME,
                         description=description,
                     ),
-                    {"message": message},
+                    {"product_name": product_name, "message": message},
                 )
                 for message in messages
             ],

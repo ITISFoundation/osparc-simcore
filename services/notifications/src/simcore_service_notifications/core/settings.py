@@ -99,6 +99,15 @@ class ProductSMTPSettings(BaseModel):
             ],
         ),
     ]
+
+    @model_validator(mode="after")
+    def _validate_local_parts_complete(self) -> Self:
+        missing = set(SenderIdentity) - set(self.local_parts)
+        if missing:
+            msg = f"local_parts is missing required identities: {sorted(missing)}. Required: {sorted(SenderIdentity)}"
+            raise ValueError(msg)
+        return self
+
     extra_headers: Annotated[
         dict[str, str],
         Field(

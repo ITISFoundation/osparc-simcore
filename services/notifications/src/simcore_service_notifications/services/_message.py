@@ -110,6 +110,7 @@ class MessageService:
         group_uuid, _, task_name = await submit_send_messages_task(
             self.task_manager,
             owner_metadata=resolved_owner,
+            product_name=product_name,
             messages=messages,
             description=description,
         )
