@@ -93,8 +93,10 @@ async def test_configure_ec2_client_closes_client_if_ping_fails(
             return False
 
     class _SingleAsyncRetrying:
-        def __aiter__(self):
+        def __init__(self) -> None:
             self._yielded = False
+
+        def __aiter__(self):
             return self
 
         async def __anext__(self) -> _SingleAttempt:
