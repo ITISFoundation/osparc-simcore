@@ -427,9 +427,9 @@ def _build_left_outer_join_query(
     left_where_conditions = []
     if email_like is not None:
         left_where_conditions.append(users_pre_registration_details.c.pre_email.like(email_like))
-    join_condition = users.c.id == users_pre_registration_details.c.user_id
     if product_name:
-        join_condition = join_condition & (users_pre_registration_details.c.product_name == product_name)
+        left_where_conditions.append(users_pre_registration_details.c.product_name == product_name)
+    join_condition = users.c.id == users_pre_registration_details.c.user_id
     left_outer_join = sa.select(*columns).select_from(users_pre_registration_details.outerjoin(users, join_condition))
 
     return left_outer_join.where(sa.and_(*left_where_conditions)) if left_where_conditions else None
