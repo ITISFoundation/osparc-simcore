@@ -8,7 +8,7 @@ from collections.abc import Callable, Coroutine
 from contextlib import AsyncExitStack
 from io import IOBase
 from pathlib import Path
-from typing import Any, Final, TypedDict, cast
+from typing import Any, BinaryIO, Final, Literal, TypedDict, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -19,6 +19,8 @@ from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
+
+from ..aes_gcm import decrypt_stream, encrypt_stream
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +97,148 @@ def _file_chunk_streamer(src: IOBase, dst: IOBase):
     return (data, segment_len)
 
 
+def _format_progress_message(
+    *,
+    text_prefix: str,
+    bytes_transferred: int,
+    file_size: int | None,
+    elapsed_time: float,
+) -> str:
+    speed_mbps = ByteSize(bytes_transferred).to("MB") / elapsed_time if elapsed_time > 0 else 0.0
+    return (
+        f"{text_prefix}"
+        f" {100.0 * float(bytes_transferred or 0) / float(file_size or 1):.1f}%"
+        f" ({ByteSize(bytes_transferred).human_readable() if bytes_transferred else 0} / "
+        f"{ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+        f" [{speed_mbps:.2f} MBytes/s (avg)]"
+    )
+
+
+class _CryptoContext(TypedDict):
+    mode: Literal["encrypt", "decrypt"]
+    job_key: bytes
+    job_id: str
+    file_id: str
+    file_role: str
+
+
+class _ThreadSafeProgressLogger:
+    """Thread-safe progress callback for blocking transfers run in an executor.
+
+    The callback is invoked from a worker thread with the cumulative number of
+    plaintext bytes processed so far, and schedules throttled progress logs back onto
+    the main event loop via ``asyncio.run_coroutine_threadsafe``.
+    """
+
+    _MIN_PERCENT_DELTA: Final[float] = 1.0
+    _MIN_INTERVAL_SECONDS: Final[float] = 1.0
+
+    def __init__(
+        self,
+        *,
+        file_size: int | None,
+        log_publishing_cb: LogPublishingCB,
+        text_prefix: str,
+        main_loop: asyncio.AbstractEventLoop,
+    ) -> None:
+        self._file_size = file_size
+        self._log_publishing_cb = log_publishing_cb
+        self._text_prefix = text_prefix
+        self._main_loop = main_loop
+        self._start_time = time.monotonic()
+        self._last_emit_time = self._start_time
+        self._last_logged_percent = -1.0
+        self._bytes_processed = 0
+
+    def __call__(self, bytes_processed: int) -> None:
+        # NOTE: invoked from the executor worker thread
+        self._bytes_processed = bytes_processed
+        now = time.monotonic()
+        percent = 100.0 * float(bytes_processed) / float(self._file_size) if self._file_size else 0.0
+        enough_progress = percent - self._last_logged_percent >= self._MIN_PERCENT_DELTA
+        enough_time = now - self._last_emit_time >= self._MIN_INTERVAL_SECONDS
+        if not (enough_progress or enough_time):
+            return
+        self._last_logged_percent = percent
+        self._last_emit_time = now
+        asyncio.run_coroutine_threadsafe(
+            self._log_publishing_cb(self._build_message(now), logging.DEBUG),
+            self._main_loop,
+        )
+
+    async def emit_final(self) -> None:
+        # NOTE: called on completion from the main event loop
+        await self._log_publishing_cb(self._build_message(time.monotonic()), logging.DEBUG)
+
+    def _build_message(self, now: float) -> str:
+        return _format_progress_message(
+            text_prefix=self._text_prefix,
+            bytes_transferred=self._bytes_processed,
+            file_size=self._file_size,
+            elapsed_time=now - self._start_time,
+        )
+
+
+async def _run_plain_copy(
+    src_fp: IOBase,
+    dst_fp: IOBase,
+    *,
+    file_size: int | None,
+    log_publishing_cb: LogPublishingCB,
+    text_prefix: str,
+) -> None:
+    data_read = True
+    total_data_written = 0
+    t = time.perf_counter()
+    while data_read:
+        (
+            data_read,
+            data_written,
+        ) = await asyncio.get_event_loop().run_in_executor(None, _file_chunk_streamer, src_fp, dst_fp)
+        elapsed_time = time.perf_counter() - t
+        total_data_written += data_written or 0
+        await log_publishing_cb(
+            f"{text_prefix}"
+            f" {100.0 * float(total_data_written or 0) / float(file_size or 1):.1f}%"
+            f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / "
+            f"{ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+            f" [{ByteSize(total_data_written).to('MB') / elapsed_time:.2f} MBytes/s (avg)]",
+            logging.DEBUG,
+        )
+
+
+async def _run_crypto_copy(
+    src_fp: IOBase,
+    dst_fp: IOBase,
+    *,
+    file_size: int | None,
+    crypto: _CryptoContext,
+    log_publishing_cb: LogPublishingCB,
+    text_prefix: str,
+) -> None:
+    main_loop = asyncio.get_running_loop()
+    progress_logger = _ThreadSafeProgressLogger(
+        file_size=file_size,
+        log_publishing_cb=log_publishing_cb,
+        text_prefix=text_prefix,
+        main_loop=main_loop,
+    )
+    transfer = encrypt_stream if crypto["mode"] == "encrypt" else decrypt_stream
+    blocking_transfer = functools.partial(
+        transfer,
+        cast(BinaryIO, src_fp),
+        cast(BinaryIO, dst_fp),
+        job_key=crypto["job_key"],
+        job_id=crypto["job_id"],
+        file_id=crypto["file_id"],
+        file_role=crypto["file_role"],
+        progress_cb=progress_logger,
+    )
+    await main_loop.run_in_executor(None, blocking_transfer)
+    # force a final progress log on completion
+    await progress_logger.emit_final()
+
+
 async def _copy_file(
     src_url: AnyUrl | Path,
     dst_url: AnyUrl | Path,
@@ -103,6 +247,7 @@ async def _copy_file(
     text_prefix: str,
     src_storage_cfg: dict[str, Any] | None = None,
     dst_storage_cfg: dict[str, Any] | None = None,
+    crypto: _CryptoContext | None = None,
 ):
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
@@ -113,23 +258,22 @@ async def _copy_file(
         assert isinstance(src_fp, IOBase)  # nosec
         assert isinstance(dst_fp, IOBase)  # nosec
         file_size = getattr(src_fp, "size", None)
-        data_read = True
-        total_data_written = 0
-        t = time.process_time()
-        while data_read:
-            (
-                data_read,
-                data_written,
-            ) = await asyncio.get_event_loop().run_in_executor(None, _file_chunk_streamer, src_fp, dst_fp)
-            elapsed_time = time.process_time() - t
-            total_data_written += data_written or 0
-            await log_publishing_cb(
-                f"{text_prefix}"
-                f" {100.0 * float(total_data_written or 0) / float(file_size or 1):.1f}%"
-                f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / "
-                f"{ByteSize(file_size).human_readable() if file_size else 'NaN'})"
-                f" [{ByteSize(total_data_written).to('MB') / elapsed_time:.2f} MBytes/s (avg)]",
-                logging.DEBUG,
+        if crypto is None:
+            await _run_plain_copy(
+                src_fp,
+                dst_fp,
+                file_size=file_size,
+                log_publishing_cb=log_publishing_cb,
+                text_prefix=text_prefix,
+            )
+        else:
+            await _run_crypto_copy(
+                src_fp,
+                dst_fp,
+                file_size=file_size,
+                crypto=crypto,
+                log_publishing_cb=log_publishing_cb,
+                text_prefix=text_prefix,
             )
 
 
