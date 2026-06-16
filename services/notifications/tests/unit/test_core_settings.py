@@ -100,6 +100,30 @@ def test_notifications_smtp_settings_rejects_invalid_mail_server_reference():
         NotificationsSMTPSettings.model_validate(raw)
 
 
+def test_notifications_smtp_settings_get_unknown_product_raises():
+    settings = NotificationsSMTPSettings.model_validate(
+        {
+            "mail_servers": {
+                "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+            },
+            "products": {
+                "osparc": {
+                    "mail_server": "aws",
+                    "domain": "osparc.io",
+                    "extra_headers": {},
+                    "local_parts": {"support": "support", "no_reply": "no-reply"},
+                },
+            },
+        }
+    )
+
+    with pytest.raises(ValueError, match="unknown_product"):
+        settings.get_product_smtp_settings("unknown_product")
+
+    with pytest.raises(ValueError, match="unknown_product"):
+        settings.get_smtp_settings("unknown_product")
+
+
 def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("NOTIFICATIONS_WORKER_MODE", "true")
     monkeypatch.delenv("NOTIFICATIONS_SMTP_SETTINGS", raising=False)

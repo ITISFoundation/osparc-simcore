@@ -99,6 +99,13 @@ class ProductSMTPSettings(BaseModel):
             ],
         ),
     ]
+    extra_headers: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
+        ),
+    ] = DEFAULT_FACTORY
 
     @model_validator(mode="after")
     def _validate_local_parts_complete(self) -> Self:
@@ -107,14 +114,6 @@ class ProductSMTPSettings(BaseModel):
             msg = f"local_parts is missing required identities: {sorted(missing)}. Required: {sorted(SenderIdentity)}"
             raise ValueError(msg)
         return self
-
-    extra_headers: Annotated[
-        dict[str, str],
-        Field(
-            default_factory=dict,
-            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
-        ),
-    ] = DEFAULT_FACTORY
 
     @model_validator(mode="after")
     def _validate_extra_headers_allowed(self) -> Self:

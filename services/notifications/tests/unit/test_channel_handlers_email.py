@@ -10,6 +10,7 @@ from models_library.notifications.rpc import (
     EmailContact,
     EmailContent,
     EmailMessage,
+    SenderIdentity,
 )
 from simcore_service_notifications.core.settings import NotificationsSMTPSettings
 from simcore_service_notifications.models.product import Product, ProductFooter, ProductUI
@@ -177,3 +178,16 @@ def test_prepare_messages_without_bcc_and_attachments():
     assert len(payloads) == 1
     assert "bcc" not in payloads[0]
     assert "attachments" not in payloads[0]
+
+
+def test_resolve_from_contact_support():
+    contact = EmailChannelHandler.resolve_from_contact(_TEST_PRODUCT, SenderIdentity.SUPPORT, _mock_settings())
+
+    assert contact.email == "support@example.com"
+    assert contact.name == f"{_TEST_PRODUCT.display_name} support"
+
+
+def test_resolve_from_contact_no_reply():
+    contact = EmailChannelHandler.resolve_from_contact(_TEST_PRODUCT, SenderIdentity.NO_REPLY, _mock_settings())
+
+    assert contact.email == "no-reply@example.com"
