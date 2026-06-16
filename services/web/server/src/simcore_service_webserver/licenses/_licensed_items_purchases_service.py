@@ -19,7 +19,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..wallets.api import get_wallet_by_user
+from ..wallets.wallets_service import get_wallet_by_user
 
 _logger = logging.getLogger(__name__)
 

@@ -29,15 +29,13 @@ from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
 from yarl import URL
 
-from ..groups.api import is_user_by_email_in_group
-from ..invitations.api import (
+from ..groups.groups_service import is_user_by_email_in_group
+from ..invitations.invitations_service import (
+    InvalidInvitationError,
+    InvitationsServiceUnavailableError,
     extract_invitation,
     is_service_invitation_code,
     validate_invitation_url,
-)
-from ..invitations.errors import (
-    InvalidInvitationError,
-    InvitationsServiceUnavailableError,
 )
 from ..products.models import Product
 from ..users import users_service

@@ -7,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from sqlalchemy.exc import DatabaseError
 
-from ..groups.api import get_group_by_gid
+from ..groups.groups_service import get_group_by_gid
 from ..projects._projects_repository_legacy import (
     PROJECT_DBAPI_APPKEY,
     ProjectAccessRights,
@@ -18,7 +18,7 @@ from ..projects.api import (
 )
 from ..projects.exceptions import ProjectNotFoundError
 from ..users import users_service
-from ..users.exceptions import UserNotFoundError
+from ..users.errors import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
 

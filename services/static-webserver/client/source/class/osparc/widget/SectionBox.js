@@ -104,6 +104,8 @@ qx.Class.define("osparc.widget.SectionBox", {
       font = font || "text-13";
       const label = new qx.ui.basic.Label(message).set({
         font,
+        rich: true,
+        wrap: true,
       });
       this.add(label);
       return label;

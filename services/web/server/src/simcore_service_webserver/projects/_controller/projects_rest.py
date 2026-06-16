@@ -269,7 +269,12 @@ async def get_project(request: web.Request):
     )
 
     # Adds permalink
-    await update_or_pop_permalink_in_project(request.app, request.url, dict(request.headers), project)
+    await update_or_pop_permalink_in_project(
+        request.app,
+        request_url=request.url,
+        request_headers=dict(request.headers),
+        project=project,
+    )
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
     return envelope_json_response(data)
