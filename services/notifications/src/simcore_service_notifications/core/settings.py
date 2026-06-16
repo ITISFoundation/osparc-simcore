@@ -32,7 +32,8 @@ class SMTPSettings(BaseModel):
 
     NOTE: These settings are only intended to login and access an email server.
     Extra info necessary to send an email such as sender email 'from' or 'reply-to' are now
-    product-dependent and therefore can be found in the product table of the database
+    product-dependent and resolved from NOTIFICATIONS_SMTP_SETTINGS (per-product 'domain',
+    'local_parts' and 'extra_headers'), see NotificationsSMTPSettings/ProductSMTPSettings
     """
 
     model_config = ConfigDict(frozen=True)

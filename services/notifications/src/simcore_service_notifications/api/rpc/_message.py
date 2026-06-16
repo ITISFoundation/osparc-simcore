@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from models_library.notifications.errors import (
     NotificationsProductNotFoundError,
+    NotificationsProductSMTPSettingsNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -21,6 +22,7 @@ router = RPCRouter()
 @router.expose(
     reraise_if_error_type=(
         NotificationsProductNotFoundError,
+        NotificationsProductSMTPSettingsNotFoundError,
         NotificationsTooManyRecipientsError,
     )
 )
@@ -43,6 +45,7 @@ async def send_message(
 @router.expose(
     reraise_if_error_type=(
         NotificationsProductNotFoundError,
+        NotificationsProductSMTPSettingsNotFoundError,
         NotificationsTemplateNotFoundError,
         NotificationsTemplateContextValidationError,
     )
