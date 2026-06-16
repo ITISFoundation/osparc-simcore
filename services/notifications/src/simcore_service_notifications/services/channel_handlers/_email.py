@@ -80,7 +80,6 @@ class EmailChannelHandler(ChannelHandler):
 
         payload_base: dict[str, Any] = {
             "channel": message.channel,
-            "product_name": product.name,
             "from": from_dict,
             "content": content_dict,
         }
