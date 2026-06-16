@@ -241,13 +241,18 @@ class RCloneMountManager:
                     break
 
             if tracked_mount is None:
-                # NOTE: if this is raised it is a bug in the code
                 raise NoMountFoundForRemotePathError(remote_path=remote_path)
 
-            # dir_to_refresh is relative to the rclone mount root (which is mounted at
-            # `s3:{bucket}/{project_id}/{node_id}/{mount_root_dir}`). Refresh the parent
-            # (containing directory) of the target path; for the mount root itself or a
-            # direct child this resolves to "" (the mount root).
+            # dir_to_refresh is relative to the mounted root.
+            # Example 1 (mount root):
+            # - remote_path: project-1/node-1/data
+            # - dir_to_refresh: ""
+            # Example 2 (file in root directory):
+            # - remote_path: project-1/node-1/data/file.txt
+            # - dir_to_refresh: ""
+            # Example 3 (subfolder file):
+            # - remote_path: project-1/node-1/data/folder/subfolder/file.txt
+            # - dir_to_refresh: "folder/subfolder"
             relative_path_parts = remote_path_parts[_MIN_PATH_PARTS:]
             dir_to_refresh = "/".join(relative_path_parts[:-1]) if relative_path_parts else ""
             await tracked_mount.refresh_path(dir_to_refresh=dir_to_refresh, recursive=recursive)
