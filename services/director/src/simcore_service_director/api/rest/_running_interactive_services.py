@@ -114,7 +114,8 @@ async def get_running_service(
 async def stop_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_uuid: UUID,
-    save_state: bool = True,  # noqa: FBT001, FBT002
+    *,
+    save_state: bool = True,
 ) -> None:
     _logger.debug(
         "Client does stop_service with service_uuid %s",
