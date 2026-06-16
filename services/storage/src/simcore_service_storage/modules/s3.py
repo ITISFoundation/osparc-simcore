@@ -8,8 +8,8 @@ from typing import Literal, cast
 from aws_library.s3 import SimcoreS3API
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from pydantic import TypeAdapter
-from servicelib.fastapi.lifespan_utils import LifespanManager
 from tenacity import retry, wait_random_exponential
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -71,7 +71,7 @@ async def _s3_client_lifespan(app: FastAPI) -> AsyncGenerator[None]:
                 )
                 assert client  # nosec
         app.state.s3_client = client
-
+        assert client  # nosec
         await _ensure_s3_bucket(client, settings)
         yield
     finally:

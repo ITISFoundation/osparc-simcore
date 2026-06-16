@@ -27,8 +27,8 @@ from typing import cast
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.background_task_utils import exclusive_periodic
-from servicelib.fastapi.lifespan_utils import LifespanManager
 from servicelib.logging_utils import log_context
 from servicelib.tracing import traced
 from settings_library.redis import RedisDatabase

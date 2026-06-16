@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.fastapi.lifespan_utils import LifespanManager
+from fastapi_lifespan_manager import LifespanManager
 
 from .datcore_dsm import DatCoreDataManager, create_datcore_data_manager
 from .dsm_factory import DataManagerProvider

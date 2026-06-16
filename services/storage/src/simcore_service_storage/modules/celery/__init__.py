@@ -7,11 +7,11 @@ from celery_library.app import create_app
 from celery_library.backends import RedisTaskStore
 from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
     FoldersBody,
 )
-from servicelib.fastapi.lifespan_utils import LifespanManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase

@@ -3,8 +3,8 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
-from servicelib.fastapi.lifespan_utils import LifespanManager
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import retry

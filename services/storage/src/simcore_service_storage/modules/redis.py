@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.fastapi.lifespan_utils import LifespanManager
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase
 
@@ -35,7 +35,6 @@ async def _redis_clients_lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
         yield
     finally:
-        redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
         if redis_clients_manager:
             await redis_clients_manager.shutdown()
 

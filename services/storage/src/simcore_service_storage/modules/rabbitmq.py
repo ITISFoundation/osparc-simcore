@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.basic_regex import SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import DatCoreFileID, NodeID, StorageFileID
@@ -13,7 +14,6 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
-from servicelib.fastapi.lifespan_utils import LifespanManager
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 
