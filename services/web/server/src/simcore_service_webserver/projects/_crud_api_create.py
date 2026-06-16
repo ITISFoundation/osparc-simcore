@@ -174,7 +174,7 @@ async def _copy_project_nodes_from_source_project(
         if "inputs" in node_data:
             node_data["inputs"] = _remap_port_links(node_data["inputs"], nodes_map)
         if node_data.get("input_nodes"):
-            node_data["input_nodes"] = [NodeID(nodes_map.get(str(nid), str(nid))) for nid in node_data["input_nodes"]]
+            node_data["input_nodes"] = [nodes_map.get(str(nid), str(nid)) for nid in node_data["input_nodes"]]
         new_node_id = _mapped_node_id(node)
         result[new_node_id] = ProjectNodeCreate(node_id=new_node_id, **node_data)
     return result
