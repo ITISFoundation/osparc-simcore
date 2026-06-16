@@ -302,7 +302,7 @@ msgstr "En embargo<br>Se requieren créditos"
 msgid "Empty"
 msgstr "Vacío"
 
-#: osparc/product/quickStart/tis/Slides.js
+#: osparc/product/quickStart/s4llite/Slides.js
 msgid "Quick Start"
 msgstr "Inicio rápido"
 
