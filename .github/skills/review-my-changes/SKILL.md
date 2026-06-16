@@ -1,5 +1,5 @@
 ---
-name: rev-changes
+name: review-my-changes
 description: 'Perform an initial pull request review on the current branch. Use when: reviewing a PR, code review, checking branch changes before merge, verifying coding standards compliance, finding security issues, reviewing software design decisions, pre-merge review.'
 ---
 
