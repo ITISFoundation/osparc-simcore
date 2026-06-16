@@ -15,7 +15,6 @@ from models_library.function_services_catalog.api import is_function_service
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
-from simcore_service_catalog._constants import DEFAULT_DIRECTOR_BULK_FETCH_LEASE
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
 from simcore_service_catalog.service import manifest
@@ -267,4 +266,4 @@ def test_set_services_cache_lease_reconfigures_both_caches():
         assert manifest._get_cached_services_map_cache.lease == 123  # noqa: SLF001
     finally:
         # restore the import-time default to keep other tests isolated
-        manifest.set_services_cache_lease(DEFAULT_DIRECTOR_BULK_FETCH_LEASE)
+        manifest.set_services_cache_lease(30)  # restore the default (see CATALOG_DIRECTOR_BULK_FETCH_LEASE)

@@ -38,7 +38,7 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 
-from .._constants import DEFAULT_DIRECTOR_BULK_FETCH_LEASE, DIRECTOR_CACHING_TTL
+from .._constants import DIRECTOR_CACHING_TTL
 from ..clients.director import DirectorClient
 from ..models.services_ports import ServicePort
 from .function_services import get_function_service, is_function_service
@@ -85,8 +85,9 @@ _get_service_cache: Final = cached_stampede(
     ttl=DIRECTOR_CACHING_TTL,
     # NOTE: `lease` coalesces a cold-cache burst for the *same* service into a single
     # director call (the others await the in-flight populate), avoiding a stampede.
-    # It is reconfigured from settings at startup (see `set_services_cache_lease`).
-    lease=DEFAULT_DIRECTOR_BULK_FETCH_LEASE,
+    # This is a placeholder: the actual value comes from `CATALOG_DIRECTOR_BULK_FETCH_LEASE`
+    # and is applied at startup (see `set_services_cache_lease`).
+    lease=1,
     namespace=__name__,
     key_builder=lambda f, *_args, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
 )
@@ -116,8 +117,9 @@ _get_cached_services_map_cache: Final = cached_stampede(
     # NOTE: `lease` locks the populate step so that a burst of concurrent calls on a
     # cold cache results in a *single* director bulk fetch (the others await the
     # in-flight populate and read the freshly cached value) instead of a thundering herd.
-    # It is reconfigured from settings at startup (see `set_services_cache_lease`).
-    lease=DEFAULT_DIRECTOR_BULK_FETCH_LEASE,
+    # This is a placeholder: the actual value comes from `CATALOG_DIRECTOR_BULK_FETCH_LEASE`
+    # and is applied at startup (see `set_services_cache_lease`).
+    lease=1,
     namespace=__name__,
     key_builder=lambda f, *_args, **_kwargs: f.__name__,
 )
