@@ -11,6 +11,8 @@ from simcore_service_dask_sidecar import aes_gcm
 from simcore_service_dask_sidecar.aes_gcm import (
     _CHUNK_PREFIX_STRUCT,
     _HEADER_STRUCT,
+    _MAX_CHUNK_INDEX_EXCLUSIVE,
+    _MAX_LP_STRING_BYTES,
     DEFAULT_CHUNK_SIZE_BYTES,
     FORMAT_MAGIC,
     FORMAT_VERSION,
@@ -24,6 +26,7 @@ from simcore_service_dask_sidecar.aes_gcm import (
     _build_chunk_aad,
     _chunk_nonce,
     _derive_file_key,
+    _length_prefixed,
     decrypt_file,
     decrypt_stream,
     encrypt_file,
@@ -312,6 +315,44 @@ def test_decrypt_rejects_unknown_chunk_flag_bits(job_key: bytes, context: dict[s
     encrypted[_HEADER_SIZE] |= 0b0000_0010
     with pytest.raises(AesGcmStreamFormatError, match="unknown flag bits"):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
+
+
+def test_decrypt_rejects_unsupported_header_flags(job_key: bytes, context: dict[str, str]):
+    encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
+    # header layout: magic(8) | version(uint16) | flags(uint16) | chunk_size(uint32) | seed(12)
+    flags_offset = len(FORMAT_MAGIC) + 2
+    encrypted[flags_offset : flags_offset + 2] = struct.pack(">H", 1)
+    with pytest.raises(AesGcmStreamFormatError, match="Unsupported stream flags"):
+        _decrypt_to_bytes(bytes(encrypted), job_key, context)
+
+
+def test_decrypt_rejects_chunk_ct_len_shorter_than_tag(job_key: bytes, context: dict[str, str]):
+    encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
+    # chunk prefix sits right after the header: chunk_flags(uint8) | ct_len(uint32)
+    ct_len_offset = _HEADER_SIZE + 1
+    encrypted[ct_len_offset : ct_len_offset + 4] = struct.pack(">I", TAG_SIZE_BYTES - 1)
+    with pytest.raises(AesGcmStreamFormatError, match="shorter than authentication tag"):
+        _decrypt_to_bytes(bytes(encrypted), job_key, context)
+
+
+def test_decrypt_rejects_incomplete_chunk_ciphertext(job_key: bytes, context: dict[str, str]):
+    encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
+    # keep the valid chunk prefix but drop all of its declared ciphertext bytes
+    truncated = bytes(encrypted[: _HEADER_SIZE + _CHUNK_PREFIX_SIZE])
+    with pytest.raises(AesGcmStreamFormatError, match="incomplete chunk ciphertext"):
+        _decrypt_to_bytes(truncated, job_key, context)
+
+
+def test_length_prefixed_rejects_oversized_string():
+    too_long = "x" * (_MAX_LP_STRING_BYTES + 1)
+    with pytest.raises(AesGcmStreamError, match="String field too long"):
+        _length_prefixed(too_long)
+
+
+def test_chunk_nonce_rejects_out_of_range_index():
+    seed = os.urandom(NONCE_SIZE_BYTES)
+    with pytest.raises(AesGcmStreamFormatError, match="Invalid chunk index"):
+        _chunk_nonce(seed, _MAX_CHUNK_INDEX_EXCLUSIVE)
 
 
 class _ReadSizeRecorder(io.BytesIO):
