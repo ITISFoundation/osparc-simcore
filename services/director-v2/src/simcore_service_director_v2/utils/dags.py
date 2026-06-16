@@ -119,7 +119,11 @@ async def _compute_node_states(graph_data: nx.classes.reportviews.NodeDataView, 
 
 
 def _node_needs_computation(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
-    node = graph_data[f"{node_id}"]
+    node = graph_data.get(f"{node_id}")
+    if node is None:
+        # node_id is referenced via a PortLink but is not part of this graph
+        # (e.g. dangling reference to a deleted or non-computational node)
+        return False
     needs_computation: bool = node.get(_NODE_MODIFIED_STATE, False) or node.get(_NODE_DEPENDENCIES_TO_COMPUTE, None)
     return needs_computation
 
