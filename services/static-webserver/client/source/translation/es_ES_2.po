@@ -41,7 +41,6 @@ msgstr "Recargar"
 # maintenance options.
 # CTX-VERSION: unknown 2026-06-16T14:26:21Z
 #: osparc/desktop/credits/UsageTable.js
-#, fuzzy
 msgid "Service"
 msgstr "Servicio"
 
