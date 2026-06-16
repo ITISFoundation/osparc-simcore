@@ -14,6 +14,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.application import BaseApplicationSettings
 from settings_library.ssm import SSMSettings
+from tenacity import AsyncRetrying, stop_after_attempt, wait_none
 
 
 @pytest.fixture
@@ -85,27 +86,10 @@ async def test_configure_ssm_client_closes_client_if_ping_fails(
     class AppSettings(BaseApplicationSettings):
         SSM_ACCESS: SSMSettings = Field(..., json_schema_extra={"auto_default_from_env": True})
 
-    class _SingleAttempt:
-        def __enter__(self) -> None:
-            return None
-
-        def __exit__(self, exc_type, exc, tb) -> bool:
-            return False
-
-    class _SingleAsyncRetrying:
-        def __init__(self) -> None:
-            self._yielded = False
-
-        def __aiter__(self):
-            return self
-
-        async def __anext__(self) -> _SingleAttempt:
-            if self._yielded:
-                raise StopAsyncIteration
-            self._yielded = True
-            return _SingleAttempt()
-
-    mocker.patch("aws_library.ssm._fastapi_lifespan.AsyncRetrying", return_value=_SingleAsyncRetrying())
+    mocker.patch(
+        "aws_library.ssm._fastapi_lifespan.AsyncRetrying",
+        return_value=AsyncRetrying(reraise=True, stop=stop_after_attempt(1), wait=wait_none()),
+    )
 
     settings = AppSettings.create_from_envs()
     mock_ssm_client_create.return_value.ping.return_value = False
