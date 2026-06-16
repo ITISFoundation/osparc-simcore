@@ -2460,7 +2460,7 @@ msgstr "Nombre Asc"
 
 #: osparc/service/SortServicesButtons.js
 msgid "Name Desc"
-msgstr "Nombre Descripción"
+msgstr "Nombre Desc"
 
 #: osparc/widget/CollapsibleViewLight.js
 msgid "Expand"
