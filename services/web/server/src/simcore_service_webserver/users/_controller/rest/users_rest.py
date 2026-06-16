@@ -16,10 +16,10 @@ from servicelib.aiohttp.requests_validation import (
 from simcore_service_webserver.application_settings_utils import (
     requires_dev_feature_enabled,
 )
-from simcore_service_webserver.users.exceptions import BillingDetailsNotFoundError
+from simcore_service_webserver.users.errors import BillingDetailsNotFoundError
 
 from ...._meta import API_VTAG
-from ....groups import api as groups_service
+from ....groups import groups_service
 from ....login.decorators import login_required
 from ....products import products_web
 from ....products.models import Product

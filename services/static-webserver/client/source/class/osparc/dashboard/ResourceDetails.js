@@ -308,7 +308,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __confirmUpdate: function() {
-      const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?");
+      const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.") + "\n\n" + this.tr("Do you want to update them now?");
       const win = new osparc.dashboard.ResourceUpgradeHelper(msg).set({
         primaryAction: "create",
         secondaryAction: "primary"

@@ -20,7 +20,6 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..db.plugin import get_asyncpg_engine
-from ..users.exceptions import FrontendUserPreferenceIsNotDefinedError
 from ._models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
@@ -28,6 +27,7 @@ from ._models import (
     get_preference_name,
 )
 from ._repository import UserPreferencesRepository
+from .errors import FrontendUserPreferenceIsNotDefinedError
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
 

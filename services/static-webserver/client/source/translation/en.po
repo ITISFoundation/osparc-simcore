@@ -2,23 +2,11 @@
 msgid "You have been logged out"
 msgstr ""
 
-#: osparc/Application.js
+#: osparc/NewRelease.js
 msgid "New Version Released"
 msgstr ""
 
-#: osparc/Application.js
-msgid "Privacy Policy"
-msgstr ""
-
-#: osparc/Application.js
-msgid "Privacy Policy and License Terms"
-msgstr ""
-
-#: osparc/Application.js
-msgid "You have been logged out"
-msgstr ""
-
-#: osparc/desktop/credits/ResourceInTableViewer.js
+#: osparc/desktop/credits/Transactions.js
 msgid "Reload"
 msgstr ""
 
@@ -107,14 +95,6 @@ msgid "project"
 msgstr ""
 
 #: osparc/product/Utils.js
-msgid "studies"
-msgstr ""
-
-#: osparc/product/Utils.js
-msgid "study"
-msgstr ""
-
-#: osparc/product/Utils.js
 msgid "tutorials"
 msgstr ""
 
@@ -140,10 +120,6 @@ msgstr ""
 
 #: osparc/NewRelease.js
 msgid "We are pleased to announce that some new features were deployed for you!"
-msgstr ""
-
-#: osparc/NewRelease.js
-msgid "What's new in "
 msgstr ""
 
 #: osparc/CookiePolicy.js
@@ -194,11 +170,11 @@ msgstr ""
 msgid "- current <b>notebooks</b> (<b>jupyterlab</b> session will be terminated)"
 msgstr ""
 
-#: osparc/desktop/MainPage.js
+#: osparc/jobs/RunsTable.js
 msgid "Close"
 msgstr ""
 
-#: osparc/share/CollaboratorsStudy.js
+#: osparc/share/CollaboratorsFunction.js
 msgid "Yes"
 msgstr ""
 
@@ -218,7 +194,7 @@ msgstr ""
 msgid "Started template creation and added to the background tasks"
 msgstr ""
 
-#: osparc/dashboard/StudyBrowser.js
+#: osparc/desktop/MainPage.js
 msgid "Something went wrong while duplicating the study<br>"
 msgstr ""
 
@@ -234,15 +210,11 @@ msgstr ""
 msgid "No snapshot found"
 msgstr ""
 
-#: osparc/desktop/MainPageHandler.js
-msgid "Study not found"
-msgstr ""
-
 #: osparc/desktop/MainPage.js
 msgid "Loading Iteration"
 msgstr ""
 
-#: osparc/desktop/MainPage.js
+#: osparc/dashboard/CardBase.js
 msgid "Closing..."
 msgstr ""
 
@@ -262,10 +234,6 @@ msgstr ""
 msgid "A new version of the application is now available."
 msgstr ""
 
-#: osparc/NewUITracker.js
-msgid "Click the Reload button to get the latest features."
-msgstr ""
-
 #: osparc/ui/switch/ThemeSwitcher.js
 msgid "Dark theme"
 msgstr ""
@@ -282,7 +250,7 @@ msgstr ""
 msgid "TSR:"
 msgstr ""
 
-#: osparc/share/NewCollaboratorsManager.js
+#: osparc/editor/AnnotationNoteCreator.js
 msgid "Share"
 msgstr ""
 
@@ -292,10 +260,6 @@ msgstr ""
 
 #: osparc/service/ServiceListItem.js
 msgid "Hits: "
-msgstr ""
-
-#: osparc/dashboard/CardBase.js
-msgid "Inaccessible service(s):"
 msgstr ""
 
 #: osparc/dashboard/CardBase.js
@@ -327,34 +291,10 @@ msgid "Unsuccessful Run"
 msgstr ""
 
 #: osparc/dashboard/CardBase.js
-msgid "A user"
-msgstr ""
-
-#: osparc/dashboard/CardBase.js
-msgid " is closing it..."
-msgstr ""
-
-#: osparc/dashboard/CardBase.js
-msgid " is cloning it..."
-msgstr ""
-
-#: osparc/dashboard/CardBase.js
-msgid " is exporting it..."
-msgstr ""
-
-#: osparc/dashboard/CardBase.js
-msgid " is opening it..."
-msgstr ""
-
-#: osparc/dashboard/CardBase.js
-msgid " is using it."
-msgstr ""
-
-#: osparc/dashboard/CardBase.js
 msgid "Embargoed<br>Credits Required"
 msgstr ""
 
-#: osparc/dashboard/StudyBrowser.js
+#: osparc/dashboard/CardBase.js
 msgid "Empty"
 msgstr ""
 
@@ -382,7 +322,7 @@ msgstr ""
 msgid "Log in in "
 msgstr ""
 
-#: osparc/store/Support.js
+#: osparc/info/ServiceLarge.js
 msgid "Release Notes"
 msgstr ""
 
@@ -400,10 +340,6 @@ msgstr ""
 
 #: osparc/store/Data.js
 msgid "Unsuccessful file copy"
-msgstr ""
-
-#: osparc/store/Data.js
-msgid "Unsuccessful file deletion"
 msgstr ""
 
 #: osparc/notification/RibbonNotification.js
@@ -466,7 +402,7 @@ msgstr ""
 msgid "Any logged-in user with the link can copy and open this "
 msgstr ""
 
-#: osparc/dashboard/SearchBarFilter.js
+#: osparc/dashboard/SearchBarFilterExtended.js
 msgid "Shared with"
 msgstr ""
 
@@ -532,26 +468,6 @@ msgstr ""
 
 #: osparc/snapshots/Loading.js
 msgid "Loading "
-msgstr ""
-
-#: osparc/desktop/MainPageHandler.js
-msgid "is already open by"
-msgstr ""
-
-#: osparc/desktop/MainPageHandler.js
-msgid "another user."
-msgstr ""
-
-#: osparc/desktop/MainPageHandler.js
-msgid "We encountered an issue with the"
-msgstr ""
-
-#: osparc/desktop/MainPageHandler.js
-msgid "Please contact support."
-msgstr ""
-
-#: osparc/dashboard/Dashboard.js
-msgid "SERVICES"
 msgstr ""
 
 #: osparc/dashboard/Dashboard.js
@@ -626,7 +542,7 @@ msgstr ""
 msgid "Unsuccessful polling status"
 msgstr ""
 
-#: osparc/dashboard/StudyBrowserHeader.js
+#: osparc/dashboard/WorkspacesAndFoldersTree.js
 msgid "My Workspace"
 msgstr ""
 
@@ -734,14 +650,6 @@ msgstr ""
 msgid "Connecting..."
 msgstr ""
 
-#: osparc/task/Export.js
-msgid "Exporting "
-msgstr ""
-
-#: osparc/info/StudyUtils.js
-msgid "Details"
-msgstr ""
-
 #: osparc/dashboard/ResourceDetails.js
 msgid "Credits required"
 msgstr ""
@@ -754,16 +662,8 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#: osparc/dashboard/ResourceDetails.js
-msgid "Some of your services are outdated. Please update to the latest version for better performance.\\\\\\\\n\\\\\\\\nDo you want to update now?"
-msgstr ""
-
 #: osparc/workbench/ServiceCatalog.js
 msgid "Version"
-msgstr ""
-
-#: osparc/dashboard/ResourceDetails.js
-msgid " Files..."
 msgstr ""
 
 #: osparc/dashboard/ResourceDetails.js
@@ -774,16 +674,12 @@ msgstr ""
 msgid "Billing Settings"
 msgstr ""
 
-#: osparc/node/TierSelectionView.js
+#: osparc/dashboard/ResourceDetails.js
 msgid "Tiers"
 msgstr ""
 
 #: osparc/dashboard/ResourceDetails.js
 msgid "Pipeline View"
-msgstr ""
-
-#: osparc/dashboard/ResourceDetails.js
-msgid "Comments"
 msgstr ""
 
 #: osparc/dashboard/ResourceDetails.js
@@ -810,10 +706,6 @@ msgstr ""
 msgid "Boot Options"
 msgstr ""
 
-#: osparc/dashboard/ResourceDetails.js
-msgid "Publish "
-msgstr ""
-
 #: osparc/dashboard/ResourceBrowserBase.js
 msgid "You need to be logged in to create a study"
 msgstr ""
@@ -834,7 +726,7 @@ msgstr ""
 msgid "List view"
 msgstr ""
 
-#: osparc/dashboard/StudyBrowser.js
+#: osparc/dashboard/ResourceBrowserBase.js
 msgid "Creating "
 msgstr ""
 
@@ -874,7 +766,7 @@ msgstr ""
 msgid "Something went wrong while removing "
 msgstr ""
 
-#: osparc/share/CollaboratorsStudy.js
+#: osparc/share/CollaboratorsFunction.js
 msgid "Demote"
 msgstr ""
 
@@ -895,23 +787,11 @@ msgid "Restricted member: no Read access"
 msgstr ""
 
 #: osparc/data/Roles.js
-msgid "- can access content shared within the Organization"
-msgstr ""
-
-#: osparc/data/Roles.js
 msgid "Member"
 msgstr ""
 
 #: osparc/data/Roles.js
 msgid "Member: Read access"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can see other members"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can share with other members"
 msgstr ""
 
 #: osparc/data/Roles.js
@@ -923,27 +803,11 @@ msgid "Manager: Read/Write access"
 msgstr ""
 
 #: osparc/data/Roles.js
-msgid "- can Add/Delete members"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can Promote/Demote members"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can Edit Organization details"
-msgstr ""
-
-#: osparc/data/Roles.js
 msgid "Administrator"
 msgstr ""
 
 #: osparc/data/Roles.js
 msgid "Admin: Read/Write/Delete access"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can Delete the Organization"
 msgstr ""
 
 #: osparc/desktop/credits/CheckoutsTable.js
@@ -954,11 +818,7 @@ msgstr ""
 msgid "User: Read access"
 msgstr ""
 
-#: osparc/data/Roles.js
-msgid "- can open it"
-msgstr ""
-
-#: osparc/info/StudyUtils.js
+#: osparc/editor/EmailContentEditor.js
 msgid "Editor"
 msgstr ""
 
@@ -966,32 +826,12 @@ msgstr ""
 msgid "Editor: Read/Write access"
 msgstr ""
 
-#: osparc/data/Roles.js
-msgid "- can make changes"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can share it"
-msgstr ""
-
-#: osparc/dashboard/SortedByMenuButton.js
+#: osparc/share/RequestServiceAccess.js
 msgid "Owner"
 msgstr ""
 
 #: osparc/data/Roles.js
 msgid "Owner: Read/Write/Delete access"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can delete it"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can use it"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can use the credits"
 msgstr ""
 
 #: osparc/data/Roles.js
@@ -1003,10 +843,6 @@ msgid "Accountant: Read/Write access"
 msgstr ""
 
 #: osparc/data/Roles.js
-msgid "- can Edit Credit Account details"
-msgstr ""
-
-#: osparc/data/Roles.js
 msgid "Viewer"
 msgstr ""
 
@@ -1015,27 +851,7 @@ msgid "Viewer: Read access"
 msgstr ""
 
 #: osparc/data/Roles.js
-msgid "- can inspect the content and open "
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can add "
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can add folders"
-msgstr ""
-
-#: osparc/data/Roles.js
-msgid "- can rename workspace"
-msgstr ""
-
-#: osparc/data/Roles.js
 msgid "Roles"
-msgstr ""
-
-#: osparc/share/AddCollaborators.js
-msgid "Share with..."
 msgstr ""
 
 #: osparc/share/AddCollaborators.js
@@ -1046,15 +862,15 @@ msgstr ""
 msgid "Publish for"
 msgstr ""
 
-#: osparc/share/CollaboratorsStudy.js
+#: osparc/share/CollaboratorsFunction.js
 msgid " successfully shared"
 msgstr ""
 
-#: osparc/share/CollaboratorsStudy.js
+#: osparc/share/CollaboratorsFunction.js
 msgid "Something went wrong while sharing the "
 msgstr ""
 
-#: osparc/share/CollaboratorsStudy.js
+#: osparc/share/ShareePermissions.js
 msgid "Sharee permissions"
 msgstr ""
 
@@ -1122,35 +938,35 @@ msgstr ""
 msgid "University Email"
 msgstr ""
 
-#: osparc/po/Users.js
+#: osparc/desktop/account/ProfilePage.js
 msgid "Email"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/desktop/account/ProfilePage.js
 msgid "Phone Number"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/product/Utils.js
 msgid "Company Name"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/product/Utils.js
 msgid "University"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/product/Utils.js
 msgid "Organization"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/product/Utils.js
 msgid "Research Group/Organization"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/desktop/account/ProfilePage.js
 msgid "Address"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/desktop/account/ProfilePage.js
 msgid "City"
 msgstr ""
 
@@ -1158,7 +974,7 @@ msgstr ""
 msgid "Postal code"
 msgstr ""
 
-#: osparc/auth/ui/RequestAccount.js
+#: osparc/desktop/account/ProfilePage.js
 msgid "Country"
 msgstr ""
 
@@ -1183,10 +999,6 @@ msgid "Request"
 msgstr ""
 
 #: osparc/auth/ui/RequestAccount.js
-msgid "The request is being processed, you will hear from us in the coming hours"
-msgstr ""
-
-#: osparc/auth/ui/RequestAccount.js
 msgid "Reload Captcha"
 msgstr ""
 
@@ -1196,10 +1008,6 @@ msgstr ""
 
 #: osparc/auth/ui/VerifyPhoneNumberView.js
 msgid "Two-Factor Authentication (2FA)"
-msgstr ""
-
-#: osparc/auth/ui/VerifyPhoneNumberView.js
-msgid "A text message will be sent to your mobile phone for authentication each time you log in."
 msgstr ""
 
 #: osparc/auth/ui/VerifyPhoneNumberView.js
@@ -1270,16 +1078,12 @@ msgstr ""
 msgid "powered by "
 msgstr ""
 
-#: osparc/workbench/BaseNodeUI.js
+#: osparc/widget/NodeTreeItem.js
 msgid "Information..."
 msgstr ""
 
-#: osparc/dashboard/StudyBrowser.js
-msgid "Convert to Pipeline"
-msgstr ""
-
 #: osparc/navigation/StudyTitleWOptions.js
-msgid "Convert to Standalone"
+msgid "Convert to Pipeline"
 msgstr ""
 
 #: osparc/dashboard/FolderButtonItem.js
@@ -1290,12 +1094,8 @@ msgstr ""
 msgid "Platform Logs..."
 msgstr ""
 
-#: osparc/task/TasksButton.js
+#: osparc/jobs/ActivityCenterWindow.js
 msgid "Tasks"
-msgstr ""
-
-#: osparc/jobs/RunsBrowser.js
-msgid "Jobs"
 msgstr ""
 
 #: osparc/navigation/UserMenu.js
@@ -1314,7 +1114,7 @@ msgstr ""
 msgid "Payments"
 msgstr ""
 
-#: osparc/desktop/account/MyAccount.js
+#: osparc/desktop/credits/BillingCenter.js
 msgid "Usage"
 msgstr ""
 
@@ -1324,10 +1124,6 @@ msgstr ""
 
 #: osparc/desktop/credits/BillingCenter.js
 msgid "Checkouts"
-msgstr ""
-
-#: osparc/desktop/account/ProfilePage.js
-msgid "username"
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
@@ -1356,10 +1152,6 @@ msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
 msgid "Privacy"
-msgstr ""
-
-#: osparc/desktop/account/ProfilePage.js
-msgid "For Privacy reasons, you might want to hide some personal data."
 msgstr ""
 
 #: osparc/desktop/account/ProfilePage.js
@@ -1422,10 +1214,6 @@ msgstr ""
 msgid "Unsuccessful password reset"
 msgstr ""
 
-#: osparc/desktop/account/ProfilePage.js
-msgid "Danger Zone"
-msgstr ""
-
 #: osparc/desktop/account/DeleteAccount.js
 msgid "Delete Account"
 msgstr ""
@@ -1466,12 +1254,8 @@ msgstr ""
 msgid "It will be permanently deleted after "
 msgstr ""
 
-#: osparc/editor/AnnotationEditor.js
+#: osparc/desktop/paymentMethods/PaymentMethodListItem.js
 msgid "Delete"
-msgstr ""
-
-#: osparc/dashboard/StudyBrowser.js
-msgid "Start with an empty study"
 msgstr ""
 
 #: osparc/dashboard/StudyBrowser.js
@@ -1502,16 +1286,12 @@ msgstr ""
 msgid "Select "
 msgstr ""
 
-#: osparc/dashboard/FolderButtonItem.js
+#: osparc/dashboard/FileButtonItem.js
 msgid "Open location"
 msgstr ""
 
 #: osparc/dashboard/FolderButtonItem.js
 msgid "Rename..."
-msgstr ""
-
-#: osparc/dashboard/StudyBrowser.js
-msgid "Thumbnail..."
 msgstr ""
 
 #: osparc/info/MergedLarge.js
@@ -1546,7 +1326,7 @@ msgstr ""
 msgid "Export cMIS"
 msgstr ""
 
-#: osparc/dashboard/StudyBrowser.js
+#: osparc/study/Utils.js
 msgid "Duplicate process started and added to the background tasks"
 msgstr ""
 
@@ -1630,36 +1410,16 @@ msgstr ""
 msgid "Are you sure you want to delete "
 msgstr ""
 
-#: osparc/dashboard/TutorialBrowser.js
-msgid "Study to Template cancelled"
-msgstr ""
-
-#: osparc/dashboard/TutorialBrowser.js
-msgid "Something went wrong while publishing the study<br>"
-msgstr ""
-
-#: osparc/dashboard/TutorialBrowser.js
+#: osparc/dashboard/ResourceBrowserBase.js
 msgid "Publishing "
 msgstr ""
 
-#: osparc/dashboard/ServiceBrowser.js
+#: osparc/dashboard/AppBrowser.js
 msgid "It seems you don't have access to this product."
 msgstr ""
 
-#: osparc/dashboard/ServiceBrowser.js
+#: osparc/dashboard/AppBrowser.js
 msgid "Please contact us:"
-msgstr ""
-
-#: osparc/dashboard/ServiceBrowser.js
-msgid "Test with data"
-msgstr ""
-
-#: osparc/dashboard/ServiceBrowser.js
-msgid "Submit new service"
-msgstr ""
-
-#: osparc/dashboard/ServiceBrowser.js
-msgid "Submit a new service"
 msgstr ""
 
 #: osparc/desktop/WorkbenchView.js
@@ -1672,10 +1432,6 @@ msgstr ""
 
 #: osparc/desktop/WorkbenchView.js
 msgid "Storage"
-msgstr ""
-
-#: osparc/desktop/WorkbenchView.js
-msgid "Study options"
 msgstr ""
 
 #: osparc/desktop/WorkbenchView.js
@@ -1702,20 +1458,12 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: osparc/admin/Announcements.js
+#: osparc/desktop/credits/CheckoutsTable.js
 msgid "Start"
-msgstr ""
-
-#: osparc/desktop/WorkbenchView.js
-msgid "Annotations"
 msgstr ""
 
 #: osparc/editor/AnnotationNoteCreator.js
 msgid "Note"
-msgstr ""
-
-#: osparc/desktop/WorkbenchView.js
-msgid "Rectangle"
 msgstr ""
 
 #: osparc/desktop/WorkbenchView.js
@@ -1802,7 +1550,7 @@ msgstr ""
 msgid "Unlink"
 msgstr ""
 
-#: osparc/navigation/PrevNextButtons.js
+#: osparc/form/renderer/PropForm.js
 msgid "Select File"
 msgstr ""
 
@@ -1832,10 +1580,6 @@ msgstr ""
 
 #: osparc/widget/NodesSlidesTree.js
 msgid "You can also display nodes by clicking on them on the Workbench or Nodes list."
-msgstr ""
-
-#: osparc/widget/NodesSlidesTree.js
-msgid "Disable"
 msgstr ""
 
 #: osparc/pricing/UnitEditor.js
@@ -1982,10 +1726,6 @@ msgstr ""
 msgid "Cancel Task"
 msgstr ""
 
-#: osparc/task/TaskUI.js
-msgid "Ignore"
-msgstr ""
-
 #: osparc/dashboard/ResourceUpgradeHelper.js
 msgid "Outdated services"
 msgstr ""
@@ -1998,40 +1738,8 @@ msgstr ""
 msgid "Copy Service Id"
 msgstr ""
 
-#: osparc/info/ServiceLarge.js
-msgid "SERVICE ID"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "KEY"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "INTEGRATION VERSION"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "VERSION"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "RELEASE DATE"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "CONTACT"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "AUTHORS"
-msgstr ""
-
 #: osparc/info/StudyMedium.js
 msgid "ACCESS RIGHTS"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "CLASSIFIERS"
 msgstr ""
 
 #: osparc/info/StudyMedium.js
@@ -2039,19 +1747,7 @@ msgid "QUALITY"
 msgstr ""
 
 #: osparc/info/ServiceLarge.js
-msgid "Show Description only"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "From all the metadata shown in this view,\\\\\\\\nonly the Description will be shown to Users."
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
 msgid "Edit Icon"
-msgstr ""
-
-#: osparc/info/ServiceLarge.js
-msgid "Edit Name"
 msgstr ""
 
 #: osparc/info/ServiceLarge.js
@@ -2066,55 +1762,7 @@ msgstr ""
 msgid "An issue occurred while updating the information."
 msgstr ""
 
-#: osparc/info/StudyLarge.js
-msgid "Title:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Thumbnail:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Description:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Author:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Access:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Created:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Modified:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Tags:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Quality:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Classifiers:"
-msgstr ""
-
-#: osparc/info/StudyLarge.js
-msgid "Location:"
-msgstr ""
-
-#: osparc/info/MergedLarge.js
-msgid "Edit Title"
-msgstr ""
-
-#: osparc/study/StudyOptions.js
+#: osparc/study/BillingSettings.js
 msgid "Credit Account"
 msgstr ""
 
@@ -2172,26 +1820,6 @@ msgstr ""
 
 #: osparc/service/PricingUnitsList.js
 msgid "No Tiers found"
-msgstr ""
-
-#: osparc/info/Conversations.js
-msgid "0 Comments"
-msgstr ""
-
-#: osparc/info/Conversations.js
-msgid "Load more comments..."
-msgstr ""
-
-#: osparc/info/Conversations.js
-msgid "1 Comment"
-msgstr ""
-
-#: osparc/info/Conversations.js
-msgid " Comments"
-msgstr ""
-
-#: osparc/info/CommentAdd.js
-msgid "Add comment"
 msgstr ""
 
 #: osparc/editor/AnnotationNoteCreator.js
@@ -2351,10 +1979,6 @@ msgid "Up-to-date"
 msgstr ""
 
 #: osparc/metadata/ServicesInStudyBootOpts.js
-msgid "Here you can select in which mode the services will be started:"
-msgstr ""
-
-#: osparc/metadata/ServicesInStudyBootOpts.js
 msgid "Boot Mode"
 msgstr ""
 
@@ -2379,18 +2003,6 @@ msgid "Autostart services"
 msgstr ""
 
 #: osparc/info/StudyUtils.js
-msgid "Disabling this will help opening and closing studies/projects faster"
-msgstr ""
-
-#: osparc/info/StudyUtils.js
-msgid "Add tags"
-msgstr ""
-
-#: osparc/info/StudyUtils.js
-msgid "Meta details"
-msgstr ""
-
-#: osparc/info/StudyUtils.js
 msgid "Share with Editors and Organizations"
 msgstr ""
 
@@ -2410,16 +2022,8 @@ msgstr ""
 msgid " Options"
 msgstr ""
 
-#: osparc/study/StudyOptions.js
-msgid "An issue occurred while selecting Credit Account"
-msgstr ""
-
-#: osparc/admin/Announcements.js
+#: osparc/desktop/wallets/WalletEditor.js
 msgid "Title"
-msgstr ""
-
-#: osparc/study/StudyOptions.js
-msgid "Advanced options"
 msgstr ""
 
 #: osparc/service/ServiceListItem.js
@@ -2430,7 +2034,7 @@ msgstr ""
 msgid "Viewer only"
 msgstr ""
 
-#: osparc/dashboard/FolderButtonItem.js
+#: osparc/dashboard/FileButtonItem.js
 msgid "Last modified"
 msgstr ""
 
@@ -2447,30 +2051,14 @@ msgid "More..."
 msgstr ""
 
 #: osparc/dashboard/SearchBarFilter.js
-msgid "All "
-msgstr ""
-
-#: osparc/dashboard/SearchBarFilter.js
-msgid "My "
-msgstr ""
-
-#: osparc/dashboard/SearchBarFilter.js
 msgid "Shared with Me"
-msgstr ""
-
-#: osparc/dashboard/SearchBarFilter.js
-msgid "Shared with Everyone"
 msgstr ""
 
 #: osparc/dashboard/SearchBarFilter.js
 msgid "search"
 msgstr ""
 
-#: osparc/dashboard/SearchBarFilter.js
-msgid "Service Type"
-msgstr ""
-
-#: osparc/dashboard/StudyBrowserHeader.js
+#: osparc/dashboard/ResourceBrowserFilter.js
 msgid "Recently Deleted"
 msgstr ""
 
@@ -2478,19 +2066,19 @@ msgstr ""
 msgid "Services"
 msgstr ""
 
-#: osparc/dashboard/ResourceFilter.js
+#: osparc/dashboard/ResourceBrowserFilter.js
 msgid "Shared"
 msgstr ""
 
-#: osparc/dashboard/ResourceFilter.js
+#: osparc/dashboard/ResourceBrowserFilter.js
 msgid "All Tags..."
 msgstr ""
 
-#: osparc/dashboard/ResourceFilter.js
+#: osparc/dashboard/ResourceBrowserFilter.js
 msgid "Less Tags..."
 msgstr ""
 
-#: osparc/dashboard/ResourceFilter.js
+#: osparc/dashboard/ResourceBrowserFilter.js
 msgid "Edit Tags..."
 msgstr ""
 
@@ -2519,10 +2107,6 @@ msgid "Welcome onboard "
 msgstr ""
 
 #: osparc/product/quickStart/s4lacad/Welcome.js
-msgid "        Sim4Life is a revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models, for directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment.        <br>        <br>        In order to facilitate the introduction to the platform, we have some Guided Tours that can be found under the User Menu.        <br>        <br>        For more specific technical information, please refer to the Manuals on the Navigation Bar.      "
-msgstr ""
-
-#: osparc/product/quickStart/s4lacad/Welcome.js
 msgid "Welcome to Sim4Life Science"
 msgstr ""
 
@@ -2542,7 +2126,7 @@ msgstr ""
 msgid "Step: "
 msgstr ""
 
-#: osparc/admin/Announcements.js
+#: osparc/desktop/credits/PurchasesTable.js
 msgid "End"
 msgstr ""
 
@@ -2559,22 +2143,6 @@ msgid "Enter card details in the next step..."
 msgstr ""
 
 #: osparc/share/NewCollaboratorsManager.js
-msgid "Share with"
-msgstr ""
-
-#: osparc/share/NewCollaboratorsManager.js
-msgid "Select users or organizations from the list below."
-msgstr ""
-
-#: osparc/share/NewCollaboratorsManager.js
-msgid "Select users from the list below."
-msgstr ""
-
-#: osparc/share/NewCollaboratorsManager.js
-msgid "<br>Search them if they aren't listed."
-msgstr ""
-
-#: osparc/po/Users.js
 msgid "Search"
 msgstr ""
 
@@ -2598,19 +2166,19 @@ msgstr ""
 msgid "Format is invalid"
 msgstr ""
 
-#: osparc/widget/IntlTelInput.js
+#: osparc/ui/form/IntlTelInput.js
 msgid "Invalid number"
 msgstr ""
 
-#: osparc/widget/IntlTelInput.js
+#: osparc/ui/form/IntlTelInput.js
 msgid "Invalid country code"
 msgstr ""
 
-#: osparc/widget/IntlTelInput.js
+#: osparc/ui/form/IntlTelInput.js
 msgid "Number too short"
 msgstr ""
 
-#: osparc/widget/IntlTelInput.js
+#: osparc/ui/form/IntlTelInput.js
 msgid "Number too long"
 msgstr ""
 
@@ -2690,7 +2258,7 @@ msgstr ""
 msgid "Admin Center"
 msgstr ""
 
-#: osparc/po/POCenterWindow.js
+#: osparc/navigation/UserMenu.js
 msgid "PO Center"
 msgstr ""
 
@@ -2802,12 +2370,8 @@ msgstr ""
 msgid "All items will be permanently deleted"
 msgstr ""
 
-#: osparc/dashboard/StudyBrowserHeader.js
+#: osparc/dashboard/WorkspacesAndFoldersTree.js
 msgid "Shared Workspaces"
-msgstr ""
-
-#: osparc/dashboard/StudyBrowserHeader.js
-msgid "Search results"
 msgstr ""
 
 #: osparc/dashboard/WorkspaceButtonItem.js
@@ -2830,11 +2394,11 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: osparc/dashboard/SortedByMenuButton.js
+#: osparc/info/StudyLarge.js
 msgid "Created"
 msgstr ""
 
-#: osparc/dashboard/SortedByMenuButton.js
+#: osparc/info/StudyLarge.js
 msgid "Modified"
 msgstr ""
 
@@ -2842,7 +2406,7 @@ msgstr ""
 msgid "Max file size 10GB"
 msgstr ""
 
-#: osparc/workbench/BaseNodeUI.js
+#: osparc/widget/NodeTreeItem.js
 msgid "Rename"
 msgstr ""
 
@@ -2850,7 +2414,7 @@ msgstr ""
 msgid "Type text"
 msgstr ""
 
-#: osparc/editor/ThumbnailEditor.js
+#: osparc/wrapper/DOMPurify.js
 msgid "Error checking link"
 msgstr ""
 
@@ -2860,10 +2424,6 @@ msgstr ""
 
 #: osparc/editor/ThumbnailEditor.js
 msgid "or pick one from the list below:"
-msgstr ""
-
-#: osparc/task/Import.js
-msgid "Importing Study"
 msgstr ""
 
 #: osparc/task/Duplicate.js
@@ -2895,18 +2455,6 @@ msgid "Collapse"
 msgstr ""
 
 #: osparc/info/StudyMedium.js
-msgid "Study Information"
-msgstr ""
-
-#: osparc/info/StudyMedium.js
-msgid "DESCRIPTION"
-msgstr ""
-
-#: osparc/info/StudyMedium.js
-msgid "More Info"
-msgstr ""
-
-#: osparc/info/StudyMedium.js
 msgid "AUTHOR"
 msgstr ""
 
@@ -2920,10 +2468,6 @@ msgstr ""
 
 #: osparc/info/StudyMedium.js
 msgid "TAGS"
-msgstr ""
-
-#: osparc/widget/NodeOptions.js
-msgid "To proceed with the following actions, the service needs to be Stopped."
 msgstr ""
 
 #: osparc/desktop/SlideshowToolbar.js
@@ -2962,7 +2506,7 @@ msgstr ""
 msgid "Edit Instructions"
 msgstr ""
 
-#: osparc/jobs/JobsTable.js
+#: osparc/jobs/SubRunsTable.js
 msgid "Progress"
 msgstr ""
 
@@ -3042,11 +2586,7 @@ msgstr ""
 msgid "Write"
 msgstr ""
 
-#: osparc/info/ServiceUtils.js
-msgid "Execute"
-msgstr ""
-
-#: osparc/info/ServiceUtils.js
+#: osparc/filter/CollaboratorToggleButton.js
 msgid "Public"
 msgstr ""
 
@@ -3074,7 +2614,7 @@ msgstr ""
 msgid "Markdown supported"
 msgstr ""
 
-#: osparc/editor/HtmlEditor.js
+#: osparc/editor/EmailContentEditor.js
 msgid "Preview"
 msgstr ""
 
@@ -3098,18 +2638,6 @@ msgstr ""
 msgid "Could not retrieve service information"
 msgstr ""
 
-#: osparc/share/PublishTemplate.js
-msgid "Make the "
-msgstr ""
-
-#: osparc/share/PublishTemplate.js
-msgid " also accessible to:"
-msgstr ""
-
-#: osparc/share/PublishTemplate.js
-msgid "Publish for..."
-msgstr ""
-
 #: osparc/dashboard/GroupedCardContainer.js
 msgid "Show less"
 msgstr ""
@@ -3128,10 +2656,6 @@ msgstr ""
 
 #: osparc/dashboard/WorkspaceButtonItem.js
 msgid "Delete Workspace"
-msgstr ""
-
-#: osparc/dashboard/FolderButtonItem.js
-msgid "Edit Folder"
 msgstr ""
 
 #: osparc/dashboard/FolderButtonItem.js
@@ -3290,12 +2814,8 @@ msgstr ""
 msgid " and other resources.<br>    Here you can see the list of organizations you belong to, create new organizations,     or manage the membership by setting up the access rights of each member in the organization     if you are a manager or administrator."
 msgstr ""
 
-#: osparc/desktop/organizations/OrganizationsList.js
+#: osparc/editor/OrganizationEditor.js
 msgid "New Organization"
-msgstr ""
-
-#: osparc/desktop/organizations/OrganizationDetails.js
-msgid "Organization Details Editor"
 msgstr ""
 
 #: osparc/desktop/organizations/OrganizationsList.js
@@ -3330,32 +2850,16 @@ msgstr ""
 msgid "Members"
 msgstr ""
 
-#: osparc/jobs/JobsTable.js
-msgid "Job Id"
-msgstr ""
-
-#: osparc/jobs/JobsTable.js
-msgid "Solver"
-msgstr ""
-
 #: osparc/desktop/credits/TransactionsTableModel.js
 msgid "Status"
 msgstr ""
 
-#: osparc/jobs/JobsTable.js
-msgid "Submitted"
-msgstr ""
-
-#: osparc/jobs/JobsTable.js
+#: osparc/jobs/RunsTable.js
 msgid "Started"
 msgstr ""
 
-#: osparc/jobs/JobsTable.js
+#: osparc/jobs/RunsTable.js
 msgid "Info"
-msgstr ""
-
-#: osparc/jobs/JobsTable.js
-msgid "Instance"
 msgstr ""
 
 #: osparc/notification/NotificationUI.js
@@ -3392,14 +2896,6 @@ msgstr ""
 
 #: osparc/desktop/preferences/pages/GeneralPage.js
 msgid "Idle time before closing (in minutes)"
-msgstr ""
-
-#: osparc/desktop/preferences/pages/GeneralPage.js
-msgid "Job Concurrency"
-msgstr ""
-
-#: osparc/desktop/preferences/pages/GeneralPage.js
-msgid "Maximum number of concurrent jobs"
 msgstr ""
 
 #: osparc/desktop/preferences/pages/GeneralPage.js
@@ -3586,10 +3082,6 @@ msgstr ""
 msgid "Something went wrong while updating the Credit Account"
 msgstr ""
 
-#: osparc/desktop/wallets/WalletsList.js
-msgid "Currently in use"
-msgstr ""
-
 #: osparc/desktop/wallets/WalletDetails.js
 msgid "Return to Credit Accounts list"
 msgstr ""
@@ -3610,7 +3102,7 @@ msgstr ""
 msgid "Card Holder name"
 msgstr ""
 
-#: osparc/filter/NodeTypeFilter.js
+#: osparc/desktop/paymentMethods/PaymentMethodDetails.js
 msgid "Type"
 msgstr ""
 
@@ -3634,7 +3126,7 @@ msgstr ""
 msgid "Duration"
 msgstr ""
 
-#: osparc/study/PricingUnitLicense.js
+#: osparc/desktop/credits/TransactionsTableModel.js
 msgid "Credits"
 msgstr ""
 
@@ -3818,14 +3310,6 @@ msgstr ""
 msgid "Items successfully deleted"
 msgstr ""
 
-#: osparc/file/FileLabelWithActions.js
-msgid "Externally managed items cannot be deleted"
-msgstr ""
-
-#: osparc/editor/HtmlEditor.js
-msgid "Supports HTML"
-msgstr ""
-
 #: osparc/study/PricingUnitTier.js
 msgid "Credits/h"
 msgstr ""
@@ -3882,28 +3366,12 @@ msgstr ""
 msgid "Leave Organization"
 msgstr ""
 
-#: osparc/desktop/organizations/TemplatesList.js
-msgid "This is the list of "
-msgstr ""
-
-#: osparc/desktop/organizations/TemplatesList.js
-msgid " shared with this Organization"
-msgstr ""
-
-#: osparc/desktop/organizations/ServicesList.js
-msgid "This is the list of services shared with this Organization"
-msgstr ""
-
-#: osparc/jobs/JobInfo.js
+#: osparc/jobs/Info.js
 msgid "Job Info"
 msgstr ""
 
 #: osparc/desktop/preferences/window/CreateAPIKey.js
 msgid "Generate API Key"
-msgstr ""
-
-#: osparc/desktop/preferences/window/CreateAPIKey.js
-msgid "Key names must be unique."
 msgstr ""
 
 #: osparc/desktop/preferences/window/CreateAPIKey.js
@@ -3962,11 +3430,7 @@ msgstr ""
 msgid "Announcements"
 msgstr ""
 
-#: osparc/po/POCenter.js
-msgid "Users"
-msgstr ""
-
-#: osparc/po/POCenter.js
+#: osparc/po/PreRegistration.js
 msgid "Pre-Registration"
 msgstr ""
 
@@ -3976,10 +3440,6 @@ msgstr ""
 
 #: osparc/po/POCenter.js
 msgid "Product Info"
-msgstr ""
-
-#: osparc/po/POCenter.js
-msgid "Message Templates"
 msgstr ""
 
 #: osparc/tester/TesterCenter.js
@@ -4038,7 +3498,7 @@ msgstr ""
 msgid "Only Accountants of an Organization can share a wallet with other users."
 msgstr ""
 
-#: osparc/vipMarket/SortModelsButtons.js
+#: osparc/desktop/credits/TransactionsTableModel.js
 msgid "Date"
 msgstr ""
 
@@ -4146,7 +3606,7 @@ msgstr ""
 msgid "User Menu"
 msgstr ""
 
-#: osparc/po/Invitations.js
+#: osparc/admin/Announcements.js
 msgid "Generate"
 msgstr ""
 
@@ -4154,24 +3614,20 @@ msgstr ""
 msgid "Copy announcement"
 msgstr ""
 
-#: osparc/po/Users.js
+#: osparc/po/UsersSearch.js
 msgid "user@email.address or user@*"
 msgstr ""
 
-#: osparc/po/Users.js
+#: osparc/po/UsersSearch.js
 msgid "Searching users..."
 msgstr ""
 
-#: osparc/po/Users.js
+#: osparc/po/UsersSearch.js
 msgid " user(s) found"
 msgstr ""
 
-#: osparc/po/Users.js
+#: osparc/po/UsersSearch.js
 msgid "Error searching users"
-msgstr ""
-
-#: osparc/po/PreRegistration.js
-msgid "Pre-Registration"
 msgstr ""
 
 #: osparc/po/PreRegistration.js
@@ -4206,23 +3662,19 @@ msgstr ""
 msgid "There is no invitation required in this product/deployment."
 msgstr ""
 
-#: osparc/po/Invitations.js
-msgid "new.user@email.address"
-msgstr ""
-
-#: osparc/po/Invitations.js
+#: osparc/po/UsersPending.js
 msgid "User Email"
 msgstr ""
 
-#: osparc/po/Invitations.js
+#: osparc/po/UsersPending.js
 msgid "Welcome Credits (USD)"
 msgstr ""
 
-#: osparc/po/Invitations.js
+#: osparc/po/UsersPending.js
 msgid "With expiration"
 msgstr ""
 
-#: osparc/po/Invitations.js
+#: osparc/po/UsersPending.js
 msgid "Trial Days"
 msgstr ""
 
@@ -4236,10 +3688,6 @@ msgstr ""
 
 #: osparc/po/Invitations.js
 msgid "Data encrypted in the invitation"
-msgstr ""
-
-#: osparc/po/MessageTemplates.js
-msgid "Template updated"
 msgstr ""
 
 #: osparc/tester/ConsoleErrors.js
@@ -4408,4 +3856,1600 @@ msgstr ""
 
 #: osparc/pricing/UnitEditor.js
 msgid "Successfully created"
+msgstr ""
+
+#: osparc/utils/Utils.js
+msgid ", please request an account in the following link:"
+msgstr ""
+
+#: osparc/store/Store.js
+msgid "You don't have a personal wallet. Please contact support."
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "hypertool"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "hypertools"
+msgstr ""
+
+#: osparc/product/Utils.js
+msgid "app"
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationDetails.js
+msgid "Apps"
+msgstr ""
+
+#: osparc/NewRelease.js
+msgid "New Version of oSparc Platform Released"
+msgstr ""
+
+#: osparc/NewRelease.js
+msgid "Loading release notes..."
+msgstr ""
+
+#: osparc/NewRelease.js
+msgid "Check more details in "
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "What's New in oSparc "
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "Help & Support"
+msgstr ""
+
+#: osparc/ui/message/NodeLockedPage.js
+msgid "Conversations"
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "Project not found"
+msgstr ""
+
+#: osparc/NewUITracker.js
+msgid "Reload the page to get the latest features."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Unknown service(s)"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Inaccessible service(s)"
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Cloning..."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Exporting..."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "Opening..."
+msgstr ""
+
+#: osparc/dashboard/CardBase.js
+msgid "In use..."
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Introduction"
+msgstr ""
+
+#: osparc/store/Support.js
+msgid "Manuals"
+msgstr ""
+
+#: osparc/store/Data.js
+msgid "Uploading an empty file"
+msgstr ""
+
+#: osparc/share/Collaborators.js
+msgid "Shared with:"
+msgstr ""
+
+#: osparc/auth/LoginWithDecorators.js
+msgid "Platform"
+msgstr ""
+
+#: osparc/auth/LoginWithDecorators.js
+msgid " is powered by osparc.<br>"
+msgstr ""
+
+#: osparc/auth/LoginWithDecorators.js
+msgid "Click to see what's new in this release."
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Contact Support"
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Something went wrong"
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Send Report"
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Thanks, your report has been sent.<br>Our support team will get back to you."
+msgstr ""
+
+#: osparc/support/ConversationPage.js
+msgid "Ask a Question"
+msgstr ""
+
+#: osparc/support/ConversationPage.js
+msgid "Book a Call"
+msgstr ""
+
+#: osparc/support/HomePage.js
+msgid "Learning"
+msgstr ""
+
+#: osparc/support/HomePage.js
+msgid "Explore Tutorials"
+msgstr ""
+
+#: osparc/support/ConversationPage.js
+msgid "Return to Conversations"
+msgstr ""
+
+#: osparc/support/ConversationPage.js
+msgid "Book a Call 3rd"
+msgstr ""
+
+#: osparc/support/ConversationPage.js
+msgid "Select date & time"
+msgstr ""
+
+#: osparc/support/ConversationPage.js
+msgid "Report an Error"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Review Users"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Active Users"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Search Users"
+msgstr ""
+
+#: osparc/po/POCenter.js
+msgid "Send Email"
+msgstr ""
+
+#: osparc/navigation/NavigationBar.js
+msgid "Saving..."
+msgstr ""
+
+#: osparc/navigation/NavigationBar.js
+msgid "Queued..."
+msgstr ""
+
+#: osparc/navigation/NavigationBar.js
+msgid "Files are being uploaded/synced"
+msgstr ""
+
+#: osparc/navigation/NavigationBar.js
+msgid "Files are queued for upload/syncing"
+msgstr ""
+
+#: osparc/task/ExportData.js
+msgid "Preparing files:"
+msgstr ""
+
+#: osparc/task/ExportData.js
+msgid "Downloading files"
+msgstr ""
+
+#: osparc/task/ExportData.js
+msgid "Compressing files..."
+msgstr ""
+
+#: osparc/task/ExportData.js
+msgid "Downloading: "
+msgstr ""
+
+#: osparc/task/ExportData.js
+msgid "Starting download..."
+msgstr ""
+
+#: osparc/task/ExportData.js
+msgid "Download cancelled"
+msgstr ""
+
+#: osparc/task/SendEmail.js
+msgid "Sending Email:"
+msgstr ""
+
+#: osparc/task/SendEmail.js
+msgid "Email(s) sent successfully"
+msgstr ""
+
+#: osparc/task/SendEmail.js
+msgid "Email(s) cancelled"
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "is already open by another user."
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "We found an issue with some links."
+msgstr ""
+
+#: osparc/desktop/MainPageHandler.js
+msgid "They will be removed."
+msgstr ""
+
+#: osparc/dashboard/Dashboard.js
+msgid "PROJECTS"
+msgstr ""
+
+#: osparc/dashboard/Dashboard.js
+msgid "TUTORIALS"
+msgstr ""
+
+#: osparc/dashboard/Dashboard.js
+msgid "APPS"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Loading Projects..."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "No Files found"
+msgstr ""
+
+#: osparc/widget/NodesTree.js
+msgid "Rename "
+msgstr ""
+
+#: osparc/navigation/StudyTitleWOptions.js
+msgid "Would you like to convert this project to a pipeline?"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Alternatively, you can create a copy of the project and convert the copy instead."
+msgstr ""
+
+#: osparc/navigation/StudyTitleWOptions.js
+msgid "Convert"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Create a copy and convert it"
+msgstr ""
+
+#: osparc/navigation/StudyTitleWOptions.js
+msgid "Project converted to pipeline"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Project's copy converted to pipeline"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Something went wrong while converting the copy to pipeline"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Delete function"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "The function has associated jobs. Are you sure you want to delete it?"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Successfully removed"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "You don't have permissions to delete or remove this project."
+msgstr ""
+
+#: osparc/dashboard/StudyBrowser.js
+msgid "Duplication completed"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "Switched to Credit Account"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner."
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "You can't join the project because it's already open by another user."
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "Join"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "Featured"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid " created"
+msgstr ""
+
+#: osparc/dashboard/ResourceBrowserBase.js
+msgid "Project to Template cancelled"
+msgstr ""
+
+#: osparc/task/Export.js
+msgid "Exporting:"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Data not found, please try again"
+msgstr ""
+
+#: osparc/share/RequestServiceAccess.js
+msgid "Request Apps Access"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Template"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Create Function"
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Activity Overview..."
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can access content shared within the Organization"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can see other members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can share with other members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can Add/Delete members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can Promote/Demote members"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can Edit Organization details"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can Delete the Organization"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can open it without making changes"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can make changes"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can share it"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can delete it"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can use it"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "Owner: Read/Write access"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can use the credits"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can Edit Credit Account details"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can inspect the content and open "
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid " without making changes"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can add "
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can add folders"
+msgstr ""
+
+#: osparc/data/Roles.js
+msgid "- Can rename workspace"
+msgstr ""
+
+#: osparc/share/AddCollaborators.js
+msgid "Emails sent"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Position"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Professor Name"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "What research group do you belong to?"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Are you a member of the Early Adopter Program of TI Solutions AG?"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Please select an option"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "What is the name of your contact person at TI Solutions AG?"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Please describe the research you intend to do with the TIP platform"
+msgstr ""
+
+#: osparc/auth/ui/RequestAccount.js
+msgid "Your request is being processed. You will hear from us soon"
+msgstr ""
+
+#: osparc/auth/ui/VerifyPhoneNumberView.js
+msgid "If SMS is your chosen 2FA method, you'll get a text message with a code on every login to authenticate your access."
+msgstr ""
+
+#: osparc/support/Conversation.js
+msgid "thinking"
+msgstr ""
+
+#: osparc/support/Conversation.js
+msgid "thinking..."
+msgstr ""
+
+#: osparc/support/Conversation.js
+msgid "Share Project with Support"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "All"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "Show all conversations"
+msgstr ""
+
+#: osparc/support/ConversationListItem.js
+msgid "Unread"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "Show only unread conversations"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "Active"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "Show only active (unarchived) conversations"
+msgstr ""
+
+#: osparc/support/ConversationListItem.js
+msgid "Archived"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "Show only archived conversations"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "Loading more..."
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "No conversations yet"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "No unread conversations"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "No active conversations"
+msgstr ""
+
+#: osparc/support/Conversations.js
+msgid "No archived conversations"
+msgstr ""
+
+#: osparc/support/ConversationOptionsMenu.js
+msgid "Project details"
+msgstr ""
+
+#: osparc/support/ConversationOptionsMenu.js
+msgid "Copy Ticket ID"
+msgstr ""
+
+#: osparc/support/ConversationOptionsMenu.js
+msgid "Archive"
+msgstr ""
+
+#: osparc/support/ConversationOptionsMenu.js
+msgid "Unarchive"
+msgstr ""
+
+#: osparc/study/ConversationPage.js
+msgid "Rename Conversation"
+msgstr ""
+
+#: osparc/support/ConversationOptionsMenu.js
+msgid "Delete conversation?"
+msgstr ""
+
+#: osparc/support/BookACallTopicSelector.js
+msgid "I would like..."
+msgstr ""
+
+#: osparc/support/BookACallTopicSelector.js
+msgid "a generic introduction"
+msgstr ""
+
+#: osparc/support/BookACallTopicSelector.js
+msgid "a specific introduction for"
+msgstr ""
+
+#: osparc/support/BookACallTopicSelector.js
+msgid "some help with my project"
+msgstr ""
+
+#: osparc/support/BookACallTopicSelector.js
+msgid "share current project with support team (optional)"
+msgstr ""
+
+#: osparc/support/BookACallTopicSelector.js
+msgid "to discuss a specific topic"
+msgstr ""
+
+#: osparc/support/BookACallTopicSelector.js
+msgid "please provide any background information that could help us make this meeting more productive"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Resend Email"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Email sent"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "User Info"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "List of pending or reviewed users but not yet registered:"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Filter by Name, Email or Status"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Actions"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Approve"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Reject"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Preview Approve"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Preview email"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Move to another product"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Select the target product:"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "Move to Product"
+msgstr ""
+
+#: osparc/po/UsersPending.js
+msgid "User moved successfully"
+msgstr ""
+
+#: osparc/po/UsersRegistered.js
+msgid "List of fully registered users:"
+msgstr ""
+
+#: osparc/po/UsersRegistered.js
+msgid "Previous page"
+msgstr ""
+
+#: osparc/po/UsersRegistered.js
+msgid "First page"
+msgstr ""
+
+#: osparc/po/UsersRegistered.js
+msgid "Next page"
+msgstr ""
+
+#: osparc/po/UsersRegistered.js
+msgid "Last page"
+msgstr ""
+
+#: osparc/po/UsersSearch.js
+msgid "Username"
+msgstr ""
+
+#: osparc/po/UsersRegistered.js
+msgid "Reviewed At"
+msgstr ""
+
+#: osparc/po/UsersRegistered.js
+msgid "of %1 (%2 users)"
+msgstr ""
+
+#: osparc/po/SendEmail.js
+msgid "Select email template"
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Send"
+msgstr ""
+
+#: osparc/po/SendEmail.js
+msgid "Please select at least one recipient"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "Please enter a subject"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "Please preview the email before sending"
+msgstr ""
+
+#: osparc/po/SendEmail.js
+msgid "Sending email(s) process started and added to the background tasks"
+msgstr ""
+
+#: osparc/po/SendEmail.js
+msgid "An error occurred while sending the test email"
+msgstr ""
+
+#: osparc/navigation/StudyTitleWOptions.js
+msgid "If you want to create a copy of the project and convert the copy instead, please close the project first."
+msgstr ""
+
+#: osparc/jobs/ActivityCenterWindow.js
+msgid "Activity Center"
+msgstr ""
+
+#: osparc/ui/window/Progress.js
+msgid "Hide"
+msgstr ""
+
+#: osparc/dashboard/TutorialBrowser.js
+msgid "Loading Tutorials..."
+msgstr ""
+
+#: osparc/dashboard/AppBrowser.js
+msgid "Loading Apps..."
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Other Projects"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Project options"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Add to Workbench"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Conversation"
+msgstr ""
+
+#: osparc/desktop/WorkbenchView.js
+msgid "Box"
+msgstr ""
+
+#: osparc/widget/NodesSlidesTree.js
+msgid "Disable App Mode"
+msgstr ""
+
+#: osparc/data/model/Node.js
+msgid "Service metadata missing"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Templates"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Public Projects"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Functions"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "My Projects results"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Templates results"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Public Projects results"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Functions results"
+msgstr ""
+
+#: osparc/dashboard/StudyBrowserHeader.js
+msgid "Files results"
+msgstr ""
+
+#: osparc/widget/Renamer.js
+msgid "%1 characters max"
+msgstr ""
+
+#: osparc/task/Import.js
+msgid "Importing..."
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "Title *"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "Show Tiers & Costs"
+msgstr ""
+
+#: osparc/study/StudyOptions.js
+msgid "Hide Tiers & Costs"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "My"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "App Type"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilter.js
+msgid "Please enter at least 3 characters to search."
+msgstr ""
+
+#: osparc/dashboard/ResourceContainerManager.js
+msgid "No Resources found"
+msgstr ""
+
+#: osparc/dashboard/ResourceContainerManager.js
+msgid "No Projects found"
+msgstr ""
+
+#: osparc/dashboard/ResourceContainerManager.js
+msgid "No Templates found"
+msgstr ""
+
+#: osparc/dashboard/ResourceContainerManager.js
+msgid "No Public Projects found"
+msgstr ""
+
+#: osparc/dashboard/ResourceContainerManager.js
+msgid "No Functions found"
+msgstr ""
+
+#: osparc/dashboard/ResourceContainerManager.js
+msgid "No Tutorials found"
+msgstr ""
+
+#: osparc/dashboard/ResourceContainerManager.js
+msgid "No Apps found"
+msgstr ""
+
+#: osparc/share/RequestServiceAccess.js
+msgid "In order to open the project, the following users/groups need to give you access to some apps. Please contact the app owner:"
+msgstr ""
+
+#: osparc/jobs/SubRunsTable.js
+msgid "App"
+msgstr ""
+
+#: osparc/share/RequestServiceAccess.js
+msgid "Unknown user"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Edit title"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Edit description"
+msgstr ""
+
+#: osparc/info/FunctionLarge.js
+msgid "Permissions"
+msgstr ""
+
+#: osparc/info/FunctionLarge.js
+msgid "Rename Function"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Template Type:"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Template type updated, please reload"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Edit thumbnail"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Access"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Go to Sharing"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Go to Tags"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Go to Quality"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Go to Classifiers"
+msgstr ""
+
+#: osparc/info/StudyLarge.js
+msgid "Location"
+msgstr ""
+
+#: osparc/study/BillingSettings.js
+msgid "This section lets you control how your project and apps are funded and powered. You can switch the Credit Account assigned to the project and choose the Tiers that best matches your workload."
+msgstr ""
+
+#: osparc/node/TierSelectionView.js
+msgid "Tiers & Costs"
+msgstr ""
+
+#: osparc/service/PricingUnitsList.js
+msgid "Below is an overview of the available tiers, including their hourly credit cost and hardware specifications. The highlighted tier indicates the default configuration for new projects."
+msgstr ""
+
+#: osparc/study/Conversations.js
+msgid "Add new conversation"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Edit version"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Released Date"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Contact"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Authors"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Edit access rights"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Edit release notes URL"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Integration Version"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Description only"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Not set"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Edit Release Notes URL"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "Rename Service"
+msgstr ""
+
+#: osparc/metadata/QualityEditor.js
+msgid "Edit references"
+msgstr ""
+
+#: osparc/metadata/ServicesInStudyBootOpts.js
+msgid "Here you can select in which mode the services will be started. You can also enable/disable Autostart services to automatically start all services when the project boots, ensuring a ready-to-use workspace without manual steps."
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Not Shared"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "Disabling this will help opening and closing projects faster"
+msgstr ""
+
+#: osparc/info/StudyUtils.js
+msgid "No tags"
+msgstr ""
+
+#: osparc/study/SaveAsTemplate.js
+msgid "Share your project with the entire community as a Public Project. This makes it discoverable and reusable by others, encouraging collaboration and inspiration."
+msgstr ""
+
+#: osparc/study/SaveAsTemplate.js
+msgid "Save the current state of your project as a reusable Template. Templates let you branch off easily and start new workflows. You can later decide with whom to share it."
+msgstr ""
+
+#: osparc/study/SaveAsTemplate.js
+msgid "Template Type"
+msgstr ""
+
+#: osparc/study/SaveAsTemplate.js
+msgid "Create Template"
+msgstr ""
+
+#: osparc/study/CreateFunction.js
+msgid "Exposed"
+msgstr ""
+
+#: osparc/study/CreateFunction.js
+msgid "Default value"
+msgstr ""
+
+#: osparc/study/CreateFunction.js
+msgid "Output"
+msgstr ""
+
+#: osparc/study/CreateFunction.js
+msgid "Expose at least one input and one output"
+msgstr ""
+
+#: osparc/study/CreateFunction.js
+msgid "Function created"
+msgstr ""
+
+#: osparc/jobs/ActivityOverview.js
+msgid "Activity Overview"
+msgstr ""
+
+#: osparc/jobs/ActivityOverview.js
+msgid "Only the latest run's tasks are available"
+msgstr ""
+
+#: osparc/jobs/ActivityOverview.js
+msgid "Runs History"
+msgstr ""
+
+#: osparc/jobs/ActivityOverview.js
+msgid "In this table, the history of the project runs is shown. Select a run to see its tasks."
+msgstr ""
+
+#: osparc/jobs/RunsBrowser.js
+msgid "Select a Run to check the details"
+msgstr ""
+
+#: osparc/jobs/SubRunsBrowser.js
+msgid "Return to Runs"
+msgstr ""
+
+#: osparc/jobs/ActivityOverview.js
+msgid "In this table, the tasks or simulations of the selected run are shown. If available, the logs can be downloaded."
+msgstr ""
+
+#: osparc/product/quickStart/s4lacad/Welcome.js
+msgid "        Sim4Life is a revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models, for directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment.        <br>        <br>        In order to facilitate the introduction to the platform, we have some Guided Tours that can be found in the Help & Support section.        <br>        <br>        For more specific technical information, please refer to the Manuals.      "
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Select recipients"
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Select organizations or users from the list or search by name, userName or email."
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Select users from the list or search by name, userName or email."
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Keep in mind that users are only searchable based on the information they've chosen to make visible. To make yourself easier to find, adjust your visibility settings in My Account → Privacy."
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Send email"
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Set the following Role:"
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Add Message"
+msgstr ""
+
+#: osparc/share/NewCollaboratorsManager.js
+msgid "Add a message to include in the email (optional)"
+msgstr ""
+
+#: osparc/conversation/MessageList.js
+msgid "Load more messages..."
+msgstr ""
+
+#: osparc/conversation/MessageUI.js
+msgid "edited"
+msgstr ""
+
+#: osparc/conversation/MessageUI.js
+msgid "Delete..."
+msgstr ""
+
+#: osparc/conversation/MessageUI.js
+msgid "Edit message"
+msgstr ""
+
+#: osparc/conversation/MessageUI.js
+msgid "Delete message?"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "userName"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Choose what others see."
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Postal Code"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "State"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Country of Residence"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Tax and VAT regulations depend on the country of residence."
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "Transfer Projects"
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Transfer of your projects to another user."
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Request the deletion of your account."
+msgstr ""
+
+#: osparc/desktop/account/ProfilePage.js
+msgid "Update Phone Number"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "Copy Invitation URL"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "Approve without Sending Email"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "Approve and Send"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "Reject without Sending Email"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "Reject and Send"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "User approved and email sent"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "User rejected and email sent"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "User approved"
+msgstr ""
+
+#: osparc/po/PreviewApprovalRejection.js
+msgid "User rejected"
+msgstr ""
+
+#: osparc/po/EmailEditor.js
+msgid "To"
+msgstr ""
+
+#: osparc/po/EmailEditor.js
+msgid "Add Recipient"
+msgstr ""
+
+#: osparc/po/EmailEditor.js
+msgid "Subject"
+msgstr ""
+
+#: osparc/navigation/UserMenu.js
+msgid "Rocket Preview"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "Project Information"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Rename Node"
+msgstr ""
+
+#: osparc/info/StudyMedium.js
+msgid "SHARED"
+msgstr ""
+
+#: osparc/node/ProbeView.js
+msgid "Value"
+msgstr ""
+
+#: osparc/widget/NodeOptions.js
+msgid "To change the following options, the service needs to be stopped."
+msgstr ""
+
+#: osparc/node/slideshow/BaseNodeView.js
+msgid "New Outputs generated"
+msgstr ""
+
+#: osparc/widget/NodeSlideTreeItem.js
+msgid "Move up"
+msgstr ""
+
+#: osparc/widget/NodeSlideTreeItem.js
+msgid "Move down"
+msgstr ""
+
+#: osparc/widget/NodeSlideTreeItem.js
+msgid "Hide node"
+msgstr ""
+
+#: osparc/widget/NodeSlideTreeItem.js
+msgid "Show node"
+msgstr ""
+
+#: osparc/workbench/NodeUI.js
+msgid "Needs to run to update the outputs"
+msgstr ""
+
+#: osparc/workbench/NodeUI.js
+msgid "Connect Node"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Downloading..."
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Waiting for upstream port to finish uploading..."
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Download completed: port has no data"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Download finished successfully"
+msgstr ""
+
+#: osparc/form/renderer/PropForm.js
+msgid "Download failed"
+msgstr ""
+
+#: osparc/data/StreamTask.js
+msgid "Unsuccessful streaming"
+msgstr ""
+
+#: osparc/dashboard/NewPlusMenu.js
+msgid "Hypertools"
+msgstr ""
+
+#: osparc/dashboard/NewPlusMenu.js
+msgid "More"
+msgstr ""
+
+#: osparc/dashboard/NewPlusMenu.js
+msgid "Tutorials..."
+msgstr ""
+
+#: osparc/dashboard/NewPlusMenu.js
+msgid "Apps..."
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "My Projects"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Files"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Search in My projects"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Search in Templates"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Search in Public Projects"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Search in Functions"
+msgstr ""
+
+#: osparc/dashboard/SearchBarFilterExtended.js
+msgid "Search in Files"
+msgstr ""
+
+#: osparc/dashboard/FolderButtonItem.js
+msgid "Rename Folder"
+msgstr ""
+
+#: osparc/info/ServiceUtils.js
+msgid "No description"
+msgstr ""
+
+#: osparc/study/ConversationPage.js
+msgid "new"
+msgstr ""
+
+#: osparc/study/ConversationPage.js
+msgid "Are you sure you want to delete the conversation?"
+msgstr ""
+
+#: osparc/study/ConversationPage.js
+msgid "Delete Conversation"
+msgstr ""
+
+#: osparc/study/ConversationPage.js
+msgid "No Messages yet"
+msgstr ""
+
+#: osparc/study/ConversationPage.js
+msgid "1 Message"
+msgstr ""
+
+#: osparc/study/ConversationPage.js
+msgid " Messages"
+msgstr ""
+
+#: osparc/form/tag/TagItem.js
+msgid "Edit tag"
+msgstr ""
+
+#: osparc/share/ShareTemplateWith.js
+msgid "Make the template accessible to:"
+msgstr ""
+
+#: osparc/jobs/RunsTable.js
+msgid "Collection Run Id"
+msgstr ""
+
+#: osparc/jobs/SubRunsTable.js
+msgid "Node Id"
+msgstr ""
+
+#: osparc/jobs/RunsTable.js
+msgid "Ended"
+msgstr ""
+
+#: osparc/jobs/SubRunsTable.js
+msgid "No logs available"
+msgstr ""
+
+#: osparc/jobs/RunsTable.js
+msgid "Project Ids"
+msgstr ""
+
+#: osparc/jobs/RunsTable.js
+msgid "Queued"
+msgstr ""
+
+#: osparc/jobs/RunsTable.js
+msgid "Are you sure you want to cancel"
+msgstr ""
+
+#: osparc/jobs/RunsTable.js
+msgid "Cancel Run"
+msgstr ""
+
+#: osparc/jobs/RunsTable.js
+msgid "Stopping Run"
+msgstr ""
+
+#: osparc/filter/CollaboratorToggleButton.js
+msgid "Public to all users"
+msgstr ""
+
+#: osparc/desktop/organizations/OrganizationDetails.js
+msgid "Tutorials"
+msgstr ""
+
+#: osparc/conversation/AddMessage.js
+msgid "Ctrl+Enter"
+msgstr ""
+
+#: osparc/conversation/AddMessage.js
+msgid "Only users with write access can add comments."
+msgstr ""
+
+#: osparc/conversation/AddMessage.js
+msgid "Notify user"
+msgstr ""
+
+#: osparc/conversation/AddMessage.js
+msgid "Notify"
+msgstr ""
+
+#: osparc/editor/AnnotationNoteCreator.js
+msgid "This user has no access to the project. Do you want to share it?"
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "Target user:"
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "Select user"
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "Share and keep ownership"
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "Share and remove my ownership"
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "Select the user you want to transfer all your projects to."
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "Select target user"
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "You cannot transfer projects to yourself"
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "All projects have been shared with the target user. You still own them."
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "This option is not yet enabled."
+msgstr ""
+
+#: osparc/desktop/account/TransferProjects.js
+msgid "All projects have been shared with the target user and you have been removed as co-owner."
+msgstr ""
+
+#: osparc/jobs/RunsBrowser.js
+msgid "Filter by name or ID"
+msgstr ""
+
+#: osparc/jobs/RunsBrowser.js
+msgid "Active only"
+msgstr ""
+
+#: osparc/vipMarket/Market.js
+msgid "Loading Models..."
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Do you want to remove the annotation?"
+msgstr ""
+
+#: osparc/workbench/WorkbenchUI.js
+msgid "Conversation not found"
+msgstr ""
+
+#: osparc/ui/message/NodeLockedPage.js
+msgid "The application is being used"
+msgstr ""
+
+#: osparc/ui/message/NodeLockedPage.js
+msgid "The application is not being used"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Unsuccessful files download"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "You can only delete files in the local storage"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Nothing to delete"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Unsuccessful files deletion"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Deleting files"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Delete files"
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Deleting files..."
+msgstr ""
+
+#: osparc/file/FileLabelWithActions.js
+msgid "Deletion aborted"
+msgstr ""
+
+#: osparc/study/PricingUnitTier.js
+msgid "SSD"
+msgstr ""
+
+#: osparc/study/Conversation.js
+msgid " was notified"
+msgstr ""
+
+#: osparc/study/Conversation.js
+msgid "Notification sent"
+msgstr ""
+
+#: osparc/editor/OrganizationEditor.js
+msgid "Edit Organization"
+msgstr ""
+
+#: osparc/desktop/organizations/TutorialsList.js
+msgid "This is the list of Tutorials shared with this Organization"
+msgstr ""
+
+#: osparc/desktop/organizations/ServicesList.js
+msgid "This is the list of Apps shared with this Organization"
+msgstr ""
+
+#: osparc/user/UserAccountWindow.js
+msgid "User Account"
+msgstr ""
+
+#: osparc/admin/Maintenance.js
+msgid "Test Maintenance message"
+msgstr ""
+
+#: osparc/desktop/wallets/WalletsList.js
+msgid "Preferred"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Language"
+msgstr ""
+
+#: osparc/desktop/preferences/pages/GeneralPage.js
+msgid "Translations are AI-generated and may contain errors. Please report any issues to help us improve them."
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Some of your services are outdated. Please update to the latest version for better performance."
+msgstr ""
+
+#: osparc/dashboard/ResourceDetails.js
+msgid "Do you want to update them now?"
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "Please describe what you were doing before the error (optional)."
+msgstr ""
+
+#: osparc/ui/message/FlashMessageOEC.js
+msgid "This will help our support team understand the context and resolve the issue faster."
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "From all the metadata shown in this view,"
+msgstr ""
+
+#: osparc/info/ServiceLarge.js
+msgid "only the Description will be shown to Users."
 msgstr ""

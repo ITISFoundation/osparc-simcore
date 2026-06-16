@@ -11,13 +11,13 @@ import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any
 
 import httpx
 import pytest
 import respx
 import simcore_service_catalog
-import simcore_service_catalog.core.events
+import simcore_service_catalog.core.application
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -29,12 +29,12 @@ from models_library.api_schemas_directorv2.services import (
 )
 from packaging.version import Version
 from pydantic import EmailStr
-from pytest_mock import MockerFixture, MockType
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.tracing import TracingConfig
-from simcore_service_catalog._meta import APP_NAME
+from simcore_service_catalog._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 from simcore_service_catalog.service import manifest
@@ -113,32 +113,11 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
     return ApplicationSettings.create_from_envs()
 
 
-class AppLifeSpanSpyTargets(NamedTuple):
-    on_startup: MockType
-    on_shutdown: MockType
-
-
-@pytest.fixture
-def spy_app(mocker: MockerFixture) -> AppLifeSpanSpyTargets:
-    # Used to ensure startup/teardown workflows using different fixtures
-    # work as expected
-    return AppLifeSpanSpyTargets(
-        on_startup=mocker.spy(
-            simcore_service_catalog.core.events,
-            "_flush_started_banner",
-        ),
-        on_shutdown=mocker.spy(
-            simcore_service_catalog.core.events,
-            "_flush_finished_banner",
-        ),
-    )
-
-
 @pytest.fixture
 async def app(
     app_settings: ApplicationSettings,
     is_pdb_enabled: bool,
-    spy_app: AppLifeSpanSpyTargets,
+    capfd: pytest.CaptureFixture[str],
 ) -> AsyncIterator[FastAPI]:
     """
     NOTE that this app was started when the fixture is setup
@@ -146,23 +125,20 @@ async def app(
     """
 
     # create instance
-    assert app_environment
     tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )
     app_under_test = create_app(tracing_config=tracing_config)
-
-    assert spy_app.on_startup.call_count == 0
-    assert spy_app.on_shutdown.call_count == 0
+    capfd.readouterr()
 
     async with LifespanManager(
         app_under_test,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
-        assert spy_app.on_startup.call_count == 1
-        assert spy_app.on_shutdown.call_count == 0
+        captured = capfd.readouterr()
+        assert APP_STARTED_BANNER_MSG.strip() in captured.out
 
         # NOTE: manifest API caches are process-global (keyed only by the registry),
         # so reset them to keep tests isolated from each other
@@ -171,42 +147,36 @@ async def app(
 
         yield app_under_test
 
-    assert spy_app.on_startup.call_count == 1
-    assert spy_app.on_shutdown.call_count == 1
+    captured = capfd.readouterr()
+    assert APP_FINISHED_BANNER_MSG.strip() in captured.out
 
 
 @pytest.fixture
-def client(app_settings: ApplicationSettings, spy_app: AppLifeSpanSpyTargets) -> Iterator[TestClient]:
+def client(app_settings: ApplicationSettings, capfd: pytest.CaptureFixture[str]) -> Iterator[TestClient]:
     # NOTE: DO NOT add `app` as a dependency since it is already initialized
 
     # create instance
-    assert app_environment
     tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )
     app_under_test = create_app(tracing_config=tracing_config)
-
-    assert spy_app.on_startup.call_count == 0, "TIP: Remove dependencies from `app` fixture and get it via `client.app`"
-    assert spy_app.on_shutdown.call_count == 0
+    capfd.readouterr()
 
     with TestClient(app_under_test) as cli:
-        assert spy_app.on_startup.call_count == 1
-        assert spy_app.on_shutdown.call_count == 0
+        captured = capfd.readouterr()
+        assert APP_STARTED_BANNER_MSG.strip() in captured.out
 
         yield cli
 
-    assert spy_app.on_startup.call_count == 1
-    assert spy_app.on_shutdown.call_count == 1
+    captured = capfd.readouterr()
+    assert APP_FINISHED_BANNER_MSG.strip() in captured.out
 
 
 @pytest.fixture
-async def aclient(app: FastAPI, spy_app: AppLifeSpanSpyTargets) -> AsyncIterator[httpx.AsyncClient]:
+async def aclient(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     # NOTE: Avoids TestClient since `app` fixture already runs LifespanManager
     # Otherwise `with TestClient` will call twice start/shutdown events
-
-    assert spy_app.on_startup.call_count == 1
-    assert spy_app.on_shutdown.call_count == 0
 
     async with httpx.AsyncClient(
         base_url="http://catalog.testserver.io",
@@ -214,13 +184,8 @@ async def aclient(app: FastAPI, spy_app: AppLifeSpanSpyTargets) -> AsyncIterator
         transport=httpx.ASGITransport(app=app),
     ) as acli:
         assert isinstance(acli._transport, httpx.ASGITransport)  # noqa: SLF001
-        assert spy_app.on_startup.call_count == 1
-        assert spy_app.on_shutdown.call_count == 0
 
         yield acli
-
-    assert spy_app.on_startup.call_count == 1
-    assert spy_app.on_shutdown.call_count == 0
 
 
 @pytest.fixture
@@ -231,34 +196,24 @@ def service_caching_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def repository_lifespan_disabled(mocker: MockerFixture):
     mocker.patch.object(
-        simcore_service_catalog.core.events,
-        "repository_lifespan_manager",
+        simcore_service_catalog.core.application,
+        "configure_postgres_database",
+        autospec=True,
+    )
+
+    mocker.patch.object(
+        simcore_service_catalog.core.application,
+        "configure_default_product_name",
         autospec=True,
     )
 
 
 @pytest.fixture
 def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
-    class MockedBackgroundTaskContextManager:
-        async def __aenter__(self):
-            print(
-                "TEST",
-                background_task_lifespan_disabled.__name__,
-                "Disabled background tasks. Skipping execution of __aenter__",
-            )
-
-        async def __aexit__(self, exc_type, exc_value, traceback):
-            print(
-                "TEST",
-                background_task_lifespan_disabled.__name__,
-                "Disabled background tasks. Skipping execution of __aexit__",
-            )
-
     mocker.patch.object(
-        simcore_service_catalog.core.events,
-        "background_task_lifespan",
+        simcore_service_catalog.core.application,
+        "configure_background_tasks",
         autospec=True,
-        return_value=MockedBackgroundTaskContextManager(),
     )
 
 
@@ -270,8 +225,8 @@ def background_task_lifespan_disabled(mocker: MockerFixture) -> None:
 @pytest.fixture
 def rabbitmq_and_rpc_setup_disabled(mocker: MockerFixture):
     # The following services are affected if rabbitmq is not in place
-    mocker.patch.object(simcore_service_catalog.core.events, "rabbitmq_lifespan", autospec=True)
-    mocker.patch.object(simcore_service_catalog.core.events, "rpc_api_lifespan", autospec=True)
+    mocker.patch.object(simcore_service_catalog.core.application, "configure_rabbitmq_client", autospec=True)
+    mocker.patch.object(simcore_service_catalog.core.application, "configure_rpc_api", autospec=True)
 
 
 @pytest.fixture
@@ -288,7 +243,7 @@ async def rpc_client(
 
 @pytest.fixture
 def director_lifespan_disabled(mocker: MockerFixture) -> None:
-    mocker.patch.object(simcore_service_catalog.core.events, "director_lifespan", autospec=True)
+    mocker.patch.object(simcore_service_catalog.core.application, "configure_director", autospec=True)
 
 
 @pytest.fixture

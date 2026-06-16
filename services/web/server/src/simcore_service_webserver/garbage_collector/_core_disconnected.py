@@ -8,9 +8,7 @@ from servicelib.logging_utils import log_catch, log_context
 
 from ..projects import _projects_service
 from ..projects._projects_repository_legacy import ProjectDBAPI
-from ..resource_manager.registry import (
-    RedisResourceRegistry,
-)
+from ..resource_manager.resource_manager_service import RedisResourceRegistry
 
 _logger = logging.getLogger(__name__)
 

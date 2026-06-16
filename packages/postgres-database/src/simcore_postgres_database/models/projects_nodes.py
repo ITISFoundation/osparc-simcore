@@ -118,12 +118,6 @@ projects_nodes = sa.Table(
         comment="Input units",
     ),
     sa.Column(
-        "output_nodes",
-        JSONB,  # Array
-        nullable=True,
-        comment="Node IDs of those connected to the output",
-    ),
-    sa.Column(
         "outputs",
         JSONB,
         nullable=True,
@@ -140,12 +134,6 @@ projects_nodes = sa.Table(
         JSONB,
         nullable=True,
         comment="State",
-    ),
-    sa.Column(
-        "parent",
-        sa.String,
-        nullable=True,
-        comment="Parent's (group-nodes) node ID",
     ),
     sa.Column(
         "boot_options",

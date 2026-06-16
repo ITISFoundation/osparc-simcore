@@ -182,7 +182,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "11",
+        "12",
         "--appendonly",
         "yes",
         "--requirepass",
@@ -417,6 +417,7 @@ services:
     environment:
       <<:
         - *postgres_settings
+        - *redis_settings
         - *registry_settings
         - *tracing_open_telemetry_environments
 
@@ -799,6 +800,7 @@ services:
       COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ${COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH}
       COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: ${COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE}
       COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE: ${COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE}
+      COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY: ${COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY}
 
       DIRECTOR_HOST: ${DIRECTOR_HOST}
       DIRECTOR_PORT: ${DIRECTOR_PORT}

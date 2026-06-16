@@ -17,7 +17,7 @@ from pprint import pformat
 from typing import Final
 
 from fastapi import FastAPI, HTTPException
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
@@ -94,7 +94,8 @@ async def _create_services_in_database(
             )
 
         except (HTTPException, ValidationError, SQLAlchemyError) as err:
-            # Resilient to single failures: errors in individual (service,key) should not prevent the evaluation of the rest
+            # Resilient to single failures: errors in individual (service,key)
+            # should not prevent the evaluation of the rest
             # and stop the background task from running.
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6318
             _logger.warning(
@@ -225,3 +226,7 @@ async def background_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
         yield {}
     finally:
         await stop_registry_sync_task(app)
+
+
+def configure_background_tasks(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(background_task_lifespan)

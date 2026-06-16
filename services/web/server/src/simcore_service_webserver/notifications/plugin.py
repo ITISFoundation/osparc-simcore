@@ -10,7 +10,7 @@ from aiohttp import web
 from ..application_setup import ModuleCategory, app_setup_func
 from ..diagnostics.plugin import setup_diagnostics
 from ..rabbitmq import setup_rabbitmq
-from ..socketio.plugin import setup_socketio
+from ..socketio.socketio_service import setup_socketio
 from ..wallets.plugin import setup_wallets
 from . import _rabbitmq_exclusive_queue_consumers, _rabbitmq_nonexclusive_queue_consumers
 from ._controller import _rest

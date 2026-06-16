@@ -52,7 +52,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.rabbitmq import RPCRouter
 
-from ..groups.api import list_all_user_groups_ids
+from ..groups.groups_service import list_all_user_groups_ids
 from ..users import users_service
 from . import (
     _function_job_collections_repository,

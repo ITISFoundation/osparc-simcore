@@ -13,14 +13,14 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
-from ..invitations import api as invitations_service
+from ..invitations import invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
 from ..products.errors import ProductNotFoundError
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval, PreviewRejection
-from .exceptions import (
+from .errors import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
 )
