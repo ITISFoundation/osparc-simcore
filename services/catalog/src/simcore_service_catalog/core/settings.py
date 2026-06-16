@@ -25,8 +25,6 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-from .._constants import DEFAULT_DIRECTOR_BULK_FETCH_LEASE
-
 _logger = logging.getLogger(__name__)
 
 
@@ -115,7 +113,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "bulk fetches of the services manifest from the director. Should comfortably exceed "
             "a slow director bulk fetch so the in-flight populate is not duplicated.",
         ),
-    ] = DEFAULT_DIRECTOR_BULK_FETCH_LEASE
+    ] = 30
 
     CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = _DEFAULT_SERVICE_SPECIFICATIONS
