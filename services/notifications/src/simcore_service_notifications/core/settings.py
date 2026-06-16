@@ -247,7 +247,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             description=(
                 "Per-product SMTP settings with named mail server profiles and product-to-profile mapping. "
-                "Required by the notifications worker; unused by the API service."
+                "Used by the API service to resolve sender identities when preparing messages, "
+                "and by the worker to deliver emails."
             ),
             examples=[
                 {

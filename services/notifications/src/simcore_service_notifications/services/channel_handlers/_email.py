@@ -4,7 +4,6 @@ from common_library.network import extract_email_domain
 from common_library.sequence_tools import interleave_by_key
 from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
 from models_library.notifications.rpc import EmailContact, EmailMessage, SenderIdentity
-from pydantic import validate_email
 
 from ...core.settings import ApplicationSettings, ProductSMTPSettings
 from ...models.product import Product
@@ -20,9 +19,7 @@ def _interleave_recipients_by_domain(
 
 def get_email(identity: SenderIdentity, product_smtp_settings: ProductSMTPSettings) -> str:
     local_part = product_smtp_settings.local_parts[identity]
-    email = f"{local_part}@{product_smtp_settings.domain}"
-    validate_email(email)  # Will raise if invalid
-    return email
+    return f"{local_part}@{product_smtp_settings.domain}"
 
 
 class EmailChannelHandler(ChannelHandler):
