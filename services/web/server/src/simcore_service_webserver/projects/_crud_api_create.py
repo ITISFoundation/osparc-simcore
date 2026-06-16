@@ -134,7 +134,7 @@ def _remap_port_links(inputs: dict | None, nodes_map: NodesMap) -> dict | None:
     """Remap PortLink node_uuid references in inputs using nodes_map (old UUID -> new UUID)."""
     if not inputs:
         return inputs
-    remapped = {}
+    remapped: dict[str, Any] = {}
     for port_key, port_value in inputs.items():
         if isinstance(port_value, dict) and "nodeUuid" in port_value:
             old_uuid = str(port_value["nodeUuid"])
