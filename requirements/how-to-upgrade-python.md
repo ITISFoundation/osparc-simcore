@@ -1,53 +1,38 @@
-# Python version
+# How to upgrade the Python version
 
-In principle every service can use a different python version but in practice it is more
-suitable to keep the same python version throughout the entire repository.
+In principle each service could use a different Python version, but in practice
+we keep a single version across the whole repository.
 
+## Where the version is specified
 
-
-## Where is python version specified?
-
-Both python and pip version are specified:
-
--  in the services/scripts ``Dockerfile``:
+- Service/script `Dockerfile`:
   ```Dockerfile
-    ARG PYTHON_VERSION="3.9.13"
-    FROM python:${PYTHON_VERSION}-slim-bookworm as base
+  ARG PYTHON_VERSION="<X.Y.Z>"
+  FROM python:${PYTHON_VERSION}-slim-bookworm AS base
   ```
-- in ``.python-version``
+- `.python-version` (repo root)
+- `requirements/PYTHON_VERSION`
 
+These are kept in sync by reusing the `PYTHON_VERSION` variable where possible.
+`tests/environment-setup/test_used_python.py` asserts that all of them match.
 
+## Tooling support
 
-## How are these versions synced?
+- CI job `unit-test-python-linting` (in `.github/workflows/ci-testing-deploy.yml`)
+  runs the lint suite against a matrix of the current and next Python versions
+  to surface incompatibilities early.
+- [pyupgrade](https://github.com/asottile/pyupgrade) is containerized as
+  `make pyupgrade` to modernize syntax for the new version.
 
-- Reusing ``PYTHON_VERSION`` variables when possible
-- ``tests/environment-setup/test_used_python.py`` checks that all these configurations are in sync
+## Checklist before upgrading
 
+- `pylint` passes on the codebase under the new version.
+- All third-party libraries provide wheels/support for the new version.
+- All dev tools are compatible.
+- See https://pythonspeed.com/articles/switch-python-3.10/ for migration tips.
 
+## See also
 
-## Tools to assist python upgrade?
-
-- CI ``.github/workflows/ci-testing-deploy.yml`` runs ``unit-test-python-linting`` job that monitor early incompatibilities for the codebase with next python's version. See
-  ```yaml
-  unit-test-python-linting:
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] python-linting"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.13", "3.14"]
-  ```
-- [pyupgrade](https://github.com/asottile/pyupgrade) tool which has been containarized (``scripts/pyupgrade.bash``) and added as a Makefile recipe (``make pyupgrade``)
-
-
-
-## When to upgrade python's version?
-
-Some points to consider (draft)
-
- - codebase ``pylint`` passes
- - all third-party libraries are available for the new python distribution
- - all tools are compatible with new python version
- - ...
-
- SEE https://pythonspeed.com/articles/switch-python-3.10/
+- [python-dependencies.md](python-dependencies.md) — overall dependency model and security workflow
+- [how-to-unify-versions.md](how-to-unify-versions.md)
+- [how-to-prune-requirements.md](how-to-prune-requirements.md)

@@ -1,8 +1,7 @@
 ---
-mode: 'edit'
+agent: agent
 description: 'Convert Pydantic model fields to use Annotated pattern'
 ---
-
 
 Please convert all pydantic model fields that use `Field()` with default values to use the Annotated pattern instead.
 Follow these guidelines:
