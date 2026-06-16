@@ -511,5 +511,5 @@ def create_standard_attributes(
     if run_id:
         attributes["run_id"] = f"{run_id}"
     if source_origin:
-        attributes["source_origin"] = source_origin.value
+        attributes["source_origin"] = source_origin.value.lower()
     return {f"{_OTEL_NAMESPACE}.{k}": v for k, v in attributes.items()}
