@@ -30,7 +30,7 @@ from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
-from ..resource_manager.user_sessions import is_user_connected
+from ..resource_manager.resource_manager_service import is_user_connected
 from ..users import users_service
 from . import (
     _conversation_message_repository,

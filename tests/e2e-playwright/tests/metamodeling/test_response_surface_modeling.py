@@ -1,8 +1,15 @@
 # pylint: disable=logging-fstring-interpolation
+# pylint:disable=invalid-name
+# pylint:disable=line-too-long
+# pylint:disable=missing-function-docstring
+# pylint:disable=missing-module-docstring
 # pylint:disable=no-value-for-parameter
 # pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-branches
+# pylint:disable=too-many-locals
+# pylint:disable=too-many-positional-arguments
 # pylint:disable=too-many-statements
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
@@ -16,12 +23,20 @@ from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
 import pytest
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, ServiceType, wait_for_service_running
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, stop_after_delay, wait_fixed
+from tenacity import (
+    RetryError,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_fixed,
+)
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
@@ -42,6 +57,10 @@ _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
 _SELECT_FUNCTION_RETRY_WAIT_SECONDS: Final[int] = 2
 _SAMPLING_STATUS_POLL_SECONDS: Final[int] = 5
+_TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
+_TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
+_TEARDOWN_FULL_WAIT_SECONDS: Final[float] = 10.0
+_TEARDOWN_FULL_ATTEMPTS: Final[int] = 3
 _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
@@ -86,6 +105,51 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
 ]
 
 
+class _TeardownDeleteError(Exception):
+    """Raised when a resource DELETE request fails (non-ok, non-404 status)."""
+
+
+@retry(
+    wait=wait_fixed(_TEARDOWN_RETRY_WAIT_SECONDS),
+    stop=stop_after_attempt(_TEARDOWN_MAX_ATTEMPTS),
+    retry=retry_if_exception_type(_TeardownDeleteError),
+    before_sleep=before_sleep_log(logging.getLogger(__name__), logging.WARNING),
+    reraise=True,
+)
+def _attempt_delete(
+    api_request_context: APIRequestContext,
+    url: str,
+    label: str,
+    *,
+    headers: dict[str, str] | None = None,
+) -> None:
+    kwargs: dict[str, Any] = {}
+    if headers:
+        kwargs["headers"] = headers
+    resp = api_request_context.delete(url, **kwargs)
+    if resp.status == 404:
+        return  # Already gone — treat as success
+    if resp.status in {200, 204}:
+        logging.info("Deleted %s", label)
+        return
+    msg = f"Delete {label} returned status {resp.status}: {resp.text()[:200]}"
+    raise _TeardownDeleteError(msg)
+
+
+def _delete_with_retry(
+    api_request_context: APIRequestContext,
+    url: str,
+    label: str,
+    *,
+    headers: dict[str, str] | None = None,
+) -> None:
+    """DELETE url with retries (tenacity), treating 404 as success."""
+    try:
+        _attempt_delete(api_request_context, url, label, headers=headers)
+    except _TeardownDeleteError:
+        logging.exception("Gave up deleting %s after %d attempts", label, _TEARDOWN_MAX_ATTEMPTS)
+
+
 def _get_api_server_url(product_url: AnyUrl) -> str:
     """Derive the API server URL from the product URL.
 
@@ -95,6 +159,112 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     api_host = f"api.{parsed.hostname}"
     api_netloc = f"{api_host}:{parsed.port}" if parsed.port else api_host
     return urlunparse(parsed._replace(netloc=api_netloc))
+
+
+@retry(
+    wait=wait_fixed(_TEARDOWN_FULL_WAIT_SECONDS),
+    stop=stop_after_attempt(_TEARDOWN_FULL_ATTEMPTS),
+    retry=retry_if_exception_type(AssertionError),
+    before_sleep=before_sleep_log(logging.getLogger(__name__), logging.WARNING),
+    reraise=True,
+)
+def _teardown_function(  # noqa: C901
+    api_request_context: APIRequestContext,
+    api_server_url: str,
+    product_url: AnyUrl,
+    function_data: dict[str, Any],
+    auth_headers: dict[str, str],
+) -> None:
+    """Delete all resources for a single function (collections, jobs, function, source study).
+
+    Retried by tenacity until the function is confirmed deleted (404).
+    """
+    function_uuid = function_data["uuid"]
+    template_id = function_data.get("templateId")
+    limit = 50
+
+    # 1. Delete all function_job_collections for this function
+    for offset in range(0, 100_000, limit):
+        collections_resp = api_request_context.get(
+            f"{api_server_url}v0/function_job_collections?has_function_id={function_uuid}&limit={limit}&offset={offset}",
+            headers=auth_headers,
+        )
+        if not collections_resp.ok:
+            if collections_resp.status != 404:
+                logging.warning(
+                    "Could not list function_job_collections for %s: %s",
+                    function_uuid,
+                    collections_resp.text()[:200],
+                )
+            break
+        collections = collections_resp.json().get("items", [])
+        for collection in collections:
+            _delete_with_retry(
+                api_request_context,
+                f"{api_server_url}v0/function_job_collections/{collection['uid']}",
+                f"function_job_collection {collection['uid']}",
+                headers=auth_headers,
+            )
+        if len(collections) < limit:
+            break
+
+    # 2. Delete all function_jobs and their associated comp projects
+    for offset in range(0, 100_000, limit):
+        jobs_resp = api_request_context.get(
+            f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+            headers=auth_headers,
+        )
+        if not jobs_resp.ok:
+            if jobs_resp.status != 404:
+                logging.warning(
+                    "Could not list function_jobs for %s: %s",
+                    function_uuid,
+                    jobs_resp.text()[:200],
+                )
+            break
+        jobs = jobs_resp.json().get("items", [])
+        for job in jobs:
+            job_uid = job["uid"]
+            project_job_id = job.get("project_job_id")
+            _delete_with_retry(
+                api_request_context,
+                f"{api_server_url}v0/function_jobs/{job_uid}",
+                f"function_job {job_uid}",
+                headers=auth_headers,
+            )
+            if project_job_id:
+                _delete_with_retry(
+                    api_request_context,
+                    f"{product_url}v0/projects/{project_job_id}",
+                    f"comp project {project_job_id}",
+                )
+        if len(jobs) < limit:
+            break
+
+    # 3. Delete the function itself (functions live on the api-server, not web-server)
+    _delete_with_retry(
+        api_request_context,
+        f"{api_server_url}v0/functions/{function_uuid}",
+        f"function {function_uuid}",
+        headers=auth_headers,
+    )
+
+    # 4. Delete the source study the function was created from
+    if template_id:
+        _delete_with_retry(
+            api_request_context,
+            f"{product_url}v0/projects/{template_id}",
+            f"source study {template_id}",
+        )
+
+    # Verify the function is gone — if not, AssertionError triggers a tenacity retry
+    check_resp = api_request_context.get(
+        f"{api_server_url}v0/functions/{function_uuid}",
+        headers=auth_headers,
+    )
+    assert check_resp.status == 404, (
+        f"Function {function_uuid} still exists after teardown (status {check_resp.status})"
+    )
 
 
 def _reload_page_before_retry(retry_state) -> None:
@@ -210,10 +380,12 @@ def _assert_sampling_completed(
 @pytest.fixture
 def create_function_from_project(
     api_request_context: APIRequestContext,
+    api_key_and_secret: tuple[str, str],
     is_product_billable: bool,
     product_url: AnyUrl,
 ) -> Iterator[Callable[[Page, str], dict[str, Any]]]:
-    created_function_uuids: list[str] = []
+    # Store full function data (including templateId for source study cleanup)
+    created_functions: list[dict[str, Any]] = []
 
     def _create_function_from_project(
         page: Page,
@@ -225,9 +397,9 @@ def create_function_from_project(
         ) as ctx:
             with page.expect_response(re.compile(rf"/projects/{project_uuid}")):
                 page.get_by_test_id(f"studyBrowserListItem_{project_uuid}").click()
-            page.wait_for_timeout(2000)
+            page.get_by_text("create function").first.wait_for(state="visible", timeout=10 * SECOND)
             page.get_by_text("create function").first.click()
-            page.wait_for_timeout(2000)
+            page.get_by_test_id("create_function_page_btn").wait_for(state="visible", timeout=10 * SECOND)
 
             with page.expect_response(
                 lambda response: (
@@ -243,22 +415,35 @@ def create_function_from_project(
             ctx.logger.info("Created function: %s", f"{json.dumps(function_data['data'], indent=2)}")
 
             page.keyboard.press("Escape")
-            created_function_uuids.append(function_data["data"]["uuid"])
+            created_functions.append(function_data["data"])
         return function_data["data"]
 
     yield _create_function_from_project
 
-    for function_uuid in created_function_uuids:
-        with log_context(
-            logging.INFO,
-            f"Delete function with {function_uuid=} in {product_url=} as {is_product_billable=}",
-        ):
-            response = api_request_context.delete(f"{product_url}v0/functions/{function_uuid}")
-            if response.status != 204:
-                logging.warning("Could not delete function %s: %s", function_uuid, response.text())
+    # --- Teardown: runs even if the test fails ---
+    api_server_url = _get_api_server_url(product_url)
+    api_key, api_secret = api_key_and_secret
+    credentials = base64.b64encode(f"{api_key}:{api_secret}".encode()).decode()
+    auth_headers = {"Authorization": f"Basic {credentials}"}
+
+    for function_data in created_functions:
+        try:
+            _teardown_function(
+                api_request_context,
+                api_server_url,
+                product_url,
+                function_data,
+                auth_headers,
+            )
+        except RetryError:
+            logging.exception(
+                "Function %s could not be fully cleaned up after %d attempts",
+                function_data.get("uuid"),
+                _TEARDOWN_FULL_ATTEMPTS,
+            )
 
 
-def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: disable=too-many-branches
+def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     page: Page,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     log_in_and_out: RobustWebSocket,
@@ -267,6 +452,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
     is_service_legacy: bool,
     create_function_from_project: Callable[[Page, str], dict[str, Any]],
     api_request_context: APIRequestContext,
+    api_key_and_secret: tuple[str, str],
 ):
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
@@ -284,7 +470,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         # Select the first jsonifier (it's the second "jsonifier" in the tree
         # because the study itself has "jsonifier" in its name)
         page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[1].click()
-        page.wait_for_timeout(3 * SECOND)
+        page.get_by_test_id("connect_input_btn_number_1").wait_for(state="visible", timeout=10 * SECOND)
 
         with log_context(logging.INFO, "Create parameter on jsonifier_1.number_1"):
             page.get_by_test_id("connect_input_btn_number_1").click()
@@ -622,28 +808,41 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
                         value_str,
                     )
                     page.wait_for_timeout(_REACT_BLUR_SETTLE_MS)
-                page.wait_for_timeout(2 * SECOND)
                 next_button.click(timeout=30 * SECOND)
-
-        page.wait_for_timeout(1 * SECOND)
 
         with log_context(logging.INFO, "Waiting for the AI model to be created..."):
             creating_ai_model_text = service_iframe.get_by_text("Creating AI model...")
-            # wait for it to disappear, which means the model is created and we can proceed
-            creating_ai_model_text.wait_for(state="hidden", timeout=2 * MINUTE)
+            no_data_text = service_iframe.get_by_text("No data available. Please create more Samples.", exact=False)
+            model_is_creating = False
+
+            try:
+                creating_ai_model_text.wait_for(state="visible", timeout=4 * SECOND)
+                model_is_creating = True  # loading confirmation
+            except PlaywrightTimeoutError:
+                # if nothing was loaded, we check for no data and continue
+                try:
+                    expect(no_data_text).to_be_visible(timeout=10 * SECOND)
+                    with log_context(logging.INFO, "No data available. Continuing test without data."):
+                        pass
+                except AssertionError:
+                    # If there is no loading AND no 'no data' message, the test fails legitimately here
+                    error_msg = "Neither the creation process nor the 'no data available' state was detected."
+                    raise TimeoutError(error_msg) from None
+
+            if model_is_creating:
+                with log_context(logging.INFO, "Model creation in progress. Waiting up to 2 minutes for completion..."):
+                    creating_ai_model_text.wait_for(state="hidden", timeout=2 * MINUTE)
 
         with log_context(logging.INFO, "Starting the sampling..."):
             extend_sampling_btn = service_iframe.locator('[mmux-testid="extend-sampling-btn"]')
             extend_sampling_btn.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             extend_sampling_btn.scroll_into_view_if_needed()
             extend_sampling_btn.click(timeout=30 * SECOND)
-            page.wait_for_timeout(2 * SECOND)
 
             new_sampling_btn = service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]')
             new_sampling_btn.wait_for(state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             new_sampling_btn.scroll_into_view_if_needed()
             new_sampling_btn.click(timeout=30 * SECOND)
-            page.wait_for_timeout(2 * SECOND)
 
             samplingInput = service_iframe.locator('input[placeholder="Number of sampling points"]')
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
@@ -708,14 +907,8 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
 
         with log_context(logging.INFO, f"Verifying sampling results for {local_service_key}..."):
             api_server_url = _get_api_server_url(product_url)
-            api_key_response = api_request_context.post(
-                f"{product_url}v0/auth/api-keys",
-                data=json.dumps({"displayName": f"e2e-test-{local_service_key}"}),
-                headers={"Content-Type": "application/json"},
-            )
-            assert api_key_response.ok, f"Failed to create API key: {api_key_response.status}"
-            api_key_data = api_key_response.json()["data"]
-            credentials = base64.b64encode(f"{api_key_data['apiKey']}:{api_key_data['apiSecret']}".encode()).decode()
+            _api_key, _api_secret = api_key_and_secret
+            credentials = base64.b64encode(f"{_api_key}:{_api_secret}".encode()).decode()
             auth_headers = {"Authorization": f"Basic {credentials}"}
 
             jobs_response = api_request_context.get(
@@ -764,7 +957,4 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901  # pylint: d
         ):
             page.get_by_test_id("dashboardBtn").click()
             page.get_by_test_id("confirmDashboardBtn").click()
-            assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
-            page.wait_for_timeout(2000)
-            assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"
-            page.wait_for_timeout(2000)
+        assert list_projects_response.value.ok, f"Failed to list projects: {list_projects_response.value.status}"

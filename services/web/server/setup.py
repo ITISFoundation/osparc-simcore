@@ -51,7 +51,6 @@ SETUP = {
         "": [
             "api/v0/openapi.json",
             "api/v0/schemas/*.json",
-            "templates/**/*.jinja2",
         ]
     },
     "entry_points": {

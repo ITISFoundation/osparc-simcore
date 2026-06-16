@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.function_services_catalog import (
     is_function_service,
     iter_service_docker_data,
@@ -39,7 +39,12 @@ async def function_services_lifespan(app: FastAPI) -> AsyncIterator[State]:
         app.state.frontend_services_catalog = None
 
 
+def configure_function_services(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(function_services_lifespan)
+
+
 __all__: tuple[str, ...] = (
+    "configure_function_services",
     "function_services_lifespan",
     "get_function_service",
     "is_function_service",

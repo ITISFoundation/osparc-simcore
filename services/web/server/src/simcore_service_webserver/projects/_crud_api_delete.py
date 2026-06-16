@@ -18,9 +18,8 @@ from servicelib.utils import fire_and_forget_task
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
-from ..users.exceptions import UserNotFoundError
-from . import _projects_repository
-from ._access_rights_service import check_user_project_permission
+from ..users.errors import UserNotFoundError
+from . import _access_rights_service, _projects_repository
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
@@ -56,7 +55,7 @@ async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID,
     # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/468
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
     product_name = await db.get_project_product(project_uuid=project_uuid)
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
