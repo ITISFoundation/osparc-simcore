@@ -36,7 +36,8 @@
       "jsontreeviewer/jsonTree.css",
       "hint/hint.css",
       "marked/markdown.css",
-      "common/common.css"
+      "common/common.css",
+      "iconfont/fontawesome7/fa7-fonts.css"
     ]
   },
   "requires": {
