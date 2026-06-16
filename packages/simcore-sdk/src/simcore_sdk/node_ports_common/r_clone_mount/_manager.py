@@ -15,6 +15,7 @@ from settings_library.r_clone import RCloneSettings
 from ._config_provider import MountRemoteType, get_config_content
 from ._container import ContainerManager, RemoteControlHttpClient
 from ._errors import (
+    InvalidRemotePathError,
     MountAlreadyStartedError,
     NoMountFoundForRemotePathError,
 )
@@ -227,10 +228,14 @@ class RCloneMountManager:
             await tracked_mount.stop_mount()
 
     async def refresh_path(self, remote_path: StorageFileID, *, recursive: bool = False) -> None:
-        with log_context(_logger, logging.INFO, f"refreshing mount for {remote_path=}", log_duration=True):
-            remote_path_parts = remote_path.split("/")
-            assert len(remote_path_parts) >= _MIN_PATH_PARTS, "Expected {project_id}/{node_id}/DIRECTORY_PATH"
+        # NOTE: always refreshes the containing directory, unless it's the top level directory if
+        # len(remote_path_parts) == _MIN_PATH_PARTS when this one is refreshed
 
+        remote_path_parts = remote_path.split("/")
+        if len(remote_path_parts) < _MIN_PATH_PARTS or any(not p for p in remote_path_parts[:_MIN_PATH_PARTS]):
+            raise InvalidRemotePathError(remote_path=remote_path)
+
+        with log_context(_logger, logging.INFO, f"refreshing mount for {remote_path=}", log_duration=True):
             base_s3_path = "/".join(remote_path_parts[:_MIN_PATH_PARTS])
             tracked_mount: _TrackedMount | None = None
 
@@ -242,7 +247,18 @@ class RCloneMountManager:
             if tracked_mount is None:
                 raise NoMountFoundForRemotePathError(remote_path=remote_path)
 
-            dir_to_refresh = "/".join(remote_path_parts[_MIN_PATH_PARTS:])
+            # dir_to_refresh is relative to the mounted root.
+            # Example 1 (mount root):
+            # - remote_path: project-1/node-1/data
+            # - dir_to_refresh: ""
+            # Example 2 (file in root directory):
+            # - remote_path: project-1/node-1/data/file.txt
+            # - dir_to_refresh: ""
+            # Example 3 (subfolder file):
+            # - remote_path: project-1/node-1/data/folder/subfolder/file.txt
+            # - dir_to_refresh: "folder/subfolder"
+            relative_path_parts = remote_path_parts[_MIN_PATH_PARTS:]
+            dir_to_refresh = "/".join(relative_path_parts[:-1]) if relative_path_parts else ""
             await tracked_mount.refresh_path(dir_to_refresh=dir_to_refresh, recursive=recursive)
 
     async def _worker_ensure_mount_is_responsive(self) -> None:
