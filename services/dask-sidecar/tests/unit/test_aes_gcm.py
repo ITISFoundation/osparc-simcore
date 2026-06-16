@@ -82,28 +82,28 @@ def test_generate_key_size():
     assert len(generate_key()) == KEY_SIZE_BYTES
 
 
-def test_roundtrip_small_content(job_key, context):
+def test_roundtrip_small_content(job_key: bytes, context: dict[str, str]):
     plaintext = b"hello\x00world"
     encrypted = _encrypt_to_bytes(plaintext, job_key, context)
     assert encrypted != plaintext
     assert _decrypt_to_bytes(encrypted, job_key, context) == plaintext
 
 
-def test_roundtrip_empty_content(job_key, context):
+def test_roundtrip_empty_content(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"", job_key, context)
     # an empty input still produces a header + exactly one final chunk
     assert len(encrypted) == _HEADER_SIZE + _CHUNK_PREFIX_SIZE + TAG_SIZE_BYTES
     assert _decrypt_to_bytes(encrypted, job_key, context) == b""
 
 
-def test_roundtrip_multichunk_large_content(job_key, context):
+def test_roundtrip_multichunk_large_content(job_key: bytes, context: dict[str, str]):
     chunk_size = 64
     plaintext = os.urandom(chunk_size * 10)  # exactly 10 full chunks
     encrypted = _encrypt_to_bytes(plaintext, job_key, context, chunk_size=chunk_size)
     assert _decrypt_to_bytes(encrypted, job_key, context) == plaintext
 
 
-def test_roundtrip_final_partial_chunk(job_key, context):
+def test_roundtrip_final_partial_chunk(job_key: bytes, context: dict[str, str]):
     chunk_size = 100
     # not a multiple of the chunk size: last chunk is a short partial chunk
     plaintext = os.urandom(chunk_size * 3 + 17)
@@ -111,14 +111,14 @@ def test_roundtrip_final_partial_chunk(job_key, context):
     assert _decrypt_to_bytes(encrypted, job_key, context) == plaintext
 
 
-def test_roundtrip_single_chunk_exact_size(job_key, context):
+def test_roundtrip_single_chunk_exact_size(job_key: bytes, context: dict[str, str]):
     chunk_size = 128
     plaintext = os.urandom(chunk_size)  # exactly one chunk, then empty final chunk
     encrypted = _encrypt_to_bytes(plaintext, job_key, context, chunk_size=chunk_size)
     assert _decrypt_to_bytes(encrypted, job_key, context) == plaintext
 
 
-def test_two_encryptions_differ_due_to_random_seed(job_key, context):
+def test_two_encryptions_differ_due_to_random_seed(job_key: bytes, context: dict[str, str]):
     plaintext = b"same plaintext"
     one = _encrypt_to_bytes(plaintext, job_key, context)
     two = _encrypt_to_bytes(plaintext, job_key, context)
@@ -127,7 +127,7 @@ def test_two_encryptions_differ_due_to_random_seed(job_key, context):
     assert _decrypt_to_bytes(two, job_key, context) == plaintext
 
 
-def test_header_has_expected_shape(job_key, context):
+def test_header_has_expected_shape(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"abc", job_key, context)
     magic, version, flags, chunk_size, seed = _HEADER_STRUCT.unpack(encrypted[:_HEADER_SIZE])
     assert magic == FORMAT_MAGIC
@@ -137,14 +137,14 @@ def test_header_has_expected_shape(job_key, context):
     assert len(seed) == NONCE_SIZE_BYTES
 
 
-def test_decrypt_rejects_tampered_magic(job_key, context):
+def test_decrypt_rejects_tampered_magic(job_key: bytes, context: dict[str, str]):
     encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
     encrypted[0] ^= 0xFF
     with pytest.raises(AesGcmStreamFormatError, match="bad magic"):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
 
 
-def test_decrypt_rejects_unsupported_version(job_key, context):
+def test_decrypt_rejects_unsupported_version(job_key: bytes, context: dict[str, str]):
     encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
     # version is the uint16 right after the 8-byte magic
     encrypted[len(FORMAT_MAGIC) : len(FORMAT_MAGIC) + 2] = struct.pack(">H", FORMAT_VERSION + 1)
@@ -152,14 +152,14 @@ def test_decrypt_rejects_unsupported_version(job_key, context):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
 
 
-def test_decrypt_rejects_tampered_base_nonce_seed(job_key, context):
+def test_decrypt_rejects_tampered_base_nonce_seed(job_key: bytes, context: dict[str, str]):
     encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
     encrypted[_HEADER_SIZE - 1] ^= 0x01  # last byte of the seed
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
 
 
-def test_decrypt_rejects_tampered_ciphertext(job_key, context):
+def test_decrypt_rejects_tampered_ciphertext(job_key: bytes, context: dict[str, str]):
     encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
     # flip a byte inside the ciphertext (right after header + chunk prefix)
     encrypted[_HEADER_SIZE + _CHUNK_PREFIX_SIZE] ^= 0x01
@@ -167,60 +167,60 @@ def test_decrypt_rejects_tampered_ciphertext(job_key, context):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
 
 
-def test_decrypt_rejects_tampered_tag(job_key, context):
+def test_decrypt_rejects_tampered_tag(job_key: bytes, context: dict[str, str]):
     encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
     encrypted[-1] ^= 0x01  # last byte is part of the GCM tag
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
 
 
-def test_decrypt_rejects_wrong_job_id(job_key, context):
+def test_decrypt_rejects_wrong_job_id(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"abc", job_key, context)
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         _decrypt_to_bytes(encrypted, job_key, {**context, "job_id": "other-job"})
 
 
-def test_decrypt_rejects_wrong_file_id(job_key, context):
+def test_decrypt_rejects_wrong_file_id(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"abc", job_key, context)
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         _decrypt_to_bytes(encrypted, job_key, {**context, "file_id": "other-file"})
 
 
-def test_decrypt_rejects_wrong_file_role(job_key, context):
+def test_decrypt_rejects_wrong_file_role(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"abc", job_key, context)
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         _decrypt_to_bytes(encrypted, job_key, {**context, "file_role": "output"})
 
 
-def test_decrypt_rejects_wrong_job_key(job_key, context):
+def test_decrypt_rejects_wrong_job_key(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"abc", job_key, context)
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         _decrypt_to_bytes(encrypted, generate_key(), context)
 
 
-def test_encrypt_rejects_unsupported_file_role(job_key, context):
+def test_encrypt_rejects_unsupported_file_role(job_key: bytes, context: dict[str, str]):
     with pytest.raises(AesGcmStreamError, match="Invalid file_role"):
         _encrypt_to_bytes(b"abc", job_key, {**context, "file_role": "sidecar"})
 
 
-def test_decrypt_rejects_unsupported_file_role(job_key, context):
+def test_decrypt_rejects_unsupported_file_role(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"abc", job_key, context)
     with pytest.raises(AesGcmStreamError, match="Invalid file_role"):
         _decrypt_to_bytes(encrypted, job_key, {**context, "file_role": "sidecar"})
 
 
 @pytest.mark.parametrize("bad_key", [b"", os.urandom(16), os.urandom(31), os.urandom(33)])
-def test_encrypt_rejects_invalid_key_length(bad_key, context):
+def test_encrypt_rejects_invalid_key_length(bad_key: bytes, context: dict[str, str]):
     with pytest.raises(AesGcmStreamError, match="Invalid job key"):
         _encrypt_to_bytes(b"abc", bad_key, context)
 
 
-def test_encrypt_rejects_non_positive_chunk_size(job_key, context):
+def test_encrypt_rejects_non_positive_chunk_size(job_key: bytes, context: dict[str, str]):
     with pytest.raises(AesGcmStreamError, match="Invalid chunk_size"):
         _encrypt_to_bytes(b"abc", job_key, context, chunk_size=0)
 
 
-def test_decrypt_rejects_truncated_stream_missing_final_chunk(job_key, context):
+def test_decrypt_rejects_truncated_stream_missing_final_chunk(job_key: bytes, context: dict[str, str]):
     chunk_size = 32
     plaintext = os.urandom(chunk_size * 3)
     encrypted = bytearray(_encrypt_to_bytes(plaintext, job_key, context, chunk_size=chunk_size))
@@ -231,18 +231,18 @@ def test_decrypt_rejects_truncated_stream_missing_final_chunk(job_key, context):
         _decrypt_to_bytes(truncated, job_key, context)
 
 
-def test_decrypt_rejects_trailing_data_after_final_chunk(job_key, context):
+def test_decrypt_rejects_trailing_data_after_final_chunk(job_key: bytes, context: dict[str, str]):
     encrypted = _encrypt_to_bytes(b"abc", job_key, context) + b"garbage"
     with pytest.raises(AesGcmStreamFormatError, match="unexpected data after final"):
         _decrypt_to_bytes(encrypted, job_key, context)
 
 
-def test_decrypt_rejects_missing_header(job_key, context):
+def test_decrypt_rejects_missing_header(job_key: bytes, context: dict[str, str]):
     with pytest.raises(AesGcmStreamFormatError, match="missing header"):
         _decrypt_to_bytes(b"", job_key, context)
 
 
-def test_decrypt_rejects_partial_header(job_key, context):
+def test_decrypt_rejects_partial_header(job_key: bytes, context: dict[str, str]):
     with pytest.raises(AesGcmStreamFormatError, match="unexpected end of input"):
         _decrypt_to_bytes(b"short", job_key, context)
 
@@ -259,7 +259,7 @@ class _ReadSizeRecorder(io.BytesIO):
         return super().read(size)
 
 
-def test_encrypt_reads_are_bounded_by_chunk_size(job_key, context):
+def test_encrypt_reads_are_bounded_by_chunk_size(job_key: bytes, context: dict[str, str]):
     chunk_size = 64
     plaintext = os.urandom(chunk_size * 5 + 3)
     recorder = _ReadSizeRecorder(plaintext)
@@ -270,7 +270,7 @@ def test_encrypt_reads_are_bounded_by_chunk_size(job_key, context):
     assert max(recorder.read_sizes) < len(plaintext)
 
 
-def test_decrypt_reads_are_bounded(job_key, context):
+def test_decrypt_reads_are_bounded(job_key: bytes, context: dict[str, str]):
     chunk_size = 64
     plaintext = os.urandom(chunk_size * 5 + 3)
     encrypted = _encrypt_to_bytes(plaintext, job_key, context, chunk_size=chunk_size)
@@ -337,7 +337,7 @@ def test_hkdf_derivation_is_deterministic_and_domain_separated():
     assert PROTOCOL_LABEL == b"simcore-aesgcm-stream-v1"
 
 
-def test_path_wrappers_roundtrip(job_key, context, tmp_path):
+def test_path_wrappers_roundtrip(job_key: bytes, context: dict[str, str], tmp_path: Path):
     src = tmp_path / "plain.bin"
     encrypted = tmp_path / "encrypted.bin"
     decrypted = tmp_path / "decrypted.bin"
@@ -350,7 +350,7 @@ def test_path_wrappers_roundtrip(job_key, context, tmp_path):
     assert decrypted.read_bytes() == payload
 
 
-def test_path_wrappers_reject_wrong_context(job_key, context, tmp_path):
+def test_path_wrappers_reject_wrong_context(job_key: bytes, context: dict[str, str], tmp_path: Path):
     src = tmp_path / "plain.bin"
     encrypted = tmp_path / "encrypted.bin"
     decrypted = tmp_path / "decrypted.bin"
