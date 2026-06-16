@@ -23,7 +23,7 @@ qx.Class.define("osparc.io.rest.AbstractResource", {
   type: "abstract",
 
   statics: {
-    API: "/v0"
+    API: "/v0",
   },
 
   construct: function(description) {
