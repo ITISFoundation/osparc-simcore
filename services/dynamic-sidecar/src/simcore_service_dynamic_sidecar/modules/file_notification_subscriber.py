@@ -9,14 +9,14 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType, FileNotificationMessage
 from servicelib.container_utils import run_command_in_container
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_sdk.node_ports_common import filemanager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePathError
 
-from ..core.rabbitmq import get_rabbitmq_client, log_catch
+from ..core.rabbitmq import get_rabbitmq_client
 from ..core.settings import ApplicationSettings
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
