@@ -126,6 +126,7 @@ from __future__ import annotations
 
 import os
 import struct
+from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, BinaryIO, Final
 
@@ -303,11 +304,17 @@ def encrypt_stream(
     file_id: str,
     file_role: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
+    progress_cb: Annotated[
+        Callable[[int], None] | None,
+        doc("Called after each chunk with the cumulative plaintext bytes processed so far"),
+    ] = None,
 ) -> None:
     """Encrypt ``src`` into ``dst`` using the streaming AES-256-GCM protocol.
 
     Reads plaintext from ``src`` in ``chunk_size`` blocks and writes a versioned
     self-describing stream to ``dst``. Memory usage is bounded by ``chunk_size``.
+
+    This call is synchronous/blocking; offload it to a thread when used in async code.
 
     Raises:
         AesGcmStreamError: If ``job_key`` length, ``file_role`` or ``chunk_size`` are invalid.
@@ -323,6 +330,7 @@ def encrypt_stream(
     dst.write(_HEADER_STRUCT.pack(FORMAT_MAGIC, FORMAT_VERSION, 0, chunk_size, base_nonce_seed))
 
     chunk_index = 0
+    total_plaintext_bytes = 0
     # One-chunk lookahead so the final chunk can be flagged unambiguously, including
     # the empty-input case (which still emits exactly one final chunk).
     pending = src.read(chunk_size)
@@ -341,6 +349,10 @@ def encrypt_stream(
         dst.write(_CHUNK_PREFIX_STRUCT.pack(_FINAL_CHUNK_FLAG if is_final else 0, len(ct_and_tag)))
         dst.write(ct_and_tag)
 
+        total_plaintext_bytes += len(pending)
+        if progress_cb is not None:
+            progress_cb(total_plaintext_bytes)
+
         if is_final:
             break
         pending = next_chunk
@@ -355,12 +367,18 @@ def decrypt_stream(
     job_id: str,
     file_id: str,
     file_role: str,
+    progress_cb: Annotated[
+        Callable[[int], None] | None,
+        doc("Called after each chunk with the cumulative plaintext bytes processed so far"),
+    ] = None,
 ) -> None:
     """Decrypt a stream produced by :func:`encrypt_stream` from ``src`` into ``dst``.
 
     Re-derives the per-file key, reconstructs per-chunk nonces and AAD, verifies every
     chunk's authentication tag and streams plaintext to ``dst``. Fails hard on any
     tampering, truncation, wrong key/context or unexpected trailing data.
+
+    This call is synchronous/blocking; offload it to a thread when used in async code.
 
     Raises:
         AesGcmStreamError: If ``job_key`` length or ``file_role`` are invalid.
@@ -376,6 +394,7 @@ def decrypt_stream(
     aesgcm = AESGCM(file_key)
 
     chunk_index = 0
+    total_plaintext_bytes = 0
     seen_final = False
     while not seen_final:
         prefix = _read_exact(src, _CHUNK_PREFIX_STRUCT.size)
@@ -412,6 +431,10 @@ def decrypt_stream(
             raise AesGcmStreamAuthError(msg) from error
 
         dst.write(plaintext)
+        total_plaintext_bytes += len(plaintext)
+        if progress_cb is not None:
+            progress_cb(total_plaintext_bytes)
+
         seen_final = is_final
         chunk_index += 1
 

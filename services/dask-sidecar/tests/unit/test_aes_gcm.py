@@ -118,6 +118,56 @@ def test_roundtrip_single_chunk_exact_size(job_key: bytes, context: dict[str, st
     assert _decrypt_to_bytes(encrypted, job_key, context) == plaintext
 
 
+def test_encrypt_stream_reports_cumulative_progress(job_key: bytes, context: dict[str, str]):
+    chunk_size = 64
+    plaintext = os.urandom(chunk_size * 3 + 7)  # 3 full chunks + a short final chunk
+    progress: list[int] = []
+    encrypt_stream(
+        io.BytesIO(plaintext),
+        io.BytesIO(),
+        job_key=job_key,
+        chunk_size=chunk_size,
+        progress_cb=progress.append,
+        **context,
+    )
+    # one callback per chunk record (3 full + 1 final), strictly increasing, ending at total
+    assert progress == [chunk_size, chunk_size * 2, chunk_size * 3, len(plaintext)]
+
+
+def test_decrypt_stream_reports_cumulative_progress(job_key: bytes, context: dict[str, str]):
+    chunk_size = 64
+    plaintext = os.urandom(chunk_size * 3 + 7)
+    encrypted = _encrypt_to_bytes(plaintext, job_key, context, chunk_size=chunk_size)
+    progress: list[int] = []
+    decrypt_stream(
+        io.BytesIO(encrypted),
+        io.BytesIO(),
+        job_key=job_key,
+        progress_cb=progress.append,
+        **context,
+    )
+    assert progress == [chunk_size, chunk_size * 2, chunk_size * 3, len(plaintext)]
+
+
+def test_encrypt_stream_progress_on_empty_input(job_key: bytes, context: dict[str, str]):
+    progress: list[int] = []
+    encrypt_stream(
+        io.BytesIO(b""),
+        io.BytesIO(),
+        job_key=job_key,
+        progress_cb=progress.append,
+        **context,
+    )
+    # empty input still emits exactly one final chunk, reporting 0 plaintext bytes
+    assert progress == [0]
+
+
+def test_streams_without_progress_cb_do_not_fail(job_key: bytes, context: dict[str, str]):
+    plaintext = os.urandom(200)
+    encrypted = _encrypt_to_bytes(plaintext, job_key, context)
+    assert _decrypt_to_bytes(encrypted, job_key, context) == plaintext
+
+
 def test_two_encryptions_differ_due_to_random_seed(job_key: bytes, context: dict[str, str]):
     plaintext = b"same plaintext"
     one = _encrypt_to_bytes(plaintext, job_key, context)
