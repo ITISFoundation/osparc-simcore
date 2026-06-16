@@ -2,13 +2,11 @@
   "info": {
     "name": "qx-iconfont-material",
     "summary": "theme for the osparc web ui",
-    "description": "a material design ispired dark theme for osparc",
+    "description": "a material design inspired dark theme for osparc",
     "homepage": "https://github.com/ITISFoundation/qx-osparc-theme",
     "license": "MIT license",
-    "authors": [],
     "version": "0.1.7",
-    "license": "MIT license",
-    "authors" : [
+    "authors": [
       {
         "name": "Tobias Oetiker (oetiker)",
         "email": "tobi@itis.ethz.ch"
