@@ -36,8 +36,8 @@ class EmailChannelHandler(ChannelHandler):
     ) -> EmailContact:
         """Resolve a from_identity into a concrete EmailContact using product data."""
         smtp_config = settings.NOTIFICATIONS_SMTP_SETTINGS
-        assert smtp_config  # nosec
-
+        if smtp_config is None:
+            raise RuntimeError("NOTIFICATIONS_SMTP_SETTINGS must be configured to send email notifications")
         smtp_settings = smtp_config.get_product_smtp_settings(product.name)
         match from_identity:
             case SenderIdentity.SUPPORT:
