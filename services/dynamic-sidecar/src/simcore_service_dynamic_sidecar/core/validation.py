@@ -262,8 +262,16 @@ def _inject_otel_collector(
         len(parsed_compose_spec["services"]),
     )
 
+    # already checked and is set
+    assert settings.DYNAMIC_SIDECAR_TRACING  # nosec
+
+    collector_image = (
+        f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME}:"
+        f"{settings.DYNAMIC_SIDECAR_TRACING.TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION}"
+    )
+
     collector_service: dict[str, Any] = {
-        "image": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE,
+        "image": collector_image,
         "container_name": collector_container_name,
         "user": f"{os.getuid()}:{os.getgid()}",
         "command": ["--config=env:OTEL_COLLECTOR_CONFIG"],

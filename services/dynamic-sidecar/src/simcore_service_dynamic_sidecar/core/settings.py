@@ -55,6 +55,10 @@ class SystemMonitorSettings(BaseApplicationSettings):
 
 
 class UserServicesTracingSettings(BaseApplicationSettings):
+    USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME: Annotated[str, Field(description="official OTEL Collector image")] = (
+        "otel/opentelemetry-collector"
+    )
+
     USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL: Annotated[
         timedelta,
         Field(
@@ -62,13 +66,6 @@ class UserServicesTracingSettings(BaseApplicationSettings):
             "note: this does NOT trigger rotation, only ensures data reaches disk promptly for crash safety",
         ),
     ] = timedelta(seconds=10)
-    USER_SERVICES_TRACING_COLLECTOR_IMAGE: Annotated[
-        str,
-        Field(description="pinned official OTEL Collector image"),
-        # NOTE: don't use the `otel/opentelemetry-collector-contrib`` image as it has a much
-        # larger attack surface and we only need the file exporter
-        # Keep in sync with https://github.com/ITISFoundation/osparc-ops-environments/blob/main/services/jaeger/docker-compose.yml.j2
-    ] = "otel/opentelemetry-collector:0.144.0"
     USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS: Annotated[
         int,
         Field(description="max rotated trace files kept by collector"),
