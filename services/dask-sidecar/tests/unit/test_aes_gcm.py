@@ -247,6 +247,23 @@ def test_decrypt_rejects_partial_header(job_key: bytes, context: dict[str, str])
         _decrypt_to_bytes(b"short", job_key, context)
 
 
+def test_decrypt_rejects_zero_chunk_size_in_header(job_key: bytes, context: dict[str, str]):
+    encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
+    # header layout: magic(8) | version(uint16) | flags(uint16) | chunk_size(uint32) | seed(12)
+    chunk_size_offset = len(FORMAT_MAGIC) + 2 + 2
+    encrypted[chunk_size_offset : chunk_size_offset + 4] = struct.pack(">I", 0)
+    with pytest.raises(AesGcmStreamFormatError, match="chunk_size must be > 0"):
+        _decrypt_to_bytes(bytes(encrypted), job_key, context)
+
+
+def test_decrypt_rejects_unknown_chunk_flag_bits(job_key: bytes, context: dict[str, str]):
+    encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
+    # first chunk record's flags byte sits right after the header; set an unknown bit
+    encrypted[_HEADER_SIZE] |= 0b0000_0010
+    with pytest.raises(AesGcmStreamFormatError, match="unknown flag bits"):
+        _decrypt_to_bytes(bytes(encrypted), job_key, context)
+
+
 class _ReadSizeRecorder(io.BytesIO):
     """BytesIO that records the size argument of every read() call."""
 

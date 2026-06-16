@@ -1,84 +1,125 @@
-"""Streaming AES-256-GCM file/object encryption with a cross-language wire format.
+"""Streaming AES-256-GCM file/object encryption — normative cross-language protocol.
 
-This module implements a *streaming-only* authenticated-encryption protocol for
-arbitrarily large files/objects. Plaintext is never fully materialised in memory:
-encryption and decryption operate on file-like binary objects (``BinaryIO``) and
-process the data in fixed-size chunks, so memory usage is bounded by ``chunk_size``.
+This module defines and implements ``simcore-aesgcm-stream-v1``, a streaming
+authenticated-encryption protocol for arbitrarily large files/objects. Plaintext is
+never fully materialised in memory: encryption and decryption operate on file-like
+binary objects (``BinaryIO``) and process data in fixed-size chunks, so memory usage is
+bounded by ``chunk_size``.
 
-The format is a clearly defined, versioned, language-neutral binary protocol intended
-to interoperate with independent client implementations (e.g. a libsodium-based client).
-No Python-specific serialization is used: every field is either a fixed-width
-big-endian integer/byte block or an explicitly length-prefixed UTF-8 string.
-
-
-Security properties
--------------------
-* Confidentiality + integrity via AES-256-GCM (32-byte key, 12-byte nonce, 16-byte tag).
-* A *per-file* key is derived with HKDF-SHA256 from a *job-level* key plus explicit
-  context (``protocol_label``, ``job_id``, ``file_id``, ``file_role``). Distinct files /
-  roles therefore use independent keys (domain separation).
-* Each chunk uses a unique deterministic nonce derived from a random per-file seed and
-  the chunk index, so a nonce is never reused with the same key.
-* Each chunk's AAD binds the protocol magic/version, ``job_id``, ``file_id``,
-  ``file_role``, the chunk index and a final-chunk marker. This prevents reordering,
-  truncation, replay and cross-file substitution of chunks.
-* The stream always contains at least one chunk and exactly one chunk flagged "final"
-  (the last). Decryption fails if the final chunk is missing (truncation) or if extra
-  data follows it.
+This docstring is the normative specification. Any independent implementation (e.g. a
+libsodium-based client) that follows it byte-for-byte interoperates with this one.
 
 
-Wire format (all integers big-endian / network byte order)
-----------------------------------------------------------
-Constants::
+Conventions
+-----------
+* All multi-byte integers are unsigned and big-endian (network byte order).
+* All strings are encoded as UTF-8.
+* Length-prefixed string (used identically wherever ``lp(s)`` appears below)::
 
-    protocol_label = b"simcore-aesgcm-stream-v1"   # HKDF + AAD domain separation
+      lp(s) = uint16(byte_length(utf8(s))) || utf8(s)     # utf8(s) must be <= 65535 bytes
+
+* ``||`` denotes byte concatenation. ``XOR`` is bytewise exclusive-or of equal-length
+  byte strings.
+
+
+Constants
+---------
+::
+
+    protocol_label = b"simcore-aesgcm-stream-v1"   # HKDF + AAD domain separation label
     magic          = b"SCAGSTRM"                    # 8 bytes, stream header marker
-    version        = 1                              # uint16
-    key size       = 32 bytes
-    nonce size     = 12 bytes
-    tag size       = 16 bytes
-    default chunk  = 1024 * 1024 bytes (plaintext)
+    version        = 1                              # uint16; this spec is version 1 only
+    key size       = 32 bytes                       # AES-256
+    nonce size     = 12 bytes                       # AES-GCM nonce
+    tag size       = 16 bytes                       # AES-GCM authentication tag
+    default chunk  = 1024 * 1024 bytes              # plaintext chunk size (writer default)
 
-Length-prefixed string ``lp(s)`` (used identically in HKDF info and AAD)::
 
-    lp(s) = uint16(len(utf8(s))) || utf8(s)        # s must encode to <= 65535 bytes
+Cryptographic primitives
+-------------------------
+* AEAD: AES-256-GCM. ``AESGCM.encrypt(nonce, plaintext, aad)`` returns
+  ``ciphertext || tag`` where ``tag`` is the trailing 16 bytes.
+* KDF: HKDF-SHA256 with ``salt`` empty (none).
 
-Per-file key derivation (HKDF-SHA256)::
 
-    salt = None (empty)
-    info = protocol_label || uint16(version)
-           || lp(job_id) || lp(file_id) || lp(file_role)
-    file_key = HKDF-SHA256(ikm=job_key, length=32, salt=None, info=info)
+Per-file key derivation (HKDF-SHA256)
+-------------------------------------
+``file_role`` is mandatory and must be exactly ``"input"`` or ``"output"``
+(case-sensitive). The per-file key is::
 
-Stream header (28 bytes, struct format ">8sHHI12s")::
+    info     = protocol_label || uint16(version)
+               || lp(job_id) || lp(file_id) || lp(file_role)
+    file_key = HKDF-SHA256(ikm=job_key, length=32, salt=<empty>, info=info)
+
+Distinct ``(job_id, file_id, file_role)`` triples therefore yield independent keys
+(domain separation).
+
+
+Stream header (28 bytes, struct format ">8sHHI12s")
+---------------------------------------------------
+::
 
     offset 0  : magic            (8 bytes)  = b"SCAGSTRM"
     offset 8  : version          (uint16)   = 1
-    offset 10 : flags            (uint16)   = 0 (reserved, must be 0)
-    offset 12 : chunk_size       (uint32)   plaintext chunk size used by the writer
-    offset 16 : base_nonce_seed  (12 bytes) random, generated per encryption
+    offset 10 : flags            (uint16)   = 0   (reserved; must be 0)
+    offset 12 : chunk_size       (uint32)   plaintext chunk size; must be > 0
+    offset 16 : base_nonce_seed  (12 bytes) random, generated fresh per encryption
 
-Per-chunk nonce (index ``i``, 0-based)::
+
+Per-chunk nonce (chunk index ``i``)
+-----------------------------------
+``i`` is zero-based and encoded as a uint64; it must be < 2**64::
 
     counter12 = b"\\x00\\x00\\x00\\x00" || uint64(i)     # 12 bytes
     nonce_i   = base_nonce_seed XOR counter12
 
-Per-chunk AAD (index ``i``)::
+Because ``base_nonce_seed`` is fresh per file and ``i`` is unique per chunk, a nonce is
+never reused with the same key.
 
-    chunk_flags = uint8 (bit0 = 1 if this is the final chunk, else 0)
+
+Per-chunk AAD (chunk index ``i``)
+---------------------------------
+::
+
+    chunk_flags = uint8; bit0 = 1 if final chunk else 0; all other bits 0
     aad_i = magic || uint16(version) || chunk_flags || uint64(i)
             || lp(job_id) || lp(file_id) || lp(file_role)
 
-Per-chunk record on the wire (written sequentially after the header)::
+The AAD binds magic/version, ``job_id``, ``file_id``, ``file_role``, the chunk index and
+the final-chunk marker, preventing reordering, truncation, replay and cross-file
+substitution of chunks.
 
-    offset 0 : chunk_flags  (uint8)    bit0 = final-chunk marker
-    offset 1 : ct_len       (uint32)   length of (ciphertext || tag) that follows
-    offset 5 : ct_and_tag   (ct_len bytes)  AESGCM.encrypt() output = ciphertext || 16-byte tag
 
-The plaintext length of a chunk is ``ct_len - tag size``. The final (possibly short or
-empty) chunk is encoded the same way; the only difference is ``chunk_flags`` bit0 = 1.
-An empty plaintext input produces exactly one final chunk whose plaintext length is 0
-(``ct_len`` == tag size).
+Per-chunk record (written sequentially after the header)
+--------------------------------------------------------
+::
+
+    offset 0 : chunk_flags  (uint8)    bit0 = final-chunk marker; other bits must be 0
+    offset 1 : ct_len       (uint32)   byte length of (ciphertext || tag)
+    offset 5 : ct_and_tag   (ct_len bytes) = AESGCM.encrypt(nonce_i, plaintext_i, aad_i)
+
+The plaintext length of a chunk is ``ct_len - 16`` (tag size). Thus ``ct_len`` must be
+>= 16. The final chunk is encoded identically except ``chunk_flags`` bit0 = 1. An empty
+plaintext input still produces exactly one final chunk whose plaintext length is 0
+(``ct_len`` == 16).
+
+
+Protocol invariants (enforced on decryption)
+---------------------------------------------
+1. Header ``magic`` must equal ``b"SCAGSTRM"``.
+2. Header ``version`` must equal 1.
+3. Header ``flags`` must be 0.
+4. Header ``chunk_size`` must be > 0.
+5. ``file_role`` must be exactly ``"input"`` or ``"output"`` (case-sensitive).
+6. ``job_key`` must be exactly 32 bytes.
+7. For every chunk record, ``chunk_flags & ~bit0`` must be 0 (unknown bits rejected).
+8. For every chunk record, ``ct_len`` must be >= 16.
+9. Chunks are decrypted in order starting at index 0; each chunk's AAD/nonce uses its
+   own index.
+10. Exactly one chunk has the final marker set, and it is the last chunk read.
+11. No bytes may follow the final chunk.
+12. Any authentication-tag failure, truncation or violation of the above aborts
+    decryption (no plaintext beyond the failing chunk is emitted as valid output).
 """
 
 from __future__ import annotations
@@ -107,6 +148,8 @@ ALLOWED_FILE_ROLES: Final[frozenset[str]] = frozenset({"input", "output"})
 
 _MAX_LP_STRING_BYTES: Final[int] = 0xFFFF
 _FINAL_CHUNK_FLAG: Final[int] = 0b0000_0001
+_KNOWN_CHUNK_FLAGS_MASK: Final[int] = _FINAL_CHUNK_FLAG
+_MAX_CHUNK_INDEX_EXCLUSIVE: Final[int] = 2**64
 
 # Stream header: magic(8) | version(uint16) | flags(uint16) | chunk_size(uint32) | seed(12)
 _HEADER_STRUCT: Final[struct.Struct] = struct.Struct(">8sHHI12s")
@@ -180,6 +223,9 @@ def _derive_file_key(
 
 
 def _chunk_nonce(base_nonce_seed: bytes, chunk_index: int) -> bytes:
+    if not 0 <= chunk_index < _MAX_CHUNK_INDEX_EXCLUSIVE:
+        msg = f"Invalid chunk index {chunk_index}: must be in [0, 2**64)"
+        raise AesGcmStreamFormatError(msg)
     counter = b"\x00\x00\x00\x00" + _U64_STRUCT.pack(chunk_index)
     return bytes(a ^ b for a, b in zip(base_nonce_seed, counter, strict=True))
 
@@ -223,13 +269,16 @@ def _read_exact(
 
 def _parse_header(
     src: BinaryIO,
-) -> Annotated[bytes, doc("The 12-byte per-file base nonce seed from the header")]:
+) -> Annotated[
+    tuple[int, bytes],
+    doc("(plaintext chunk_size, 12-byte per-file base nonce seed) from the header"),
+]:
     header = _read_exact(src, _HEADER_STRUCT.size)
     if header is None:
         msg = "Truncated stream: missing header"
         raise AesGcmStreamFormatError(msg)
 
-    magic, version, flags, _chunk_size, base_nonce_seed = _HEADER_STRUCT.unpack(header)
+    magic, version, flags, chunk_size, base_nonce_seed = _HEADER_STRUCT.unpack(header)
     if magic != FORMAT_MAGIC:
         msg = "Invalid stream header: bad magic"
         raise AesGcmStreamFormatError(msg)
@@ -239,7 +288,10 @@ def _parse_header(
     if flags != 0:
         msg = f"Unsupported stream flags: {flags}"
         raise AesGcmStreamFormatError(msg)
-    return bytes(base_nonce_seed)
+    if chunk_size <= 0:
+        msg = f"Invalid stream header: chunk_size must be > 0, got {chunk_size}"
+        raise AesGcmStreamFormatError(msg)
+    return chunk_size, bytes(base_nonce_seed)
 
 
 def encrypt_stream(
@@ -318,7 +370,7 @@ def decrypt_stream(
     _validate_key(job_key)
     _validate_file_role(file_role)
 
-    base_nonce_seed = _parse_header(src)
+    _chunk_size, base_nonce_seed = _parse_header(src)
 
     file_key = _derive_file_key(job_key, job_id=job_id, file_id=file_id, file_role=file_role)
     aesgcm = AESGCM(file_key)
@@ -332,6 +384,9 @@ def decrypt_stream(
             raise AesGcmStreamAuthError(msg)
 
         chunk_flags, ct_len = _CHUNK_PREFIX_STRUCT.unpack(prefix)
+        if chunk_flags & ~_KNOWN_CHUNK_FLAGS_MASK:
+            msg = f"Invalid chunk record: unknown flag bits set ({chunk_flags:#04x})"
+            raise AesGcmStreamFormatError(msg)
         if ct_len < TAG_SIZE_BYTES:
             msg = "Invalid chunk record: ciphertext shorter than authentication tag"
             raise AesGcmStreamFormatError(msg)
