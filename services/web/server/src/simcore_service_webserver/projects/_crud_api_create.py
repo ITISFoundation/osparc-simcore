@@ -137,11 +137,11 @@ def _remap_port_links(inputs: dict | None, nodes_map: NodesMap) -> dict | None:
     remapped: dict[str, Any] = {}
     for port_key, port_value in inputs.items():
         if isinstance(port_value, dict) and "nodeUuid" in port_value:
-            old_uuid = str(port_value["nodeUuid"])
+            old_uuid = f"{port_value['nodeUuid']}"
             new_uuid = nodes_map.get(old_uuid, old_uuid)
             remapped[port_key] = {**port_value, "nodeUuid": new_uuid}
         elif isinstance(port_value, PortLink):
-            old_uuid = str(port_value.node_uuid)
+            old_uuid = f"{port_value.node_uuid}"
             new_uuid = nodes_map.get(old_uuid, old_uuid)
             remapped[port_key] = port_value.model_copy(update={"node_uuid": NodeID(new_uuid)})
         else:
@@ -174,7 +174,7 @@ async def _copy_project_nodes_from_source_project(
         if "inputs" in node_data:
             node_data["inputs"] = _remap_port_links(node_data["inputs"], nodes_map)
         if node_data.get("input_nodes"):
-            node_data["input_nodes"] = [nodes_map.get(str(nid), str(nid)) for nid in node_data["input_nodes"]]
+            node_data["input_nodes"] = [nodes_map.get(f"{nid}", f"{nid}") for nid in node_data["input_nodes"]]
         new_node_id = _mapped_node_id(node)
         result[new_node_id] = ProjectNodeCreate(node_id=new_node_id, **node_data)
     return result

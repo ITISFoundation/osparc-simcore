@@ -113,12 +113,12 @@ async def test_clone_project(
     original_node_ids = set(project["workbench"].keys())
     for new_node in cloned_project.workbench.values():
         for ref_id in new_node.input_nodes or []:
-            assert str(ref_id) not in original_node_ids, (
+            assert f"{ref_id}" not in original_node_ids, (
                 f"Cloned input_nodes still references original node ID {ref_id}"
             )
         for port_val in (new_node.inputs or {}).values():
             if isinstance(port_val, PortLink):
-                assert str(port_val.node_uuid) not in original_node_ids, (
+                assert f"{port_val.node_uuid}" not in original_node_ids, (
                     f"Cloned PortLink still references original node UUID {port_val.node_uuid}"
                 )
 
