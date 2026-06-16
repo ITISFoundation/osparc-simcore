@@ -75,6 +75,7 @@ def create_app(
         )
     # configure the director services caches from settings
     manifest.set_services_cache_lease(settings.CATALOG_DIRECTOR_BULK_FETCH_LEASE)
+    manifest.set_services_caching_enabled(enabled=settings.CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED)
     with configure_app_lifespan(
         logging_lifespan=logging_lifespan,
         starting_banner=APP_STARTING_BANNER_MSG,

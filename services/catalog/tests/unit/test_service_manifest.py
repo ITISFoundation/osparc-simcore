@@ -267,3 +267,28 @@ def test_set_services_cache_lease_reconfigures_both_caches():
     finally:
         # restore the import-time default to keep other tests isolated
         manifest.set_services_cache_lease(30)  # restore the default (see CATALOG_DIRECTOR_BULK_FETCH_LEASE)
+
+
+async def test_set_services_caching_disabled_always_fetches_fresh(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    # NOTE: when caching is disabled (CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED=False) the
+    # result is never stored, so every call hits the director afresh.
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    mocked_director_rest_api["list_services"].reset()
+
+    manifest.set_services_caching_enabled(enabled=False)
+    try:
+        for expected_call_count in (1, 2, 3):
+            got_services = await manifest.get_batch_services(selection, director_client)
+
+            assert [(s.key, s.version) for s in got_services] == selection
+            # no caching: each call re-issues the bulk director fetch
+            assert mocked_director_rest_api["list_services"].call_count == expected_call_count
+    finally:
+        manifest.set_services_caching_enabled(enabled=True)  # restore caching for other tests

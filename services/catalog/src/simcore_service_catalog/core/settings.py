@@ -115,6 +115,15 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = 30
 
+    CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED: Annotated[
+        bool,
+        Field(
+            description="Enables in-memory caching of the director services manifest "
+            "(the bulk manifest fetch and the deprecated `/services` listing). "
+            "Disable to always fetch fresh from the director, e.g. for testing or debugging.",
+        ),
+    ] = True
+
     CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = _DEFAULT_SERVICE_SPECIFICATIONS
     CATALOG_TRACING: Annotated[

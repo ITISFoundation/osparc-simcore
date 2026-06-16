@@ -141,6 +141,15 @@ def set_services_cache_lease(lease_seconds: float) -> None:
     _get_cached_services_map_cache.lease = lease_seconds
 
 
+def set_services_caching_enabled(*, enabled: bool) -> None:
+    # NOTE: when disabled, `skip_cache_func` returns True so aiocache never stores a
+    # result and every call fetches fresh from the director. Applied at startup, before
+    # any traffic, so the cache is never populated. Exposed so caching can be turned off
+    # in production for testing/debugging (see `CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED`).
+    for cache in (_get_service_cache, _get_cached_services_map_cache):
+        cache.skip_cache_func = lambda _result: not enabled
+
+
 async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
     director_client: DirectorClient,
