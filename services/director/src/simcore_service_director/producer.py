@@ -48,6 +48,8 @@ from .services_common import ServicesCommonSettings
 
 _logger = logging.getLogger(__name__)
 
+_PIN_TO_OSPARC_PRODUCT: Final[str] = "osparc"
+
 
 class ServiceState(Enum):
     PENDING = "pending"
@@ -145,7 +147,6 @@ def _to_simcore_runtime_docker_label_key(key: str) -> str:
     return f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key.replace('_', '-').lower()}"
 
 
-# pylint: disable=too-many-branches
 async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR0915
     app: FastAPI,
     *,
@@ -267,7 +268,9 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
     # add dynamic placement constraints based on custom templates from configuration
     if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
         label_values = {
-            "product_name": product_name,
+            # NOTE: legacy services can only exist in osparc product
+            # this is on purpose there is no reason to change this
+            "product_name": _PIN_TO_OSPARC_PRODUCT,
             "user_id": user_id,
             "project_id": project_id,
             "node_id": node_uuid,
