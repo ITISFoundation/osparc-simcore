@@ -1,4 +1,6 @@
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from celery_library import CeleryTaskManager
 from celery_library.app import create_app
@@ -9,6 +11,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
     FoldersBody,
 )
+from servicelib.fastapi.lifespan_utils import LifespanManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
@@ -18,8 +21,12 @@ from ..redis import get_redis_client_manager
 _logger = logging.getLogger(__name__)
 
 
-def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
-    async def on_startup() -> None:
+@asynccontextmanager
+async def _celery_task_manager_lifespan(app: FastAPI, settings: CelerySettings) -> AsyncGenerator[None]:
+    """Lifespan context manager for Celery task manager."""
+    app.state.task_manager = None
+
+    try:
         with log_context(_logger, logging.INFO, "Setting up Celery"):
             app.state.task_manager = CeleryTaskManager(
                 create_app(settings),
@@ -30,7 +37,20 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
             register_celery_types()
             register_pydantic_types(FileUploadCompletionBody, FoldersBody)
 
-    app.add_event_handler("startup", on_startup)
+        yield
+    finally:
+        pass
+
+
+def configure_celery_task_manager(app_lifespan: LifespanManager, settings: CelerySettings) -> None:
+    """Configure Celery task manager lifespan."""
+
+    @asynccontextmanager
+    async def _wrapped_lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        async with _celery_task_manager_lifespan(app, settings):
+            yield
+
+    app_lifespan.add(_wrapped_lifespan)
 
 
 def get_task_manager_from_app(app: FastAPI) -> CeleryTaskManager:

@@ -1,4 +1,6 @@
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI
@@ -11,6 +13,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
+from servicelib.fastapi.lifespan_utils import LifespanManager
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 
@@ -20,22 +23,27 @@ from ..core.settings import get_application_settings
 _logger = logging.getLogger(__name__)
 
 
-def setup_rabbitmq(app: FastAPI) -> None:
-    async def on_startup() -> None:
+@asynccontextmanager
+async def _rabbitmq_client_lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    """Lifespan context manager for RabbitMQ client."""
+    app.state.rabbitmq_client = None
+
+    try:
         settings = get_application_settings(app).STORAGE_RABBITMQ
         app.state.rabbitmq_client = RabbitMQClient(
             client_name=f"{APP_NAME}",
             settings=settings,
         )
-
-    async def on_shutdown() -> None:
+        yield
+    finally:
         if app.state.rabbitmq_client:
             await cast(RabbitMQClient, app.state.rabbitmq_client).close()
             app.state.rabbitmq_client = None
 
-    app.state.rabbitmq_client = None
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+
+def configure_rabbitmq_client(app_lifespan: LifespanManager) -> None:
+    """Configure RabbitMQ client lifespan."""
+    app_lifespan.add(_rabbitmq_client_lifespan)
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

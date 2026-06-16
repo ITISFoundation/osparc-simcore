@@ -20,12 +20,15 @@
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import timedelta
 from typing import cast
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from servicelib.background_task_utils import exclusive_periodic
+from servicelib.fastapi.lifespan_utils import LifespanManager
 from servicelib.logging_utils import log_context
 from servicelib.tracing import traced
 from settings_library.redis import RedisDatabase
@@ -50,8 +53,12 @@ async def dsm_cleaner_task(app: FastAPI) -> None:
         await simcore_s3_dsm.clean_expired_uploads()
 
 
-def setup_dsm_cleaner(app: FastAPI) -> None:
-    async def _on_startup() -> None:
+@asynccontextmanager
+async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    """Lifespan context manager for DSM cleaner."""
+    app.state.dsm_cleaner_task = None
+
+    try:
         cfg = get_application_settings(app)
         assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
@@ -65,9 +72,12 @@ def setup_dsm_cleaner(app: FastAPI) -> None:
 
         app.state.dsm_cleaner_task = asyncio.create_task(_periodic_dsm_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_DSM)
 
-    async def _on_shutdown() -> None:
-        assert isinstance(app.state.dsm_cleaner_task, asyncio.Task)  # nosec
-        await cancel_wait_task(app.state.dsm_cleaner_task)
+        yield
+    finally:
+        if isinstance(app.state.dsm_cleaner_task, asyncio.Task):
+            await cancel_wait_task(app.state.dsm_cleaner_task)
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+
+def configure_dsm_cleaner(app_lifespan: LifespanManager) -> None:
+    """Configure DSM cleaner lifespan."""
+    app_lifespan.add(_dsm_cleaner_lifespan)
