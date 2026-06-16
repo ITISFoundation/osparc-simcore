@@ -60,7 +60,7 @@ def _configure_plugins(
     configure_director_v2(app_lifespan)
     configure_director_v0(app_lifespan)
     configure_catalog(app_lifespan)
-    configure_rabbitmq_client(app_lifespan)
+    configure_rabbitmq_client(app_lifespan, settings=settings.DYNAMIC_SCHEDULER_RABBITMQ)
     configure_rpc_api(app_lifespan)
     configure_redis_clients(app_lifespan, settings=settings.DYNAMIC_SCHEDULER_REDIS)
     configure_notifier(app_lifespan)

@@ -71,7 +71,7 @@ def _configure_plugins(
     configure_redis_clients(app_lifespan, settings=settings.STORAGE_REDIS)
 
     # RabbitMQ for messaging
-    configure_rabbitmq_client(app_lifespan)
+    configure_rabbitmq_client(app_lifespan, settings=settings.STORAGE_RABBITMQ)
 
     # Celery task manager (depends on Redis)
     if settings.STORAGE_CELERY:

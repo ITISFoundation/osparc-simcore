@@ -40,7 +40,7 @@ def _configure_plugins(
     tracing_config: TracingConfig,
 ) -> None:
     configure_redis_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_REDIS)
-    configure_rabbitmq_client(app_lifespan)
+    configure_rabbitmq_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_RABBITMQ)
     configure_ec2_client(app_lifespan)
     configure_ssm_client(app_lifespan)
     configure_rpc_routes(app_lifespan)

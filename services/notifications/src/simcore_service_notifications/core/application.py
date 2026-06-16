@@ -48,7 +48,7 @@ def _configure_plugins(
     configure_postgres_liveness(app_lifespan)
 
     if not settings.NOTIFICATIONS_WORKER_MODE:
-        configure_rabbitmq_client(app_lifespan)
+        configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
         configure_rpc_api(app_lifespan)
 
     assert settings.NOTIFICATIONS_CELERY is not None  # nosec
