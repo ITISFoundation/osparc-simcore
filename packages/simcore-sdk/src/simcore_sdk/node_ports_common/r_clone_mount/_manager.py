@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Final
@@ -29,6 +28,7 @@ _MIN_PATH_PARTS: Final[NonNegativeInt] = 3
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 _MOUNT_RESPONSIVE_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=6)
 _CONSECUTIVE_UNRESPONSIVE_THRESHOLD: Final[NonNegativeInt] = 3
+_S3_SCHEME_PREFIX: Final[str] = "s3://"
 
 
 class _TrackedMount:  # pylint:disable=too-many-instance-attributes
@@ -201,7 +201,7 @@ class RCloneMountManager:
                 self.r_clone_settings,
                 remote_type,
                 remote_path=remote_path,
-                mount_s3_path=re.sub(r"^s3://", "", f"{mount_s3_link}"),
+                mount_s3_path=f"{mount_s3_link}".removeprefix(_S3_SCHEME_PREFIX),
                 local_mount_path=local_mount_path,
                 index=index,
                 delegate=self.delegate,
