@@ -1,47 +1,31 @@
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
 from typing import cast
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.redis_lifespan import configure_redis_clients_manager
 from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
-from settings_library.redis import RedisDatabase
+from settings_library.redis import RedisDatabase, RedisSettings
 
 from .._meta import APP_NAME
-from ..core.settings import get_application_settings
 
 
-@asynccontextmanager
-async def _redis_clients_lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Lifespan context manager for Redis clients."""
-    app.state.redis_clients_manager = None
-
-    try:
-        redis_settings = get_application_settings(app).STORAGE_REDIS
-
-        redis_clients_manager = RedisClientsManager(
-            databases_configs={
-                RedisManagerDBConfig(database=db)
-                for db in (
-                    RedisDatabase.LOCKS,
-                    RedisDatabase.CELERY_TASKS,
-                )
-            },
-            settings=redis_settings,
-            client_name=APP_NAME,
-        )
-        await redis_clients_manager.setup()
-        app.state.redis_clients_manager = redis_clients_manager
-
-        yield
-    finally:
-        if redis_clients_manager:
-            await redis_clients_manager.shutdown()
-
-
-def configure_redis_clients(app_lifespan: LifespanManager) -> None:
-    """Configure Redis clients lifespan."""
-    app_lifespan.add(_redis_clients_lifespan)
+def configure_redis_clients(
+    app_lifespan: LifespanManager,
+    *,
+    settings: RedisSettings,
+) -> None:
+    configure_redis_clients_manager(
+        app_lifespan,
+        settings=settings,
+        databases_configs={
+            RedisManagerDBConfig(database=db)
+            for db in (
+                RedisDatabase.LOCKS,
+                RedisDatabase.CELERY_TASKS,
+            )
+        },
+        client_name=APP_NAME,
+    )
 
 
 def get_redis_client_manager(app: FastAPI) -> RedisClientsManager:

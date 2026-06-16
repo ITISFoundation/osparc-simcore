@@ -62,7 +62,7 @@ def _configure_plugins(
     configure_catalog(app_lifespan)
     configure_rabbitmq_client(app_lifespan)
     configure_rpc_api(app_lifespan)
-    configure_redis_clients(app_lifespan)
+    configure_redis_clients(app_lifespan, settings=settings.DYNAMIC_SCHEDULER_REDIS)
     configure_notifier(app_lifespan)
     configure_service_tracker(app_lifespan)
     configure_deferred_manager(app_lifespan)

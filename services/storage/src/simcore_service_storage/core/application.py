@@ -68,7 +68,7 @@ def _configure_plugins(
     configure_s3_client(app_lifespan)
 
     # Redis for caching and locks
-    configure_redis_clients(app_lifespan)
+    configure_redis_clients(app_lifespan, settings=settings.STORAGE_REDIS)
 
     # RabbitMQ for messaging
     configure_rabbitmq_client(app_lifespan)
