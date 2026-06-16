@@ -16,8 +16,10 @@
   ],
   "defaultTarget": "source",
   "locales": [
-    "en"
+    "en",
+    "es"
   ],
+  "writeAllTranslations": true,
   "applications": [
     {
       "default": true,
