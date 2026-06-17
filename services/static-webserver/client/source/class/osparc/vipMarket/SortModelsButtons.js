@@ -19,7 +19,7 @@ qx.Class.define("osparc.vipMarket.SortModelsButtons", {
   extend: qx.ui.form.MenuButton,
 
   construct: function() {
-    this.base(arguments, this.tr("Sort"), "@FontAwesome5Solid/chevron-down/10");
+    this.base(arguments, this.tr("Sort"), "@FontAwesomeSolid/chevron-down/10");
 
     this.set({
       iconPosition: "left",
@@ -33,26 +33,26 @@ qx.Class.define("osparc.vipMarket.SortModelsButtons", {
 
     const nameAsc = new qx.ui.menu.Button().set({
       label: this.tr("Name"),
-      icon: "@FontAwesome5Solid/sort-alpha-down/14"
+      icon: "@FontAwesomeSolid/sort-alpha-down/14"
     });
     nameAsc["sortBy"] = "name";
     nameAsc["orderBy"] = "down";
     const nameDesc = new qx.ui.menu.Button().set({
       label: this.tr("Name"),
-      icon: "@FontAwesome5Solid/sort-alpha-up/14"
+      icon: "@FontAwesomeSolid/sort-alpha-up/14"
     });
     nameDesc["sortBy"] = "name";
     nameDesc["orderBy"] = "up";
 
     const dateDesc = new qx.ui.menu.Button().set({
       label: this.tr("Date"),
-      icon: "@FontAwesome5Solid/arrow-down/14"
+      icon: "@FontAwesomeSolid/arrow-down/14"
     });
     dateDesc["sortBy"] = "date";
     dateDesc["orderBy"] = "down";
     const dateAsc = new qx.ui.menu.Button().set({
       label: this.tr("Date"),
-      icon: "@FontAwesome5Solid/arrow-up/14"
+      icon: "@FontAwesomeSolid/arrow-up/14"
     });
     dateAsc["sortBy"] = "date";
     dateAsc["orderBy"] = "down";

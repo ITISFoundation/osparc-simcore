@@ -1,0 +1,55 @@
+{
+  "info": {
+    "name": "qx-iconfont-fontawesome",
+    "summary": "font awesome 7 iconfont",
+    "description": "qooxdoo integration of the font awesome iconfonts",
+    "homepage": "https://github.com/ITISFoundation/qx-iconfont-fontawesome",
+    "license": "MIT license",
+    "authors": [],
+    "version": "0.4.0"
+  },
+  "provides": {
+    "namespace": "iconfont.fontawesome",
+    "encoding": "utf-8",
+    "class": "source/class",
+    "resource": "source/resource",
+    "translation": "source/translation",
+    "webfonts": [
+      {
+        "name": "FontAwesomeBrands",
+        "defaultSize": 32,
+        "comparisonString": "\\uf26e\\uf368",
+        "mapping": "iconfont/fontawesome/fa-brands.json",
+        "resources": [
+          "iconfont/fontawesome/fa-brands-400.woff2",
+          "iconfont/fontawesome/fa-brands-400.ttf"
+        ]
+      },
+      {
+        "name": "FontAwesomeRegular",
+        "defaultSize": 32,
+        "comparisonString": "\\uf2b9\\uf2bb",
+        "mapping": "iconfont/fontawesome/fa-regular.json",
+        "resources": [
+          "iconfont/fontawesome/fa-regular-400.woff2",
+          "iconfont/fontawesome/fa-regular-400.ttf"
+        ]
+      },
+      {
+        "name": "FontAwesomeSolid",
+        "defaultSize": 32,
+        "comparisonString": "\\uf2b9\\uf2bb",
+        "mapping": "iconfont/fontawesome/fa-solid.json",
+        "resources": [
+          "iconfont/fontawesome/fa-solid-900.woff2",
+          "iconfont/fontawesome/fa-solid-900.ttf"
+        ]
+      }
+    ]
+  },
+  "requires": {
+    "@qooxdoo/framework": "^6.0.0-alpha",
+    "@qooxdoo/compiler": "^1.0.0-beta"
+  },
+  "$schema": "https://raw.githubusercontent.com/qooxdoo/qooxdoo-compiler/master/source/resource/qx/tool/schema/Manifest-1-0-0.json"
+}

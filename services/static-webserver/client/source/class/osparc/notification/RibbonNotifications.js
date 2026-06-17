@@ -67,7 +67,7 @@ qx.Class.define("osparc.notification.RibbonNotifications", {
 
       const notificationAtom = new qx.ui.basic.Atom().set({
         label: notification.getFullText(),
-        icon: notification.getType() === "announcement" ? null : "@FontAwesome5Solid/exclamation-triangle/14",
+        icon: notification.getType() === "announcement" ? null : "@FontAwesomeSolid/exclamation-triangle/14",
         padding: notification.getType() === "announcement" ? 6 : 2,
         height: notification.getType() === "announcement" ? 30 : 20,
         center: true,
@@ -86,7 +86,7 @@ qx.Class.define("osparc.notification.RibbonNotifications", {
       notificationLayout.add(notificationAtom);
 
       if (notification.getClosable()) {
-        const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+        const closeButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/times/12").set({
           backgroundColor: "transparent",
           textColor: notification.getType() === "announcement" ? "white" : "black",
           alignY: "middle"

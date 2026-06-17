@@ -133,7 +133,7 @@ qx.Class.define("osparc.ui.form.PasswordField", {
             width: 22,
             padding: 0,
             paddingRight: 4,
-            icon: "@FontAwesome5Solid/eye/10",
+            icon: "@FontAwesomeSolid/eye/10",
             backgroundColor: "transparent"
           });
           control.addListener("tap", this.__toggleEye, this);
@@ -151,11 +151,11 @@ qx.Class.define("osparc.ui.form.PasswordField", {
         if (eyeButton.getValue()) {
           // show
           domEl.setAttribute("type", "text");
-          eyeButton.setIcon("@FontAwesome5Solid/eye-slash/10");
+          eyeButton.setIcon("@FontAwesomeSolid/eye-slash/10");
         } else {
           // hide
           domEl.setAttribute("type", "password");
-          eyeButton.setIcon("@FontAwesome5Solid/eye/10");
+          eyeButton.setIcon("@FontAwesomeSolid/eye/10");
         }
       }
     },

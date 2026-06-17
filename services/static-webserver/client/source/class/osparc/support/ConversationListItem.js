@@ -114,7 +114,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
             allowGrowY: false,
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/12",
+            icon: "@FontAwesomeSolid/ellipsis-v/12",
             focusable: false,
           });
           this.getChildControl("bottom-right-layout").add(control);

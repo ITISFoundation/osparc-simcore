@@ -231,7 +231,7 @@
     "plusButton": {
       "resources": [{
         "resourceType": "study",
-        "icon": "@FontAwesome5Solid/file/18",
+        "icon": "@FontAwesomeSolid/file/18",
         "title": "Empty Project",
         "newStudyLabel": "New Project",
         "idToWidget": "emptyStudyBtn"

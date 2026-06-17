@@ -442,7 +442,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const groupByMenu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
+      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesomeSolid/chevron-down/10", groupByMenu);
       groupByButton.set({
         appearance: "form-button-outlined",
         marginRight: 14
@@ -488,10 +488,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addViewModeButton: function() {
-      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"), "left");
+      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesomeSolid/th/14", this.tr("Grid view"), "left");
       gridBtn.addListener("execute", () => this.__viewModeChanged("grid"));
 
-      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"), "right");
+      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesomeSolid/bars/14", this.tr("List view"), "right");
       listBtn.addListener("execute", () => this.__viewModeChanged("list"));
 
       const viewModeLayout = this.__viewModeLayout;
@@ -783,7 +783,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/12");
       deleteButton.set({
         appearance: "menu-button"
       });
@@ -1143,7 +1143,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesomeSolid/share-alt/12");
       shareButton.addListener("tap", () => card.openAccessRights(), this);
       return shareButton;
     },
@@ -1155,7 +1155,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."), "@FontAwesome5Solid/tags/12");
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."), "@FontAwesomeSolid/tags/12");
       tagsButton.addListener("tap", () => card.openTags(), this);
       return tagsButton;
     }

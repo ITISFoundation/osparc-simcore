@@ -161,7 +161,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
       const loadingModel = {
         id: 0,
-        thumbnail: "@FontAwesome5Solid/spinner/32",
+        thumbnail: "@FontAwesomeSolid/spinner/32",
         name: this.tr("Loading"),
       };
       this.__anatomicalBundlesModel.append(qx.data.marshal.Json.createModel(loadingModel));

@@ -99,7 +99,7 @@ qx.Class.define("osparc.FlashMessenger", {
     __createCopyOECWidget: function(message, supportId) {
       const errorLabel = new qx.ui.basic.Atom().set({
         label: supportId,
-        icon: "@FontAwesome5Solid/copy/10",
+        icon: "@FontAwesomeSolid/copy/10",
         iconPosition: "right",
         gap: 8,
         cursor: "pointer",

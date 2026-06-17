@@ -151,9 +151,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           if (value === "shared") {
             return osparc.store.Workspaces.iconPath(18);
           } else if (value === "home") {
-            return "@FontAwesome5Solid/home/16";
+            return "@FontAwesomeSolid/home/16";
           }
-          return "@FontAwesome5Solid/folder/16";
+          return "@FontAwesomeSolid/folder/16";
         },
       });
     },
