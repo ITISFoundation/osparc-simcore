@@ -16,9 +16,16 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.celery import TaskState, TaskStatus, TaskUUID
-from models_library.functions import RegisteredFunction, RegisteredFunctionJob
+from models_library.functions import (
+    FunctionJobStatus,
+    RegisteredFunction,
+    RegisteredFunctionJob,
+    RegisteredProjectFunctionJobWithStatus,
+)
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
+from models_library.projects_state import RunningState
+from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
@@ -187,3 +194,67 @@ async def test_create_function_job_creation_tasks_all_cached(
     assert len(result) == 1
     assert result[0] == cached_function_job
     mock_function_job_service.batch_pre_register_function_jobs.assert_not_called()
+
+
+@pytest.fixture
+def in_progress_function_job_with_status(
+    registered_project_function: RegisteredFunction,
+) -> RegisteredProjectFunctionJobWithStatus:
+    return RegisteredProjectFunctionJobWithStatus(
+        uid=uuid4(),
+        function_uid=registered_project_function.uid,
+        title="In-progress job",
+        description="",
+        inputs={"input1": 1},
+        outputs=None,
+        project_job_id=uuid4(),
+        function_class=FunctionClass.PROJECT,
+        job_creation_task_id=None,
+        created_at=datetime.datetime.now(datetime.UTC),
+        status=FunctionJobStatus(status=RunningState.STARTED),
+    )
+
+
+async def test_list_function_jobs_with_status_caches_get_function(
+    mocker: MockerFixture,
+    user_id: UserID,
+    product_name: ProductName,
+    registered_project_function: RegisteredFunction,
+    in_progress_function_job_with_status: RegisteredProjectFunctionJobWithStatus,
+):
+    """get_function should be called at most once per unique function_uid,
+    even when multiple jobs share the same function (map scenario)."""
+    # Three jobs all belonging to the same function
+    job1 = in_progress_function_job_with_status
+    job2 = in_progress_function_job_with_status.model_copy(update={"uid": uuid4(), "inputs": {"input1": 2}})
+    job3 = in_progress_function_job_with_status.model_copy(update={"uid": uuid4(), "inputs": {"input1": 3}})
+
+    mock_web_rpc = mocker.AsyncMock(spec=WbApiRpcClient)
+    mock_web_rpc.list_function_jobs_with_status.return_value = (
+        [job1, job2, job3],
+        PageMetaInfoLimitOffset(total=3, count=3, limit=10, offset=0),
+    )
+    mock_web_rpc.get_function_job_status.return_value = FunctionJobStatus(status=RunningState.STARTED)
+
+    mock_function_service = mocker.AsyncMock(spec=FunctionService)
+    mock_function_service.get_function.return_value = registered_project_function
+
+    service = FunctionJobTaskClientService(
+        user_id=user_id,
+        product_name=product_name,
+        _web_rpc_client=mock_web_rpc,
+        _storage_client=mocker.AsyncMock(spec=StorageService),
+        _job_service=mocker.AsyncMock(spec=JobService),
+        _function_service=mock_function_service,
+        _function_job_service=mocker.AsyncMock(spec=FunctionJobService),
+        _webserver_api=mocker.AsyncMock(spec=AuthSession),
+        _celery_task_manager=mocker.Mock(spec=TaskManager),
+        _async_pg_engine=mocker.MagicMock(spec=AsyncEngine),
+    )
+
+    jobs, meta = await service.list_function_jobs_with_status()
+
+    assert len(jobs) == 3
+    assert meta.total == 3
+    # get_function must be called exactly once despite 3 jobs sharing the same function_uid
+    mock_function_service.get_function.assert_called_once_with(function_id=registered_project_function.uid)
