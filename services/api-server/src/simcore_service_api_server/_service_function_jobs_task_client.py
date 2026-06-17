@@ -1,6 +1,6 @@
 # pylint: disable=too-many-instance-attributes
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from celery_library.errors import TaskOrGroupNotFoundError
 from common_library.exclude import as_dict_exclude_none
@@ -121,6 +121,7 @@ class FunctionJobTaskClientService:
     _webserver_api: AuthSession
     _celery_task_manager: TaskManager
     _async_pg_engine: AsyncEngine
+    _function_cache: dict[FunctionID, RegisteredFunction] = field(default_factory=dict)
 
     async def list_function_jobs_with_status(
         self,
@@ -150,7 +151,6 @@ class FunctionJobTaskClientService:
             **pagination_kwargs,
         )
 
-        function_cache: dict[FunctionID, RegisteredFunction] = {}
         for function_job_wso in function_jobs_list_ws:
             if function_job_wso.outputs is None or (
                 function_job_wso.status.status
@@ -160,11 +160,11 @@ class FunctionJobTaskClientService:
                 )
             ):
                 function_uid = function_job_wso.function_uid
-                if function_uid not in function_cache:
-                    function_cache[function_uid] = await self._function_service.get_function(
+                if function_uid not in self._function_cache:
+                    self._function_cache[function_uid] = await self._function_service.get_function(
                         function_id=function_uid,
                     )
-                function = function_cache[function_uid]
+                function = self._function_cache[function_uid]
                 function_job_wso.status = await self.inspect_function_job(
                     function=function,
                     function_job=function_job_wso,
