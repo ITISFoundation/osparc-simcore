@@ -117,14 +117,15 @@ def _has_otel_collector(services: dict) -> bool:
     return any("otel" in name for name in services)
 
 
-def test_generate_otel_collector_config_has_flush_interval(
+def test_generate_otel_collector_config_flush_interval_matches_settings(
     app_settings_with_tracing: ApplicationSettings,
     user_tracing_settings: UserServicesTracingSettings,
 ):
     config_yaml = _generate_otel_collector_config(user_tracing_settings, app_settings_with_tracing)
     config = yaml.safe_load(config_yaml)
 
-    assert config["exporters"]["file"]["flush_interval"] == "10s"
+    expected = f"{int(user_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL.total_seconds())}s"
+    assert config["exporters"]["file"]["flush_interval"] == expected
     assert "max_elapsed" not in config["exporters"]["file"]["rotation"]
 
 
@@ -191,6 +192,7 @@ def test_inject_otel_collector_adds_service(
     assert "depends_on" not in collector
     assert "/fake/mount:/traces" in collector["volumes"]
     assert container_name
+    assert "http" in _OTEL_COLLECTOR_SERVICE_NAME, "Service name should reflect HTTP-only protocol"
 
     # User services depend on collector (so Docker stops them first)
     for svc_key in ("jupyter-lab", "data-processor"):

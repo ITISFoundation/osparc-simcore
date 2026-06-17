@@ -18,7 +18,7 @@ from .settings import ApplicationSettings, UserServicesTracingSettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
-_OTEL_COLLECTOR_SERVICE_NAME: Final[str] = "dy-otel-collector"
+_OTEL_COLLECTOR_SERVICE_NAME: Final[str] = "dy-otel-http-collector"
 _TEMPLATE_DIRECTIVE_NUM_PARTS: Final[int] = 2
 
 _logger = logging.getLogger(__name__)
