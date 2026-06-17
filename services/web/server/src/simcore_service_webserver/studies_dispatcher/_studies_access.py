@@ -22,13 +22,16 @@ from aiohttp import web
 from aiohttp_session import get_session
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.users_enums import UserRole
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.redis import RedisClientSDK, exclusive
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
 from ..products import products_web
 from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
@@ -40,6 +43,7 @@ from ..projects.exceptions import (
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
+from ..redis import get_redis_lock_manager_client_sdk
 from ..security import security_web
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
@@ -234,6 +238,37 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
     return project_uuid
 
 
+def _get_guest_user_gc_lock_key(request: web.Request, template_project: dict, user: dict) -> str:
+    assert request  # nosec
+    assert template_project  # nosec
+    # NOTE: we lock on the guest *name* (the "construction" GC lock key) and NOT on the user id.
+    # `create_temporary_guest_user` returns while still holding the user-id "initialization" GC lock
+    # (TTL=MAX_DELAY_TO_GUEST_FIRST_CONNECTION), which bridges the short hand-off until this lock is
+    # acquired. Using a different key here avoids a self-conflict with that lock, and the
+    # garbage-collector honors BOTH keys (`lock_during_construction` keyed by the name AND
+    # `lock_during_initialization` keyed by the id), so the guest is protected without any gap.
+    return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["name"])
+
+
+def _get_guest_user_gc_lock_redis_client(request: web.Request, *args, **kwargs) -> RedisClientSDK:
+    assert args is not None  # nosec
+    assert kwargs is not None  # nosec
+    return get_redis_lock_manager_client_sdk(request.app)
+
+
+@exclusive(
+    _get_guest_user_gc_lock_redis_client,
+    lock_key=_get_guest_user_gc_lock_key,
+)
+async def _copy_study_to_guest_protected_from_gc(request: web.Request, template_project: dict, user: dict) -> str:
+    # NOTE: GUEST users are removed by the garbage-collector when they appear idle.
+    # Copying a (potentially large) study can take longer than the guest's GC grace
+    # period, so we hold a guest GC lock for the whole copy. The lock is auto-extended
+    # and is one of the keys the GC checks (see _get_guest_user_gc_lock_key), so the
+    # GC will not delete the user nor its destination project while the copy runs.
+    return await copy_study_to_account(request, template_project, user)
+
+
 # HANDLERS --------------------------------------------------------
 
 
@@ -344,6 +379,10 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if not user:
         try:
             _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
+            # NOTE: the guest is created holding the user-id "initialization" GC lock
+            # (see create_temporary_guest_user). That lock bridges the short hand-off until
+            # the study copy below acquires and auto-extends the guest "construction" GC lock
+            # for its whole (potentially long) duration (see _copy_study_to_guest_account).
             user = await create_temporary_guest_user(request)
             is_anonymous_user = True
 
@@ -380,7 +419,18 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             user.get("email"),
         )
 
-        copied_project_id = await copy_study_to_account(request, template_project, user)
+        copy_study = (
+            (
+                # GUEST users can be garbage-collected while idle. Hold the guest-user GC
+                # lock for the whole (potentially long) copy so the GC does not delete the
+                # user nor its destination project mid-copy.
+                _copy_study_to_guest_protected_from_gc
+            )
+            if user.get("role") == UserRole.GUEST
+            else copy_study_to_account
+        )
+
+        copied_project_id = await copy_study(request, template_project, user)
 
         _logger.debug("Study %s copied", copied_project_id)
 
