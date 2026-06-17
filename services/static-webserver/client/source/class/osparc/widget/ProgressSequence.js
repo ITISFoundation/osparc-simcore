@@ -68,7 +68,7 @@ qx.Class.define("osparc.widget.ProgressSequence", {
         allowGrowY: false,
         allowGrowX: false,
       });
-      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/check/10").set({
+      const icon = new qx.ui.basic.Image("@FontAwesomeSolid/check/10").set({
         visibility: "excluded",
         textColor: "success"
       });

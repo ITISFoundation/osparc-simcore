@@ -65,7 +65,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
       switch (id) {
         case "icon":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/paw/14",
+            source: "@FontAwesomeSolid/paw/14",
             alignX: "center",
             alignY: "middle",
             minWidth: 18
@@ -114,19 +114,19 @@ qx.Class.define("osparc.notification.NotificationUI", {
       const icon = this.getChildControl("icon");
       switch (notification.getCategory()) {
         case "NEW_ORGANIZATION":
-          icon.setSource("@FontAwesome5Solid/users/14");
+          icon.setSource("@FontAwesomeSolid/users/14");
           break;
         case "STUDY_SHARED":
-          icon.setSource("@FontAwesome5Solid/file/14");
+          icon.setSource("@FontAwesomeSolid/file/14");
           break;
         case "TEMPLATE_SHARED":
-          icon.setSource("@FontAwesome5Solid/copy/14");
+          icon.setSource("@FontAwesomeSolid/copy/14");
           break;
         case "CONVERSATION_NOTIFICATION":
-          icon.setSource("@FontAwesome5Solid/bell/14");
+          icon.setSource("@FontAwesomeSolid/bell/14");
           break;
         case "ANNOTATION_NOTE":
-          icon.setSource("@FontAwesome5Solid/file/14");
+          icon.setSource("@FontAwesomeSolid/file/14");
           break;
         case "WALLET_SHARED":
           icon.setSource("@MaterialIcons/account_balance_wallet/14");

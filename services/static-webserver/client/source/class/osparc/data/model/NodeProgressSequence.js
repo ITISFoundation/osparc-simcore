@@ -126,7 +126,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         label: qx.locale.Manager.tr("Please wait, this process may take a few minutes ..."),
         padding: [20, 10],
         gap: 15,
-        icon: "@FontAwesome5Solid/exclamation-triangle/16",
+        icon: "@FontAwesomeSolid/exclamation-triangle/16",
         backgroundColor: "disclaimer-bg",
         textColor: "info",
         alignX: "center"

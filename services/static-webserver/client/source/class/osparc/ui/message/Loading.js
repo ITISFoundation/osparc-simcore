@@ -104,7 +104,7 @@ qx.Class.define("osparc.ui.message.Loading", {
           break;
         case "loading-title":
           control = new qx.ui.basic.Atom().set({
-            icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
+            icon: "@FontAwesomeSolid/circle-notch/"+this.self().STATUS_ICON_SIZE,
             font: "title-18",
             alignX: "center",
             rich: true,

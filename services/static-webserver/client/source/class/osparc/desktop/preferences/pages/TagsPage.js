@@ -67,7 +67,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       const addTagButton = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("New Tag"),
-        icon: "@FontAwesome5Solid/plus/14"
+        icon: "@FontAwesomeSolid/plus/14"
       });
       osparc.utils.Utils.setIdToWidget(addTagButton, "addTagBtn");
       addTagButton.addListener("execute", () => {

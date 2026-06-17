@@ -19,7 +19,7 @@ qx.Class.define("osparc.service.SortServicesButtons", {
   extend: qx.ui.form.MenuButton,
 
   construct: function() {
-    this.base(arguments, this.tr("Sort"), "@FontAwesome5Solid/chevron-down/10");
+    this.base(arguments, this.tr("Sort"), "@FontAwesomeSolid/chevron-down/10");
 
     this.set({
       iconPosition: "left",
@@ -33,19 +33,19 @@ qx.Class.define("osparc.service.SortServicesButtons", {
 
     const hitsDesc = new qx.ui.menu.Button().set({
       label: this.tr("Hits"),
-      icon: "@FontAwesome5Solid/sort-numeric-down/14"
+      icon: "@FontAwesomeSolid/sort-numeric-down/14"
     });
     hitsDesc["sortBy"] = "hits";
     hitsDesc["orderBy"] = "down";
     const nameAsc = new qx.ui.menu.Button().set({
       label: this.tr("Name Asc"),
-      icon: "@FontAwesome5Solid/sort-alpha-down/14"
+      icon: "@FontAwesomeSolid/sort-alpha-down/14"
     });
     nameAsc["sortBy"] = "name";
     nameAsc["orderBy"] = "down";
     const nameDesc = new qx.ui.menu.Button().set({
       label: this.tr("Name Desc"),
-      icon: "@FontAwesome5Solid/sort-alpha-up/14"
+      icon: "@FontAwesomeSolid/sort-alpha-up/14"
     });
     nameDesc["sortBy"] = "name";
     nameDesc["orderBy"] = "up";

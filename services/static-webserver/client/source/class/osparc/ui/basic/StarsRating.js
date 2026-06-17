@@ -84,9 +84,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   },
 
   statics: {
-    StarFull: "@FontAwesome5Solid/star/12",
-    StarHalf: "@FontAwesome5Solid/star-half/12", // Todo: upgrade FontAwesome for star-half-alt
-    StarEmpty: "@FontAwesome5Regular/star/12",
+    StarFull: "@FontAwesomeSolid/star/12",
+    StarHalf: "@FontAwesomeSolid/star-half/12", // Todo: upgrade FontAwesome for star-half-alt
+    StarEmpty: "@FontAwesomeRegular/star/12",
 
     scoreToStarsRating: function(currentTSR, targetTSR, starsRating) {
       const {
