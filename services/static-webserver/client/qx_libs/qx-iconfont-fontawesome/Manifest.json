@@ -1,12 +1,12 @@
 {
   "info": {
     "name": "qx-iconfont-fontawesome",
-    "summary": "font awesome 6 iconfont",
+    "summary": "font awesome 7 iconfont",
     "description": "qooxdoo integration of the font awesome iconfonts",
     "homepage": "https://github.com/ITISFoundation/qx-iconfont-fontawesome",
     "license": "MIT license",
     "authors": [],
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "provides": {
     "namespace": "iconfont.fontawesome",
