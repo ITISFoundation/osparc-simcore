@@ -250,9 +250,7 @@ def _get_guest_user_gc_lock_key(request: web.Request, template_project: dict, us
     return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["name"])
 
 
-def _get_guest_user_gc_lock_redis_client(request: web.Request, *args, **kwargs) -> RedisClientSDK:
-    assert args is not None  # nosec
-    assert kwargs is not None  # nosec
+def _get_guest_user_gc_lock_redis_client(request: web.Request, *_args, **_kwargs) -> RedisClientSDK:
     return get_redis_lock_manager_client_sdk(request.app)
 
 
