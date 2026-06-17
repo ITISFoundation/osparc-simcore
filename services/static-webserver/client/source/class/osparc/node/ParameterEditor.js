@@ -116,7 +116,7 @@ qx.Class.define("osparc.node.ParameterEditor", {
       const labelWidget = this._labels[this._labels.length - 1];
       if (labelWidget) {
         this._remove(labelWidget);
-        const atom = new qx.ui.basic.Atom("Value", "@FontAwesome5Solid/sliders-h/14");
+        const atom = new qx.ui.basic.Atom("Value", "@FontAwesomeSolid/sliders-h/14");
         this._add(atom, {row: this._row - 1, column: 0});
       }
     }

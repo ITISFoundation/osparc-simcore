@@ -2,7 +2,7 @@
   "libraries": [
     ".",
     "qx_libs/qx-iconfont-material",
-    "qx_libs/qx-iconfont-fontawesome5"
+    "qx_libs/qx-iconfont-fontawesome"
   ],
   "targets": [
     {
@@ -34,7 +34,7 @@
       "title": "oSPARC",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.osparc.ThemeLight"
       ],
       "environment": {
@@ -50,7 +50,7 @@
       "title": "Sim4Life",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
@@ -66,7 +66,7 @@
       "title": "Sim4Life.lite",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
@@ -82,7 +82,7 @@
       "title": "Sim4Life Science",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
@@ -98,7 +98,7 @@
       "title": "Sim4Life Engineering",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
@@ -114,7 +114,7 @@
       "title": "Sim4Life Desktop",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
@@ -130,7 +130,7 @@
       "title": "Sim4Life Desktop Academia",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.s4l.ThemeLight"
       ],
       "environment": {
@@ -146,7 +146,7 @@
       "title": "TIP - IT'IS",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.tis.ThemeLight"
       ],
       "environment": {
@@ -162,7 +162,7 @@
       "title": "TIP.lite - IT'IS",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load",
+        "iconfont.fontawesome.Load",
         "osparc.theme.products.tis.ThemeLight"
       ],
       "environment": {

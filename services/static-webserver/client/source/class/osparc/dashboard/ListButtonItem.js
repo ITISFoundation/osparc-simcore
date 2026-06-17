@@ -147,7 +147,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             padding: [0, 8],
             maxWidth: this.self().MENU_BTN_DIMENSIONS,
             maxHeight: this.self().MENU_BTN_DIMENSIONS,
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
@@ -174,7 +174,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         }
         case "tick-selected": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/12").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/check/12").set({
             appearance: "form-button-outlined",
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,

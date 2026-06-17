@@ -393,7 +393,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       if (["idle", "failed"].includes(status)) {
         const startButton = new qx.ui.form.Button().set({
           label: this.tr("Start"),
-          icon: "@FontAwesome5Solid/play/18",
+          icon: "@FontAwesomeSolid/play/18",
           font: "text-18",
           allowGrowX: false,
           height: 32

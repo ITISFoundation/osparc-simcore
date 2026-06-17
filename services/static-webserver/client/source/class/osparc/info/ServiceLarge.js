@@ -103,7 +103,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         vBox.add(deprecated);
       }
 
-      const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
+      const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesomeSolid/copy/12").set({
         allowGrowX: false
       });
       copyMetadataButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
@@ -116,14 +116,14 @@ qx.Class.define("osparc.info.ServiceLarge", {
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
         if (this.getNodeId()) {
           const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-          const copyStudyIdButton = new qx.ui.form.Button(this.tr(`Copy ${studyAlias} Id`), "@FontAwesome5Solid/copy/12").set({
+          const copyStudyIdButton = new qx.ui.form.Button(this.tr(`Copy ${studyAlias} Id`), "@FontAwesomeSolid/copy/12").set({
             toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
           });
           copyStudyIdButton.addListener("execute", this.__copyStudyIdToClipboard, this);
           buttonsLayout.add(copyStudyIdButton);
           vBox.add(buttonsLayout);
 
-          const copyNodeIdButton = new qx.ui.form.Button(this.tr("Copy Service Id"), "@FontAwesome5Solid/copy/12").set({
+          const copyNodeIdButton = new qx.ui.form.Button(this.tr("Copy Service Id"), "@FontAwesomeSolid/copy/12").set({
             toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
           });
           copyNodeIdButton.addListener("execute", this.__copyNodeIdToClipboard, this);
