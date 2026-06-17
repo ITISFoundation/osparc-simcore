@@ -6,6 +6,7 @@
 
 
 import asyncio
+import datetime
 import re
 import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -40,7 +41,6 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis import RedisClientSDK
-from servicelib.redis._constants import DEFAULT_LOCK_TTL
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.garbage_collector.garbage_collector_service import (
@@ -591,6 +591,24 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
     )
 
 
+@pytest.fixture
+def short_redis_lock_ttl(mocker: MockerFixture) -> datetime.timedelta:
+    """Shortens DEFAULT_LOCK_TTL and speeds up the renewal loop to keep lock-renewal tests fast."""
+    import servicelib.redis._decorators as _redis_decorators  # noqa: PLC0415
+
+    short_ttl = datetime.timedelta(seconds=0.5)
+    mocker.patch.object(_redis_decorators, "DEFAULT_LOCK_TTL", short_ttl)
+
+    async def _fast_periodic_reacquisition(lock, started_event, cancellation_event) -> None:  # type: ignore[no-untyped-def]
+        started_event.set()
+        while not cancellation_event.is_set():
+            await _redis_decorators.auto_extend_lock(lock)
+            await asyncio.sleep(short_ttl.total_seconds() / 4)
+
+    mocker.patch.object(_redis_decorators, "_periodic_reacquisition", _fast_periodic_reacquisition)
+    return short_ttl
+
+
 async def _is_guest_gc_lock_held(redis_sdk: RedisClientSDK, guest_user_name: str) -> bool:
     # The garbage-collector skips a guest whenever the construction GC lock (keyed by the
     # guest name) is held (see garbage_collector._core_guests, `lock_during_construction`).
@@ -604,6 +622,7 @@ async def test_guest_gc_lock_is_renewed_and_not_released_during_long_study_copy(
     client: TestClient,
     mocker: MockerFixture,
     faker: Faker,
+    short_redis_lock_ttl: datetime.timedelta,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
@@ -630,7 +649,7 @@ async def test_guest_gc_lock_is_renewed_and_not_released_during_long_study_copy(
     request = make_mocked_request("GET", "/", app=client.app)
 
     # the copy intentionally takes LONGER than the lock TTL to force at least one renewal
-    copy_duration_s = DEFAULT_LOCK_TTL.total_seconds() + 3.0
+    copy_duration_s = short_redis_lock_ttl.total_seconds() + 0.3
 
     copy_started = asyncio.Event()
 
@@ -653,10 +672,10 @@ async def test_guest_gc_lock_is_renewed_and_not_released_during_long_study_copy(
     # poll across more than one TTL window: without renewal the lock would expire at
     # DEFAULT_LOCK_TTL and this assertion would fail once we cross that boundary
     elapsed = 0.0
-    poll_interval = 1.0
+    poll_interval = 0.05
     while elapsed < copy_duration_s - poll_interval:
         assert await _is_guest_gc_lock_held(redis_sdk, guest_user_name), (
-            f"guest GC lock was released after {elapsed}s (TTL={DEFAULT_LOCK_TTL.total_seconds()}s): "
+            f"guest GC lock was released after {elapsed}s (TTL={short_redis_lock_ttl.total_seconds()}s): "
             "exclusive did not renew it"
         )
         await asyncio.sleep(poll_interval)
