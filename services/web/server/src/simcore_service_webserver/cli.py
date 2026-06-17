@@ -19,6 +19,7 @@ from typing import Annotated, Final
 
 import typer
 from aiohttp import web
+from common_library.basic_types import BootModeEnum
 from common_library.json_serialization import json_dumps
 from servicelib.tracing import TracingConfig
 from settings_library.utils_cli import create_settings_command
@@ -115,18 +116,44 @@ def invitations(
     )
 
 
-@main.command()
+def _is_devel_deployment() -> bool:
+    """Whether the service was booted in a development mode.
+
+    Reads SC_BOOT_MODE, which is injected by the docker boot stage (e.g.
+    docker-compose.devel.yml sets it to 'debug' for 'make up-devel') and is NOT
+    read from the user-editable .env file. Unknown/undefined values are treated
+    as non-development (fail-closed).
+    """
+    boot_mode = os.environ.get("SC_BOOT_MODE")
+    try:
+        return boot_mode is not None and BootModeEnum(boot_mode).is_devel_mode()
+    except ValueError:
+        return False
+
+
 def create_admin(
     email: str,
     password: Annotated[str, typer.Option(prompt=True, hide_input=True)],
     product_name: str = "osparc",
 ):
-    """Creates an ACTIVE ADMIN user (bootstraps the first privileged user)"""
+    """Creates an ACTIVE ADMIN user (bootstraps the first privileged user).
+
+    DEVELOPMENT-ONLY: this command is only registered when the service boots in a
+    development mode (SC_BOOT_MODE), and is additionally guarded at runtime. See
+    login.cli.create_admin.
+    """
     login_cli.create_admin(
         email=email,
         password=password,
         product_name=product_name,
     )
+
+
+# Bootstrap tool: only expose the command in development deployments. It is
+# additionally guarded at runtime (see login.cli.create_admin) so a direct call
+# in a production deployment fails closed.
+if _is_devel_deployment():
+    main.command()(create_admin)
 
 
 @main.command()

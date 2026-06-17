@@ -10,7 +10,7 @@ from servicelib.utils_secrets import generate_password
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
-from ..application_settings import setup_settings
+from ..application_settings import get_application_settings, setup_settings
 from ..db.plugin import setup_db
 from . import _account_aggregation_service
 from ._invitations_service import ConfirmedInvitationData, get_invitation_url
@@ -88,6 +88,25 @@ def _build_db_cli_app() -> web.Application:
     return app
 
 
+def _ensure_development_deployment(app: web.Application) -> None:
+    """Fail-closed guard: `create-admin` must never run in a production deployment.
+
+    The check relies on `SC_BOOT_MODE`, which is injected by the docker boot stage
+    (e.g. `docker-compose.devel.yml` sets it to `debug` for `make up-devel`) and is
+    NOT read from the user-editable `.env` file. Any non-development boot mode -- or
+    an undefined one -- is rejected.
+    """
+    boot_mode = get_application_settings(app).SC_BOOT_MODE
+    if boot_mode is None or not boot_mode.is_devel_mode():
+        typer.secho(
+            f"'create-admin' is disabled in this deployment (SC_BOOT_MODE={boot_mode}). "
+            "It is a development-only bootstrap tool (e.g. 'make build-devel up-devel').",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+
 def create_admin(
     email: str,
     password: str,
@@ -101,6 +120,7 @@ def create_admin(
 
     async def _run() -> None:
         app = _build_db_cli_app()
+        _ensure_development_deployment(app)
         runner = web.AppRunner(app)
         await runner.setup()  # enters cleanup_ctx -> creates the postgres engine
         try:
