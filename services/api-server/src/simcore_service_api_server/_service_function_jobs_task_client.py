@@ -121,8 +121,6 @@ class FunctionJobTaskClientService:
     _webserver_api: AuthSession
     _celery_task_manager: TaskManager
     _async_pg_engine: AsyncEngine
-    # Request-scoped deduplication: this service is instantiated per-request by DI,
-    # so this dict is alive for exactly one request — no TTL or cache-busting needed.
     _function_lookup: dict[FunctionID, RegisteredFunction] = field(default_factory=dict)
 
     async def list_function_jobs_with_status(
