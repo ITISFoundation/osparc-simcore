@@ -139,7 +139,7 @@ qx.Class.define("osparc.file.FolderContent", {
     },
 
     __convertChildren: function(children) {
-      const data = [];
+      const dataCol = [];
       children.forEach(child => {
         const data = {
           icon: child.getIcon ? child.getIcon() : this.self().getIcon(child),
@@ -149,13 +149,13 @@ qx.Class.define("osparc.file.FolderContent", {
           itemId: child.getItemId ? child.getItemId() : null,
           entry: child,
         };
-        data.push(data);
+        dataCol.push(data);
       });
       // folders first
-      data.sort((a, b) => osparc.file.FilesTree.isFile(a.entry) - osparc.file.FilesTree.isFile(b.entry));
+      dataCol.sort((a, b) => osparc.file.FilesTree.isFile(a.entry) - osparc.file.FilesTree.isFile(b.entry));
       const items = [];
       if (this.getMode() === "list") {
-        data.forEach(data => {
+        dataCol.forEach(data => {
           const row = [];
           row.push(data["icon"]);
           row.push(data["label"]);
@@ -168,7 +168,7 @@ qx.Class.define("osparc.file.FolderContent", {
           items.push(row);
         });
       } else if (this.getMode() === "icons") {
-        data.forEach(data => {
+        dataCol.forEach(data => {
           let toolTip = data["label"];
           if (data["size"]) {
             toolTip += "<br>" + data["size"];
