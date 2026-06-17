@@ -9,18 +9,17 @@ from settings_library.utils_service import MixinServiceSettings, URLPart
 
 from ..application_keys import APP_SETTINGS_APPKEY
 
+_CHATBOT_ARCHITECTURE = Literal["simple_rag", "multi_query_rag", "simple_agentic_rag"]
+_CHATBOT_MODELS = Literal["gpt-3.5-turbo", "gpt-4o-mini", "gpt-5.2", "gpt-4.1-nano"]
+
 
 class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):
     model_config = SettingsConfigDict(str_strip_whitespace=True, str_min_length=1)
 
     CHATBOT_HOST: str
     CHATBOT_PORT: PortInt
-    CHATBOT_MODEL: Literal["gpt-3.5-turbo", "gpt-4o-mini", "gpt-5.2", "gpt-4.1-nano"]
-    CHATBOT_GRAPH_NAME: Literal[
-        "simple_rag",
-        "multi_query_rag",
-        "simple_agentic_rag",
-    ]
+    CHATBOT_MODEL: _CHATBOT_MODELS
+    CHATBOT_GRAPH_NAME: _CHATBOT_ARCHITECTURE
 
     @cached_property
     def base_url(self) -> str:
