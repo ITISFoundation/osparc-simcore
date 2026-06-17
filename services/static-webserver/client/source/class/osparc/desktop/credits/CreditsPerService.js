@@ -66,9 +66,9 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
               totalHours += entry["running_time_in_hours"]
               totalCredits+= parseFloat(entry["osparc_credits"])
             });
-            let data = [];
+            let dataCol = [];
             entries.forEach(entry => {
-              data.push({
+              dataCol.push({
                 service: entry["service_key"],
                 credits: -1*parseFloat(entry["osparc_credits"]),
                 hours: entry["running_time_in_hours"],
@@ -76,15 +76,15 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
                 percentageCredits: totalCredits ? 100*parseFloat(entry["osparc_credits"])/totalCredits : 0,
               });
             });
-            data.sort((a, b) => {
+            dataCol.sort((a, b) => {
               if (b.credits !== a.credits) {
                 return b.credits - a.credits;
               }
               return b.hours - a.hours;
             });
             // top 5 services
-            data = data.slice(0, 5);
-            data.forEach(data => {
+            dataCol = dataCol.slice(0, 5);
+            dataCol.forEach(data => {
               const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(data.service, data.credits, data.hours, totalCredits === 0 ? data.percentageHours : data.percentageCredits);
               this._add(uiEntry);
             });
