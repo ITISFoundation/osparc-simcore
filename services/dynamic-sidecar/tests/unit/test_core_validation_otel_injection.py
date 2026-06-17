@@ -294,6 +294,5 @@ async def test_validate_compose_spec_without_tracing_no_otel(
 
 def test_no_contrib_collector_image_used(user_tracing_settings: UserServicesTracingSettings):
     assert user_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME == "otel/opentelemetry-collector", (
-        "Ensure only the minimal otel/opentelemetry-collector image is used "
-        "the bigge rmore complete images are not necessary, they just slow down startup speed"
+        "Ensure only the minimal otel/opentelemetry-collector image is used the larger image is not necessary"
     )
