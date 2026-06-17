@@ -595,15 +595,25 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
 def short_redis_lock_ttl(mocker: MockerFixture) -> datetime.timedelta:
     """Shortens DEFAULT_LOCK_TTL and speeds up the renewal loop to keep lock-renewal tests fast."""
     import servicelib.redis._decorators as _redis_decorators  # noqa: PLC0415
+    from redis.asyncio.lock import Lock  # noqa: PLC0415
 
     short_ttl = datetime.timedelta(seconds=0.5)
     mocker.patch.object(_redis_decorators, "DEFAULT_LOCK_TTL", short_ttl)
 
-    async def _fast_periodic_reacquisition(lock, started_event, cancellation_event) -> None:  # type: ignore[no-untyped-def]
+    async def _fast_periodic_reacquisition(
+        lock: Lock,
+        started_event: asyncio.Event,
+        cancellation_event: asyncio.Event,
+    ) -> None:
+        if cancellation_event.is_set():
+            raise asyncio.CancelledError
+        await _redis_decorators.auto_extend_lock(lock)
         started_event.set()
         while not cancellation_event.is_set():
-            await _redis_decorators.auto_extend_lock(lock)
             await asyncio.sleep(short_ttl.total_seconds() / 4)
+            if cancellation_event.is_set():
+                break
+            await _redis_decorators.auto_extend_lock(lock)
 
     mocker.patch.object(_redis_decorators, "_periodic_reacquisition", _fast_periodic_reacquisition)
     return short_ttl
