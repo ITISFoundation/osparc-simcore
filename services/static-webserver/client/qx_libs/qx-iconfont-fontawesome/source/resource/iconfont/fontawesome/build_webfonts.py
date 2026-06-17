@@ -45,7 +45,7 @@ from fontTools.ttLib.tables._g_l_y_f import table__g_l_y_f
 from fontTools.ttLib.tables._l_o_c_a import table__l_o_c_a
 
 MAX_ERR = 1.0  # cubic -> quadratic conversion tolerance, in font units
-TARGET_FILL = 0.92  # max fraction of the em a glyph's ink may occupy
+TARGET_FILL = 0.95  # max fraction of the em a glyph's ink may occupy
 
 # Upstream .otf file name -> output basename (without extension).
 SOURCES = {
