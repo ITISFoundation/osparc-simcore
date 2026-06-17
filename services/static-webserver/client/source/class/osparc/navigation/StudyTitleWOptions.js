@@ -57,21 +57,21 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         case "study-menu-share":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Share..."),
-            icon: "@FontAwesome5Solid/share-alt/14",
+            icon: "@FontAwesomeSolid/share-alt/14",
           });
           control.addListener("execute", () => this.__openAccessRights(), this);
           break;
         case "study-menu-reload":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Reload"),
-            icon: "@FontAwesome5Solid/redo-alt/12",
+            icon: "@FontAwesomeSolid/redo-alt/12",
           });
           control.addListener("execute", () => this.__reloadIFrame(), this);
           break;
         case "study-menu-conversations":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Conversations"),
-            icon: "@FontAwesome5Solid/comments/12",
+            icon: "@FontAwesomeSolid/comments/12",
           });
           control.addListener("execute", () => osparc.study.Conversations.popUpInWindow(this.getStudy().serialize()), this);
           break;
@@ -85,7 +85,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         case "study-menu-open-logger":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Platform Logs..."),
-            icon: "@FontAwesome5Solid/download/14"
+            icon: "@FontAwesomeSolid/download/14"
           });
           control.addListener("execute", () => this.fireEvent("openLogger"));
           break;
@@ -103,7 +103,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           control = new qx.ui.form.MenuButton().set({
             appearance: "fab-button",
             menu: optionsMenu,
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             allowGrowY: false,
             width: 24,
           });

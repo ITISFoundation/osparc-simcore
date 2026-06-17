@@ -1,48 +1,48 @@
 {
   "info": {
-    "name": "qx-iconfont-fontawesome5",
+    "name": "qx-iconfont-fontawesome",
     "summary": "font awesome 6 iconfont",
     "description": "qooxdoo integration of the font awesome iconfonts",
-    "homepage": "https://github.com/ITISFoundation/qx-iconfont-fontawesome5",
+    "homepage": "https://github.com/ITISFoundation/qx-iconfont-fontawesome",
     "license": "MIT license",
     "authors": [],
     "version": "0.3.0"
   },
   "provides": {
-    "namespace": "iconfont.fontawesome5",
+    "namespace": "iconfont.fontawesome",
     "encoding": "utf-8",
     "class": "source/class",
     "resource": "source/resource",
     "translation": "source/translation",
     "webfonts": [
       {
-        "name": "FontAwesome5Brands",
+        "name": "FontAwesomeBrands",
         "defaultSize": 32,
         "comparisonString": "\\uf26e\\uf368",
-        "mapping": "iconfont/fontawesome5/fa-brands.json",
+        "mapping": "iconfont/fontawesome/fa-brands.json",
         "resources": [
-          "iconfont/fontawesome5/fa-brands-400.woff2",
-          "iconfont/fontawesome5/fa-brands-400.ttf"
+          "iconfont/fontawesome/fa-brands-400.woff2",
+          "iconfont/fontawesome/fa-brands-400.ttf"
         ]
       },
       {
-        "name": "FontAwesome5Regular",
+        "name": "FontAwesomeRegular",
         "defaultSize": 32,
         "comparisonString": "\\uf2b9\\uf2bb",
-        "mapping": "iconfont/fontawesome5/fa-regular.json",
+        "mapping": "iconfont/fontawesome/fa-regular.json",
         "resources": [
-          "iconfont/fontawesome5/fa-regular-400.woff2",
-          "iconfont/fontawesome5/fa-regular-400.ttf"
+          "iconfont/fontawesome/fa-regular-400.woff2",
+          "iconfont/fontawesome/fa-regular-400.ttf"
         ]
       },
       {
-        "name": "FontAwesome5Solid",
+        "name": "FontAwesomeSolid",
         "defaultSize": 32,
         "comparisonString": "\\uf2b9\\uf2bb",
-        "mapping": "iconfont/fontawesome5/fa-solid.json",
+        "mapping": "iconfont/fontawesome/fa-solid.json",
         "resources": [
-          "iconfont/fontawesome5/fa-solid-900.woff2",
-          "iconfont/fontawesome5/fa-solid-900.ttf"
+          "iconfont/fontawesome/fa-solid-900.woff2",
+          "iconfont/fontawesome/fa-solid-900.ttf"
         ]
       }
     ]

@@ -136,7 +136,7 @@ qx.Class.define("osparc.po.UsersPending", {
           this.getChildControl("header-layout").add(control);
           break;
         case "loading-spinner":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/26").set({
             padding: 6
           });
           control.getContentElement().addClass("rotate");

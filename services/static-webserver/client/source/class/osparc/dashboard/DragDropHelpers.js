@@ -31,7 +31,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         const dragWidget = osparc.dashboard.DragWidget.getInstance();
         dragWidget.getChildControl("dragged-resource").set({
           label: studyDataOrigin["name"],
-          icon: "@FontAwesome5Solid/file/16",
+          icon: "@FontAwesomeSolid/file/16",
         });
         dragWidget.start();
 
@@ -105,7 +105,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         const dragWidget = osparc.dashboard.DragWidget.getInstance();
         dragWidget.getChildControl("dragged-resource").set({
           label: folderOrigin.getName(),
-          icon: "@FontAwesome5Solid/folder/16",
+          icon: "@FontAwesomeSolid/folder/16",
         });
         dragWidget.start();
 

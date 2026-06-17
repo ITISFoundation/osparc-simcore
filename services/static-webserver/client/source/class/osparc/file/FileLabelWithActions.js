@@ -93,12 +93,12 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           this._add(control);
           break;
         case "download-button":
-          control = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
+          control = new qx.ui.form.Button(this.tr("Download"), "@FontAwesomeSolid/cloud-download-alt/16");
           osparc.utils.Utils.setIdToWidget(control, "filesTreeDownloadBtn");
           this._add(control);
           break;
         case "delete-button":
-          control = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/16").set({
+          control = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/16").set({
             appearance: "danger-button"
           });
           this._add(control);
@@ -257,14 +257,14 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     __deleteTaskReceived: function(task, paths) {
       const taskUI = new osparc.task.TaskUI();
-      taskUI.setIcon("@FontAwesome5Solid/trash/14");
+      taskUI.setIcon("@FontAwesomeSolid/trash/14");
       taskUI.setTitle(this.tr("Deleting files"));
       taskUI.setTask(task);
       osparc.task.TasksContainer.getInstance().addTaskUI(taskUI);
 
       const progressWindow = new osparc.ui.window.Progress(
         this.tr("Delete files"),
-        "@FontAwesome5Solid/trash/14",
+        "@FontAwesomeSolid/trash/14",
         this.tr("Deleting files..."),
       );
       progressWindow.addHideButton();

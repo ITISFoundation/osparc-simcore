@@ -139,7 +139,7 @@ qx.Class.define("osparc.file.FolderContent", {
     },
 
     __convertChildren: function(children) {
-      const datas = [];
+      const data = [];
       children.forEach(child => {
         const data = {
           icon: child.getIcon ? child.getIcon() : this.self().getIcon(child),
@@ -149,13 +149,13 @@ qx.Class.define("osparc.file.FolderContent", {
           itemId: child.getItemId ? child.getItemId() : null,
           entry: child,
         };
-        datas.push(data);
+        data.push(data);
       });
       // folders first
-      datas.sort((a, b) => osparc.file.FilesTree.isFile(a.entry) - osparc.file.FilesTree.isFile(b.entry));
+      data.sort((a, b) => osparc.file.FilesTree.isFile(a.entry) - osparc.file.FilesTree.isFile(b.entry));
       const items = [];
       if (this.getMode() === "list") {
-        datas.forEach(data => {
+        data.forEach(data => {
           const row = [];
           row.push(data["icon"]);
           row.push(data["label"]);
@@ -168,7 +168,7 @@ qx.Class.define("osparc.file.FolderContent", {
           items.push(row);
         });
       } else if (this.getMode() === "icons") {
-        datas.forEach(data => {
+        data.forEach(data => {
           let toolTip = data["label"];
           if (data["size"]) {
             toolTip += "<br>" + data["size"];
@@ -182,7 +182,7 @@ qx.Class.define("osparc.file.FolderContent", {
             toolTipText: toolTip
           });
           const icon = gridItem.getChildControl("icon", true);
-          if (icon.getSource() === "@FontAwesome5Solid/circle-notch/12") {
+          if (icon.getSource() === "@FontAwesomeSolid/circle-notch/12") {
             icon.setPadding(0);
             icon.setMarginRight(4);
             icon.getContentElement().addClass("rotate");

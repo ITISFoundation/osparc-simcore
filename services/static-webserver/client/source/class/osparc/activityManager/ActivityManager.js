@@ -86,7 +86,7 @@ qx.Class.define("osparc.activityManager.ActivityManager", {
       })).set({
         visibility: "excluded"
       });
-      const image = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26");
+      const image = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/26");
       image.getContentElement().addClass("rotate");
       this.__fetchingView.add(image);
       this._add(this.__fetchingView, {
@@ -105,7 +105,7 @@ qx.Class.define("osparc.activityManager.ActivityManager", {
       // toolbar.addSpacer();
       // toolbar.add(actionsPart);
 
-      const reloadButton = this.__reloadButton = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14");
+      const reloadButton = this.__reloadButton = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesomeSolid/sync-alt/14");
       tablePart.add(reloadButton);
       reloadButton.addListener("execute", () => {
         this.__tree.exclude();
@@ -117,15 +117,15 @@ qx.Class.define("osparc.activityManager.ActivityManager", {
       }, this);
 
       /*
-      const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
+      const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesomeSolid/play/14");
       actionsPart.add(runButton);
       runButton.addListener("execute", () => osparc.FlashMessenger.logAs("Not implemented"));
 
-      const stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/14");
+      const stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesomeSolid/stop-circle/14");
       actionsPart.add(stopButton);
       stopButton.addListener("execute", () => osparc.FlashMessenger.logAs("Not implemented"));
 
-      const infoButton = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info/14");
+      const infoButton = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesomeSolid/info/14");
       actionsPart.add(infoButton);
       infoButton.addListener("execute", () => osparc.FlashMessenger.logAs("Not implemented"));
 

@@ -51,7 +51,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       });
       introContainer.add(this.__introLabel)
       introContainer.add(new qx.ui.core.Spacer(), { flex: 1 })
-      const refreshButton = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14")
+      const refreshButton = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesomeSolid/sync-alt/14")
       refreshButton.addListener("execute", () => this.__table && this.__table.getTableModel().reloadData())
       introContainer.add(refreshButton)
       this._add(introContainer);

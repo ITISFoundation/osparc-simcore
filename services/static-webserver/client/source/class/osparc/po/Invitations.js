@@ -123,7 +123,7 @@ qx.Class.define("osparc.po.Invitations", {
       copyInvitationBtn.set({appearance: "form-button-outlined"});
       copyInvitationBtn.addListener("execute", () => {
         if (osparc.utils.Utils.copyTextToClipboard(respData["invitation_link"])) {
-          copyInvitationBtn.setIcon("@FontAwesome5Solid/check/12");
+          copyInvitationBtn.setIcon("@FontAwesomeSolid/check/12");
         }
       });
       hBox.add(copyInvitationBtn);

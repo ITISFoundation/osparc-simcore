@@ -54,7 +54,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
       switch (id) {
         case "oec-atom":
           control = new qx.ui.basic.Atom().set({
-            icon: "@FontAwesome5Solid/copy/10",
+            icon: "@FontAwesomeSolid/copy/10",
             iconPosition: "right",
             gap: 8,
             cursor: "pointer",
@@ -67,7 +67,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
         case "contact-support":
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Contact Support"),
-            icon: "@FontAwesome5Solid/comments/10",
+            icon: "@FontAwesomeSolid/comments/10",
             iconPosition: "left",
             gap: 8,
             cursor: "pointer",

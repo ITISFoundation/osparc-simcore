@@ -86,7 +86,7 @@ qx.Class.define("osparc.info.StudyMedium", {
         menu,
         width: 25,
         height: 25,
-        icon: "@FontAwesome5Solid/ellipsis-v/14",
+        icon: "@FontAwesomeSolid/ellipsis-v/14",
         focusable: false,
         allowGrowY: false
       });
@@ -95,7 +95,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       infoButton.addListener("execute", () => this.__openStudyDetails(), this);
       menu.add(infoButton);
 
-      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/14");
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesomeSolid/share-alt/14");
       shareButton.addListener("execute", () => this.__openAccessRights(), this);
       menu.add(shareButton);
 

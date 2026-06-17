@@ -176,7 +176,7 @@ qx.Class.define("osparc.file.FileTreeItem", {
     _applyIcon: function(value, old) {
       this.base(arguments, value, old);
       const icon = this.getChildControl("icon", true);
-      if (icon && value === "@FontAwesome5Solid/circle-notch/12") {
+      if (icon && value === "@FontAwesomeSolid/circle-notch/12") {
         icon.setPadding(0);
         icon.setMarginRight(4);
         icon.getContentElement().addClass("rotate");
