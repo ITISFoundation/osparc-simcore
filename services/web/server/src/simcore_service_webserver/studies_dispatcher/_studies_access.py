@@ -152,7 +152,7 @@ async def _get_published_template_project(
     raise _create_access_denied_error(reason)
 
 
-async def copy_study_to_account(request: web.Request, template_project: dict, user: dict):
+async def copy_study_to_account(request: web.Request, template_project: dict, user: dict) -> str:
     """
     Creates a copy of the study to a given project in user's account
 
