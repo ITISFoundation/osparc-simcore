@@ -150,6 +150,7 @@ class FunctionJobTaskClientService:
             **pagination_kwargs,
         )
 
+        function_cache: dict[FunctionID, RegisteredFunction] = {}
         for function_job_wso in function_jobs_list_ws:
             if function_job_wso.outputs is None or (
                 function_job_wso.status.status
@@ -158,19 +159,21 @@ class FunctionJobTaskClientService:
                     RunningState.FAILED,
                 )
             ):
+                function_uid = function_job_wso.function_uid
+                if function_uid not in function_cache:
+                    function_cache[function_uid] = await self._function_service.get_function(
+                        function_id=function_uid,
+                    )
+                function = function_cache[function_uid]
                 function_job_wso.status = await self.inspect_function_job(
-                    function=await self._function_service.get_function(
-                        function_id=function_job_wso.function_uid,
-                    ),
+                    function=function,
                     function_job=function_job_wso,
                 )
 
                 if function_job_wso.status.status == RunningState.SUCCESS:
                     function_job_wso.outputs = await self.function_job_outputs(
                         function_job=function_job_wso,
-                        function=await self._function_service.get_function(
-                            function_id=function_job_wso.function_uid,
-                        ),
+                        function=function,
                         stored_job_outputs=None,
                     )
         return function_jobs_list_ws, meta
