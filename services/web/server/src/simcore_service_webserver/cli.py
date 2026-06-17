@@ -32,7 +32,7 @@ from .login import cli as login_cli
 if os.environ.get("SC_BOOT_MODE") == "debug":
     import multiprocessing
 
-    multiprocessing.set_start_method("spawn", True)
+    multiprocessing.set_start_method("spawn", force=True)
 
 _logger = logging.getLogger(__name__)
 
@@ -41,9 +41,9 @@ def _setup_app_from_settings(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> tuple[web.Application, dict]:
-    # NOTE: keeping imports here to reduce CLI load time
-    from .application import create_application
-    from .application_settings_utils import convert_to_app_config
+    # NOTE: keeping LAZY imports here to reduce CLI load time
+    from .application import create_application  # noqa: PLC0415
+    from .application_settings_utils import convert_to_app_config  # noqa: PLC0415
 
     # NOTE: By having an equivalent config allows us
     # to keep some of the code from the previous
@@ -61,8 +61,10 @@ async def app_factory() -> web.Application:
 
     Created to launch app from gunicorn (see docker/boot.sh)
     """
-    from .application import create_application_auth
-    from .log import setup_logging
+    # NOTE: keeping LAZY imports here to reduce CLI load time
+
+    from .application import create_application_auth  # noqa: PLC0415
+    from .log import setup_logging  # noqa: PLC0415
 
     app_settings = ApplicationSettings.create_from_envs()
     tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)
@@ -114,10 +116,24 @@ def invitations(
 
 
 @main.command()
+def create_admin(
+    email: str,
+    password: Annotated[str, typer.Option(prompt=True, hide_input=True)],
+    product_name: str = "osparc",
+):
+    """Creates an ACTIVE ADMIN user (bootstraps the first privileged user)"""
+    login_cli.create_admin(
+        email=email,
+        password=password,
+        product_name=product_name,
+    )
+
+
+@main.command()
 def run():
     """Runs web server"""
     # NOTE: keeping imports here to reduce CLI load time
-    from .application import run_service
+    from .application import run_service  # noqa: PLC0415
 
     app_settings = ApplicationSettings.create_from_envs()
     app_tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)

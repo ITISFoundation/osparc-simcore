@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TypedDict
 
 from aiohttp import web
+from common_library.users_enums import UserRole
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_repos import transaction_context
@@ -65,6 +66,7 @@ async def create_user(
     password: str,
     status_upon_creation: UserStatus,
     expires_at: datetime | None,
+    role: UserRole = UserRole.USER,
 ) -> UserInfoDict:
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
@@ -75,6 +77,7 @@ async def create_user(
             password_hash=security_service.encrypt_password(password),
             status=status_upon_creation,
             expires_at=expires_at,
+            role=role,
         )
         await repo.link_and_update_user_from_pre_registration(
             conn,

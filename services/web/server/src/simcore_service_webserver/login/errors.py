@@ -14,3 +14,7 @@ class SendingVerificationEmailError(LoginError):
 
 class WrongPasswordError(LoginError):
     msg_template = "Invalid password provided for user {user_id}"
+
+
+class UserAlreadyRegisteredError(LoginError):
+    msg_template = "A user with email {email} is already registered"
