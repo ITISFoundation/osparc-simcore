@@ -13,7 +13,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import (
     ApplicationSettings,
-    UserServiceTracingSettings,
+    UserServicesTracingSettings,
 )
 from simcore_service_dynamic_sidecar.core.validation import (
     _OTEL_COLLECTOR_SERVICE_NAME,
@@ -43,10 +43,15 @@ def mock_environment_with_tracing(
     return setenvs_from_dict(
         monkeypatch,
         {
+            **mock_environment,
+            "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/test",
+            "DY_SIDECAR_SERVICE_VERSION": "1.0.0",
+            "DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN": "True",
+            "DYNAMIC_SIDECAR_TRACING": "{}",
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://otel-collector.internal",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
             "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": "1.0",
-            "DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN": "True",
+            "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION": "0.144.0",
         },
     )
 
@@ -68,8 +73,8 @@ def app_settings_with_tracing(
 @pytest.fixture
 def user_tracing_settings(
     app_settings_with_tracing: ApplicationSettings,
-) -> UserServiceTracingSettings:
-    return app_settings_with_tracing.DYNAMIC_SIDECAR_USER_SERVICES_TRACING
+) -> UserServicesTracingSettings:
+    return app_settings_with_tracing.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
 
 
 @pytest.fixture
@@ -114,7 +119,7 @@ def _has_otel_collector(services: dict) -> bool:
 
 def test_generate_otel_collector_config_has_flush_interval(
     app_settings_with_tracing: ApplicationSettings,
-    user_tracing_settings: UserServiceTracingSettings,
+    user_tracing_settings: UserServicesTracingSettings,
 ):
     config_yaml = _generate_otel_collector_config(user_tracing_settings, app_settings_with_tracing)
     config = yaml.safe_load(config_yaml)
@@ -125,7 +130,7 @@ def test_generate_otel_collector_config_has_flush_interval(
 
 def test_generate_otel_collector_config_structure(
     app_settings_with_tracing: ApplicationSettings,
-    user_tracing_settings: UserServiceTracingSettings,
+    user_tracing_settings: UserServicesTracingSettings,
 ):
     config_yaml = _generate_otel_collector_config(user_tracing_settings, app_settings_with_tracing)
     config = yaml.safe_load(config_yaml)
@@ -152,9 +157,8 @@ def test_build_otel_resource_attributes(
 ):
     attrs = _build_otel_resource_attributes(app_settings_with_tracing)
 
-    assert "simcore.user_id=" in attrs
-    assert "simcore.project_id=" in attrs
-    assert "simcore.node_id=" in attrs
+    assert "simcore.service_key=" in attrs
+    assert "simcore.service_version=" in attrs
     for part in attrs.split(","):
         key, value = part.split("=", 1)
         assert value, f"Empty value for key {key} should be excluded"
@@ -162,7 +166,7 @@ def test_build_otel_resource_attributes(
 
 def test_inject_otel_collector_adds_service(
     app_settings_with_tracing: ApplicationSettings,
-    user_tracing_settings: UserServiceTracingSettings,
+    user_tracing_settings: UserServicesTracingSettings,
 ):
     parsed_spec = {
         "version": "3.7",
@@ -195,7 +199,7 @@ def test_inject_otel_collector_adds_service(
 
 def test_inject_otel_collector_normalises_long_form_depends_on_to_list(
     app_settings_with_tracing: ApplicationSettings,
-    user_tracing_settings: UserServiceTracingSettings,
+    user_tracing_settings: UserServicesTracingSettings,
 ):
     """Long-form depends_on mapping is normalised to a list (conditions are dropped
     downstream by _remap_service_keys anyway)."""
@@ -288,8 +292,8 @@ async def test_validate_compose_spec_without_tracing_no_otel(
         assert "OTEL_EXPORTER_OTLP_ENDPOINT" not in env_str
 
 
-def test_no_contrib_collector_image_used():
-    assert UserServiceTracingSettings().USER_SERVICES_TRACING_COLLECTOR_IMAGE == "otel/opentelemetry-collector", (
+def test_no_contrib_collector_image_used(user_tracing_settings: UserServicesTracingSettings):
+    assert user_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME == "otel/opentelemetry-collector", (
         "Ensure only the minimal otel/opentelemetry-collector image is used "
         "the bigge rmore complete images are not necessary, they just slow down startup speed"
     )

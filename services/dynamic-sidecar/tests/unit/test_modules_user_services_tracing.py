@@ -11,9 +11,18 @@ from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
+from google.protobuf.json_format import MessageToDict
+from opentelemetry.proto.common.v1.common_pb2 import AnyValue, KeyValue
+from opentelemetry.proto.resource.v1.resource_pb2 import Resource
+from opentelemetry.proto.trace.v1.trace_pb2 import (
+    ResourceSpans,
+    ScopeSpans,
+    Span,
+    TracesData,
+)
 from pydantic import ByteSize, TypeAdapter
 from settings_library.tracing import TracingSettings
-from simcore_service_dynamic_sidecar.core.settings import UserServiceTracingSettings
+from simcore_service_dynamic_sidecar.core.settings import UserServicesTracingSettings
 from simcore_service_dynamic_sidecar.modules.user_services_tracing import (
     _ACTIVE_FILE_NAME,
     _CHECKPOINT_FILE_NAME,
@@ -40,18 +49,18 @@ def traces_directory(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def tracing_settings_factory() -> Callable[..., UserServiceTracingSettings]:
-    def _factory(**overrides: Any) -> UserServiceTracingSettings:
+def tracing_settings_factory() -> Callable[..., UserServicesTracingSettings]:
+    def _factory(**overrides: Any) -> UserServicesTracingSettings:
         params = {**_DEFAULT_TRACING_OVERRIDES, **overrides}
-        return UserServiceTracingSettings(**params)
+        return UserServicesTracingSettings(**params)
 
     return _factory
 
 
 @pytest.fixture
 def tracing_settings(
-    tracing_settings_factory: Callable[..., UserServiceTracingSettings],
-) -> UserServiceTracingSettings:
+    tracing_settings_factory: Callable[..., UserServicesTracingSettings],
+) -> UserServicesTracingSettings:
     return tracing_settings_factory()
 
 
@@ -60,6 +69,7 @@ def platform_tracing_settings() -> TracingSettings:
     return TypeAdapter(TracingSettings).validate_python(
         {
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://otel-collector.internal",
+            "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION": "0.144.0",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": 4318,
             "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": 1.0,
         }
@@ -68,45 +78,38 @@ def platform_tracing_settings() -> TracingSettings:
 
 @pytest.fixture
 def sample_span_line() -> bytes:
-    span = {
-        "resourceSpans": [
-            {
-                "resource": {
-                    "attributes": [
-                        {
-                            "key": "service.name",
-                            "value": {"stringValue": "test-svc"},
-                        }
-                    ]
-                },
-                "scopeSpans": [
-                    {
-                        "spans": [
-                            {
-                                "traceId": "abc123",
-                                "spanId": "def456",
-                                "name": "test-span",
-                                "startTimeUnixNano": "1000000000",
-                                "endTimeUnixNano": "2000000000",
-                            }
+    data = TracesData(
+        resource_spans=[
+            ResourceSpans(
+                resource=Resource(attributes=[KeyValue(key="service.name", value=AnyValue(string_value="test-svc"))]),
+                scope_spans=[
+                    ScopeSpans(
+                        spans=[
+                            Span(
+                                trace_id=b"\xab\xc1\x23" + b"\x00" * 13,
+                                span_id=b"\xde\xf4\x56" + b"\x00" * 5,
+                                name="test-span",
+                                start_time_unix_nano=1_000_000_000,
+                                end_time_unix_nano=2_000_000_000,
+                            )
                         ]
-                    }
+                    )
                 ],
-            }
+            )
         ]
-    }
-    return json.dumps(span).encode()
+    )
+    return json.dumps(MessageToDict(data), separators=(",", ":")).encode()
 
 
 @pytest.fixture
 def forwarder(
     traces_directory: Path,
-    tracing_settings: UserServiceTracingSettings,
+    tracing_settings: UserServicesTracingSettings,
     platform_tracing_settings: TracingSettings,
 ) -> UserServicesTraceForwarder:
     return UserServicesTraceForwarder(
         traces_directory=traces_directory,
-        tracing_settings=tracing_settings,
+        user_services_tracing_settings=tracing_settings,
         platform_tracing_settings=platform_tracing_settings,
     )
 
@@ -135,7 +138,7 @@ def capture_post() -> tuple[list[bytes], Callable]:
 @pytest.fixture
 def forwarder_factory(
     traces_directory: Path,
-    tracing_settings: UserServiceTracingSettings,
+    tracing_settings: UserServicesTracingSettings,
     platform_tracing_settings: TracingSettings,
 ) -> Callable[..., UserServicesTraceForwarder]:
     """Creates a new forwarder instance (simulates restart scenarios)."""
@@ -143,7 +146,7 @@ def forwarder_factory(
     def _factory(**settings_overrides: Any) -> UserServicesTraceForwarder:
         return UserServicesTraceForwarder(
             traces_directory=traces_directory,
-            tracing_settings=tracing_settings,
+            user_services_tracing_settings=tracing_settings,
             platform_tracing_settings=platform_tracing_settings,
         )
 
@@ -244,7 +247,7 @@ async def test_forwarder_drain_processes_all_files(
 
 async def test_forwarder_drain_respects_timeout(
     traces_directory: Path,
-    tracing_settings_factory: Callable[..., UserServiceTracingSettings],
+    tracing_settings_factory: Callable[..., UserServicesTracingSettings],
     platform_tracing_settings: TracingSettings,
     sample_span_line: bytes,
 ):
@@ -254,7 +257,7 @@ async def test_forwarder_drain_respects_timeout(
     )
     timeout_forwarder = UserServicesTraceForwarder(
         traces_directory=traces_directory,
-        tracing_settings=short_timeout_settings,
+        user_services_tracing_settings=short_timeout_settings,
         platform_tracing_settings=platform_tracing_settings,
     )
 
@@ -276,7 +279,7 @@ async def test_forwarder_drain_respects_timeout(
 
 async def test_forwarder_chunks_large_files(
     traces_directory: Path,
-    tracing_settings_factory: Callable[..., UserServiceTracingSettings],
+    tracing_settings_factory: Callable[..., UserServicesTracingSettings],
     platform_tracing_settings: TracingSettings,
     sample_span_line: bytes,
     mock_successful_post: AsyncMock,
@@ -287,7 +290,7 @@ async def test_forwarder_chunks_large_files(
     )
     chunked_forwarder = UserServicesTraceForwarder(
         traces_directory=traces_directory,
-        tracing_settings=small_batch_settings,
+        user_services_tracing_settings=small_batch_settings,
         platform_tracing_settings=platform_tracing_settings,
     )
 
