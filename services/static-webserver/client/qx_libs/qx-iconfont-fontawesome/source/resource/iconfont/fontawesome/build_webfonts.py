@@ -17,6 +17,20 @@ This script regenerates the fonts so that:
 * any glyph whose ink is taller than ``TARGET_FILL`` em is uniformly scaled down
   about its centre until it fits, leaving smaller glyphs untouched. Glyphs are
   designed centred on the em centre, so no repositioning is needed.
+
+Note on a future qooxdoo upgrade
+--------------------------------
+The CFF->TrueType conversion (and therefore the vendored ``.ttf``) exists only
+because the pinned 2020-era ``qooxdoo-kit`` compiler reads glyph metrics from a
+``.ttf`` exclusively. Current qooxdoo ``WebFont.js`` uses fontkit and accepts
+``ttf|otf|woff|woff2``, so after a compiler upgrade the ``.ttf`` output can be
+dropped and the served ``.woff2`` shipped straight from upstream.
+
+The normalization, however, must stay regardless of compiler version: qooxdoo
+sizes a font icon's box from the glyph's *advance* metrics (not its ink) and the
+runtime clips with ``overflow: hidden``, so an oversized FA7 glyph would still be
+cropped. Advance widths are deliberately left untouched here so the qooxdoo box
+dimensions are unchanged -- only the visible ink shrinks.
 """
 import sys
 from pathlib import Path
