@@ -17,13 +17,13 @@ qx.Class.define("osparc.utils.LanguageManager", {
 
     // Display names for the locales we want to expose
     __localeLabels: {
-      "en": "English",
-      "es": "Español",
+      "en_US": "English",
+      "es_ES": "Español",
     },
 
     /**
      * Returns the locales for which translations were compiled (see compile.json).
-     * @return {String[]} e.g. ["en", "es"]
+     * @return {String[]} e.g. ["en_US", "es_ES"]
      */
     getAvailableLocales: function() {
       return qx.locale.Manager.getInstance().getAvailableLocales();
