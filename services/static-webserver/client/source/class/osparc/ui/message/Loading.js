@@ -291,5 +291,10 @@ qx.Class.define("osparc.ui.message.Loading", {
       const extraWidgetsContainer = this.getChildControl("extra-widgets-container");
       extraWidgetsContainer.add(widget);
     },
+
+    clearExtraWidgets: function() {
+      const extraWidgetsContainer = this.getChildControl("extra-widgets-container");
+      extraWidgetsContainer.removeAll();
+    },
   }
 });

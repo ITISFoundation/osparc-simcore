@@ -34,6 +34,10 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.__stack.add(loadingPage);
     },
 
+    getLoadingPage: function() {
+      return this.__loadingPage;
+    },
+
     addDashboard: function(dashboard) {
       this.__dashboard = dashboard;
       this.__stack.add(dashboard);

@@ -1809,11 +1809,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       minStudyData["name"] = title;
       minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
-      this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
+      mainPageHandler.setLoadingPageHeader(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
+      mainPageHandler.showLoadingPage();
       osparc.study.Utils.createStudyAndPoll(minStudyData)
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
-          this._hideLoadingPage();
+          mainPageHandler.showDashboard();
           osparc.FlashMessenger.logError(err);
         });
     },
@@ -1824,21 +1826,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const existingNames = this._resourcesList.map(study => study["name"]);
       const title = osparc.utils.Utils.getUniqueName(newStudyName, existingNames);
       templateCopyData.name = title;
-      this._showLoadingPage(this.tr("Creating ") + (newStudyName || osparc.product.Utils.getStudyAlias()));
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
+      mainPageHandler.setLoadingPageHeader(this.tr("Creating ") + (newStudyName || osparc.product.Utils.getStudyAlias()));
+      mainPageHandler.showLoadingPage();
       const contextProps = {
         workspaceId: this.getCurrentWorkspaceId(),
         folderId: this.getCurrentFolderId(),
       };
-      osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage, contextProps)
+      osparc.study.Utils.createStudyFromTemplate(templateCopyData, mainPageHandler.getLoadingPage(), contextProps)
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
-          this._hideLoadingPage();
+          mainPageHandler.showDashboard();
+          if (err && err["aborted"]) {
+            // the user cancelled the creation, nothing else to do
+            return;
+          }
           osparc.FlashMessenger.logError(err);
         });
     },
 
     __newStudyFromServiceBtnClicked: function(key, version, newStudyLabel) {
-      this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
+      mainPageHandler.setLoadingPageHeader(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
+      mainPageHandler.showLoadingPage();
       const contextProps = {
         workspaceId: this.getCurrentWorkspaceId(),
         folderId: this.getCurrentFolderId(),
@@ -1846,15 +1856,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.study.Utils.createStudyFromService(key, version, this._resourcesList, newStudyLabel, contextProps)
         .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
-          this._hideLoadingPage();
+          mainPageHandler.showDashboard();
           osparc.FlashMessenger.logError(err);
         });
     },
 
     __startStudyAfterCreating: function(studyId) {
-      const openCB = () => this._hideLoadingPage();
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
+      const openCB = () => {
+        // the study editor will be shown by startStudy, no extra action needed here
+      };
       const cancelCB = () => {
-        this._hideLoadingPage();
+        mainPageHandler.showDashboard();
         osparc.store.Study.getInstance().deleteStudy(studyId);
       };
       const isStudyCreation = true;

@@ -873,8 +873,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return;
       }
 
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || studyAlias));
+      mainPageHandler.setLoadingPageHeader(this.tr("Creating ") + (templateData.name || studyAlias));
+      mainPageHandler.showLoadingPage();
 
       if (osparc.store.StaticInfo.isBillableProduct()) {
         const studyOptions = new osparc.study.StudyOptions();
@@ -885,7 +887,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const win = osparc.study.StudyOptions.popUpInWindow(studyOptions);
         win.moveItUp();
         const cancelStudyOptions = () => {
-          this._hideLoadingPage();
+          mainPageHandler.showDashboard();
           win.close();
         }
         win.addListener("cancel", () => cancelStudyOptions());
@@ -898,15 +900,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
           win.close();
 
-          this._showLoadingPage(this.tr("Creating ") + (newName || studyAlias));
-          osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+          mainPageHandler.setLoadingPageHeader(this.tr("Creating ") + (newName || studyAlias));
+          mainPageHandler.showLoadingPage();
+          osparc.study.Utils.createStudyFromTemplate(templateData, mainPageHandler.getLoadingPage())
             .then(newStudyData => {
               const studyId = newStudyData["uuid"];
               const openCB = () => {
-                this._hideLoadingPage();
+                // the study editor will be shown by startStudy, no extra action needed here
               };
               const cancelCB = () => {
-                this._hideLoadingPage();
+                mainPageHandler.showDashboard();
                 osparc.store.Study.getInstance().deleteStudy(studyId);
               };
 
@@ -963,29 +966,39 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   this._startStudyById(studyId, openCB, cancelCB, showStudyOptions);
                 })
                 .catch(err => {
-                  this._hideLoadingPage();
+                  mainPageHandler.showDashboard();
                   osparc.FlashMessenger.logError(err);
                 });
             })
             .catch(err => {
-              this._hideLoadingPage();
+              mainPageHandler.showDashboard();
+              if (err && err["aborted"]) {
+                // the user cancelled the creation, nothing else to do
+                return;
+              }
               osparc.FlashMessenger.logError(err);
             });
         });
       } else {
-        osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+        osparc.study.Utils.createStudyFromTemplate(templateData, mainPageHandler.getLoadingPage())
           .then(newStudyData => {
             const studyId = newStudyData["uuid"];
-            const openCB = () => this._hideLoadingPage();
+            const openCB = () => {
+              // the study editor will be shown by startStudy, no extra action needed here
+            };
             const cancelCB = () => {
-              this._hideLoadingPage();
+              mainPageHandler.showDashboard();
               osparc.store.Study.getInstance().deleteStudy(studyId);
             };
             const isStudyCreation = true;
             this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
           })
           .catch(err => {
-            this._hideLoadingPage();
+            mainPageHandler.showDashboard();
+            if (err && err["aborted"]) {
+              // the user cancelled the creation, nothing else to do
+              return;
+            }
             osparc.FlashMessenger.logError(err);
           });
       }
@@ -996,21 +1009,25 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return;
       }
 
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      this._showLoadingPage(this.tr("Creating ") + studyAlias);
+      mainPageHandler.setLoadingPageHeader(this.tr("Creating ") + studyAlias);
+      mainPageHandler.showLoadingPage();
 
       osparc.study.Utils.createStudyFromService(key, version)
         .then(studyId => {
-          const openCB = () => this._hideLoadingPage();
+          const openCB = () => {
+            // the study editor will be shown by startStudy, no extra action needed here
+          };
           const cancelCB = () => {
-            this._hideLoadingPage();
+            mainPageHandler.showDashboard();
             osparc.store.Study.getInstance().deleteStudy(studyId);
           };
           const isStudyCreation = true;
           this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
         })
         .catch(err => {
-          this._hideLoadingPage();
+          mainPageHandler.showDashboard();
           osparc.FlashMessenger.logError(err);
         });
     },

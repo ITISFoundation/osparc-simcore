@@ -128,6 +128,21 @@ qx.Class.define("osparc.study.Utils", {
                 progressSequence.addOverallProgressBar();
                 loadingPage.clearMessages();
                 loadingPage.addWidgetToMessages(progressSequence);
+
+                // let the user cancel the (potentially long) copy-project task
+                loadingPage.clearExtraWidgets();
+                if (task.getAbortHref()) {
+                  const cancelButton = new qx.ui.form.Button(qx.locale.Manager.tr("Cancel")).set({
+                    appearance: "danger-button",
+                    alignX: "center",
+                    allowGrowX: false,
+                  });
+                  cancelButton.addListener("execute", () => {
+                    cancelButton.setEnabled(false);
+                    task.abortRequested();
+                  });
+                  loadingPage.addExtraWidget(cancelButton);
+                }
                 task.addListener("updateReceived", e => {
                   const updateData = e.getData();
                   if ("task_progress" in updateData && loadingPage) {
@@ -160,10 +175,18 @@ qx.Class.define("osparc.study.Utils", {
                 }, this);
                 task.addListener("resultReceived", e => {
                   const studyData = e.getData();
+                  loadingPage.clearExtraWidgets();
                   resolve(studyData);
+                }, this);
+                task.addListener("taskAborted", () => {
+                  loadingPage.clearExtraWidgets();
+                  reject({
+                    aborted: true,
+                  });
                 }, this);
                 task.addListener("pollingError", e => {
                   const err = e.getData();
+                  loadingPage.clearExtraWidgets();
                   reject(err);
                 }, this);
               })
