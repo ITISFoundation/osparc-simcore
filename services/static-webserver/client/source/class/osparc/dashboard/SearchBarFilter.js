@@ -80,19 +80,19 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       return [{
         id: "show-all",
         label: qx.locale.Manager.tr("All") + " " + resourceAlias,
-        icon: "@FontAwesome5Solid/home/20"
+        icon: "@FontAwesomeSolid/home/20"
       }, {
         id: "my-resources",
         label: qx.locale.Manager.tr("My") + " " + resourceAlias,
-        icon: "@FontAwesome5Solid/user/20"
+        icon: "@FontAwesomeSolid/user/20"
       }, {
         id: "shared-with-me",
         label: qx.locale.Manager.tr("Shared with Me"),
-        icon: "@FontAwesome5Solid/users/20"
+        icon: "@FontAwesomeSolid/users/20"
       }, {
         id: "shared-with-everyone",
         label: qx.locale.Manager.tr("Public") + " " + resourceAlias,
-        icon: "@FontAwesome5Solid/globe/20"
+        icon: "@FontAwesomeSolid/globe/20"
       }];
     },
 
@@ -127,7 +127,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       let control;
       switch (id) {
         case "search-icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/search/16").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/search/16").set({
             backgroundColor: "transparent",
             alignY: "middle",
             paddingLeft: 6,
@@ -237,19 +237,19 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const menu = this.__filtersMenu;
       menu.removeAll();
 
-      const sharedWithButton = new qx.ui.menu.Button(this.tr("Shared with"), "@FontAwesome5Solid/share-alt/12");
+      const sharedWithButton = new qx.ui.menu.Button(this.tr("Shared with"), "@FontAwesomeSolid/share-alt/12");
       this.__addSharedWith(sharedWithButton);
       menu.add(sharedWithButton);
 
       if (["study", "template"].includes(this.__resourceType)) {
-        const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
+        const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesomeSolid/tags/12");
         osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
         this.__addTags(tagsButton);
         menu.add(tagsButton);
       }
 
       if (this.__resourceType === "service") {
-        const appTypeButton = new qx.ui.menu.Button(this.tr("App Type"), "@FontAwesome5Solid/cogs/12");
+        const appTypeButton = new qx.ui.menu.Button(this.tr("App Type"), "@FontAwesomeSolid/cogs/12");
         this.__addAppTypes(appTypeButton);
         menu.add(appTypeButton);
       }
@@ -291,7 +291,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         const tagsMenu = new qx.ui.menu.Menu();
         osparc.utils.Utils.setIdToWidget(tagsMenu, "searchBarFilter-tags-menu");
         tags.forEach(tag => {
-          const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
+          const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesomeSolid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.getColor());
           tagsMenu.add(tagButton);
           tagButton.addListener("execute", () => {

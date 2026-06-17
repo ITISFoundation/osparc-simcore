@@ -1714,7 +1714,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createTrashStudiesButton: function() {
-      const trashButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
+      const trashButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/14").set({
         appearance: "warning-button",
         visibility: "excluded"
       });
@@ -1728,7 +1728,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createDeleteStudiesButton: function() {
-      const deleteButton = new qx.ui.form.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/14").set({
+      const deleteButton = new qx.ui.form.Button(this.tr("Delete permanently"), "@FontAwesomeSolid/trash/14").set({
         appearance: "danger-button",
         visibility: "excluded"
       });
@@ -2023,7 +2023,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getOpenLocationMenuButton: function(studyData) {
-      const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/external-link-alt/12");
+      const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesomeSolid/external-link-alt/12");
       openLocationButton.addListener("execute", () => {
         this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, studyData["workspaceId"], studyData["folderId"]);
       }, this);
@@ -2031,7 +2031,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getRenameStudyMenuButton: function(studyData) {
-      const renameButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
+      const renameButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesomeSolid/pencil-alt/12");
       renameButton.addListener("execute", () => {
         const title = this.tr("Rename ") + osparc.product.Utils.getStudyAlias();
         const renamer = new osparc.widget.Renamer(studyData["name"], null, title);
@@ -2060,7 +2060,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getStudyDataMenuButton: function(card) {
       const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" files...");
-      const studyDataButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/file/12");
+      const studyDataButton = new qx.ui.menu.Button(text, "@FontAwesomeSolid/file/12");
       studyDataButton["studyDataButton"] = true;
       studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
@@ -2095,7 +2095,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getMoveStudyToMenuButton: function(studyData) {
-      const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
+      const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesomeSolid/folder/12");
       moveToButton["moveToButton"] = true;
       moveToButton.addListener("tap", () => {
         const currentWorkspaceId = this.getCurrentWorkspaceId();
@@ -2134,7 +2134,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDuplicateMenuButton: function(studyData) {
-      const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"), "@FontAwesome5Solid/copy/12");
+      const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"), "@FontAwesomeSolid/copy/12");
       duplicateButton["duplicateButton"] = true;
       duplicateButton.addListener("execute", () => this.__duplicateStudy(studyData), this);
       return duplicateButton;
@@ -2195,7 +2195,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getExportCMISMenuButton: function(studyData) {
-      const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
+      const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesomeSolid/cloud-download-alt/12");
       exportButton["exportCMISButton"] = true;
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
       exportButton.setVisibility(isDisabled ? "excluded" : "visible");
@@ -2245,7 +2245,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
-      const deleteButton = new qx.ui.menu.Button(null, "@FontAwesome5Solid/trash/12");
+      const deleteButton = new qx.ui.menu.Button(null, "@FontAwesomeSolid/trash/12");
       const deleteAction = this.__getDeleteAction(studyData);
       switch (deleteAction) {
         case "delete":
@@ -2278,7 +2278,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteFunctionMenuButton: function(functionData) {
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/12");
       deleteButton.set({
         appearance: "menu-button"
       });
@@ -2370,7 +2370,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.FlashMessenger.logAs(text, "INFO");
 
       const cardTitle = this.tr("Importing Study...");
-      const cardIcon = "@FontAwesome5Solid/cloud-upload-alt";
+      const cardIcon = "@FontAwesomeSolid/cloud-upload-alt";
       const importingStudyCard = this._addTaskCard(null, cardTitle, cardIcon);
       if (importingStudyCard) {
         this.__attachImportEventHandler(file, importTaskUI, importingStudyCard);

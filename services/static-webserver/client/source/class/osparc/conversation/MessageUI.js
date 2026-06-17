@@ -116,7 +116,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowY: false,
             marginTop: 4,
             alignY: "top",
-            icon: "@FontAwesome5Solid/ellipsis-v/12",
+            icon: "@FontAwesomeSolid/ellipsis-v/12",
             focusable: false
           });
           this._addAt(control, 2);
@@ -170,11 +170,11 @@ qx.Class.define("osparc.conversation.MessageUI", {
         });
         menuButton.setMenu(menu);
 
-        const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
+        const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesomeSolid/pencil-alt/12");
         editButton.addListener("execute", () => this.__editMessage(), this);
         menu.add(editButton);
 
-        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."), "@FontAwesome5Solid/trash/12");
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."), "@FontAwesomeSolid/trash/12");
         deleteButton.addListener("execute", () => this.__deleteMessage(), this);
         menu.add(deleteButton);
       }

@@ -271,8 +271,17 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
 
     __applyThumbnail: function(value) {
       const image = this.getChildControl("thumbnail").getChildControl("image");
+      if (!value) {
+        this.getContentElement().setStyles({
+          "background-image": "none",
+        });
+        image.set({
+          visibility: "excluded",
+        });
+        return;
+      }
       if (
-        value.includes("@FontAwesome5Solid/") ||
+        value.includes("@FontAwesomeSolid/") ||
         value.includes("@MaterialIcons/")
       ) {
         this.getContentElement().setStyles({

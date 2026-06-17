@@ -70,7 +70,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
 
       // Copy Id button
       const text = "Function Id";
-      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/copy/12").set({
         label: text,
         toolTipText: "Copy " + text,
         marginTop: 15,

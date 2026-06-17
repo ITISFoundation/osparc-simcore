@@ -62,7 +62,7 @@ qx.Class.define("osparc.po.EmailEditor", {
           break;
         }
         case "add-recipient-button": {
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus/12").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/plus/12").set({
             allowGrowX: false,
             allowGrowY: true,
             toolTipText: this.tr("Add Recipient"),
@@ -156,7 +156,7 @@ qx.Class.define("osparc.po.EmailEditor", {
     },
 
     addChip: function(label, description) {
-      const chip = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/times/10").set({
+      const chip = new qx.ui.basic.Atom(label, "@FontAwesomeSolid/times/10").set({
         toolTipText: description,
         padding: [4, 8],
         decorator: "chip",

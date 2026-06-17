@@ -18,7 +18,7 @@ qx.Class.define("iconbrowser.Application", {
       // font files to the output class.
       // you could also explicitly include the class in the compile.json file
 
-      // iconfont.fontawesome5.Load;
+      // iconfont.fontawesome.Load;
 
       let copy = document.createElement("input");
       document.body.appendChild(copy);

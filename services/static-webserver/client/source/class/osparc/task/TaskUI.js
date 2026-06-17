@@ -67,7 +67,7 @@ qx.Class.define("osparc.task.TaskUI", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/14").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/14").set({
             width: 25,
             alignY: "middle"
           });

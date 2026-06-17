@@ -57,7 +57,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
             appearance: "form-button",
             label: this.tr("Add Service"),
             alignX: "center",
-            icon: "@FontAwesome5Solid/plus/14",
+            icon: "@FontAwesomeSolid/plus/14",
             allowGrowX: false
           });
           control.addListener("execute", () => this.__openAddServiceToPlan());

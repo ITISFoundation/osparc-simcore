@@ -28,9 +28,9 @@ qx.Class.define("osparc.service.StatusUI", {
       fpNode.bind("outputs", icon, "source", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
-            return "@FontAwesome5Solid/check/12";
+            return "@FontAwesomeSolid/check/12";
           }
-          return "@FontAwesome5Solid/file/12";
+          return "@FontAwesomeSolid/file/12";
         },
         onUpdate: (source, target) => {
           if (osparc.file.FilePicker.getOutput(source.getOutputs())) {
@@ -54,43 +54,43 @@ qx.Class.define("osparc.service.StatusUI", {
         case "WAITING_FOR_CLUSTER":
         case "STARTED":
         case "RETRY":
-          return "@FontAwesome5Solid/circle-notch/"+size;
+          return "@FontAwesomeSolid/circle-notch/"+size;
         case "SUCCESS":
-          return "@FontAwesome5Solid/check/"+size;
+          return "@FontAwesomeSolid/check/"+size;
         case "FAILED":
         case "ABORTED":
-          return "@FontAwesome5Solid/exclamation-circle/"+size;
+          return "@FontAwesomeSolid/exclamation-circle/"+size;
 
         // dynamics
         case "idle":
-          return "@FontAwesome5Solid/hourglass-end/"+size;
+          return "@FontAwesomeSolid/hourglass-end/"+size;
         case "ready":
-          return "@FontAwesome5Solid/check/"+size;
+          return "@FontAwesomeSolid/check/"+size;
         case "starting":
         case "stopping":
         case "pending":
         case "pulling":
         case "connecting":
-          return "@FontAwesome5Solid/circle-notch/"+size;
+          return "@FontAwesomeSolid/circle-notch/"+size;
         case "deprecated":
-          return "@FontAwesome5Solid/exclamation-triangle/"+size;
+          return "@FontAwesomeSolid/exclamation-triangle/"+size;
         case "retired":
         case "failed":
-          return "@FontAwesome5Solid/exclamation-circle/"+size;
+          return "@FontAwesomeSolid/exclamation-circle/"+size;
 
         // ports
         case "modified":
-          return "@FontAwesome5Solid/exclamation-circle/"+size;
+          return "@FontAwesomeSolid/exclamation-circle/"+size;
         case "up-to-date":
-          return "@FontAwesome5Solid/check/"+size;
+          return "@FontAwesomeSolid/check/"+size;
         case "running":
-          return "@FontAwesome5Solid/circle-notch/"+size;
+          return "@FontAwesomeSolid/circle-notch/"+size;
 
         // outputs
         case "busy":
-          return "@FontAwesome5Solid/circle-notch/"+size;
+          return "@FontAwesomeSolid/circle-notch/"+size;
         case "out-of-date":
-          return "@FontAwesome5Solid/exclamation-circle/"+size;
+          return "@FontAwesomeSolid/exclamation-circle/"+size;
 
         default:
           return "";

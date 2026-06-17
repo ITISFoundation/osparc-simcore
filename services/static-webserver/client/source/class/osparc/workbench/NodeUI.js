@@ -133,8 +133,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
     PORT_DIAMETER: 18,
     PORT_MARGIN_TOP: 4,
     CONTENT_PADDING: 2,
-    PORT_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
-    PORT_DISCONNECTED: "@FontAwesome5Regular/circle/18",
+    PORT_CONNECTED: "@FontAwesomeRegular/dot-circle/18",
+    PORT_DISCONNECTED: "@FontAwesomeRegular/circle/18",
 
     CAPTION_POS: {
       ICON: 0, // from qooxdoo
@@ -204,7 +204,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           break;
         case "lock":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/lock/12",
+            source: "@FontAwesomeSolid/lock/12",
             padding: 4,
             visibility: "excluded"
           });
@@ -215,7 +215,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           break;
         case "marker":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/bookmark/12",
+            source: "@FontAwesomeSolid/bookmark/12",
             padding: 4,
             visibility: "excluded"
           });
@@ -267,7 +267,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
             });
           } else if (this.getNode().isUnknown()) {
             control.set({
-              icon: "@FontAwesome5Solid/question/14",
+              icon: "@FontAwesomeSolid/question/14",
               toolTipText: "Unknown",
             });
           }
@@ -419,14 +419,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
       if (node.isDynamic()) {
         const startButton = new qx.ui.menu.Button().set({
           label: this.tr("Start"),
-          icon: "@FontAwesome5Solid/play/10"
+          icon: "@FontAwesomeSolid/play/10"
         });
         node.attachHandlersToStartButton(startButton);
         this.__optionsMenu.addAt(startButton, 0);
 
         const stopButton = new qx.ui.menu.Button().set({
           label: this.tr("Stop"),
-          icon: "@FontAwesome5Solid/stop/10"
+          icon: "@FontAwesomeSolid/stop/10"
         });
         node.attachHandlersToStopButton(stopButton);
         this.__optionsMenu.addAt(stopButton, 1);
@@ -435,14 +435,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
       if (node.getKey().includes("parameter/int")) {
         const makeIterator = new qx.ui.menu.Button().set({
           label: this.tr("Convert to Iterator"),
-          icon: "@FontAwesome5Solid/sync-alt/10"
+          icon: "@FontAwesomeSolid/sync-alt/10"
         });
         makeIterator.addListener("execute", () => node.convertToIterator("int"), this);
         this.__optionsMenu.add(makeIterator);
       } else if (node.getKey().includes("data-iterator/int-range")) {
         const convertToParameter = new qx.ui.menu.Button().set({
           label: this.tr("Convert to Parameter"),
-          icon: "@FontAwesome5Solid/sync-alt/10"
+          icon: "@FontAwesomeSolid/sync-alt/10"
         });
         convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
         this.__optionsMenu.add(convertToParameter);
@@ -621,9 +621,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const outputs = this.getNode().getOutputs();
       let imageSrc = null;
       if (osparc.file.FilePicker.isOutputFromStore(outputs)) {
-        imageSrc = "@FontAwesome5Solid/file-alt/34";
+        imageSrc = "@FontAwesomeSolid/file-alt/34";
       } else if (osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
-        imageSrc = "@FontAwesome5Solid/link/34";
+        imageSrc = "@FontAwesomeSolid/link/34";
       }
       if (imageSrc) {
         this.setThumbnail(imageSrc);
@@ -850,21 +850,21 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
       const renameBtn = new qx.ui.menu.Button().set({
         label: this.tr("Rename"),
-        icon: "@FontAwesome5Solid/i-cursor/10"
+        icon: "@FontAwesomeSolid/i-cursor/10"
       });
       renameBtn.getChildControl("shortcut").setValue("F2");
       renameBtn.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
       optionsMenu.add(renameBtn);
 
       const markerBtn = this.__markerBtn = new qx.ui.menu.Button().set({
-        icon: "@FontAwesome5Solid/bookmark/10",
+        icon: "@FontAwesomeSolid/bookmark/10",
         visibility: "excluded"
       });
       optionsMenu.add(markerBtn);
 
       const infoBtn = new qx.ui.menu.Button().set({
         label: this.tr("Information..."),
-        icon: "@FontAwesome5Solid/info/10"
+        icon: "@FontAwesomeSolid/info/10"
       });
       infoBtn.getChildControl("shortcut").setValue("I");
       infoBtn.addListener("execute", () => this.fireDataEvent("infoNode", this.getNodeId()));
@@ -872,7 +872,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
       const deleteBtn = this.__deleteBtn = new qx.ui.menu.Button().set({
         label: this.tr("Delete"),
-        icon: "@FontAwesome5Solid/trash/10"
+        icon: "@FontAwesomeSolid/trash/10"
       });
       deleteBtn.getChildControl("shortcut").setValue("Del");
       deleteBtn.addListener("execute", () => this.fireDataEvent("removeNode", this.getNodeId()));
@@ -880,7 +880,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
       const menuBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
-        icon: "@FontAwesome5Solid/ellipsis-v/9",
+        icon: "@FontAwesomeSolid/ellipsis-v/9",
         height: 18,
         width: 18,
         allowGrowX: false,

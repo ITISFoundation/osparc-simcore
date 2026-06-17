@@ -225,7 +225,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addDeleteItemButton: function() {
       const deleteItemButton = this.__deleteItemButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/trash/18",
+        icon: "@FontAwesomeSolid/trash/18",
         width: this.self().BUTTON_SIZE,
         height: this.self().BUTTON_SIZE,
         visibility: "excluded"
@@ -330,7 +330,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const boxWidth = osparc.workbench.NodeUI.NODE_WIDTH;
       const boxHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
       const circleSize = 26;
-      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/"+circleSize).set({
+      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/"+circleSize).set({
         opacity: 0.8
       });
       temporaryNodeUI.getContentElement().addClass("rotate");

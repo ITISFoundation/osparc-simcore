@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.ServiceSubmission", {
       const platformName = osparc.store.StaticInfo.getPlatformName();
       const hasRights = osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll");
       if (platformName === "dev") {
-        const testDataButton = new qx.ui.form.Button(qx.locale.Manager.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
+        const testDataButton = new qx.ui.form.Button(qx.locale.Manager.tr("Test with data"), "@FontAwesomeSolid/plus-circle/14");
         testDataButton.addListener("execute", () => {
           osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
             .then(data => {
@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ServiceSubmission", {
         this.__toolbar.add(testDataButton);
       }
 
-      const addServiceButton = new qx.ui.form.Button(qx.locale.Manager.tr("Submit new app"), "@FontAwesome5Solid/plus-circle/14");
+      const addServiceButton = new qx.ui.form.Button(qx.locale.Manager.tr("Submit new app"), "@FontAwesomeSolid/plus-circle/14");
       addServiceButton.set({
         appearance: "form-button-outlined",
         visibility: hasRights ? "visible" : "excluded"
