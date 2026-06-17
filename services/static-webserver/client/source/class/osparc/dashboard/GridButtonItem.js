@@ -127,7 +127,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             padding: [0, 8, 0, 8],
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
@@ -162,7 +162,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             padding: 5,
             alignX: "center",
             alignY: "middle",
-            source: "@FontAwesome5Solid/check/12",
+            source: "@FontAwesomeSolid/check/12",
             focusable: false
           });
           // make it circular

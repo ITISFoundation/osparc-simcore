@@ -71,7 +71,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
         if (skipNode) {
           btn.set({
             label: nodeLabel,
-            icon: "@FontAwesome5Solid/eye-slash/14"
+            icon: "@FontAwesomeSolid/eye-slash/14"
           });
         } else {
           btn.set({
@@ -99,7 +99,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
     __createNewServiceBtn: function() {
       const newServiceBtn = new qx.ui.form.Button().set({
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        icon: "@FontAwesome5Solid/plus-circle/24",
+        icon: "@FontAwesomeSolid/plus-circle/24",
         backgroundColor: "background-main-4",
         textColor: "ready-green"
       });
@@ -120,7 +120,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
       const menu = new qx.ui.menu.Menu();
 
       if (btn.skipNode) {
-        const showButton = new qx.ui.menu.Button("Show", "@FontAwesome5Solid/eye/14");
+        const showButton = new qx.ui.menu.Button("Show", "@FontAwesomeSolid/eye/14");
         showButton.addListener("execute", () => {
           this.fireDataEvent("showNode", {
             nodeId: btn.nodeId,
@@ -129,14 +129,14 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
         });
         menu.add(showButton);
       } else {
-        const hideButton = new qx.ui.menu.Button("Hide", "@FontAwesome5Solid/eye-slash/14");
+        const hideButton = new qx.ui.menu.Button("Hide", "@FontAwesomeSolid/eye-slash/14");
         hideButton.addListener("execute", () => {
           this.fireDataEvent("hideNode", btn.nodeId);
         });
         menu.add(hideButton);
       }
 
-      const deleteButton = new qx.ui.menu.Button("Delete", "@FontAwesome5Solid/trash/14").set({
+      const deleteButton = new qx.ui.menu.Button("Delete", "@FontAwesomeSolid/trash/14").set({
         appearance: "danger-button"
       });
       deleteButton.addListener("execute", () => {

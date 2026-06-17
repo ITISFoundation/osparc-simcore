@@ -101,7 +101,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         appearance: "form-button",
         label: this.tr("New Organization"),
         alignX: "center",
-        icon: "@FontAwesome5Solid/plus/14",
+        icon: "@FontAwesomeSolid/plus/14",
         allowGrowX: false
       });
       createOrgBtn.addListener("execute", () => {

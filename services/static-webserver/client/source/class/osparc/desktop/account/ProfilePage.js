@@ -146,8 +146,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "hideEmail": "hideEmail" in privacyData ? privacyData["hideEmail"] : true,
         });
 
-        const visibleIcon = "@FontAwesome5Solid/eye/12";
-        const hiddenIcon = "@FontAwesome5Solid/eye-slash/12";
+        const visibleIcon = "@FontAwesomeSolid/eye/12";
+        const hiddenIcon = "@FontAwesomeSolid/eye-slash/12";
         const createImage = source => {
           return new qx.ui.basic.Image(source).set({
             alignX: "center",
@@ -162,7 +162,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           [pos.EMAIL]: createImage(this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon),
         };
         if (osparc.store.StaticInfo.isUpdatePhoneNumberEnabled()) {
-          const updatePhoneNumberButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+          const updatePhoneNumberButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/pencil-alt/12").set({
             padding: [1, 5],
           });
           updatePhoneNumberButton.addListener("execute", () => this.__openPhoneNumberUpdater(), this);
@@ -430,7 +430,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       const optOutMessage = new qx.ui.basic.Atom().set({
         label: this.tr("If all searchable fields are hidden, you will not be discoverable."),
-        icon: "@FontAwesome5Solid/exclamation-triangle/14",
+        icon: "@FontAwesomeSolid/exclamation-triangle/14",
         gap: 8,
         allowGrowX: false,
       });

@@ -174,7 +174,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Templates"),
-        icon: "@FontAwesome5Solid/copy/16",
+        icon: "@FontAwesomeSolid/copy/16",
         paddingLeft: 10, // align it with the context
       });
       osparc.utils.Utils.setIdToWidget(templatesButton, "templatesFilterItem");
@@ -192,7 +192,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Public Projects"),
-        icon: "@FontAwesome5Solid/globe/16",
+        icon: "@FontAwesomeSolid/globe/16",
         paddingLeft: 10, // align it with the context
       });
       osparc.utils.Utils.setIdToWidget(publicProjectsButton, "publicProjectsFilterItem");
@@ -229,7 +229,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Recently Deleted"),
-        icon: "@FontAwesome5Solid/trash-alt/16",
+        icon: "@FontAwesomeSolid/trash-alt/16",
         paddingLeft: 10, // align it with the context
       });
       trashButton.addListener("changeValue", e => {
@@ -321,7 +321,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
 
     setTrashEmpty: function(isEmpty) {
       this.__trashButton.set({
-        icon: isEmpty ? "@FontAwesome5Solid/trash-alt/16" : "@FontAwesome5Solid/trash/16"
+        icon: isEmpty ? "@FontAwesomeSolid/trash-alt/16" : "@FontAwesomeSolid/trash/16"
       });
     },
     /* /TRASH BIN */
@@ -400,7 +400,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         if (!tag) {
           return;
         }
-        const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
+        const button = new qx.ui.form.ToggleButton(null, "@FontAwesomeSolid/tag/16");
         button.id = tag.getTagId();
         tag.bind("name", button, "label");
         tag.bind("name", button, "toolTipText");
@@ -425,7 +425,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
 
 
       if (this.__tagButtons.length > maxTags) {
-        const showAllButton = new qx.ui.form.Button(this.tr("All Tags..."), "@FontAwesome5Solid/tags/16");
+        const showAllButton = new qx.ui.form.Button(this.tr("All Tags..."), "@FontAwesomeSolid/tags/16");
         showAllButton.set({
           appearance: "filter-toggle-button"
         });
@@ -444,7 +444,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         tagsLayout.add(showAllButton);
       }
 
-      const editTagsButton = new qx.ui.form.Button(this.tr("Edit Tags..."), "@FontAwesome5Solid/pencil-alt/14");
+      const editTagsButton = new qx.ui.form.Button(this.tr("Edit Tags..."), "@FontAwesomeSolid/pencil-alt/14");
       editTagsButton.set({
         appearance: "filter-toggle-button"
       });

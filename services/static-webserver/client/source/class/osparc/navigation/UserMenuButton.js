@@ -58,7 +58,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           icon.getContentElement().setStyles({
             "margin-left": "0px"
           });
-          return "@FontAwesome5Solid/user-secret/28";
+          return "@FontAwesomeSolid/user-secret/28";
         }
         icon.getContentElement().setStyles({
           "margin-left": "-4px"
