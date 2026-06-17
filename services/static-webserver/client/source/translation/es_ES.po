@@ -1,9 +1,22 @@
+#, fuzzy
 msgid ""
-msgstr "Project-Id-Version: osparc\nLanguage: es\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2; plural=(n != 1);\n"
+msgstr ""
+"Project-Id-Version: osparc\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.9\n"
 
+# no me pises que llevo chanclas
 #: osparc/Application.js
 msgid "You have been logged out"
-msgstr "Se ha cerrado tu sesión"
+msgstr "Has sido desconectado"
 
 #: osparc/NewRelease.js
 msgid "New Version Released"
@@ -301,7 +314,7 @@ msgstr "En embargo<br>Se requieren créditos"
 msgid "Empty"
 msgstr "Vacío"
 
-#: osparc/product/quickStart/tis/Slides.js
+#: osparc/product/quickStart/s4llite/Slides.js
 msgid "Quick Start"
 msgstr "Inicio rápido"
 
@@ -2443,11 +2456,11 @@ msgstr "Visitas"
 
 #: osparc/service/SortServicesButtons.js
 msgid "Name Asc"
-msgstr "Nombre asc."
+msgstr "Nombre Asc"
 
 #: osparc/service/SortServicesButtons.js
 msgid "Name Desc"
-msgstr "Nombre desc."
+msgstr "Nombre Desc"
 
 #: osparc/widget/CollapsibleViewLight.js
 msgid "Expand"
