@@ -126,8 +126,9 @@ async def _process_start_event(
         # service run record. That winning handler is responsible for the credit
         # transaction, so we stop here to avoid creating a duplicate one.
         _logger.warning(
-            "On process start event the service run id %s was already created",
+            "On process start event the service run id %s for product %s was already created",
             msg.service_run_id,
+            msg.product_name,
         )
         return
 

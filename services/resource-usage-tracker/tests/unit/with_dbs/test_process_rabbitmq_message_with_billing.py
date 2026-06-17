@@ -346,10 +346,18 @@ async def test_stop_event_with_platform_ok_does_not_send_reimbursement_notificat
     mock_notify.assert_not_called()
 
 
-def _count_rows(postgres_db: sa.engine.Engine, table: sa.Table, service_run_id: str) -> int:
+def _count_rows(
+    postgres_db: sa.engine.Engine,
+    table: sa.Table,
+    *,
+    product_name: str,
+    service_run_id: str,
+) -> int:
     with postgres_db.connect() as con:
         return con.execute(
-            sa.select(sa.func.count()).select_from(table).where(table.c.service_run_id == service_run_id)
+            sa.select(sa.func.count())
+            .select_from(table)
+            .where((table.c.product_name == product_name) & (table.c.service_run_id == service_run_id))
         ).scalar_one()
 
 
@@ -380,10 +388,42 @@ async def test_process_start_event_is_idempotent_on_duplicate_message(
     # First delivery creates the records
     await _process_start_event(engine, msg, publisher, rpc_client)
     await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
-    assert _count_rows(postgres_db, resource_tracker_service_runs, msg.service_run_id) == 1
-    assert _count_rows(postgres_db, resource_tracker_credit_transactions, msg.service_run_id) == 1
+    assert (
+        _count_rows(
+            postgres_db,
+            resource_tracker_service_runs,
+            product_name=msg.product_name,
+            service_run_id=msg.service_run_id,
+        )
+        == 1
+    )
+    assert (
+        _count_rows(
+            postgres_db,
+            resource_tracker_credit_transactions,
+            product_name=msg.product_name,
+            service_run_id=msg.service_run_id,
+        )
+        == 1
+    )
 
     # Second (duplicate/redelivered) delivery must not raise and must not duplicate rows
     await _process_start_event(engine, msg, publisher, rpc_client)
-    assert _count_rows(postgres_db, resource_tracker_service_runs, msg.service_run_id) == 1
-    assert _count_rows(postgres_db, resource_tracker_credit_transactions, msg.service_run_id) == 1
+    assert (
+        _count_rows(
+            postgres_db,
+            resource_tracker_service_runs,
+            product_name=msg.product_name,
+            service_run_id=msg.service_run_id,
+        )
+        == 1
+    )
+    assert (
+        _count_rows(
+            postgres_db,
+            resource_tracker_credit_transactions,
+            product_name=msg.product_name,
+            service_run_id=msg.service_run_id,
+        )
+        == 1
+    )
