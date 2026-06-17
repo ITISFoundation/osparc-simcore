@@ -34,9 +34,9 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ....exceptions.errors import ServiceRunNotCreatedDBError
 from ....models.service_runs import (
     OsparcCreditsAggregatedByServiceKeyDB,
     ServiceRunCreate,
@@ -55,10 +55,10 @@ async def create_service_run(
     connection: AsyncConnection | None = None,
     *,
     data: ServiceRunCreate,
-) -> ServiceRunID:
+) -> ServiceRunID | None:
     async with transaction_context(engine, connection) as conn:
         insert_stmt = (
-            resource_tracker_service_runs.insert()
+            pg_insert(resource_tracker_service_runs)
             .values(
                 product_name=data.product_name,
                 service_run_id=data.service_run_id,
@@ -91,12 +91,24 @@ async def create_service_run(
                 modified=sa.func.now(),
                 last_heartbeat_at=data.last_heartbeat_at,
             )
+            # NOTE: RUT may receive the same TRACKING_STARTED event more than once
+            # (e.g. RabbitMQ redelivery across competing consumers/replicas). The
+            # (product_name, service_run_id) primary key makes this insert idempotent:
+            # on conflict nothing is inserted and we signal it to the caller by
+            # returning None instead of raising an IntegrityError.
+            .on_conflict_do_nothing(
+                index_elements=[
+                    resource_tracker_service_runs.c.product_name,
+                    resource_tracker_service_runs.c.service_run_id,
+                ]
+            )
             .returning(resource_tracker_service_runs.c.service_run_id)
         )
         result = await conn.execute(insert_stmt)
     row = result.first()
     if row is None:
-        raise ServiceRunNotCreatedDBError(data=data)
+        # The record already exists (duplicate start event): nothing was inserted
+        return None
     return cast(ServiceRunID, row[0])
 
 

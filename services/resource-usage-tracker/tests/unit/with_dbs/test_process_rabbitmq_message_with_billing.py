@@ -19,6 +19,9 @@ from models_library.resource_tracker import (
 )
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
+from simcore_postgres_database.models.resource_tracker_credit_transactions import (
+    resource_tracker_credit_transactions,
+)
 from simcore_postgres_database.models.resource_tracker_pricing_plan_to_service import (
     resource_tracker_pricing_plan_to_service,
 )
@@ -30,6 +33,9 @@ from simcore_postgres_database.models.resource_tracker_pricing_unit_costs import
 )
 from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,
+)
+from simcore_postgres_database.models.resource_tracker_service_runs import (
+    resource_tracker_service_runs,
 )
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_service_resource_usage_tracker.services import notifications
@@ -338,3 +344,46 @@ async def test_stop_event_with_platform_ok_does_not_send_reimbursement_notificat
 
     # No reimbursement notification should be sent
     mock_notify.assert_not_called()
+
+
+def _count_rows(postgres_db: sa.engine.Engine, table: sa.Table, service_run_id: str) -> int:
+    with postgres_db.connect() as con:
+        return con.execute(
+            sa.select(sa.func.count()).select_from(table).where(table.c.service_run_id == service_run_id)
+        ).scalar_one()
+
+
+async def test_process_start_event_is_idempotent_on_duplicate_message(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_rabbit_message_start,
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    resource_tracker_service_run_db,
+    resource_tracker_pricing_tables_db,
+    initialized_app,
+):
+    # Reproduces the RabbitMQ redelivery / competing-consumers race where the same
+    # TRACKING_STARTED message is processed twice. The second call must be a no-op:
+    # no duplicate service run and no duplicate credit transaction (no IntegrityError).
+    engine = initialized_app.state.engine
+    publisher = create_rabbitmq_client("publisher")
+    rpc_client = AsyncMock()
+
+    msg = random_rabbit_message_start(
+        wallet_id=1,
+        wallet_name="test",
+        pricing_plan_id=1,
+        pricing_unit_id=1,
+        pricing_unit_cost_id=1,
+    )
+
+    # First delivery creates the records
+    await _process_start_event(engine, msg, publisher, rpc_client)
+    await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
+    assert _count_rows(postgres_db, resource_tracker_service_runs, msg.service_run_id) == 1
+    assert _count_rows(postgres_db, resource_tracker_credit_transactions, msg.service_run_id) == 1
+
+    # Second (duplicate/redelivered) delivery must not raise and must not duplicate rows
+    await _process_start_event(engine, msg, publisher, rpc_client)
+    assert _count_rows(postgres_db, resource_tracker_service_runs, msg.service_run_id) == 1
+    assert _count_rows(postgres_db, resource_tracker_credit_transactions, msg.service_run_id) == 1
