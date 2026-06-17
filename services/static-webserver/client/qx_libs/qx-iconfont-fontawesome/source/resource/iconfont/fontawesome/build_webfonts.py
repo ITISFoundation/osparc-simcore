@@ -40,7 +40,7 @@ from fontTools.pens.cu2quPen import Cu2QuPen
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.ttGlyphPen import TTGlyphPen
-from fontTools.ttLib import TTFont
+from fontTools.ttLib import TTFont, newTable
 from fontTools.ttLib.tables._g_l_y_f import table__g_l_y_f
 from fontTools.ttLib.tables._l_o_c_a import table__l_o_c_a
 
@@ -101,6 +101,24 @@ def _build_font(src: Path, ttf_out: Path, woff2_out: Path) -> None:
 
     for name in glyph_order:
         glyf_glyphs[name].recalcBounds(glyf)
+
+    # CFF/OTF fonts carry a version 0.5 `maxp` (numGlyphs only). A glyf-based
+    # TrueType font requires version 1.0 with the point/contour limit fields,
+    # otherwise browsers reject the font as malformed and no glyph renders.
+    maxp = newTable("maxp")
+    maxp.tableVersion = 0x00010000
+    maxp.numGlyphs = len(glyph_order)
+    maxp.maxZones = 1
+    maxp.maxTwilightPoints = 0
+    maxp.maxStorage = 0
+    maxp.maxFunctionDefs = 0
+    maxp.maxInstructionDefs = 0
+    maxp.maxStackElements = 0
+    maxp.maxSizeOfInstructions = 0
+    maxp.maxComponentElements = 0
+    maxp.maxComponentDepth = 0
+    font["maxp"] = maxp
+    maxp.recalc(font)  # fills maxPoints/maxContours/... from the glyf table
 
     font.flavor = None
     font.save(str(ttf_out))
