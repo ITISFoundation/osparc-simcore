@@ -346,10 +346,12 @@ async def test_stop_event_with_platform_ok_does_not_send_reimbursement_notificat
     mock_notify.assert_not_called()
 
 
-def _count_rows(postgres_db: sa.engine.Engine, table: sa.Table, service_run_id: str) -> int:
+def _count_rows(postgres_db: sa.engine.Engine, table: sa.Table, *, product_name: str, service_run_id: str) -> int:
     with postgres_db.connect() as con:
         return con.execute(
-            sa.select(sa.func.count()).select_from(table).where(table.c.service_run_id == service_run_id)
+            sa.select(sa.func.count())
+            .select_from(table)
+            .where((table.c.product_name == product_name) & (table.c.service_run_id == service_run_id))
         ).scalar_one()
 
 
