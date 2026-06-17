@@ -121,7 +121,9 @@ class FunctionJobTaskClientService:
     _webserver_api: AuthSession
     _celery_task_manager: TaskManager
     _async_pg_engine: AsyncEngine
-    _function_cache: dict[FunctionID, RegisteredFunction] = field(default_factory=dict)
+    # Request-scoped deduplication: this service is instantiated per-request by DI,
+    # so this dict is alive for exactly one request — no TTL or cache-busting needed.
+    _function_lookup: dict[FunctionID, RegisteredFunction] = field(default_factory=dict)
 
     async def list_function_jobs_with_status(
         self,
@@ -160,11 +162,11 @@ class FunctionJobTaskClientService:
                 )
             ):
                 function_uid = function_job_wso.function_uid
-                if function_uid not in self._function_cache:
-                    self._function_cache[function_uid] = await self._function_service.get_function(
+                if function_uid not in self._function_lookup:
+                    self._function_lookup[function_uid] = await self._function_service.get_function(
                         function_id=function_uid,
                     )
-                function = self._function_cache[function_uid]
+                function = self._function_lookup[function_uid]
                 function_job_wso.status = await self.inspect_function_job(
                     function=function,
                     function_job=function_job_wso,

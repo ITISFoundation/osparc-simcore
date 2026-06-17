@@ -238,6 +238,14 @@ async def test_list_function_jobs_with_status_caches_get_function(
     mock_function_service = mocker.AsyncMock(spec=FunctionService)
     mock_function_service.get_function.return_value = registered_project_function
 
+    # inspect_function_job is not the focus of this test; stub it out at class level
+    # (instance-level patching fails on frozen dataclasses)
+    mocker.patch.object(
+        FunctionJobTaskClientService,
+        "inspect_function_job",
+        return_value=FunctionJobStatus(status=RunningState.STARTED),
+    )
+
     service = FunctionJobTaskClientService(
         user_id=user_id,
         product_name=product_name,
@@ -249,12 +257,6 @@ async def test_list_function_jobs_with_status_caches_get_function(
         _webserver_api=mocker.AsyncMock(spec=AuthSession),
         _celery_task_manager=mocker.Mock(spec=TaskManager),
         _async_pg_engine=mocker.MagicMock(spec=AsyncEngine),
-    )
-    # inspect_function_job is not the focus of this test; stub it out
-    mocker.patch.object(
-        service,
-        "inspect_function_job",
-        return_value=FunctionJobStatus(status=RunningState.STARTED),
     )
 
     jobs, meta = await service.list_function_jobs_with_status()
