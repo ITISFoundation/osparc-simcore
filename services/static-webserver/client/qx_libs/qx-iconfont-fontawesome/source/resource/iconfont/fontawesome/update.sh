@@ -13,7 +13,6 @@ FA_VERSION="7.2.0"
 git clone --depth=1 --branch "${FA_VERSION}" https://github.com/FortAwesome/Font-Awesome.git fa-git
 cp fa-git/LICENSE.txt .
 cp fa-git/CHANGELOG.md .
-cp fa-git/metadata/icons.yml .
 python3 ./build_webfonts.py fa-git
+node ./fa-map-convert.js fa-git/metadata/icons.yml
 rm -rf fa-git
-node ./fa-map-convert.js

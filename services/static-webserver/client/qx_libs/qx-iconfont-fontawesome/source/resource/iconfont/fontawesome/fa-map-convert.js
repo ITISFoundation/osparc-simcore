@@ -9,9 +9,10 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 
 const FREE_STYLES = ['solid', 'regular', 'brands'];
+const iconsYml = process.argv[2] || 'icons.yml';
 
 let res = {};
-let doc = yaml.safeLoad(fs.readFileSync('icons.yml', 'utf8'));
+let doc = yaml.safeLoad(fs.readFileSync(iconsYml, 'utf8'));
 for (let key in doc) {
    let icon = doc[key];
    if (!icon || !icon.unicode || !Array.isArray(icon.styles)) {
