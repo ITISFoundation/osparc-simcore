@@ -22,15 +22,17 @@ from aiodocker.types import JSONObject
 from botocore.client import Config
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings
 from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
+    InvalidRemotePathError,
     MountActivity,
     MountRemoteType,
     NoMountFoundForRemotePathError,
@@ -54,6 +56,14 @@ _dampen_noisy_loggers(("botocore", "aiobotocore", "aioboto3", "moto.server"))
 @pytest.fixture
 def bucket_name(faker: Faker) -> S3BucketName:
     return TypeAdapter(S3BucketName).validate_python(f"osparc-data-{faker.uuid4()}")
+
+
+@pytest.fixture
+def mount_s3_link_from_remote(bucket_name: S3BucketName) -> Callable[[StorageFileID], AnyUrl]:
+    def _build(remote_path: StorageFileID) -> AnyUrl:
+        return TypeAdapter(AnyUrl).validate_python(f"s3://{bucket_name}/{remote_path}")
+
+    return _build
 
 
 @pytest.fixture
@@ -226,6 +236,11 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
 def moto_server() -> Iterator[None]:
     server = ThreadedMotoServer()
     server.start()
@@ -317,6 +332,7 @@ async def test_workflow(
     r_clone_mount_manager: RCloneMountManager,
     r_clone_settings: RCloneSettings,
     bucket_name: S3BucketName,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
     node_id: NodeID,
     remote_path: StorageFileID,
     local_mount_path: Path,
@@ -331,6 +347,7 @@ async def test_workflow(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
         remote_path=remote_path,
+        mount_s3_link=mount_s3_link_from_remote(remote_path),
         node_id=node_id,
         index=index,
     )
@@ -371,6 +388,8 @@ async def test_container_recovers_and_shutdown_is_emitted(
     docker_swarm: None,
     moto_server: None,
     r_clone_mount_manager: RCloneMountManager,
+    bucket_name: S3BucketName,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
     node_id: NodeID,
     remote_path: StorageFileID,
     local_mount_path: Path,
@@ -381,6 +400,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
         remote_path=remote_path,
+        mount_s3_link=mount_s3_link_from_remote(remote_path),
         node_id=node_id,
         index=index,
     )
@@ -416,6 +436,112 @@ async def test_refresh_path_with_no_tracked_mount(
         await r_clone_mount_manager.refresh_path(remote_path=remote_path)
 
 
+@pytest.mark.parametrize(
+    "remote_path, expected_dir_to_refresh",
+    [
+        ("{project_id}/{node_id}/base-dir", ""),
+        ("{project_id}/{node_id}/base-dir/file.txt", ""),
+        ("{project_id}/{node_id}/base-dir/subdir/file.txt", "subdir"),
+        ("{project_id}/{node_id}/base-dir/subdir/nested/file.txt", "subdir/nested"),
+    ],
+)
+async def test_refresh_path_refreshes_containing_directory(
+    remote_path: str,
+    expected_dir_to_refresh: str,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    manager = object.__new__(RCloneMountManager)
+    tracked_mount = AsyncMock()
+    mount_id = cast(Any, "mount-id")
+    manager._tracked_mounts = {mount_id: tracked_mount}  # noqa: SLF001
+    manager._reverse_path_search = {  # noqa: SLF001
+        mount_id: TypeAdapter(StorageFileID).validate_python(f"{project_id}/{node_id}/base-dir")
+    }
+
+    await manager.refresh_path(  # type: ignore[misc]
+        remote_path=TypeAdapter(StorageFileID).validate_python(
+            remote_path.format(project_id=project_id, node_id=node_id)
+        ),
+        recursive=False,
+    )
+
+    tracked_mount.refresh_path.assert_awaited_once_with(
+        dir_to_refresh=expected_dir_to_refresh,
+        recursive=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "invalid_remote_path",
+    [
+        "",
+        ".",
+        "proj",
+        "proj/node",
+        "/proj/node/file",
+        "proj//node/file",
+        "proj/node//file",
+    ],
+)
+async def test_refresh_path_with_invalid_remote_path_raises(
+    invalid_remote_path: str,
+):
+    manager = object.__new__(RCloneMountManager)
+    manager._tracked_mounts = {}  # noqa: SLF001
+    manager._reverse_path_search = {}  # noqa: SLF001
+
+    with pytest.raises(InvalidRemotePathError) as exc_info:
+        await manager.refresh_path(  # type: ignore[misc]
+            remote_path=cast(StorageFileID, invalid_remote_path)
+        )
+
+    assert exc_info.value.remote_path == invalid_remote_path
+
+
+@pytest.mark.parametrize("with_prefix", [True, False])
+async def test_ensure_mounted_handles_optional_s3_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+    r_clone_settings: RCloneSettings,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    local_mount_path: Path,
+    bucket_name: S3BucketName,
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    with_prefix: bool,
+):
+    async def _fake_start_mount(self: _TrackedMount) -> None:
+        return
+
+    monkeypatch.setattr(_TrackedMount, "start_mount", _fake_start_mount)
+
+    r_clone_mount_manager = RCloneMountManager(
+        r_clone_settings, requires_data_mounting=True, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown)
+    )
+
+    expected_remote_path = f"{bucket_name}/{remote_path}"
+    mount_s3_link = (
+        cast(AnyUrl, f"s3://{expected_remote_path}") if with_prefix else cast(AnyUrl, f"{expected_remote_path}")
+    )
+
+    await r_clone_mount_manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_link=mount_s3_link,
+        node_id=node_id,
+        index=0,
+    )
+
+    mount_id = get_mount_id(local_mount_path, 0)
+    tracked_mount = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
+    assert tracked_mount._container_manager.remote_path == expected_remote_path  # noqa: SLF001
+
+    r_clone_mount_manager._tracked_mounts.clear()  # noqa: SLF001
+    r_clone_mount_manager._reverse_path_search.clear()  # noqa: SLF001
+
+
 @pytest.mark.parametrize("file_count", [10])
 @pytest.mark.parametrize("file_size", [TypeAdapter(ByteSize).validate_python("100kb")])
 @pytest.mark.parametrize("recursive", [True, False])
@@ -426,6 +552,7 @@ async def test_refresh_path(
     r_clone_mount_manager: RCloneMountManager,
     r_clone_settings: RCloneSettings,
     bucket_name: S3BucketName,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
     node_id: NodeID,
     local_mount_path: Path,
     remote_path: StorageFileID,
@@ -453,6 +580,7 @@ async def test_refresh_path(
             local_mount_path=local,
             remote_type=MountRemoteType.S3,
             remote_path=remote,
+            mount_s3_link=mount_s3_link_from_remote(remote),
             node_id=node_id,
             index=index,
         )
