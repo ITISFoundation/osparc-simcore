@@ -39,6 +39,7 @@ from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_pro
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.redis import RedisClientSDK
 from servicelib.redis._constants import DEFAULT_LOCK_TTL
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -590,7 +591,7 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
     )
 
 
-async def _is_guest_gc_lock_held(redis_sdk, guest_user_name: str) -> bool:
+async def _is_guest_gc_lock_held(redis_sdk: RedisClientSDK, guest_user_name: str) -> bool:
     # The garbage-collector skips a guest whenever the construction GC lock (keyed by the
     # guest name) is held (see garbage_collector._core_guests, `lock_during_construction`).
     # Hence checking the key existence is equivalent to checking that the GC would skip the guest.

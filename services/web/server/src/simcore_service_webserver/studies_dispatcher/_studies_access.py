@@ -382,7 +382,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             # NOTE: the guest is created holding the user-id "initialization" GC lock
             # (see create_temporary_guest_user). That lock bridges the short hand-off until
             # the study copy below acquires and auto-extends the guest "construction" GC lock
-            # for its whole (potentially long) duration (see _copy_study_to_guest_account).
+            # for its whole (potentially long) duration (see _copy_study_to_guest_protected_from_gc).
             user = await create_temporary_guest_user(request)
             is_anonymous_user = True
 
