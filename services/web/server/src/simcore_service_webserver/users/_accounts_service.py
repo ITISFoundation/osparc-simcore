@@ -43,14 +43,13 @@ async def pre_register_user(
     ],
     product_name: ProductName,
 ) -> UserAccountGet:
-    found = await search_users_accounts(
-        app,
-        filter_by_email_glob=profile.email,
+    already_exists = await _accounts_repository.check_pre_registration_email_exists_in_product(
+        get_asyncpg_engine(app),
+        email=profile.email,
         product_name=product_name,
-        include_products=False,
     )
-    if found:
-        raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
+    if already_exists:
+        raise AlreadyPreRegisteredError(num_found=1, email=profile.email)
 
     details = profile.model_dump(
         include={
