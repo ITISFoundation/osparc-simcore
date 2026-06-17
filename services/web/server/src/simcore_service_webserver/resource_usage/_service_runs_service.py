@@ -17,7 +17,7 @@ from pydantic import AnyUrl, NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import service_runs
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..wallets import api as wallet_api
+from ..wallets.wallets_service import get_wallet_with_permissions_by_user
 
 
 async def list_usage_services(
@@ -32,7 +32,7 @@ async def list_usage_services(
 ) -> ServiceRunPage:
     access_all_wallet_usage = False
     if wallet_id:
-        wallet: WalletGetPermissions = await wallet_api.get_wallet_with_permissions_by_user(
+        wallet: WalletGetPermissions = await get_wallet_with_permissions_by_user(
             app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
         )
         access_all_wallet_usage = wallet.write is True
@@ -63,7 +63,7 @@ async def get_osparc_credits_aggregated_usages_page(
 ) -> OsparcCreditsAggregatedUsagesPage:
     access_all_wallet_usage = False
     if wallet_id:
-        wallet: WalletGetPermissions = await wallet_api.get_wallet_with_permissions_by_user(
+        wallet: WalletGetPermissions = await get_wallet_with_permissions_by_user(
             app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
         )
         access_all_wallet_usage = wallet.write is True
@@ -92,7 +92,7 @@ async def export_usage_services(
 ) -> AnyUrl:
     access_all_wallet_usage = False
     if wallet_id:
-        wallet: WalletGetPermissions = await wallet_api.get_wallet_with_permissions_by_user(
+        wallet: WalletGetPermissions = await get_wallet_with_permissions_by_user(
             app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
         )
         access_all_wallet_usage = wallet.write is True

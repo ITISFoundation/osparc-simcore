@@ -6,7 +6,7 @@ from models_library.users import UserID
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from ..constants import RQ_PRODUCT_KEY
-from ..groups import api as groups_service
+from ..groups.groups_service import is_user_in_group
 from . import _service
 from .errors import UnknownProductError
 from .models import Product
@@ -39,7 +39,7 @@ async def is_user_in_product_support_group(request: web.Request, *, user_id: Use
     product = get_current_product(request)
     if product.support_standard_group_id is None:
         return False
-    return await groups_service.is_user_in_group(
+    return await is_user_in_group(
         app=request.app,
         user_id=user_id,
         group_id=product.support_standard_group_id,

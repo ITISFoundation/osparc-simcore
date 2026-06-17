@@ -97,7 +97,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           break;
         }
         case "copy-invitation-url-button": {
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/copy/12").set({
             allowGrowX: false,
             allowGrowY: true,
             toolTipText: this.tr("Copy Invitation URL"),

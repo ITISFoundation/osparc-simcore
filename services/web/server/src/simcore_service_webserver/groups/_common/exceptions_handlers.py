@@ -10,7 +10,7 @@ from ...exception_handling import (
     to_exceptions_handlers_map,
 )
 from ...scicrunch.errors import InvalidRRIDError, ScicrunchError
-from ...users.exceptions import UserNotFoundError
+from ...users.errors import UserNotFoundError
 from ..exceptions import (
     GroupNotFoundError,
     UserAlreadyInGroupError,

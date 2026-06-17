@@ -12,22 +12,26 @@ from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.products import ProductName
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.products import products_service
 from simcore_service_webserver.products.errors import ProductNotFoundError
-from simcore_service_webserver.users import _accounts_service
+from simcore_service_webserver.users import _accounts_repository, _accounts_service
 from simcore_service_webserver.users._accounts_repository import (
     create_user_pre_registration,
 )
-from simcore_service_webserver.users.exceptions import (
+from simcore_service_webserver.users.errors import (
+    AlreadyPreRegisteredError,
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,
     PreRegistrationNotFoundError,
 )
+from simcore_service_webserver.users.schemas import UserAccountRestPreRegister
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 async def _get_other_existing_product_name(
@@ -378,3 +382,90 @@ async def test_move_user_account_request_to_product_fails_on_duplicate_target(
             new_product_name=target_product,
             moved_by=product_owner_user["id"],
         )
+
+
+@pytest.mark.parametrize(
+    "first_product_final_status",
+    [
+        AccountRequestStatus.APPROVED,
+        AccountRequestStatus.REJECTED,
+    ],
+    ids=["approved", "rejected"],
+)
+async def test_pre_register_user_on_second_product_after_reviewed_on_first(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    asyncpg_engine: AsyncEngine,
+    first_product_final_status: AccountRequestStatus,
+):
+    """A user pre-registered (and reviewed) on product A must be allowed to
+    pre-register on a different product B.
+
+    Regression test for the bug where `_build_left_outer_join_query` returned
+    all pre-registration rows for a given email regardless of product_name,
+    causing `pre_register_user` to raise `AlreadyPreRegisteredError` even when
+    the existing pre-registration belongs to a different product.
+    """
+
+    product_a = product_name
+    email = "cross-product-prereg@example.com"
+    reviewer_id = product_owner_user["id"]
+
+    async with insert_and_get_product_lifespan(asyncpg_engine) as product_b_row:
+        product_b = ProductName(product_b_row["name"])
+
+        # 1. Pre-register on product A
+        pre_registration_id = await create_user_pre_registration(
+            asyncpg_engine,
+            email=email,
+            created_by=reviewer_id,
+            product_name=product_a,
+            pre_first_name="Cross",
+            pre_last_name="Product",
+            institution="Cross University",
+        )
+
+        # 2. Review the product-A pre-registration (approve or reject)
+
+        await _accounts_repository.review_user_pre_registration(
+            asyncpg_engine,
+            pre_registration_id=pre_registration_id,
+            reviewed_by=reviewer_id,
+            new_status=first_product_final_status,
+        )
+
+        # 3. Build a minimal profile for product B pre-registration
+        profile = UserAccountRestPreRegister.model_validate(
+            {
+                "firstName": "Cross",
+                "lastName": "Product",
+                "email": email,
+                "address": "1 Test St",
+                "city": "Testville",
+                "postalCode": "00000",
+                "country": "US",
+                "phone": None,
+            }
+        )
+
+        # 4. Pre-registering on product B must NOT raise AlreadyPreRegisteredError
+        try:
+            await _accounts_service.pre_register_user(
+                app,
+                profile=profile,
+                creator_user_id=reviewer_id,
+                product_name=product_b,
+            )
+        except AlreadyPreRegisteredError:
+            pytest.fail(
+                f"pre_register_user raised AlreadyPreRegisteredError for product {product_b!r} "
+                f"even though the existing pre-registration belongs to product {product_a!r}"
+            )
+        finally:
+            # Clean up both rows — must run even if the test fails
+            async with asyncpg_engine.connect() as conn:
+                await conn.execute(
+                    sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.pre_email == email)
+                )
+                await conn.commit()

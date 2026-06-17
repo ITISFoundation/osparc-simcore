@@ -56,7 +56,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           this._add(control);
           break;
         case "back-to-dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesomeSolid/arrow-left/14").set({
             appearance: "fab-button",
             alignY: "middle",
             padding: [5, 16],
@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
         case "collapse-expand-stack": {
           control = new qx.ui.container.Stack();
 
-          const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
+          const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesomeSolid/chevron-up/14").set({
             appearance: "fab-button",
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
@@ -88,7 +88,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
             this.fireEvent("collapseNavBar");
           });
 
-          const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
+          const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesomeSolid/chevron-down/14").set({
             appearance: "fab-button",
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });

@@ -7,12 +7,21 @@ from aiohttp import web
 from common_library.users_enums import UserRole, UserStatus
 from models_library.users import UserID
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.groups import api as groups_service
+from simcore_service_webserver.groups import groups_service
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.products.products_service import list_products
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .faker_factories import DEFAULT_TEST_PASSWORD
 from .postgres_users import insert_and_get_user_and_secrets_lifespan
+
+__all__: tuple[str, ...] = (
+    "MixedUserTestData",
+    "NewUser",
+    "SortingUserTestData",
+    "UserInfoDict",
+    "groups_service",  # exposed for test mocking
+)
 
 
 @dataclass
@@ -109,7 +118,7 @@ async def _register_user_in_default_product(app: web.Application, user_id: UserI
     assert products
     product_name = products[0].name
 
-    return await groups_service.auto_add_user_to_product_group(app, user_id, product_name=product_name)
+    return await auto_add_user_to_product_group(app, user_id, product_name=product_name)
 
 
 async def _create_account_in_db(

@@ -113,7 +113,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (this.getStudy().getTemplateType()) {
         text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
       }
-      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/copy/12").set({
         label: text,
         toolTipText: "Copy " + text,
         marginTop: 15,
