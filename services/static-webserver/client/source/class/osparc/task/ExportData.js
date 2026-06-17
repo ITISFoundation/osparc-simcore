@@ -26,7 +26,7 @@ qx.Class.define("osparc.task.ExportData", {
   },
 
   statics: {
-    ICON: "@FontAwesome5Solid/download",
+    ICON: "@FontAwesomeSolid/download",
 
     exportDataTaskReceived: function(task, popUpProgressWindow = true) {
       const exportDataTaskUI = new osparc.task.ExportData();

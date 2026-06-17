@@ -42,7 +42,7 @@ qx.Class.define("osparc.data.Converters", {
         location: null,
         path: null,
         children: [],
-        icon: "@FontAwesome5Solid/circle-notch/12",
+        icon: "@FontAwesomeSolid/circle-notch/12",
         type: "loading",
       };
     },
@@ -92,11 +92,11 @@ qx.Class.define("osparc.data.Converters", {
     },
 
     pathToDatasetId: function(path) {
-      const splitted = path.split("/");
-      if (splitted.length > 0) {
+      const split = path.split("/");
+      if (split.length > 0) {
         // simcore: studyId + nodeId + fileId
         // datcore: datasetId
-        return splitted[0];
+        return split[0];
       }
       return null;
     },

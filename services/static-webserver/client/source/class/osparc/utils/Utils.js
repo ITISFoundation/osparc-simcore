@@ -456,7 +456,7 @@ qx.Class.define("osparc.utils.Utils", {
     reloadNoCacheButton: function() {
       const reloadButton = new qx.ui.form.Button().set({
         label: qx.locale.Manager.tr("Reload"),
-        icon: "@FontAwesome5Solid/redo/16",
+        icon: "@FontAwesomeSolid/redo/16",
         font: "text-16",
         gap: 10,
         appearance: "strong-button",
@@ -605,7 +605,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getEditButton: function(isVisible = true, toolTipText = qx.locale.Manager.tr("Edit")) {
-      return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+      return new qx.ui.form.Button(null, "@FontAwesomeSolid/pencil-alt/12").set({
         appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
@@ -616,7 +616,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getLinkButton: function(isVisible = true, toolTipText = "") {
-      return new qx.ui.form.Button(null, "@FontAwesome5Solid/link/12").set({
+      return new qx.ui.form.Button(null, "@FontAwesomeSolid/link/12").set({
         appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
@@ -627,7 +627,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getCopyButton: function() {
-      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+      const button = new qx.ui.form.Button(null, "@FontAwesomeSolid/copy/12").set({
         allowGrowY: false,
         toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
         padding: 3,

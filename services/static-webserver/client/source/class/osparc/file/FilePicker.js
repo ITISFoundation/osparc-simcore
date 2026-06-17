@@ -385,7 +385,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const stopButton = new osparc.ui.form.FetchButton().set({
         minHeight: 24,
-        icon: "@FontAwesome5Solid/times/16",
+        icon: "@FontAwesomeSolid/times/16",
         toolTipText: this.tr("Cancel upload"),
         appearance: "danger-button",
         allowGrowX: false
@@ -436,7 +436,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __getDownloadFileButton: function() {
       const node = this.getNode();
-      const downloadFileBtn = new osparc.ui.form.FetchButton(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
+      const downloadFileBtn = new osparc.ui.form.FetchButton(this.tr("Download"), "@FontAwesomeSolid/cloud-download-alt/14").set({
         allowGrowX: false
       });
       downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(node, downloadFileBtn));
@@ -450,7 +450,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __getResetFileButton: function() {
-      const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
+      const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesomeSolid/sync-alt/14").set({
         allowGrowX: false
       });
       resetFileBtn.addListener("execute", () => this.__resetOutput());
@@ -602,7 +602,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const reloadButton = new qx.ui.form.Button().set({
         label: this.tr("Reload"),
-        icon: "@FontAwesome5Solid/sync-alt/16",
+        icon: "@FontAwesomeSolid/sync-alt/16",
         allowGrowX: false
       });
       reloadButton.addListener("execute", () => this.__reloadFilesTree(), this);

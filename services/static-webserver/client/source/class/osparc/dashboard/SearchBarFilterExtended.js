@@ -116,7 +116,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "my-projects-button": {
           control = this.self().createListItem(
             this.tr("My Projects"),
-            "@FontAwesome5Solid/file/14",
+            "@FontAwesomeSolid/file/14",
             "myProjects"
           );
           const contextDropDown = this.getChildControl("context-drop-down");
@@ -126,7 +126,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "templates-button": {
           control = this.self().createListItem(
             this.tr("Templates"),
-            "@FontAwesome5Solid/copy/14",
+            "@FontAwesomeSolid/copy/14",
             "templates"
           );
           const contextDropDown = this.getChildControl("context-drop-down");
@@ -136,7 +136,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "public-projects-button": {
           control = this.self().createListItem(
             this.tr("Public Projects"),
-            "@FontAwesome5Solid/globe/14",
+            "@FontAwesomeSolid/globe/14",
             "publicProjects"
           );
           const contextDropDown = this.getChildControl("context-drop-down");
@@ -156,7 +156,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "files-button": {
           control = this.self().createListItem(
             this.tr("Files"),
-            "@FontAwesome5Solid/file-alt/14",
+            "@FontAwesomeSolid/file-alt/14",
             "files"
           );
           const contextDropDown = this.getChildControl("context-drop-down");
@@ -174,12 +174,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.getChildControl("filters-layout").add(control);
           break;
         case "shared-with-button":
-          control = new qx.ui.toolbar.MenuButton(this.tr("Shared with"), "@FontAwesome5Solid/share-alt/12");
+          control = new qx.ui.toolbar.MenuButton(this.tr("Shared with"), "@FontAwesomeSolid/share-alt/12");
           this.__addSharedWithMenu(control);
           this.getChildControl("filter-buttons").add(control);
           break;
         case "tags-button":
-          control = new qx.ui.toolbar.MenuButton(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
+          control = new qx.ui.toolbar.MenuButton(this.tr("Tags"), "@FontAwesomeSolid/tags/12");
           this.__addTagsMenu(control);
           this.getChildControl("filter-buttons").add(control);
           break;
@@ -365,7 +365,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         const menu = this.__tagsMenu = new qx.ui.menu.Menu();
         osparc.utils.Utils.setIdToWidget(menu, "searchBarFilter-tags-menu");
         tags.forEach(tag => {
-          const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
+          const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesomeSolid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.getColor());
           menu.add(tagButton);
           tagButton.addListener("execute", () => this.__filter("tag", tag));

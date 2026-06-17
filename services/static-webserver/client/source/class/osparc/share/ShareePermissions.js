@@ -40,7 +40,7 @@ qx.Class.define("osparc.share.ShareePermissions", {
           if (inaccessibleShareesData.length) {
             const shareePermissions = new osparc.share.ShareePermissions(inaccessibleShareesData);
             const caption = qx.locale.Manager.tr("Sharee permissions");
-            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, caption, 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, caption, 500, 500, "@FontAwesomeSolid/exclamation-triangle/14").set({
               clickAwayClose: false,
               resizable: true,
               showClose: true

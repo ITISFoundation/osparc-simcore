@@ -21,21 +21,21 @@ qx.Class.define("osparc.utils.Icons", {
   statics: {
     user: function(iconSize) {
       if (iconSize) {
-        return "@FontAwesome5Solid/user/" + iconSize;
+        return "@FontAwesomeSolid/user/" + iconSize;
       }
       return osparc.dashboard.CardBase.SHARED_USER;
     },
 
     organization: function(iconSize) {
       if (iconSize) {
-        return "@FontAwesome5Solid/users/" + iconSize;
+        return "@FontAwesomeSolid/users/" + iconSize;
       }
       return osparc.dashboard.CardBase.SHARED_ORGS;
     },
 
     everyone: function(iconSize) {
       if (iconSize) {
-        return "@FontAwesome5Solid/globe/" + iconSize;
+        return "@FontAwesomeSolid/globe/" + iconSize;
       }
       return osparc.dashboard.CardBase.SHARED_ALL;
     }

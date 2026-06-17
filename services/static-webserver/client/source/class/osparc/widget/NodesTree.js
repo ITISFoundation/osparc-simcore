@@ -116,7 +116,7 @@ qx.Class.define("osparc.widget.NodesTree", {
         id: study.getUuid(),
         label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
         children: [],
-        icon: "@FontAwesome5Solid/home/14",
+        icon: "@FontAwesomeSolid/home/14",
         iconColor: "text",
         sortingValue: 0,
         study
