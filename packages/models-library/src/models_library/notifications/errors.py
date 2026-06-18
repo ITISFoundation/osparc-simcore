@@ -9,6 +9,14 @@ class NotificationsTemplateNotFoundError(BaseNotificationsError):
     msg_template = "Template '{template_name}' not found for channel '{channel}'."
 
 
+class NotificationsProductNotFoundError(BaseNotificationsError):
+    msg_template = "Product '{product_name}' not found."
+
+
+class NotificationsProductSMTPSettingsNotFoundError(BaseNotificationsError):
+    msg_template = "SMTP settings are missing for product '{product_name}'."
+
+
 class NotificationsTemplateContextValidationError(BaseNotificationsError):
     msg_template = "Validation of context failed for template '{template_name}'."
 
