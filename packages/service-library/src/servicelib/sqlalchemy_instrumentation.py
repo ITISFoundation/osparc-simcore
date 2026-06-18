@@ -16,10 +16,10 @@ def instrument_async_engine(
     engine: AsyncEngine,
     *,
     tracing_config: TracingConfig | None,
-) -> AsyncEngine:
+) -> None:
     """Instruments a SQLAlchemy AsyncEngine with OpenTelemetry contrib instrumentation."""
     if tracing_config is None or not tracing_config.tracing_enabled:
-        return engine
+        return
 
     assert tracing_config.tracer_provider  # nosec
 
@@ -30,5 +30,3 @@ def instrument_async_engine(
             enable_commenter=False,
             tracer_provider=tracing_config.tracer_provider,
         )
-
-    return engine

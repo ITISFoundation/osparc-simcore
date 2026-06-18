@@ -32,7 +32,7 @@ async def create_async_engine_and_database_ready(
     - waits until db data is migrated (i.e. ready to use)
     - returns engine
     """
-    from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear  # noqa: PLC0415
+    from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this one is unclear  # noqa: PLC0415
         raise_if_migration_not_ready,
     )
 
@@ -87,6 +87,7 @@ async def with_async_pg_engine(
     Creates an asyncpg engine and ensures it is properly closed after use.
     """
     try:
+        engine: AsyncEngine | None = None
         with log_context(
             _logger,
             logging.DEBUG,
@@ -108,5 +109,6 @@ async def with_async_pg_engine(
                 instrument_async_engine(engine, tracing_config=tracing_config)
         yield engine
     finally:
-        with log_context(_logger, logging.DEBUG, f"db disconnect of {engine}"):
-            await engine.dispose()
+        if engine is not None:
+            with log_context(_logger, logging.DEBUG, f"db disconnect of {engine}"):
+                await engine.dispose()
