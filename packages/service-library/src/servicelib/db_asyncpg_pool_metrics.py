@@ -104,17 +104,10 @@ def setup_pool_metrics_instrumentation(
     sync_pool = engine.sync_engine.pool
 
     # Write static configuration metrics once.
-    try:
-        pool_size: int = int(sync_pool.size())  # type: ignore[attr-defined]
-        max_overflow: int = max(int(getattr(sync_pool, "_max_overflow", 0)), 0)
-        pool_metrics.pool_connections_size.set(pool_size)
-        pool_metrics.pool_connections_total_capacity.set(pool_size + max_overflow)
-    except AttributeError:
-        _logger.debug(
-            "Pool static metrics unavailable for engine %s (pool type does not expose pool stats)",
-            engine,
-        )
-        return
+    pool_size: int = int(sync_pool.size())  # type: ignore[attr-defined]
+    max_overflow: int = max(int(getattr(sync_pool, "_max_overflow", 0)), 0)
+    pool_metrics.pool_connections_size.set(pool_size)
+    pool_metrics.pool_connections_total_capacity.set(pool_size + max_overflow)
 
     def _update_dynamic_metrics() -> None:
         try:
