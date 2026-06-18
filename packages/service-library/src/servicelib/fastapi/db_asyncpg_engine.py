@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_context
+from .tracing import get_tracing_config
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +29,11 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings, application_na
         logging.DEBUG,
         f"Connecting and migrating {redact_url(settings.dsn_with_async_sqlalchemy)}",
     ):
-        engine = await create_async_engine_and_database_ready(settings, application_name)
+        engine = await create_async_engine_and_database_ready(
+            settings,
+            application_name,
+            tracing_config=get_tracing_config(app),
+        )
 
     app.state.engine = engine
     _logger.debug(

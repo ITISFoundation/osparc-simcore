@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_context
+from .tracing import TracingConfig
 
 DB_ASYNC_ENGINE_APPKEY: Final = web.AppKey("DB_ASYNC_ENGINE", AsyncEngine)
 
@@ -35,7 +36,9 @@ def get_async_engine(app: web.Application) -> AsyncEngine:
     return engine
 
 
-async def connect_to_db(app: web.Application, settings: PostgresSettings, application_name: str) -> None:
+async def connect_to_db(
+    app: web.Application, settings: PostgresSettings, application_name: str, tracing_config: TracingConfig | None
+) -> None:
     """
     - db services up, data migrated and ready to use
     - sets an engine in app state (use `get_async_engine(app)` to retrieve)
@@ -46,7 +49,11 @@ async def connect_to_db(app: web.Application, settings: PostgresSettings, applic
         "Connecting app[APP_DB_ASYNC_ENGINE_KEY] to postgres with %s",
         f"{settings=}",
     ):
-        engine = await create_async_engine_and_database_ready(settings, application_name)
+        engine = await create_async_engine_and_database_ready(
+            settings,
+            application_name,
+            tracing_config=tracing_config,
+        )
         _set_async_engine_to_app_state(app, engine)
 
     _logger.info(

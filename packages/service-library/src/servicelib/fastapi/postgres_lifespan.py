@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_catch
 from .lifespan_utils import LifespanOnStartupError, PublisherLifespan, create_publisher_lifespan, lifespan_context
+from .tracing import get_tracing_config
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +36,11 @@ def _create_postgres_database_lifespan(settings: PostgresSettings) -> PublisherL
 
             assert isinstance(settings, PostgresSettings)  # nosec
 
-            async_engine: AsyncEngine = await create_async_engine_and_database_ready(settings, app.title)
+            async_engine: AsyncEngine = await create_async_engine_and_database_ready(
+                settings,
+                app.title,
+                tracing_config=get_tracing_config(app),
+            )
 
             try:
                 yield {
