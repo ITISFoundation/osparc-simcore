@@ -50,6 +50,7 @@ def _configure_plugins(
     configure_postgres_database(
         app_lifespan,
         settings=settings.DYNAMIC_SCHEDULER_POSTGRES,
+        tracing_config=tracing_config,
     )
     configure_remote_docker_client(
         app_lifespan,

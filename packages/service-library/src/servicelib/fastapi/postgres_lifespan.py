@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_catch
+from ..tracing import TracingConfig
 from .lifespan_utils import LifespanOnStartupError, PublisherLifespan, create_publisher_lifespan, lifespan_context
-from .tracing import get_tracing_config
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +26,9 @@ class PostgresConfigurationError(LifespanOnStartupError):
     )
 
 
-def _create_postgres_database_lifespan(settings: PostgresSettings) -> PublisherLifespan:
+def _create_postgres_database_lifespan(
+    settings: PostgresSettings, tracing_config: TracingConfig | None
+) -> PublisherLifespan:
     async def _lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
         _lifespan_name = f"{__name__}.{_lifespan.__name__}"
 
@@ -39,7 +41,7 @@ def _create_postgres_database_lifespan(settings: PostgresSettings) -> PublisherL
             async_engine: AsyncEngine = await create_async_engine_and_database_ready(
                 settings,
                 app.title,
-                tracing_config=get_tracing_config(app),
+                tracing_config=tracing_config,
             )
 
             try:
@@ -57,9 +59,10 @@ def _create_postgres_database_lifespan(settings: PostgresSettings) -> PublisherL
 
 def _create_postgres_lifespan_manager(
     settings: PostgresSettings,
+    tracing_config: TracingConfig | None,
 ) -> LifespanManager[FastAPI]:
     postgres_lifespan_manager = LifespanManager()
-    postgres_lifespan_manager.add(_create_postgres_database_lifespan(settings=settings))
+    postgres_lifespan_manager.add(_create_postgres_database_lifespan(settings=settings, tracing_config=tracing_config))
     postgres_lifespan_manager.add(
         create_publisher_lifespan(
             state_key=PostgresLifespanState.POSTGRES_ASYNC_ENGINE,
@@ -73,5 +76,6 @@ def configure_postgres_database(
     app_lifespan: LifespanManager[FastAPI],
     *,
     settings: PostgresSettings,
+    tracing_config: TracingConfig | None,
 ) -> None:
-    app_lifespan.include(_create_postgres_lifespan_manager(settings=settings))
+    app_lifespan.include(_create_postgres_lifespan_manager(settings=settings, tracing_config=tracing_config))

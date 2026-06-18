@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     settings: PostgresSettings = get_plugin_settings(app)
     tracing_config = app[TRACING_CONFIG_KEY]
-    await connect_to_db(app, settings, application_name=APP_NAME, tracing_config=tracing_config)
+    await connect_to_db(app, settings=settings, application_name=APP_NAME, tracing_config=tracing_config)
 
     assert get_async_engine(app)  # nosec
     assert isinstance(get_async_engine(app), AsyncEngine)  # nosec

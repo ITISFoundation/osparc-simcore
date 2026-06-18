@@ -37,7 +37,7 @@ def get_async_engine(app: web.Application) -> AsyncEngine:
 
 
 async def connect_to_db(
-    app: web.Application, settings: PostgresSettings, application_name: str, tracing_config: TracingConfig | None
+    app: web.Application, *, settings: PostgresSettings, application_name: str, tracing_config: TracingConfig | None
 ) -> None:
     """
     - db services up, data migrated and ready to use

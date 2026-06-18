@@ -67,6 +67,7 @@ def app_lifespan(
     configure_postgres_database(
         app_lifespan,
         settings=settings.CATALOG_POSTGRES,
+        tracing_config=None,
     )
 
     return app_lifespan
@@ -150,6 +151,7 @@ async def test_setup_postgres_database_with_empty_pg_settings(
     configure_postgres_database(
         app_lifespan,
         settings=cast(PostgresSettings, None),
+        tracing_config=None,
     )
 
     app = FastAPI(lifespan=app_lifespan)
