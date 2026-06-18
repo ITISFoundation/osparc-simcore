@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from typing import Final
 
 import arrow
+import httpx
 import networkx as nx
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
@@ -856,15 +857,18 @@ class BaseCompScheduler(ABC):
             for task in tasks_ready_to_start:
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
 
-        except OsparcVariableResolveTimeoutError as exc:
+        except (
+            httpx.RequestError,
+            httpx.HTTPStatusError,
+            OsparcVariableResolveTimeoutError,
+        ) as exc:
             _logger.warning(
                 **create_troubleshooting_log_kwargs(
-                    "Variable resolution timed out during task scheduling. "
+                    "Transient error during task scheduling. "
                     "Tasks are set back to WAITING_FOR_CLUSTER state and will be retried!",
                     error=exc,
                     error_context=log_error_context,
-                    tip="This is likely a transient issue. The variable resolution will be retried "
-                    "on the next scheduling cycle.",
+                    tip="This is likely a transient issue. The scheduler will retry on the next cycle.",
                 )
             )
             await publish_project_log(
@@ -872,7 +876,7 @@ class BaseCompScheduler(ABC):
                 user_id,
                 project_id,
                 log=user_message(
-                    "Variable resolution timed out during task scheduling, will retry.",
+                    "A transient error occurred during task scheduling, will retry.",
                     _version=1,
                 ),
                 log_level=logging.WARNING,

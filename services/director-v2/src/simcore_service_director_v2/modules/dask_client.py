@@ -496,6 +496,7 @@ class DaskClient:
         # process, and report when it is finished and properly cancelled.
         _logger.debug("cancelling task with %s", f"{job_id=}")
         try:
+            dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
             task_future: distributed.Future = await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
             )
@@ -507,6 +508,8 @@ class DaskClient:
             _logger.debug("Dask task %s cancelled", task_future.key)
         except KeyError:
             _logger.warning("Unknown task cannot be aborted: %s", f"{job_id=}")
+        except AttributeError as exc:
+            raise ComputationalBackendNotConnectedError from exc
 
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         _logger.debug("getting result of %s", f"{job_id=}")
@@ -533,6 +536,7 @@ class DaskClient:
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
         try:
+            dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(self.backend.client.get_dataset(name=job_id))
 
@@ -540,3 +544,5 @@ class DaskClient:
 
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
+        except AttributeError as exc:
+            raise ComputationalBackendNotConnectedError from exc
