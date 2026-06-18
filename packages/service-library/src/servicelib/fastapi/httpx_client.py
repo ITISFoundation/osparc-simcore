@@ -15,32 +15,6 @@ from .lifespan_utils import PublisherLifespan, create_publisher_lifespan, lifesp
 _logger = logging.getLogger(__name__)
 
 
-def setup_httpx_client(
-    app: FastAPI,
-    *,
-    default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
-    max_keepalive_connections: int = 20,
-    tracing_config: TracingConfig | None,
-) -> None:
-    async def on_startup() -> None:
-        client = httpx.AsyncClient(
-            transport=httpx.AsyncHTTPTransport(http2=True),
-            limits=httpx.Limits(max_keepalive_connections=max_keepalive_connections),
-            timeout=default_timeout.total_seconds(),
-        )
-        if tracing_config:
-            setup_httpx_client_tracing(client, tracing_config=tracing_config)
-        app.state.httpx_client = client
-
-    async def on_shutdown() -> None:
-        client = app.state.httpx_client
-        assert isinstance(client, httpx.AsyncClient)  # nosec
-        await client.aclose()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
-
-
 class HttpxLifespanState(StrEnum):
     HTTPX_CLIENT = "httpx_client"
 
