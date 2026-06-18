@@ -30,7 +30,9 @@ aiormq==6.9.3
 aiosignal==1.4.0
     # via aiohttp
 annotated-doc==0.0.4
-    # via typer
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.7.0
     # via pydantic
 anyio==4.12.1
@@ -38,6 +40,7 @@ anyio==4.12.1
     #   fast-depends
     #   faststream
     #   httpx
+    #   starlette
 arrow==1.4.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -73,6 +76,12 @@ email-validator==2.3.0
     # via pydantic
 fast-depends==3.0.8
     # via faststream
+fastapi==0.137.2
+    # via
+    #   -r requirements/_base.in
+    #   fastapi-lifespan-manager
+fastapi-lifespan-manager==0.1.4
+    # via -r requirements/_base.in
 faststream==0.6.7
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.8.0
@@ -139,6 +148,7 @@ opentelemetry-api==1.42.1
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+    #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
     #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
@@ -162,6 +172,7 @@ opentelemetry-instrumentation==0.63b1
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+    #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
 opentelemetry-instrumentation-aio-pika==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
@@ -176,6 +187,8 @@ opentelemetry-instrumentation-logging==0.63b1
 opentelemetry-instrumentation-redis==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.63b1
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-instrumentation-sqlalchemy==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-threading==0.63b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
@@ -201,6 +214,7 @@ opentelemetry-semantic-conventions==0.63b1
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+    #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-sdk
 opentelemetry-util-http==0.63b1
     # via
@@ -212,7 +226,9 @@ orjson==3.11.9
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 packaging==26.0
-    # via opentelemetry-instrumentation
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-sqlalchemy
 pamqp==3.3.0
     # via aiormq
 propcache==0.4.1
@@ -237,6 +253,7 @@ pydantic==2.11.10
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fast-depends
+    #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.33.2
@@ -292,6 +309,10 @@ shellingham==1.5.4
     # via typer
 six==1.17.0
     # via python-dateutil
+starlette==1.3.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 stream-zip==0.0.84
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==9.1.4
@@ -316,6 +337,7 @@ typing-extensions==4.15.0
     # via
     #   aiodebug
     #   fast-depends
+    #   fastapi
     #   faststream
     #   grpcio
     #   opentelemetry-api
@@ -328,7 +350,9 @@ typing-extensions==4.15.0
     #   pydantic-extra-types
     #   typing-inspection
 typing-inspection==0.4.2
-    # via pydantic
+    # via
+    #   fastapi
+    #   pydantic
 tzdata==2025.3
     # via arrow
 urllib3==2.7.0
@@ -344,6 +368,7 @@ wrapt==1.17.3
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
+    #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
 yarl==1.23.0
     # via
