@@ -176,8 +176,7 @@ async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
 
 @pytest.fixture
 async def mock_rabbit_setup(mocker: MockerFixture) -> MockerFixture:
-    mocker.patch("simcore_service_storage.core.application.setup_rabbitmq")
-    mocker.patch("simcore_service_storage.core.application.setup_rpc_api_routes")
+    mocker.patch("simcore_service_storage.modules.rabbitmq.configure_rabbitmq_client")
     return mocker
 
 
