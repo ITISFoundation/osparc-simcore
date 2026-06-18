@@ -48,6 +48,7 @@ from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
 from ._constants import (
+    MSG_LOGIN_REQUIRED,
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
     MSG_PUBLIC_PROJECT_NOT_PUBLISHED,
@@ -57,6 +58,7 @@ from ._constants import (
 from ._errors import GuestUsersLimitError
 from ._guards import check_studies_dispatcher_enabled
 from ._users import create_temporary_guest_user, get_authorized_user
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -274,10 +276,6 @@ def _handle_errors_with_error_page(handler: Handler):
         try:
             return await handler(request)
 
-        except web.HTTPNotFound:
-            # Pass through 404 to allow dispatcher-disabled responses
-            raise
-
         except ProjectNotFoundError as err:
             raise create_redirect_to_page_response(
                 request.app,
@@ -294,6 +292,14 @@ def _handle_errors_with_error_page(handler: Handler):
                 request.app,
                 page="error",
                 message=err.human_readable_message,
+                status_code=err.status_code,
+            ) from err
+
+        except web.HTTPError as err:
+            raise create_redirect_to_page_response(
+                request.app,
+                page="error",
+                message=err.reason or MSG_UNEXPECTED_DISPATCH_ERROR,
                 status_code=err.status_code,
             ) from err
 
@@ -365,6 +371,13 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get or create a valid USER
     if not user:
+        if get_plugin_settings(request.app).is_login_required():
+            raise RedirectToFrontEndPageError(
+                MSG_LOGIN_REQUIRED,
+                error_code="LOGIN_REQUIRED",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
         try:
             _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
             user = await create_temporary_guest_user(request)

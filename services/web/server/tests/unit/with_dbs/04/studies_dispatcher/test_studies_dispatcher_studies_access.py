@@ -540,21 +540,22 @@ async def test_access_study_with_dispatcher_disabled(
     storage_subsystem_mock_override: None,
 ):
     """
-    Test that accessing /study returns 404 when studies_dispatcher_enabled is False.
+    Test that accessing /study redirects to the SPA error page when studies_dispatcher_enabled is False.
 
     When the product has studies_dispatcher_enabled=False, the dispatcher feature
     should be completely disabled, and accessing the /study endpoint should result
-    in a direct 404 response (not a redirect).
+    in a redirect to the front-end error page — never a raw HTTP response.
     """
     assert not _is_user_authenticated(client.session), "Is anonymous"
     assert client.app
 
-    # Accessing the study should return 404 directly
     study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
 
-    assert resp.status == status.HTTP_404_NOT_FOUND, (
-        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    _assert_redirected_to_error_page(
+        resp,
+        expected_page="error",
+        expected_status_code=status.HTTP_404_NOT_FOUND,
     )
 
     # User should NOT be auto-logged in as guest when dispatcher is disabled
@@ -574,8 +575,8 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
     user_role: UserRole,
 ):
     """
-    Test that accessing /study returns 404 for logged-in users when
-    studies_dispatcher_enabled is False.
+    Test that accessing /study redirects to the SPA error page for logged-in users
+    when studies_dispatcher_enabled is False.
 
     Even logged-in users should not be able to access the dispatcher
     when the feature is disabled at the product level.
@@ -583,13 +584,51 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
     assert _is_user_authenticated(client.session), "Is already logged-in"
     assert client.app
 
-    # Accessing the study should return 404 directly, even for authenticated users
     study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
 
-    assert resp.status == status.HTTP_404_NOT_FOUND, (
-        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    _assert_redirected_to_error_page(
+        resp,
+        expected_page="error",
+        expected_status_code=status.HTTP_404_NOT_FOUND,
     )
+
+
+@pytest.mark.parametrize("studies_dispatcher_enabled", [True], indirect=True)
+async def test_access_study_anonymously_with_login_required(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    published_project: ProjectDict,
+    mocker: MockerFixture,
+):
+    """
+    When STUDIES_ACCESS_ANONYMOUS_ALLOWED=0 (login required) and an anonymous user
+    accesses /study/{id}, the handler must redirect to the SPA error page with
+    status_code=401 — never return a raw HTTP response.
+    """
+    mock_settings = mocker.MagicMock()
+    mock_settings.is_login_required.return_value = True
+    mocker.patch(
+        "simcore_service_webserver.studies_dispatcher._studies_access.get_plugin_settings",
+        return_value=mock_settings,
+    )
+
+    assert not _is_user_authenticated(client.session), "Is anonymous"
+    assert client.app
+
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    resp = await client.get(f"{study_url}")
+
+    _assert_redirected_to_error_page(
+        resp,
+        expected_page="error",
+        expected_status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+    # User must NOT have been auto-logged in as guest
+    me_url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{me_url}")
+    assert resp.status == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.fixture
