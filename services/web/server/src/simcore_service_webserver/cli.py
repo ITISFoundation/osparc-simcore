@@ -19,6 +19,7 @@ from typing import Annotated, Final
 
 import typer
 from aiohttp import web
+from common_library.basic_types import BootModeEnum
 from common_library.json_serialization import json_dumps
 from servicelib.tracing import TracingConfig
 from settings_library.utils_cli import create_settings_command
@@ -32,7 +33,7 @@ from .login import cli as login_cli
 if os.environ.get("SC_BOOT_MODE") == "debug":
     import multiprocessing
 
-    multiprocessing.set_start_method("spawn", True)
+    multiprocessing.set_start_method("spawn", force=True)
 
 _logger = logging.getLogger(__name__)
 
@@ -41,9 +42,9 @@ def _setup_app_from_settings(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> tuple[web.Application, dict]:
-    # NOTE: keeping imports here to reduce CLI load time
-    from .application import create_application
-    from .application_settings_utils import convert_to_app_config
+    # NOTE: keeping LAZY imports here to reduce CLI load time
+    from .application import create_application  # noqa: PLC0415
+    from .application_settings_utils import convert_to_app_config  # noqa: PLC0415
 
     # NOTE: By having an equivalent config allows us
     # to keep some of the code from the previous
@@ -61,8 +62,10 @@ async def app_factory() -> web.Application:
 
     Created to launch app from gunicorn (see docker/boot.sh)
     """
-    from .application import create_application_auth
-    from .log import setup_logging
+    # NOTE: keeping LAZY imports here to reduce CLI load time
+
+    from .application import create_application_auth  # noqa: PLC0415
+    from .log import setup_logging  # noqa: PLC0415
 
     app_settings = ApplicationSettings.create_from_envs()
     tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)
@@ -113,11 +116,51 @@ def invitations(
     )
 
 
+def _is_devel_deployment() -> bool:
+    """Whether the service was booted in a development mode.
+
+    Reads SC_BOOT_MODE, which is injected by the docker boot stage (e.g.
+    docker-compose.devel.yml sets it to 'debug' for 'make up-devel') and is NOT
+    read from the user-editable .env file. Unknown/undefined values are treated
+    as non-development (fail-closed).
+    """
+    boot_mode = os.environ.get("SC_BOOT_MODE")
+    try:
+        return boot_mode is not None and BootModeEnum(boot_mode).is_devel_mode()
+    except ValueError:
+        return False
+
+
+def create_admin(
+    email: str,
+    password: Annotated[str, typer.Option(prompt=True, hide_input=True)],
+    product_name: str = "osparc",
+):
+    """Creates an ACTIVE ADMIN user (bootstraps the first privileged user).
+
+    DEVELOPMENT-ONLY: this command is only registered when the service boots in a
+    development mode (SC_BOOT_MODE), and is additionally guarded at runtime. See
+    login.cli.create_admin.
+    """
+    login_cli.create_admin(
+        email=email,
+        password=password,
+        product_name=product_name,
+    )
+
+
+# Bootstrap tool: only expose the command in development deployments. It is
+# additionally guarded at runtime (see login.cli.create_admin) so a direct call
+# in a production deployment fails closed.
+if _is_devel_deployment():
+    main.command()(create_admin)
+
+
 @main.command()
 def run():
     """Runs web server"""
     # NOTE: keeping imports here to reduce CLI load time
-    from .application import run_service
+    from .application import run_service  # noqa: PLC0415
 
     app_settings = ApplicationSettings.create_from_envs()
     app_tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)

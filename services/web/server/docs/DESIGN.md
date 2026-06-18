@@ -76,6 +76,18 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
   - Calls its own domain's service or an aggregation service; never a repository or client directly.
   - Maps domain models ⇄ transport schemas (REST/RPC).
 
+#### CLI / Entrypoints (`cli.py`)
+- **Responsibility:** a **driving adapter** — the same architectural role as a controller, but
+  driven by command-line arguments instead of HTTP. Parses args, invokes the service layer, renders output.
+- **Invariants:**
+  - Thin: contains no business logic. Like a controller, it calls its domain's service or an
+    **aggregation service**; never a repository or client directly. Cross-domain orchestration belongs
+    in an aggregation service, not in the command body.
+  - Service functions take `app: web.Application`. A command therefore builds a **minimal app context**
+    with only the plugins it needs (e.g. `setup_settings` + `setup_db`), runs the app lifespan
+    (`web.AppRunner.setup()/cleanup()`) to wire resources, then calls services.
+  - Maps domain errors ⇄ process exit codes / console output.
+
 #### Service (`_service.py` + public facade `<domain>_service.py`)
 - **Responsibility:** the domain's business logic; orchestrates repository and client calls.
 - **Invariants:**

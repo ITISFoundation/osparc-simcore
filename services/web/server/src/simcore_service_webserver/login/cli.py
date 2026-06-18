@@ -1,12 +1,20 @@
+import asyncio
 import sys
 from datetime import UTC, datetime
 
 import typer
+from aiohttp import web
+from common_library.users_enums import UserRole
+from servicelib.aiohttp.application import create_safe_application
 from servicelib.utils_secrets import generate_password
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
+from ..application_settings import get_application_settings, setup_settings
+from ..db.plugin import setup_db
+from . import _account_aggregation_service
 from ._invitations_service import ConfirmedInvitationData, get_invitation_url
+from .errors import UserAlreadyRegisteredError
 
 
 def invitations(
@@ -66,3 +74,72 @@ def invitations(
         "-" * 100,
         fg=typer.colors.BLUE,
     )
+
+
+def _build_db_cli_app() -> web.Application:
+    """Minimal aiohttp app exposing only the postgres engine.
+
+    The login/groups/products service functions used below reach the database
+    exclusively through `get_asyncpg_engine(app)`, which is wired by `setup_db`.
+    """
+    app = create_safe_application()
+    setup_settings(app)
+    setup_db(app)
+    return app
+
+
+def _ensure_development_deployment(app: web.Application) -> None:
+    """Fail-closed guard: `create-admin` must never run in a production deployment.
+
+    The check relies on `SC_BOOT_MODE`, which is injected by the docker boot stage
+    (e.g. `docker-compose.devel.yml` sets it to `debug` for `make up-devel`) and is
+    NOT read from the user-editable `.env` file. Any non-development boot mode -- or
+    an undefined one -- is rejected.
+    """
+    boot_mode = get_application_settings(app).SC_BOOT_MODE
+    if boot_mode is None or not boot_mode.is_devel_mode():
+        typer.secho(
+            f"'create-admin' is disabled in this deployment (SC_BOOT_MODE={boot_mode}). "
+            "It is a development-only bootstrap tool (e.g. 'make build-devel up-devel').",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+
+def create_admin(
+    email: str,
+    password: str,
+    product_name: str,
+) -> None:
+    """Creates an ACTIVE ADMIN user account.
+
+    Bootstraps the first privileged user in an empty deployment so that
+    invitations and account approvals become possible.
+    """
+
+    async def _run() -> None:
+        app = _build_db_cli_app()
+        _ensure_development_deployment(app)
+        runner = web.AppRunner(app)
+        await runner.setup()  # enters cleanup_ctx -> creates the postgres engine
+        try:
+            user = await _account_aggregation_service.create_account(
+                app,
+                email=email,
+                password=password,
+                role=UserRole.ADMIN,
+                product_name=product_name,
+            )
+            typer.secho(
+                f"Created ADMIN account id={user['id']} email={user['email']} in product '{product_name}'",
+                fg=typer.colors.GREEN,
+            )
+        finally:
+            await runner.cleanup()
+
+    try:
+        asyncio.run(_run())
+    except UserAlreadyRegisteredError as err:
+        typer.secho(f"{err}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from err
