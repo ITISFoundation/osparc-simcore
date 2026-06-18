@@ -149,6 +149,22 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
+        case "dispatch": {
+          // Route: /#/dispatch?study_id={studyId}
+          if (urlFragment.params && urlFragment.params.study_id) {
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(() => {
+                const studyId = urlFragment.params.study_id;
+                const loadAfterLogin = {
+                  id: "dispatchStudy",
+                  studyId,
+                };
+                this.__loadMainPage(loadAfterLogin);
+              })
+              .catch(() => this.__loadLoginPage());
+          }
+          break;
+        }
         case "view": {
           // Route: /#/view/?project_id={studyId}&viewer_node_id={viewerNodeId}
           if (urlFragment.params && urlFragment.params.project_id && urlFragment.params.viewer_node_id) {
@@ -512,6 +528,14 @@ qx.Class.define("osparc.Application", {
               if (loadAfterLogin["id"] === "startStudy" && loadAfterLogin["studyId"]) {
                 const studyId = loadAfterLogin["studyId"];
                 osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+              }
+
+              if (loadAfterLogin["id"] === "dispatchStudy" && loadAfterLogin["studyId"]) {
+                const studyId = loadAfterLogin["studyId"];
+                // Reuse the existing MainPage startup path that triggers startStudy.
+                // MainPageHandler.startStudy will intercept and run dispatchStudy instead.
+                osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+                osparc.store.Store.getInstance().setCurrentDispatchStudyId(studyId);
               }
 
               if (loadAfterLogin["id"] === "openConversation" && loadAfterLogin["conversationId"]) {

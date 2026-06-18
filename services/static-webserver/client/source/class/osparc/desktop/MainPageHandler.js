@@ -61,6 +61,15 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
     },
 
     startStudy: function(studyId) {
+      const store = osparc.store.Store.getInstance();
+      const dispatchStudyId = store.getCurrentDispatchStudyId();
+      if (dispatchStudyId) {
+        store.setCurrentStudyId(null);
+        store.setCurrentDispatchStudyId(null);
+        this.dispatchStudy(dispatchStudyId);
+        return;
+      }
+
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + osparc.product.Utils.getStudyAlias());
       this.showLoadingPage();
 
@@ -76,6 +85,61 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           osparc.FlashMessenger.logError(err);
           this.showDashboard();
           return;
+        });
+    },
+
+    dispatchStudy: function(studyId) {
+      this.setLoadingPageHeader(qx.locale.Manager.tr("Preparing ") + osparc.product.Utils.getStudyAlias());
+      this.showLoadingPage();
+      this.__loadingPage.setMessages([
+        qx.locale.Manager.tr("Starting dispatch task...")
+      ]);
+
+      const params = {
+        url: {
+          studyId,
+        }
+      };
+      const options = {
+        pollTask: true,
+      };
+
+      const pollPromise = osparc.data.Resources.fetch("studies", "postDispatchStudy", params, options);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      const interval = 1000;
+      pollTasks.createPollingTask(pollPromise, interval)
+        .then(task => {
+          task.addListener("updateReceived", e => {
+            const updateData = e.getData();
+            if ("task_progress" in updateData) {
+              const taskProgress = updateData["task_progress"];
+              const message = taskProgress["message"];
+              if (message) {
+                this.__loadingPage.setMessages([message]);
+              }
+            }
+          }, this);
+
+          task.addListener("resultReceived", e => {
+            const resultData = e.getData();
+            const projectId = resultData ? resultData["project_id"] : null;
+            if (!projectId) {
+              throw new Error(qx.locale.Manager.tr("Missing project id in dispatch result"));
+            }
+            osparc.store.Store.getInstance().setCurrentStudyId(projectId);
+            this.__loadingPage.setMessages([]);
+            this.startStudy(projectId);
+          }, this);
+
+          task.addListener("pollingError", e => {
+            const err = e.getData();
+            osparc.FlashMessenger.logError(err);
+            this.showDashboard();
+          }, this);
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          this.showDashboard();
         });
     },
 
