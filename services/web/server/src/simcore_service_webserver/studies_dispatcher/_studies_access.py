@@ -238,15 +238,9 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
     return project_uuid
 
 
-def _get_guest_user_gc_lock_key(request: web.Request, template_project: dict, user: dict) -> str:
-    assert request  # nosec
-    assert template_project  # nosec
-    # NOTE: we lock on the guest *name* (the "construction" GC lock key) and NOT on the user id.
-    # `create_temporary_guest_user` returns while still holding the user-id "initialization" GC lock
-    # (TTL=MAX_DELAY_TO_GUEST_FIRST_CONNECTION), which bridges the short hand-off until this lock is
-    # acquired. Using a different key here avoids a self-conflict with that lock, and the
-    # garbage-collector honors BOTH keys (`lock_during_construction` keyed by the name AND
-    # `lock_during_initialization` keyed by the id), so the guest is protected without any gap.
+def _get_guest_user_gc_lock_key(_request: web.Request, _template_project: dict, user: dict) -> str:
+    # Use the guest-name key (construction lock domain), not the user-id key.
+    # See GUEST_USER_RC_LOCK_FORMAT docs for lifecycle rationale.
     return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["name"])
 
 
