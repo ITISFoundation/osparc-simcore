@@ -370,8 +370,8 @@ async def test_process_start_event_is_idempotent_on_duplicate_message(
     resource_tracker_pricing_tables_db,
     initialized_app,
 ):
-    # Reproduces the RabbitMQ redelivery / competing-consumers race where the same
-    # TRACKING_STARTED message is processed twice. The second call must be a no-op:
+    # Reproduces the case where the client publishes the same TRACKING_STARTED
+    # message more than once, so it is processed twice. The second call must be a no-op:
     # no duplicate service run and no duplicate credit transaction (no IntegrityError).
     engine = initialized_app.state.engine
     publisher = create_rabbitmq_client("publisher")
@@ -407,7 +407,7 @@ async def test_process_start_event_is_idempotent_on_duplicate_message(
         == 1
     )
 
-    # Second (duplicate/redelivered) delivery must not raise and must not duplicate rows
+    # Second (duplicate) delivery must not raise and must not duplicate rows
     await _process_start_event(engine, msg, publisher, rpc_client)
     assert (
         _count_rows(
