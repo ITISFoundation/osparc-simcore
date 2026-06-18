@@ -49,7 +49,7 @@ async def pre_register_user(
         product_name=product_name,
     )
     if already_exists:
-        raise AlreadyPreRegisteredError(num_found=1, email=profile.email)
+        raise AlreadyPreRegisteredError(product_name=product_name, email=profile.email)
 
     details = profile.model_dump(
         include={
