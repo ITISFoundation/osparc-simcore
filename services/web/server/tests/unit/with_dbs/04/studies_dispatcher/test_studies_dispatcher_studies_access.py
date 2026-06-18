@@ -46,6 +46,7 @@ from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.garbage_collector.garbage_collector_service import (
     GUEST_USER_RC_LOCK_FORMAT,
 )
+from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
 from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
 )
@@ -53,7 +54,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from simcore_service_webserver.studies_dispatcher._studies_access import (
-    _copy_study_to_guest_protected_from_gc,
+    copy_study_to_account,
 )
 from simcore_service_webserver.users.users_service import (
     delete_user_without_projects,
@@ -663,20 +664,27 @@ async def test_guest_gc_lock_is_renewed_and_not_released_during_long_study_copy(
 
     copy_started = asyncio.Event()
 
-    async def _slow_copy(_request, _template_project, _user) -> str:
+    # `copy_study_to_account` is now itself decorated with the guest-user GC lock. We make it
+    # run longer than the lock TTL by slowing its first inner DB call, and short-circuit the
+    # rest so it returns without performing a real copy. This exercises the production
+    # decorator (and its guest-name lock key) directly.
+    async def _slow_get_project_product(*_args, **_kwargs) -> str:
         copy_started.set()
         await asyncio.sleep(copy_duration_s)
-        return "copied-project-uuid"
+        return "osparc"
 
+    mocker.patch.object(ProjectDBAPI, "get_project_product", side_effect=_slow_get_project_product)
     mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._studies_access.copy_study_to_account",
-        side_effect=_slow_copy,
+        "simcore_service_webserver.studies_dispatcher._studies_access.check_user_project_permission",
+        autospec=True,
     )
+    # project "already exists" -> skip the clone/copy branch and return early
+    mocker.patch.object(ProjectDBAPI, "get_project_dict_and_type", return_value=({}, None))
 
     # initially not locked
     assert not await _is_guest_gc_lock_held(redis_sdk, guest_user_name)
 
-    copy_task = asyncio.create_task(_copy_study_to_guest_protected_from_gc(request, template_project, user))
+    copy_task = asyncio.create_task(copy_study_to_account(request, template_project, user))
     await asyncio.wait_for(copy_started.wait(), timeout=5)
 
     # poll across more than one TTL window: without renewal the lock would expire at
@@ -691,7 +699,9 @@ async def test_guest_gc_lock_is_renewed_and_not_released_during_long_study_copy(
         await asyncio.sleep(poll_interval)
         elapsed += poll_interval
 
-    assert await copy_task == "copied-project-uuid"
+    # the copy returns the destination project uuid and releases the lock
+    copied_project_uuid = await copy_task
+    assert copied_project_uuid
 
     # once the copy is done the lock is released and the guest becomes GC-eligible again
     assert not await _is_guest_gc_lock_held(redis_sdk, guest_user_name)
