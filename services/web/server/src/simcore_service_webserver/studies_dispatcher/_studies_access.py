@@ -403,9 +403,6 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             user.get("email"),
         )
 
-        # NOTE: the copy is always wrapped by the guest-user GC lock. The lock only
-        # affects GUEST users (the GC checks this key before pruning idle guests), so it
-        # is harmless for the rest while keeping a single, uniform copy path.
         copied_project_id = await copy_study_to_account(request, template_project, user)
 
         _logger.debug("Study %s copied", copied_project_id)
