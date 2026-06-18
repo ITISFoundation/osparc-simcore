@@ -38,7 +38,7 @@ qx.Class.define("osparc.Application", {
      * This method contains the initial application code and gets called
      * during startup of the application
      */
-    main: async function () {
+    main: async function() {
       // Call super class
       this.base();
 
@@ -107,11 +107,11 @@ qx.Class.define("osparc.Application", {
       this.__startupChecks();
     },
 
-    __preloadCalls: async function () {
+    __preloadCalls: async function() {
       await osparc.store.Store.getInstance().preloadCalls();
     },
 
-    __initRouting: function () {
+    __initRouting: function() {
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
         this.__rerouteNav(urlFragment);
@@ -266,12 +266,12 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __updateTabName: function () {
+    __updateTabName: function() {
       const newName = osparc.utils.Utils.composeTabName();
       osparc.utils.Utils.updateTabName(newName);
     },
 
-    __setDeviceSpecificIcons: function () {
+    __setDeviceSpecificIcons: function() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isAndroid = /android/i.test(navigator.userAgent);
       // default icons
@@ -284,7 +284,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __getProductMetaData: function () {
+    __getProductMetaData: function() {
       let productName = osparc.product.Utils.getProductName();
       if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
         productName = "s4l";
@@ -299,7 +299,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __updateMetaTags: function () {
+    __updateMetaTags: function() {
       // check device type and only set the icons for the device type
       // i.e iOS, Android or windows etc
       const themeColorMeta = document.querySelector("meta[name='theme-color']");
@@ -343,7 +343,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __setDefaultIcons: function () {
+    __setDefaultIcons: function() {
       const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons/`;
       const favIconUrls = [
@@ -365,7 +365,7 @@ qx.Class.define("osparc.Application", {
       });
     },
 
-    __setGoogleIcons: function () {
+    __setGoogleIcons: function() {
       const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons`;
 
@@ -387,7 +387,7 @@ qx.Class.define("osparc.Application", {
       });
     },
 
-    __setIOSpIcons: function () {
+    __setIOSpIcons: function() {
       // Array of promises to resolve icon URLs for Apple Touch Icons
       const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons`;
@@ -416,7 +416,7 @@ qx.Class.define("osparc.Application", {
       });
     },
 
-    __startupChecks: function () {
+    __startupChecks: function() {
       // first, pop up new release window
       this.__checkNewRelease();
 
@@ -424,19 +424,19 @@ qx.Class.define("osparc.Application", {
       this.__checkCookiesAccepted();
     },
 
-    __checkNewRelease: function () {
+    __checkNewRelease: function() {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
         osparc.NewRelease.popUpReleaseNotes();
       }
     },
 
-    __checkCookiesAccepted: function () {
+    __checkCookiesAccepted: function() {
       if (!osparc.CookiePolicy.areCookiesAccepted()) {
         osparc.CookiePolicy.popUpCookieBanner();
       }
     },
 
-    __restart: function () {
+    __restart: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (isLogged) {
         this.__loadMainPage();
@@ -454,7 +454,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loadLoginPage: function () {
+    __loadLoginPage: function() {
       this.__disconnectWebSocket();
       let view = null;
       switch (qx.core.Environment.get("product.name")) {
@@ -638,7 +638,7 @@ qx.Class.define("osparc.Application", {
       this.__closeAllAndToLoginPage();
     },
 
-    __closeAllAndToLoginPage: function () {
+    __closeAllAndToLoginPage: function() {
       osparc.store.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
@@ -664,17 +664,17 @@ qx.Class.define("osparc.Application", {
       this.__restart();
     },
 
-    __connectWebSocket: function () {
+    __connectWebSocket: function() {
       // open web socket
       osparc.wrapper.WebSocket.getInstance().connect();
     },
 
-    __disconnectWebSocket: function () {
+    __disconnectWebSocket: function() {
       // open web socket
       osparc.wrapper.WebSocket.getInstance().disconnect();
     },
 
-    __preventAutofillBrowserStyles: function () {
+    __preventAutofillBrowserStyles: function() {
       const stylesheet = qx.ui.style.Stylesheet.getInstance();
       if (qx.bom.client.Browser.getName() === "chrome" && qx.bom.client.Browser.getVersion() >= 71) {
         stylesheet.addRule(
@@ -704,7 +704,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loadCommonCss: function () {
+    __loadCommonCss: function() {
       const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
       qx.module.Css.includeStylesheet(commonCssUri);
     }

@@ -35,7 +35,7 @@
 qx.Class.define("osparc.dashboard.StudyBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
-  construct: function () {
+  construct: function() {
     this._resourceType = "study";
     this.base(arguments);
 
@@ -121,7 +121,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __lastUrlParams: null,
 
     // overridden
-    initResources: function () {
+    initResources: function() {
       if (this._resourcesInitialized) {
         return;
       }
@@ -159,7 +159,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __getActiveStudy: function () {
+    __getActiveStudy: function() {
       return osparc.store.Study.getInstance().getActive(osparc.utils.Utils.getClientSessionID())
         .then(studyData => {
           if (studyData) {
@@ -169,7 +169,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
 
-    reloadResources: function () {
+    reloadResources: function() {
       if (
         osparc.data.Permissions.getInstance().canDo("studies.user.read") &&
         osparc.auth.Manager.getInstance().isLoggedIn()
@@ -185,7 +185,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    reloadMoreResources: function () {
+    reloadMoreResources: function() {
       if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES) {
         this.__reloadSearchFiles();
       } else {
@@ -193,7 +193,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __reloadWorkspaces: function () {
+    __reloadWorkspaces: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         ![
@@ -245,7 +245,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __reloadFolders: function () {
+    __reloadFolders: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         ![
@@ -303,7 +303,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __reloadStudies: function () {
+    __reloadStudies: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES || // all but workspaces
@@ -424,7 +424,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __reloadSearchFiles: function () {
+    __reloadSearchFiles: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         this.getCurrentContext() !== osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES ||
@@ -496,7 +496,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __resetStudiesList: function () {
+    __resetStudiesList: function() {
       this._resourcesList = [];
       // It will remove the study cards
       this._reloadCards();
@@ -529,7 +529,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    _reloadCards: function () {
+    _reloadCards: function() {
       const fetching = this._loadingResourcesBtn ? this._loadingResourcesBtn.getFetching() : false;
       const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
 
@@ -552,7 +552,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
-    __reloadNewCards: function () {
+    __reloadNewCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadNewCards();
       this.__configureStudyCards(cards);
@@ -567,12 +567,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadWorkspaceCards();
     },
 
-    __reloadWorkspaceCards: function () {
+    __reloadWorkspaceCards: function() {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
       this._resourcesContainer.reloadWorkspaces();
     },
 
-    __addNewWorkspaceButton: function () {
+    __addNewWorkspaceButton: function() {
       if (this.getCurrentContext() !== osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES) {
         return;
       }
@@ -594,7 +594,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, workspaceId, null);
     },
 
-    _workspaceUpdated: function () {
+    _workspaceUpdated: function() {
       this.__reloadWorkspaces();
     },
 
@@ -639,12 +639,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadFolderCards();
     },
 
-    __reloadFolderCards: function () {
+    __reloadFolderCards: function() {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
     },
 
-    __addNewFolderButton: function () {
+    __addNewFolderButton: function() {
       if (this.getCurrentContext() !== osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS) {
         return;
       }
@@ -680,11 +680,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, workspaceId, folderId);
     },
 
-    _folderUpdated: function () {
+    _folderUpdated: function() {
       this.__reloadFolders();
     },
 
-    __showMoveToDifferentWorkspaceWarningMessage: function () {
+    __showMoveToDifferentWorkspaceWarningMessage: function() {
       const msg = this.tr("The permissions will be taken from the new workspace.");
       const win = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Move"),
@@ -799,12 +799,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadFileCards();
     },
 
-    __reloadFileCards: function () {
+    __reloadFileCards: function() {
       this._resourcesContainer.setFilesToList(this.__filesList);
       this._resourcesContainer.reloadFiles();
     },
 
-    __resetFilesList: function () {
+    __resetFilesList: function() {
       this._resourcesList = [];
       // It will remove the file cards
       this._reloadCards();
@@ -891,7 +891,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __attachEventHandlers: function () {
+    __attachEventHandlers: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       socket.on("projectStateUpdated", data => {
         if (data) {
@@ -989,7 +989,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return !sameContext;
     },
 
-    __getNextPageParams: function () {
+    __getNextPageParams: function() {
       const studiesContainer = this._resourcesContainer.getFlatList();
       if (studiesContainer && studiesContainer.nextRequest) {
         // Context might have been changed while waiting for the response.
@@ -1029,7 +1029,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return null;
     },
 
-    __getRequestParams: function () {
+    __getRequestParams: function() {
       const requestParams = {};
       requestParams.orderBy = JSON.stringify(this.getOrderBy());
 
@@ -1076,7 +1076,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return requestParams;
     },
 
-    __getNextStudiesRequest: function () {
+    __getNextStudiesRequest: function() {
       const params = {
         url: {
           offset: 0,
@@ -1128,7 +1128,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return request;
     },
 
-    invalidateStudies: function () {
+    invalidateStudies: function() {
       osparc.store.Study.getInstance().invalidateStudies();
       this.__resetStudiesList();
       if (this._resourcesContainer.getFlatList()) {
@@ -1136,21 +1136,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    invalidateFunctions: function () {
+    invalidateFunctions: function() {
       this.__resetStudiesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
       }
     },
 
-    invalidateFiles: function () {
+    invalidateFiles: function() {
       this.__resetFilesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
       }
     },
 
-    __addNewPlusButton: function () {
+    __addNewPlusButton: function() {
       const newPlusButton = new osparc.dashboard.NewPlusButton();
       this._leftFilters.add(newPlusButton);
 
@@ -1191,7 +1191,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
     },
 
-    __addNewStudyButtons: function () {
+    __addNewStudyButtons: function() {
       if (this.getCurrentContext() !== osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS) {
         return;
       }
@@ -1215,7 +1215,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __addTIPPlusButton: function () {
+    __addTIPPlusButton: function() {
       const mode = this._resourcesContainer.getMode();
       const title = this.tr("New Plan");
       const newPlansBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
@@ -1255,7 +1255,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // LAYOUT //
-    _createLayout: function () {
+    _createLayout: function() {
       this._createSearchBar();
       this._searchBarFilter.set({
         showFilterMenu: false,
@@ -1349,7 +1349,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return this._resourcesContainer;
     },
 
-    __extendSearchBar: function () {
+    __extendSearchBar: function() {
       const searchBarFilterExtended = this._searchBarFilter.popUpSearchBarFilter();
       let curatedContext = null;
       switch (this.getCurrentContext()) {
@@ -1382,7 +1382,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __connectContexts: function () {
+    __connectContexts: function() {
       const header = this.__header;
       header.addListener("locationChanged", () => {
         const workspaceId = header.getCurrentWorkspaceId();
@@ -1408,7 +1408,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourceFilter.addListener("trashContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.TRASH));
     },
 
-    _backToContext: function () {
+    _backToContext: function() {
       let backToContext = null;
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
@@ -1576,7 +1576,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourceFilter.contextChanged(context, workspaceId, folderId);
     },
 
-    __connectDropHandlers: function () {
+    __connectDropHandlers: function() {
       const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
       workspacesAndFoldersTree.addListener("studyToFolderRequested", e => {
         const {
@@ -1625,7 +1625,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__folderToFolderRequested(folderId, workspaceId, destWorkspaceId, destFolderId);
     },
 
-    __addSortByButton: function () {
+    __addSortByButton: function() {
       const sortByButton = this.__sortByButton = new osparc.dashboard.SortedByMenuButton();
       sortByButton.set({
         appearance: "form-button-outlined"
@@ -1639,7 +1639,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._toolbar.add(sortByButton);
     },
 
-    __createLoadMoreButton: function () {
+    __createLoadMoreButton: function() {
       const mode = this._resourcesContainer.getMode();
       const loadMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
       loadMoreBtn.setCardKey("load-more");
@@ -1650,7 +1650,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return loadMoreBtn;
     },
 
-    __createImportButton: function () {
+    __createImportButton: function() {
       const importButton = new qx.ui.form.Button(this.tr("Import"));
       importButton.set({
         appearance: "form-button-outlined"
@@ -1679,7 +1679,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return importButton;
     },
 
-    __createMoveStudiesButton: function () {
+    __createMoveStudiesButton: function() {
       const moveStudiesButton = new qx.ui.form.Button(this.tr("Move to")).set({
         appearance: "form-button-outlined",
         visibility: "excluded",
@@ -1720,7 +1720,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return moveStudiesButton;
     },
 
-    __createTrashStudiesButton: function () {
+    __createTrashStudiesButton: function() {
       const trashButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/14").set({
         appearance: "warning-button",
         visibility: "excluded"
@@ -1734,7 +1734,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return trashButton;
     },
 
-    __createDeleteStudiesButton: function () {
+    __createDeleteStudiesButton: function() {
       const deleteButton = new qx.ui.form.Button(this.tr("Delete permanently"), "@FontAwesomeSolid/trash/14").set({
         appearance: "danger-button",
         visibility: "excluded"
@@ -1748,7 +1748,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return deleteButton;
     },
 
-    __createSelectButton: function () {
+    __createSelectButton: function() {
       const selectButton = new qx.ui.form.ToggleButton().set({
         appearance: "form-button-outlined",
         marginRight: 8
@@ -2599,7 +2599,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // TASKS //
-    __tasksToCards: function () {
+    __tasksToCards: function() {
       const tasks = osparc.store.PollTasks.getInstance().getDuplicateStudyTasks();
       tasks.forEach(task => {
         const studyName = "";
