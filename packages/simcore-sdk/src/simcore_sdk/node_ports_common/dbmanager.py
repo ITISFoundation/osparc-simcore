@@ -82,7 +82,7 @@ class DBContextManager:
     async def _create_db_engine(application_name: str) -> AsyncEngine:
         settings = NodePortsSettings.create_from_envs()
         engine = await create_async_engine_and_database_ready(
-            settings.POSTGRES_SETTINGS, f"{application_name}-simcore-sdk"
+            settings.POSTGRES_SETTINGS, f"{application_name}-simcore-sdk", tracing_config=None
         )
         assert isinstance(engine, AsyncEngine)  # nosec
         return engine
