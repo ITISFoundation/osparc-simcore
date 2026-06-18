@@ -43,7 +43,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis import RedisClientSDK
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.garbage_collector.garbage_collector_service import (
+from simcore_service_webserver.garbage_collector.settings import (
     GUEST_USER_RC_LOCK_FORMAT,
 )
 from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
