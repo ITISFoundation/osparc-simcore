@@ -19,10 +19,7 @@ from models_library.groups import (
 from models_library.users import UserID, UserNameID
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_products import get_or_create_product_group
-from simcore_postgres_database.utils_repos import (
-    pass_or_acquire_connection,
-    transaction_context,
-)
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from simcore_postgres_database.utils_users import is_public, visible_user_profile_cols
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import insert
@@ -262,6 +259,33 @@ async def get_ids_of_all_user_groups(
             .where(user_to_groups.c.uid == user_id)
         )
         return [row.gid async for row in result]
+
+
+async def get_ids_of_all_user_groups_and_primary_gid(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+) -> tuple[list[GroupID], GroupID]:
+    """Returns (all_group_ids, primary_group_id) in a single DB round-trip."""
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        row = await conn.execute(
+            sa.select(
+                users.c.primary_gid,
+                sa.func.array_agg(groups.c.gid).label("group_ids"),
+            )
+            .select_from(
+                users.join(user_to_groups, users.c.id == user_to_groups.c.uid).join(
+                    groups, user_to_groups.c.gid == groups.c.gid
+                )
+            )
+            .where(users.c.id == user_id)
+            .group_by(users.c.primary_gid)
+        )
+        result = row.one_or_none()
+        if result is None or result.primary_gid is None:
+            raise UserNotFoundError(user_id=user_id)
+        return list(result.group_ids), result.primary_gid
 
 
 async def get_user_group(
