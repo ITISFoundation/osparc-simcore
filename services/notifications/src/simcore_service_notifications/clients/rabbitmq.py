@@ -1,32 +1,22 @@
-from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
-from servicelib.rabbitmq import RabbitMQRPCClient, wait_till_rabbitmq_responsive
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.rabbitmq_lifespan import configure_rabbitmq_rpc_client
+from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 
-from ..core.settings import ApplicationSettings
 
-
-async def _rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    settings: ApplicationSettings = app.state.settings
-    rabbit_settings: RabbitSettings = settings.NOTIFICATIONS_RABBITMQ
-    app.state.rabbitmq_rpc_client = None
-
-    await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
-
-    app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-        client_name="notifications_rpc_client", settings=rabbit_settings
+def configure_rabbitmq_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: RabbitSettings,
+) -> None:
+    configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=settings,
+        client_name="notifications_rpc_client",
     )
-
-    yield {}
-
-    await app.state.rabbitmq_rpc_client.close()
-
-
-def configure_rabbitmq_client(app_lifespan: LifespanManager[FastAPI]) -> None:
-    app_lifespan.add(_rabbitmq_lifespan)
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
