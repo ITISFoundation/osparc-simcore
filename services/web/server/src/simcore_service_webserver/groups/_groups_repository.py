@@ -16,7 +16,9 @@ from models_library.groups import (
     StandardGroupCreate,
     StandardGroupUpdate,
 )
+from models_library.products import ProductName
 from models_library.users import UserID, UserNameID
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
@@ -161,14 +163,33 @@ async def get_group_by_gid(
 #
 
 
-def _list_user_groups_with_read_access_query(*group_selection, user_id: UserID):
-    return (
+def _list_user_groups_with_read_access_query(
+    *group_selection,
+    user_id: UserID,
+    product_name: ProductName | None = None,
+):
+    base_query = (
         sa.select(*group_selection, user_to_groups.c.access_rights)
         .select_from(
             user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
         )
         .where((user_to_groups.c.uid == user_id) & (user_to_groups.c.access_rights["read"].astext == "true"))
     )
+    if product_name is None:
+        return base_query
+
+    # Exclude standard groups that are system groups (group_id or support_standard_group_id)
+    # of a *different* product. Such groups are product-internal and must not leak across products.
+    other_product_system_gids = (
+        sa.select(products.c.group_id)
+        .where((products.c.name != product_name) & (products.c.group_id.isnot(None)))
+        .union(
+            sa.select(products.c.support_standard_group_id).where(
+                (products.c.name != product_name) & (products.c.support_standard_group_id.isnot(None))
+            )
+        )
+    )
+    return base_query.where((groups.c.type != GroupType.STANDARD) | groups.c.gid.notin_(other_product_system_gids))
 
 
 async def get_all_user_groups_with_read_access(
@@ -176,15 +197,19 @@ async def get_all_user_groups_with_read_access(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    product_name: ProductName | None = None,
 ) -> GroupsByTypeTuple:
     """
-    Returns the user primary group, standard groups and the all group
+    Returns the user primary group, standard groups and the all group.
+
+    When product_name is provided, standard groups that are system groups
+    (group_id or support_standard_group_id) of a different product are excluded.
     """
     primary_group: GroupInfoTuple | None = None
     standard_groups: list[GroupInfoTuple] = []
     everyone_group: GroupInfoTuple | None = None
 
-    query = _list_user_groups_with_read_access_query(groups, user_id=user_id)
+    query = _list_user_groups_with_read_access_query(groups, user_id=user_id, product_name=product_name)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
