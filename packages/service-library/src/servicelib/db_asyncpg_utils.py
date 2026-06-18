@@ -53,7 +53,7 @@ async def create_async_engine_and_database_ready(settings: PostgresSettings, app
         raise
 
     # Instrument the engine with OpenTelemetry tracing and Prometheus metrics
-    instrument_async_engine(engine, engine_name=application_name)
+    instrument_async_engine(engine)
 
     return engine
 
@@ -95,7 +95,7 @@ async def with_async_pg_engine(settings: PostgresSettings, *, application_name: 
             )
 
             # Instrument the engine with OpenTelemetry tracing and Prometheus metrics
-            instrument_async_engine(engine, engine_name=application_name)
+            instrument_async_engine(engine)
         yield engine
     finally:
         with log_context(_logger, logging.DEBUG, f"db disconnect of {engine}"):
