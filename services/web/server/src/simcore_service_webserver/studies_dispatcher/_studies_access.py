@@ -25,10 +25,12 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.redis import RedisClientSDK, exclusive
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
 from ..products import products_web
 from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
@@ -40,6 +42,7 @@ from ..projects.exceptions import (
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
+from ..redis import get_redis_lock_manager_client_sdk
 from ..security import security_web
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
@@ -148,12 +151,32 @@ async def _get_published_template_project(
     raise _create_access_denied_error(reason)
 
 
-async def copy_study_to_account(request: web.Request, template_project: dict, user: dict):
+def _get_guest_user_gc_lock_key(_request: web.Request, _template_project: dict, user: dict) -> str:
+    return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["name"])
+
+
+def _get_guest_user_gc_lock_redis_client(request: web.Request, *_args, **_kwargs) -> RedisClientSDK:
+    return get_redis_lock_manager_client_sdk(request.app)
+
+
+@exclusive(
+    _get_guest_user_gc_lock_redis_client,
+    lock_key=_get_guest_user_gc_lock_key,
+)
+async def copy_study_to_account(request: web.Request, template_project: dict, user: dict) -> str:
     """
     Creates a copy of the study to a given project in user's account
 
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
+
+    NOTE: This is wrapped by the guest-user GC lock for *every* user, but it only has an
+    effect on GUEST users: they are the only ones the garbage-collector can remove while
+    idle, and the GC checks this exact key (see GUEST_USER_RC_LOCK_FORMAT) before pruning
+    them. Copying a (potentially large) study can take longer than the guest's GC grace
+    period, so holding the lock for the whole copy guarantees the GC will not delete the
+    user nor its destination project mid-copy. For non-GUEST users the lock is inert (the
+    GC never inspects it).
     """
     # NOTE: Avoids circular dependencies
     from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY  # noqa: PLC0415
