@@ -46,10 +46,14 @@ def _configure_plugins(
     configure_smtp_config_check(app_lifespan)
 
     if not settings.NOTIFICATIONS_WORKER_MODE:
-        configure_rabbitmq_client(app_lifespan)
+        configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
         configure_rpc_api(app_lifespan)
 
-    configure_redis_client(app_lifespan)
+    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
+    configure_redis_client(
+        app_lifespan,
+        settings=settings.NOTIFICATIONS_CELERY.CELERY_REDIS_RESULT_BACKEND,
+    )
     configure_task_manager(app_lifespan)
 
     if settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
