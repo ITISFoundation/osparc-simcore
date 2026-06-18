@@ -22,7 +22,6 @@ from aiohttp import web
 from aiohttp_session import get_session
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
-from common_library.users_enums import UserRole
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
@@ -152,12 +151,32 @@ async def _get_published_template_project(
     raise _create_access_denied_error(reason)
 
 
+def _get_guest_user_gc_lock_key(_request: web.Request, _template_project: dict, user: dict) -> str:
+    return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["name"])
+
+
+def _get_guest_user_gc_lock_redis_client(request: web.Request, *_args, **_kwargs) -> RedisClientSDK:
+    return get_redis_lock_manager_client_sdk(request.app)
+
+
+@exclusive(
+    _get_guest_user_gc_lock_redis_client,
+    lock_key=_get_guest_user_gc_lock_key,
+)
 async def copy_study_to_account(request: web.Request, template_project: dict, user: dict) -> str:
     """
     Creates a copy of the study to a given project in user's account
 
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
+
+    NOTE: This is wrapped by the guest-user GC lock for *every* user, but it only has an
+    effect on GUEST users: they are the only ones the garbage-collector can remove while
+    idle, and the GC checks this exact key (see GUEST_USER_RC_LOCK_FORMAT) before pruning
+    them. Copying a (potentially large) study can take longer than the guest's GC grace
+    period, so holding the lock for the whole copy guarantees the GC will not delete the
+    user nor its destination project mid-copy. For non-GUEST users the lock is inert (the
+    GC never inspects it).
     """
     # NOTE: Avoids circular dependencies
     from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY  # noqa: PLC0415
@@ -236,29 +255,6 @@ async def copy_study_to_account(request: web.Request, template_project: dict, us
         )
 
     return project_uuid
-
-
-def _get_guest_user_gc_lock_key(_request: web.Request, _template_project: dict, user: dict) -> str:
-    # Use the guest-name key (construction lock domain), not the user-id key.
-    # See GUEST_USER_RC_LOCK_FORMAT docs for lifecycle rationale.
-    return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["name"])
-
-
-def _get_guest_user_gc_lock_redis_client(request: web.Request, *_args, **_kwargs) -> RedisClientSDK:
-    return get_redis_lock_manager_client_sdk(request.app)
-
-
-@exclusive(
-    _get_guest_user_gc_lock_redis_client,
-    lock_key=_get_guest_user_gc_lock_key,
-)
-async def _copy_study_to_guest_protected_from_gc(request: web.Request, template_project: dict, user: dict) -> str:
-    # NOTE: GUEST users are removed by the garbage-collector when they appear idle.
-    # Copying a (potentially large) study can take longer than the guest's GC grace
-    # period, so we hold a guest GC lock for the whole copy. The lock is auto-extended
-    # and is one of the keys the GC checks (see _get_guest_user_gc_lock_key), so the
-    # GC will not delete the user nor its destination project while the copy runs.
-    return await copy_study_to_account(request, template_project, user)
 
 
 # HANDLERS --------------------------------------------------------
@@ -407,18 +403,10 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             user.get("email"),
         )
 
-        copy_study = (
-            (
-                # GUEST users can be garbage-collected while idle. Hold the guest-user GC
-                # lock for the whole (potentially long) copy so the GC does not delete the
-                # user nor its destination project mid-copy.
-                _copy_study_to_guest_protected_from_gc
-            )
-            if user.get("role") == UserRole.GUEST
-            else copy_study_to_account
-        )
-
-        copied_project_id = await copy_study(request, template_project, user)
+        # NOTE: the copy is always wrapped by the guest-user GC lock. The lock only
+        # affects GUEST users (the GC checks this key before pruning idle guests), so it
+        # is harmless for the rest while keeping a single, uniform copy path.
+        copied_project_id = await copy_study_to_account(request, template_project, user)
 
         _logger.debug("Study %s copied", copied_project_id)
 
