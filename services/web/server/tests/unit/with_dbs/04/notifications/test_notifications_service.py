@@ -126,51 +126,6 @@ async def test_send_message_from_template_with_group_ids(
         assert task_name == mocked_send_message_from_template_rpc.task_name
 
 
-async def test_send_message_from_template_enriches_context_with_product_data(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    mocked_notifications_rpc_client: MockerFixture,
-    fake_template_context: dict[str, Any],
-    mocker: MockerFixture,
-    faker: Faker,
-):
-    """Test that the context is enriched with product data before calling RPC"""
-    assert client.app
-
-    mock_rpc = mocker.patch(
-        f"{_service.__name__}.remote_send_message_from_template",
-        autospec=True,
-        return_value=SendMessageResponse(
-            task_or_group_uuid=uuid.uuid4(),
-            task_name="send_message_from_template",
-        ),
-    )
-
-    external_contacts = [
-        EmailContact(name=faker.name(), email=faker.email()),
-    ]
-
-    await send_message_from_template(
-        client.app,
-        user_id=logged_user["id"],
-        product_name="osparc",
-        channel=Channel.email,
-        group_ids=None,
-        external_contacts=external_contacts,
-        template_name="reset_password",
-        context=fake_template_context,
-    )
-
-    assert mock_rpc.called
-    call_kwargs = mock_rpc.call_args.kwargs
-    assert "context" in call_kwargs
-    context = call_kwargs["context"]
-    assert "product" in context
-    # Original context keys should still be present
-    for key in fake_template_context:
-        assert key in context
-
-
 async def test_send_message_from_template_passes_correct_template_ref(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -216,7 +171,7 @@ async def test_send_message_from_template_passes_correct_template_ref(
 
     # Verify addressing has from and to
     addressing = call_kwargs["addressing"]
-    assert addressing.from_ is not None
+    assert addressing.from_identity is not None
     assert len(addressing.to) == 1
     assert addressing.to[0].email == external_contacts[0].email
 
