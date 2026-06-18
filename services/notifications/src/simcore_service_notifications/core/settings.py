@@ -1,41 +1,164 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
-from common_library.network import extract_email_domain
 from models_library.basic_types import LogLevel
+from models_library.notifications.errors import (
+    NotificationsProductSMTPSettingsNotFoundError,
+)
+from models_library.notifications.rpc import SenderIdentity
 from pydantic import (
     AliasChoices,
+    BaseModel,
+    ConfigDict,
     Field,
-    RootModel,
-    StringConstraints,
     field_validator,
     model_validator,
 )
+from pydantic.types import SecretStr
 from settings_library.application import BaseApplicationSettings
+from settings_library.basic_types import PortInt
 from settings_library.celery import CelerySettings
-from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-type Domain = Annotated[
-    str,
-    StringConstraints(strip_whitespace=True, to_lower=True, min_length=1, pattern=r"^[a-z0-9.-]+$"),
-]
+from ..models.smtp import ALLOWED_HEADERS, EmailProtocol
 
 
-class _DomainToSMTPSettings(RootModel[dict[Domain, SMTPSettings]]):
-    """SMTP settings keyed by sender email domain (lowercase)."""
+class SMTPSettings(BaseModel):
+    """Settings for Simple Mail Transfer Protocol (SMTP)
 
-    def get_settings_for_email(self, email: str) -> SMTPSettings:
-        domain = extract_email_domain(email).lower()
-        settings = self.root.get(domain)
-        if settings is None:
-            msg = f"No SMTP settings configured for domain {domain!r} (from={email!r})"
+    NOTE: These settings are only intended to login and access an email server.
+    Extra info necessary to send an email such as sender email 'from' or 'reply-to' are now
+    product-dependent and resolved from NOTIFICATIONS_SMTP_SETTINGS (per-product 'domain',
+    'local_parts' and 'extra_headers'), see NotificationsSMTPSettings/ProductSMTPSettings
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    host: str
+    port: PortInt
+    protocol: Annotated[
+        EmailProtocol,
+        Field(
+            description="Select between TLS, STARTTLS Secure Mode or unencrypted communication",
+        ),
+    ] = EmailProtocol.UNENCRYPTED
+
+    username: Annotated[str | None, Field(min_length=1)] = None
+    password: Annotated[SecretStr | None, Field(min_length=1)] = None
+
+    @model_validator(mode="after")
+    def _both_credentials_must_be_set(self) -> Self:
+        username = self.username
+        password = self.password
+
+        if (username is None and password) or (username and password is None):
+            msg = f"Please provide both {username=} and {password=} not just one"
             raise ValueError(msg)
-        return settings
+
+        return self
+
+    @model_validator(mode="after")
+    def _enabled_tls_required_authentication(self) -> Self:
+        protocol = self.protocol
+
+        username = self.username
+        password = self.password
+
+        tls_enabled = protocol == EmailProtocol.TLS
+        starttls_enabled = protocol == EmailProtocol.STARTTLS
+
+        if (tls_enabled or starttls_enabled) and not (username or password):
+            msg = "when using protocol other than UNENCRYPTED username and password are required"
+            raise ValueError(msg)
+        return self
+
+    @property
+    def has_credentials(self) -> bool:
+        return self.username is not None and self.password is not None
+
+
+class ProductSMTPSettings(BaseModel):
+    """Per-product SMTP configuration referencing a named mail server profile."""
+
+    model_config = ConfigDict(frozen=True)
+
+    mail_server: Annotated[
+        str,
+        Field(description="Name of the mail server profile from mail_servers dict"),
+    ]
+    domain: str
+    local_parts: Annotated[
+        dict[SenderIdentity, str],
+        Field(
+            description="A mapping of FromIdentity values to local-part strings used to build sender emails.",
+            examples=[
+                {
+                    "support": "support",
+                    "no_reply": "no-reply",
+                }
+            ],
+        ),
+    ]
+    extra_headers: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
+        ),
+    ] = DEFAULT_FACTORY
+
+    @model_validator(mode="after")
+    def _validate_local_parts_complete(self) -> Self:
+        missing = set(SenderIdentity) - set(self.local_parts)
+        if missing:
+            msg = f"local_parts is missing required identities: {sorted(missing)}. Required: {sorted(SenderIdentity)}"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _validate_extra_headers_allowed(self) -> Self:
+        disallowed = {k for k in self.extra_headers if k.lower() not in ALLOWED_HEADERS}
+        if disallowed:
+            msg = (
+                f"extra_headers contains non-permitted headers: {sorted(disallowed)}. "
+                f"Allowed (case-insensitive): {sorted(ALLOWED_HEADERS)}"
+            )
+            raise ValueError(msg)
+        return self
+
+
+class NotificationsSMTPSettings(BaseModel):
+    """Root model for SMTP settings with named mail server profiles and per-product config."""
+
+    model_config = ConfigDict(frozen=True)
+
+    mail_servers: dict[str, SMTPSettings]
+    products: dict[str, ProductSMTPSettings]
+
+    @model_validator(mode="after")
+    def _validate_mail_server_references(self) -> Self:
+        for product_name, product_settings in self.products.items():
+            if product_settings.mail_server not in self.mail_servers:
+                msg = (
+                    f"Product '{product_name}' references mail_server "
+                    f"'{product_settings.mail_server}' which is not defined in mail_servers. "
+                    f"Available: {sorted(self.mail_servers.keys())}"
+                )
+                raise ValueError(msg)
+        return self
+
+    def get_product_smtp_settings(self, product_name: str) -> ProductSMTPSettings:
+        if product_name not in self.products:
+            raise NotificationsProductSMTPSettingsNotFoundError(product_name=product_name)
+        return self.products[product_name]
+
+    def get_smtp_settings(self, product_name: str) -> SMTPSettings:
+        product = self.get_product_smtp_settings(product_name)
+        return self.mail_servers[product.mail_server]
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -120,33 +243,34 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = "1/s"
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
-        _DomainToSMTPSettings | None,
+        NotificationsSMTPSettings | None,
         Field(
             description=(
-                "Per-domain SMTP settings keyed by sender email domain (e.g. 'osparc.io'). "
-                "Required by the notifications worker; unused by the API service."
+                "Per-product SMTP settings with named mail server profiles and product-to-profile mapping. "
+                "Used by the API service to resolve sender identities when preparing messages, "
+                "and by the worker to deliver emails."
             ),
             examples=[
                 {
-                    "osparc.io": {
-                        "SMTP_LOCAL_PARTS": {
-                            "INFO": "info",
-                            "NO_REPLY": "no-reply",
-                            "SUPPORT": "support",
-                        },
-                        "SMTP_HOST": "smtp.osparc.io",
-                        "SMTP_PORT": 25,
+                    "mail_servers": {
+                        "aws": {
+                            "host": "email-smtp.us-east-1.amazonaws.com",
+                            "port": 465,
+                            "protocol": "TLS",
+                            "username": "AKIA...",
+                            "password": "***",
+                        }
                     },
-                    "example.com": {
-                        "SMTP_LOCAL_PARTS": {
-                            "INFO": "info",
-                            "NO_REPLY": "no-reply",
-                            "SUPPORT": "support",
-                        },
-                        "SMTP_HOST": "smtp.example.com",
-                        "SMTP_PORT": 587,
-                        "SMTP_USERNAME": "user@example.com",
-                        "SMTP_PASSWORD": "blabla",
+                    "products": {
+                        "osparc": {
+                            "mail_server": "aws",
+                            "domain": "sim4life.io",
+                            "extra_headers": {},
+                            "local_parts": {
+                                "no_reply": "no-reply",
+                                "support": "support",
+                            },
+                        }
                     },
                 }
             ],
@@ -164,7 +288,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             msg = (
                 "NOTIFICATIONS_SMTP_SETTINGS must be configured when "
                 "NOTIFICATIONS_WORKER_MODE is enabled "
-                "(per-domain SMTP settings are required by the worker)."
+                "(per-product SMTP settings are required by the worker)."
             )
             raise ValueError(msg)
         return self

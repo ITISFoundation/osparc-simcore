@@ -1,27 +1,21 @@
-# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import AsyncIterator
-
 import pytest
 import servicelib.fastapi.rabbitmq_lifespan
-import servicelib.rabbitmq
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
+from fastapi_lifespan_manager import LifespanManager
 from pydantic import Field
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.rabbitmq_lifespan import (
-    RabbitMQConfigurationError,
-    RabbitMQLifespanState,
-    rabbitmq_connectivity_lifespan,
+    configure_rabbitmq_client,
+    configure_rabbitmq_rpc_client,
 )
-from servicelib.rabbitmq import rabbitmq_rpc_client_context
 from settings_library.application import BaseApplicationSettings
 from settings_library.rabbit import RabbitSettings
 
@@ -36,15 +30,25 @@ def mock_rabbitmq_connection(mocker: MockerFixture) -> MockType:
 
 
 @pytest.fixture
-def mock_rabbitmq_rpc_client_class(mocker: MockerFixture) -> MockType:
+def mock_rabbitmq_client_class(mocker: MockerFixture) -> MockType:
+    mock_client_instance = mocker.AsyncMock()
+    mock_client_instance.close = mocker.AsyncMock()
+    return mocker.patch.object(
+        servicelib.fastapi.rabbitmq_lifespan,
+        "RabbitMQClient",
+        return_value=mock_client_instance,
+    )
+
+
+@pytest.fixture
+def mock_rabbitmq_rpc_client_create(mocker: MockerFixture) -> MockType:
     mock_rpc_client_instance = mocker.AsyncMock()
-    mocker.patch.object(
-        servicelib.rabbitmq._client_rpc.RabbitMQRPCClient,  # noqa: SLF001
+    mock_rpc_client_instance.close = mocker.AsyncMock()
+    return mocker.patch.object(
+        servicelib.fastapi.rabbitmq_lifespan.RabbitMQRPCClient,
         "create",
         return_value=mock_rpc_client_instance,
     )
-    mock_rpc_client_instance.close = mocker.AsyncMock()
-    return mock_rpc_client_instance
 
 
 @pytest.fixture
@@ -52,51 +56,26 @@ def app_environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return setenvs_from_dict(monkeypatch, RabbitSettings.model_json_schema()["examples"][0])
 
 
-@pytest.fixture
-def app_lifespan(
+async def test_configure_rabbitmq_client_publishes_client_in_app_state(
+    is_pdb_enabled: bool,
     app_environment: EnvVarsDict,
     mock_rabbitmq_connection: MockType,
-    mock_rabbitmq_rpc_client_class: MockType,
-) -> LifespanManager:
+    mock_rabbitmq_client_class: MockType,
+):
     assert app_environment
 
     class AppSettings(BaseApplicationSettings):
         RABBITMQ: RabbitSettings = Field(..., json_schema_extra={"auto_default_from_env": True})
 
-    # setup settings
-    async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
-        app.state.settings = AppSettings.create_from_envs()
-
-        yield RabbitMQLifespanState(
-            RABBIT_SETTINGS=app.state.settings.RABBITMQ,
-        ).model_dump()
-
-    # setup rpc-client using rabbitmq_rpc_client_context
-    async def my_app_rpc_client(app: FastAPI, state: State) -> AsyncIterator[State]:
-        assert "RABBIT_CONNECTIVITY_LIFESPAN_NAME" in state
-
-        async with rabbitmq_rpc_client_context("rpc_client", app.state.settings.RABBITMQ) as rpc_client:
-            app.state.rpc_client = rpc_client
-            yield {}
+    settings = AppSettings.create_from_envs()
 
     app_lifespan = LifespanManager()
-    app_lifespan.add(my_app_settings)
-    app_lifespan.add(rabbitmq_connectivity_lifespan)
-    app_lifespan.add(my_app_rpc_client)
+    configure_rabbitmq_client(
+        app_lifespan,
+        settings=settings.RABBITMQ,
+        client_name="test_rabbit_client",
+    )
 
-    assert not mock_rabbitmq_connection.called
-    assert not mock_rabbitmq_rpc_client_class.called
-
-    return app_lifespan
-
-
-async def test_lifespan_rabbitmq_in_an_app(
-    is_pdb_enabled: bool,
-    app_environment: EnvVarsDict,
-    mock_rabbitmq_connection: MockType,
-    mock_rabbitmq_rpc_client_class: MockType,
-    app_lifespan: LifespanManager,
-):
     app = FastAPI(lifespan=app_lifespan)
 
     async with ASGILifespanManager(
@@ -104,38 +83,98 @@ async def test_lifespan_rabbitmq_in_an_app(
         startup_timeout=None if is_pdb_enabled else 10,
         shutdown_timeout=None if is_pdb_enabled else 10,
     ):
-        # Verify that RabbitMQ responsiveness was checked
-        mock_rabbitmq_connection.assert_called_once_with(app.state.settings.RABBITMQ.dsn)
+        mock_rabbitmq_connection.assert_called_once_with(settings.RABBITMQ.dsn)
+        mock_rabbitmq_client_class.assert_called_once_with(
+            client_name="test_rabbit_client",
+            settings=settings.RABBITMQ,
+        )
+        assert app.state.rabbitmq_client == mock_rabbitmq_client_class.return_value
 
-        # Verify that RabbitMQ settings are in the lifespan manager state
-        assert app.state.settings.RABBITMQ
-        assert app.state.rpc_client
-
-    # No explicit shutdown logic for RabbitMQ in this case
-    assert mock_rabbitmq_rpc_client_class.close.called
+    mock_rabbitmq_client_class.return_value.close.assert_called_once()
 
 
-async def test_lifespan_rabbitmq_with_invalid_settings(
+async def test_configure_rabbitmq_rpc_client_publishes_rpc_client_in_app_state(
     is_pdb_enabled: bool,
+    app_environment: EnvVarsDict,
+    mock_rabbitmq_connection: MockType,
+    mock_rabbitmq_rpc_client_create: MockType,
 ):
-    async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
-        yield {"RABBIT_SETTINGS": None}
+    assert app_environment
+
+    class AppSettings(BaseApplicationSettings):
+        RABBITMQ: RabbitSettings = Field(..., json_schema_extra={"auto_default_from_env": True})
+
+    settings = AppSettings.create_from_envs()
 
     app_lifespan = LifespanManager()
-    app_lifespan.add(my_app_settings)
-    app_lifespan.add(rabbitmq_connectivity_lifespan)
+    configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=settings.RABBITMQ,
+        client_name="test_rabbit_rpc_client",
+    )
 
     app = FastAPI(lifespan=app_lifespan)
 
-    with pytest.raises(RabbitMQConfigurationError, match="Invalid RabbitMQ") as excinfo:
-        async with ASGILifespanManager(
-            app,
-            startup_timeout=None if is_pdb_enabled else 10,
-            shutdown_timeout=None if is_pdb_enabled else 10,
-        ):
-            ...
+    async with ASGILifespanManager(
+        app,
+        startup_timeout=None if is_pdb_enabled else 10,
+        shutdown_timeout=None if is_pdb_enabled else 10,
+    ):
+        mock_rabbitmq_connection.assert_called_once_with(settings.RABBITMQ.dsn)
+        mock_rabbitmq_rpc_client_create.assert_called_once_with(
+            client_name="test_rabbit_rpc_client",
+            settings=settings.RABBITMQ,
+        )
+        assert app.state.rabbitmq_rpc_client == mock_rabbitmq_rpc_client_create.return_value
 
-    exception = excinfo.value
-    assert isinstance(exception, RabbitMQConfigurationError)
-    assert exception.validation_error
-    assert exception.state["RABBIT_SETTINGS"] is None
+    mock_rabbitmq_rpc_client_create.return_value.close.assert_called_once()
+
+
+async def test_configure_rabbitmq_client_with_none_settings(
+    is_pdb_enabled: bool,
+    mock_rabbitmq_connection: MockType,
+    mock_rabbitmq_client_class: MockType,
+):
+    app_lifespan = LifespanManager()
+    configure_rabbitmq_client(
+        app_lifespan,
+        settings=None,
+        client_name="disabled_rabbit_client",
+    )
+
+    app = FastAPI(lifespan=app_lifespan)
+
+    async with ASGILifespanManager(
+        app,
+        startup_timeout=None if is_pdb_enabled else 10,
+        shutdown_timeout=None if is_pdb_enabled else 10,
+    ):
+        assert app.state.rabbitmq_client is None
+
+    mock_rabbitmq_connection.assert_not_called()
+    mock_rabbitmq_client_class.assert_not_called()
+
+
+async def test_configure_rabbitmq_rpc_client_with_none_settings(
+    is_pdb_enabled: bool,
+    mock_rabbitmq_connection: MockType,
+    mock_rabbitmq_rpc_client_create: MockType,
+):
+    app_lifespan = LifespanManager()
+    configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=None,
+        client_name="disabled_rabbit_rpc_client",
+    )
+
+    app = FastAPI(lifespan=app_lifespan)
+
+    async with ASGILifespanManager(
+        app,
+        startup_timeout=None if is_pdb_enabled else 10,
+        shutdown_timeout=None if is_pdb_enabled else 10,
+    ):
+        assert app.state.rabbitmq_rpc_client is None
+
+    mock_rabbitmq_connection.assert_not_called()
+    mock_rabbitmq_rpc_client_create.assert_not_called()

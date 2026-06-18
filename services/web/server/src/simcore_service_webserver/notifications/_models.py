@@ -1,9 +1,9 @@
 from email.utils import parseaddr
-from typing import Annotated, Any, Self
+from typing import Any, Self
 
 from common_library.network import replace_email_parts
 from models_library.notifications import Channel, TemplateName
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class TemplateRef(BaseModel):
@@ -83,7 +83,6 @@ class EmailContent(BaseModel):
 
 
 class EmailAddressing(BaseModel):
-    from_: Annotated[EmailContact, Field(alias="from")]
     to: list[EmailContact]
     reply_to: EmailContact | None = None
     bcc: EmailContact | None = None
@@ -92,8 +91,6 @@ class EmailAddressing(BaseModel):
 
     model_config = ConfigDict(
         frozen=True,
-        validate_by_alias=True,
-        validate_by_name=True,
     )
 
 

@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from models_library.notifications.errors import (
+    NotificationsProductNotFoundError,
+    NotificationsProductSMTPSettingsNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -17,7 +19,13 @@ from .dependencies import get_message_service
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(NotificationsTooManyRecipientsError,))
+@router.expose(
+    reraise_if_error_type=(
+        NotificationsProductNotFoundError,
+        NotificationsProductSMTPSettingsNotFoundError,
+        NotificationsTooManyRecipientsError,
+    )
+)
 async def send_message(
     app: FastAPI,
     *,
@@ -27,6 +35,7 @@ async def send_message(
 
     message_service = get_message_service(app)
     task_or_group_uuid, task_name = await message_service.send_message(
+        product_name=request.product_name,
         message=request.message,
         owner_metadata=request.owner_metadata,
     )
@@ -35,6 +44,8 @@ async def send_message(
 
 @router.expose(
     reraise_if_error_type=(
+        NotificationsProductNotFoundError,
+        NotificationsProductSMTPSettingsNotFoundError,
         NotificationsTemplateNotFoundError,
         NotificationsTemplateContextValidationError,
     )
@@ -48,6 +59,7 @@ async def send_message_from_template(
 
     message_service = get_message_service(app)
     task_or_group_uuid, task_name = await message_service.send_message_from_template(
+        product_name=request.product_name,
         addressing=request.addressing,
         ref=TemplateRef(**request.template_ref.model_dump()),
         context=request.context,
