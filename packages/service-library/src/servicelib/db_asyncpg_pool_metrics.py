@@ -7,6 +7,8 @@ from prometheus_client import Counter, Gauge
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from servicelib.logging_utils import log_context
+
 from .instrumentation import MetricsBase
 
 _logger = logging.getLogger(__name__)
@@ -127,14 +129,17 @@ def setup_pool_metrics_instrumentation(
         except AttributeError:
             pass
 
-    event.listen(
-        sync_pool,
-        "checkout",
-        lambda dbapi_conn, conn_record, conn_proxy: _update_dynamic_metrics(),  # noqa: ARG005
-    )
-    event.listen(
-        sync_pool,
-        "checkin",
-        lambda dbapi_conn, conn_record: _update_dynamic_metrics(),  # noqa: ARG005
-    )
-    _logger.debug("Pool metrics instrumentation set up for engine %s", engine)
+    # initial metrics update to avoid Prometheus scrape with all zeros
+    _update_dynamic_metrics()
+    # Attach event listeners to update metrics on every connection checkout/checkin.
+    with log_context(_logger, logging.INFO, f"set up pool metrics instrumentation for engine {engine}"):
+        event.listen(
+            sync_pool,
+            "checkout",
+            lambda dbapi_conn, conn_record, conn_proxy: _update_dynamic_metrics(),  # noqa: ARG005
+        )
+        event.listen(
+            sync_pool,
+            "checkin",
+            lambda dbapi_conn, conn_record: _update_dynamic_metrics(),  # noqa: ARG005
+        )
