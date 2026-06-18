@@ -13,6 +13,7 @@ from tenacity import retry
 
 from .logging_utils import log_context
 from .retry_policies import PostgresRetryPolicyUponInitialization
+from .sqlalchemy_instrumentation import instrument_async_engine
 
 _logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ async def create_async_engine_and_database_ready(settings: PostgresSettings, app
     - waits until db data is migrated (i.e. ready to use)
     - returns engine
     """
-    from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
+    from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear  # noqa: PLC0415
         raise_if_migration_not_ready,
     )
 
@@ -50,6 +51,9 @@ async def create_async_engine_and_database_ready(settings: PostgresSettings, app
         await engine.dispose()
         exc.add_note("Failed during migration check. Created engine disposed.")
         raise
+
+    # Instrument the engine with OpenTelemetry tracing and Prometheus metrics
+    instrument_async_engine(engine, engine_name=application_name)
 
     return engine
 
@@ -89,6 +93,9 @@ async def with_async_pg_engine(settings: PostgresSettings, *, application_name: 
                 pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
                 future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
             )
+
+            # Instrument the engine with OpenTelemetry tracing and Prometheus metrics
+            instrument_async_engine(engine, engine_name=application_name)
         yield engine
     finally:
         with log_context(_logger, logging.DEBUG, f"db disconnect of {engine}"):
