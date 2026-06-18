@@ -394,47 +394,17 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             ) from exc
 
-    # COPY
+    # Redirect immediately to the SPA dispatching route — the actual clone is done
+    # by a separate POST /{VTAG}/studies/{id}:dispatch call from the SPA, which runs
+    # as a long-running task so the user gets live progress feedback.
     assert user  # nosec
-    try:
-        _logger.debug(
-            "Granted access to study name='%s' for user email='%s'. Copying study over ...",
-            template_project.get("name"),
-            user.get("email"),
-        )
 
-        copied_project_id = await copy_study_to_account(request, template_project, user)
-
-        _logger.debug("Study %s copied", copied_project_id)
-
-    except Exception as exc:  # pylint: disable=broad-except
-        error_code = create_error_code(exc)
-        user_error_msg = compose_support_error_msg(
-            msg=MSG_UNEXPECTED_DISPATCH_ERROR,
-            error_code=error_code,
-        )
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                user_error_msg,
-                error=exc,
-                error_code=error_code,
-                error_context={
-                    "user_id": user.get("id"),
-                    "user": dict(user),
-                    "template_project": {k: template_project.get(k) for k in ["name", "uuid"]},
-                },
-                tip=f"Failed while copying project '{template_project.get('name')}' to '{user.get('email')}'",
-            )
-        )
-
-        raise RedirectToFrontEndPageError(
-            user_error_msg,
-            error_code=error_code,
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        ) from exc
-
-    # Creating REDIRECTION LINK
-    redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(f"/study/{copied_project_id}")
+    # Creating REDIRECTION LINK — points to the SPA dispatch fragment, not the final study
+    redirect_url = (
+        request.app.router[INDEX_RESOURCE_NAME]
+        .url_for()
+        .with_fragment(f"/dispatch?study_id={template_project['uuid']}")
+    )
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:
