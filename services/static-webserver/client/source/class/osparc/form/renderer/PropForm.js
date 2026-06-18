@@ -57,23 +57,23 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     getDownloadingIcon: function() {
-      return "@FontAwesome5Solid/cloud-download-alt/12";
+      return "@FontAwesomeSolid/cloud-download-alt/12";
     },
 
     getUploadingIcon: function() {
-      return "@FontAwesome5Solid/cloud-upload-alt/12";
+      return "@FontAwesomeSolid/cloud-upload-alt/12";
     },
 
     getFailedIcon: function() {
-      return "@FontAwesome5Solid/times/12";
+      return "@FontAwesomeSolid/times/12";
     },
 
     getSucceededIcon: function() {
-      return "@FontAwesome5Solid/check/12";
+      return "@FontAwesomeSolid/check/12";
     },
 
     getRetrievedEmpty: function() {
-      return "@FontAwesome5Solid/dot-circle/10";
+      return "@FontAwesomeSolid/dot-circle/10";
     },
 
     GRID_POS: {
@@ -269,7 +269,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       });
       const fieldOptsBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
-        icon: "@FontAwesome5Solid/link/12",
+        icon: "@FontAwesomeSolid/link/12",
         maxHeight: 23,
         focusable: false,
         allowGrowX: false,
@@ -288,7 +288,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     __createUnlinkButton: function(field) {
-      const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/12").set({
+      const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesomeSolid/unlink/12").set({
         toolTipText: this.tr("Unlink"),
         maxHeight: 23
       });
@@ -468,11 +468,11 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       const evalButton = () => {
         if (node.getInputsRequired().includes(portId)) {
           inputRequiredBtn.set({
-            icon: "@FontAwesome5Regular/check-square/12"
+            icon: "@FontAwesomeRegular/check-square/12"
           });
         } else {
           inputRequiredBtn.set({
-            icon: "@FontAwesome5Regular/square/12"
+            icon: "@FontAwesomeRegular/square/12"
           });
         }
       }
@@ -599,7 +599,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       // add visible input port button
       const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
         label: this.tr("Input"),
-        icon: "@FontAwesome5Solid/plus/14",
+        icon: "@FontAwesomeSolid/plus/14",
         marginTop: 6,
         allowGrowX: false,
         minWidth: 70

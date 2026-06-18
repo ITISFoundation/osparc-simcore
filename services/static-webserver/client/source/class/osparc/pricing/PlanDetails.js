@@ -65,7 +65,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
         case "back-to-pp-button":
           control = new qx.ui.form.Button().set({
             toolTipText: this.tr("Return to Pricing Plans"),
-            icon: "@FontAwesome5Solid/arrow-left/20",
+            icon: "@FontAwesomeSolid/arrow-left/20",
             backgroundColor: "transparent"
           });
           control.addListener("execute", () => this.fireEvent("backToPricingPlans"));
@@ -88,7 +88,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
           break;
         case "pricing-units": {
           control = new osparc.pricing.UnitsList();
-          const tabPage = this.self().createTabPage(this.tr("Pricing Units"), "@FontAwesome5Solid/paw/14");
+          const tabPage = this.self().createTabPage(this.tr("Pricing Units"), "@FontAwesomeSolid/paw/14");
           tabPage.add(control, {
             flex: 1
           });
@@ -98,7 +98,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
         }
         case "service-list": {
           control = new osparc.pricing.ServicesList();
-          const tabPage = this.__servicesPage = this.self().createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+          const tabPage = this.__servicesPage = this.self().createTabPage(this.tr("Services"), "@FontAwesomeSolid/cogs/14");
           tabPage.add(control, {
             flex: 1
           });

@@ -73,7 +73,7 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     iconSrc: {
       check: "String",
       nullable: true,
-      init: "@FontAwesome5Solid/check/14",
+      init: "@FontAwesomeSolid/check/14",
       event: "changeIconSrc"
     },
   },

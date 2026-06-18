@@ -79,9 +79,9 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: states => {
         let icon = "";
         if (states.move) {
-          icon = "@FontAwesome5Solid/check/14";
+          icon = "@FontAwesomeSolid/check/14";
         } else {
-          icon = "@FontAwesome5Solid/times/14";
+          icon = "@FontAwesomeSolid/times/14";
         }
         return {
           source: icon,

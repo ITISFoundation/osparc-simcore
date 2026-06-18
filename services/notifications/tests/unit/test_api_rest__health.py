@@ -27,6 +27,7 @@ def mock_lifespans(mocker: MockerFixture) -> None:
 
     for configure_fn in (
         "configure_postgres_liveness",
+        "configure_smtp_config_check",
         "configure_rabbitmq_client",
         "configure_rpc_api",
         "configure_redis_client",

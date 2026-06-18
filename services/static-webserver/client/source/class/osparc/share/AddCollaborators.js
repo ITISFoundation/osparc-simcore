@@ -27,7 +27,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
 
   /**
     * @param serializedDataCopy {Object} Object containing the Serialized Data
-    * @param publishingTemplate {Boolean} Wether the widget needs to be initialized for publishing template
+    * @param publishingTemplate {Boolean} Whether the widget needs to be initialized for publishing template
     */
   construct: function(serializedDataCopy, publishingTemplate = false) {
     this.base(arguments);
@@ -61,7 +61,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
           break;
         case "share-with":
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/share-alt/12",
+            icon: "@FontAwesomeSolid/share-alt/12",
             label: this.tr("Share"),
             appearance: "form-button",
             alignX: "left",

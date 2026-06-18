@@ -474,7 +474,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
 
       const restartCaptcha = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/sync-alt/12",
+        icon: "@FontAwesomeSolid/sync-alt/12",
         toolTipText: this.tr("Reload Captcha")
       });
       restartCaptcha.addListener("tap", () => this.__restartCaptcha(), this);

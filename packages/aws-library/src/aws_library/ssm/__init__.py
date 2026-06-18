@@ -8,6 +8,7 @@ from ._errors import (
     SSMRuntimeError,
     SSMSendCommandInstancesNotReadyError,
 )
+from ._fastapi_lifespan import configure_ssm_client
 
 __all__: tuple[str, ...] = (
     "SSMAccessError",
@@ -18,6 +19,5 @@ __all__: tuple[str, ...] = (
     "SSMRuntimeError",
     "SSMSendCommandInstancesNotReadyError",
     "SimcoreSSMAPI",
+    "configure_ssm_client",
 )
-
-# nopycln: file

@@ -43,7 +43,7 @@ def _configure_plugins(
         tracing_config=tracing_config,
     )
     if settings.DIRECTOR_REGISTRY_CACHING:
-        configure_redis_clients_manager(app_lifespan)
+        configure_redis_clients_manager(app_lifespan, settings=settings.DIRECTOR_REDIS)
 
     configure_registry_lifespans(app_lifespan)
 

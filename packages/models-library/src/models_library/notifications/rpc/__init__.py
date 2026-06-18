@@ -11,6 +11,7 @@ from ._email import (
     EmailContent,
     EmailMessage,
     Message,
+    SenderIdentity,
 )
 from ._message import (
     SendMessageFromTemplateRequest,
@@ -40,5 +41,6 @@ __all__: tuple[str, ...] = (
     "SendMessageFromTemplateRequest",
     "SendMessageRequest",
     "SendMessageResponse",
+    "SenderIdentity",
     "TemplateRef",
 )

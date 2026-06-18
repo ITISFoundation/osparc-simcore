@@ -3,7 +3,7 @@ from typing import Any
 
 from ..models.content import Content, for_channel
 from ..models.template import Template, TemplatePreview
-from ..repositories import TemplateRepository
+from ..repositories.template import TemplateRepository
 from ._renderer import Renderer
 
 
