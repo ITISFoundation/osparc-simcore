@@ -179,6 +179,7 @@ async def search_users(request: web.Request) -> web.Response:
     found = await _users_service.search_public_users(
         request.app,
         caller_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         match_=search_params.match_,
         limit=search_params.limit,
     )
