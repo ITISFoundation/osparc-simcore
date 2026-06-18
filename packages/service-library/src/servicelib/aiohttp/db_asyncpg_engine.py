@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_context
-from .tracing import TracingConfig
+from ..tracing import TracingConfig
 
 DB_ASYNC_ENGINE_APPKEY: Final = web.AppKey("DB_ASYNC_ENGINE", AsyncEngine)
 
