@@ -30,7 +30,7 @@ from servicelib.redis import RedisClientSDK, exclusive
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
+from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products import products_web
 from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
