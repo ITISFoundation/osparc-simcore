@@ -56,6 +56,16 @@ async def list_all_user_groups_ids(app: web.Application, *, user_id: UserID) -> 
     return await _groups_repository.get_ids_of_all_user_groups(app, user_id=user_id)
 
 
+async def get_all_user_groups_ids_and_primary_gid(
+    app: web.Application, *, user_id: UserID
+) -> tuple[list[GroupID], GroupID]:
+    """Returns (all_group_ids, primary_group_id) in a single DB round-trip.
+
+    Use instead of calling list_all_user_groups_ids + get_user_primary_group_id separately.
+    """
+    return await _groups_repository.get_ids_of_all_user_groups_and_primary_gid(app, user_id=user_id)
+
+
 async def get_product_group_for_user(
     app: web.Application, *, user_id: UserID, product_gid: GroupID
 ) -> tuple[Group, AccessRightsDict]:
