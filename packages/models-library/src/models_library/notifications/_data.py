@@ -13,13 +13,13 @@ class UserData:
 
 
 @dataclass(frozen=True)
-class SharerData:
+class Sharer:
     user_name: str
     message: str
 
 
 @dataclass(frozen=True)
-class ProductUIData:
+class ProductUI:
     logo_url: str | None = (
         None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html  # noqa: E501
     )
@@ -42,7 +42,7 @@ type CompanyLinks = list[CompanyLink]
 
 
 @dataclass(frozen=True)
-class ProductFooterData:
+class ProductFooter:
     social_links: FooterSocialLinks
     company_name: str
     company_address: str
@@ -50,14 +50,14 @@ class ProductFooterData:
 
 
 @dataclass(frozen=True)
-class ProductData:
-    product_name: ProductName
+class Product:
+    name: ProductName
     display_name: str
     vendor_display_inline: str
     support_email: str
     homepage_url: str | None  # default_homepage = "https://osparc.io/" in base.html
-    ui: ProductUIData
-    footer: ProductFooterData
+    ui: ProductUI
+    footer: ProductFooter
 
     @property
     def footer_social_links(self) -> FooterSocialLinks:

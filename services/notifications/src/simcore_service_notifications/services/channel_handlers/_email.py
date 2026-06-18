@@ -3,8 +3,10 @@ from typing import Any
 from common_library.network import extract_email_domain
 from common_library.sequence_tools import interleave_by_key
 from models_library.notifications.celery import EmailMessage as CeleryEmailMessage
-from models_library.notifications.rpc import EmailContact, EmailMessage
+from models_library.notifications.rpc import EmailContact, EmailMessage, SenderIdentity
 
+from ...core.settings import ApplicationSettings, ProductSMTPSettings
+from ...models.product import Product
 from ._base import ChannelHandler
 
 
@@ -15,13 +17,55 @@ def _interleave_recipients_by_domain(
     return interleave_by_key(recipients, key=lambda r: extract_email_domain(r.email))
 
 
+def get_email(identity: SenderIdentity, product_smtp_settings: ProductSMTPSettings) -> str:
+    local_part = product_smtp_settings.local_parts[identity]
+    return f"{local_part}@{product_smtp_settings.domain}"
+
+
 class EmailChannelHandler(ChannelHandler):
     """Handles email channel: validates and fans out into per-recipient payloads."""
 
     @staticmethod
-    def prepare_messages(message: EmailMessage) -> list[dict[str, Any]]:
+    def resolve_from_contact(
+        product: Product,
+        from_identity: SenderIdentity,
+        settings: ApplicationSettings,
+    ) -> EmailContact:
+        """Resolve a from_identity into a concrete EmailContact using product data."""
+        smtp_config = settings.NOTIFICATIONS_SMTP_SETTINGS
+        if smtp_config is None:
+            raise RuntimeError("NOTIFICATIONS_SMTP_SETTINGS must be configured to send email notifications")
+        smtp_settings = smtp_config.get_product_smtp_settings(product.name)
+        match from_identity:
+            case SenderIdentity.SUPPORT:
+                return EmailContact(
+                    name=f"{product.display_name} support",
+                    email=get_email(SenderIdentity.SUPPORT, smtp_settings),
+                )
+            case SenderIdentity.NO_REPLY:
+                return EmailContact(
+                    name="no-reply",
+                    email=get_email(SenderIdentity.NO_REPLY, smtp_settings),
+                )
+            case _:
+                msg = f"Unsupported from_identity={from_identity!r}"
+                raise ValueError(msg)
+
+    @staticmethod
+    def prepare_messages(
+        message: EmailMessage,
+        *,
+        product: Product,
+        settings: ApplicationSettings,
+    ) -> list[dict[str, Any]]:
+        resolved_from = EmailChannelHandler.resolve_from_contact(
+            product,
+            message.addressing.from_identity,
+            settings,
+        )
+
         content_dict = message.content.model_dump()
-        from_dict = message.addressing.from_.model_dump()
+        from_dict = resolved_from.model_dump()
         bcc_dict = message.addressing.bcc.model_dump() if message.addressing.bcc else None
         reply_to_dict = message.addressing.reply_to.model_dump() if message.addressing.reply_to else None
 

@@ -43,7 +43,6 @@ from .modules.db import (
 )
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client, get_rabbitmq_rpc_client
 from .notifications import notify_user_of_credit_reimbursement
-from .products import get_product_email_info
 from .utils import (
     compute_service_run_credit_costs,
     make_negative,
@@ -344,12 +343,9 @@ async def _process_stop_event(
 
         if _send_email:
             try:
-                product_email_info = await get_product_email_info(db_engine, product_name=running_service.product_name)
                 await notify_user_of_credit_reimbursement(
                     rabbitmq_rpc_client,
                     product_name=running_service.product_name,
-                    product_display_name=product_email_info.display_name,
-                    support_email=product_email_info.support_email,
                     user_email=running_service.user_email,
                     service_run_id=msg.service_run_id,
                     reimbursed_credits=computed_credits,

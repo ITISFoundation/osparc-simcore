@@ -7,9 +7,9 @@ from models_library.notifications import Channel, TemplateName
 from pydantic import TypeAdapter
 
 # NOTE: The following import triggers decorator-based registration
-from ..models import template_contexts  # pylint: disable=unused-import  # noqa: F401
-from ..models.content import for_channel
-from ..models.template import Template, TemplateRef, get_template_context_model
+from ...models import template_contexts  # pylint: disable=unused-import  # noqa: F401
+from ...models.content import for_channel
+from ...models.template import Template, TemplateRef, get_template_context_model
 from ._template import TemplateRepository
 
 _TEMPLATE_EXTENSION = ".j2"

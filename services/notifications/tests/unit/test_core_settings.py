@@ -4,14 +4,18 @@
 
 
 import pytest
+from models_library.notifications.errors import (
+    NotificationsProductSMTPSettingsNotFoundError,
+)
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
 )
-from settings_library.email import SMTPSettings
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
-    _DomainToSMTPSettings,
+    NotificationsSMTPSettings,
+    ProductSMTPSettings,
+    SMTPSettings,
 )
 
 
@@ -24,33 +28,103 @@ def test_valid_application_settings(mock_environment: EnvVarsDict):
     assert settings == ApplicationSettings.create_from_envs()
 
 
-_SMTP_PAYLOAD = {
-    "SMTP_HOST": "mailpit",
-    "SMTP_PORT": 1025,
-    "SMTP_PROTOCOL": "UNENCRYPTED",
-    "SMTP_LOCAL_PARTS": {"SUPPORT": "support", "NO_REPLY": "no-reply"},
-}
-
-
-def test_per_domain_smtp_settings_rejects_invalid_domain_keys():
+def test_product_smtp_settings_rejects_disallowed_headers():
     with pytest.raises(ValidationError):
-        _DomainToSMTPSettings.model_validate({"  Osparc.IO  ": _SMTP_PAYLOAD})
+        ProductSMTPSettings.model_validate(
+            {
+                "mail_server": "aws",
+                "domain": "osparc.io",
+                "extra_headers": {"x-invalid-header": "value"},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            }
+        )
 
 
-def test_per_domain_smtp_settings_for_email_is_case_insensitive():
-    per_domain = _DomainToSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
+def test_product_smtp_settings_valid():
+    product_smtp = ProductSMTPSettings.model_validate(
+        {
+            "mail_server": "aws",
+            "domain": "osparc.io",
+            "extra_headers": {},
+            "local_parts": {"support": "support", "no_reply": "no-reply"},
+        }
+    )
 
-    settings = per_domain.get_settings_for_email("Someone <USER@Osparc.IO>")
-
-    assert isinstance(settings, SMTPSettings)
-    assert settings.SMTP_HOST == "mailpit"
+    assert product_smtp.mail_server == "aws"
+    assert product_smtp.domain == "osparc.io"
 
 
-def test_per_domain_smtp_settings_for_email_unknown_domain_raises():
-    per_domain = _DomainToSMTPSettings.model_validate({"osparc.io": _SMTP_PAYLOAD})
+def test_notifications_smtp_settings_structure():
+    raw = {
+        "mail_servers": {
+            "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+        },
+        "products": {
+            "osparc": {
+                "mail_server": "aws",
+                "domain": "osparc.io",
+                "extra_headers": {},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            },
+            "s4l": {
+                "mail_server": "aws",
+                "domain": "sim4life.io",
+                "extra_headers": {},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            },
+        },
+    }
 
-    with pytest.raises(ValueError, match="No SMTP settings configured for domain"):
-        per_domain.get_settings_for_email("user@unknown.example")
+    settings = NotificationsSMTPSettings.model_validate(raw)
+
+    assert "osparc" in settings.products
+    assert "s4l" in settings.products
+    assert settings.products["osparc"].domain == "osparc.io"
+    assert settings.products["s4l"].domain == "sim4life.io"
+    assert isinstance(settings.get_smtp_settings("osparc"), SMTPSettings)
+
+
+def test_notifications_smtp_settings_rejects_invalid_mail_server_reference():
+    raw = {
+        "mail_servers": {
+            "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+        },
+        "products": {
+            "osparc": {
+                "mail_server": "nonexistent",
+                "domain": "osparc.io",
+                "extra_headers": {},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            },
+        },
+    }
+
+    with pytest.raises(ValidationError, match="nonexistent"):
+        NotificationsSMTPSettings.model_validate(raw)
+
+
+def test_notifications_smtp_settings_get_unknown_product_raises():
+    settings = NotificationsSMTPSettings.model_validate(
+        {
+            "mail_servers": {
+                "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
+            },
+            "products": {
+                "osparc": {
+                    "mail_server": "aws",
+                    "domain": "osparc.io",
+                    "extra_headers": {},
+                    "local_parts": {"support": "support", "no_reply": "no-reply"},
+                },
+            },
+        }
+    )
+
+    with pytest.raises(NotificationsProductSMTPSettingsNotFoundError, match="unknown_product"):
+        settings.get_product_smtp_settings("unknown_product")
+
+    with pytest.raises(NotificationsProductSMTPSettingsNotFoundError, match="unknown_product"):
+        settings.get_smtp_settings("unknown_product")
 
 
 def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
