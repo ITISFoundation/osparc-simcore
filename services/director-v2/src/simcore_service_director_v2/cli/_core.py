@@ -37,7 +37,7 @@ async def _initialized_app(*, only_db: bool = False) -> AsyncIterator[FastAPI]:
     app = create_base_app()
     settings: AppSettings = app.state.settings
     # Initialize minimal required components for the application
-    db.setup(app, settings.POSTGRES, tracing_config=None)
+    db.setup(app, settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
 
     if not only_db:
         dynamic_sidecar.setup(app)
