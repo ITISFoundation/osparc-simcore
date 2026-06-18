@@ -178,18 +178,16 @@ def _list_user_groups_with_read_access_query(
     if product_name is None:
         return base_query
 
-    # Exclude standard groups that are system groups (group_id or support_standard_group_id)
-    # of a *different* product. Such groups are product-internal and must not leak across products.
-    other_product_system_gids = (
-        sa.select(products.c.group_id)
-        .where((products.c.name != product_name) & (products.c.group_id.isnot(None)))
-        .union(
-            sa.select(products.c.support_standard_group_id).where(
-                (products.c.name != product_name) & (products.c.support_standard_group_id.isnot(None))
-            )
+    # Exclude standard groups linked by another product row as either the
+    # product group or the product support group. These groups are
+    # product-internal and must not leak across products.
+    other_product_group_or_support_group_exists = sa.exists(
+        sa.select(sa.literal(1)).where(
+            (products.c.name != product_name)
+            & ((products.c.group_id == groups.c.gid) | (products.c.support_standard_group_id == groups.c.gid))
         )
     )
-    return base_query.where((groups.c.type != GroupType.STANDARD) | groups.c.gid.notin_(other_product_system_gids))
+    return base_query.where((groups.c.type != GroupType.STANDARD) | ~other_product_group_or_support_group_exists)
 
 
 async def get_all_user_groups_with_read_access(
@@ -202,8 +200,8 @@ async def get_all_user_groups_with_read_access(
     """
     Returns the user primary group, standard groups and the all group.
 
-    When product_name is provided, standard groups that are system groups
-    (group_id or support_standard_group_id) of a different product are excluded.
+    When product_name is provided, standard groups linked by another product
+    row as product group or product support group are excluded.
     """
     primary_group: GroupInfoTuple | None = None
     standard_groups: list[GroupInfoTuple] = []
