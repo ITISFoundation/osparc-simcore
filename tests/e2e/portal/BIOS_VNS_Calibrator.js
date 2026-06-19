@@ -22,13 +22,16 @@ async function runTutorial () {
 
   try {
     const page = await tutorial.beforeScript();
-    const studyData = await tutorial.openStudyLink();
+    const studyResp = await tutorial.openStudyLink();
+    const studyData = studyResp["data"];
+    const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    console.log("Workbench Data:", workbenchData);
-    const BIOSIdViewer = workbenchData["nodeIds"][0];
+    const BIOSIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "bios-health-vns-calibrator");
+    if (!BIOSIdViewer) {
+      throw new Error('Could not find node with service key "bios-health-vns-calibrator"');
+    }
     await tutorial.waitForServices(
-      workbenchData["studyId"],
+      studyId,
       [BIOSIdViewer],
       startTimeout,
       false
