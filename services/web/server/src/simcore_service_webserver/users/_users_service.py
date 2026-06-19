@@ -48,10 +48,13 @@ async def get_public_user(app: web.Application, *, caller_id: UserID, user_id: U
     )
 
 
-async def search_public_users(app: web.Application, *, caller_id: UserID, match_: str, limit: int) -> list:
+async def search_public_users(
+    app: web.Application, *, caller_id: UserID, product_name: ProductName, match_: str, limit: int
+) -> list:
     return await _users_repository.search_public_user(
         get_asyncpg_engine(app),
         caller_id=caller_id,
+        product_name=product_name,
         search_pattern=match_,
         limit=limit,
     )

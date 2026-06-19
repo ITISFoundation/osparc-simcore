@@ -1,5 +1,5 @@
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: "^.venv$|^.cache$|^.pytest_cache$"
+exclude: "^.venv$|^.cache$|^.pytest_cache$|^services/static-webserver/client/qx_libs/"
 fail_fast: false
 default_language_version:
   python: python3.13

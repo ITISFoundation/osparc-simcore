@@ -8,6 +8,7 @@ from models_library.notifications.rpc import (
     SearchTemplatesResponse,
     TemplateRef,
 )
+from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter, validate_call
 
@@ -22,6 +23,7 @@ _logger = logging.getLogger(__name__)
 async def preview_template(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
+    product_name: ProductName,
     ref: TemplateRef,
     context: dict[str, Any],
 ) -> PreviewTemplateResponse:
@@ -29,6 +31,7 @@ async def preview_template(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("preview_template"),
         request=PreviewTemplateRequest(
+            product_name=product_name,
             ref=ref,
             context=context,
         ),

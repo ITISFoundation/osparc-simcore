@@ -34,21 +34,21 @@ qx.Class.define("osparc.tester.TesterCenter", {
   members: {
     __addSocketMessagesPage: function() {
       const title = this.tr("Socket Messages");
-      const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
+      const iconSrc = "@FontAwesomeSolid/exchange-alt/22";
       const webSocketMessages = new osparc.tester.WebSocketMessages();
       this.addTab(title, iconSrc, webSocketMessages);
     },
 
     __addConsoleErrorsPage: function() {
       const title = this.tr("Console Errors");
-      const iconSrc = "@FontAwesome5Solid/times/22";
+      const iconSrc = "@FontAwesomeSolid/times/22";
       const consoleErrors = new osparc.tester.ConsoleErrors();
       this.addTab(title, iconSrc, consoleErrors);
     },
 
     __addStaticsPage: function() {
       const title = this.tr("Statics");
-      const iconSrc = "@FontAwesome5Solid/wrench/22";
+      const iconSrc = "@FontAwesomeSolid/wrench/22";
       const maintenance = new osparc.tester.Statics();
       this.addTab(title, iconSrc, maintenance);
     },

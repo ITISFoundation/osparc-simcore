@@ -150,7 +150,7 @@ qx.Class.define("osparc.admin.Announcements", {
       copyAnnouncementBtn.set({appearance: "form-button"});
       copyAnnouncementBtn.addListener("execute", () => {
         if (osparc.utils.Utils.copyTextToClipboard(JSON.stringify(announcementData))) {
-          copyAnnouncementBtn.setIcon("@FontAwesome5Solid/check/12");
+          copyAnnouncementBtn.setIcon("@FontAwesomeSolid/check/12");
         }
       });
       vBox.add(copyAnnouncementBtn);

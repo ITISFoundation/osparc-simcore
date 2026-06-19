@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.83.0"
+    "version": "0.84.0"
   },
   "servers": [
     {
@@ -11900,6 +11900,39 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_PricingPlanToServiceAdminGet_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/studies/{study_id}:dispatch": {
+      "post": {
+        "tags": [
+          "studies-dispatcher"
+        ],
+        "summary": "Dispatch Study",
+        "description": "Start an async clone of a published study into the requesting user's account. Returns 202 Accepted + TaskGet for polling via /tasks-legacy/{task_id}.",
+        "operationId": "dispatch_study",
+        "parameters": [
+          {
+            "name": "study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Study Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskGet_"
                 }
               }
             }

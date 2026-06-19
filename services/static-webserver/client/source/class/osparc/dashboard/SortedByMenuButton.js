@@ -19,7 +19,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   extend: qx.ui.form.MenuButton,
 
   construct: function() {
-    this.base(arguments, this.tr("Sort"), "@FontAwesome5Solid/chevron-down/10");
+    this.base(arguments, this.tr("Sort"), "@FontAwesomeSolid/chevron-down/10");
 
     osparc.utils.Utils.setIdToWidget(this, "sortedByButton");
 
@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       // Sort by last modified date
       if (idx === options.length -1) {
         this.__selectedMenuButton = btn;
-        btn.setIcon("@FontAwesome5Solid/arrow-down/14");
+        btn.setIcon("@FontAwesomeSolid/arrow-down/14");
       }
       sortedByMenu.add(btn);
 
@@ -79,7 +79,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       },
       nullable: false,
       event: "changeSort",
-      apply: "__handelSortEvent",
+      apply: "__handleSortEvent",
     }
   },
 
@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       this.__selectedMenuButton = btn;
       this.set({
         label: btn.getLabel(),
-        icon: "@FontAwesome5Solid/chevron-down/10"
+        icon: "@FontAwesomeSolid/chevron-down/10"
       });
 
       const field = btn.field;
@@ -111,9 +111,9 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       }
     },
 
-    __handelSortEvent: function({field, direction}) {
-      this.__selectedMenuButton.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
-      this.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
+    __handleSortEvent: function({field, direction}) {
+      this.__selectedMenuButton.setIcon(direction ? "@FontAwesomeSolid/arrow-down/14" : "@FontAwesomeSolid/arrow-up/14")
+      this.setIcon(direction ? "@FontAwesomeSolid/arrow-down/14" : "@FontAwesomeSolid/arrow-up/14")
       const sort = {
         field: field,
         direction: direction ? "desc" : "asc"

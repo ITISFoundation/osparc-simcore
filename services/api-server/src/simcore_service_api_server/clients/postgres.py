@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
 from servicelib.fastapi.lifespan_utils import LifespanOnStartupError
+from servicelib.tracing import TracingConfig
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .._meta import APP_NAME
@@ -19,7 +20,7 @@ def get_engine(app: FastAPI) -> AsyncEngine:
     return engine
 
 
-def setup_postgres(app: FastAPI):
+def setup_postgres(app: FastAPI, *, tracing_config: TracingConfig | None) -> None:
     app.state.engine = None
 
     async def _on_startup() -> None:
@@ -30,7 +31,9 @@ def setup_postgres(app: FastAPI):
                 settings=settings,
             )
 
-        await connect_to_db(app, settings.API_SERVER_POSTGRES, application_name=APP_NAME)
+        await connect_to_db(
+            app, settings=settings.API_SERVER_POSTGRES, application_name=APP_NAME, tracing_config=tracing_config
+        )
         assert app.state.engine  # nosec
         assert isinstance(app.state.engine, AsyncEngine)  # nosec
 

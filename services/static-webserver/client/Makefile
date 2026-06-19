@@ -18,16 +18,12 @@ container_name := qooxdoo-compiler
 
 # qx compile --------------------------
 
-qx_packages:
-	$(docker_compose) run --rm qooxdoo-kit \
-		/bin/sh -c "qx package update && qx package install"
-
 source-output:
 	# making fast a folder to allow volume binding in dev-mode
 	mkdir $@
 
 .PHONY: compile-dev
-compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
+compile-dev: source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --detach --rm --name=$(container_name) qooxdoo-kit \
 		qx compile $(flags) \
@@ -86,7 +82,7 @@ define qx_serve =
 endef
 
 .PHONY: serve-dev
-serve-dev: qx_packages ## compiles & watches host 'source' and serves site in 127.0.0.1:8080. Use this to view the effect of your changes in realtime
+serve-dev: ## compiles & watches host 'source' and serves site in 127.0.0.1:8080. Use this to view the effect of your changes in realtime
 	# qx serve $(flags) 'source' --> 'source-output' --> 127.0.0.1:8080
 	$(docker_compose) run $(if $(detached),--detach --name=$(detached),--rm) --service-ports qooxdoo-kit $(qx_serve)
 

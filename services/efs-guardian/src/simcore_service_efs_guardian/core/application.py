@@ -59,7 +59,7 @@ def create_app(
     # PLUGINS SETUP
     setup_rabbitmq(app)
     setup_redis(app)
-    setup_db(app)
+    setup_db(app, tracing_config=tracing_config)
 
     setup_api_routes(app)
     setup_rpc_routes(app)  # requires Rabbit

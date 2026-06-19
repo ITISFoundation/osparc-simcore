@@ -91,19 +91,32 @@ async def search_public_user(
     connection: AsyncConnection | None = None,
     *,
     caller_id: UserID,
+    product_name: ProductName,
     search_pattern: str,
     limit: int,
 ) -> list:
     _pattern = f"%{search_pattern}%"
 
+    # Only return users who belong to the current product's group
+    in_product_subq = (
+        sa.select(sa.literal(1))
+        .select_from(user_to_groups.join(products, products.c.group_id == user_to_groups.c.gid))
+        .where((user_to_groups.c.uid == users.c.id) & (products.c.name == product_name))
+        .exists()
+    )
+
     query = (
         sa.select(*_public_user_cols(caller_id=caller_id))
         .where(
-            (is_public(users.c.privacy_hide_username, caller_id) & users.c.name.ilike(_pattern))
-            | (is_public(users.c.privacy_hide_email, caller_id) & users.c.email.ilike(_pattern))
-            | (
-                is_public(users.c.privacy_hide_fullname, caller_id)
-                & (users.c.first_name.ilike(_pattern) | users.c.last_name.ilike(_pattern))
+            in_product_subq
+            & (users.c.status == UserStatus.ACTIVE)
+            & (
+                (is_public(users.c.privacy_hide_username, caller_id) & users.c.name.ilike(_pattern))
+                | (is_public(users.c.privacy_hide_email, caller_id) & users.c.email.ilike(_pattern))
+                | (
+                    is_public(users.c.privacy_hide_fullname, caller_id)
+                    & (users.c.first_name.ilike(_pattern) | users.c.last_name.ilike(_pattern))
+                )
             )
         )
         .limit(limit)
