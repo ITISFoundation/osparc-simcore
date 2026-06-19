@@ -2,7 +2,7 @@ import datetime
 import logging
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Final, TypeAlias
+from typing import Final
 
 import sqlalchemy as sa
 import sqlalchemy.exc
@@ -14,8 +14,8 @@ from .models.payments_transactions import PaymentTransactionState, payments_tran
 _logger = logging.getLogger(__name__)
 
 
-PaymentID: TypeAlias = str
-PaymentTransactionRow: TypeAlias = Row
+type PaymentID = str
+type PaymentTransactionRow = Row
 
 
 UNSET: Final[str] = "__UNSET__"
@@ -157,5 +157,5 @@ async def get_user_payments_transactions(
         stmt = stmt.limit(limit)
 
     result = await connection.execute(stmt)
-    rows = result.fetchall()
+    rows = list(result.fetchall())
     return total_number_of_items, rows
