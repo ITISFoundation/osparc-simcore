@@ -27,7 +27,13 @@ async function runTutorial () {
     const studyId = studyData["uuid"];
 
     const kemberSolver = utils.getNodeIdFromServiceKey(studyData["workbench"], "kember-cardiac-model");
+    if (!kemberSolver) {
+      throw new Error('Could not find node with service key "kember-cardiac-model"');
+    }
     const kemberIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "voila-viewer");
+    if (!kemberIdViewer) {
+      throw new Error('Could not find node with service key "voila-viewer"');
+    }
 
     await tutorial.takeScreenshot("template_started");
 

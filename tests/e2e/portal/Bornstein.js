@@ -27,6 +27,9 @@ async function runTutorial () {
     const studyId = studyData["uuid"];
 
     const bornsteinViewerId = utils.getNodeIdFromServiceKey(studyData["workbench"], "bornstein-viewer");
+    if (!bornsteinViewerId) {
+      throw new Error('Could not find node with service key "bornstein-viewer"');
+    }
     await tutorial.waitForServices(
       studyId,
       [bornsteinViewerId],

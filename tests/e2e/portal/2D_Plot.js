@@ -27,6 +27,9 @@ async function runTutorial () {
     const studyId = studyData["uuid"];
 
     const nodeIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "raw-graphs");
+    if (!nodeIdViewer) {
+      throw new Error('Could not find node with service key "raw-graphs"');
+    }
     await tutorial.waitForServices(
       studyId,
       [nodeIdViewer],

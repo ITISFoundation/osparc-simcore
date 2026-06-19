@@ -27,6 +27,9 @@ async function runTutorial () {
     const studyId = studyData["uuid"];
 
     const BIOSIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "bios-health-vns-calibrator");
+    if (!BIOSIdViewer) {
+      throw new Error('Could not find node with service key "bios-health-vns-calibrator"');
+    }
     await tutorial.waitForServices(
       studyId,
       [BIOSIdViewer],

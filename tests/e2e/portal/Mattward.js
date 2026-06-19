@@ -27,6 +27,9 @@ async function runTutorial () {
     const studyId = studyData["uuid"];
 
     const mattwardViewerId = utils.getNodeIdFromServiceKey(studyData["workbench"], "mattward-viewer");
+    if (!mattwardViewerId) {
+      throw new Error('Could not find node with service key "mattward-viewer"');
+    }
     await tutorial.waitForServices(
       studyId,
       [mattwardViewerId],
