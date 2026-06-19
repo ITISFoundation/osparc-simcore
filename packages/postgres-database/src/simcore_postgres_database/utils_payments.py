@@ -2,7 +2,7 @@ import datetime
 import logging
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Final
+from typing import Final, TypeAlias
 
 import sqlalchemy as sa
 import sqlalchemy.exc
@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 
 type PaymentID = str
-type PaymentTransactionRow = Row
+PaymentTransactionRow: TypeAlias = Row  # this is used in isintance calls. so it cannot be a type alias  # noqa: UP040
 
 
 UNSET: Final[str] = "__UNSET__"
