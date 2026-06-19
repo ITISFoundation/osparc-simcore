@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
+from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import retry
@@ -24,7 +25,12 @@ async def _db_lifespan(app: FastAPI) -> AsyncGenerator[None]:
     async def _setup() -> None:
         app_settings = get_application_settings(app)
         assert app_settings.STORAGE_POSTGRES is not None  # nosec
-        await connect_to_db(app, app_settings.STORAGE_POSTGRES, application_name=APP_NAME)
+        await connect_to_db(
+            app,
+            settings=app_settings.STORAGE_POSTGRES,
+            application_name=APP_NAME,
+            tracing_config=get_tracing_config(app),
+        )
 
     try:
         await _setup()

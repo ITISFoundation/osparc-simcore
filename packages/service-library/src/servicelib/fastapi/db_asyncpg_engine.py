@@ -11,11 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_context
+from ..tracing import TracingConfig
 
 _logger = logging.getLogger(__name__)
 
 
-async def connect_to_db(app: FastAPI, settings: PostgresSettings, application_name: str) -> None:
+async def connect_to_db(
+    app: FastAPI, *, settings: PostgresSettings, application_name: str, tracing_config: TracingConfig | None
+) -> None:
     warnings.warn(
         "The 'connect_to_db' function is deprecated and will be removed in a future release. "
         "Please use 'postgres_lifespan' instead for managing the database connection lifecycle.",
@@ -28,7 +31,11 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings, application_na
         logging.DEBUG,
         f"Connecting and migrating {redact_url(settings.dsn_with_async_sqlalchemy)}",
     ):
-        engine = await create_async_engine_and_database_ready(settings, application_name)
+        engine = await create_async_engine_and_database_ready(
+            settings,
+            application_name,
+            tracing_config=tracing_config,
+        )
 
     app.state.engine = engine
     _logger.debug(

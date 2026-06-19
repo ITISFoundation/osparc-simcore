@@ -38,14 +38,24 @@ async def get_group_by_gid(app: web.Application, group_id: GroupID) -> Group | N
 #
 
 
-async def list_user_groups_with_read_access(app: web.Application, *, user_id: UserID) -> GroupsByTypeTuple:
+async def list_user_groups_with_read_access(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName | None = None,
+) -> GroupsByTypeTuple:
     """
-    Returns the user primary group, standard groups and the all group
+    Returns the user primary group, standard groups and the all group.
+
+    When product_name is provided, standard groups that are system groups
+    (group_id or support_standard_group_id) of a different product are excluded.
     """
     # NOTE: Careful! It seems we are filtering out groups, such as Product Groups,
     # because they do not have read access. I believe this was done because the
     # frontend did not want to display them.
-    return await _groups_repository.get_all_user_groups_with_read_access(app, user_id=user_id)
+    return await _groups_repository.get_all_user_groups_with_read_access(
+        app, user_id=user_id, product_name=product_name
+    )
 
 
 async def list_user_groups_ids_with_read_access(app: web.Application, *, user_id: UserID) -> list[GroupID]:
@@ -91,7 +101,7 @@ async def get_user_profile_groups(
     Returns:
         Tuple of (groups_by_type, my_product_group, product_support_group)
     """
-    groups_by_type = await list_user_groups_with_read_access(app, user_id=user_id)
+    groups_by_type = await list_user_groups_with_read_access(app, user_id=user_id, product_name=product.name)
 
     my_product_group = None
     if product.group_id:  # Product group is optional
