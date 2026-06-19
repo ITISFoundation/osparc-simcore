@@ -14,7 +14,6 @@ import httpx
 import tenacity
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, status
-from models_library.products import ProductName
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
@@ -719,7 +718,6 @@ async def _start_docker_service(  # noqa: PLR0913
     client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
-    product_name: ProductName,
     service_key: str,
     service_tag: str,
     main_service: bool,
@@ -797,7 +795,7 @@ async def _start_docker_service(  # noqa: PLR0913
             "service_message": service_msg,
             "user_id": user_id,
             "project_id": project_id,
-            "product_name": product_name,
+            "product_name": _PIN_TO_OSPARC_PRODUCT,
         }
 
     except ServiceStartTimeoutError:
@@ -820,7 +818,6 @@ async def _create_node(
     client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
-    product_name: ProductName,
     list_of_services: list[dict],
     node_uuid: str,
     node_base_path: str,
@@ -849,7 +846,6 @@ async def _create_node(
             client=client,
             user_id=user_id,
             project_id=project_id,
-            product_name=product_name,
             service_key=service["key"],
             service_tag=service["tag"],
             main_service=list_of_services.index(service) == 0,
@@ -893,7 +889,6 @@ async def start_service(
     app: FastAPI,
     user_id: str,
     project_id: str,
-    product_name: ProductName,
     service_key: str,
     service_tag: str | None,
     node_uuid: str,
@@ -926,7 +921,6 @@ async def start_service(
             client,
             user_id,
             project_id,
-            product_name,
             list_of_services_to_start,
             node_uuid,
             node_base_path,

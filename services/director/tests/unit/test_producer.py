@@ -81,7 +81,6 @@ async def run_services(  # noqa: PLR0915
                 app,
                 f"{user_id}",
                 f"{project_id}",
-                "osparc",
                 service_key,
                 service_version,
                 service_uuid,

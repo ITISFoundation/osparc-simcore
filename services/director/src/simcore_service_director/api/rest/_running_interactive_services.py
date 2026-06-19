@@ -75,7 +75,6 @@ async def start_service(
             the_app,
             f"{user_id}",
             f"{project_id}",
-            product_name,
             service_key,
             service_tag,
             f"{service_uuid}",
