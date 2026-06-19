@@ -22,10 +22,11 @@ async function runTutorial () {
 
   try {
     await tutorial.beforeScript();
-    const studyData = await tutorial.openStudyLink();
-    const studyId = studyData["data"]["uuid"];
+    const studyResp = await tutorial.openStudyLink();
+    const studyData = studyResp["data"];
+    const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    const workbenchData = utils.extractWorkbenchData(studyData);
     const kemberSolver = workbenchData["nodeIds"][0];
     const kemberIdViewer = workbenchData["nodeIds"][1];
 

@@ -22,11 +22,13 @@ async function runTutorial () {
 
   try {
     const page = await tutorial.beforeScript();
-    const studyData = await tutorial.openStudyLink();
+    const studyResp = await tutorial.openStudyLink();
+    const studyData = studyResp["data"];
+    const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    const workbenchData = utils.extractWorkbenchData(studyData);
     await tutorial.waitForServices(
-      workbenchData["studyId"],
+      studyId,
       [workbenchData["nodeIds"][0]],
       startTimeout
     );
