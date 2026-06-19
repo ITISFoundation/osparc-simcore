@@ -26,10 +26,10 @@ async function runTutorial () {
     const studyData = studyResp["data"];
     const studyId = studyData["uuid"];
 
-    const rawGraphsId = utils.getNodeIdFromServiceKey(studyData["workbench"], "raw-graphs");
+    const nodeIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "raw-graphs");
     await tutorial.waitForServices(
       studyId,
-      [rawGraphsId],
+      [nodeIdViewer],
       startTimeout
     );
 
@@ -39,7 +39,7 @@ async function runTutorial () {
     await tutorial.waitFor(2000);
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
 
-    const frame = await tutorial.getIframe(rawGraphsId);
+    const frame = await tutorial.getIframe(nodeIdViewer);
 
     // inside the iFrame, click on "oSPARC inputs"
     const oSPARCInputsSelector = '#load-data > div > div:nth-child(2) > div.col-lg-2 > ul > li:nth-child(5)';
