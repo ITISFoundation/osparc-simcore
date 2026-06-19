@@ -113,7 +113,6 @@ async def create_dynamic_service(
             params={
                 "user_id": f"{service.user_id}",
                 "project_id": f"{service.project_id}",
-                "product_name": f"{service.product_name}",
                 "service_uuid": f"{service.node_uuid}",
                 "service_key": f"{service.key}",
                 "service_tag": f"{service.version}",
