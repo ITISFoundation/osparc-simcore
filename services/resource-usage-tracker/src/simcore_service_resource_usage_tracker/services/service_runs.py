@@ -1,7 +1,7 @@
 # pylint: disable=too-many-arguments
 from datetime import UTC, datetime, timedelta
 
-import shortuuid
+import shortuuid  # type: ignore[import-not-found]
 from aws_library.s3 import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
