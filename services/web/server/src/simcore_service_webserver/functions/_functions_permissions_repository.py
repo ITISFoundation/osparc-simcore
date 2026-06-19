@@ -280,10 +280,11 @@ async def _internal_set_group_permissions(
                 access_rights_list.append((object_id, FunctionGroupAccessRights(**row)))
             else:
                 # Update existing access rights only for non-None values
+                row_mapping = row._mapping
                 update_values = {
-                    "read": read if read is not None else row["read"],
-                    "write": write if write is not None else row["write"],
-                    "execute": execute if execute is not None else row["execute"],
+                    "read": read if read is not None else row_mapping["read"],
+                    "write": write if write is not None else row_mapping["write"],
+                    "execute": execute if execute is not None else row_mapping["execute"],
                 }
 
                 update_result = await transaction.execute(

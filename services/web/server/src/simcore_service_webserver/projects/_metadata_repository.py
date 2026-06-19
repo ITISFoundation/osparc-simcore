@@ -167,4 +167,4 @@ async def list_project_uuids_by_root_parent_project_id(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(stmt)
-        return [ProjectID(row["project_uuid"]) async for row in result]
+        return [ProjectID(row._mapping["project_uuid"]) async for row in result]
