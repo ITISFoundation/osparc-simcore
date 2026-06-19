@@ -37,7 +37,7 @@ class UserDefaultWalletNotFoundError(UsersBaseError):
 
 
 class AlreadyPreRegisteredError(UsersBaseError):
-    msg_template = "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
+    msg_template = "User is already pre-registered. Found multiple matches for '{email}' in {product_name}"
 
 
 class BillingDetailsNotFoundError(UsersBaseError):

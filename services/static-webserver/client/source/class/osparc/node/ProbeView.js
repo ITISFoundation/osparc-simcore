@@ -114,7 +114,7 @@ qx.Class.define("osparc.node.ProbeView", {
       const valueContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(16)).set({
         paddingTop: 8,
       });
-      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/thermometer/14");
+      const icon = new qx.ui.basic.Image("@FontAwesomeSolid/thermometer/14");
       const valueLabel = osparc.node.ProbeView.createProbeValueLabel(node);
       valueContainer.add(icon);
       valueContainer.add(valueLabel, {

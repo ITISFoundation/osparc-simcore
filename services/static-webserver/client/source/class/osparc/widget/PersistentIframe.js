@@ -121,7 +121,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
-        icon: "@FontAwesome5Solid/redo-alt/14",
+        icon: "@FontAwesomeSolid/redo-alt/14",
         padding: [1, 5],
         gap: 10
       });

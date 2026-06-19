@@ -1,58 +1,33 @@
-import logging
-from collections.abc import AsyncIterator
 from typing import cast
 
 from aws_library.ec2 import SimcoreEC2API
-from aws_library.ec2._errors import EC2NotConnectedError
+from aws_library.ec2 import configure_ec2_client as _configure_ec2_client
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
+from fastapi_lifespan_manager import LifespanManager
 from settings_library.ec2 import EC2Settings
-from tenacity.asyncio import AsyncRetrying
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random_exponential
 
 from ..core.errors import ConfigurationError
 from .instrumentation import has_instrumentation, instrument_ec2_client_methods
 
-_logger = logging.getLogger(__name__)
+
+async def _create_ec2_client(app: FastAPI, settings: EC2Settings) -> SimcoreEC2API:
+    ec2_client = await SimcoreEC2API.create(settings)
+    if not has_instrumentation(app):
+        return ec2_client
+    return instrument_ec2_client_methods(app, ec2_client)
 
 
-async def _ec2_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.ec2_client = None
-    settings: EC2Settings | None = app.state.settings.AUTOSCALING_EC2_ACCESS
-
-    if not settings:
-        _logger.warning("EC2 client is de-activated in the settings")
-        yield {}
-        return
-
-    try:
-        if has_instrumentation(app):
-            client = instrument_ec2_client_methods(app, await SimcoreEC2API.create(settings))
-        else:
-            client = await SimcoreEC2API.create(settings)
-        app.state.ec2_client = client
-
-        async for attempt in AsyncRetrying(
-            reraise=True,
-            stop=stop_after_delay(120),
-            wait=wait_random_exponential(max=30),
-            before_sleep=before_sleep_log(_logger, logging.WARNING),
-        ):
-            with attempt:
-                connected = await client.ping()
-                if not connected:
-                    raise EC2NotConnectedError  # pragma: no cover
-
-        yield {}
-    finally:
-        if app.state.ec2_client:
-            await cast(SimcoreEC2API, app.state.ec2_client).close()
-
-
-def configure_ec2_client(app_lifespan: LifespanManager[FastAPI]) -> None:
-    app_lifespan.add(_ec2_lifespan)
+def configure_ec2_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: EC2Settings | None,
+) -> None:
+    _configure_ec2_client(
+        app_lifespan,
+        settings=settings,
+        client_name="autoscaling",
+        client_factory=_create_ec2_client,
+    )
 
 
 def get_ec2_client(app: FastAPI) -> SimcoreEC2API:

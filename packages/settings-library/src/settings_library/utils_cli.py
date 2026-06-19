@@ -13,7 +13,7 @@ import rich
 import typer
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
-from pydantic import RootModel, ValidationError
+from pydantic import BaseModel, RootModel, ValidationError
 from pydantic.fields import FieldInfo
 from pydantic_core import to_jsonable_python
 from pydantic_settings import BaseSettings
@@ -89,6 +89,15 @@ def _render_collection(name: str, value: Any, field: FieldInfo, ctx: _RenderCont
     # Serialize complex objects as JSON to ensure they can be parsed correctly.
     # Wrap in single quotes so bash preserves the double quotes when sourcing.
     typer.echo(f"{name}='{json_dumps(value)}'")
+    return True
+
+
+@_register_field_renderer
+def _render_base_model(name: str, value: Any, field: FieldInfo, ctx: _RenderContext) -> bool:  # pylint: disable=unused-argument
+    if not isinstance(value, BaseModel):
+        return False
+    # Serialize BaseModel instances as JSON so they round-trip through env vars.
+    typer.echo(f"{name}='{_dump_with_secrets_as_json(value, ctx)}'")
     return True
 
 

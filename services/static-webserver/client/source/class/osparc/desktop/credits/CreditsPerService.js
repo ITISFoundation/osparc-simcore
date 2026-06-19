@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
         return;
       }
       const walletId = contextWallet.getWalletId();
-      const loadingImage = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26").set({
+      const loadingImage = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/26").set({
         alignX: "center",
         padding: 6
       });
@@ -66,9 +66,9 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
               totalHours += entry["running_time_in_hours"]
               totalCredits+= parseFloat(entry["osparc_credits"])
             });
-            let datas = [];
+            let dataCol = [];
             entries.forEach(entry => {
-              datas.push({
+              dataCol.push({
                 service: entry["service_key"],
                 credits: -1*parseFloat(entry["osparc_credits"]),
                 hours: entry["running_time_in_hours"],
@@ -76,15 +76,15 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
                 percentageCredits: totalCredits ? 100*parseFloat(entry["osparc_credits"])/totalCredits : 0,
               });
             });
-            datas.sort((a, b) => {
+            dataCol.sort((a, b) => {
               if (b.credits !== a.credits) {
                 return b.credits - a.credits;
               }
               return b.hours - a.hours;
             });
             // top 5 services
-            datas = datas.slice(0, 5);
-            datas.forEach(data => {
+            dataCol = dataCol.slice(0, 5);
+            dataCol.forEach(data => {
               const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(data.service, data.credits, data.hours, totalCredits === 0 ? data.percentageHours : data.percentageCredits);
               this._add(uiEntry);
             });

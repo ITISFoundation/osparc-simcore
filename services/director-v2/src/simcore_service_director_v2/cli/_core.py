@@ -33,11 +33,11 @@ from ._client import ThinDV2LocalhostClient
 
 
 @asynccontextmanager
-async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
+async def _initialized_app(*, only_db: bool = False) -> AsyncIterator[FastAPI]:
     app = create_base_app()
     settings: AppSettings = app.state.settings
     # Initialize minimal required components for the application
-    db.setup(app, settings.POSTGRES)
+    db.setup(app, settings.POSTGRES, tracing_config=None)
 
     if not only_db:
         dynamic_sidecar.setup(app)
@@ -150,7 +150,7 @@ async def _get_dy_service_state(client: AsyncClient, node_uuid: NodeIDStr) -> Dy
         return None
 
     result_dict = result.json()
-    return DynamicServiceGet(**(result_dict["data"] if "data" in result_dict else result_dict))
+    return DynamicServiceGet(**(result_dict.get("data", result_dict)))
 
 
 async def _to_render_data(
@@ -254,7 +254,7 @@ async def _display(
             live.update(generate_table(await _get_nodes_render_data(app, project_id)))
 
 
-async def async_project_state(project_id: ProjectID, blocking: bool, update_interval: PositiveInt) -> None:
+async def async_project_state(project_id: ProjectID, *, blocking: bool, update_interval: PositiveInt) -> None:
     async with _initialized_app(only_db=True) as app:
         await _display(app, project_id, update_interval=update_interval, blocking=blocking)
 

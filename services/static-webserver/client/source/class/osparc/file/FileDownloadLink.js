@@ -109,7 +109,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
         case "checkLink":
           control = new qx.ui.basic.Image();
           control.set({
-            source: "@FontAwesome5Solid/question-circle/14"
+            source: "@FontAwesomeSolid/question-circle/14"
           });
           this._add(control);
           break;

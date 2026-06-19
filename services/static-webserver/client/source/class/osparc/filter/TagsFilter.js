@@ -48,7 +48,7 @@ qx.Class.define("osparc.filter.TagsFilter", {
   },
 
   statics: {
-    ActiveTagIcon: "@FontAwesome5Solid/check/12"
+    ActiveTagIcon: "@FontAwesomeSolid/check/12"
   },
 
   members: {

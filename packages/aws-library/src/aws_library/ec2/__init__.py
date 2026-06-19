@@ -5,6 +5,7 @@ from ._errors import (
     EC2NotConnectedError,
     EC2RuntimeError,
 )
+from ._fastapi_lifespan import configure_ec2_client
 from ._models import (
     AWS_TAG_KEY_MAX_LENGTH,
     AWS_TAG_KEY_MIN_LENGTH,
@@ -40,5 +41,5 @@ __all__: tuple[str, ...] = (
     "GenericResourceValueType",
     "Resources",
     "SimcoreEC2API",
+    "configure_ec2_client",
 )
-# nopycln: file

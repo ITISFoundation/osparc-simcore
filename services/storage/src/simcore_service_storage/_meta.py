@@ -14,6 +14,7 @@ API_VERSION: Final[VersionStr] = info.__version__
 API_VTAG: Final[str] = info.api_prefix_path_tag
 SUMMARY: Final[str] = info.get_summary()
 APP_NAME: Final[str] = info.app_name
+APP_STARTING_BANNER_MSG: Final[str] = info.get_starting_banner()
 
 ## https://patorjk.com/software/taag/#p=display&f=Standard&t=Storage
 APP_STARTED_BANNER_MSG = r"""

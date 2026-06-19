@@ -6,20 +6,26 @@
 
 
 import operator
+from contextlib import AsyncExitStack
 
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet, MyGroupsGet
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.faker_factories import random_product
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.groups import groups, user_to_groups
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -92,12 +98,7 @@ async def test_list_user_groups_and_try_modify_organizations(
         # try to add some user in the group
         url = client.app.router["add_group_user"].url_for(gid=f"{group['gid']}")
 
-        if i % 2 == 0:
-            # by user-id
-            params = {"uid": logged_user["id"]}
-        else:
-            # by user name
-            params = {"userName": logged_user["name"]}
+        params = {"uid": logged_user["id"]} if i % 2 == 0 else {"userName": logged_user["name"]}
 
         response = await client.post(f"{url}", json=params)
         await assert_status(response, status.HTTP_403_FORBIDDEN)
@@ -202,3 +203,81 @@ async def test_group_creation_workflow(
     _, error = await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
     assert f"{group.gid}" in error["message"]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_list_user_groups_excludes_other_product_support_group(
+    client: TestClient,
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    asyncpg_engine: AsyncEngine,
+):
+    assert client.app
+    assert logged_user["role"] == user_role
+
+    async with AsyncExitStack() as stack:
+        other_product_group = await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                asyncpg_engine,
+                table=groups,
+                values={
+                    "name": "other-product-membership-group",
+                    "description": "Membership group for another product",
+                    "type": "STANDARD",
+                },
+                pk_col=groups.c.gid,
+            )
+        )
+        other_product_group_gid = other_product_group["gid"]
+
+        other_product_support_group = await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                asyncpg_engine,
+                table=groups,
+                values={
+                    "name": "other-product-support-group",
+                    "description": "Support group for another product",
+                    "type": "STANDARD",
+                },
+                pk_col=groups.c.gid,
+            )
+        )
+        other_product_support_group_gid = other_product_support_group["gid"]
+
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                asyncpg_engine,
+                table=user_to_groups,
+                values={
+                    "uid": logged_user["id"],
+                    "gid": other_product_support_group_gid,
+                    "access_rights": {"read": True, "write": False, "delete": False},
+                },
+                pk_cols=[user_to_groups.c.uid, user_to_groups.c.gid],
+            )
+        )
+
+        other_product_data = random_product(
+            name="other-product",
+            priority=999,
+            group_id=other_product_group_gid,
+            support_standard_group_id=other_product_support_group_gid,
+        )
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                asyncpg_engine,
+                table=products,
+                values=other_product_data,
+                pk_col=products.c.name,
+            )
+        )
+
+        # ACT
+        url = client.app.router["list_groups"].url_for()
+        response = await client.get(f"{url}")
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        my_groups = MyGroupsGet.model_validate(data)
+
+        # ASSERT
+        organization_ids = {group.gid for group in my_groups.organizations or []}
+        assert other_product_support_group_gid not in organization_ids

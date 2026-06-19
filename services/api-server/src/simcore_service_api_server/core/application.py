@@ -94,7 +94,7 @@ def create_app(  # noqa: C901
         setup_tracing(app, tracing_config)
 
     if settings.API_SERVER_POSTGRES:
-        setup_postgres(app)
+        setup_postgres(app, tracing_config=tracing_config)
 
     setup_rabbitmq(app)
 
