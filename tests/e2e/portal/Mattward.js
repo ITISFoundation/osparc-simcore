@@ -26,10 +26,10 @@ async function runTutorial () {
     const studyData = studyResp["data"];
     const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData);
+    const mattwardViewerId = utils.getNodeIdFromServiceKey(studyData["workbench"], "mattward-viewer");
     await tutorial.waitForServices(
       studyId,
-      [workbenchData["nodeIds"][0]],
+      [mattwardViewerId],
       startTimeout
     );
 

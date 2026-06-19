@@ -26,9 +26,7 @@ async function runTutorial () {
     const studyData = studyResp["data"];
     const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData);
-    console.log("Workbench Data:", workbenchData);
-    const BIOSIdViewer = workbenchData["nodeIds"][0];
+    const BIOSIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "bios-health-vns-calibrator");
     await tutorial.waitForServices(
       studyId,
       [BIOSIdViewer],

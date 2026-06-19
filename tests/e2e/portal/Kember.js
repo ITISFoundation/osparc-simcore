@@ -26,9 +26,8 @@ async function runTutorial () {
     const studyData = studyResp["data"];
     const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData);
-    const kemberSolver = workbenchData["nodeIds"][0];
-    const kemberIdViewer = workbenchData["nodeIds"][1];
+    const kemberSolver = utils.getNodeIdFromServiceKey(studyData["workbench"], "kember-cardiac-model");
+    const kemberIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "voila-viewer");
 
     await tutorial.takeScreenshot("template_started");
 

@@ -26,10 +26,10 @@ async function runTutorial () {
     const studyData = studyResp["data"];
     const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData);
+    const bornsteinViewerId = utils.getNodeIdFromServiceKey(studyData["workbench"], "bornstein-viewer");
     await tutorial.waitForServices(
       studyId,
-      [workbenchData["nodeIds"][0]],
+      [bornsteinViewerId],
       startTimeout
     );
 
