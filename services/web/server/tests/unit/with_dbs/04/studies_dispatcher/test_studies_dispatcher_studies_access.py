@@ -356,6 +356,28 @@ async def test_access_study_anonymously(
     assert guest_project["prjOwner"] == data["login"]
 
 
+async def test_access_study_anonymously_with_trailing_slash(
+    studies_dispatcher_enabled: bool,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+    mock_dynamic_scheduler: None,
+    director_v2_service_mock: AioResponsesMock,
+    mocks_on_projects_api: None,
+    # needed to cleanup the locks between parametrizations
+    redis_locks_client: AsyncIterator[aioredis.Redis],
+):
+    assert not _is_user_authenticated(client.session), "Is anonymous"
+    assert client.app
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+
+    # a trailing slash must be dispatched to the same handler (e.g. '/study/{id}/')
+    resp = await client.get(f"{study_url}/")
+
+    await _assert_redirected_to_study(resp, client.session)
+
+
 @pytest.fixture
 async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
     assert client.app

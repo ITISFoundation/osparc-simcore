@@ -14,17 +14,19 @@ _logger = logging.getLogger(__name__)
 
 
 def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSettings):
-    # TODO: integrate when _studies_access is fully integrated
-
     # Redirects routes
     study_handler = get_redirection_to_study_page
     if settings.is_login_required():
         study_handler = login_required(get_redirection_to_study_page)
 
-    # TODO: make sure that these routes are filtered properly in active middlewares
+    # NOTE: these routes bypass the REST error/envelope middleware (is_api_request matches only /v0),
+    # so handler errors surface as a 302 redirect instead of a 5xx status.
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6477
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6476
     app.router.add_routes(
         [
             web.get(r"/study/{id}", study_handler, name="get_redirection_to_study_page"),
+            web.get(r"/study/{id}/", study_handler, name="get_redirection_to_study_page_with_slash"),
         ]
     )
 
