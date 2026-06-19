@@ -184,7 +184,12 @@ def create_app(  # noqa: C901
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
-    db.setup(app, settings.POSTGRES, tracing_config=get_tracing_config(app))
+    db.setup(
+        app,
+        settings.POSTGRES,
+        tracing_config=get_tracing_config(app),
+        monitoring_enabled=settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED,
+    )
 
     if get_tracing_config(app).tracing_enabled:
         initialize_fastapi_app_tracing(app, tracing_config=get_tracing_config(app))
