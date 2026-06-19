@@ -42,9 +42,10 @@ def _configure_plugins(
     configure_postgres_database(
         app_lifespan,
         settings=settings.CATALOG_POSTGRES,
+        tracing_config=tracing_config,
     )
     configure_default_product_name(app_lifespan)
-    configure_rabbitmq_client(app_lifespan)
+    configure_rabbitmq_client(app_lifespan, settings=settings.CATALOG_RABBITMQ)
     configure_rpc_api(app_lifespan)
     configure_director(app_lifespan)
     configure_function_services(app_lifespan)

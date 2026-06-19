@@ -81,14 +81,14 @@ qx.Class.define("osparc.widget.CollapsibleViewLight", {
           });
           break;
         case "expand-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/angle-right/14").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/angle-right/14").set({
             toolTipText: this.tr("Expand")
           });
           this.self().styleCollapseExpandButton(control);
           control.addListener("execute", () => this.setCollapsed(false));
           break;
         case "collapse-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/angle-left/14").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/angle-left/14").set({
             toolTipText: this.tr("Collapse")
           });
           this.self().styleCollapseExpandButton(control);

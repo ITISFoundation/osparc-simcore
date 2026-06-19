@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       const requestAPIKeyBtn = this.__requestAPIKeyBtn = new osparc.ui.form.FetchButton().set({
         appearance: "strong-button",
         label: this.tr("New API Key"),
-        icon: "@FontAwesome5Solid/plus/14",
+        icon: "@FontAwesomeSolid/plus/14",
         allowGrowX: false
       });
       requestAPIKeyBtn.addListener("execute", () => {
@@ -120,7 +120,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         column: 0
       });
 
-      const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash/14");
+      const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesomeSolid/trash/14");
       delAPIKeyBtn.addListener("execute", () => this.__deleteAPIKey(apiKey["id"]), this);
       grid.add(delAPIKeyBtn, {
         row: 0,
@@ -256,7 +256,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
       const delTokenBtn = new qx.ui.form.Button().set({
         appearance: "danger-button",
-        icon: "@FontAwesome5Solid/trash/14"
+        icon: "@FontAwesomeSolid/trash/14"
       });
       delTokenBtn.addListener("execute", e => {
         this.__deleteToken(service);

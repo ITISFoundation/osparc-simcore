@@ -13,7 +13,7 @@ qx.Class.define("osparc.filter.SearchingCollaborators", {
 
     this.set({
       label: this.tr("Searching..."),
-      icon: "@FontAwesome5Solid/circle-notch/14",
+      icon: "@FontAwesomeSolid/circle-notch/14",
       appearance: "tagbutton",
       gap: 10,
     });

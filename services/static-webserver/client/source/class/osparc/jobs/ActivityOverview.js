@@ -135,7 +135,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
 
       const prevBtn = new qx.ui.form.Button().set({
         toolTipText: this.tr("Return to Runs"),
-        icon: "@FontAwesome5Solid/arrow-left/20",
+        icon: "@FontAwesomeSolid/arrow-left/20",
         backgroundColor: "transparent"
       });
       prevBtn.addListener("execute", () => this.fireEvent("backToRuns"));

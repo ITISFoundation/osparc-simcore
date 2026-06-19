@@ -163,7 +163,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "tag-manager-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Add"),
-            icon: "@FontAwesome5Solid/tag/12",
+            icon: "@FontAwesomeSolid/tag/12",
             allowGrowX: false,
             allowGrowY: false,
             appearance: "form-button-outlined",
@@ -185,7 +185,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         case "tiers-toggle-button":
           control = new qx.ui.form.ToggleButton().set({
             label: this.tr("Show Tiers & Costs"),
-            icon: "@FontAwesome5Solid/chevron-right/12",
+            icon: "@FontAwesomeSolid/chevron-right/12",
             font: "text-14",
             appearance: "form-button-text",
             textColor: "text",
@@ -198,7 +198,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             converter: expanded => expanded ? this.tr("Hide Tiers & Costs") : this.tr("Show Tiers & Costs")
           });
           control.bind("value", control, "icon", {
-            converter: expanded => expanded ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-right/12"
+            converter: expanded => expanded ? "@FontAwesomeSolid/chevron-down/12" : "@FontAwesomeSolid/chevron-right/12"
           });
           this.getChildControl("advanced-layout").add(control);
           break;
@@ -218,7 +218,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         }
         case "loading-units-spinner":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/circle-notch/48",
+            source: "@FontAwesomeSolid/circle-notch/48",
             alignX: "center",
             alignY: "middle",
             marginTop: 20

@@ -50,6 +50,7 @@ def _configure_plugins(
     configure_postgres_database(
         app_lifespan,
         settings=settings.DYNAMIC_SCHEDULER_POSTGRES,
+        tracing_config=tracing_config,
     )
     configure_remote_docker_client(
         app_lifespan,
@@ -60,9 +61,9 @@ def _configure_plugins(
     configure_director_v2(app_lifespan)
     configure_director_v0(app_lifespan)
     configure_catalog(app_lifespan)
-    configure_rabbitmq_client(app_lifespan)
+    configure_rabbitmq_client(app_lifespan, settings=settings.DYNAMIC_SCHEDULER_RABBITMQ)
     configure_rpc_api(app_lifespan)
-    configure_redis_clients(app_lifespan)
+    configure_redis_clients(app_lifespan, settings=settings.DYNAMIC_SCHEDULER_REDIS)
     configure_notifier(app_lifespan)
     configure_service_tracker(app_lifespan)
     configure_deferred_manager(app_lifespan)

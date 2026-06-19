@@ -46,7 +46,7 @@ qx.Class.define("osparc.ui.form.LinkButton", {
     });
 
     if (url) {
-      this.setIcon("@FontAwesome5Solid/external-link-alt/12");
+      this.setIcon("@FontAwesomeSolid/external-link-alt/12");
       this.addListener("execute", () => {
         window.open(url);
       }, this);

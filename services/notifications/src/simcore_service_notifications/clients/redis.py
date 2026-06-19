@@ -1,35 +1,25 @@
-from collections.abc import AsyncIterator
+from typing import cast
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager, State
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.redis_lifespan import configure_redis_client_sdk
 from servicelib.redis import RedisClientSDK
-from settings_library.celery import CelerySettings
-from settings_library.redis import RedisDatabase
-
-from ..core.settings import ApplicationSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 
 
-async def _redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    settings: ApplicationSettings = app.state.settings
-    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
-    celery_settings: CelerySettings = settings.NOTIFICATIONS_CELERY
-
-    app.state.celery_tasks_redis_client_sdk = redis_client_sdk = RedisClientSDK(
-        celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
+def configure_redis_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: RedisSettings,
+) -> None:
+    configure_redis_client_sdk(
+        app_lifespan,
+        settings=settings,
+        database=RedisDatabase.CELERY_TASKS,
         client_name="notifications_celery_tasks",
+        app_state_attr="celery_tasks_redis_client_sdk",
     )
-    await redis_client_sdk.setup()
-
-    yield {}
-
-    await redis_client_sdk.shutdown()
-
-
-def configure_redis_client(app_lifespan: LifespanManager[FastAPI]) -> None:
-    app_lifespan.add(_redis_lifespan)
 
 
 def get_redis_client(app: FastAPI) -> RedisClientSDK:
-    assert hasattr(app.state, "celery_tasks_redis_client_sdk"), "Redis client not setup for this app"  # nosec
-    assert isinstance(app.state.celery_tasks_redis_client_sdk, RedisClientSDK)  # nosec
-    return app.state.celery_tasks_redis_client_sdk
+    return cast(RedisClientSDK, app.state.celery_tasks_redis_client_sdk)

@@ -22,13 +22,6 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jinja2 import DictLoader, Environment, select_autoescape
-from models_library.notifications import (
-    CompanyLink,
-    ProductData,
-    ProductFooterData,
-    ProductUIData,
-    SocialLink,
-)
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.celery.task_manager import TaskManager
@@ -44,9 +37,18 @@ from simcore_service_notifications.api.rpc import dependencies as rpc_dependenci
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.main import app_factory
+from simcore_service_notifications.models.product import (
+    CompanyLink,
+    Product,
+    ProductFooter,
+    ProductUI,
+    SocialLink,
+)
 
 pytest_plugins = [
+    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
 ]
 
@@ -96,15 +98,24 @@ def app_environment(
             "NOTIFICATIONS_TRACING": "null",
             "NOTIFICATIONS_SMTP_SETTINGS": json.dumps(
                 {
-                    "test-domain.com": {
-                        "SMTP_HOST": "mailpit",
-                        "SMTP_PORT": 1025,
-                        "SMTP_PROTOCOL": "UNENCRYPTED",
-                        "SMTP_LOCAL_PARTS": {
-                            "SUPPORT": "support",
-                            "NO_REPLY": "no-reply",
-                        },
-                    }
+                    "mail_servers": {
+                        "local": {
+                            "host": "mailpit",
+                            "port": 1025,
+                            "protocol": "UNENCRYPTED",
+                        }
+                    },
+                    "products": {
+                        "thetestproduct": {
+                            "mail_server": "local",
+                            "extra_headers": {},
+                            "domain": "test-domain.com",
+                            "local_parts": {
+                                "support": "support",
+                                "no_reply": "no-reply",
+                            },
+                        }
+                    },
                 }
             ),
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
@@ -249,7 +260,7 @@ def fake_ipinfo(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def fake_product_data(faker: Faker) -> dict[str, Any]:
-    footer_data = ProductFooterData(
+    footer_data = ProductFooter(
         social_links=[SocialLink(name=faker.word(), url=faker.url()) for _ in range(3)],
         company_name=faker.company(),
         company_address=faker.address(),
@@ -257,13 +268,13 @@ def fake_product_data(faker: Faker) -> dict[str, Any]:
     )
 
     return asdict(
-        ProductData(
-            product_name=faker.company(),
+        Product(
+            name=faker.company(),
             display_name=faker.company(),
             vendor_display_inline=faker.company_suffix(),
             support_email=faker.email(),
             homepage_url=faker.url(),
-            ui=ProductUIData(
+            ui=ProductUI(
                 logo_url=faker.image_url(),
                 strong_color=faker.color_name(),
             ),

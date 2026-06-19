@@ -4,7 +4,6 @@ from models_library.groups import GroupID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.payments_transactions import payments_transactions
-from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 
 from .base import BaseRepository
@@ -37,24 +36,17 @@ class PaymentsUsersRepo(BaseRepository):
         if row := await self._get(
             sa.select(
                 payments_transactions.c.payment_id,
+                payments_transactions.c.product_name,
                 users.c.name.label("user_name"),
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
-                products.c.name.label("product_name"),
-                products.c.display_name,
-                products.c.vendor,
-                products.c.support_email,
             )
             .select_from(
                 sa.join(
-                    sa.join(
-                        payments_transactions,
-                        users,
-                        payments_transactions.c.user_id == users.c.id,
-                    ),
-                    products,
-                    payments_transactions.c.product_name == products.c.name,
+                    payments_transactions,
+                    users,
+                    payments_transactions.c.user_id == users.c.id,
                 )
             )
             .where((payments_transactions.c.payment_id == payment_id) & (payments_transactions.c.user_id == user_id))

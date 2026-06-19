@@ -47,7 +47,7 @@ qx.Class.define("osparc.data.model.LicensedItem", {
         licensedResources.push(licensedItemResource);
       });
     }
-    let categoryIcon = "@FontAwesome5Solid/shopping-bag/20";
+    let categoryIcon = "@FontAwesomeSolid/shopping-bag/20";
     if (licensedItemData.categoryIcon) {
       categoryIcon = licensedItemData.categoryIcon;
     } else if (qx.util.ResourceManager.getInstance().has(`osparc/market/${licensedItemData.categoryId}.svg`)) {

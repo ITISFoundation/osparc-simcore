@@ -245,7 +245,7 @@ qx.Class.define("osparc.NewRelease", {
     __addLoadingIndicator: function() {
       this.__loadingLabel = new qx.ui.basic.Atom().set({
         label: qx.locale.Manager.tr("Loading release notes..."),
-        icon: "@FontAwesome5Solid/circle-notch/14",
+        icon: "@FontAwesomeSolid/circle-notch/14",
         font: "text-14",
         alignX: "center",
         alignY: "middle"

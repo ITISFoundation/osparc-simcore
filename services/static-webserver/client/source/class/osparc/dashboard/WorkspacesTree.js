@@ -78,7 +78,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
           if (value === "shared") {
             return osparc.store.Workspaces.iconPath(16);
           }
-          return "@FontAwesome5Solid/folder/14";
+          return "@FontAwesomeSolid/folder/14";
         },
       });
     },

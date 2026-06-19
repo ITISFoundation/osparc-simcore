@@ -133,7 +133,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             padding: [0, 8],
             maxWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
             maxHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
@@ -279,12 +279,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS ||
         studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS
       ) {
-        const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
+        const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesomeSolid/pencil-alt/12");
         editButton.addListener("execute", () => this.__renameFolder(), this);
         menu.add(editButton);
 
         if (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) {
-          const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/external-link-alt/12");
+          const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesomeSolid/external-link-alt/12");
           openLocationButton.addListener("execute", () => {
             const folder = this.getFolder();
             this.fireDataEvent("changeContext", {
@@ -296,14 +296,14 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           menu.add(openLocationButton);
         }
 
-        const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
+        const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesomeSolid/folder/12");
         moveToButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
         osparc.utils.Utils.setIdToWidget(moveToButton, "moveFolderMenuItem");
         menu.add(moveToButton);
 
         menu.addSeparator();
 
-        const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+        const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/12");
         trashButton.addListener("execute", () => this.fireDataEvent("trashFolderRequested", this.getFolderId()), this);
         menu.add(trashButton);
       } else if (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
@@ -313,7 +313,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
         menu.addSeparator();
 
-        const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/12");
         osparc.utils.Utils.setIdToWidget(deleteButton, "deleteFolderMenuItem");
         deleteButton.addListener("execute", () => this.__deleteFolderRequested(), this);
         menu.add(deleteButton);

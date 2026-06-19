@@ -59,7 +59,7 @@ qx.Class.define("osparc.support.SupportButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Regular/question-circle/24");
+          control = new qx.ui.basic.Image("@FontAwesomeRegular/question-circle/24");
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle",
           })).set({
@@ -72,7 +72,7 @@ qx.Class.define("osparc.support.SupportButton", {
           break;
         }
         case "is-active-icon-outline":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/12").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/circle/12").set({
             textColor: osparc.navigation.NavigationBar.BG_COLOR,
           });
           this._add(control, {
@@ -81,7 +81,7 @@ qx.Class.define("osparc.support.SupportButton", {
           });
           break;
         case "is-active-icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/8").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/circle/8").set({
             textColor: "strong-main",
           });
           this._add(control, {
