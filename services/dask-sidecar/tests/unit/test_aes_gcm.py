@@ -116,7 +116,7 @@ def test_roundtrip_final_partial_chunk(job_key: bytes, context: dict[str, str]):
 
 def test_roundtrip_single_chunk_exact_size(job_key: bytes, context: dict[str, str]):
     chunk_size = 128
-    plaintext = os.urandom(chunk_size)  # exactly one chunk, then empty final chunk
+    plaintext = os.urandom(chunk_size)  # exactly one final chunk, no trailing empty chunk
     encrypted = _encrypt_to_bytes(plaintext, job_key, context, chunk_size=chunk_size)
     assert _decrypt_to_bytes(encrypted, job_key, context) == plaintext
 
@@ -217,6 +217,18 @@ def test_decrypt_rejects_tampered_ciphertext(job_key: bytes, context: dict[str, 
     # flip a byte inside the ciphertext (right after header + chunk prefix)
     encrypted[_HEADER_SIZE + _CHUNK_PREFIX_SIZE] ^= 0x01
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
+        _decrypt_to_bytes(bytes(encrypted), job_key, context)
+
+
+def test_decrypt_rejects_chunk_larger_than_advertised_size(job_key: bytes, context: dict[str, str]):
+    chunk_size = 32
+    encrypted = bytearray(_encrypt_to_bytes(os.urandom(chunk_size), job_key, context, chunk_size=chunk_size))
+    encrypted[_HEADER_SIZE : _HEADER_SIZE + _CHUNK_PREFIX_SIZE] = _CHUNK_PREFIX_STRUCT.pack(
+        0,
+        chunk_size + TAG_SIZE_BYTES + 1,
+    )
+
+    with pytest.raises(AesGcmStreamFormatError, match="ciphertext exceeds advertised chunk size"):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
 
 

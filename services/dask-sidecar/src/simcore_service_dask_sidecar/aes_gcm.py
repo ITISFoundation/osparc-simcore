@@ -382,8 +382,9 @@ def decrypt_stream(
 
     Raises:
         AesGcmStreamError: If ``job_key`` length or ``file_role`` are invalid.
-        AesGcmStreamFormatError: If the header or a chunk record is malformed/unsupported.
-        AesGcmStreamAuthError: If authentication fails or the stream is truncated.
+        AesGcmStreamFormatError: If the header or a chunk record is malformed,
+            unsupported or truncated.
+        AesGcmStreamAuthError: If authentication fails or the final chunk is missing.
     """
     _validate_key(job_key)
     _validate_file_role(file_role)
@@ -408,6 +409,12 @@ def decrypt_stream(
             raise AesGcmStreamFormatError(msg)
         if ct_len < TAG_SIZE_BYTES:
             msg = "Invalid chunk record: ciphertext shorter than authentication tag"
+            raise AesGcmStreamFormatError(msg)
+        if ct_len > _chunk_size + TAG_SIZE_BYTES:
+            msg = (
+                "Invalid chunk record: ciphertext exceeds advertised chunk size "
+                f"({ct_len} > {_chunk_size + TAG_SIZE_BYTES})"
+            )
             raise AesGcmStreamFormatError(msg)
 
         is_final = bool(chunk_flags & _FINAL_CHUNK_FLAG)

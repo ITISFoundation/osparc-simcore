@@ -198,11 +198,12 @@ async def _run_plain_copy(
         elapsed_time = time.perf_counter() - t
         total_data_written += data_written or 0
         await log_publishing_cb(
-            f"{text_prefix}"
-            f" {100.0 * float(total_data_written or 0) / float(file_size or 1):.1f}%"
-            f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / "
-            f"{ByteSize(file_size).human_readable() if file_size else 'NaN'})"
-            f" [{ByteSize(total_data_written).to('MB') / elapsed_time:.2f} MBytes/s (avg)]",
+            _format_progress_message(
+                text_prefix=text_prefix,
+                bytes_transferred=total_data_written,
+                file_size=file_size,
+                elapsed_time=elapsed_time,
+            ),
             logging.DEBUG,
         )
 

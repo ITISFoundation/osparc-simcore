@@ -5,6 +5,7 @@
 import asyncio
 import contextlib
 import hashlib
+import io
 import mimetypes
 import zipfile
 from collections.abc import AsyncIterable, Callable, Iterator
@@ -21,6 +22,7 @@ from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.utils.files import (
+    _run_plain_copy,
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,
     push_file_to_remote,
@@ -290,6 +292,32 @@ async def test_pull_file_from_remote(
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
     mocked_log_publishing_cb.assert_called()
+
+
+async def test_run_plain_copy_logs_progress_when_elapsed_time_is_zero(
+    mocker: MockerFixture,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    src_fp = io.BytesIO(b"payload")
+    dst_fp = io.BytesIO()
+    mocker.patch(
+        "simcore_service_dask_sidecar.utils.files.time.perf_counter",
+        side_effect=[10.0, 10.0, 10.0],
+    )
+
+    await _run_plain_copy(
+        src_fp,
+        dst_fp,
+        file_size=len(b"payload"),
+        log_publishing_cb=mocked_log_publishing_cb,
+        text_prefix="Copying:",
+    )
+
+    assert dst_fp.getvalue() == b"payload"
+    logged_message, logged_level = mocked_log_publishing_cb.await_args_list[0].args
+    assert logged_message.startswith("Copying: 100.0%")
+    assert "[0.00 MBytes/s (avg)]" in logged_message
+    assert logged_level == 10
 
 
 async def test_pull_file_from_remote_s3_presigned_link(
