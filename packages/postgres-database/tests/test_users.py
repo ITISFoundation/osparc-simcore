@@ -135,7 +135,7 @@ async def test_new_user(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_d
         "email": faker.email(),
         "password_hash": "foo",
         "status": UserStatus.ACTIVE,
-        "expires_at": datetime.now(tz=UTC),
+        "expires_at": datetime.utcnow(),  # noqa: DTZ003
     }
     repo = UsersRepo(asyncpg_engine)
     new_user = await repo.new_user(**data)
@@ -162,7 +162,7 @@ async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table:
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
     # creates trial user
-    client_now = datetime.now(tz=UTC)
+    client_now = datetime.utcnow()  # noqa: DTZ003
     async with transaction_context(asyncpg_engine) as connection:
         user_id: int | None = await connection.scalar(
             users.insert()
