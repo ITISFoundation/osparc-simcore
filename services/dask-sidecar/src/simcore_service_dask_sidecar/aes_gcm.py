@@ -130,11 +130,11 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, BinaryIO, Final
 
-from annotated_types import doc
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from pydantic import Field
 
 KEY_SIZE_BYTES: Final[int] = 32
 NONCE_SIZE_BYTES: Final[int] = 12
@@ -253,7 +253,7 @@ def _build_chunk_aad(
 
 def _read_exact(
     src: BinaryIO,
-    size: Annotated[int, doc("Exact number of bytes to read")],
+    size: Annotated[int, Field(description="Exact number of bytes to read")],
 ) -> bytes | None:
     """Read exactly ``size`` bytes; return ``None`` only at a clean stream boundary (0 bytes)."""
     buffer = bytearray()
@@ -272,7 +272,7 @@ def _parse_header(
     src: BinaryIO,
 ) -> Annotated[
     tuple[int, bytes],
-    doc("(plaintext chunk_size, 12-byte per-file base nonce seed) from the header"),
+    Field(description="(plaintext chunk_size, 12-byte per-file base nonce seed) from the header"),
 ]:
     header = _read_exact(src, _HEADER_STRUCT.size)
     if header is None:
@@ -306,7 +306,7 @@ def encrypt_stream(
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
     progress_cb: Annotated[
         Callable[[int], None] | None,
-        doc("Called after each chunk with the cumulative plaintext bytes processed so far"),
+        Field(description="Called after each chunk with the cumulative plaintext bytes processed so far"),
     ] = None,
 ) -> None:
     """Encrypt ``src`` into ``dst`` using the streaming AES-256-GCM protocol.
@@ -369,7 +369,7 @@ def decrypt_stream(
     file_role: str,
     progress_cb: Annotated[
         Callable[[int], None] | None,
-        doc("Called after each chunk with the cumulative plaintext bytes processed so far"),
+        Field(description="Called after each chunk with the cumulative plaintext bytes processed so far"),
     ] = None,
 ) -> None:
     """Decrypt a stream produced by :func:`encrypt_stream` from ``src`` into ``dst``.
@@ -444,8 +444,8 @@ def decrypt_stream(
 
 
 def encrypt_file(
-    src: Annotated[Path, doc("Path to plaintext input file")],
-    dst: Annotated[Path, doc("Path to encrypted output file")],
+    src: Annotated[Path, Field(description="Path to plaintext input file")],
+    dst: Annotated[Path, Field(description="Path to encrypted output file")],
     *,
     job_key: bytes,
     job_id: str,
@@ -467,8 +467,8 @@ def encrypt_file(
 
 
 def decrypt_file(
-    src: Annotated[Path, doc("Path to encrypted input file")],
-    dst: Annotated[Path, doc("Path to plaintext output file")],
+    src: Annotated[Path, Field(description="Path to encrypted input file")],
+    dst: Annotated[Path, Field(description="Path to plaintext output file")],
     *,
     job_key: bytes,
     job_id: str,
