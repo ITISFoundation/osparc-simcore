@@ -38,6 +38,7 @@ def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_set
     if tracing_settings_in[2]:
         sampling_probability_mocked = True
         monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{tracing_settings_in[2]}")
+    monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION", "0.144.0")
     yield
     if endpoint_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
@@ -45,6 +46,8 @@ def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_set
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
     if sampling_probability_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY")
+
+    monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION")
 
 
 @pytest.mark.parametrize(
@@ -270,8 +273,8 @@ async def test_tracing_finds_project_id_and_node_id_if_available(
         assert len(spans) == 4  # there are now 2 more spans, one for the server and one for the client
         server_span = spans[2]  # the third span is the server span for the second request
         assert server_span.attributes
-        assert server_span.attributes.get("project_id") == "123"
-        assert server_span.attributes.get("node_id") == "456"
+        assert server_span.attributes.get("simcore.project_id") == "123"
+        assert server_span.attributes.get("simcore.node_id") == "456"
 
 
 def test_traced_decorator_accepts_aiohttp_app():
