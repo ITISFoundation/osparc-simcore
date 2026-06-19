@@ -58,8 +58,6 @@ def configure_postgres_database(
     tracing_config: TracingConfig | None,
 ) -> None:
     async def _database_lifespan(app: FastAPI) -> AsyncIterator[State]:
-        # NOTE: an outer retry is used so that the service keeps retrying
-        # (instead of failing on startup) while the alembic migration is not ready
         @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
         async def _connect() -> AsyncEngine:
             return await create_async_engine_and_database_ready(
