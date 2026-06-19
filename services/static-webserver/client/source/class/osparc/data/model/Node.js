@@ -465,10 +465,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __getInputUnits: function() {
       if (this.hasPropsForm()) {
-        const changedUnits = this.getPropsForm().getChangedXUnits();
-        if (Object.keys(changedUnits).length) {
-          return changedUnits;
-        }
+        return this.getPropsForm().getChangedXUnits();
       }
       return null;
     },
