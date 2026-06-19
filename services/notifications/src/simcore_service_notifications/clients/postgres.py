@@ -9,14 +9,9 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from models_library.healthchecks import IsResponsive, LivenessResult
 from servicelib.background_task import create_periodic_task
-from servicelib.db_asyncpg_utils import check_postgres_liveness, create_async_engine_and_database_ready
+from servicelib.db_asyncpg_utils import check_postgres_liveness
 from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
-from servicelib.tracing import TracingConfig
-from settings_library.postgres import PostgresSettings
-from sqlalchemy.ext.asyncio import AsyncEngine
-from tenacity import retry
 
 _logger = logging.getLogger(__name__)
 
@@ -49,32 +44,6 @@ class PostgresLiveness:
         if self._task is not None:
             with log_catch(_logger, reraise=False):
                 await cancel_wait_task(self._task, max_delay=5)
-
-
-def configure_postgres_database(
-    app_lifespan: LifespanManager[FastAPI],
-    *,
-    settings: PostgresSettings,
-    tracing_config: TracingConfig | None,
-) -> None:
-    async def _database_lifespan(app: FastAPI) -> AsyncIterator[State]:
-        @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-        async def _connect() -> AsyncEngine:
-            return await create_async_engine_and_database_ready(
-                settings,
-                app.title,
-                tracing_config=tracing_config,
-            )
-
-        with log_context(_logger, logging.INFO, msg="setup postgres database"):
-            app.state.engine = await _connect()
-
-        yield {}
-
-        with log_context(_logger, logging.INFO, msg="teardown postgres database"), log_catch(_logger, reraise=False):
-            await app.state.engine.dispose()
-
-    app_lifespan.add(_database_lifespan)
 
 
 async def _postgres_lifespan(app: FastAPI) -> AsyncIterator[State]:
