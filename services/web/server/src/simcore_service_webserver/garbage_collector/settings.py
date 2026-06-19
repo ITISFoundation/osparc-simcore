@@ -6,7 +6,13 @@ from settings_library.base import BaseCustomSettings
 
 from ..application_keys import APP_SETTINGS_APPKEY
 
-# lock names and format strings
+# Guest-user GC lock key pattern.
+#
+# This format is intentionally used with two identities during the guest lifecycle:
+# - guest *name* while the account is under construction
+# - guest user *id* while the account is initialized and waiting for first resource use
+#
+# The garbage collector checks BOTH keys before pruning guest users (see _core_guests.py).
 GUEST_USER_RC_LOCK_FORMAT = f"{__name__}:redlock:garbage_collect_user:{{user_id}}"
 
 

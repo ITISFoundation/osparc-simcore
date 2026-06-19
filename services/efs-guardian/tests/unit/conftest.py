@@ -20,6 +20,7 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.tracing import TracingConfig
 from settings_library.efs import AwsEfsSettings
 from simcore_service_efs_guardian.core.application import create_app
 
@@ -58,7 +59,7 @@ async def rpc_client(
 
 @pytest.fixture
 def disable_postgres_setup(mocker: MockerFixture) -> Callable:
-    def _setup(app: FastAPI):
+    def _setup(app: FastAPI, *, tracing_config: TracingConfig | None) -> None:
         app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
 
     def _():
@@ -73,7 +74,7 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
-def with_disabled_postgres(disable_postgres_setup: Callable):
+def with_disabled_postgres(disable_postgres_setup: Callable) -> None:
     disable_postgres_setup()
 
 
