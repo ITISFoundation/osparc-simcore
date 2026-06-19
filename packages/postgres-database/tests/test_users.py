@@ -6,7 +6,7 @@
 
 import json
 from collections.abc import Iterator
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import simcore_postgres_database.cli
@@ -545,7 +545,7 @@ def test_pre_registration_reconciliation_migration_upgrade_downgrade(  # noqa: P
                 "pre_email": "rejected@example.com",
                 "status": "REJECTED",
                 "reviewed_by": po_user_id,
-                "reviewed_at": datetime.utcnow(),  # noqa: DTZ003
+                "reviewed_at": datetime.now(tz=UTC),
                 "product_name": "osparc",
                 "created_by": po_user_id,
                 "extras": "{}",
@@ -560,7 +560,7 @@ def test_pre_registration_reconciliation_migration_upgrade_downgrade(  # noqa: P
                 "pre_email": "approved@example.com",
                 "status": "APPROVED",
                 "reviewed_by": po_user_id,
-                "reviewed_at": datetime.utcnow(),  # noqa: DTZ003
+                "reviewed_at": datetime.now(tz=UTC),
                 "product_name": "osparc",
                 "created_by": po_user_id,
                 "extras": "{}",
