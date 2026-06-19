@@ -579,15 +579,14 @@ function extractWorkbenchData(data) {
   return workbenchData;
 }
 
-function getNodeIdFromServiceKey(workbenchData, serviceKeyFragment) {
-  // Resolves a nodeId by matching the service key, instead of relying on the
-  // node's position in the workbench. The match is done on a substring of the
-  // service key so it is resilient to version changes.
-  const idx = workbenchData.keyVersions.findIndex(keyVersion => keyVersion.includes(serviceKeyFragment));
-  if (idx === -1) {
-    throw new Error(`No node found with service key matching "${serviceKeyFragment}". Available: ${workbenchData.keyVersions.join(", ")}`);
-  }
-  return workbenchData.nodeIds[idx];
+function getNodeIdFromServiceKey(workbench, serviceKeyFragment) {
+  let nodeId = null;
+  Object.entries(workbench).forEach(([nId, nodeData]) => {
+    if (nodeData["key"].includes(serviceKeyFragment)) {
+      nodeId = nId;
+    }
+  });
+  return nodeId;
 }
 
 function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
