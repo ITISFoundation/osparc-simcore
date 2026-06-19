@@ -8,7 +8,6 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.postgres_lifespan import configure_postgres_database
 from servicelib.fastapi.tracing import configure_fastapi_app_tracing
 from servicelib.tracing import TracingConfig
 
@@ -25,7 +24,7 @@ from .._meta import (
 from ..api.rest.routes import configure_rest_api
 from ..api.rpc.routes import configure_rpc_api
 from ..clients.celery import configure_task_manager
-from ..clients.postgres import configure_postgres_liveness
+from ..clients.postgres import configure_postgres_database, configure_postgres_liveness
 from ..clients.rabbitmq import configure_rabbitmq_client
 from ..clients.redis import configure_redis_client
 from ..services import configure_smtp_config_check
@@ -38,15 +37,15 @@ def _configure_plugins(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
-    configure_postgres_database(
-        app_lifespan,
-        settings=settings.NOTIFICATIONS_POSTGRES,
-        tracing_config=tracing_config,
-    )
-    configure_postgres_liveness(app_lifespan)
     configure_smtp_config_check(app_lifespan)
 
     if not settings.NOTIFICATIONS_WORKER_MODE:
+        configure_postgres_database(
+            app_lifespan,
+            settings=settings.NOTIFICATIONS_POSTGRES,
+            tracing_config=tracing_config,
+        )
+        configure_postgres_liveness(app_lifespan)
         configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
         configure_rpc_api(app_lifespan)
 
