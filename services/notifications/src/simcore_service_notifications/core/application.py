@@ -41,6 +41,7 @@ def _configure_plugins(
     configure_postgres_database(
         app_lifespan,
         settings=settings.NOTIFICATIONS_POSTGRES,
+        tracing_config=tracing_config,
     )
     configure_postgres_liveness(app_lifespan)
     configure_smtp_config_check(app_lifespan)

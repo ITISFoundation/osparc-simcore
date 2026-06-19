@@ -51,13 +51,14 @@ def project_save_state(project_id: ProjectID, save_attempts: int = DEFAULT_NODE_
 @main.command()
 def project_state(
     project_id: ProjectID,
+    *,
     blocking: bool = True,
     update_interval: int = DEFAULT_STATE_UPDATE_INTERVAL_S,
 ):
     """
     Displays the state of the nodes in the project.
     """
-    asyncio.run(async_project_state(project_id, blocking, update_interval))
+    asyncio.run(async_project_state(project_id, blocking=blocking, update_interval=update_interval))
 
 
 @main.command()
@@ -79,6 +80,7 @@ def free_reserved_disk_space(node_id: NodeID):
 @main.command()
 def close_and_save_service(
     node_id: NodeID,
+    *,
     skip_container_removal: bool = False,
     skip_state_saving: bool = False,
     skip_outputs_pushing: bool = False,

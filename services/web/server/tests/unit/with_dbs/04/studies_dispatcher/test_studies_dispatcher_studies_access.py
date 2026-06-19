@@ -6,6 +6,7 @@
 
 
 import asyncio
+import datetime
 import re
 import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -18,7 +19,7 @@ from unittest import mock
 import pytest
 import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
 )
@@ -39,13 +40,22 @@ from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_pro
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.redis import RedisClientSDK
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
+from simcore_service_webserver.garbage_collector.garbage_collector_service import (
+    GUEST_USER_RC_LOCK_FORMAT,
+)
+from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
 from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
+from simcore_service_webserver.studies_dispatcher._studies_access import (
+    copy_study_to_account,
+)
 from simcore_service_webserver.users.users_service import (
     delete_user_without_projects,
     get_user_role,
@@ -580,3 +590,118 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
     assert resp.status == status.HTTP_404_NOT_FOUND, (
         f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
     )
+
+
+@pytest.fixture
+def short_redis_lock_ttl(mocker: MockerFixture) -> datetime.timedelta:
+    """Shortens DEFAULT_LOCK_TTL and speeds up the renewal loop to keep lock-renewal tests fast."""
+    import servicelib.redis._decorators as _redis_decorators  # noqa: PLC0415
+    from redis.asyncio.lock import Lock  # noqa: PLC0415
+
+    short_ttl = datetime.timedelta(seconds=0.5)
+    mocker.patch.object(_redis_decorators, "DEFAULT_LOCK_TTL", short_ttl)
+
+    async def _fast_periodic_reacquisition(
+        lock: Lock,
+        started_event: asyncio.Event,
+        cancellation_event: asyncio.Event,
+    ) -> None:
+        if cancellation_event.is_set():
+            raise asyncio.CancelledError
+        await _redis_decorators.auto_extend_lock(lock)
+        started_event.set()
+        while not cancellation_event.is_set():
+            await asyncio.sleep(short_ttl.total_seconds() / 4)
+            if cancellation_event.is_set():
+                break
+            await _redis_decorators.auto_extend_lock(lock)
+
+    mocker.patch.object(_redis_decorators, "_periodic_reacquisition", _fast_periodic_reacquisition)
+    return short_ttl
+
+
+async def _is_guest_gc_lock_held(redis_sdk: RedisClientSDK, guest_user_name: str) -> bool:
+    # The garbage-collector skips a guest whenever the construction GC lock (keyed by the
+    # guest name) is held (see garbage_collector._core_guests, `lock_during_construction`).
+    # Hence checking the key existence is equivalent to checking that the GC would skip the guest.
+    lock_key = GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
+    return bool(await redis_sdk.redis.exists(lock_key))
+
+
+async def test_guest_gc_lock_is_renewed_and_not_released_during_long_study_copy(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    mocker: MockerFixture,
+    faker: Faker,
+    short_redis_lock_ttl: datetime.timedelta,
+    # needed to cleanup the locks between parametrizations
+    redis_locks_client: AsyncIterator[aioredis.Redis],
+):
+    """
+    Ensures that the guest-user GC lock held around the (potentially long) study copy
+    is NOT released while the copy takes longer than the lock TTL, because it is
+    auto-extended (renewed) by `exclusive`.
+
+    While the lock is held the garbage-collector would skip the guest (it checks the
+    very same construction key keyed by the guest name), so the guest user and its
+    destination project cannot be deleted mid-copy.
+    """
+    assert client.app
+    redis_sdk = get_redis_lock_manager_client_sdk(client.app)
+
+    guest_user_name = faker.pystr().lower()
+    user = {
+        "id": faker.pyint(min_value=1000, max_value=99999),
+        "name": guest_user_name,
+        "role": UserRole.GUEST,
+        "email": faker.email(),
+    }
+    template_project = {"uuid": faker.uuid4()}
+    request = make_mocked_request("GET", "/", app=client.app)
+
+    # the copy intentionally takes LONGER than the lock TTL to force at least one renewal
+    copy_duration_s = short_redis_lock_ttl.total_seconds() + 0.3
+
+    copy_started = asyncio.Event()
+
+    # `copy_study_to_account` is now itself decorated with the guest-user GC lock. We make it
+    # run longer than the lock TTL by slowing its first inner DB call, and short-circuit the
+    # rest so it returns without performing a real copy. This exercises the production
+    # decorator (and its guest-name lock key) directly.
+    async def _slow_get_project_product(*_args, **_kwargs) -> str:
+        copy_started.set()
+        await asyncio.sleep(copy_duration_s)
+        return "osparc"
+
+    mocker.patch.object(ProjectDBAPI, "get_project_product", side_effect=_slow_get_project_product)
+    mocker.patch(
+        "simcore_service_webserver.studies_dispatcher._studies_access.check_user_project_permission",
+        autospec=True,
+    )
+    # project "already exists" -> skip the clone/copy branch and return early
+    mocker.patch.object(ProjectDBAPI, "get_project_dict_and_type", return_value=({}, None))
+
+    # initially not locked
+    assert not await _is_guest_gc_lock_held(redis_sdk, guest_user_name)
+
+    copy_task = asyncio.create_task(copy_study_to_account(request, template_project, user))
+    await asyncio.wait_for(copy_started.wait(), timeout=5)
+
+    # poll across more than one TTL window: without renewal the lock would expire at
+    # DEFAULT_LOCK_TTL and this assertion would fail once we cross that boundary
+    elapsed = 0.0
+    poll_interval = 0.05
+    while elapsed < copy_duration_s - poll_interval:
+        assert await _is_guest_gc_lock_held(redis_sdk, guest_user_name), (
+            f"guest GC lock was released after {elapsed}s (TTL={short_redis_lock_ttl.total_seconds()}s): "
+            "exclusive did not renew it"
+        )
+        await asyncio.sleep(poll_interval)
+        elapsed += poll_interval
+
+    # the copy returns the destination project uuid and releases the lock
+    copied_project_uuid = await copy_task
+    assert copied_project_uuid
+
+    # once the copy is done the lock is released and the guest becomes GC-eligible again
+    assert not await _is_guest_gc_lock_held(redis_sdk, guest_user_name)

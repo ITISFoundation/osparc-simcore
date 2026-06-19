@@ -1876,7 +1876,7 @@ async def add_project_states_for_user(
     computational_node_states = user_computation_task.pipeline_details.node_states if user_computation_task else {}
 
     # compose the node states
-    is_pipeline_running = await director_v2_service.is_pipeline_running(app, user_id, project["uuid"])
+    is_pipeline_running = project_running_state.is_running()
     user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id)
     for node_uuid, node in project["workbench"].items():
         assert isinstance(node_uuid, str)  # nosec

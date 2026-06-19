@@ -13,19 +13,26 @@ from tenacity import retry
 
 from .logging_utils import log_context
 from .retry_policies import PostgresRetryPolicyUponInitialization
+from .sqlalchemy_instrumentation import instrument_async_engine
+from .tracing import TracingConfig
 
 _logger = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-async def create_async_engine_and_database_ready(settings: PostgresSettings, application_name: str) -> AsyncEngine:
+async def create_async_engine_and_database_ready(
+    settings: PostgresSettings,
+    application_name: str,
+    *,
+    tracing_config: TracingConfig | None,
+) -> AsyncEngine:
     """
     - creates asyncio engine
     - waits until db service is up
     - waits until db data is migrated (i.e. ready to use)
     - returns engine
     """
-    from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
+    from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this one is unclear  # noqa: PLC0415
         raise_if_migration_not_ready,
     )
 
@@ -51,6 +58,9 @@ async def create_async_engine_and_database_ready(settings: PostgresSettings, app
         exc.add_note("Failed during migration check. Created engine disposed.")
         raise
 
+    if tracing_config and tracing_config.tracing_enabled:
+        instrument_async_engine(engine, tracing_config=tracing_config)
+
     return engine
 
 
@@ -67,11 +77,17 @@ async def check_postgres_liveness(engine: AsyncEngine) -> LivenessResult:
 
 
 @contextlib.asynccontextmanager
-async def with_async_pg_engine(settings: PostgresSettings, *, application_name: str) -> AsyncIterator[AsyncEngine]:
+async def with_async_pg_engine(
+    settings: PostgresSettings,
+    *,
+    application_name: str,
+    tracing_config: TracingConfig | None,
+) -> AsyncIterator[AsyncEngine]:
     """
     Creates an asyncpg engine and ensures it is properly closed after use.
     """
     try:
+        engine: AsyncEngine | None = None
         with log_context(
             _logger,
             logging.DEBUG,
@@ -89,7 +105,10 @@ async def with_async_pg_engine(settings: PostgresSettings, *, application_name: 
                 pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
                 future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
             )
+            if tracing_config and tracing_config.tracing_enabled:
+                instrument_async_engine(engine, tracing_config=tracing_config)
         yield engine
     finally:
-        with log_context(_logger, logging.DEBUG, f"db disconnect of {engine}"):
-            await engine.dispose()
+        if engine is not None:
+            with log_context(_logger, logging.DEBUG, f"db disconnect of {engine}"):
+                await engine.dispose()
