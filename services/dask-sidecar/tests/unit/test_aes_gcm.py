@@ -5,6 +5,7 @@ import io
 import os
 import struct
 from pathlib import Path
+from typing import Final
 
 import pytest
 from simcore_service_dask_sidecar import aes_gcm
@@ -34,8 +35,8 @@ from simcore_service_dask_sidecar.aes_gcm import (
     generate_key,
 )
 
-_HEADER_SIZE = _HEADER_STRUCT.size
-_CHUNK_PREFIX_SIZE = _CHUNK_PREFIX_STRUCT.size
+_HEADER_SIZE: Final[int] = _HEADER_STRUCT.size
+_CHUNK_PREFIX_SIZE: Final[int] = _CHUNK_PREFIX_STRUCT.size
 
 
 @pytest.fixture
@@ -324,7 +325,7 @@ def test_decrypt_rejects_zero_chunk_size_in_header(job_key: bytes, context: dict
 def test_decrypt_rejects_unknown_chunk_flag_bits(job_key: bytes, context: dict[str, str]):
     encrypted = bytearray(_encrypt_to_bytes(b"abc", job_key, context))
     # first chunk record's flags byte sits right after the header; set an unknown bit
-    encrypted[_HEADER_SIZE] |= 0b0000_0010
+    encrypted[int(_HEADER_SIZE)] |= 0b0000_0010
     with pytest.raises(AesGcmStreamFormatError, match="unknown flag bits"):
         _decrypt_to_bytes(bytes(encrypted), job_key, context)
 
