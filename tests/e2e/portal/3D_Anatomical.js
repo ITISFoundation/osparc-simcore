@@ -26,8 +26,7 @@ async function runTutorial () {
     const studyData = studyResp["data"];
     const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData);
-    const vtkNodeId = workbenchData["nodeIds"][1];
+    const vtkNodeId = utils.getNodeIdFromServiceKey(studyData["workbench"], "3d-viewer-gpu");
     await tutorial.waitForServices(
       studyId,
       [vtkNodeId],
