@@ -453,7 +453,22 @@ def encrypt_file(
     file_role: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
 ) -> None:
-    """Thin ``Path`` wrapper around :func:`encrypt_stream` (opens files in binary mode)."""
+    """Utility function to encrypt a file following the streaming AES-GCM protocol, given and key/context.
+
+    Arguments:
+        job_key -- a 32-byte key used for encryption; must be the same as the one used for decryption
+        job_id -- a string identifier for the job; must be the same as the one used for decryption
+        file_id -- a string identifier for the file; must be the same as the one used for decryption
+        file_role -- a string identifier for the file role; must be the same as the one used for decryption
+
+    Keyword Arguments:
+        src -- source file path
+        dst -- destination file path
+        chunk_size -- size of each encrypted chunk in bytes (default: {DEFAULT_CHUNK_SIZE_BYTES})
+
+    Raises:
+        AesGcmStreamError: If ``job_key`` length, ``file_role`` or ``chunk_size`` are invalid.
+    """
     with src.open("rb") as src_stream, dst.open("wb") as dst_stream:
         encrypt_stream(
             src_stream,
@@ -475,7 +490,25 @@ def decrypt_file(
     file_id: str,
     file_role: str,
 ) -> None:
-    """Thin ``Path`` wrapper around :func:`decrypt_stream` (opens files in binary mode)."""
+    """Utility function to decrypt a file following the streaming AES-GCM protocol,
+    given the same key/context used for encryption.
+
+    Arguments:
+        job_key -- a 32-byte key used for decryption; must be the same as the one used for encryption
+        job_id -- a string identifier for the job; must be the same as the one used for encryption
+        file_id -- a string identifier for the file; must be the same as the one used for encryption
+        file_role -- a string identifier for the file role; must be the same as the one used for encryption
+                    and either "input" or "output"
+
+    Keyword Arguments:
+        src -- source file path
+        dst -- destination file path
+
+    Raises:
+        AesGcmStreamError: If ``job_key`` length or ``file_role`` are invalid.
+        AesGcmStreamFormatError: If the header or a chunk record is malformed/unsupported.
+        AesGcmStreamAuthError: If authentication fails or the stream is truncated.
+    """
     with src.open("rb") as src_stream, dst.open("wb") as dst_stream:
         decrypt_stream(
             src_stream,
