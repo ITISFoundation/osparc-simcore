@@ -22,12 +22,17 @@ async function runTutorial () {
 
   try {
     const page = await tutorial.beforeScript();
-    const studyData = await tutorial.openStudyLink();
+    const studyResp = await tutorial.openStudyLink();
+    const studyData = studyResp["data"];
+    const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    const mattwardViewerId = utils.getNodeIdFromServiceKey(studyData["workbench"], "mattward-viewer");
+    if (!mattwardViewerId) {
+      throw new Error('Could not find node with service key "mattward-viewer"');
+    }
     await tutorial.waitForServices(
-      workbenchData["studyId"],
-      [workbenchData["nodeIds"][0]],
+      studyId,
+      [mattwardViewerId],
       startTimeout
     );
 
