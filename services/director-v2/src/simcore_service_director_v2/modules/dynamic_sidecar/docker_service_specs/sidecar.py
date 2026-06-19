@@ -179,7 +179,7 @@ def _get_environment_variables(
         # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
         "DYNAMIC_SIDECAR_TRACING": (
-            app_settings.DIRECTOR_V2_TRACING.model_dump_json() if app_settings.DIRECTOR_V2_TRACING else "null"
+            "null" if app_settings.DIRECTOR_V2_TRACING is None else app_settings.DIRECTOR_V2_TRACING.model_dump_json()
         ),
         "DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN": f"{scheduler_data.tracing}",
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
