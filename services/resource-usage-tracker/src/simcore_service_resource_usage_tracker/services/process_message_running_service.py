@@ -121,10 +121,6 @@ async def _process_start_event(
     )
     service_run_id = await service_runs_db.create_service_run(db_engine, data=create_service_run)
     if service_run_id is None:
-        # A previous TRACKING_STARTED message for the same service run (e.g. the client
-        # published it more than once) already created this service run record. That
-        # first handler is responsible for the credit transaction, so we stop here to
-        # avoid creating a duplicate one.
         _logger.warning(
             "On process start event the service run id %s for product %s was already created",
             msg.service_run_id,
