@@ -56,6 +56,7 @@ async def create_service_run(
     *,
     data: ServiceRunCreate,
 ) -> ServiceRunID | None:
+    """Returns None when the record already exists (duplicate start event): nothing was inserted."""
     async with transaction_context(engine, connection) as conn:
         insert_stmt = (
             pg_insert(resource_tracker_service_runs)
@@ -102,7 +103,6 @@ async def create_service_run(
         result = await conn.execute(insert_stmt)
     row = result.first()
     if row is None:
-        # The record already exists (duplicate start event): nothing was inserted
         return None
     return cast(ServiceRunID, row[0])
 
