@@ -144,9 +144,16 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
-            padding: [0, 8],
+            padding: 0,
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            minWidth: this.self().MENU_BTN_DIMENSIONS,
+            minHeight: this.self().MENU_BTN_DIMENSIONS,
             maxWidth: this.self().MENU_BTN_DIMENSIONS,
             maxHeight: this.self().MENU_BTN_DIMENSIONS,
+            center: true,
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
