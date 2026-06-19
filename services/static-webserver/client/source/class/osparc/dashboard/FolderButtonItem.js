@@ -130,9 +130,16 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
-            padding: [0, 8],
+            padding: 0,
+            width: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            height: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            minWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            minHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
             maxWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
             maxHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            center: true,
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
