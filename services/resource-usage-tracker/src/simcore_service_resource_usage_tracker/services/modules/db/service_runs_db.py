@@ -91,11 +91,6 @@ async def create_service_run(
                 modified=sa.func.now(),
                 last_heartbeat_at=data.last_heartbeat_at,
             )
-            # NOTE: RUT may receive the same TRACKING_STARTED event more than once
-            # (e.g. the client publishes the same TRACKING_STARTED message several
-            # times). The (product_name, service_run_id) primary key makes this insert
-            # idempotent: on conflict nothing is inserted and we signal it to the caller
-            # by returning None instead of raising an IntegrityError.
             .on_conflict_do_nothing(
                 index_elements=[
                     resource_tracker_service_runs.c.product_name,
