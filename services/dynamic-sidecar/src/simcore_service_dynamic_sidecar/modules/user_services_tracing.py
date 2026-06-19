@@ -9,6 +9,8 @@ then deletes the processed files.
 import asyncio
 import contextlib
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
@@ -31,33 +33,53 @@ _ACTIVE_FILE_NAME = "spans.jsonl"
 _CHECKPOINT_FILE_NAME = "_trace_offset"
 
 
-class UserServicesTraceForwarder:
-    def __init__(
-        self,
-        traces_directory: Path,
-        user_services_tracing_settings: UserServicesTracingSettings,
-        platform_tracing_settings: TracingSettings,
-    ) -> None:
-        self._traces_directory = traces_directory
-        self._user_services_tracing_settings = user_services_tracing_settings
-        self._scrape_task: asyncio.Task | None = None
-        self._active_file_offset: int = 0
+@dataclass
+class _TraceBatch:
+    """A chunk of trace bytes ready to forward plus how to commit it once sent.
 
-        self._otlp_endpoint = f"{
-            URL(f'{platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}')
-            .with_port(platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT)
-            .with_path('/v1/traces')
-        }"
-        self._client = httpx.AsyncClient(
-            timeout=user_services_tracing_settings.USER_SERVICES_TRACING_FORWARD_TIMEOUT.total_seconds()
-        )
+    ``commit`` advances the reader's offset and/or deletes the source file. It must
+    be awaited by the caller ONLY after the content has been forwarded successfully.
+    """
+
+    content: bytes
+    _commit: Callable[[], Awaitable[None]]
+
+    async def commit(self) -> None:
+        await self._commit()
+
+
+class RotatingTraceFileReader:
+    """Encapsulates reading the rotating JSONL trace directory.
+
+    Responsibilities:
+    - Track a byte offset into the active file so each scrape only forwards new data.
+    - Persist/restore that offset via a checkpoint file for crash recovery.
+    - Yield only complete (newline-terminated) byte ranges, skipping already-forwarded
+      bytes, from rotated (immutable) files first and then the active file.
+
+    Forwarding is intentionally NOT a concern of this class: callers forward each
+    batch's content and call ``batch.commit()`` only on success. This keeps the
+    byte-offset/rotation bookkeeping isolated and independently testable.
+    """
+
+    def __init__(self, traces_directory: Path) -> None:
+        self._traces_directory = traces_directory
+        self._offset: int = 0
+
+    @property
+    def offset(self) -> int:
+        return self._offset
 
     @property
     def _checkpoint_path(self) -> Path:
         return self._traces_directory / _CHECKPOINT_FILE_NAME
 
+    async def restore_offset(self) -> int:
+        """Loads the persisted offset from the checkpoint file (0 if missing/invalid)."""
+        self._offset = await self._read_checkpoint()
+        return self._offset
+
     async def _read_checkpoint(self) -> int:
-        """Reads persisted offset from checkpoint file. Returns 0 if missing or invalid."""
         if not await aiofiles.os.path.exists(self._checkpoint_path):
             return 0
         try:
@@ -68,18 +90,126 @@ class UserServicesTraceForwarder:
             _logger.warning("Invalid checkpoint file, resetting offset to 0")
             return 0
 
-    async def _write_checkpoint(self, offset: int) -> None:
-        """Atomically persists offset to checkpoint file (tmp + rename)."""
+    async def persist_offset(self) -> None:
+        """Atomically persists the current offset to the checkpoint file (tmp + rename)."""
         tmp_path = self._checkpoint_path.with_suffix(f".{uuid4().hex[:8]}.tmp")
         async with aiofiles.open(tmp_path, "w") as f:
-            await f.write(f"{offset}")
+            await f.write(f"{self._offset}")
         await aiofiles.os.rename(tmp_path, self._checkpoint_path)
 
+    async def _get_rotated_files(self) -> list[Path]:
+        """Returns rotated span files (not the active one), oldest→newest."""
+        all_files = await asyncio.to_thread(list, self._traces_directory.glob("spans*.jsonl"))
+        return sorted(f for f in all_files if f.name != _ACTIVE_FILE_NAME)
+
+    def _rotated_commit(self, file_path: Path) -> Callable[[], Awaitable[None]]:
+        async def _commit() -> None:
+            await aiofiles.os.remove(file_path)
+            # The file rotated away: the new active file starts at offset 0.
+            self._offset = 0
+            await self.persist_offset()
+
+        return _commit
+
+    async def iter_pending(self, *, drain: bool) -> AsyncIterator[_TraceBatch]:
+        """Yields the trace batches that still need forwarding.
+
+        Rotated (immutable) files are yielded first (oldest→newest), then the active
+        file. The offset is consulted lazily, so once the caller commits a rotated
+        batch (which resets the offset to 0) subsequent files are read in full.
+
+        When ``drain`` is True the active file is read to its end and deleted on
+        commit; otherwise only the complete-line tail is yielded and the file is kept.
+        """
+        for file_path in await self._get_rotated_files():
+            async with aiofiles.open(file_path, "rb") as f:
+                content = await f.read()
+            # Only send bytes beyond what we already tailed from this (now rotated) file.
+            yield _TraceBatch(
+                content=content[self._offset :],
+                _commit=self._rotated_commit(file_path),
+            )
+
+        if drain:
+            async for batch in self._iter_active_drain():
+                yield batch
+        else:
+            async for batch in self._iter_active_tail():
+                yield batch
+
+    async def _iter_active_tail(self) -> AsyncIterator[_TraceBatch]:
+        """Yields new complete lines appended to the active file since the last scrape."""
+        active_file = self._traces_directory / _ACTIVE_FILE_NAME
+        if not await aiofiles.os.path.exists(active_file):
+            return
+
+        stat_result = await aiofiles.os.stat(active_file)
+        if stat_result.st_size <= self._offset:
+            return
+
+        async with aiofiles.open(active_file, "rb") as f:
+            await f.seek(self._offset)
+            new_content = await f.read()
+        if not new_content:
+            return
+
+        # Only forward complete lines (the last line might be partially written).
+        last_newline = new_content.rfind(b"\n")
+        if last_newline == -1:
+            return  # no complete lines yet
+
+        content_to_send = new_content[: last_newline + 1]
+        if not content_to_send.strip():
+            return
+
+        async def _commit() -> None:
+            self._offset += len(content_to_send)
+
+        yield _TraceBatch(content=content_to_send, _commit=_commit)
+
+    async def _iter_active_drain(self) -> AsyncIterator[_TraceBatch]:
+        """Yields the remaining un-tailed bytes of the active file and deletes it on commit."""
+        active_file = self._traces_directory / _ACTIVE_FILE_NAME
+        if not await aiofiles.os.path.exists(active_file):
+            return
+
+        async with aiofiles.open(active_file, "rb") as f:
+            content = await f.read()
+
+        async def _commit() -> None:
+            await aiofiles.os.remove(active_file)
+            self._offset = 0
+            await self.persist_offset()
+
+        yield _TraceBatch(content=content[self._offset :], _commit=_commit)
+
+
+class UserServicesTraceForwarder:
+    def __init__(
+        self,
+        traces_directory: Path,
+        user_services_tracing_settings: UserServicesTracingSettings,
+        platform_tracing_settings: TracingSettings,
+    ) -> None:
+        self._traces_directory = traces_directory
+        self._user_services_tracing_settings = user_services_tracing_settings
+        self._reader = RotatingTraceFileReader(traces_directory)
+        self._scrape_task: asyncio.Task | None = None
+
+        self._otlp_endpoint = f"{
+            URL(f'{platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}')
+            .with_port(platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT)
+            .with_path('/v1/traces')
+        }"
+        self._client = httpx.AsyncClient(
+            timeout=user_services_tracing_settings.USER_SERVICES_TRACING_FORWARD_TIMEOUT.total_seconds()
+        )
+
     async def setup(self) -> None:
-        self._active_file_offset = await self._read_checkpoint()
+        await self._reader.restore_offset()
         _logger.info(
             "Restored trace forwarder offset from checkpoint: %d",
-            self._active_file_offset,
+            self._reader.offset,
         )
 
         interval = self._user_services_tracing_settings.USER_SERVICES_TRACING_SCRAPE_INTERVAL
@@ -107,125 +237,26 @@ class UserServicesTraceForwarder:
         timeout = self._user_services_tracing_settings.USER_SERVICES_TRACING_DRAIN_TIMEOUT.total_seconds()
         _logger.info("Draining remaining trace files (timeout=%.1fs)", timeout)
         try:
-            await asyncio.wait_for(self._forward_all_files(), timeout=timeout)
+            await asyncio.wait_for(self._forward_pending(drain=True), timeout=timeout)
         except TimeoutError:
             _logger.warning("Drain timeout reached, some traces may be lost")
 
     async def _scrape_once(self) -> None:
         with log_catch(_logger, reraise=False):
-            # Forward completed rotated files first
-            rotated_files = await self._get_rotated_files()
-            if rotated_files:
-                _logger.info(
-                    "Scrape cycle: found %d rotated trace file(s) to forward",
-                    len(rotated_files),
-                )
-            for file_path in rotated_files:
-                await self._forward_rotated_file(file_path)
-
-            # Also forward new data from the active file
-            await self._forward_active_file_tail()
-
+            await self._forward_pending(drain=False)
             # Persist current offset for crash recovery
-            await self._write_checkpoint(self._active_file_offset)
+            await self._reader.persist_offset()
 
-    async def _forward_active_file_tail(self) -> None:
-        """Reads new bytes appended to the active file since last scrape and forwards them."""
-        active_file = self._traces_directory / _ACTIVE_FILE_NAME
-        if not await aiofiles.os.path.exists(active_file):
-            return
+    async def _forward_pending(self, *, drain: bool) -> None:
+        """Forwards every pending batch, committing each only after a successful send.
 
-        stat_result = await aiofiles.os.stat(active_file)
-        if stat_result.st_size <= self._active_file_offset:
-            return
-
-        async with aiofiles.open(active_file, "rb") as f:
-            await f.seek(self._active_file_offset)
-            new_content = await f.read()
-
-        if not new_content:
-            return
-
-        # Only forward complete lines (the last line might be partially written)
-        last_newline = new_content.rfind(b"\n")
-        if last_newline == -1:
-            return  # no complete lines yet
-
-        content_to_send = new_content[: last_newline + 1]
-        if not content_to_send.strip():
-            return
-
-        success = await self._forward_content(content_to_send)
-        if success:
-            self._active_file_offset += len(content_to_send)
-            _logger.info(
-                "Forwarded %d bytes from active file (offset now %d)",
-                len(content_to_send),
-                self._active_file_offset,
-            )
-
-    async def _forward_rotated_file(self, file_path: Path) -> None:
-        """Forwards only the un-tailed portion of a rotated file and deletes it.
-
-        When the active file rotates, we may have already forwarded some bytes
-        via _forward_active_file_tail. Only send the remainder to avoid duplicates.
+        Stops on the first failed send so the unsent file(s) are kept for retry and
+        the offset is not advanced past data that never reached the platform.
         """
-        async with aiofiles.open(file_path, "rb") as f:
-            content = await f.read()
-        if not content:
-            await aiofiles.os.remove(file_path)
-            self._active_file_offset = 0
-            return
-
-        # Only send bytes beyond what we already tailed
-        unsent_content = content[self._active_file_offset :]
-        skipped_bytes = self._active_file_offset
-        if unsent_content and not await self._forward_content(unsent_content):
-            return  # keep file for retry
-
-        await aiofiles.os.remove(file_path)
-        # Reset offset for the new active file and persist
-        self._active_file_offset = 0
-        await self._write_checkpoint(0)
-        _logger.info(
-            "Forwarded and deleted %s (sent %d of %d bytes, skipped %d already-tailed)",
-            file_path.name,
-            len(unsent_content),
-            len(content),
-            skipped_bytes,
-        )
-
-    async def _forward_rotated_files(self) -> None:
-        """Forwards only rotated (immutable) files, skipping the active file."""
-        for file_path in await self._get_rotated_files():
-            await self._forward_rotated_file(file_path)
-
-    async def _forward_all_files(self) -> None:
-        """Forwards ALL files including the active one (used during drain).
-
-        Offset-aware: skips already-tailed bytes to avoid duplicates.
-        Processes rotated files first (oldest→newest), then the active file.
-        """
-        rotated_files = await self._get_rotated_files()
-        for file_path in rotated_files:
-            await self._forward_rotated_file(file_path)
-
-        # Forward remaining content from the active file
-        active_file = self._traces_directory / _ACTIVE_FILE_NAME
-        if await aiofiles.os.path.exists(active_file):
-            async with aiofiles.open(active_file, "rb") as f:
-                content = await f.read()
-            unsent = content[self._active_file_offset :]
-            if unsent and not await self._forward_content(unsent):
-                return
-            await aiofiles.os.remove(active_file)
-            self._active_file_offset = 0
-            await self._write_checkpoint(0)
-
-    async def _get_rotated_files(self) -> list[Path]:
-        """Returns rotated span files (not the active one)."""
-        all_files = await asyncio.to_thread(list, self._traces_directory.glob("spans*.jsonl"))
-        return sorted(f for f in all_files if f.name != _ACTIVE_FILE_NAME)
+        async for batch in self._reader.iter_pending(drain=drain):
+            if batch.content and not await self._forward_content(batch.content):
+                break  # keep file for retry
+            await batch.commit()
 
     async def _forward_content(self, content: bytes) -> bool:
         """Forwards content to the platform OTLP endpoint. Returns True on success."""
