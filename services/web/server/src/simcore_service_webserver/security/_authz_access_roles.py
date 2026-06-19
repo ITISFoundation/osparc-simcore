@@ -46,6 +46,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "services.pipeline.*",
             "services.interactive.*",
             "services.catalog.*",
+            "study.dispatch",
         ]
     ),
     UserRole.USER: PermissionDict(
