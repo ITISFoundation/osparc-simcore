@@ -23,6 +23,7 @@ from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.aes_gcm import FORMAT_MAGIC, AesGcmStreamAuthError, generate_key
 from simcore_service_dask_sidecar.utils.files import (
+    TransferEncryptionSettings,
     _copy_file,
     _run_plain_copy,
     _s3fs_settings_from_s3_settings,
@@ -119,6 +120,13 @@ def upload_file_to_remote(
     for open_file in uploaded_files:
         with contextlib.suppress(Exception):
             open_file.fs.rm(open_file.path)
+def encryption_settings() -> TransferEncryptionSettings:
+    return TransferEncryptionSettings(
+        job_key=generate_key(),
+        job_id="job-1",
+        file_id="file-1",
+        file_role="input",
+    )
 
 
 async def test_push_file_to_remote(
@@ -325,26 +333,20 @@ async def test_run_plain_copy_logs_progress_when_elapsed_time_is_zero(
 async def test_copy_file_encrypts_with_crypto_context(
     tmp_path: Path,
     mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
 ):
     src_path = tmp_path / "plain.txt"
     src_bytes = b"top-secret payload"
     src_path.write_bytes(src_bytes)
     encrypted_path = tmp_path / "encrypted.bin"
 
-    crypto = {
-        "mode": "encrypt",
-        "job_key": generate_key(),
-        "job_id": "job-1",
-        "file_id": "file-1",
-        "file_role": "input",
-    }
-
     await _copy_file(
         TypeAdapter(AnyUrl).validate_python(src_path.as_uri()),
         TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
         log_publishing_cb=mocked_log_publishing_cb,
         text_prefix="Encrypting:",
-        crypto=crypto,
+        encryption=encryption_settings,
+        encryption_mode="encrypt",
     )
 
     assert encrypted_path.exists()
@@ -357,6 +359,7 @@ async def test_copy_file_encrypts_with_crypto_context(
 async def test_copy_file_decrypts_with_crypto_context(
     tmp_path: Path,
     mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
 ):
     src_path = tmp_path / "plain.txt"
     src_bytes = b"top-secret payload"
@@ -364,26 +367,21 @@ async def test_copy_file_decrypts_with_crypto_context(
     encrypted_path = tmp_path / "encrypted.bin"
     decrypted_path = tmp_path / "decrypted.txt"
 
-    common_crypto = {
-        "job_key": generate_key(),
-        "job_id": "job-1",
-        "file_id": "file-1",
-        "file_role": "input",
-    }
-
     await _copy_file(
         TypeAdapter(AnyUrl).validate_python(src_path.as_uri()),
         TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
         log_publishing_cb=mocked_log_publishing_cb,
         text_prefix="Encrypting:",
-        crypto={**common_crypto, "mode": "encrypt"},
+        encryption=encryption_settings,
+        encryption_mode="encrypt",
     )
     await _copy_file(
         TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
         TypeAdapter(AnyUrl).validate_python(decrypted_path.as_uri()),
         log_publishing_cb=mocked_log_publishing_cb,
         text_prefix="Decrypting:",
-        crypto={**common_crypto, "mode": "decrypt"},
+        encryption=encryption_settings,
+        encryption_mode="decrypt",
     )
 
     assert decrypted_path.exists()
@@ -394,6 +392,7 @@ async def test_copy_file_decrypts_with_crypto_context(
 async def test_copy_file_decrypt_with_wrong_key_raises_auth_error(
     tmp_path: Path,
     mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
 ):
     src_path = tmp_path / "plain.txt"
     src_bytes = b"top-secret payload"
@@ -401,36 +400,74 @@ async def test_copy_file_decrypt_with_wrong_key_raises_auth_error(
     encrypted_path = tmp_path / "encrypted.bin"
     decrypted_path = tmp_path / "decrypted.txt"
 
-    encrypt_crypto = {
-        "mode": "encrypt",
-        "job_key": generate_key(),
-        "job_id": "job-1",
-        "file_id": "file-1",
-        "file_role": "input",
-    }
     await _copy_file(
         TypeAdapter(AnyUrl).validate_python(src_path.as_uri()),
         TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
         log_publishing_cb=mocked_log_publishing_cb,
         text_prefix="Encrypting:",
-        crypto=encrypt_crypto,
+        encryption=encryption_settings,
+        encryption_mode="encrypt",
     )
 
-    decrypt_crypto = {
-        "mode": "decrypt",
-        "job_key": generate_key(),
-        "job_id": "job-1",
-        "file_id": "file-1",
-        "file_role": "input",
-    }
+    wrong_key_settings = encryption_settings.model_copy(update={"job_key": generate_key()})
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         await _copy_file(
             TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
             TypeAdapter(AnyUrl).validate_python(decrypted_path.as_uri()),
             log_publishing_cb=mocked_log_publishing_cb,
             text_prefix="Decrypting:",
-            crypto=decrypt_crypto,
+            encryption=wrong_key_settings,
+            encryption_mode="decrypt",
         )
+
+
+async def test_push_then_pull_file_with_encryption_roundtrip(
+    remote_parameters: StorageParameters,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
+):
+    src_path = tmp_path / faker.file_name()
+    plain_text = faker.text()
+    src_path.write_text(plain_text)
+
+    await push_file_to_remote(
+        src_path,
+        remote_parameters.remote_file_url,
+        mocked_log_publishing_cb,
+        remote_parameters.s3_settings,
+        encryption=encryption_settings,
+    )
+
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+    with cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            f"{remote_parameters.remote_file_url}",
+            mode="rb",
+            **storage_kwargs,
+        ),
+    ) as fp:
+        remote_data = fp.read()
+    assert remote_data != plain_text.encode()
+    assert remote_data.startswith(FORMAT_MAGIC)
+
+    dst_path = tmp_path / faker.file_name()
+    await pull_file_from_remote(
+        src_url=remote_parameters.remote_file_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=encryption_settings,
+    )
+
+    assert dst_path.exists()
+    assert dst_path.read_text() == plain_text
+    mocked_log_publishing_cb.assert_called()
 
 
 async def test_pull_file_from_remote_s3_presigned_link(

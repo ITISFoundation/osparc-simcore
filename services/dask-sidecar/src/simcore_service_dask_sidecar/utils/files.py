@@ -14,13 +14,13 @@ import aiofiles
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
 import repro_zipfile
-from pydantic import ByteSize
+from pydantic import BaseModel, ByteSize, ConfigDict, Field, FileUrl, TypeAdapter
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..aes_gcm import decrypt_stream, encrypt_stream
+from ..aes_gcm import KEY_SIZE_BYTES, decrypt_stream, encrypt_stream
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +66,7 @@ class S3FsSettingsDict(TypedDict):
 
 
 _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
+_TransferMode = Literal["encrypt", "decrypt"]
 
 
 def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict:
@@ -114,12 +115,13 @@ def _format_progress_message(
     )
 
 
-class _CryptoContext(TypedDict):
-    mode: Literal["encrypt", "decrypt"]
-    job_key: bytes
+class TransferEncryptionSettings(BaseModel):
+    job_key: bytes = Field(min_length=KEY_SIZE_BYTES, max_length=KEY_SIZE_BYTES)
     job_id: str
     file_id: str
-    file_role: str
+    file_role: Literal["input", "output"]
+
+    model_config = ConfigDict(frozen=True)
 
 
 class _ThreadSafeProgressLogger:
@@ -213,7 +215,8 @@ async def _run_crypto_copy(
     dst_fp: IOBase,
     *,
     file_size: int | None,
-    crypto: _CryptoContext,
+    encryption: TransferEncryptionSettings,
+    encryption_mode: _TransferMode,
     log_publishing_cb: LogPublishingCB,
     text_prefix: str,
 ) -> None:
@@ -224,15 +227,15 @@ async def _run_crypto_copy(
         text_prefix=text_prefix,
         main_loop=main_loop,
     )
-    transfer = encrypt_stream if crypto["mode"] == "encrypt" else decrypt_stream
+    transfer = encrypt_stream if encryption_mode == "encrypt" else decrypt_stream
     blocking_transfer = functools.partial(
         transfer,
         cast(BinaryIO, src_fp),
         cast(BinaryIO, dst_fp),
-        job_key=crypto["job_key"],
-        job_id=crypto["job_id"],
-        file_id=crypto["file_id"],
-        file_role=crypto["file_role"],
+        job_key=encryption.job_key,
+        job_id=encryption.job_id,
+        file_id=encryption.file_id,
+        file_role=encryption.file_role,
         progress_cb=progress_logger,
     )
     await main_loop.run_in_executor(None, blocking_transfer)
@@ -248,7 +251,8 @@ async def _copy_file(
     text_prefix: str,
     src_storage_cfg: dict[str, Any] | None = None,
     dst_storage_cfg: dict[str, Any] | None = None,
-    crypto: _CryptoContext | None = None,
+    encryption: TransferEncryptionSettings | None = None,
+    encryption_mode: _TransferMode | None = None,
 ):
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
@@ -259,7 +263,7 @@ async def _copy_file(
         assert isinstance(src_fp, IOBase)  # nosec
         assert isinstance(dst_fp, IOBase)  # nosec
         file_size = getattr(src_fp, "size", None)
-        if crypto is None:
+        if encryption is None:
             await _run_plain_copy(
                 src_fp,
                 dst_fp,
@@ -268,11 +272,15 @@ async def _copy_file(
                 text_prefix=text_prefix,
             )
         else:
+            if encryption_mode is None:
+                msg = "encryption_mode must be provided when encryption settings are configured"
+                raise ValueError(msg)
             await _run_crypto_copy(
                 src_fp,
                 dst_fp,
                 file_size=file_size,
-                crypto=crypto,
+                encryption=encryption,
+                encryption_mode=encryption_mode,
                 log_publishing_cb=log_publishing_cb,
                 text_prefix=text_prefix,
             )
@@ -304,6 +312,7 @@ async def pull_file_from_remote(
     dst_path: Path,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
+    encryption: TransferEncryptionSettings | None = None,
 ) -> None:
     assert src_url.path  # nosec
     src_location_str = f"{src_url.path.strip('/')} on {src_url.host}:{src_url.port}"
@@ -337,6 +346,8 @@ async def pull_file_from_remote(
             src_storage_cfg=cast(dict[str, Any], storage_kwargs),
             log_publishing_cb=log_publishing_cb,
             text_prefix=f"Downloading '{src_location_str}':",
+            encryption=encryption,
+            encryption_mode="decrypt" if encryption else None,
         )
 
         await log_publishing_cb(
@@ -387,6 +398,7 @@ async def _push_file_to_remote(
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
+    encryption: TransferEncryptionSettings | None = None,
 ) -> None:
     logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
     assert dst_url.path  # nosec
@@ -401,6 +413,8 @@ async def _push_file_to_remote(
         dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
         text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
+        encryption=encryption,
+        encryption_mode="encrypt" if encryption else None,
     )
 
 
@@ -412,6 +426,7 @@ async def push_file_to_remote(
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
+    encryption: TransferEncryptionSettings | None = None,
 ) -> None:
     if not src_path.exists():
         msg = f"{src_path=} does not exist"
@@ -443,10 +458,19 @@ async def push_file_to_remote(
         await log_publishing_cb(f"Uploading '{file_to_upload.name}' to '{dst_url}'...", logging.INFO)
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
+            if encryption is not None:
+                msg = "Encryption is not supported for HTTP upload destinations"
+                raise ValueError(msg)
             logger.debug("destination is a http presigned link")
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:
-            await _push_file_to_remote(file_to_upload, dst_url, log_publishing_cb, s3_settings)
+            await _push_file_to_remote(
+                file_to_upload,
+                dst_url,
+                log_publishing_cb,
+                s3_settings,
+                encryption=encryption,
+            )
 
     await log_publishing_cb(
         f"Upload of '{src_path.name}' to '{dst_url.path.strip('/')}' complete",
