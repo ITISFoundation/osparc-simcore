@@ -2,13 +2,12 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable
 from typing import Any, Final
 
 import pytest
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, ValidationError
-from pytest_mock import MockerFixture
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -266,60 +265,12 @@ async def test_get_namespaced_method_name_max_length(
         await rpc_client.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
 
 
-async def test_rpc_handlers_re_registered_after_reconnection(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
-    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
-
-    # Simulate reconnection by invoking the callback directly (more than once, as
-    # repeated network glitches would trigger it)
-    await rpc_client._on_reconnect()  # noqa: SLF001
-    await rpc_client._on_reconnect()  # noqa: SLF001
-
-    assert rpc_client.healthy is True
-
-    # Verify the handler still routes after re-registration
-    result = await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=2)
-    assert result == 3
-
-
-async def test_caller_only_client_can_request_after_reconnection(
-    rpc_client: RabbitMQRPCClient,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    namespace: RPCNamespace,
-):
-    # the replier owns the handler ...
-    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
-
-    # ... while the caller registers NO handler (like webserver_rpc_client)
-    caller = await rabbitmq_rpc_client("pytest_caller_only_client")
-    assert not caller._registered_handlers  # noqa: SLF001
-
-    # a reconnection must still rebuild the caller's RPC mailbox deterministically
-    await caller._on_reconnect()  # noqa: SLF001
-    assert caller.healthy is True
-
-    result = await caller.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5)
-    assert result == 9
-
-
-async def test_rpc_marked_unhealthy_when_reregistration_fails(
-    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace, mocker: MockerFixture
-):
+async def test_rpc_marked_unhealthy_after_reconnection(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
     assert rpc_client.healthy is True
 
-    # keep the bounded retry fast and deterministic in tests
-    mocker.patch("servicelib.rabbitmq._client_rpc._REBUILD_MAX_ATTEMPTS", 2)
-    mocker.patch("servicelib.rabbitmq._client_rpc._REBUILD_WAIT_MIN_S", 0)
-    mocker.patch("servicelib.rabbitmq._client_rpc._REBUILD_WAIT_MAX_S", 0)
+    # Simulate a RabbitMQ reconnection by invoking the callback directly
+    await rpc_client._on_reconnect()  # noqa: SLF001
 
-    # force the rebuild to fail (e.g. broker unreachable mid-reconnect)
-    mocker.patch.object(
-        rpc_client._connection,  # noqa: SLF001
-        "channel",
-        side_effect=RuntimeError("broker unreachable"),
-    )
-    with pytest.raises(RuntimeError, match="broker unreachable"):
-        await rpc_client._on_reconnect()  # noqa: SLF001
-
-    # a failed rebuild must NOT report a healthy RPC
+    # the client must report itself unhealthy so the liveness probe restarts the service
     assert rpc_client.healthy is False
