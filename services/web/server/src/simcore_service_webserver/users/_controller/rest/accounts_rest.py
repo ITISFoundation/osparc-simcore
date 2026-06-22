@@ -158,9 +158,9 @@ async def search_user_accounts(request: web.Request) -> web.Response:
         include_products=True,
     )
 
-    return envelope_json_response(
-        [user_for_admin.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY) for user_for_admin in found]
-    )
+    return envelope_json_response([
+        user_for_admin.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY) for user_for_admin in found
+    ])
 
 
 @routes.post(f"/{API_VTAG}/admin/user-accounts:pre-register", name="pre_register_user_account")
@@ -231,6 +231,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
         reviewer_id=req_ctx.user_id,
         invitation_url=f"{approval_data.invitation_url}" if approval_data.invitation_url else None,
         message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
+        bcc_emails=approval_data.bcc,
     )
     assert pre_registration_id  # nosec
 

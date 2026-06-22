@@ -97,7 +97,7 @@ def test_interleave_many_domains_one_each():
 
 def _make_message(
     *,
-    bcc: EmailContact | None = None,
+    bcc: list[EmailContact] | None = None,
     attachments: list[EmailAttachment] | None = None,
 ) -> EmailMessage:
     return EmailMessage(
@@ -128,21 +128,19 @@ _TEST_PRODUCT = Product(
 
 
 def _mock_settings() -> MagicMock:
-    smtp_config = NotificationsSMTPSettings.model_validate(
-        {
-            "mail_servers": {
-                "local": {"host": "localhost", "port": 25, "protocol": "UNENCRYPTED"},
+    smtp_config = NotificationsSMTPSettings.model_validate({
+        "mail_servers": {
+            "local": {"host": "localhost", "port": 25, "protocol": "UNENCRYPTED"},
+        },
+        "products": {
+            "osparc": {
+                "mail_server": "local",
+                "domain": "example.com",
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+                "extra_headers": {},
             },
-            "products": {
-                "osparc": {
-                    "mail_server": "local",
-                    "domain": "example.com",
-                    "local_parts": {"support": "support", "no_reply": "no-reply"},
-                    "extra_headers": {},
-                },
-            },
-        }
-    )
+        },
+    })
     settings = MagicMock()
     settings.NOTIFICATIONS_SMTP_SETTINGS = smtp_config
     return settings
@@ -151,11 +149,11 @@ def _mock_settings() -> MagicMock:
 def test_prepare_messages_includes_bcc():
     bcc = EmailContact(name="Billing", email="billing@example.com")
     payloads = EmailChannelHandler.prepare_messages(
-        _make_message(bcc=bcc), product=_TEST_PRODUCT, settings=_mock_settings()
+        _make_message(bcc=[bcc]), product=_TEST_PRODUCT, settings=_mock_settings()
     )
 
     assert len(payloads) == 1
-    assert payloads[0]["bcc"]["email"] == "billing@example.com"
+    assert payloads[0]["bcc"][0]["email"] == "billing@example.com"
 
 
 def test_prepare_messages_includes_attachments():

@@ -29354,6 +29354,21 @@
             "format": "email",
             "title": "Email"
           },
+          "bcc": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bcc"
+          },
           "invitationUrl": {
             "type": "string",
             "maxLength": 2083,

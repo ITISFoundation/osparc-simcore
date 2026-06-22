@@ -184,9 +184,11 @@ async def test_approve_user_account_with_full_invitation_details(
     message_content = preview_data.get("messageContent")
 
     # 3. Approve the user with the invitation URL and message content
+    bcc_emails = [faker.email(), faker.email()]
     approve_payload: dict[str, Any] = {
         "email": test_email,
         "invitationUrl": invitation_url,
+        "bcc": bcc_emails,
     }
     if message_content:
         approve_payload["messageContent"] = message_content
@@ -206,6 +208,9 @@ async def test_approve_user_account_with_full_invitation_details(
         call_kwargs = mock_notifications_send_message.call_args.kwargs
         assert call_kwargs["product_name"] == product_name
         assert call_kwargs["channel"] == Channel.email
+        # bcc emails from the request are propagated to the notification
+        assert call_kwargs["bcc"] is not None
+        assert [contact.email for contact in call_kwargs["bcc"]] == bcc_emails
 
     # 5. Verify the user account status and invitation data in extras
     url = client.app.router["search_user_accounts"].url_for()

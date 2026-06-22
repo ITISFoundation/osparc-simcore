@@ -261,6 +261,10 @@ async def approve_user_account(
         dict[str, Any] | None,
         doc("Optional message content to send to the approved user"),
     ] = None,
+    bcc_emails: Annotated[
+        list[LowerCaseEmailStr] | None,
+        doc("Optional list of emails to add as blind carbon copy (BCC) of the approval message"),
+    ] = None,
 ) -> Annotated[int, doc("The ID of the approved pre-registration record")]:
     """Approve a user account based on their pre-registration email.
 
@@ -316,6 +320,7 @@ async def approve_user_account(
             group_ids=None,
             external_contacts=[EmailContact(email=pre_registration_email)],
             content=message_content,
+            bcc=([EmailContact(email=email) for email in bcc_emails] if bcc_emails else None),
         )
 
     return pre_registration_id
