@@ -48,6 +48,11 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         )
         self._connection.close_callbacks.add(self._connection_close_callback)
         self._connection.reconnect_callbacks.add(self._on_reconnect)
+
+        await self._create_channel_and_rpc()
+
+    async def _create_channel_and_rpc(self) -> None:
+        assert self._connection is not None  # nosec
         self._channel = await self._connection.channel()
         self._channel.close_callbacks.add(self._channel_close_callback)
 
@@ -91,11 +96,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                     with contextlib.suppress(Exception):
                         await self._channel.close()
 
-                self._channel = await self._connection.channel()
-                self._channel.close_callbacks.add(self._channel_close_callback)
-
-                self._rpc = aio_pika.patterns.RPC(self._channel)
-                await self._rpc.initialize()
+                await self._create_channel_and_rpc()
+                assert self._rpc is not None  # nosec
 
                 for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
                     await self._rpc.register(
@@ -107,8 +109,6 @@ class RabbitMQRPCClient(RabbitMQClientBase):
 
                 self._healthy_state = True
             except Exception:
-                # Do not claim health on a half-rebuilt RPC: a green healthcheck on
-                # a non-routable RPC is exactly what masked the original incident.
                 self._healthy_state = False
                 _logger.exception(
                     "Failed to rebuild RPC after RabbitMQ reconnection (%s)",
