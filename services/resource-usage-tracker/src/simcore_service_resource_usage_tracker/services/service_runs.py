@@ -1,7 +1,7 @@
 # pylint: disable=too-many-arguments
 from datetime import UTC, datetime, timedelta
 
-import shortuuid  # type: ignore[import-not-found]
+import shortuuid
 from aws_library.s3 import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
@@ -32,7 +32,7 @@ from .modules.db import service_runs_db
 _PRESIGNED_LINK_EXPIRATION_SEC = 7200
 
 
-async def list_service_runs(
+async def list_service_runs(  # noqa: PLR0913
     db_engine: AsyncEngine,
     *,
     user_id: UserID,
