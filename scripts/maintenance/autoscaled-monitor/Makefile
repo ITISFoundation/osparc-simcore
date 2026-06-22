@@ -38,10 +38,7 @@ install-dev: .venv ## installs in devel mode using PYTHON_VERSION or uses defaul
 	# autoscaled-monitor --deploy-config PATH/TO/REPO.CONFIG summary
 
 sync-dask-version: ## upgrades uv.lock while pinning dask to the dask-sidecar version
-	@dask_version=$$(grep -E '^dask==' $(DASK_SIDECAR_REQUIREMENTS) | sed -E 's/^dask==([^ #]+).*/\1/'); \
-	if [ -z "$$dask_version" ]; then \
-		echo "ERROR: could not read dask version from $(DASK_SIDECAR_REQUIREMENTS)"; \
-		exit 1; \
-	fi; \
-	echo "Pinning dask[distributed]==$$dask_version (from dask-sidecar)"; \
-	uv add "dask[distributed]==$$dask_version"
+	$(eval DASK_VERSION := $(shell grep -E '^dask==' $(DASK_SIDECAR_REQUIREMENTS) | sed -E 's/^dask==([^ #]+).*/\1/'))
+	@if [ -z "$(DASK_VERSION)" ]; then echo "ERROR: could not read dask version from $(DASK_SIDECAR_REQUIREMENTS)"; exit 1; fi
+	@echo "Pinning dask[distributed]==$(DASK_VERSION) (from dask-sidecar)"
+	@uv add "dask[distributed]==$(DASK_VERSION)"
