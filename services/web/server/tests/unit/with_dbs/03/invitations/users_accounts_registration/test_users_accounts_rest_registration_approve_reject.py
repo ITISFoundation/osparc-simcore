@@ -26,7 +26,7 @@ def user_role() -> UserRole:
     return UserRole.PRODUCT_OWNER
 
 
-async def test_reject_user_account(
+async def test_reject_user_account(  # pylint: disable=too-many-statements
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
