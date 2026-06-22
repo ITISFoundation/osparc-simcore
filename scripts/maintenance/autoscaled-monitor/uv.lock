@@ -151,7 +151,7 @@ requires-dist = [
     { name = "black" },
     { name = "boto3" },
     { name = "cloudpickle" },
-    { name = "dask", extras = ["distributed"] },
+    { name = "dask", extras = ["distributed"], specifier = "==2025.11.0" },
     { name = "lz4" },
     { name = "mypy-boto3-ec2" },
     { name = "orjson", specifier = ">=3.11.7" },
@@ -361,7 +361,7 @@ wheels = [
 
 [[package]]
 name = "dask"
-version = "2026.1.2"
+version = "2025.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -372,9 +372,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "toolz" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/52/b0f9172b22778def907db1ff173249e4eb41f054b46a9c83b1528aaf811f/dask-2026.1.2.tar.gz", hash = "sha256:1136683de2750d98ea792670f7434e6c1cfce90cab2cc2f2495a9e60fd25a4fc", size = 10997838, upload-time = "2026-01-30T21:04:20.54Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/db/33/eacaa72731f7fc64868caaf2d35060d50049eff889bd217263e68f76472f/dask-2025.11.0.tar.gz", hash = "sha256:23d59e624b80ee05b7cc8df858682cca58262c4c3b197ccf61da0f6543c8f7c3", size = 10984781, upload-time = "2025-11-06T16:56:51.535Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/23/d39ccc4ed76222db31530b0a7d38876fdb7673e23f838e8d8f0ed4651a4f/dask-2026.1.2-py3-none-any.whl", hash = "sha256:46a0cf3b8d87f78a3d2e6b145aea4418a6d6d606fe6a16c79bd8ca2bb862bc91", size = 1482084, upload-time = "2026-01-30T21:04:18.363Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/54/a46920229d12c3a6e9f0081d1bdaeffad23c1826353ace95714faee926e5/dask-2025.11.0-py3-none-any.whl", hash = "sha256:08c35a8146c05c93b34f83cf651009129c42ee71762da7ca452fb7308641c2b8", size = 1477108, upload-time = "2025-11-06T16:56:44.892Z" },
 ]
 
 [package.optional-dependencies]
@@ -384,7 +384,7 @@ distributed = [
 
 [[package]]
 name = "distributed"
-version = "2026.1.2"
+version = "2025.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -403,9 +403,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "zict" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4e/75/b6e5b77229097ff03dd5ba6a07c77e2da87e7e991ccfef412549bba78746/distributed-2026.1.2.tar.gz", hash = "sha256:8333fa7a34151ed3b4cf1a03136fe1f1799eca706a5e47bdb63022c8795d853b", size = 2103721, upload-time = "2026-01-30T21:07:03.307Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c5/be/085a60b627c1f2b795827ce41d4cc1e11e74ffdadcb5235ee5fb620f7929/distributed-2025.11.0.tar.gz", hash = "sha256:372c2f0c2faa890fc42188349969ba468161a9b356df49c4ca7d9a8d551a7ace", size = 2119140, upload-time = "2025-11-06T16:57:32.391Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/14/0fe5889a83991ac29c93e6b2e121ad2afc3bff5f9327f34447d3068d8142/distributed-2026.1.2-py3-none-any.whl", hash = "sha256:30ccb5587351f50304f6f6e219ea91bc09d88401125779caa8be5253e9d3ecf2", size = 1009083, upload-time = "2026-01-30T21:07:01.363Z" },
+    { url = "https://files.pythonhosted.org/packages/46/ec/da78855318971c2be94d0283a41de6941a6b9f16146fb00babc74903ae01/distributed-2025.11.0-py3-none-any.whl", hash = "sha256:1794ff25b19ba347ccce563fb1dd5898c3bb30f500b15f8c20ad373f6281b30f", size = 1009248, upload-time = "2025-11-06T16:57:28.714Z" },
 ]
 
 [[package]]
