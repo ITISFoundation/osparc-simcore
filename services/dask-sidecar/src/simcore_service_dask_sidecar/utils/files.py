@@ -249,10 +249,10 @@ async def _copy_file(
     *,
     log_publishing_cb: LogPublishingCB,
     text_prefix: str,
-    src_storage_cfg: dict[str, Any] | None = None,
-    dst_storage_cfg: dict[str, Any] | None = None,
-    encryption: TransferEncryptionSettings | None = None,
-    encryption_mode: _TransferMode | None = None,
+    src_storage_cfg: dict[str, Any] | None,
+    dst_storage_cfg: dict[str, Any] | None,
+    encryption: TransferEncryptionSettings | None,
+    encryption_mode: _TransferMode | None,
 ):
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
@@ -344,6 +344,7 @@ async def pull_file_from_remote(
             src_url,
             download_dst_path,
             src_storage_cfg=cast(dict[str, Any], storage_kwargs),
+            dst_storage_cfg=None,
             log_publishing_cb=log_publishing_cb,
             text_prefix=f"Downloading '{src_location_str}':",
             encryption=encryption,
@@ -410,6 +411,7 @@ async def _push_file_to_remote(
     await _copy_file(
         file_to_upload,
         dst_url,
+        src_storage_cfg=None,
         dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
         text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
