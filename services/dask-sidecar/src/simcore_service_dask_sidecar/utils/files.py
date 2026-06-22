@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, BinaryIO, Final, Literal, TypedDict, cast
 
 import aiofiles
+import aiofiles.os
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
 import repro_zipfile
@@ -312,7 +313,7 @@ async def pull_file_from_remote(
     dst_path: Path,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
-    encryption: TransferEncryptionSettings | None = None,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     assert src_url.path  # nosec
     src_location_str = f"{src_url.path.strip('/')} on {src_url.host}:{src_url.port}"
@@ -372,7 +373,7 @@ async def _push_file_to_http_link(file_to_upload: Path, dst_url: AnyUrl, log_pub
     fs = fsspec.filesystem(
         "http",
         headers={
-            "Content-Length": f"{file_to_upload.stat().st_size}",
+            "Content-Length": f"{(await aiofiles.os.stat(file_to_upload)).st_size}",
         },
         asynchronous=True,
     )
@@ -397,9 +398,10 @@ async def _push_file_to_http_link(file_to_upload: Path, dst_url: AnyUrl, log_pub
 async def _push_file_to_remote(
     file_to_upload: Path,
     dst_url: AnyUrl,
+    *,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
-    encryption: TransferEncryptionSettings | None = None,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
     assert dst_url.path  # nosec
@@ -428,9 +430,9 @@ async def push_file_to_remote(
     dst_url: AnyUrl,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
-    encryption: TransferEncryptionSettings | None = None,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
-    if not src_path.exists():
+    if not await aiofiles.os.path.exists(src_path):
         msg = f"{src_path=} does not exist"
         raise ValueError(msg)
     assert dst_url.path  # nosec
@@ -469,8 +471,8 @@ async def push_file_to_remote(
             await _push_file_to_remote(
                 file_to_upload,
                 dst_url,
-                log_publishing_cb,
-                s3_settings,
+                log_publishing_cb=log_publishing_cb,
+                s3_settings=s3_settings,
                 encryption=encryption,
             )
 
