@@ -265,8 +265,6 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
     # add dynamic placement constraints based on custom templates from configuration
     if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
         label_values = {
-            # NOTE: legacy services can only exist in osparc product
-            # this is on purpose there is no reason to change this
             "product_name": PIN_TO_OSPARC_PRODUCT,
             "user_id": user_id,
             "project_id": project_id,

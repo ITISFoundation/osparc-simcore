@@ -5,7 +5,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, status
 from models_library.generics import Envelope
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -54,7 +53,6 @@ async def start_service(
     project_id: ProjectID,
     service_key: ServiceKey,
     service_uuid: UUID,
-    product_name: ProductName = PIN_TO_OSPARC_PRODUCT,
     service_basepath: Path = Path(),
     service_tag: ServiceVersion | None = None,
     x_simcore_user_agent: str = Header(...),
@@ -64,7 +62,7 @@ async def start_service(
         "service_basepath %s, request_simcore_user_agent %s",
         user_id,
         project_id,
-        product_name,
+        PIN_TO_OSPARC_PRODUCT,
         service_key,
         service_tag,
         service_uuid,
