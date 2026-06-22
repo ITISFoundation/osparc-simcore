@@ -9,6 +9,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
 from simcore_service_dynamic_sidecar.core.validation import (
     _connect_user_services,
@@ -136,6 +137,29 @@ def mock_get_volume_by_label(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.fixture(params=[True, False], ids=["tracing_enabled", "tracing_disabled"])
+def is_user_services_tracing_enabled(request: pytest.FixtureRequest) -> bool:
+    return request.param  # type: ignore[no-any-return]
+
+
+@pytest.fixture
+def mock_environment(
+    mock_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    is_user_services_tracing_enabled: bool,
+) -> EnvVarsDict:
+    if is_user_services_tracing_enabled:
+        tracing_vars = {
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://jaeger",
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
+            "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": "1.0",
+            "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION": "0.144.0",
+        }
+        setenvs_from_dict(monkeypatch, tracing_vars)
+        return {**mock_environment, **tracing_vars}
+    return mock_environment
+
+
 @pytest.fixture
 def no_internet_spec(project_tests_dir: Path) -> str:
     no_intenret_file = project_tests_dir / "mocks" / "internet_blocked_spec.yaml"
@@ -157,13 +181,12 @@ def fake_mounted_volumes(faker: Faker) -> MountedVolumes:
     )
 
 
-@pytest.mark.parametrize("is_user_services_tracing_enabled", [True, False])
 async def test_regression_validate_compose_spec(
     mock_get_volume_by_label: None,
     app: FastAPI,
+    is_user_services_tracing_enabled: bool,
     no_internet_spec: str,
     fake_mounted_volumes: MountedVolumes,
-    is_user_services_tracing_enabled: bool,
 ):
     await get_and_validate_compose_spec(
         app.state.settings,
