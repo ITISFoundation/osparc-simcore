@@ -80,6 +80,27 @@ qx.Class.define("osparc.po.EmailEditor", {
           });
           break;
         }
+        case "options-container": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
+            alignY: "middle",
+          })).set({
+            marginBottom: 10,
+          });
+          const formContainer = this.getChildControl("form-container");
+          formContainer.add(control, {
+            row: 1,
+            column: 1
+          });
+          break;
+        }
+        case "bcc-myself-checkbox": {
+          control = new qx.ui.form.CheckBox(this.tr("Send me a copy (Bcc)")).set({
+            value: false,
+            visibility: "excluded",
+          });
+          this.getChildControl("options-container").add(control);
+          break;
+        }
         case "subject-field": {
           control = new qx.ui.form.TextField().set({
             marginBottom: 10
@@ -88,11 +109,11 @@ qx.Class.define("osparc.po.EmailEditor", {
           formContainer.add(new qx.ui.basic.Label(this.tr("Subject")).set({
             paddingTop: 5,
           }), {
-            row: 1,
+            row: 2,
             column: 0
           });
           formContainer.add(control, {
-            row: 1,
+            row: 2,
             column: 1
           });
           break;
@@ -113,6 +134,8 @@ qx.Class.define("osparc.po.EmailEditor", {
     __buildLayout: function() {
       this.getChildControl("add-recipient-button");
       this.getChildControl("recipients-chips");
+      this.getChildControl("options-container");
+      this.getChildControl("bcc-myself-checkbox");
       this.getChildControl("subject-field");
       this.getChildControl("email-content-editor-and-preview");
     },
@@ -173,6 +196,14 @@ qx.Class.define("osparc.po.EmailEditor", {
 
     getSelectedGroupIds: function() {
       return this.__selectedGroupIds;
+    },
+
+    showBccMyselfOption: function() {
+      this.getChildControl("bcc-myself-checkbox").show();
+    },
+
+    isBccMyself: function() {
+      return this.getChildControl("bcc-myself-checkbox").getValue();
     },
   }
 });
