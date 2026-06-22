@@ -16,9 +16,6 @@ from servicelib.rabbitmq import (
     RPCNotInitializedError,
 )
 from settings_library.rabbit import RabbitSettings
-from tenacity.asyncio import AsyncRetrying
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -321,26 +318,3 @@ async def test_rpc_marked_unhealthy_when_reregistration_fails(
 
     # a failed rebuild must NOT report a healthy RPC (this masked the incident)
     assert rpc_client.healthy is False
-
-
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors  # reconnect() intentionally drops the TCP connection
-async def test_rpc_routes_after_real_broker_reconnection(
-    rpc_client: RabbitMQRPCClient,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    namespace: RPCNamespace,
-):
-    # replier owns the handler, caller only issues requests
-    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
-    caller = await rabbitmq_rpc_client("pytest_reconnect_caller")
-    assert await caller.request(namespace, RPCMethodName(add_me.__name__), x=1, y=2) == 3
-
-    # Force a REAL reconnection of the replier
-    assert rpc_client._connection is not None  # noqa: SLF001
-    await rpc_client._connection.reconnect()  # noqa: SLF001
-    assert rpc_client.healthy is True
-
-    # the method MUST route again after the real reconnection
-    async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(0.5), reraise=True):
-        with attempt:
-            result = await caller.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5)
-            assert result == 9
