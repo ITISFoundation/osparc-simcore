@@ -24,15 +24,15 @@ hel%:
 	@uv venv --python=$(PYTHON_VERSION)
 
 install: .venv ## installs using $PYTHON_VERSION or uses defaults
-	# installing package
-	@uv pip install --python=$(PYTHON_VERSION) .
+	# installing locked dependencies (see uv.lock)
+	@uv sync --python=$(PYTHON_VERSION) --no-editable
 	# now you can call the maintenance scripts
 	# source .venv/bin/activate
 	# autoscaled-monitor --deploy-config PATH/TO/REPO.CONFIG summary
 
 install-dev: .venv ## installs in devel mode using PYTHON_VERSION or uses defaults
-	# installing package
-	@uv pip install -e .
+	# installing locked dependencies in editable mode (see uv.lock)
+	@uv sync --python=$(PYTHON_VERSION)
 	# now you can call the maintenance scripts
 	# source .venv/bin/activate
 	# autoscaled-monitor --deploy-config PATH/TO/REPO.CONFIG summary
