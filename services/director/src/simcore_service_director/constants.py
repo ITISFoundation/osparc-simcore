@@ -18,6 +18,4 @@ DIRECTOR_SIMCORE_SERVICES_PREFIX: Final[str] = "simcore/services"
 
 DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%f"
 
-# NOTE: legacy services can only exist in osparc product
-# this is on purpose there is no reason to change this
-PIN_TO_OSPARC_PRODUCT: Final[ProductName] = "osparc"
+LEGACY_SERVICES_PINNED_OSPARC_PRODUCT: Final[ProductName] = "osparc"

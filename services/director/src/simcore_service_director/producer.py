@@ -26,8 +26,8 @@ from tenacity.stop import stop_after_attempt
 from . import docker_utils
 from .constants import (
     CPU_RESOURCE_LIMIT_KEY,
+    LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
     MEM_RESOURCE_LIMIT_KEY,
-    PIN_TO_OSPARC_PRODUCT,
     SERVICE_REVERSE_PROXY_SETTINGS,
     SERVICE_RUNTIME_BOOTSETTINGS,
     SERVICE_RUNTIME_SETTINGS,
@@ -192,7 +192,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key("product_name"): PIN_TO_OSPARC_PRODUCT,
+            _to_simcore_runtime_docker_label_key("product_name"): LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
         }
@@ -236,7 +236,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key("product_name"): PIN_TO_OSPARC_PRODUCT,
+            _to_simcore_runtime_docker_label_key("product_name"): LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
             _to_simcore_runtime_docker_label_key("type"): ("main" if main_service else "dependency"),
@@ -265,7 +265,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
     # add dynamic placement constraints based on custom templates from configuration
     if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
         label_values = {
-            "product_name": PIN_TO_OSPARC_PRODUCT,
+            "product_name": LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
             "user_id": user_id,
             "project_id": project_id,
             "node_id": node_uuid,
@@ -792,7 +792,7 @@ async def _start_docker_service(  # noqa: PLR0913
             "service_message": service_msg,
             "user_id": user_id,
             "project_id": project_id,
-            "product_name": PIN_TO_OSPARC_PRODUCT,
+            "product_name": LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
         }
 
     except ServiceStartTimeoutError:

@@ -11,7 +11,7 @@ from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 
 from ... import producer
-from ...constants import PIN_TO_OSPARC_PRODUCT
+from ...constants import LEGACY_SERVICES_PINNED_OSPARC_PRODUCT
 from ...core.errors import (
     RegistryConnectionError,
     ServiceNotAvailableError,
@@ -62,7 +62,7 @@ async def start_service(
         "service_basepath %s, request_simcore_user_agent %s",
         user_id,
         project_id,
-        PIN_TO_OSPARC_PRODUCT,
+        LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
         service_key,
         service_tag,
         service_uuid,
