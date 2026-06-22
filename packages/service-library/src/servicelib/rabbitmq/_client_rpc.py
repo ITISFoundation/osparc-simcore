@@ -51,6 +51,16 @@ class RabbitMQRPCClient(RabbitMQClientBase):
 
         await self._create_channel_and_rpc()
 
+    async def _close_rpc_and_channel(self) -> None:
+        if self._rpc is not None:
+            with contextlib.suppress(Exception):
+                await self._rpc.close()
+            self._rpc = None
+        if self._channel is not None:
+            with contextlib.suppress(Exception):
+                await self._channel.close()
+            self._channel = None
+
     async def _create_channel_and_rpc(self) -> None:
         assert self._connection is not None  # nosec
         try:
@@ -65,14 +75,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         except Exception:
             # best-effort cleanup so a partial failure does not leak a channel/consumer
             # nor leave the client in a half-initialized state
-            if self._rpc is not None:
-                with contextlib.suppress(Exception):
-                    await self._rpc.close()
-                self._rpc = None
-            if self._channel is not None:
-                with contextlib.suppress(Exception):
-                    await self._channel.close()
-                self._channel = None
+            await self._close_rpc_and_channel()
             raise
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
@@ -102,14 +105,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             try:
                 # Discard the previous RPC and channel to avoid leaking consumers
                 # and racing aio-pika's auto-restoration of the old channel.
-                if self._rpc is not None:
-                    with contextlib.suppress(Exception):
-                        await self._rpc.close()
-                    self._rpc = None
-                if self._channel is not None:
-                    with contextlib.suppress(Exception):
-                        await self._channel.close()
-                    self._channel = None
+                await self._close_rpc_and_channel()
 
                 await self._create_channel_and_rpc()
                 assert self._rpc is not None  # nosec
