@@ -10,7 +10,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
 from simcore_service_webserver.garbage_collector._core_utils import (
-    get_project_product_name_with_running_service_fallback,
+    try_get_product_name,
 )
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 
@@ -59,7 +59,7 @@ async def test_returns_product_name_from_db_when_project_exists(
 ):
     mock_project_repo.get_project_db.return_value = mock.Mock(product_name="s4l")
 
-    product_name = await get_project_product_name_with_running_service_fallback(mock_app, project_id)
+    product_name = await try_get_product_name(mock_app, project_id)
 
     assert product_name == "s4l"
     mock_project_repo.get_project_db.assert_awaited_once_with(project_id)
@@ -79,7 +79,7 @@ async def test_falls_back_to_dynamic_scheduler_when_project_not_in_db(
     mock_project_repo.get_project_db.side_effect = ProjectNotFoundError(project_uuid=project_id)
     mock_list_dynamic_services.return_value = [running_service] if has_running_service else []
 
-    product_name = await get_project_product_name_with_running_service_fallback(mock_app, project_id)
+    product_name = await try_get_product_name(mock_app, project_id)
 
     expected = running_service.product_name if has_running_service else None
     assert product_name == expected
@@ -96,6 +96,6 @@ async def test_returns_none_when_dynamic_scheduler_call_fails(
     # a transient RPC/scheduler failure must not crash the garbage-collection cycle
     mock_list_dynamic_services.side_effect = RuntimeError("scheduler unreachable")
 
-    product_name = await get_project_product_name_with_running_service_fallback(mock_app, project_id)
+    product_name = await try_get_product_name(mock_app, project_id)
 
     assert product_name is None

@@ -8,7 +8,7 @@ from servicelib.logging_utils import log_catch, log_context
 
 from ..projects import _projects_service
 from ..resource_manager.resource_manager_service import RedisResourceRegistry
-from ._core_utils import get_project_product_name_with_running_service_fallback
+from ._core_utils import try_get_product_name
 
 _logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ async def remove_disconnected_user_resources(registry: RedisResourceRegistry, ap
                     ),
                 ):
                     # NOTE: the project might already be deleted from the DB while its services are still running
-                    product_name = await get_project_product_name_with_running_service_fallback(app, project_id)
+                    product_name = await try_get_product_name(app, project_id)
                     if product_name is None:
                         _logger.info("Skipping closing project_id='%s': not in DB and no running service", project_id)
                         continue

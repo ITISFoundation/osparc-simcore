@@ -22,8 +22,8 @@ from ..users import errors, users_service
 from ..users.errors import UserNotFoundError
 from ._core_utils import (
     get_new_project_owner_gid,
-    get_project_product_name_with_running_service_fallback,
     replace_current_owner,
+    try_get_product_name,
 )
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 
@@ -102,7 +102,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 )
                 project_id = ProjectID(project_uuid)
 
-                product_name = await get_project_product_name_with_running_service_fallback(app, project_id)
+                product_name = await try_get_product_name(app, project_id)
                 if product_name is None:
                     raise ProjectNotFoundError(project_uuid=project_id)  # noqa: TRY301
 
