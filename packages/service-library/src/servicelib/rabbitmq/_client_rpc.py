@@ -92,9 +92,11 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 if self._rpc is not None:
                     with contextlib.suppress(Exception):
                         await self._rpc.close()
+                    self._rpc = None
                 if self._channel is not None:
                     with contextlib.suppress(Exception):
                         await self._channel.close()
+                    self._channel = None
 
                 await self._create_channel_and_rpc()
                 assert self._rpc is not None  # nosec
