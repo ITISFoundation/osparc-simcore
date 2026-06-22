@@ -58,50 +58,63 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         await self._rpc.initialize()
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
-        """Re-register all RPC handlers after a reconnection event.
+        """Rebuild the RPC surface (channel + handlers) after a reconnection event.
 
-        When the RabbitMQ connection drops (network issue, broker restart, Docker
-        networking), auto_delete queues used for RPC method registration are removed
-        by the broker. The robust connection restores the channel but does NOT
-        restore aio_pika.patterns.RPC internal state. This callback ensures all
-        previously registered handlers are re-registered on a fresh RPC instance.
+        When the RabbitMQ connection drops, the broker removes the ``auto_delete``
+        queues backing both the RPC result mailbox and the registered handler
+        methods. aio-pika's robust connection tries to auto-restore the channel and
+        its queues, but reusing that channel here races with that restoration and
+        can leave handler queues non-routable while still reporting success.
+
+        To be deterministic, we discard the old RPC and channel and rebuild
+        everything on a *fresh* channel. The client is marked healthy only when the
+        rebuild fully succeeds; otherwise it is marked unhealthy so the liveness
+        probe can restart the service instead of silently dropping every request.
         """
-        if not self._registered_handlers:
-            self._healthy_state = True
-            return
-
-        assert self._channel is not None  # nosec
+        assert self._connection is not None  # nosec
 
         with log_context(
             _logger,
             logging.WARNING,
             msg=(
-                f"re-registering {len(self._registered_handlers)} RPC handler(s)"
+                f"rebuilding RPC ({len(self._registered_handlers)} handler(s))"
                 f" after RabbitMQ reconnection ({self.client_name})"
             ),
         ):
-            # Close the previous RPC to avoid leaking its background consumer
-            if self._rpc is not None:
-                with contextlib.suppress(Exception):
-                    await self._rpc.close()
+            try:
+                # Discard the previous RPC and channel to avoid leaking consumers
+                # and racing aio-pika's auto-restoration of the old channel.
+                if self._rpc is not None:
+                    with contextlib.suppress(Exception):
+                        await self._rpc.close()
+                if self._channel is not None:
+                    with contextlib.suppress(Exception):
+                        await self._channel.close()
 
-            # Re-create RPC on the existing (restored) channel.
-            # NOTE: self._channel is a RobustChannel obtained from a RobustConnection,
-            # so aio-pika reopens it automatically after a reconnect. Only the
-            # application-level RPC state (auto_delete queues, handler registrations)
-            # needs to be rebuilt here.
-            self._rpc = aio_pika.patterns.RPC(self._channel)
-            await self._rpc.initialize()
+                self._channel = await self._connection.channel()
+                self._channel.close_callbacks.add(self._channel_close_callback)
 
-            for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
-                await self._rpc.register(
-                    namespaced_method_name,
-                    handler,
-                    auto_delete=True,
+                self._rpc = aio_pika.patterns.RPC(self._channel)
+                await self._rpc.initialize()
+
+                for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
+                    await self._rpc.register(
+                        namespaced_method_name,
+                        handler,
+                        auto_delete=True,
+                    )
+                    _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
+
+                self._healthy_state = True
+            except Exception:
+                # Do not claim health on a half-rebuilt RPC: a green healthcheck on
+                # a non-routable RPC is exactly what masked the original incident.
+                self._healthy_state = False
+                _logger.exception(
+                    "Failed to rebuild RPC after RabbitMQ reconnection (%s)",
+                    self.client_name,
                 )
-                _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
-
-            self._healthy_state = True
+                raise
 
     async def close(self) -> None:
         with log_context(
