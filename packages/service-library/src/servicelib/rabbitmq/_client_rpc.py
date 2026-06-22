@@ -60,7 +60,16 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         self._connection.close_callbacks.add(self._connection_close_callback)
         self._connection.reconnect_callbacks.add(self._on_reconnect)
 
-        await self._create_channel_and_rpc()
+        try:
+            await self._create_channel_and_rpc()
+        except Exception:
+            # the connection was opened just above: close it so a failed
+            # initialization does not leak the socket (callers of create()
+            # have no handle to close it themselves)
+            with contextlib.suppress(Exception):
+                await self._connection.close()
+            self._connection = None
+            raise
 
     async def _close_rpc_and_channel(self) -> None:
         if self._rpc is not None:
