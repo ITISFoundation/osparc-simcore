@@ -307,6 +307,11 @@ async def test_rpc_marked_unhealthy_when_reregistration_fails(
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
     assert rpc_client.healthy is True
 
+    # keep the bounded retry fast and deterministic in tests
+    mocker.patch("servicelib.rabbitmq._client_rpc._REBUILD_MAX_ATTEMPTS", 2)
+    mocker.patch("servicelib.rabbitmq._client_rpc._REBUILD_WAIT_MIN_S", 0)
+    mocker.patch("servicelib.rabbitmq._client_rpc._REBUILD_WAIT_MAX_S", 0)
+
     # force the rebuild to fail (e.g. broker unreachable mid-reconnect)
     mocker.patch.object(
         rpc_client._connection,  # noqa: SLF001

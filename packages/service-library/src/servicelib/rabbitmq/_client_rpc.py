@@ -5,12 +5,18 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Final
 
 import aio_pika
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import PositiveInt
 from settings_library.rabbit import RabbitSettings
+from tenacity import (
+    AsyncRetrying,
+    before_sleep_log,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
@@ -21,6 +27,11 @@ from ._rpc_router import RPCRouter
 from ._utils import get_rabbitmq_client_unique_name
 
 _logger = logging.getLogger(__name__)
+
+
+_REBUILD_MAX_ATTEMPTS: Final[int] = 5
+_REBUILD_WAIT_MIN_S: Final[float] = 1.0
+_REBUILD_WAIT_MAX_S: Final[float] = 10.0
 
 
 @dataclass
@@ -88,9 +99,11 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         can leave handler queues non-routable while still reporting success.
 
         To be deterministic, we discard the old RPC and channel and rebuild
-        everything on a *fresh* channel. The client is marked healthy only when the
-        rebuild fully succeeds; otherwise it is marked unhealthy so the liveness
-        probe can restart the service instead of silently dropping every request.
+        everything on a *fresh* channel. The rebuild is retried with a bounded
+        exponential backoff to absorb transient failures (e.g. a broker that just
+        came back up). The client is marked healthy only when the rebuild fully
+        succeeds; otherwise it is marked unhealthy so the liveness probe can
+        restart the service instead of silently dropping every request.
         """
         assert self._connection is not None  # nosec
 
@@ -103,20 +116,14 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             ),
         ):
             try:
-                # Discard the previous RPC and channel to avoid leaking consumers
-                # and racing aio-pika's auto-restoration of the old channel.
-                await self._close_rpc_and_channel()
-
-                await self._create_channel_and_rpc()
-                assert self._rpc is not None  # nosec
-
-                for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
-                    await self._rpc.register(
-                        namespaced_method_name,
-                        handler,
-                        auto_delete=True,
-                    )
-                    _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
+                async for attempt in AsyncRetrying(
+                    stop=stop_after_attempt(_REBUILD_MAX_ATTEMPTS),
+                    wait=wait_exponential(min=_REBUILD_WAIT_MIN_S, max=_REBUILD_WAIT_MAX_S),
+                    before_sleep=before_sleep_log(_logger, logging.WARNING),
+                    reraise=True,
+                ):
+                    with attempt:
+                        await self._rebuild_rpc_surface()
 
                 self._healthy_state = True
             except Exception:
@@ -126,6 +133,22 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                     self.client_name,
                 )
                 raise
+
+    async def _rebuild_rpc_surface(self) -> None:
+        # Discard the previous RPC and channel to avoid leaking consumers
+        # and racing aio-pika's auto-restoration of the old channel.
+        await self._close_rpc_and_channel()
+
+        await self._create_channel_and_rpc()
+        assert self._rpc is not None  # nosec
+
+        for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
+            await self._rpc.register(
+                namespaced_method_name,
+                handler,
+                auto_delete=True,
+            )
+            _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
 
     async def close(self) -> None:
         with log_context(
