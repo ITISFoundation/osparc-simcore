@@ -2,6 +2,7 @@ import logging
 
 import asyncpg.exceptions
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.groups import Group, GroupID, GroupType
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -36,15 +37,27 @@ async def get_project_product_name_with_running_service_fallback(
     dynamic-scheduler which tracks the product name of currently running services.
 
     Returns:
-        the resolved product name, or ``None`` when the project is gone from the
-        database and no service is running for it (i.e. nothing left to act upon)
+        the resolved product name, or ``None`` when the product cannot be
+        determined (i.e. nothing left to act upon): the project is gone from the
+        database and either no service is running for it or the dynamic-scheduler
+        could not be reached. The next garbage-collection cycle will retry.
     """
     project_repo = ProjectDBAPI.get_from_app_context(app)
     try:
         project_at_db = await project_repo.get_project_db(project_id)
         return project_at_db.product_name
     except ProjectNotFoundError:
-        running_services = await dynamic_scheduler_service.list_dynamic_services(app, project_id=project_id)
+        try:
+            running_services = await dynamic_scheduler_service.list_dynamic_services(app, project_id=project_id)
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "Could not resolve product from dynamic-scheduler, skipping",
+                    error=exc,
+                    error_context={"project_id": project_id},
+                ),
+            )
+            return None
         return running_services[0].product_name if running_services else None
 
 
