@@ -74,7 +74,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       switch (id) {
         case "email-editor": {
           control = new osparc.po.EmailEditor();
-          control.showBccMyselfOption();
+          control.showBccField();
           this._add(control, {
             flex: 1
           });
@@ -236,12 +236,12 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
-      const bccApprover = emailEditor.isBccMyself();
+      const bcc = emailEditor.getBccEmails();
       const params = {
         data: {
           email,
           invitationUrl,
-          bccApprover,
+          bcc,
           messageContent: {
             subject,
             bodyHtml,
@@ -265,11 +265,11 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
-      const bccApprover = emailEditor.isBccMyself();
+      const bcc = emailEditor.getBccEmails();
       const params = {
         data: {
           email,
-          bccApprover,
+          bcc,
           messageContent: {
             subject,
             bodyHtml,

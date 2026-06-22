@@ -21,7 +21,7 @@ qx.Class.define("osparc.po.EmailEditor", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(4));
 
     this.__selectedGroupIds = [];
 
@@ -35,7 +35,7 @@ qx.Class.define("osparc.po.EmailEditor", {
       let control;
       switch (id) {
         case "form-container": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Grid(10, 5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.Grid(10, 4));
           control.getLayout().setColumnFlex(1, 1);
           this._add(control);
           break;
@@ -80,25 +80,28 @@ qx.Class.define("osparc.po.EmailEditor", {
           });
           break;
         }
-        case "options-container": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
-            alignY: "middle",
-          })).set({
+        case "bcc-label": {
+          control = new qx.ui.basic.Label(this.tr("Bcc")).set({
+            paddingTop: 5,
+            visibility: "excluded",
+          });
+          break;
+        }
+        case "bcc-field": {
+          control = new qx.ui.form.TextField().set({
             marginBottom: 10,
+            placeholder: this.tr("Comma-separated email addresses"),
+            visibility: "excluded",
           });
           const formContainer = this.getChildControl("form-container");
+          formContainer.add(this.getChildControl("bcc-label"), {
+            row: 1,
+            column: 0
+          });
           formContainer.add(control, {
             row: 1,
             column: 1
           });
-          break;
-        }
-        case "bcc-myself-checkbox": {
-          control = new qx.ui.form.CheckBox(this.tr("Send me a copy (Bcc)")).set({
-            value: false,
-            visibility: "excluded",
-          });
-          this.getChildControl("options-container").add(control);
           break;
         }
         case "subject-field": {
@@ -134,8 +137,7 @@ qx.Class.define("osparc.po.EmailEditor", {
     __buildLayout: function() {
       this.getChildControl("add-recipient-button");
       this.getChildControl("recipients-chips");
-      this.getChildControl("options-container");
-      this.getChildControl("bcc-myself-checkbox");
+      this.getChildControl("bcc-field");
       this.getChildControl("subject-field");
       this.getChildControl("email-content-editor-and-preview");
     },
@@ -198,12 +200,17 @@ qx.Class.define("osparc.po.EmailEditor", {
       return this.__selectedGroupIds;
     },
 
-    showBccMyselfOption: function() {
-      this.getChildControl("bcc-myself-checkbox").show();
+    showBccField: function() {
+      this.getChildControl("bcc-label").show();
+      this.getChildControl("bcc-field").show();
     },
 
-    isBccMyself: function() {
-      return this.getChildControl("bcc-myself-checkbox").getValue();
+    getBccEmails: function() {
+      const value = this.getChildControl("bcc-field").getValue();
+      if (!value) {
+        return [];
+      }
+      return value.split(",").map(email => email.trim()).filter(email => email.length);
     },
   }
 });
