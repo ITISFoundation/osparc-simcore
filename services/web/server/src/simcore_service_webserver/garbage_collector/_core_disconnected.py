@@ -7,8 +7,8 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 
 from ..projects import _projects_service
-from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..resource_manager.resource_manager_service import RedisResourceRegistry
+from ._core_utils import get_project_product_name_with_running_service_fallback
 
 _logger = logging.getLogger(__name__)
 
@@ -24,8 +24,6 @@ async def remove_disconnected_user_resources(registry: RedisResourceRegistry, ap
 
     _, dead_user_sessions = await registry.get_all_resource_keys()
     _logger.debug("potential dead keys: %s", dead_user_sessions)
-
-    project_repo = ProjectDBAPI.get_from_app_context(app)
 
     # clean up all resources of expired keys
     for dead_session in dead_user_sessions:
@@ -57,13 +55,17 @@ async def remove_disconnected_user_resources(registry: RedisResourceRegistry, ap
                         f"Closing project {project_id} for user {user_id=}",
                     ),
                 ):
-                    project_at_db = await project_repo.get_project_db(project_id)
+                    # NOTE: the project might already be deleted from the DB while its services are still running
+                    product_name = await get_project_product_name_with_running_service_fallback(app, project_id)
+                    if product_name is None:
+                        _logger.info("Skipping closing project_id='%s': not in DB and no running service", project_id)
+                        continue
                     await _projects_service.close_project_for_user(
                         user_id=user_id,
                         project_uuid=project_id,
                         client_session_id=dead_session.client_session_id,
                         app=app,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                        product_name=project_at_db.product_name,
+                        product_name=product_name,
                         wait_for_service_closed=True,
                     )
