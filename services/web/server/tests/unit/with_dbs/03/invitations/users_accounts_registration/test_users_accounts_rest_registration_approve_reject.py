@@ -75,6 +75,7 @@ async def test_reject_user_account(
     message_content = preview_data["messageContent"]
 
     # 4. Reject the pre-registered user with message content
+    bcc_emails = [faker.email(), faker.email()]
     url = client.app.router["reject_user_account"].url_for()
     assert url.path == "/v0/admin/user-accounts:reject"
     resp = await client.post(
@@ -82,6 +83,7 @@ async def test_reject_user_account(
         headers={X_PRODUCT_NAME_HEADER: product_name},
         json={
             "email": pre_registered_email,
+            "bccEmails": bcc_emails,
             "messageContent": message_content,
         },
     )
@@ -92,6 +94,8 @@ async def test_reject_user_account(
     call_kwargs = mock_notifications_send_message.call_args.kwargs
     assert call_kwargs["product_name"] == product_name
     assert call_kwargs["channel"] == Channel.email
+    # bcc emails from the request are propagated to the notification
+    assert [contact.email for contact in call_kwargs["bcc"]] == bcc_emails
 
     # 5. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_accounts"].url_for()

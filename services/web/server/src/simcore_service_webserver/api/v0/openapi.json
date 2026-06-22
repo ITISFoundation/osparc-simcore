@@ -29796,6 +29796,21 @@
             "format": "email",
             "title": "Email"
           },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
+          },
           "messageContent": {
             "anyOf": [
               {

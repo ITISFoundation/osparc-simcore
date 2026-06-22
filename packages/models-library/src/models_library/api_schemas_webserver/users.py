@@ -383,6 +383,7 @@ class UserAccountPreviewApprovalGet(OutputSchema):
 
 class UserAccountReject(InputSchema):
     email: EmailStr
+    bcc_emails: list[EmailStr] | None = None
     message_content: MessageContent | None = None
 
 
