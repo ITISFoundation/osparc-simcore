@@ -12,6 +12,7 @@ from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 
 from ... import producer
+from ...constants import PIN_TO_OSPARC_PRODUCT
 from ...core.errors import (
     RegistryConnectionError,
     ServiceNotAvailableError,
@@ -53,7 +54,7 @@ async def start_service(
     project_id: ProjectID,
     service_key: ServiceKey,
     service_uuid: UUID,
-    product_name: ProductName,
+    product_name: ProductName = PIN_TO_OSPARC_PRODUCT,
     service_basepath: Path = Path(),
     service_tag: ServiceVersion | None = None,
     x_simcore_user_agent: str = Header(...),

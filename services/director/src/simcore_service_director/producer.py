@@ -27,6 +27,7 @@ from . import docker_utils
 from .constants import (
     CPU_RESOURCE_LIMIT_KEY,
     MEM_RESOURCE_LIMIT_KEY,
+    PIN_TO_OSPARC_PRODUCT,
     SERVICE_REVERSE_PROXY_SETTINGS,
     SERVICE_RUNTIME_BOOTSETTINGS,
     SERVICE_RUNTIME_SETTINGS,
@@ -46,8 +47,6 @@ from .modules.docker_registry import client as registry_proxy
 from .services_common import ServicesCommonSettings
 
 _logger = logging.getLogger(__name__)
-
-_PIN_TO_OSPARC_PRODUCT: Final[str] = "osparc"
 
 
 class ServiceState(Enum):
@@ -193,7 +192,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key("product_name"): _PIN_TO_OSPARC_PRODUCT,
+            _to_simcore_runtime_docker_label_key("product_name"): PIN_TO_OSPARC_PRODUCT,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
         }
@@ -237,7 +236,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key("product_name"): _PIN_TO_OSPARC_PRODUCT,
+            _to_simcore_runtime_docker_label_key("product_name"): PIN_TO_OSPARC_PRODUCT,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
             _to_simcore_runtime_docker_label_key("type"): ("main" if main_service else "dependency"),
@@ -268,7 +267,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
         label_values = {
             # NOTE: legacy services can only exist in osparc product
             # this is on purpose there is no reason to change this
-            "product_name": _PIN_TO_OSPARC_PRODUCT,
+            "product_name": PIN_TO_OSPARC_PRODUCT,
             "user_id": user_id,
             "project_id": project_id,
             "node_id": node_uuid,
@@ -795,7 +794,7 @@ async def _start_docker_service(  # noqa: PLR0913
             "service_message": service_msg,
             "user_id": user_id,
             "project_id": project_id,
-            "product_name": _PIN_TO_OSPARC_PRODUCT,
+            "product_name": PIN_TO_OSPARC_PRODUCT,
         }
 
     except ServiceStartTimeoutError:
