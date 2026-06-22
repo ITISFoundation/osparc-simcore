@@ -24,12 +24,24 @@ qx.Class.define("osparc.po.EmailEditor", {
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.__selectedGroupIds = [];
+    this.__ccSelectedGroupIds = [];
+    this.__bccSelectedGroupIds = [];
 
     this.__buildLayout();
   },
 
+  statics: {
+    ROWS: {
+      "to": 0,
+      "cc": 1,
+      "bcc": 2,
+    },
+  },
+
   members: {
     __selectedGroupIds: null,
+    __ccSelectedGroupIds: null,
+    __bccSelectedGroupIds: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -40,7 +52,10 @@ qx.Class.define("osparc.po.EmailEditor", {
           this._add(control);
           break;
         }
-        case "recipients-container": {
+        case "recipients-container-to":
+        case "recipients-container-cc":
+        case "recipients-container-bcc": {
+          const type = id.replace("recipients-container-", "");
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
             alignY: "middle",
           })).set({
@@ -49,33 +64,45 @@ qx.Class.define("osparc.po.EmailEditor", {
             marginBottom: 5,
           });
           const formContainer = this.getChildControl("form-container");
-          formContainer.add(new qx.ui.basic.Label(this.tr("To")).set({
+          const row = this.self().ROWS[type];
+          const labels = {
+            "to": this.tr("To"),
+            "cc": this.tr("Cc"),
+            "bcc": this.tr("Bcc"),
+          };
+          formContainer.add(new qx.ui.basic.Label(labels[type]).set({
             paddingTop: 5,
           }), {
-            row: 0,
+            row,
             column: 0
           });
           formContainer.add(control, {
-            row: 0,
+            row,
             column: 1
           });
           break;
         }
-        case "add-recipient-button": {
+        case "add-recipient-button-to":
+        case "add-recipient-button-cc":
+        case "add-recipient-button-bcc": {
+          const type = id.replace("add-recipient-button-", "");
           control = new qx.ui.form.Button(null, "@FontAwesomeSolid/plus/12").set({
             allowGrowX: false,
             allowGrowY: true,
             toolTipText: this.tr("Add Recipient"),
           });
-          control.addListener("execute", () => this.__openCollaboratorsManager(), this);
-          this.getChildControl("recipients-container").add(control);
+          control.addListener("execute", () => this.__openCollaboratorsManager(type), this);
+          this.getChildControl("recipients-container-" + type).add(control);
           break;
         }
-        case "recipients-chips": {
+        case "recipients-chips-to":
+        case "recipients-chips-cc":
+        case "recipients-chips-bcc": {
+          const type = id.replace("recipients-chips-", "");
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4).set({
             alignY: "middle",
           }));
-          this.getChildControl("recipients-container").add(control, {
+          this.getChildControl("recipients-container-" + type).add(control, {
             flex: 1
           });
           break;
@@ -88,11 +115,11 @@ qx.Class.define("osparc.po.EmailEditor", {
           formContainer.add(new qx.ui.basic.Label(this.tr("Subject")).set({
             paddingTop: 5,
           }), {
-            row: 1,
+            row: 3,
             column: 0
           });
           formContainer.add(control, {
-            row: 1,
+            row: 3,
             column: 1
           });
           break;
@@ -111,13 +138,26 @@ qx.Class.define("osparc.po.EmailEditor", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("add-recipient-button");
-      this.getChildControl("recipients-chips");
+      ["to", "cc", "bcc"].forEach(type => {
+        this.getChildControl("add-recipient-button-" + type);
+        this.getChildControl("recipients-chips-" + type);
+      });
       this.getChildControl("subject-field");
       this.getChildControl("email-content-editor-and-preview");
     },
 
-    __openCollaboratorsManager: function() {
+    __getSelectedGroupIdsByType: function(type) {
+      switch (type) {
+        case "cc":
+          return this.__ccSelectedGroupIds;
+        case "bcc":
+          return this.__bccSelectedGroupIds;
+        default:
+          return this.__selectedGroupIds;
+      }
+    },
+
+    __openCollaboratorsManager: function(type) {
       const data = {
         resourceType: "emailRecipients",
       };
@@ -126,36 +166,40 @@ qx.Class.define("osparc.po.EmailEditor", {
       collaboratorsManager.addListener("addCollaborators", e => {
         const data = e.getData();
         const selectedGids = data.selectedGids;
+        const groupIds = this.__getSelectedGroupIdsByType(type);
         selectedGids.forEach(gid => {
-          if (!this.__selectedGroupIds.includes(gid)) {
-            this.__selectedGroupIds.push(gid);
+          if (!groupIds.includes(gid)) {
+            groupIds.push(gid);
           }
         });
-        this.__updateRecipientsChips();
+        this.__updateRecipientsChips(type);
         collaboratorsManager.close();
       }, this);
     },
 
     clearRecipients: function() {
       this.__selectedGroupIds = [];
-      this.__updateRecipientsChips();
+      this.__ccSelectedGroupIds = [];
+      this.__bccSelectedGroupIds = [];
+      ["to", "cc", "bcc"].forEach(type => this.__updateRecipientsChips(type));
     },
 
-    __updateRecipientsChips: function() {
-      const chipsContainer = this.getChildControl("recipients-chips");
+    __updateRecipientsChips: function(type) {
+      const chipsContainer = this.getChildControl("recipients-chips-" + type);
       chipsContainer.removeAll();
       const groupsStore = osparc.store.Groups.getInstance();
-      this.__selectedGroupIds.forEach((gid, index) => {
+      const groupIds = this.__getSelectedGroupIdsByType(type);
+      groupIds.forEach((gid, index) => {
         const group = groupsStore.getGroup(gid);
-        const chip = this.addChip(group.getLabel(), group.getDescription());
+        const chip = this.addChip(type, group.getLabel(), group.getDescription());
         chip.addListener("tap", () => {
-          this.__selectedGroupIds.splice(index, 1);
-          this.__updateRecipientsChips();
+          groupIds.splice(index, 1);
+          this.__updateRecipientsChips(type);
         }, this);
       });
     },
 
-    addChip: function(label, description) {
+    addChip: function(type, label, description) {
       const chip = new qx.ui.basic.Atom(label, "@FontAwesomeSolid/times/10").set({
         toolTipText: description,
         padding: [4, 8],
@@ -166,13 +210,21 @@ qx.Class.define("osparc.po.EmailEditor", {
         allowGrowY: true,
         backgroundColor: "background-main-3",
       });
-      const chipsContainer = this.getChildControl("recipients-chips");
+      const chipsContainer = this.getChildControl("recipients-chips-" + type);
       chipsContainer.add(chip);
       return chip;
     },
 
     getSelectedGroupIds: function() {
       return this.__selectedGroupIds;
+    },
+
+    getCcSelectedGroupIds: function() {
+      return this.__ccSelectedGroupIds;
+    },
+
+    getBccSelectedGroupIds: function() {
+      return this.__bccSelectedGroupIds;
     },
   }
 });
