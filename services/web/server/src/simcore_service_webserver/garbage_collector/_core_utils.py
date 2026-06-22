@@ -35,10 +35,7 @@ async def try_get_product_name(app: web.Application, project_id: ProjectID) -> P
     dynamic-scheduler which tracks the product name of currently running services.
 
     Returns:
-        the resolved product name, or ``None`` when the product cannot be
-        determined (i.e. nothing left to act upon): the project is gone from the
-        database and either no service is running for it or the dynamic-scheduler
-        could not be reached. The next garbage-collection cycle will retry.
+        the resolved product name, or ``None`` when the product cannot be determined
     """
     project_repo = ProjectDBAPI.get_from_app_context(app)
     try:
