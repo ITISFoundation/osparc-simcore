@@ -126,7 +126,14 @@ async def db_engine(
 async def abort_job_in_db(engine: AsyncEngine, project_id: uuid.UUID, node_id: uuid.UUID) -> None:
     async with engine.begin() as db_connection:
         await db_connection.execute(
-            sa.update(sa.table("comp_tasks"))
+            sa.update(
+                sa.table(
+                    "comp_tasks",
+                    sa.column("project_id"),
+                    sa.column("node_id"),
+                    sa.column("state"),
+                )
+            )
             .where(
                 sa.and_(
                     sa.column("project_id") == str(project_id),
@@ -141,7 +148,14 @@ async def abort_job_in_db(engine: AsyncEngine, project_id: uuid.UUID, node_id: u
 async def abort_jobs_in_db(engine: AsyncEngine, project_node_ids: set[tuple[uuid.UUID, uuid.UUID]]) -> None:
     async with engine.begin() as db_connection:
         await db_connection.execute(
-            sa.update(sa.table("comp_tasks"))
+            sa.update(
+                sa.table(
+                    "comp_tasks",
+                    sa.column("project_id"),
+                    sa.column("node_id"),
+                    sa.column("state"),
+                )
+            )
             .where(
                 sa.tuple_(sa.column("project_id"), sa.column("node_id")).in_(
                     [(str(pid), str(nid)) for pid, nid in project_node_ids]
