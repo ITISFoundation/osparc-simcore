@@ -3,7 +3,6 @@ import logging
 from aiohttp import web
 
 from ..application_setup import ModuleCategory, app_setup_func
-from ..login.decorators import login_required
 from ..products.plugin import setup_products
 from ._controller import setup_controller
 from ._projects_permalinks import setup_projects_permalinks
@@ -13,18 +12,13 @@ from .settings import StudiesDispatcherSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSettings):
-    # TODO: integrate when _studies_access is fully integrated
-
-    # Redirects routes
-    study_handler = get_redirection_to_study_page
-    if settings.is_login_required():
-        study_handler = login_required(get_redirection_to_study_page)
-
-    # TODO: make sure that these routes are filtered properly in active middlewares
+def _setup_studies_access(app: web.Application, _settings: StudiesDispatcherSettings):
+    # The handler manages login-required logic internally and always redirects to the
+    # SPA error page — never returning a raw HTTP response. Middleware filtering is a
+    # deferred concern for a future refactoring pass.
     app.router.add_routes(
         [
-            web.get(r"/study/{id}", study_handler, name="get_redirection_to_study_page"),
+            web.get(r"/study/{id}", get_redirection_to_study_page, name="get_redirection_to_study_page"),
         ]
     )
 
