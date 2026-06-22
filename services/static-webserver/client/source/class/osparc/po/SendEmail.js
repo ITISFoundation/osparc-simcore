@@ -155,13 +155,17 @@ qx.Class.define("osparc.po.SendEmail", {
       sending();
 
       const emailEditor = this.getChildControl("email-editor");
-      const selectedGroupIds = emailEditor.getSelectedGroupIds();
       const subjectField = emailEditor.getChildControl("subject-field");
       const subject = subjectField.getValue();
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
-      const sendMessagePromise = osparc.message.Messages.sendMessage(selectedGroupIds, subject, bodyHtml, bodyText);
+      const recipients = {
+        to: emailEditor.getSelectedGroupIds(),
+        cc: emailEditor.getCcSelectedGroupIds(),
+        bcc: emailEditor.getBccSelectedGroupIds(),
+      }
+      const sendMessagePromise = osparc.message.Messages.sendMessage(recipients, subject, bodyHtml, bodyText);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
         .then(task => {

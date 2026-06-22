@@ -176,9 +176,9 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
 
     __applyEmailAddress: function(value) {
       const emailEditor = this.getChildControl("email-editor");
-      const chip = emailEditor.addChip(value, value);
+      const chip = emailEditor.addChip("to", value, value);
       chip.setEnabled(false);
-      emailEditor.getChildControl("add-recipient-button").exclude();
+      emailEditor.getChildControl("add-recipient-button-to").exclude();
     },
 
     __applyInvitationUrl: function(value) {
