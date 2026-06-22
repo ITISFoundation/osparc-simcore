@@ -236,12 +236,12 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
-      const bcc = emailEditor.getBccEmails();
+      const bccEmails = emailEditor.getBccEmails();
       const params = {
         data: {
           email,
+          bccEmails,
           invitationUrl,
-          bcc,
           messageContent: {
             subject,
             bodyHtml,
@@ -265,11 +265,11 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
-      const bcc = emailEditor.getBccEmails();
+      const bccEmails = emailEditor.getBccEmails();
       const params = {
         data: {
           email,
-          bcc,
+          bccEmails,
           messageContent: {
             subject,
             bodyHtml,
