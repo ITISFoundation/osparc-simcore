@@ -115,42 +115,44 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update({
-            "examples": [
-                {
-                    "id": 42,
-                    "login": "bla@foo.com",
-                    "userName": "bla42",
-                    "role": "admin",  # pre
-                    "expirationDate": "2022-09-14",  # optional
-                    "preferences": {},
-                    "privacy": {
-                        "hide_username": 0,
-                        "hide_fullname": 0,
-                        "hide_email": 1,
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "id": 42,
+                        "login": "bla@foo.com",
+                        "userName": "bla42",
+                        "role": "admin",  # pre
+                        "expirationDate": "2022-09-14",  # optional
+                        "preferences": {},
+                        "privacy": {
+                            "hide_username": 0,
+                            "hide_fullname": 0,
+                            "hide_email": 1,
+                        },
                     },
-                },
-                {
-                    "id": 1,
-                    "login": "minimal@user.com",
-                    "userName": "minuser",
-                    "role": "USER",
-                    "preferences": {},
-                    "privacy": {
-                        "hide_username": False,
-                        "hide_fullname": False,
-                        "hide_email": False,
+                    {
+                        "id": 1,
+                        "login": "minimal@user.com",
+                        "userName": "minuser",
+                        "role": "USER",
+                        "preferences": {},
+                        "privacy": {
+                            "hide_username": False,
+                            "hide_fullname": False,
+                            "hide_email": False,
+                        },
+                        "provided": {
+                            "address": "123 Main St",
+                            "city": "Sampleville",
+                            "state": "CA",
+                            "postal_code": "12345",
+                            "country": "Wonderland",
+                        },
                     },
-                    "provided": {
-                        "address": "123 Main St",
-                        "city": "Sampleville",
-                        "state": "CA",
-                        "postal_code": "12345",
-                        "country": "Wonderland",
-                    },
-                },
-            ]
-        })
+                ]
+            }
+        )
 
     model_config = ConfigDict(
         # NOTE: old models have an hybrid between snake and camel cases!
@@ -359,7 +361,7 @@ class _InvitationDetails(InputSchema):
 
 class UserAccountApprove(InputSchema):
     email: EmailStr
-    bcc: list[EmailStr] | None = None
+    bcc_emails: list[EmailStr] | None = None
     invitation_url: HttpUrl
     message_content: MessageContent | None = None
 

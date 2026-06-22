@@ -29354,7 +29354,7 @@
             "format": "email",
             "title": "Email"
           },
-          "bcc": {
+          "bccEmails": {
             "anyOf": [
               {
                 "items": {
@@ -29367,7 +29367,7 @@
                 "type": "null"
               }
             ],
-            "title": "Bcc"
+            "title": "Bccemails"
           },
           "invitationUrl": {
             "type": "string",

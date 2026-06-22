@@ -188,7 +188,7 @@ async def test_approve_user_account_with_full_invitation_details(
     approve_payload: dict[str, Any] = {
         "email": test_email,
         "invitationUrl": invitation_url,
-        "bcc": bcc_emails,
+        "bccEmails": bcc_emails,
     }
     if message_content:
         approve_payload["messageContent"] = message_content
