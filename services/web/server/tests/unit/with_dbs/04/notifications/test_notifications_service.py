@@ -181,6 +181,48 @@ async def test_send_message_from_template_passes_correct_template_ref(
     assert owner_metadata.product_name == "osparc"
 
 
+async def test_send_message_propagates_bcc(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_notifications_rpc_client: MockerFixture,
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    """Test that send_message threads bcc contacts into the addressing passed to the RPC"""
+    assert client.app
+
+    mock_rpc = mocker.patch(
+        f"{_service.__name__}.remote_send_message",
+        autospec=True,
+        return_value=SendMessageResponse(
+            task_or_group_uuid=uuid.uuid4(),
+            task_name="send_message",
+        ),
+    )
+
+    external_contacts = [EmailContact(name=faker.name(), email=faker.email())]
+    bcc_contacts = [
+        EmailContact(email=faker.email()),
+        EmailContact(email=faker.email()),
+    ]
+
+    await _service.send_message(
+        client.app,
+        user_id=logged_user["id"],
+        product_name="osparc",
+        channel=Channel.email,
+        group_ids=None,
+        external_contacts=external_contacts,
+        content={"subject": "Hello", "body_text": "Body"},
+        bcc=bcc_contacts,
+    )
+
+    assert mock_rpc.called
+    message = mock_rpc.call_args.kwargs["message"]
+    assert message.addressing.bcc is not None
+    assert [contact.email for contact in message.addressing.bcc] == [contact.email for contact in bcc_contacts]
+
+
 async def test_send_message_from_template_unsupported_channel(
     client: TestClient,
     logged_user: UserInfoDict,
