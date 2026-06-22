@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Final, cast
+from typing import Final, Self, cast
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -101,8 +101,9 @@ class ComputationalSidecar:
                         input_params.url,
                         input_params.file_mime_type,
                         destination_path,
-                        self._publish_sidecar_log,
-                        self.s3_settings,
+                        log_publishing_cb=self._publish_sidecar_log,
+                        s3_settings=self.s3_settings,
+                        encryption=None,  # NOTE: encryption is not supported for now (will be added in the future if needed
                     )
                 )
             else:
@@ -149,8 +150,9 @@ class ComputationalSidecar:
                         push_file_to_remote(
                             src_path,
                             output_params.url,
-                            self._publish_sidecar_log,
-                            self.s3_settings,
+                            log_publishing_cb=self._publish_sidecar_log,
+                            s3_settings=self.s3_settings,
+                            encryption=None,  # NOTE: encryption is not supported for now (will be added in the future if needed
                         )
                     )
             await asyncio.gather(*upload_tasks)
@@ -242,10 +244,11 @@ class ComputationalSidecar:
             ):
                 await container.start()
                 await self._publish_sidecar_log(
-                    f"Service {self.task_parameters.image}:{self.task_parameters.tag} started as '{container.id}' on {socket.gethostname()}..."
+                    f"Service {self.task_parameters.image}:{self.task_parameters.tag} "
+                    f"started as '{container.id}' on {socket.gethostname()}..."
                 )
                 # wait until the container finished, either success or fail or timeout
-                while (container_data := await container.show())["State"]["Running"]:
+                while (container_data := await container.show())["State"]["Running"]:  # noqa: ASYNC110
                     await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
 
                 async def _safe_get_last_logs() -> list[str]:
@@ -289,7 +292,7 @@ class ComputationalSidecar:
             )
             return results
 
-    async def __aenter__(self) -> "ComputationalSidecar":
+    async def __aenter__(self) -> Self:
         # ensure we start publishing progress
         self.task_publishers.publish_progress(ProgressReport(actual_value=0))
         return self

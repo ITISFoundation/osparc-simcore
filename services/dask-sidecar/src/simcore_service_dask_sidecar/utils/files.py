@@ -311,6 +311,7 @@ async def pull_file_from_remote(
     src_url: AnyUrl,
     target_mime_type: str | None,
     dst_path: Path,
+    *,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     encryption: TransferEncryptionSettings | None,

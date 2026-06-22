@@ -144,8 +144,9 @@ async def test_push_file_to_remote(
     await push_file_to_remote(
         src_path,
         remote_parameters.remote_file_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
 
     # check the remote is actually having the file in
@@ -218,8 +219,9 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     await push_file_to_remote(
         src_path,
         s3_presigned_link_remote_file_url,
-        mocked_log_publishing_cb,
+        log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
+        encryption=None,
     )
 
     # check the remote is actually having the file in, but we need s3 access now
@@ -251,8 +253,9 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
     await push_file_to_remote(
         src_path,
         destination_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
 
     storage_kwargs = {}
@@ -298,6 +301,7 @@ async def test_pull_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
@@ -435,8 +439,8 @@ async def test_push_then_pull_file_with_encryption_roundtrip(
     await push_file_to_remote(
         src_path,
         remote_parameters.remote_file_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
         encryption=encryption_settings,
     )
 
@@ -566,6 +570,7 @@ async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
             dst_path=dst_path,
             log_publishing_cb=mocked_log_publishing_cb,
             s3_settings=None,
+            encryption=None,
         )
 
     assert not dst_path.exists()
@@ -608,6 +613,7 @@ async def test_pull_compressed_zip_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path.exists()
     dst_path.unlink()
@@ -623,6 +629,7 @@ async def test_pull_compressed_zip_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert not dst_path.exists()
     for file in download_folder.glob("*"):
@@ -643,6 +650,7 @@ async def test_pull_compressed_zip_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert not dst_path.exists()
     for file in download_folder.glob("*"):
@@ -727,8 +735,9 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
     await push_file_to_remote(
         src_path,
         destination_url1,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     await asyncio.sleep(
         5
@@ -736,8 +745,9 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
     await push_file_to_remote(
         src_path,
         destination_url2,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
 
     # now we pull both file and compare their hash
@@ -755,6 +765,7 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
         dst_path=dst_path1,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path1.exists()
 
@@ -764,6 +775,7 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
         dst_path=dst_path2,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path2.exists()
 
