@@ -8,7 +8,8 @@
 import uuid
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
-from typing import Any
+from typing import Any, cast
+from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -185,20 +186,10 @@ async def test_send_message_propagates_bcc(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
-    mocker: MockerFixture,
     faker: Faker,
 ):
     """Test that send_message threads bcc contacts into the addressing passed to the RPC"""
     assert client.app
-
-    mock_rpc = mocker.patch(
-        f"{_service.__name__}.remote_send_message",
-        autospec=True,
-        return_value=SendMessageResponse(
-            task_or_group_uuid=uuid.uuid4(),
-            task_name="send_message",
-        ),
-    )
 
     external_contacts = [EmailContact(name=faker.name(), email=faker.email())]
     bcc_contacts = [
@@ -217,6 +208,7 @@ async def test_send_message_propagates_bcc(
         bcc=bcc_contacts,
     )
 
+    mock_rpc = cast(AsyncMock, _service.remote_send_message)
     assert mock_rpc.called
     message = mock_rpc.call_args.kwargs["message"]
     assert message.addressing.bcc is not None
