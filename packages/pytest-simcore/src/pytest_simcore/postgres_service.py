@@ -5,6 +5,7 @@
 import json
 from collections.abc import AsyncIterator, Iterator
 from typing import Final
+from urllib.parse import quote_plus
 
 import docker
 import pytest
@@ -91,7 +92,13 @@ def postgres_with_template_db(
 def drop_db_engine(postgres_dsn: PostgresTestConfig) -> sa.engine.Engine:
     postgres_dsn_copy = postgres_dsn.copy()  # make a copy to change these parameters
     postgres_dsn_copy["database"] = "postgres"
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn_copy)
+    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+        user=quote_plus(postgres_dsn_copy["user"]),
+        password=quote_plus(postgres_dsn_copy["password"]),
+        host=postgres_dsn_copy["host"],
+        port=postgres_dsn_copy["port"],
+        database=postgres_dsn_copy["database"],
+    )
     return sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
 
 
@@ -146,7 +153,13 @@ _MINUTE: Final[int] = 60
 
 @pytest.fixture(scope="module")
 def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn)
+    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+        user=quote_plus(postgres_dsn["user"]),
+        password=quote_plus(postgres_dsn["password"]),
+        host=postgres_dsn["host"],
+        port=postgres_dsn["port"],
+        database=postgres_dsn["database"],
+    )
 
     engine = sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
     assert isinstance(engine, sa.engine.Engine)  # nosec
@@ -188,7 +201,8 @@ async def sqlalchemy_async_engine(
 ) -> AsyncIterator[AsyncEngine]:
     # NOTE: prevent having to import this if latest sqlalchemy not installed
 
-    engine = create_async_engine(f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg"))
+    sync_dsn = postgres_db.url.render_as_string(hide_password=False)
+    engine = create_async_engine(sync_dsn.replace("postgresql+psycopg2://", "postgresql+asyncpg://"))
     assert engine
     yield engine
 
