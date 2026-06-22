@@ -57,19 +57,6 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         await self._rpc.initialize()
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
-        """Mark the client unhealthy after a RabbitMQ reconnection.
-
-        When the RabbitMQ connection drops, the broker removes the ``auto_delete``
-        queues backing both the RPC result mailbox and the registered handler
-        methods. aio-pika's robust connection restores the channel, but the
-        ``aio_pika.patterns.RPC`` application-level state is not reliably
-        restored: rebuilding it in place races with that restoration and can
-        silently leave handlers non-routable.
-
-        Instead of attempting an in-place rebuild, we mark the client unhealthy
-        so the liveness probe restarts the service, which re-initializes the RPC
-        surface cleanly.
-        """
         self._healthy_state = False
         _logger.warning(
             "RabbitMQ reconnection detected (%s): marking RPC client unhealthy to trigger a service restart",
