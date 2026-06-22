@@ -61,9 +61,9 @@ class RequestCancellationMiddleware:
 
         async def _tracking_send(message: Message) -> None:
             nonlocal response_started
+            await send(message)
             if message["type"] == "http.response.start":
                 response_started = True
-            await send(message)
 
         with log_context(_logger, logging.DEBUG, f"cancellable request {request.url}"):
             try:
