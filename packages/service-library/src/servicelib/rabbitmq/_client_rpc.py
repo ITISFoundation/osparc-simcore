@@ -84,8 +84,6 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
             await self._rpc.initialize()
         except Exception:
-            # best-effort cleanup so a partial failure does not leak a channel/consumer
-            # nor leave the client in a half-initialized state
             await self._close_rpc_and_channel()
             raise
 
