@@ -25,7 +25,6 @@ from .._meta import (
 from ..api.rest.routes import configure_rest_api
 from ..api.rpc.routes import configure_rpc_api
 from ..clients.celery import configure_task_manager
-from ..clients.postgres import configure_postgres_liveness
 from ..clients.rabbitmq import configure_rabbitmq_client
 from ..clients.redis import configure_redis_client
 from ..services import configure_smtp_config_check
@@ -46,7 +45,6 @@ def _configure_plugins(
             settings=settings.NOTIFICATIONS_POSTGRES,
             tracing_config=tracing_config,
         )
-        configure_postgres_liveness(app_lifespan)
         configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
         configure_rpc_api(app_lifespan)
 

@@ -6,7 +6,6 @@
 
 
 from datetime import timedelta
-from typing import TypeAlias
 
 from pydantic import BaseModel
 
@@ -25,4 +24,4 @@ class IsNonResponsive(BaseModel):
         return False
 
 
-LivenessResult: TypeAlias = IsResponsive | IsNonResponsive
+type LivenessResult = IsResponsive | IsNonResponsive
