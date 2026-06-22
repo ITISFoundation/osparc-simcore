@@ -119,6 +119,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 f" after RabbitMQ reconnection ({self.client_name})"
             ),
         ):
+            self._healthy_state = False
             try:
                 async for attempt in AsyncRetrying(
                     stop=stop_after_attempt(_REBUILD_MAX_ATTEMPTS),
