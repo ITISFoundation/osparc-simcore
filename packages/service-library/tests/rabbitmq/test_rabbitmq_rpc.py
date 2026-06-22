@@ -321,5 +321,5 @@ async def test_rpc_marked_unhealthy_when_reregistration_fails(
     with pytest.raises(RuntimeError, match="broker unreachable"):
         await rpc_client._on_reconnect()  # noqa: SLF001
 
-    # a failed rebuild must NOT report a healthy RPC (this masked the incident)
+    # a failed rebuild must NOT report a healthy RPC
     assert rpc_client.healthy is False
