@@ -53,14 +53,27 @@ class RabbitMQRPCClient(RabbitMQClientBase):
 
     async def _create_channel_and_rpc(self) -> None:
         assert self._connection is not None  # nosec
-        self._channel = await self._connection.channel()
-        self._channel.close_callbacks.add(self._channel_close_callback)
+        try:
+            self._channel = await self._connection.channel()
+            self._channel.close_callbacks.add(self._channel_close_callback)
 
-        self._rpc = aio_pika.patterns.RPC(self._channel)
-        # rely on default queue configuration that should be reasonable
-        # if overriding parameters, make sure their combination makes sense
-        # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
-        await self._rpc.initialize()
+            self._rpc = aio_pika.patterns.RPC(self._channel)
+            # rely on default queue configuration that should be reasonable
+            # if overriding parameters, make sure their combination makes sense
+            # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
+            await self._rpc.initialize()
+        except Exception:
+            # best-effort cleanup so a partial failure does not leak a channel/consumer
+            # nor leave the client in a half-initialized state
+            if self._rpc is not None:
+                with contextlib.suppress(Exception):
+                    await self._rpc.close()
+                self._rpc = None
+            if self._channel is not None:
+                with contextlib.suppress(Exception):
+                    await self._channel.close()
+                self._channel = None
+            raise
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
         """Rebuild the RPC surface (channel + handlers) after a reconnection event.
