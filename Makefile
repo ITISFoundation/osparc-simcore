@@ -989,13 +989,24 @@ define create_github_release_url
 	echo -e "\e[34m$(_prettify_logs)"
 endef
 
+# NOTE: 'staging-latest' is a movable tag that always points to the most recent staging release commit.
+# It is updated only for staging releases (guarded via $(findstring -staging, $@)).
+define create_staging_latest_tag
+	# move the movable 'staging-latest' tag to the released commit and force-push it
+	git tag --force staging-latest $(_url_encoded_target) && \
+	git push --force origin staging-latest && \
+	echo -e "\e[32mUpdated movable tag 'staging-latest' -> $(_url_encoded_target) on origin"
+endef
+
 .PHONY: release-staging release-prod
 release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)
 	$(create_github_release_url)
+	$(if $(findstring -staging, $@),$(create_staging_latest_tag))
 
 .PHONY: release-hotfix release-staging-hotfix
 release-hotfix release-staging-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional or make release-staging-hotfix name=Sprint version=2)
 	$(create_github_release_url)
+	$(if $(findstring -staging, $@),$(create_staging_latest_tag))
 
 .PHONY: docker-image-fuse
 docker-image-fuse:
