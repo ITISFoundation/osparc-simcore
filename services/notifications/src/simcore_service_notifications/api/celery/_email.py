@@ -34,7 +34,7 @@ async def send_email_message_task(
     msg = EmailMessage(
         from_=EmailContact(**message.from_.model_dump()),
         to=EmailContact(**message.to.model_dump()),
-        bcc=EmailContact(**message.bcc.model_dump()) if message.bcc else None,
+        bcc=[EmailContact(**contact.model_dump()) for contact in message.bcc] if message.bcc else None,
         reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
         content=EmailContent(**message.content.model_dump()),
         attachments=message.attachments,
@@ -55,7 +55,7 @@ async def send_email_message_task(
                 content_text=msg.content.body_text,
                 content_html=msg.content.body_html,
                 reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
-                bcc=[_to_address(msg.bcc)] if msg.bcc else None,
+                bcc=[_to_address(contact) for contact in msg.bcc] if msg.bcc else None,
                 extra_headers=product_smtp_settings.extra_headers,
             )
             if msg.attachments:
