@@ -128,32 +128,45 @@ _TEST_PRODUCT = Product(
 
 
 def _mock_settings() -> MagicMock:
-    smtp_config = NotificationsSMTPSettings.model_validate({
-        "mail_servers": {
-            "local": {"host": "localhost", "port": 25, "protocol": "UNENCRYPTED"},
-        },
-        "products": {
-            "osparc": {
-                "mail_server": "local",
-                "domain": "example.com",
-                "local_parts": {"support": "support", "no_reply": "no-reply"},
-                "extra_headers": {},
+    smtp_config = NotificationsSMTPSettings.model_validate(
+        {
+            "mail_servers": {
+                "local": {"host": "localhost", "port": 25, "protocol": "UNENCRYPTED"},
             },
-        },
-    })
+            "products": {
+                "osparc": {
+                    "mail_server": "local",
+                    "domain": "example.com",
+                    "local_parts": {"support": "support", "no_reply": "no-reply"},
+                    "extra_headers": {},
+                },
+            },
+        }
+    )
     settings = MagicMock()
     settings.NOTIFICATIONS_SMTP_SETTINGS = smtp_config
     return settings
 
 
-def test_prepare_messages_includes_bcc():
-    bcc = EmailContact(name="Billing", email="billing@example.com")
+@pytest.mark.parametrize(
+    "bcc_emails",
+    [
+        pytest.param([], id="no_bcc"),
+        pytest.param(["billing@example.com"], id="single_bcc"),
+        pytest.param(["billing@example.com", "finance@example.com"], id="two_bcc"),
+    ],
+)
+def test_prepare_messages_includes_bcc(bcc_emails: list[str]):
+    bcc = [EmailContact(name=email.split("@")[0], email=email) for email in bcc_emails]
     payloads = EmailChannelHandler.prepare_messages(
-        _make_message(bcc=[bcc]), product=_TEST_PRODUCT, settings=_mock_settings()
+        _make_message(bcc=bcc or None), product=_TEST_PRODUCT, settings=_mock_settings()
     )
 
     assert len(payloads) == 1
-    assert payloads[0]["bcc"][0]["email"] == "billing@example.com"
+    if bcc_emails:
+        assert [c["email"] for c in payloads[0]["bcc"]] == bcc_emails
+    else:
+        assert "bcc" not in payloads[0]
 
 
 def test_prepare_messages_includes_attachments():
