@@ -8,11 +8,11 @@ from models_library.errors import (
     RABBITMQ_CLIENT_UNHEALTHY_MSG,
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
-from models_library.healthchecks import IsNonResponsive, LivenessResult
 from servicelib.fastapi.health import HealthCheckError
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 
+from ...clients.postgres import PostgresLiveness
 from .dependencies import get_postgres_liveness, get_rabbitmq_rpc_client, get_redis_client
 
 router = APIRouter()
@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/", response_class=PlainTextResponse)
 async def check_service_health(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client)],
-    postgres_liveness: Annotated[LivenessResult, Depends(get_postgres_liveness)],
+    postgres_liveness: Annotated[PostgresLiveness, Depends(get_postgres_liveness)],
     redis_client_sdk: Annotated[RedisClientSDK, Depends(get_redis_client)],
 ) -> str:
     if not redis_client_sdk.is_healthy:
@@ -30,7 +30,7 @@ async def check_service_health(
     if not rabbitmq_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
-    if isinstance(postgres_liveness, IsNonResponsive):
+    if not postgres_liveness.is_responsive:
         raise HealthCheckError(POSRGRES_DATABASE_UNHEALTHY_MSG)
 
     return f"{__name__}@{arrow.utcnow().datetime.isoformat()}"

@@ -3,13 +3,11 @@
 from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Request
-from models_library.healthchecks import LivenessResult
-from servicelib.db_asyncpg_utils import check_postgres_liveness
-from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 
-from ...clients import redis
+from ...clients import postgres, redis
+from ...clients.postgres import PostgresLiveness
 
 
 def get_application(request: Request) -> FastAPI:
@@ -23,10 +21,10 @@ def get_rabbitmq_rpc_client(
     return app.state.rabbitmq_rpc_client
 
 
-async def get_postgres_liveness(
+def get_postgres_liveness(
     app: Annotated[FastAPI, Depends(get_application)],
-) -> LivenessResult:
-    return await check_postgres_liveness(get_engine(app))
+) -> PostgresLiveness:
+    return postgres.get_postgres_liveness(app)
 
 
 def get_redis_client(app: Annotated[FastAPI, Depends(get_application)]) -> RedisClientSDK:
