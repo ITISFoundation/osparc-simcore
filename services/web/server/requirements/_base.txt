@@ -69,6 +69,8 @@ bidict==0.22.0
     # via python-socketio
 billiard==4.2.1
     # via celery
+cachebox==5.2.3
+    # via deepdiff
 captcha==0.5.0
     # via -r requirements/_base.in
 celery==5.6.3
@@ -101,7 +103,7 @@ cryptography==41.0.7
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   aiohttp-session
-deepdiff==8.1.1
+deepdiff==9.1.0
     # via -r requirements/_base.in
 dnspython==2.2.1
     # via email-validator
@@ -287,7 +289,7 @@ opentelemetry-util-http==0.63b1
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
-orderly-set==5.2.3
+orderly-set==5.5.0
     # via deepdiff
 orjson==3.11.9
     # via
