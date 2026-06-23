@@ -134,9 +134,9 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from dask_task_models_library.container_tasks.encryption import KEY_SIZE_BYTES
 from pydantic import Field
 
-KEY_SIZE_BYTES: Final[int] = 32
 NONCE_SIZE_BYTES: Final[int] = 12
 TAG_SIZE_BYTES: Final[int] = 16
 DEFAULT_CHUNK_SIZE_BYTES: Final[int] = 1024 * 1024

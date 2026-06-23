@@ -15,13 +15,16 @@ import aiofiles.os
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
 import repro_zipfile
-from pydantic import BaseModel, ByteSize, ConfigDict, Field, FileUrl, TypeAdapter
+from dask_task_models_library.container_tasks.encryption import (
+    TransferEncryptionSettings,
+)
+from pydantic import ByteSize, FileUrl, TypeAdapter
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..aes_gcm import KEY_SIZE_BYTES, decrypt_stream, encrypt_stream
+from ..aes_gcm import decrypt_stream, encrypt_stream
 
 logger = logging.getLogger(__name__)
 
@@ -114,15 +117,6 @@ def _format_progress_message(
         f"{ByteSize(file_size).human_readable() if file_size else 'NaN'})"
         f" [{speed_mbps:.2f} MBytes/s (avg)]"
     )
-
-
-class TransferEncryptionSettings(BaseModel):
-    job_key: bytes = Field(min_length=KEY_SIZE_BYTES, max_length=KEY_SIZE_BYTES)
-    job_id: str
-    file_id: str
-    file_role: Literal["input", "output"]
-
-    model_config = ConfigDict(frozen=True)
 
 
 class _ThreadSafeProgressLogger:

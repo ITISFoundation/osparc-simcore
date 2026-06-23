@@ -16,6 +16,9 @@ from unittest import mock
 
 import fsspec
 import pytest
+from dask_task_models_library.container_tasks.encryption import (
+    TransferEncryptionSettings,
+)
 from faker import Faker
 from pydantic import AnyUrl, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
@@ -23,7 +26,6 @@ from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.aes_gcm import FORMAT_MAGIC, AesGcmStreamAuthError, generate_key
 from simcore_service_dask_sidecar.utils.files import (
-    TransferEncryptionSettings,
     _copy_file,
     _run_plain_copy,
     _s3fs_settings_from_s3_settings,
