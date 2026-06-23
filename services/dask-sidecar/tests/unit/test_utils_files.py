@@ -430,10 +430,7 @@ async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
-    # regression test for zip files whose name contains spaces (e.g. 'IXI025-Guys-0852-MRI (2) (3).zip')
-    # the URL path percent-encodes the spaces and the local download name must be decoded back
-    # so that the archive can be found and uncompressed
-    local_zip_file_path = tmp_path / "archive with spaces (2) (3).zip"
+    local_zip_file_path = tmp_path / "archive with spaces (1) (2).zip"
     file_names_within_zip_file = set()
     with zipfile.ZipFile(local_zip_file_path, compression=zipfile.ZIP_DEFLATED, mode="w") as zfp:
         for file_number in range(5):
@@ -445,8 +442,12 @@ async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
 
     # NOTE: the remote file name contains spaces, which get percent-encoded in the URL
     destination_url = TypeAdapter(AnyUrl).validate_python(
-        f"{remote_parameters.remote_file_url} with spaces (2) (3).zip"
+        f"{remote_parameters.remote_file_url} with spaces (1) (2).zip"
     )
+
+    assert "%20" in f"{destination_url}"
+    assert " " not in f"{destination_url}"
+
     storage_kwargs = {}
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
