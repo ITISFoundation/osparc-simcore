@@ -6,6 +6,7 @@ from pprint import pformat
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
@@ -97,12 +98,13 @@ async def _run_computational_sidecar_async(
     docker_auth: DockerBasicAuth,
     log_file_url: LogFileUploadURL,
     s3_settings: S3Settings | None,
+    encryption: JobEncryptionContext | None,
 ) -> TaskOutputData:
     task_publishers = TaskPublisher(task_owner=task_parameters.task_owner)
 
     _logger.info(
         "run_computational_sidecar %s",
-        f"{task_parameters.model_dump()=}, {docker_auth=}, {log_file_url=}, {s3_settings=}",
+        f"{task_parameters.model_dump()=}, {docker_auth=}, {log_file_url=}, {s3_settings=}, {encryption=}",
     )
     current_task = asyncio.current_task()
     assert current_task  # nosec
@@ -113,6 +115,7 @@ async def _run_computational_sidecar_async(
             docker_auth=docker_auth,
             log_file_url=log_file_url,
             s3_settings=s3_settings,
+            encryption=encryption,
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
         ) as sidecar:
@@ -126,6 +129,7 @@ def run_computational_sidecar(
     docker_auth: DockerBasicAuth,
     log_file_url: LogFileUploadURL,
     s3_settings: S3Settings | None,
+    encryption: JobEncryptionContext | None = None,
 ) -> TaskOutputData:
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
@@ -144,5 +148,6 @@ def run_computational_sidecar(
             docker_auth=docker_auth,
             log_file_url=log_file_url,
             s3_settings=s3_settings,
+            encryption=encryption,
         )
     )

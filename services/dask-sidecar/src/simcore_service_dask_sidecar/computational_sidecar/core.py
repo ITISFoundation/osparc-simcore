@@ -13,6 +13,10 @@ from uuid import uuid4
 from aiodocker import Docker
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import (
+    JobEncryptionContext,
+    TransferEncryptionSettings,
+)
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
     ServiceOutOfMemoryError,
@@ -62,6 +66,7 @@ class ComputationalSidecar:
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
+    encryption: JobEncryptionContext | None
 
     async def _write_input_data(
         self,
@@ -103,7 +108,16 @@ class ComputationalSidecar:
                         destination_path,
                         log_publishing_cb=self._publish_sidecar_log,
                         s3_settings=self.s3_settings,
-                        encryption=None,  # NOTE: encryption is not supported for now (will be added in the future if needed
+                        encryption=(
+                            TransferEncryptionSettings(
+                                job_key=self.encryption.job_key,
+                                job_id=self.encryption.job_id,
+                                file_id=input_key,
+                                file_role="input",
+                            )
+                            if self.encryption
+                            else None
+                        ),
                     )
                 )
             else:
@@ -139,7 +153,7 @@ class ComputationalSidecar:
             )
 
             upload_tasks = []
-            for output_params in output_data.values():
+            for output_key, output_params in output_data.items():
                 if isinstance(output_params, FileUrl):
                     assert (  # nosec
                         output_params.file_mapping
@@ -152,7 +166,16 @@ class ComputationalSidecar:
                             output_params.url,
                             log_publishing_cb=self._publish_sidecar_log,
                             s3_settings=self.s3_settings,
-                            encryption=None,  # NOTE: encryption is not supported for now (will be added in the future if needed
+                            encryption=(
+                                TransferEncryptionSettings(
+                                    job_key=self.encryption.job_key,
+                                    job_id=self.encryption.job_id,
+                                    file_id=output_key,
+                                    file_role="output",
+                                )
+                                if self.encryption
+                                else None
+                            ),
                         )
                     )
             await asyncio.gather(*upload_tasks)
