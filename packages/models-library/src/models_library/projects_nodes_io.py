@@ -32,7 +32,7 @@ from .basic_regex import (
     UUID_RE,
 )
 
-type UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
+UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]  # noqa: UP040
 
 NodeID: TypeAlias = UUID  # noqa: UP040
 NodeIDStr: TypeAlias = UUIDStr  # noqa: UP040
