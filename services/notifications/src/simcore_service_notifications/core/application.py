@@ -38,8 +38,6 @@ def _configure_plugins(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
-    configure_smtp_config_check(app_lifespan)
-
     if not settings.NOTIFICATIONS_WORKER_MODE:
         configure_postgres_database(
             app_lifespan,
@@ -47,6 +45,7 @@ def _configure_plugins(
             tracing_config=tracing_config,
         )
         configure_postgres_liveness(app_lifespan)
+        configure_smtp_config_check(app_lifespan)
         configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
         configure_rpc_api(app_lifespan)
 
