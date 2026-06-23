@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 from collections.abc import Iterator
+from datetime import timedelta
 from unittest.mock import Mock
 
 import pytest
@@ -12,6 +13,7 @@ from models_library.errors import (
     RABBITMQ_CLIENT_UNHEALTHY_MSG,
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
+from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_notifications.api.rest.dependencies import (
@@ -59,8 +61,13 @@ def _get_mock(healthy: bool) -> Mock:
     mock = Mock()
     mock.is_healthy = healthy
     mock.healthy = healthy
-    mock.is_responsive = healthy
     return mock
+
+
+def _get_postgres_liveness(healthy: bool) -> LivenessResult:
+    if healthy:
+        return IsResponsive(elapsed=timedelta(seconds=0))
+    return IsNonResponsive(reason="unhealthy")
 
 
 @pytest.fixture
@@ -68,7 +75,7 @@ def mock_services_health(
     mock_fastapi_app: FastAPI, rabbit_healthy: bool, postgres_healthy: bool, redis_healthy: bool
 ) -> Iterator[None]:
     mock_fastapi_app.dependency_overrides[get_rabbitmq_rpc_client] = lambda: _get_mock(rabbit_healthy)
-    mock_fastapi_app.dependency_overrides[get_postgres_liveness] = lambda: _get_mock(postgres_healthy)
+    mock_fastapi_app.dependency_overrides[get_postgres_liveness] = lambda: _get_postgres_liveness(postgres_healthy)
     mock_fastapi_app.dependency_overrides[get_redis_client] = lambda: _get_mock(redis_healthy)
 
     yield

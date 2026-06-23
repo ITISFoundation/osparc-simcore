@@ -8,7 +8,6 @@ from servicelib.db_asyncpg_utils import check_postgres_liveness
 from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...clients import redis
 
@@ -25,9 +24,9 @@ def get_rabbitmq_rpc_client(
 
 
 async def get_postgres_liveness(
-    engine: Annotated[AsyncEngine, Depends(get_engine)],
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> LivenessResult:
-    return await check_postgres_liveness(engine)
+    return await check_postgres_liveness(get_engine(app))
 
 
 def get_redis_client(app: Annotated[FastAPI, Depends(get_application)]) -> RedisClientSDK:
