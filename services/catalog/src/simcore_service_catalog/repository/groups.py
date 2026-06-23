@@ -59,5 +59,7 @@ class GroupsRepository(BaseRepository):
             async for row in await conn.stream(
                 sa.select(users.c.primary_gid, users.c.email).where(users.c.primary_gid.in_(gids))
             ):
-                service_owners[row[0]] = TypeAdapter(LowerCaseEmailStr).validate_python(row[1]) if row[1] else None
+                service_owners[row.primary_gid] = (
+                    TypeAdapter(LowerCaseEmailStr).validate_python(row.email) if row.email else None
+                )
         return service_owners
