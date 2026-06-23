@@ -631,15 +631,19 @@ def _decrypt_to_bytes(ciphertext: bytes, *, job_key: bytes, job_id: str, file_id
     return decrypted.getvalue()
 
 
-@pytest.mark.parametrize("integration_version", ["1.0.0"], indirect=True)
-def test_run_computational_sidecar_with_encryption(
+@pytest.mark.parametrize(
+    "integration_version, task_owner",
+    [("1.0.0", "no_parent_node")],
+    indirect=True,
+)
+async def test_run_computational_sidecar_with_encryption(
     app_environment: EnvVarsDict,
-    dask_subsystem_mock: dict[str, mock.Mock],
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
     s3_remote_file_url: Callable[..., AnyUrl],
     task_owner: TaskOwner,
     log_rabbit_client_parser: mock.AsyncMock,
+    dask_client: distributed.Client,
 ):
     job_encryption_context = JobEncryptionContext(
         job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
@@ -651,6 +655,8 @@ def test_run_computational_sidecar_with_encryption(
     input_port_key = "input_file_1"
     output_port_key = "output_file_1"
     plaintext = b"this is the very secret payload that must travel encrypted\nline 2\n"
+    computation_marker = "this was added during computation"
+    expected_plaintext_output = plaintext + f"{computation_marker}\n".encode()
 
     # 1. upload an encrypted input file on S3 (as the client would do)
     encrypted_input_url = s3_remote_file_url(file_path="encrypted_input.dat")
@@ -668,8 +674,10 @@ def test_run_computational_sidecar_with_encryption(
 
     output_url = s3_remote_file_url(file_path="encrypted_output.dat")
 
-    # 2. run a task that simply copies the (decrypted) input to its output, with encryption enabled
-    output_data = run_computational_sidecar(
+    # 2. run a task (through the dask subsystem) that copies the decrypted input to its
+    #    output, appends some text and logs a marker line, with encryption enabled
+    future = dask_client.submit(
+        run_computational_sidecar,
         task_parameters=ContainerTaskParameters(
             image="itisfoundation/sleeper",
             tag="2.1.2",
@@ -685,7 +693,17 @@ def test_run_computational_sidecar_with_encryption(
                     }
                 }
             ),
-            command=["/bin/bash", "-c", "cat ${INPUT_FOLDER}/input.txt > ${OUTPUT_FOLDER}/result.txt"],
+            command=[
+                "/bin/bash",
+                "-c",
+                " && ".join(
+                    [
+                        "cat ${INPUT_FOLDER}/input.txt > ${OUTPUT_FOLDER}/result.txt",
+                        f"echo '{computation_marker}' >> ${{OUTPUT_FOLDER}}/result.txt",
+                        f"echo '{computation_marker}'",
+                    ]
+                ),
+            ],
             envs={},
             labels={},
             task_owner=task_owner,
@@ -695,20 +713,47 @@ def test_run_computational_sidecar_with_encryption(
         log_file_url=s3_remote_file_url(file_path="log.dat"),
         s3_settings=s3_settings,
         encryption=job_encryption_context,
+        resources={},
     )
 
-    # 3. retrieve the encrypted output from S3
-    assert output_port_key in output_data
+    output_data = future.result()
+    assert isinstance(output_data, TaskOutputData), f"unexpected output data type: {output_data!r}"
+
+    # 3. check the live logs (forwarded through RabbitMQ) contain the marker emitted by the task.
+    #    NOTE: this is what we will need to keep working once logs themselves get encrypted.
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert log_rabbit_client_parser.called, "no logs were published to RabbitMQ during the computation"
+            worker_logs = [
+                message
+                for msg in log_rabbit_client_parser.call_args_list
+                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
+            ]
+            assert any(computation_marker in log for log in worker_logs), (
+                f"Could not find live log marker '{computation_marker}' in worker logs:\n"
+                f"{pformat(worker_logs, width=240)}"
+            )
+
+    # 4. retrieve the encrypted output from S3
+    assert output_port_key in output_data, (
+        f"expected output '{output_port_key}' missing from {list(output_data.keys())}"
+    )
     output_file = output_data[output_port_key]
-    assert isinstance(output_file, FileUrl)
+    assert isinstance(output_file, FileUrl), f"expected a FileUrl output, got {output_file!r}"
     with fsspec.open(f"{output_file.url}", mode="rb", **s3_storage_kwargs) as fp:
         encrypted_output = fp.read()  # type: ignore[attr-defined]
 
     # the stored output is indeed encrypted (not plaintext)
-    assert encrypted_output.startswith(FORMAT_MAGIC)
-    assert plaintext not in encrypted_output
+    assert encrypted_output.startswith(FORMAT_MAGIC), "stored output does not look like an encrypted stream"
+    assert expected_plaintext_output not in encrypted_output, "plaintext output leaked into the stored encrypted file"
 
-    # 4. decrypt it with the per-output context and check we recover the expected payload
+    # 5. decrypt it with the per-output context and check we recover the expected payload,
+    #    including the text added during the computation
     decrypted_output = _decrypt_to_bytes(
         encrypted_output,
         job_key=job_key,
@@ -716,7 +761,15 @@ def test_run_computational_sidecar_with_encryption(
         file_id=output_port_key,
         file_role="output",
     )
-    assert decrypted_output == plaintext
+    assert decrypted_output == expected_plaintext_output, (
+        f"decrypted output does not match expected payload.\n"
+        f"got:      {decrypted_output!r}\n"
+        f"expected: {expected_plaintext_output!r}"
+    )
+    assert computation_marker.encode() in decrypted_output, (
+        f"text added during computation '{computation_marker}' missing from decrypted output"
+    )
+    mocked_get_image_labels.assert_called()
 
 
 @pytest.mark.parametrize("integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True)
