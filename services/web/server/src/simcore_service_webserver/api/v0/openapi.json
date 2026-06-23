@@ -29354,6 +29354,21 @@
             "format": "email",
             "title": "Email"
           },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
+          },
           "invitationUrl": {
             "type": "string",
             "maxLength": 2083,
@@ -29780,6 +29795,21 @@
             "type": "string",
             "format": "email",
             "title": "Email"
+          },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
           },
           "messageContent": {
             "anyOf": [
