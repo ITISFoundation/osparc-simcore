@@ -21,7 +21,7 @@ qx.Class.define("osparc.po.EmailEditor", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(4));
 
     this.__selectedGroupIds = [];
 
@@ -35,7 +35,7 @@ qx.Class.define("osparc.po.EmailEditor", {
       let control;
       switch (id) {
         case "form-container": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Grid(10, 5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.Grid(10, 4));
           control.getLayout().setColumnFlex(1, 1);
           this._add(control);
           break;
@@ -80,6 +80,30 @@ qx.Class.define("osparc.po.EmailEditor", {
           });
           break;
         }
+        case "bcc-label": {
+          control = new qx.ui.basic.Label(this.tr("Bcc")).set({
+            paddingTop: 5,
+            visibility: "excluded",
+          });
+          break;
+        }
+        case "bcc-field": {
+          control = new qx.ui.form.TextField().set({
+            marginBottom: 10,
+            placeholder: this.tr("Comma-separated email addresses"),
+            visibility: "excluded",
+          });
+          const formContainer = this.getChildControl("form-container");
+          formContainer.add(this.getChildControl("bcc-label"), {
+            row: 1,
+            column: 0
+          });
+          formContainer.add(control, {
+            row: 1,
+            column: 1
+          });
+          break;
+        }
         case "subject-field": {
           control = new qx.ui.form.TextField().set({
             marginBottom: 10
@@ -88,11 +112,11 @@ qx.Class.define("osparc.po.EmailEditor", {
           formContainer.add(new qx.ui.basic.Label(this.tr("Subject")).set({
             paddingTop: 5,
           }), {
-            row: 1,
+            row: 2,
             column: 0
           });
           formContainer.add(control, {
-            row: 1,
+            row: 2,
             column: 1
           });
           break;
@@ -113,6 +137,7 @@ qx.Class.define("osparc.po.EmailEditor", {
     __buildLayout: function() {
       this.getChildControl("add-recipient-button");
       this.getChildControl("recipients-chips");
+      this.getChildControl("bcc-field");
       this.getChildControl("subject-field");
       this.getChildControl("email-content-editor-and-preview");
     },
@@ -173,6 +198,19 @@ qx.Class.define("osparc.po.EmailEditor", {
 
     getSelectedGroupIds: function() {
       return this.__selectedGroupIds;
+    },
+
+    showBccField: function() {
+      this.getChildControl("bcc-label").show();
+      this.getChildControl("bcc-field").show();
+    },
+
+    getBccEmails: function() {
+      const value = this.getChildControl("bcc-field").getValue();
+      if (!value) {
+        return [];
+      }
+      return value.split(",").map(email => email.trim()).filter(email => email.length);
     },
   }
 });
