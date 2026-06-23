@@ -118,7 +118,7 @@ python-dotenv==1.2.2
     # via
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.29
+python-multipart==0.0.32
     # via fastapi
 pyyaml==6.0.3
     # via
