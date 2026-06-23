@@ -25,6 +25,7 @@ from settings_library.s3 import S3Settings
 from yarl import URL
 
 from ..aes_gcm import decrypt_stream, encrypt_stream
+from ..errors import HTTPDestinationEncryptionNotSupportedError
 
 logger = logging.getLogger(__name__)
 
@@ -458,8 +459,7 @@ async def push_file_to_remote(
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             if encryption is not None:
-                msg = "Encryption is not supported for HTTP upload destinations"
-                raise ValueError(msg)
+                raise HTTPDestinationEncryptionNotSupportedError(scheme=dst_url.scheme)
             logger.debug("destination is a http presigned link")
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:

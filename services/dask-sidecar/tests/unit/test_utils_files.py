@@ -24,6 +24,7 @@ from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.aes_gcm import FORMAT_MAGIC, AesGcmStreamAuthError, generate_key
+from simcore_service_dask_sidecar.errors import HTTPDestinationEncryptionNotSupportedError
 from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,
@@ -422,6 +423,29 @@ async def test_pull_file_from_remote_decrypt_with_wrong_key_raises_auth_error(
             log_publishing_cb=mocked_log_publishing_cb,
             s3_settings=None,
             encryption=wrong_key_settings,
+        )
+
+
+@pytest.mark.parametrize("scheme", ["http", "https"])
+async def test_push_file_to_remote_with_encryption_to_http_raises(
+    scheme: str,
+    tmp_path: Path,
+    mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
+):
+    src_path = tmp_path / "plain.txt"
+    src_path.write_bytes(b"top-secret payload")
+
+    with pytest.raises(
+        HTTPDestinationEncryptionNotSupportedError,
+        match=f"Encryption is not supported for {scheme} upload destinations",
+    ):
+        await push_file_to_remote(
+            src_path,
+            TypeAdapter(AnyUrl).validate_python(f"{scheme}://example.com/upload"),
+            log_publishing_cb=mocked_log_publishing_cb,
+            s3_settings=None,
+            encryption=encryption_settings,
         )
 
 
