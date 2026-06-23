@@ -156,7 +156,7 @@ redis==6.4.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-requests==2.32.4
+requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker
