@@ -126,6 +126,42 @@ async def test_push_file_to_remote(
     mocked_log_publishing_cb.assert_called()
 
 
+async def test_push_file_with_spaces_in_name_to_remote(
+    remote_parameters: StorageParameters,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # let's create some file with spaces/parentheses in its local name
+    src_path = tmp_path / "some file with spaces (1) (2).txt"
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+    # push it to the remote
+    await push_file_to_remote(
+        src_path,
+        remote_parameters.remote_file_url,
+        mocked_log_publishing_cb,
+        remote_parameters.s3_settings,
+    )
+
+    # check the remote is actually having the file in
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+
+    with cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            f"{remote_parameters.remote_file_url}",
+            mode="rt",
+            **storage_kwargs,
+        ),
+    ) as fp:
+        assert fp.read() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
 async def test_push_file_to_remote_s3_http_presigned_link(
     s3_presigned_link_remote_file_url: AnyUrl,
     s3_settings: S3Settings,
