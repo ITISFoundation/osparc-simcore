@@ -129,14 +129,14 @@ class FileMetaDataRepository(BaseRepository):
         # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
         # so we get the correct time stamps
         fmd_db = FileMetaDataAtDB.model_validate(fmd) if isinstance(fmd, FileMetaData) else fmd
-        insert_statement = pg_insert(file_meta_data).values(**fmd_db.model_dump())
         async with transaction_context(self.db_engine, connection) as conn:
             return FileMetaDataAtDB.model_validate(
                 (
                     await conn.execute(
-                        insert_statement.on_conflict_do_update(
-                            index_elements=[file_meta_data.c.file_id], set_=fmd_db.model_dump()
-                        ).returning(literal_column("*"))
+                        pg_insert(file_meta_data)
+                        .values(**fmd_db.model_dump())
+                        .on_conflict_do_update(index_elements=[file_meta_data.c.file_id], set_=fmd_db.model_dump())
+                        .returning(literal_column("*"))
                     )
                 ).one()
             )
