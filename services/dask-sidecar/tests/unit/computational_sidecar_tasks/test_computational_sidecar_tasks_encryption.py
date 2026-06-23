@@ -1,0 +1,201 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=no-member
+# pylint: disable=too-many-arguments
+
+import io
+from collections.abc import Callable
+from unittest import mock
+
+import distributed
+import fsspec
+import pytest
+from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
+from dask_task_models_library.container_tasks.io import (
+    FileUrl,
+    TaskInputData,
+    TaskOutputData,
+    TaskOutputDataSchema,
+)
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerTaskParameters,
+    TaskOwner,
+)
+from models_library.services_resources import BootMode
+from pydantic import AnyUrl, SecretBytes, SecretStr, TypeAdapter
+from pytest_simcore.helpers.dask_sidecar_tasks import (
+    assert_expected_logs_published_to_rabbit,
+)
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.s3 import S3Settings
+from simcore_service_dask_sidecar.aes_gcm import (
+    FORMAT_MAGIC,
+    decrypt_stream,
+    encrypt_stream,
+    generate_key,
+)
+from simcore_service_dask_sidecar.utils.files import (
+    _s3fs_settings_from_s3_settings,
+)
+from simcore_service_dask_sidecar.worker import run_computational_sidecar
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
+
+def _encrypt_to_bytes(plaintext: bytes, *, job_key: bytes, job_id: str, file_id: str, file_role: str) -> bytes:
+    encrypted = io.BytesIO()
+    encrypt_stream(
+        io.BytesIO(plaintext),
+        encrypted,
+        job_key=job_key,
+        job_id=job_id,
+        file_id=file_id,
+        file_role=file_role,
+    )
+    return encrypted.getvalue()
+
+
+def _decrypt_to_bytes(ciphertext: bytes, *, job_key: bytes, job_id: str, file_id: str, file_role: str) -> bytes:
+    decrypted = io.BytesIO()
+    decrypt_stream(
+        io.BytesIO(ciphertext),
+        decrypted,
+        job_key=job_key,
+        job_id=job_id,
+        file_id=file_id,
+        file_role=file_role,
+    )
+    return decrypted.getvalue()
+
+
+@pytest.mark.parametrize(
+    "integration_version, task_owner",
+    [("1.0.0", "no_parent_node")],
+    indirect=True,
+)
+async def test_run_computational_sidecar_with_encryption(
+    app_environment: EnvVarsDict,
+    mocked_get_image_labels: mock.Mock,
+    s3_settings: S3Settings,
+    s3_remote_file_url: Callable[..., AnyUrl],
+    task_owner: TaskOwner,
+    log_rabbit_client_parser: mock.AsyncMock,
+    dask_client: distributed.Client,
+):
+    job_encryption_context = JobEncryptionContext(
+        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
+        job_id="pytest-encryption-job",
+    )
+    job_key = job_encryption_context.job_key.get_secret_value()
+    job_id = job_encryption_context.job_id
+
+    input_port_key = "input_file_1"
+    output_port_key = "output_file_1"
+    plaintext = b"this is the very secret payload that must travel encrypted\nline 2\n"
+    computation_marker = "this was added during computation"
+    expected_plaintext_output = plaintext + f"{computation_marker}\n".encode()
+
+    # 1. upload an encrypted input file on S3 (as the client would do)
+    encrypted_input_url = s3_remote_file_url(file_path="encrypted_input.dat")
+    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
+    with fsspec.open(f"{encrypted_input_url}", mode="wb", **s3_storage_kwargs) as fp:
+        fp.write(  # type: ignore[attr-defined]
+            _encrypt_to_bytes(
+                plaintext,
+                job_key=job_key,
+                job_id=job_id,
+                file_id=input_port_key,
+                file_role="input",
+            )
+        )
+
+    output_url = s3_remote_file_url(file_path="encrypted_output.dat")
+
+    # 2. run a task (through the dask subsystem) that copies the decrypted input to its
+    #    output, appends some text and logs a marker line, with encryption enabled
+    future = dask_client.submit(
+        run_computational_sidecar,
+        task_parameters=ContainerTaskParameters(
+            image="itisfoundation/sleeper",
+            tag="2.1.2",
+            input_data=TaskInputData.model_validate(
+                {input_port_key: FileUrl(url=encrypted_input_url, file_mapping="input.txt")}
+            ),
+            output_data_keys=TaskOutputDataSchema.model_validate(
+                {
+                    output_port_key: {
+                        "required": True,
+                        "mapping": "result.txt",
+                        "url": f"{output_url}",
+                    }
+                }
+            ),
+            command=[
+                "/bin/bash",
+                "-c",
+                " && ".join(
+                    [
+                        "cat ${INPUT_FOLDER}/input.txt > ${OUTPUT_FOLDER}/result.txt",
+                        f"echo '{computation_marker}' >> ${{OUTPUT_FOLDER}}/result.txt",
+                        f"echo '{computation_marker}'",
+                    ]
+                ),
+            ],
+            envs={},
+            labels={},
+            task_owner=task_owner,
+            boot_mode=BootMode.CPU,
+        ),
+        docker_auth=DockerBasicAuth(server_address="docker.io", username="pytest", password=SecretStr("")),
+        log_file_url=s3_remote_file_url(file_path="log.dat"),
+        s3_settings=s3_settings,
+        encryption=job_encryption_context,
+        resources={},
+    )
+
+    output_data = future.result()
+    assert isinstance(output_data, TaskOutputData), f"unexpected output data type: {output_data!r}"
+
+    # 3. check the live logs (forwarded through RabbitMQ) contain the marker emitted by the task.
+    #    NOTE: this is what we will need to keep working once logs themselves get encrypted.
+    await assert_expected_logs_published_to_rabbit(
+        log_rabbit_client_parser,
+        [computation_marker],
+        match="contains",
+    )
+
+    # 4. retrieve the encrypted output from S3
+    assert output_port_key in output_data, (
+        f"expected output '{output_port_key}' missing from {list(output_data.keys())}"
+    )
+    output_file = output_data[output_port_key]
+    assert isinstance(output_file, FileUrl), f"expected a FileUrl output, got {output_file!r}"
+    with fsspec.open(f"{output_file.url}", mode="rb", **s3_storage_kwargs) as fp:
+        encrypted_output = fp.read()  # type: ignore[attr-defined]
+
+    # the stored output is indeed encrypted (not plaintext)
+    assert encrypted_output.startswith(FORMAT_MAGIC), "stored output does not look like an encrypted stream"
+    assert expected_plaintext_output not in encrypted_output, "plaintext output leaked into the stored encrypted file"
+
+    # 5. decrypt it with the per-output context and check we recover the expected payload,
+    #    including the text added during the computation
+    decrypted_output = _decrypt_to_bytes(
+        encrypted_output,
+        job_key=job_key,
+        job_id=job_id,
+        file_id=output_port_key,
+        file_role="output",
+    )
+    assert decrypted_output == expected_plaintext_output, (
+        f"decrypted output does not match expected payload.\n"
+        f"got:      {decrypted_output!r}\n"
+        f"expected: {expected_plaintext_output!r}"
+    )
+    assert computation_marker.encode() in decrypted_output, (
+        f"text added during computation '{computation_marker}' missing from decrypted output"
+    )
+    mocked_get_image_labels.assert_called()
