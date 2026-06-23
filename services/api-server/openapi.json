@@ -9114,7 +9114,33 @@
         ],
         "title": "ApiServerEnvelope[list[TaskGet]]"
       },
-      "ArgumentTypes": {
+      "ArgumentTypes-Input": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/File"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "items": {},
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "ArgumentTypes-Output": {
         "anyOf": [
           {
             "$ref": "#/components/schemas/File"
@@ -9299,6 +9325,9 @@
         ],
         "title": "ClientFileUploadData"
       },
+      "ETag": {
+        "type": "string"
+      },
       "ErrorDict": {
         "properties": {
           "loc": {
@@ -9411,14 +9440,26 @@
           "e_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "E Tag",
             "description": "S3 entity tag"
+          },
+          "last_modified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
           }
         },
         "type": "object",
@@ -10019,13 +10060,13 @@
       },
       "KeywordArguments-Input": {
         "additionalProperties": {
-          "$ref": "#/components/schemas/ArgumentTypes"
+          "$ref": "#/components/schemas/ArgumentTypes-Input"
         },
         "type": "object"
       },
       "KeywordArguments-Output": {
         "additionalProperties": {
-          "$ref": "#/components/schemas/ArgumentTypes"
+          "$ref": "#/components/schemas/ArgumentTypes-Output"
         },
         "type": "object"
       },
@@ -13251,8 +13292,7 @@
             "title": "Number"
           },
           "e_tag": {
-            "type": "string",
-            "title": "E Tag"
+            "$ref": "#/components/schemas/ETag"
           }
         },
         "type": "object",
