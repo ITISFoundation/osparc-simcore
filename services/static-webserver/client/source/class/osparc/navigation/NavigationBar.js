@@ -220,7 +220,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("left-items").add(control);
           break;
         case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesomeSolid/home/16").set({
             ...this.self().BUTTON_OPTIONS
           });
           control.set({
@@ -237,7 +237,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "saving-study-icon":
           control = new qx.ui.basic.Atom().set({
-            icon: "@FontAwesome5Solid/cloud-upload-alt/14",
+            icon: "@FontAwesomeSolid/cloud-upload-alt/14",
             label: this.tr("Saving..."),
             font: "text-12",
             opacity: 0.8,
@@ -257,7 +257,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "read-only-info": {
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Read only"),
-            icon: "@FontAwesome5Solid/eye/22",
+            icon: "@FontAwesomeSolid/eye/22",
             gap: 10,
             font: "text-14",
             visibility: "excluded"
@@ -284,7 +284,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "expiration-icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/hourglass-end/22").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/hourglass-end/22").set({
             visibility: "excluded",
             textColor: "danger-red",
             cursor: "pointer"
@@ -382,7 +382,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createLoginBtn: function() {
-      const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesome5Solid/edit/14");
+      const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesomeSolid/edit/14");
       registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
       return registerButton;
     },
@@ -431,9 +431,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("saveFilesPending", savingStudyFilesIcon, "icon", {
           converter: value => {
             if (value === "Uploading") {
-              return "@FontAwesome5Solid/upload/12";
+              return "@FontAwesomeSolid/upload/12";
             } else if (value === "Queued") {
-              return "@FontAwesome5Solid/file-medical/12";
+              return "@FontAwesomeSolid/file-medical/12";
             }
             return null;
           }

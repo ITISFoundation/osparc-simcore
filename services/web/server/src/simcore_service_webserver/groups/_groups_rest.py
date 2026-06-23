@@ -19,7 +19,6 @@ from servicelib.aiohttp.requests_validation import (
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..products import products_web
-from ..products.models import Product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_service
@@ -44,7 +43,7 @@ async def list_groups(request: web.Request):
     """
     List all groups (organizations, primary, everyone and products) I belong to
     """
-    product: Product = products_web.get_current_product(request)
+    product = products_web.get_current_product(request)
     req_ctx = GroupsRequestContext.model_validate(request)
 
     (

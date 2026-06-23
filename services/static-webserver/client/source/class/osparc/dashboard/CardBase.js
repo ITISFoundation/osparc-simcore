@@ -50,15 +50,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
   },
 
   statics: {
-    SHARE_ICON: "@FontAwesome5Solid/share-alt/13",
-    SHARED_USER: "@FontAwesome5Solid/user/13",
-    SHARED_SUPPORT: "@FontAwesome5Solid/question-circle/13",
-    SHARED_ORGS: "@FontAwesome5Solid/users/13",
-    SHARED_ALL: "@FontAwesome5Solid/globe/13",
-    PERM_READ: "@FontAwesome5Solid/eye/13",
-    MODE_APP: "@FontAwesome5Solid/desktop/13",
-    NEW_ICON: "@FontAwesome5Solid/plus/",
-    LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
+    SHARE_ICON: "@FontAwesomeSolid/share-alt/13",
+    SHARED_USER: "@FontAwesomeSolid/user/13",
+    SHARED_SUPPORT: "@FontAwesomeSolid/question-circle/13",
+    SHARED_ORGS: "@FontAwesomeSolid/users/13",
+    SHARED_ALL: "@FontAwesomeSolid/globe/13",
+    PERM_READ: "@FontAwesomeSolid/eye/13",
+    MODE_APP: "@FontAwesomeSolid/desktop/13",
+    NEW_ICON: "@FontAwesomeSolid/plus/",
+    LOADING_ICON: "@FontAwesomeSolid/circle-notch/",
     PRODUCT_ICON: osparc.product.Utils.getIconUrl(),
     // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getThumbnailUrl(Thumbnail-01.png)
     PRODUCT_THUMBNAIL: osparc.product.Utils.getThumbnailUrl(),
@@ -725,7 +725,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const unknownServices = cantReadServices => {
         // Block card
         this.setBlocked("UNKNOWN_SERVICES");
-        const image = "@FontAwesome5Solid/ban/";
+        const image = "@FontAwesomeSolid/ban/";
         let toolTipText = this.tr("Unknown service(s)");
         if (cantReadServices && cantReadServices.length) {
           toolTipText = this.tr("Inaccessible service(s)");
@@ -832,22 +832,22 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "PUBLISHED":
         case "STARTED":
         case "STOPPING":
-          iconSource = "@FontAwesome5Solid/spinner/10";
+          iconSource = "@FontAwesomeSolid/spinner/10";
           toolTipText = this.tr("Running");
           borderColor = "info";
           break;
         case "SUCCESS":
-          iconSource = "@FontAwesome5Solid/check/10";
+          iconSource = "@FontAwesomeSolid/check/10";
           toolTipText = this.tr("Ran successfully");
           borderColor = "success";
           break;
         case "ABORTED":
-          iconSource = "@FontAwesome5Solid/exclamation/10";
+          iconSource = "@FontAwesomeSolid/exclamation/10";
           toolTipText = this.tr("Run aborted");
           borderColor = "warning";
           break;
         case "FAILED":
-          iconSource = "@FontAwesome5Solid/exclamation/10";
+          iconSource = "@FontAwesomeSolid/exclamation/10";
           toolTipText = this.tr("Unsuccessful Run");
           borderColor = "error";
           break;
@@ -929,11 +929,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
         .finally(() => {
           switch (projectStatus) {
             case osparc.study.Utils.state.STATUS.CLOSING:
-              image = "@FontAwesome5Solid/key/";
+              image = "@FontAwesomeSolid/key/";
               toolTip += this.tr("Closing...");
               break;
             case osparc.study.Utils.state.STATUS.CLONING:
-              image = "@FontAwesome5Solid/clone/";
+              image = "@FontAwesomeSolid/clone/";
               toolTip += this.tr("Cloning...");
               break;
             case osparc.study.Utils.state.STATUS.EXPORTING:
@@ -941,15 +941,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
               toolTip += this.tr("Exporting...");
               break;
             case osparc.study.Utils.state.STATUS.OPENING:
-              image = "@FontAwesome5Solid/key/";
+              image = "@FontAwesomeSolid/key/";
               toolTip += this.tr("Opening...");
               break;
             case osparc.study.Utils.state.STATUS.OPENED:
-              image = "@FontAwesome5Solid/lock/";
+              image = "@FontAwesomeSolid/lock/";
               toolTip += this.tr("In use...");
               break;
             default:
-              image = "@FontAwesome5Solid/lock/";
+              image = "@FontAwesomeSolid/lock/";
               break;
           }
           userNames.forEach(userName => {
@@ -962,7 +962,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __blockedInDebt: function() {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       const toolTip = studyAlias + " " + this.tr("Embargoed<br>Credits Required");
-      const image = "@FontAwesome5Solid/lock/";
+      const image = "@FontAwesomeSolid/lock/";
       this.__showBlockedCard(image, toolTip);
     },
 
@@ -1161,7 +1161,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipText += osparc.product.Utils.getAppAlias();
       }
       const control = new qx.ui.basic.Image().set({
-        source: "@FontAwesome5Solid/times-circle/14",
+        source: "@FontAwesomeSolid/times-circle/14",
         alignY: "bottom",
         toolTipText
       });

@@ -61,7 +61,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     fire_and_forget_setup(app)
 
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
-        setup_db(app)
+        setup_db(app, tracing_config=tracing_config)
     setup_redis(app)
     setup_rabbitmq(app)
     if settings.RESOURCE_USAGE_TRACKER_S3:
@@ -84,10 +84,10 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
 
     # EVENTS
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
-        print(APP_FINISHED_BANNER_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

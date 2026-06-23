@@ -16,7 +16,7 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import UserStatus
-from simcore_service_webserver.groups import api as groups_service
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
@@ -238,9 +238,7 @@ async def test_unregistered_product(
 
     async with NewUser(app=client.app) as user:
         # allow in
-        await groups_service.auto_add_user_to_product_group(
-            client.app, user_id=user["id"], product_name=default_product_name
-        )
+        await auto_add_user_to_product_group(client.app, user_id=user["id"], product_name=default_product_name)
         assert await users_service.is_user_in_product(client.app, user_id=user["id"], product_name=default_product_name)
         assert not await users_service.is_user_in_product(
             client.app, user_id=user["id"], product_name=other_product_name

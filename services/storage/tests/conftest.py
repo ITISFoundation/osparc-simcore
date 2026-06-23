@@ -176,8 +176,7 @@ async def storage_s3_bucket(app_settings: ApplicationSettings) -> str:
 
 @pytest.fixture
 async def mock_rabbit_setup(mocker: MockerFixture) -> MockerFixture:
-    mocker.patch("simcore_service_storage.core.application.setup_rabbitmq")
-    mocker.patch("simcore_service_storage.core.application.setup_rpc_api_routes")
+    mocker.patch("simcore_service_storage.modules.rabbitmq.configure_rabbitmq_client")
     return mocker
 
 
@@ -268,7 +267,8 @@ async def client(
 
 @pytest.fixture
 async def node_id(project_id: ProjectID, create_project_node: Callable[[ProjectID], Awaitable[NodeID]]) -> NodeID:
-    return await create_project_node(project_id)
+    node_id, _node_row = await create_project_node(project_id)
+    return node_id
 
 
 @pytest.fixture
@@ -792,7 +792,7 @@ async def random_project_with_files(
             node_to_files_mapping[node_id] = {}
             output3_file_name = faker.file_name()
             output3_file_id = create_simcore_file_id(project_id, node_id, output3_file_name, Path("outputs/output_3"))
-            created_node_id = await create_project_node(
+            created_node_id, _node_row = await create_project_node(
                 ProjectID(project["uuid"]),
                 node_id,
                 outputs={

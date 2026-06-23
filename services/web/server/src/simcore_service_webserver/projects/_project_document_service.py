@@ -27,9 +27,8 @@ from ..redis import (
     get_redis_document_manager_client_sdk,
     get_redis_lock_manager_client_sdk,
 )
-from ..resource_manager.registry import get_registry
-from ..resource_manager.service import list_opened_project_ids
-from ..socketio._utils import get_socket_server
+from ..resource_manager.resource_manager_service import get_registry, list_opened_project_ids
+from ..socketio.socketio_service import get_socket_server
 from . import _projects_repository
 
 _logger = logging.getLogger(__name__)
@@ -62,24 +61,23 @@ async def create_project_document_and_increment_version(
         - the project document and its version must be kept in sync
         """
         # Get the full project with workbench for document creation
-        project_with_workbench = await _projects_repository.get_project_with_workbench(
-            app=app, project_uuid=project_uuid
-        )
+        project = await _projects_repository.get_project_with_workbench(app=app, project_uuid=project_uuid)
+
         # Create project document
         project_document = ProjectDocument(
-            uuid=project_with_workbench.uuid,
-            workspace_id=project_with_workbench.workspace_id,
-            name=project_with_workbench.name,
-            description=project_with_workbench.description,
-            thumbnail=project_with_workbench.thumbnail,
-            last_change_date=project_with_workbench.last_change_date,
-            classifiers=project_with_workbench.classifiers,
-            dev=project_with_workbench.dev,
-            quality=project_with_workbench.quality,
-            workbench=project_with_workbench.workbench,
-            ui=project_with_workbench.ui,
-            type=cast(ProjectTypeAPI, project_with_workbench.type),
-            template_type=cast(ProjectTemplateType, project_with_workbench.template_type),
+            uuid=project.uuid,
+            workspace_id=project.workspace_id,
+            name=project.name,
+            description=project.description,
+            thumbnail=project.thumbnail,
+            last_change_date=project.last_change_date,
+            classifiers=project.classifiers,
+            dev=project.dev,
+            quality=project.quality,
+            workbench=project.workbench,
+            ui=project.ui,
+            type=cast(ProjectTypeAPI, project.type),
+            template_type=cast(ProjectTemplateType, project.template_type),
         )
         # Increment document version
         redis_client_sdk = get_redis_document_manager_client_sdk(app)
@@ -157,11 +155,16 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                 else:
                     # Create a synthetic exception for this unexpected state
                     unexpected_state_error = RuntimeError(
-                        f"Project {project_uuid} has {len(room_sessions)} connected users but is not in Redis Resources table"
+                        f"Project {project_uuid} has {len(room_sessions)} connected users but is not in "
+                        "Redis Resources table"
                     )
                     _logger.error(
                         **create_troubleshooting_log_kwargs(
-                            user_error_msg=f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
+                            user_error_msg=(
+                                f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io"
+                                " room (This is not expected, as project resource is not in the Redis Resources table),"
+                                "  keeping document just in case"
+                            ),
                             error=unexpected_state_error,
                             error_context={
                                 "project_uuid": str(project_uuid),
@@ -170,7 +173,11 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                                 "connected_users_count": len(room_sessions),
                                 "room_sessions": room_sessions[:5],  # Limit to first 5 sessions for debugging
                             },
-                            tip="This indicates a potential race condition or inconsistency between the Redis Resources table and socketio room state. Check if the project was recently closed but users are still connected, or if there's a synchronization issue between services.",
+                            tip=(
+                                "This indicates a potential race condition or inconsistency between the Redis Resources"
+                                " table and socketio room state. Check if the project was recently closed but users are"
+                                "still connected, or if there's a synchronization issue between services."
+                            ),
                         )
                     )
                     continue
@@ -185,7 +192,10 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                             "project_room": project_room,
                             "key_str": key_str,
                         },
-                        tip="Check if socketio server is properly initialized and the room exists. This could indicate a socketio manager issue or invalid room format.",
+                        tip=(
+                            "Check if socketio server is properly initialized and the room exists. "
+                            "This could indicate a socketio manager issue or invalid room format."
+                        ),
                     )
                 )
                 continue

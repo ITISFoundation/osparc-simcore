@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.83.0"
+    "version": "0.84.0"
   },
   "servers": [
     {
@@ -11907,6 +11907,39 @@
         }
       }
     },
+    "/v0/studies/{study_id}:dispatch": {
+      "post": {
+        "tags": [
+          "studies-dispatcher"
+        ],
+        "summary": "Dispatch Study",
+        "description": "Start an async clone of a published study into the requesting user's account. Returns 202 Accepted + TaskGet for polling via /tasks-legacy/{task_id}.",
+        "operationId": "dispatch_study",
+        "parameters": [
+          {
+            "name": "study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Study Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskGet_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -14877,6 +14910,10 @@
           "items"
         ],
         "title": "BootOption"
+      },
+      "BootOptions": {
+        "additionalProperties": true,
+        "type": "object"
       },
       "CatalogLatestServiceGet": {
         "properties": {
@@ -23398,6 +23435,23 @@
             ],
             "title": "Inputsrequired"
           },
+          "inputsUnits": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputsunits"
+          },
           "inputNodes": {
             "anyOf": [
               {
@@ -23429,14 +23483,12 @@
           "bootOptions": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/BootOptions"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Bootoptions"
+            ]
           },
           "outputs": {
             "anyOf": [
@@ -23462,8 +23514,7 @@
               "pattern": "^[-_a-zA-Z0-9]+$"
             },
             "type": "array",
-            "title": "Port Keys",
-            "default": []
+            "title": "Port Keys"
           }
         },
         "type": "object",
@@ -29303,6 +29354,21 @@
             "format": "email",
             "title": "Email"
           },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
+          },
           "invitationUrl": {
             "type": "string",
             "maxLength": 2083,
@@ -29729,6 +29795,21 @@
             "type": "string",
             "format": "email",
             "title": "Email"
+          },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
           },
           "messageContent": {
             "anyOf": [

@@ -8,10 +8,11 @@ from celery import (  # type: ignore[import-untyped]
 )
 from models_library.celery import TaskKey
 from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
+from models_library.products import ProductName
 from servicelib.logging_utils import log_context
 
 from ...clients.smtp import create_session
-from ...core.settings import ApplicationSettings
+from ...core.settings import ApplicationSettings, NotificationsSMTPSettings
 from ...services.email import add_attachments, compose_email
 
 _logger = logging.getLogger(__name__)
@@ -21,9 +22,10 @@ def _to_address(address: EmailContact) -> Address:
     return Address(display_name=address.name or "", addr_spec=address.email)
 
 
-async def send_email_message(
+async def send_email_message_task(
     task: Task,
     task_key: TaskKey,
+    product_name: ProductName,
     message: EmailMessage,
 ) -> None:
     assert task  # nosec
@@ -32,7 +34,7 @@ async def send_email_message(
     msg = EmailMessage(
         from_=EmailContact(**message.from_.model_dump()),
         to=EmailContact(**message.to.model_dump()),
-        bcc=EmailContact(**message.bcc.model_dump()) if message.bcc else None,
+        bcc=[EmailContact(**contact.model_dump()) for contact in message.bcc] if message.bcc else None,
         reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
         content=EmailContent(**message.content.model_dump()),
         attachments=message.attachments,
@@ -41,10 +43,11 @@ async def send_email_message(
     with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
         app_settings = ApplicationSettings.create_from_envs()
         assert app_settings.NOTIFICATIONS_SMTP_SETTINGS is not None  # nosec
+        smtp_settings: NotificationsSMTPSettings = app_settings.NOTIFICATIONS_SMTP_SETTINGS
 
-        settings = app_settings.NOTIFICATIONS_SMTP_SETTINGS.get_settings_for_email(msg.from_.email)
+        product_smtp_settings = smtp_settings.get_product_smtp_settings(product_name)
 
-        async with create_session(settings=settings) as smtp:
+        async with create_session(settings=smtp_settings.get_smtp_settings(product_name)) as smtp:
             email_msg = compose_email(
                 from_=_to_address(msg.from_),
                 to=_to_address(msg.to),
@@ -52,8 +55,8 @@ async def send_email_message(
                 content_text=msg.content.body_text,
                 content_html=msg.content.body_html,
                 reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
-                bcc=[_to_address(msg.bcc)] if msg.bcc else None,
-                extra_headers=settings.SMTP_EXTRA_HEADERS,
+                bcc=[_to_address(contact) for contact in msg.bcc] if msg.bcc else None,
+                extra_headers=product_smtp_settings.extra_headers,
             )
             if msg.attachments:
                 add_attachments(

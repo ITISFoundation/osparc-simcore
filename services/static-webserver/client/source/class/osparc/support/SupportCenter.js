@@ -110,7 +110,7 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "home-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Help & Support"),
-            icon: "@FontAwesome5Solid/question-circle/18",
+            icon: "@FontAwesomeSolid/question-circle/18",
             backgroundColor: "transparent",
             iconPosition: "top",
             allowGrowX: true,
@@ -122,7 +122,7 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "conversations-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Conversations"),
-            icon: "@FontAwesome5Solid/comments/18",
+            icon: "@FontAwesomeSolid/comments/18",
             backgroundColor: "transparent",
             iconPosition: "top",
             allowGrowX: true,

@@ -6,7 +6,7 @@
 
 
 import asyncio
-import re
+import datetime
 import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
@@ -18,7 +18,7 @@ from unittest import mock
 import pytest
 import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
 )
@@ -39,18 +39,26 @@ from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_pro
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.redis import RedisClientSDK
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
+from simcore_service_webserver.garbage_collector.garbage_collector_service import (
+    GUEST_USER_RC_LOCK_FORMAT,
+)
+from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
 from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
+from simcore_service_webserver.studies_dispatcher._studies_access import (
+    copy_study_to_account,
+)
 from simcore_service_webserver.users.users_service import (
     delete_user_without_projects,
     get_user_role,
 )
-from tenacity import retry, stop_after_attempt, wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -175,9 +183,9 @@ async def storage_subsystem_mock_override(
     # Overrides + extends fixture in services/web/server/tests/unit/with_dbs/conftest.py
     # SEE https://docs.pytest.org/en/stable/fixture.html#override-a-fixture-on-a-folder-conftest-level
 
-    # Mocks copy_data_folders_from_project BUT under studies_access
+    # Mocks copy_data_folders_from_project in the dispatch task (new split-flow location)
     mock = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._studies_access.copy_data_folders_from_project",
+        "simcore_service_webserver.studies_dispatcher._dispatch_task.copy_data_folders_from_project",
         autospec=True,
     )
 
@@ -233,38 +241,50 @@ def _assert_redirected_to_error_page(response: ClientResponse, expected_page: st
     assert params["status_code"] == [f"{expected_status_code}"], params
 
 
-@retry(wait=wait_fixed(5), stop=stop_after_attempt(3))
-async def _assert_redirected_to_study(response: ClientResponse, session: ClientSession) -> str:
-    # https://docs.aiohttp.org/en/stable/client_advanced.html#redirection-history
-    assert len(response.history) == 1, "Is a re-direction"
+def _assert_dispatch_redirect(response: ClientResponse, source_study_id: str) -> None:
+    """Assert GET /study/{id} responded with an immediate 302 to the SPA dispatch fragment.
 
-    content = await response.text()
-    assert response.status == status.HTTP_200_OK, f"Got {content}"
-
-    # Expects redirection to osparc web
-    assert response.url.path == "/"
-    assert "OSPARC-SIMCORE" in content, f"Expected front-end rendering workbench's study, got {content!s}"
-
-    # First check if the fragment indicates an error
+    In the new split-flow the server redirects immediately (no clone yet) to
+    ``/#/dispatch?study_id={source_study_id}``.  The actual clone is triggered
+    separately by the SPA via POST /{VTAG}/studies/{id}:dispatch.
+    """
+    assert len(response.history) == 1, "Expected exactly 1 redirect from GET /study/{id}"
+    assert response.status == status.HTTP_200_OK, f"Expected 200 after redirect, got {response.status}"
+    assert response.url.path == "/", "Expected redirect to root SPA page"
     fragment = response.real_url.fragment
-    error_match = re.match(r"/error", fragment)
-    if error_match:
-        # Parse query parameters to extract error details
-        query_params = urllib.parse.parse_qs(fragment.split("?", 1)[1] if "?" in fragment else "")
-        error_message = query_params.get("message", ["Unknown error"])[0]
-        error_status = query_params.get("status_code", ["Unknown"])[0]
+    assert fragment == f"/dispatch?study_id={source_study_id}", (
+        f"Expected fragment '/dispatch?study_id={source_study_id}', got {fragment!r}"
+    )
 
-        pytest.fail(f"Redirected to error page: Status={error_status}, Message={error_message}")
 
-    # Check for study path if not an error
-    m = re.match(r"/study/([\d\w-]+)", fragment)
-    assert m, f"Expected /study/uuid, got {fragment}"
+async def _dispatch_and_poll(client: TestClient, study_id: str, *, max_iters: int = 60) -> str:
+    """POST :dispatch and poll until completion. Returns the cloned project UUID."""
+    assert client.app
+    dispatch_url = str(client.app.router["dispatch_study"].url_for(study_id=study_id))
+    resp = await client.post(dispatch_url)
+    payload = await resp.json()
+    assert resp.status == status.HTTP_202_ACCEPTED, f"Expected 202 from :dispatch, got {resp.status}: {payload}"
 
-    # Expects auth cookie for current user
-    assert _is_user_authenticated(session)
+    task_data = payload.get("data") or payload
+    status_href: str = task_data["status_href"]
+    result_href: str = task_data["result_href"]
 
-    # returns newly created project
-    return m.group(1)
+    for _ in range(max_iters):
+        await asyncio.sleep(0.1)
+        poll_resp = await client.get(urllib.parse.urlparse(status_href).path)
+        poll_payload = await poll_resp.json()
+        assert poll_resp.status == status.HTTP_200_OK, f"Task status poll failed: {poll_payload}"
+        task_status = poll_payload.get("data") or poll_payload
+        if task_status.get("done"):
+            result_resp = await client.get(urllib.parse.urlparse(result_href).path)
+            result_payload = await result_resp.json()
+            assert result_resp.status == status.HTTP_200_OK, f"Task result failed: {result_payload}"
+            result = result_payload.get("data") or result_payload
+            project_id: str | None = result.get("project_id")
+            assert project_id, f"Expected project_id in task result, got: {result}"
+            return project_id
+
+    pytest.fail(f"Dispatch task for study {study_id!r} did not complete in {max_iters * 0.1:.1f}s")
 
 
 # -----------------------------------------------------------
@@ -325,7 +345,12 @@ async def test_access_study_anonymously(
 
     resp = await client.get(f"{study_url}")
 
-    expected_prj_id = await _assert_redirected_to_study(resp, client.session)
+    # New split-flow: GET redirects immediately to dispatch fragment, no clone yet
+    _assert_dispatch_redirect(resp, published_project["uuid"])
+    assert _is_user_authenticated(client.session), "Guest session must be set before the clone"
+
+    # SPA now calls :dispatch to start the clone task, then polls to completion
+    expected_prj_id = await _dispatch_and_poll(client, published_project["uuid"])
 
     # has auto logged in as guest?
     me_url = client.app.router["get_my_profile"].url_for()
@@ -373,15 +398,19 @@ async def test_access_study_by_logged_user(
 
     study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
-    await _assert_redirected_to_study(resp, client.session)
+
+    # New split-flow: GET redirects immediately to dispatch fragment, no clone yet
+    _assert_dispatch_redirect(resp, published_project["uuid"])
+
+    # SPA now calls :dispatch to start the clone task, then polls to completion
+    cloned_project_id = await _dispatch_and_poll(client, published_project["uuid"])
 
     # user has a copy of the template project
     projects = await _get_user_projects(client)
     assert len(projects) == 1
     user_project = projects[0]
 
-    # heck redirects to /#/study/{uuid}
-    assert resp.real_url.fragment.endswith("/study/{}".format(user_project["uuid"]))
+    assert user_project["uuid"] == cloned_project_id
     _assert_same_projects(user_project, published_project)
 
     assert user_project["prjOwner"] == logged_user["email"]
@@ -406,7 +435,12 @@ async def test_access_cookie_of_expired_user(
     study_url = app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
 
-    await _assert_redirected_to_study(resp, client.session)
+    # New split-flow: GET redirects immediately to dispatch fragment, no clone yet
+    _assert_dispatch_redirect(resp, published_project["uuid"])
+    assert _is_user_authenticated(client.session), "Guest session must be set"
+
+    # SPA calls :dispatch to start the clone task, then polls to completion
+    await _dispatch_and_poll(client, published_project["uuid"])
 
     # Expects valid cookie and GUEST access
     me_url = app.router["get_my_profile"].url_for()
@@ -444,7 +478,9 @@ async def test_access_cookie_of_expired_user(
 
     # But still can access as a new user
     resp = await client.get(f"{study_url}")
-    await _assert_redirected_to_study(resp, client.session)
+    # New split-flow: the GET sets a new guest session and redirects to the dispatch fragment
+    _assert_dispatch_redirect(resp, published_project["uuid"])
+    assert _is_user_authenticated(client.session), "New guest session must be set"
 
     # as a guest user
     resp = await client.get(f"{me_url}")
@@ -494,7 +530,12 @@ async def test_guest_user_is_not_garbage_collected(
         # clicks link to study
         resp = await client.get(f"{study_url}")
 
-        expected_prj_id = await _assert_redirected_to_study(resp, client.session)
+        # New split-flow: GET redirects immediately, sets guest session
+        _assert_dispatch_redirect(resp, published_project["uuid"])
+        assert _is_user_authenticated(client.session), "Guest session must be set"
+
+        # SPA calls :dispatch to start the clone task, then polls to completion
+        expected_prj_id = await _dispatch_and_poll(client, published_project["uuid"])
 
         # has auto logged in as guest?
         me_url = client.app.router["get_my_profile"].url_for()
@@ -530,21 +571,22 @@ async def test_access_study_with_dispatcher_disabled(
     storage_subsystem_mock_override: None,
 ):
     """
-    Test that accessing /study returns 404 when studies_dispatcher_enabled is False.
+    Test that accessing /study redirects to the SPA error page when studies_dispatcher_enabled is False.
 
     When the product has studies_dispatcher_enabled=False, the dispatcher feature
     should be completely disabled, and accessing the /study endpoint should result
-    in a direct 404 response (not a redirect).
+    in a redirect to the front-end error page — never a raw HTTP response.
     """
     assert not _is_user_authenticated(client.session), "Is anonymous"
     assert client.app
 
-    # Accessing the study should return 404 directly
     study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
 
-    assert resp.status == status.HTTP_404_NOT_FOUND, (
-        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    _assert_redirected_to_error_page(
+        resp,
+        expected_page="error",
+        expected_status_code=status.HTTP_404_NOT_FOUND,
     )
 
     # User should NOT be auto-logged in as guest when dispatcher is disabled
@@ -564,8 +606,8 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
     user_role: UserRole,
 ):
     """
-    Test that accessing /study returns 404 for logged-in users when
-    studies_dispatcher_enabled is False.
+    Test that accessing /study redirects to the SPA error page for logged-in users
+    when studies_dispatcher_enabled is False.
 
     Even logged-in users should not be able to access the dispatcher
     when the feature is disabled at the product level.
@@ -573,10 +615,163 @@ async def test_access_study_by_logged_user_with_dispatcher_disabled(
     assert _is_user_authenticated(client.session), "Is already logged-in"
     assert client.app
 
-    # Accessing the study should return 404 directly, even for authenticated users
     study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
 
-    assert resp.status == status.HTTP_404_NOT_FOUND, (
-        f"Expected 404 when studies_dispatcher_enabled=False, got {resp.status}"
+    _assert_redirected_to_error_page(
+        resp,
+        expected_page="error",
+        expected_status_code=status.HTTP_404_NOT_FOUND,
     )
+
+
+@pytest.mark.parametrize("studies_dispatcher_enabled", [True], indirect=True)
+async def test_access_study_anonymously_with_login_required(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    published_project: ProjectDict,
+    mocker: MockerFixture,
+):
+    """
+    When STUDIES_ACCESS_ANONYMOUS_ALLOWED=0 (login required) and an anonymous user
+    accesses /study/{id}, the handler must redirect to the SPA error page with
+    status_code=401 — never return a raw HTTP response.
+    """
+    mock_settings = mocker.MagicMock()
+    mock_settings.is_login_required.return_value = True
+    mocker.patch(
+        "simcore_service_webserver.studies_dispatcher._studies_access.get_plugin_settings",
+        return_value=mock_settings,
+    )
+
+    assert not _is_user_authenticated(client.session), "Is anonymous"
+    assert client.app
+
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    resp = await client.get(f"{study_url}")
+
+    _assert_redirected_to_error_page(
+        resp,
+        expected_page="error",
+        expected_status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+    # User must NOT have been auto-logged in as guest
+    me_url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{me_url}")
+    assert resp.status == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.fixture
+def short_redis_lock_ttl(mocker: MockerFixture) -> datetime.timedelta:
+    """Shortens DEFAULT_LOCK_TTL and speeds up the renewal loop to keep lock-renewal tests fast."""
+    import servicelib.redis._decorators as _redis_decorators  # noqa: PLC0415
+    from redis.asyncio.lock import Lock  # noqa: PLC0415
+
+    short_ttl = datetime.timedelta(seconds=0.5)
+    mocker.patch.object(_redis_decorators, "DEFAULT_LOCK_TTL", short_ttl)
+
+    async def _fast_periodic_reacquisition(
+        lock: Lock,
+        started_event: asyncio.Event,
+        cancellation_event: asyncio.Event,
+    ) -> None:
+        if cancellation_event.is_set():
+            raise asyncio.CancelledError
+        await _redis_decorators.auto_extend_lock(lock)
+        started_event.set()
+        while not cancellation_event.is_set():
+            await asyncio.sleep(short_ttl.total_seconds() / 4)
+            if cancellation_event.is_set():
+                break
+            await _redis_decorators.auto_extend_lock(lock)
+
+    mocker.patch.object(_redis_decorators, "_periodic_reacquisition", _fast_periodic_reacquisition)
+    return short_ttl
+
+
+async def _is_guest_gc_lock_held(redis_sdk: RedisClientSDK, guest_user_name: str) -> bool:
+    # The garbage-collector skips a guest whenever the construction GC lock (keyed by the
+    # guest name) is held (see garbage_collector._core_guests, `lock_during_construction`).
+    # Hence checking the key existence is equivalent to checking that the GC would skip the guest.
+    lock_key = GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
+    return bool(await redis_sdk.redis.exists(lock_key))
+
+
+async def test_guest_gc_lock_is_renewed_and_not_released_during_long_study_copy(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    mocker: MockerFixture,
+    faker: Faker,
+    short_redis_lock_ttl: datetime.timedelta,
+    # needed to cleanup the locks between parametrizations
+    redis_locks_client: AsyncIterator[aioredis.Redis],
+):
+    """
+    Ensures that the guest-user GC lock held around the (potentially long) study copy
+    is NOT released while the copy takes longer than the lock TTL, because it is
+    auto-extended (renewed) by `exclusive`.
+
+    While the lock is held the garbage-collector would skip the guest (it checks the
+    very same construction key keyed by the guest name), so the guest user and its
+    destination project cannot be deleted mid-copy.
+    """
+    assert client.app
+    redis_sdk = get_redis_lock_manager_client_sdk(client.app)
+
+    guest_user_name = faker.pystr().lower()
+    user = {
+        "id": faker.pyint(min_value=1000, max_value=99999),
+        "name": guest_user_name,
+        "role": UserRole.GUEST,
+        "email": faker.email(),
+    }
+    template_project = {"uuid": faker.uuid4()}
+    request = make_mocked_request("GET", "/", app=client.app)
+
+    # the copy intentionally takes LONGER than the lock TTL to force at least one renewal
+    copy_duration_s = short_redis_lock_ttl.total_seconds() + 0.3
+
+    copy_started = asyncio.Event()
+
+    # `copy_study_to_account` is now itself decorated with the guest-user GC lock. We make it
+    # run longer than the lock TTL by slowing its first inner DB call, and short-circuit the
+    # rest so it returns without performing a real copy. This exercises the production
+    # decorator (and its guest-name lock key) directly.
+    async def _slow_get_project_product(*_args, **_kwargs) -> str:
+        copy_started.set()
+        await asyncio.sleep(copy_duration_s)
+        return "osparc"
+
+    mocker.patch.object(ProjectDBAPI, "get_project_product", side_effect=_slow_get_project_product)
+    mocker.patch(
+        "simcore_service_webserver.studies_dispatcher._studies_access.check_user_project_permission",
+        autospec=True,
+    )
+    # project "already exists" -> skip the clone/copy branch and return early
+    mocker.patch.object(ProjectDBAPI, "get_project_dict_and_type", return_value=({}, None))
+
+    # initially not locked
+    assert not await _is_guest_gc_lock_held(redis_sdk, guest_user_name)
+
+    copy_task = asyncio.create_task(copy_study_to_account(request, template_project, user))
+    await asyncio.wait_for(copy_started.wait(), timeout=5)
+
+    # poll across more than one TTL window: without renewal the lock would expire at
+    # DEFAULT_LOCK_TTL and this assertion would fail once we cross that boundary
+    elapsed = 0.0
+    poll_interval = 0.05
+    while elapsed < copy_duration_s - poll_interval:
+        assert await _is_guest_gc_lock_held(redis_sdk, guest_user_name), (
+            f"guest GC lock was released after {elapsed}s (TTL={short_redis_lock_ttl.total_seconds()}s): "
+            "exclusive did not renew it"
+        )
+        await asyncio.sleep(poll_interval)
+        elapsed += poll_interval
+
+    # the copy returns the destination project uuid and releases the lock
+    copied_project_uuid = await copy_task
+    assert copied_project_uuid
+
+    # once the copy is done the lock is released and the guest becomes GC-eligible again
+    assert not await _is_guest_gc_lock_held(redis_sdk, guest_user_name)

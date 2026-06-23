@@ -151,9 +151,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           if (value === "shared") {
             return osparc.store.Workspaces.iconPath(18);
           } else if (value === "home") {
-            return "@FontAwesome5Solid/home/16";
+            return "@FontAwesomeSolid/home/16";
           }
-          return "@FontAwesome5Solid/folder/16";
+          return "@FontAwesomeSolid/folder/16";
         },
       });
     },
@@ -175,7 +175,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = null;
       const folderId = null;
       const myWorkspaceData = this.__createItemData(
-        "My Workspace",
+        this.tr("My Workspace"),
         "home",
         workspaceId,
         folderId,
@@ -192,7 +192,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = -1;
       const folderId = null;
       const sharedWorkspaceData = this.__createItemData(
-        "Shared Workspaces",
+        this.tr("Shared Workspaces"),
         "shared",
         workspaceId,
         folderId,

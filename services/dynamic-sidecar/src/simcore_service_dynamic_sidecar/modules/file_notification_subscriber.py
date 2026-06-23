@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType, FileNotificationMessage
 from servicelib.container_utils import run_command_in_container
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_sdk.node_ports_common import filemanager
@@ -27,10 +27,7 @@ _MIN_STORAGE_PATH_PARTS: Final[int] = 3
 _TIMEOUT_REMOVAL: Final[timedelta] = timedelta(seconds=5)
 
 
-def _resolve_local_path_from_storage_id(
-    mounted_volumes: MountedVolumes,
-    storage_path: StorageFileID,
-) -> Path | None:
+def _resolve_local_path_from_storage_id(mounted_volumes: MountedVolumes, storage_path: StorageFileID) -> Path | None:
     """Maps a StorageFileID to a local disk path within mounted volumes.
 
     Only state volumes are resolved. Inputs and outputs are intentionally ignored:
@@ -127,7 +124,7 @@ async def _notify_path_change(
     Informs that a path inside S3 changed and that an action needs to be taken in the container.
     """
     try:
-        await get_r_clone_mount_manager(app).refresh_path(f"{Path(path).parent}", recursive=recursive)
+        await get_r_clone_mount_manager(app).refresh_path(path, recursive=recursive)
     except NoMountFoundForRemotePathError:
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
         match event_type:
@@ -142,7 +139,8 @@ async def _notify_path_change(
 async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
     message = FileNotificationMessage.model_validate_json(data)
     _logger.debug("Received file notification: %s for file_id=%s", message.event_type, message.file_id)
-    await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
+    with log_catch(_logger, reraise=False):
+        await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
     return True
 
 

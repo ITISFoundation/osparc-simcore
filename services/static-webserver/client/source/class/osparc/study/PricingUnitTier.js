@@ -74,7 +74,7 @@ qx.Class.define("osparc.study.PricingUnitTier", {
             converter: selected => selected ? "Selected" : "Select"
           });
           this.bind("selected", control, "icon", {
-            converter: selected => selected ? "@FontAwesome5Solid/check/12" : null
+            converter: selected => selected ? "@FontAwesomeSolid/check/12" : null
           });
           this.bind("showSelectButton", control, "visibility", {
             converter: show => show ? "visible" : "excluded"
@@ -111,19 +111,19 @@ qx.Class.define("osparc.study.PricingUnitTier", {
         let toolTipText = "";
         switch (key) {
           case "CPU":
-            icon = "@FontAwesome5Solid/microchip/13";
+            icon = "@FontAwesomeSolid/microchip/13";
             toolTipText = qx.locale.Manager.tr("CPU");
             break;
           case "RAM":
-            icon = "@FontAwesome5Solid/server/13";
+            icon = "@FontAwesomeSolid/server/13";
             toolTipText = qx.locale.Manager.tr("RAM");
             break;
           case "VRAM":
-            icon = "@FontAwesome5Solid/desktop/13";
+            icon = "@FontAwesomeSolid/desktop/13";
             toolTipText = qx.locale.Manager.tr("VRAM");
             break;
           case "SSD":
-            icon = "@FontAwesome5Solid/hdd/13";
+            icon = "@FontAwesomeSolid/hdd/13";
             toolTipText = qx.locale.Manager.tr("SSD");
             break;
         }

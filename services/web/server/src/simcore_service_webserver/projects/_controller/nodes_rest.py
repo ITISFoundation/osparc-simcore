@@ -62,8 +62,8 @@ from ..._meta import API_VTAG as VTAG
 from ...catalog import catalog_service
 from ...dynamic_scheduler import api as dynamic_scheduler_service
 from ...exception_handling import create_error_response
-from ...groups import api as groups_service
 from ...groups.exceptions import GroupNotFoundError
+from ...groups.groups_service import get_group_by_gid, list_all_user_groups_ids
 from ...login.decorators import login_required
 from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
@@ -114,18 +114,12 @@ async def create_node(request: web.Request) -> web.Response:
     ):
         raise web.HTTPNotAcceptable(text=f"Service {body.service_key}:{body.service_version} is deprecated")
 
-    # ensure the project exists
-    project_data = await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-    )
     data = {
         "node_id": await _projects_service.add_project_node(
             request,
-            project_data,
             req_ctx.user_id,
             req_ctx.product_name,
+            path_params.project_id,
             get_api_base_url(request),
             body.service_key,
             body.service_version,
@@ -582,9 +576,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     groups_to_compare = {EVERYONE_GROUP_ID}
 
     # Get the group from the provided group ID
-    _sharing_with_group: Group | None = await groups_service.get_group_by_gid(
-        app=request.app, group_id=query_params.for_gid
-    )
+    _sharing_with_group: Group | None = await get_group_by_gid(app=request.app, group_id=query_params.for_gid)
 
     # Check if the group exists
     if _sharing_with_group is None:
@@ -593,7 +585,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     # Update groups to compare based on the type of sharing group
     if _sharing_with_group.group_type == GroupType.PRIMARY:
         _user_id = await users_service.get_user_id_from_gid(app=request.app, primary_gid=query_params.for_gid)
-        user_groups_ids = await groups_service.list_all_user_groups_ids(app=request.app, user_id=_user_id)
+        user_groups_ids = await list_all_user_groups_ids(app=request.app, user_id=_user_id)
         groups_to_compare.update(set(user_groups_ids))
         groups_to_compare.add(query_params.for_gid)
     elif _sharing_with_group.group_type == GroupType.STANDARD:

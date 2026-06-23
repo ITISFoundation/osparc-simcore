@@ -27,6 +27,6 @@ qx.Class.define("osparc.task.ToTemplate", {
   },
 
   statics: {
-    ICON: "@FontAwesome5Solid/copy"
+    ICON: "@FontAwesomeSolid/copy"
   },
 });

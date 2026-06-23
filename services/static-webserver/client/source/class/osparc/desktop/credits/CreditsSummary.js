@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
             alignX: "center",
             alignY: "middle",
             center: true,
-            icon: "@FontAwesome5Solid/ellipsis-v/12"
+            icon: "@FontAwesomeSolid/ellipsis-v/12"
           });
           // make it circular
           control.getContentElement().setStyles({

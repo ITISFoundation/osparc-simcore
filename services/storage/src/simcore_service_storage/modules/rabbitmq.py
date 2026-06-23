@@ -1,7 +1,7 @@
 import logging
-from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.basic_regex import SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import DatCoreFileID, NodeID, StorageFileID
@@ -11,31 +11,28 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
+from servicelib.fastapi.rabbitmq_lifespan import configure_rabbitmq_client as _configure_rabbitmq_client
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
+from settings_library.rabbit import RabbitSettings
 
 from .._meta import APP_NAME
-from ..core.settings import get_application_settings
 
 _logger = logging.getLogger(__name__)
 
 
-def setup_rabbitmq(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        settings = get_application_settings(app).STORAGE_RABBITMQ
-        app.state.rabbitmq_client = RabbitMQClient(
-            client_name=f"{APP_NAME}",
-            settings=settings,
-        )
-
-    async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await cast(RabbitMQClient, app.state.rabbitmq_client).close()
-            app.state.rabbitmq_client = None
-
-    app.state.rabbitmq_client = None
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+def configure_rabbitmq_client(
+    app_lifespan: LifespanManager,
+    *,
+    settings: RabbitSettings,
+) -> None:
+    """Configure RabbitMQ client lifespan."""
+    _configure_rabbitmq_client(
+        app_lifespan,
+        settings=settings,
+        client_name=APP_NAME,
+        wait_for_connectivity=False,
+    )
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
