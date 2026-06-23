@@ -298,7 +298,7 @@ async def test_email_provider_propagates_bcc(
     assert mock_send_message_from_template.called
     addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
     assert addressing.bcc is not None
-    assert addressing.bcc.email == bcc
+    assert addressing.bcc[0].email == bcc
 
 
 @pytest.mark.parametrize(

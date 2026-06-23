@@ -66,7 +66,7 @@ class EmailChannelHandler(ChannelHandler):
 
         content_dict = message.content.model_dump()
         from_dict = resolved_from.model_dump()
-        bcc_dict = message.addressing.bcc.model_dump() if message.addressing.bcc else None
+        bcc_list = [contact.model_dump() for contact in message.addressing.bcc] if message.addressing.bcc else None
         reply_to_dict = message.addressing.reply_to.model_dump() if message.addressing.reply_to else None
 
         recipients = _interleave_recipients_by_domain(message.addressing.to)
@@ -80,8 +80,8 @@ class EmailChannelHandler(ChannelHandler):
             "from": from_dict,
             "content": content_dict,
         }
-        if bcc_dict:
-            payload_base["bcc"] = bcc_dict
+        if bcc_list:
+            payload_base["bcc"] = bcc_list
         if reply_to_dict:
             payload_base["reply_to"] = reply_to_dict
 
