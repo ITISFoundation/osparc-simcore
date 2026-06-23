@@ -424,6 +424,68 @@ async def test_pull_compressed_zip_file_from_remote(
     mocked_log_publishing_cb.assert_called()
 
 
+async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
+    remote_parameters: StorageParameters,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # regression test for zip files whose name contains spaces (e.g. 'IXI025-Guys-0852-MRI (2) (3).zip')
+    # the URL path percent-encodes the spaces and the local download name must be decoded back
+    # so that the archive can be found and uncompressed
+    local_zip_file_path = tmp_path / "archive with spaces (2) (3).zip"
+    file_names_within_zip_file = set()
+    with zipfile.ZipFile(local_zip_file_path, compression=zipfile.ZIP_DEFLATED, mode="w") as zfp:
+        for file_number in range(5):
+            local_test_file = tmp_path / f"{file_number}_{faker.file_name()}"
+            local_test_file.write_text(faker.text())
+            assert local_test_file.exists()
+            zfp.write(local_test_file, local_test_file.name)
+            file_names_within_zip_file.add(local_test_file.name)
+
+    # NOTE: the remote file name contains spaces, which get percent-encoded in the URL
+    destination_url = TypeAdapter(AnyUrl).validate_python(
+        f"{remote_parameters.remote_file_url} with spaces (2) (3).zip"
+    )
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+
+    with (
+        cast(
+            fsspec.core.OpenFile,
+            fsspec.open(
+                f"{destination_url}",
+                mode="wb",
+                **storage_kwargs,
+            ),
+        ) as dest_fp,
+        local_zip_file_path.open("rb") as src_fp,
+    ):
+        dest_fp.write(src_fp.read())
+
+    # now we want to download that file so it becomes the source
+    src_url = destination_url
+
+    # if destination is not a zip, then we decompress
+    download_folder = tmp_path / "download"
+    download_folder.mkdir(parents=True, exist_ok=True)
+    assert download_folder.exists()
+    dst_path = download_folder / faker.file_name()
+    await pull_file_from_remote(
+        src_url=src_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+    )
+    assert not dst_path.exists()
+    for file in download_folder.glob("*"):
+        assert file.exists()
+        assert file.name in file_names_within_zip_file
+    mocked_log_publishing_cb.assert_called()
+
+
 def _compute_hash(file_path: Path) -> str:
     with file_path.open("rb") as file_to_hash:
         file_hash = hashlib.sha256()
