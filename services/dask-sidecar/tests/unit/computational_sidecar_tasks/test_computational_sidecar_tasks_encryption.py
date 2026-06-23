@@ -6,6 +6,7 @@
 
 import io
 from collections.abc import Callable
+from typing import Literal
 from unittest import mock
 
 import distributed
@@ -13,6 +14,7 @@ import fsspec
 import pytest
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
+from dask_task_models_library.container_tasks.errors import ServiceEncryptionError
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -199,3 +201,98 @@ async def test_run_computational_sidecar_with_encryption(
         f"text added during computation '{computation_marker}' missing from decrypted output"
     )
     mocked_get_image_labels.assert_called()
+
+
+@pytest.mark.parametrize(
+    "integration_version, task_owner",
+    [("1.0.0", "no_parent_node")],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "wrong_field",
+    ["job_key", "job_id", "file_id"],
+)
+async def test_run_computational_sidecar_with_wrong_encryption_context_raises(
+    wrong_field: Literal["job_key", "job_id", "file_id"],
+    app_environment: EnvVarsDict,
+    mocked_get_image_labels: mock.Mock,
+    s3_settings: S3Settings,
+    s3_remote_file_url: Callable[..., AnyUrl],
+    task_owner: TaskOwner,
+    log_rabbit_client_parser: mock.AsyncMock,
+    dask_client: distributed.Client,
+):
+    # the context the task will decrypt the input with
+    job_encryption_context = JobEncryptionContext(
+        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
+        job_id="pytest-encryption-job",
+    )
+    input_port_key = "input_file_1"
+    plaintext = b"this is the very secret payload that must travel encrypted\n"
+
+    # the context the client encrypts the input with: exactly ONE field is wrong, so that
+    # the per-file key derived by the task (HKDF over job_key/job_id/file_id/file_role)
+    # no longer matches and AES-GCM authentication must fail.
+    encrypt_params: dict[str, str | bytes] = {
+        "job_key": job_encryption_context.job_key.get_secret_value(),
+        "job_id": job_encryption_context.job_id,
+        "file_id": input_port_key,
+        "file_role": "input",
+    }
+    if wrong_field == "job_key":
+        encrypt_params["job_key"] = generate_key()  # a different, unrelated key
+    elif wrong_field == "job_id":
+        encrypt_params["job_id"] = "some-other-job-id"
+    else:
+        encrypt_params["file_id"] = "some-other-file-id"
+
+    # 1. upload an encrypted input file on S3 using the WRONG context
+    encrypted_input_url = s3_remote_file_url(file_path="encrypted_input.dat")
+    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
+    with fsspec.open(f"{encrypted_input_url}", mode="wb", **s3_storage_kwargs) as fp:
+        fp.write(  # type: ignore[attr-defined]
+            _encrypt_to_bytes(
+                plaintext,
+                job_key=encrypt_params["job_key"],  # type: ignore[arg-type]
+                job_id=encrypt_params["job_id"],  # type: ignore[arg-type]
+                file_id=encrypt_params["file_id"],  # type: ignore[arg-type]
+                file_role=encrypt_params["file_role"],  # type: ignore[arg-type]
+            )
+        )
+
+    # 2. submit a task that tries to decrypt the input with the (correct) job context
+    future = dask_client.submit(
+        run_computational_sidecar,
+        task_parameters=ContainerTaskParameters(
+            image="itisfoundation/sleeper",
+            tag="2.1.2",
+            input_data=TaskInputData.model_validate(
+                {input_port_key: FileUrl(url=encrypted_input_url, file_mapping="input.txt")}
+            ),
+            output_data_keys=TaskOutputDataSchema.model_validate({}),
+            command=["/bin/bash", "-c", "echo 'should never run'"],
+            envs={},
+            labels={},
+            task_owner=task_owner,
+            boot_mode=BootMode.CPU,
+        ),
+        docker_auth=DockerBasicAuth(server_address="docker.io", username="pytest", password=SecretStr("")),
+        log_file_url=s3_remote_file_url(file_path="log.dat"),
+        s3_settings=s3_settings,
+        encryption=job_encryption_context,
+        resources={},
+    )
+
+    # 3. a clear, well-defined worker error must surface (decryption could not be authenticated).
+    #    The low-level crypto error stays internal to the sidecar: it is not chained as cause
+    #    (it is not importable on the dask client) but its message is embedded in the worker
+    #    error so the failure remains diagnosable on the client side.
+    with pytest.raises(ServiceEncryptionError) as exc_info:
+        future.result()
+
+    assert exc_info.value.code == "runtime.encryption"  # type: ignore[attr-defined]
+    error_message = f"{exc_info.value}"
+    assert "decrypt" in error_message
+    assert input_port_key in error_message
+    assert "authentication failed" in error_message
+    assert exc_info.value.__cause__ is None, "the internal crypto error must not be chained across the dask boundary"
