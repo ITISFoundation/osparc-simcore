@@ -3,10 +3,10 @@ import logging
 from aiohttp import web
 
 from ...login.decorators import login_required
-from .._controller.rest.redirects import get_redirection_to_viewer
 from ..settings import StudiesDispatcherSettings
 from .rest.nih import routes as nih_routes
 from .rest.redirects import get_redirection_to_viewer
+from .rest.study_dispatch import routes as study_dispatch_routes
 
 _logger = logging.getLogger(__name__)
 
@@ -25,3 +25,4 @@ def setup_controller(app: web.Application, settings: StudiesDispatcherSettings):
     app.router.add_routes([web.get("/view", redirect_handler, name="get_redirection_to_viewer")])
 
     app.router.add_routes(nih_routes)
+    app.router.add_routes(study_dispatch_routes)

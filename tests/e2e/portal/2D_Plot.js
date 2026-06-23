@@ -22,12 +22,16 @@ async function runTutorial () {
 
   try {
     const page = await tutorial.beforeScript();
-    const studyData = await tutorial.openStudyLink();
+    const studyResp = await tutorial.openStudyLink();
+    const studyData = studyResp["data"];
+    const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    const nodeIdViewer = workbenchData["nodeIds"][1];
+    const nodeIdViewer = utils.getNodeIdFromServiceKey(studyData["workbench"], "raw-graphs");
+    if (!nodeIdViewer) {
+      throw new Error('Could not find node with service key "raw-graphs"');
+    }
     await tutorial.waitForServices(
-      workbenchData["studyId"],
+      studyId,
       [nodeIdViewer],
       startTimeout
     );

@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
 import logging
@@ -15,6 +16,7 @@ from fastapi import APIRouter, BackgroundTasks, FastAPI
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.utils import unused_port
+from starlette.types import Message, Receive, Scope, Send
 from tenacity import retry, stop_after_delay, wait_fixed
 from yarl import URL
 
@@ -168,3 +170,107 @@ async def test_server_cancels_when_client_disconnects(
         # request should have been cancelled after the ReadTimeout!
         server_done_event.wait(5)
         server_cancelled_mock.assert_called_once()
+
+
+async def test_middleware_emits_499_when_client_disconnects_before_response():
+    # When the client disconnects while the handler is still running (and no
+    # response has been sent yet), the middleware must emit a synthetic 499
+    # response so that outer middlewares observe a real response instead of
+    # raising RuntimeError("No response returned").
+
+    async def _never_responding_app(scope: Scope, receive: Receive, send: Send) -> None:
+        # Simulates a handler still working when the client disconnects
+        await asyncio.Event().wait()
+
+    middleware = RequestCancellationMiddleware(_never_responding_app)
+
+    sent_messages: list[Message] = []
+    initial_request_sent = False
+
+    async def _receive() -> Message:
+        nonlocal initial_request_sent
+        if not initial_request_sent:
+            initial_request_sent = True
+            return {"type": "http.request", "body": b"", "more_body": False}
+        return {"type": "http.disconnect"}
+
+    async def _send(message: Message) -> None:
+        sent_messages.append(message)
+
+    scope: Scope = {
+        "type": "http",
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "http",
+        "path": "/",
+        "raw_path": b"/",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [],
+        "server": ("127.0.0.1", 8000),
+        "client": ("127.0.0.1", 12345),
+    }
+
+    await asyncio.wait_for(middleware(scope, _receive, _send), timeout=5)
+
+    start_messages = [m for m in sent_messages if m["type"] == "http.response.start"]
+    assert len(start_messages) == 1
+    assert start_messages[0]["status"] == 499
+
+    body_messages = [m for m in sent_messages if m["type"] == "http.response.body"]
+    assert len(body_messages) == 1
+
+
+async def test_middleware_does_not_inject_499_when_client_disconnects_mid_stream():
+    # When the client disconnects AFTER the response has already started
+    # streaming, the middleware must NOT inject a second http.response.start
+    # (which would violate the ASGI protocol). The already-committed status is
+    # preserved and the truncated stream simply ends.
+
+    streaming_started = asyncio.Event()
+
+    async def _streaming_app(scope: Scope, receive: Receive, send: Send) -> None:
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"chunk", "more_body": True})
+        streaming_started.set()
+        # still streaming when the client disconnects
+        await asyncio.Event().wait()
+
+    middleware = RequestCancellationMiddleware(_streaming_app)
+
+    sent_messages: list[Message] = []
+    initial_request_sent = False
+
+    async def _receive() -> Message:
+        nonlocal initial_request_sent
+        if not initial_request_sent:
+            initial_request_sent = True
+            return {"type": "http.request", "body": b"", "more_body": False}
+        # only signal the disconnect once the response is actually streaming
+        await streaming_started.wait()
+        return {"type": "http.disconnect"}
+
+    async def _send(message: Message) -> None:
+        sent_messages.append(message)
+
+    scope: Scope = {
+        "type": "http",
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "http",
+        "path": "/",
+        "raw_path": b"/",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [],
+        "server": ("127.0.0.1", 8000),
+        "client": ("127.0.0.1", 12345),
+    }
+
+    # must complete without raising (no protocol violation, no leaked error)
+    await asyncio.wait_for(middleware(scope, _receive, _send), timeout=5)
+
+    start_messages = [m for m in sent_messages if m["type"] == "http.response.start"]
+    # exactly one start, with the status the handler already committed (NOT 499)
+    assert len(start_messages) == 1
+    assert start_messages[0]["status"] == 200

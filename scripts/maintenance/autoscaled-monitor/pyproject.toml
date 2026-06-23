@@ -8,7 +8,7 @@ dependencies = [
   "boto3",
   # NOTE: these must be in sync with osparc
   "cloudpickle",
-  "dask[distributed]",
+  "dask[distributed]==2025.11.0",
   "mypy_boto3_ec2",
   "types-boto3",
   "parse",

@@ -208,7 +208,7 @@ class EmailProvider(NotificationProvider):
                     email=data.email,
                 )
             ],
-            bcc=EmailContact(name="", email=self._bcc_email) if self._bcc_email else None,
+            bcc=[EmailContact(name="", email=self._bcc_email)] if self._bcc_email else None,
             attachments=attachments or None,
         )
 

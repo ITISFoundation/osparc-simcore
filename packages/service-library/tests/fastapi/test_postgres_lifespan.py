@@ -67,6 +67,7 @@ def app_lifespan(
     configure_postgres_database(
         app_lifespan,
         settings=settings.CATALOG_POSTGRES,
+        tracing_config=None,
     )
 
     return app_lifespan
@@ -87,7 +88,9 @@ async def test_lifespan_postgres_database_in_an_app(
     ) as asgi_manager:
         # Verify that the async engine was created
         mock_create_async_engine_and_database_ready.assert_called_once_with(
-            app.state.settings.CATALOG_POSTGRES, app.title
+            app.state.settings.CATALOG_POSTGRES,
+            app.title,
+            tracing_config=None,
         )
 
         # Verify that the async engine is in the lifespan manager state
@@ -148,6 +151,7 @@ async def test_setup_postgres_database_with_empty_pg_settings(
     configure_postgres_database(
         app_lifespan,
         settings=cast(PostgresSettings, None),
+        tracing_config=None,
     )
 
     app = FastAPI(lifespan=app_lifespan)

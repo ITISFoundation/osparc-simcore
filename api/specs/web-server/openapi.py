@@ -59,6 +59,7 @@ openapi_modules = [
         "_projects_wallet",
         "_projects_workspaces",
         "_resource_usage",
+        "_studies_dispatcher",
         "_statics",
         "_storage",
         "_trash",

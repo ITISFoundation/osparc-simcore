@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.83.0"
+    "version": "0.84.0"
   },
   "servers": [
     {
@@ -11907,6 +11907,39 @@
         }
       }
     },
+    "/v0/studies/{study_id}:dispatch": {
+      "post": {
+        "tags": [
+          "studies-dispatcher"
+        ],
+        "summary": "Dispatch Study",
+        "description": "Start an async clone of a published study into the requesting user's account. Returns 202 Accepted + TaskGet for polling via /tasks-legacy/{task_id}.",
+        "operationId": "dispatch_study",
+        "parameters": [
+          {
+            "name": "study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Study Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskGet_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -23274,6 +23307,11 @@
             "type": "string",
             "title": "Userid",
             "description": "the user that started the service"
+          },
+          "productName": {
+            "type": "string",
+            "title": "Productname",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -23285,7 +23323,8 @@
           "serviceHost",
           "servicePort",
           "serviceState",
-          "userId"
+          "userId",
+          "productName"
         ],
         "title": "NodeGet"
       },
@@ -27225,6 +27264,11 @@
             "title": "Is Collaborative",
             "description": "True if service allows collaboration (multi-tenant access)",
             "default": false
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -27236,7 +27280,8 @@
           "service_uuid",
           "service_host",
           "service_port",
-          "service_state"
+          "service_state",
+          "product_name"
         ],
         "title": "RunningDynamicServiceDetails"
       },
@@ -29321,6 +29366,21 @@
             "format": "email",
             "title": "Email"
           },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
+          },
           "invitationUrl": {
             "type": "string",
             "maxLength": 2083,
@@ -29747,6 +29807,21 @@
             "type": "string",
             "format": "email",
             "title": "Email"
+          },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
           },
           "messageContent": {
             "anyOf": [

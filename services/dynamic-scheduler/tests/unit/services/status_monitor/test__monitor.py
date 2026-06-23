@@ -80,7 +80,7 @@ def _add_to_dict(dict_data: dict, entries: list[tuple[str, Any]]) -> None:
 
 
 def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGet:
-    dict_data = deepcopy(NodeGet.model_config["json_schema_extra"]["examples"][1])
+    dict_data = deepcopy(NodeGet.model_json_schema()["examples"][0])
     _add_to_dict(
         dict_data,
         [

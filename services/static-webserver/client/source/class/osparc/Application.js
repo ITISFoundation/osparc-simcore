@@ -129,7 +129,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __rerouteNav: function(urlFragment) {
+    __rerouteNav: function (urlFragment) {
       const page = urlFragment.nav[0];
       switch (page) {
         case "study": {
@@ -141,6 +141,23 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 const loadAfterLogin = {
                   id: "startStudy",
+                  studyId,
+                };
+                this.__loadMainPage(loadAfterLogin);
+              })
+              .catch(() => this.__loadLoginPage());
+          }
+          break;
+        }
+        case "dispatch": {
+          // Route: /#/dispatch?study_id={studyId}
+          if (urlFragment.params && urlFragment.params.study_id) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(() => {
+                const studyId = urlFragment.params.study_id;
+                const loadAfterLogin = {
+                  id: "dispatchStudy",
                   studyId,
                 };
                 this.__loadMainPage(loadAfterLogin);
@@ -293,7 +310,7 @@ qx.Class.define("osparc.Application", {
       const manifestLink = document.querySelector("link[rel='manifest']");
       const msApplicationLink = document.querySelector("link[rel='msapplication-config']");
 
-      const {productName, productColor} = this.__getProductMetaData();
+      const { productName, productColor } = this.__getProductMetaData();
 
       if (themeColorMeta) {
         themeColorMeta.setAttribute("content", productColor);
@@ -327,7 +344,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __setDefaultIcons: function() {
-      const {productName} = this.__getProductMetaData()
+      const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons/`;
       const favIconUrls = [
         "favicon-16x16.png",
@@ -349,7 +366,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __setGoogleIcons: function() {
-      const {productName} = this.__getProductMetaData()
+      const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons`;
 
       const favIconUrls = [
@@ -372,7 +389,7 @@ qx.Class.define("osparc.Application", {
 
     __setIOSpIcons: function() {
       // Array of promises to resolve icon URLs for Apple Touch Icons
-      const {productName} = this.__getProductMetaData()
+      const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons`;
 
       const appleIconUrls = [
@@ -461,7 +478,7 @@ qx.Class.define("osparc.Application", {
       view.addListener("done", () => this.__restart(), this);
     },
 
-    __loadMainPage: function(loadAfterLogin = null) {
+    __loadMainPage: function (loadAfterLogin = null) {
       // logged in
       osparc.WindowSizeTracker.getInstance().evaluateTooSmallDialog();
       osparc.data.Resources.getOne("profile")
@@ -514,6 +531,14 @@ qx.Class.define("osparc.Application", {
                 osparc.store.Store.getInstance().setCurrentStudyId(studyId);
               }
 
+              if (loadAfterLogin["id"] === "dispatchStudy" && loadAfterLogin["studyId"]) {
+                const studyId = loadAfterLogin["studyId"];
+                // Reuse the existing MainPage startup path that triggers startStudy.
+                // MainPageHandler.startStudy will intercept and run dispatchStudy instead.
+                osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+                osparc.store.Store.getInstance().setCurrentDispatchStudyId(studyId);
+              }
+
               if (loadAfterLogin["id"] === "openConversation" && loadAfterLogin["conversationId"]) {
                 const conversationId = loadAfterLogin["conversationId"];
                 const supportCenterWindow = osparc.support.SupportCenter.openWindow();
@@ -533,7 +558,7 @@ qx.Class.define("osparc.Application", {
             if (wsInstance.isAppConnected()) {
               loadViewerPage();
             } else {
-              const listenerId = wsInstance.addListener("changeAppConnected", function(e) {
+              const listenerId = wsInstance.addListener("changeAppConnected", function (e) {
                 if (e.getData()) {
                   wsInstance.removeListenerById(listenerId);
                   loadViewerPage();
@@ -545,7 +570,7 @@ qx.Class.define("osparc.Application", {
         .catch(err => console.error(err));
     },
 
-    __loadNodeViewerPage: function(studyId, viewerNodeId) {
+    __loadNodeViewerPage: function (studyId, viewerNodeId) {
       this.__connectWebSocket();
 
       const loadNodeViewerPage = () => {
@@ -566,7 +591,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loadView: function(view, opts, clearUrl=true) {
+    __loadView: function (view, opts, clearUrl = true) {
       const options = {
         top: 0,
         bottom: 0,
@@ -594,7 +619,7 @@ qx.Class.define("osparc.Application", {
     /**
      * Resets session and restarts
     */
-    logout: function(forcedReason) {
+    logout: function (forcedReason) {
       const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
       if (isLoggedIn) {
         osparc.auth.Manager.getInstance().logout()
@@ -604,7 +629,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loggedOut: function(forcedReason) {
+    __loggedOut: function (forcedReason) {
       if (forcedReason) {
         osparc.FlashMessenger.logAs(forcedReason, "WARNING", 0);
       } else {
