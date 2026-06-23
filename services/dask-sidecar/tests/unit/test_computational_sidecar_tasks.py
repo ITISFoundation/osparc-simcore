@@ -17,7 +17,7 @@ from collections.abc import AsyncIterator, Callable, Iterable
 from dataclasses import dataclass
 from pprint import pformat
 from random import randint
-from typing import Any
+from typing import Any, Literal
 from unittest import mock
 
 import distributed
@@ -631,6 +631,50 @@ def _decrypt_to_bytes(ciphertext: bytes, *, job_key: bytes, job_id: str, file_id
     return decrypted.getvalue()
 
 
+async def _assert_expected_logs_published_to_rabbit(
+    log_rabbit_client_parser: mock.AsyncMock,
+    expected_logs: list[str],
+    *,
+    match: Literal["prefix", "contains"] = "prefix",
+    expected_match_count: int | None = None,
+) -> list[str]:
+    """Polls the captured RabbitMQ log messages until every entry in ``expected_logs`` is found.
+
+    Matching is done either by prefix-regex (``match="prefix"``) or by substring
+    (``match="contains"``). When ``expected_match_count`` is provided, each expected entry must
+    match exactly that many log lines (e.g. to assert no message is lost).
+
+    Returns the collected worker logs.
+    """
+    worker_logs: list[str] = []
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert log_rabbit_client_parser.called, "no logs were published to RabbitMQ during the computation"
+            worker_logs = [
+                message
+                for msg in log_rabbit_client_parser.call_args_list
+                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
+            ]
+            for expected in expected_logs:
+                if match == "prefix":
+                    matches = [log for log in worker_logs if re.match(rf"^({expected}).*", log)]
+                else:
+                    matches = [log for log in worker_logs if expected in log]
+                if expected_match_count is None:
+                    assert matches, f"Could not find '{expected}' in worker logs:\n{pformat(worker_logs, width=240)}"
+                else:
+                    assert len(matches) == expected_match_count, (
+                        f"Expected exactly {expected_match_count} matches of '{expected}' "
+                        f"but found {len(matches)} in worker logs"
+                    )
+    return worker_logs
+
+
 @pytest.mark.parametrize(
     "integration_version, task_owner",
     [("1.0.0", "no_parent_node")],
@@ -721,23 +765,11 @@ async def test_run_computational_sidecar_with_encryption(
 
     # 3. check the live logs (forwarded through RabbitMQ) contain the marker emitted by the task.
     #    NOTE: this is what we will need to keep working once logs themselves get encrypted.
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert log_rabbit_client_parser.called, "no logs were published to RabbitMQ during the computation"
-            worker_logs = [
-                message
-                for msg in log_rabbit_client_parser.call_args_list
-                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
-            ]
-            assert any(computation_marker in log for log in worker_logs), (
-                f"Could not find live log marker '{computation_marker}' in worker logs:\n"
-                f"{pformat(worker_logs, width=240)}"
-            )
+    await _assert_expected_logs_published_to_rabbit(
+        log_rabbit_client_parser,
+        [computation_marker],
+        match="contains",
+    )
 
     # 4. retrieve the encrypted output from S3
     assert output_port_key in output_data, (
@@ -847,28 +879,11 @@ async def test_run_computational_sidecar_dask(
     # check that the task produces expected logs
     _assert_parse_progresses_from_progress_event_handler(progress_event_handler)
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert log_rabbit_client_parser.called
-            worker_logs = [
-                message
-                for msg in log_rabbit_client_parser.call_args_list
-                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
-            ]
-
-            print(f"<-- we got {len(worker_logs)} lines of logs")
-
-            for log in sleeper_task.expected_logs:
-                r = re.compile(rf"^({log}).*")
-                search_results = list(filter(r.search, worker_logs))
-                assert len(search_results) > 0, (
-                    f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
-                )
+    await _assert_expected_logs_published_to_rabbit(
+        log_rabbit_client_parser,
+        sleeper_task.expected_logs,
+        match="prefix",
+    )
 
     # check that the task produce the expected data, not less not more
     assert isinstance(output_data, TaskOutputData)
@@ -925,23 +940,12 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     # check that the task produces expected logs
     _assert_parse_progresses_from_progress_event_handler(progress_event_handler)
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert log_rabbit_client_parser.called
-
-            worker_logs = [
-                message
-                for msg in log_rabbit_client_parser.call_args_list
-                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
-            ]
-            # check all the awaited logs are in there
-            filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
-            assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
+    await _assert_expected_logs_published_to_rabbit(
+        log_rabbit_client_parser,
+        ["This is iteration"],
+        match="contains",
+        expected_match_count=NUMBER_OF_LOGS,
+    )
     mocked_get_image_labels.assert_called()
 
 
