@@ -414,7 +414,12 @@ async def test_pull_file_from_remote_decrypt_with_wrong_key_raises_auth_error(
         encryption=encryption_settings,
     )
 
-    wrong_key_settings = encryption_settings.model_copy(update={"job_key": generate_key()})
+    wrong_key_settings = TransferEncryptionSettings(
+        job_key=generate_key(),
+        job_id=encryption_settings.job_id,
+        file_id=encryption_settings.file_id,
+        file_role=encryption_settings.file_role,
+    )
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         await pull_file_from_remote(
             src_url=TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),

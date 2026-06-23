@@ -7,11 +7,15 @@ secret material and context needed by the dask-sidecar to derive per-file keys.
 The job-level :class:`JobEncryptionContext` is meant to be transported as a separate
 ``client.submit(..., encryption=...)`` kwarg (mirroring ``S3Settings``), and must never
 be embedded in the persisted ``ContainerTaskParameters``.
+
+The ``job_key`` is a :class:`~pydantic.SecretBytes`: it is masked in ``repr``/``str`` and
+``model_dump_json`` (shown as ``**********``), so logging a model never leaks the secret.
+Use ``job_key.get_secret_value()`` to access the raw bytes for key derivation.
 """
 
 from typing import Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretBytes
 from pydantic.config import JsonDict
 
 KEY_SIZE_BYTES: Final[int] = 32  # AES-256 job key length (simcore-aesgcm-stream-v1)
@@ -29,7 +33,7 @@ class JobEncryptionContext(BaseModel):
     locally by combining this context with each port's ``file_id``/``file_role``.
     """
 
-    job_key: bytes = Field(min_length=KEY_SIZE_BYTES, max_length=KEY_SIZE_BYTES)
+    job_key: SecretBytes = Field(min_length=KEY_SIZE_BYTES, max_length=KEY_SIZE_BYTES)
     job_id: str = Field(min_length=1, max_length=MAX_JOB_ID_LENGTH)
 
     @staticmethod
@@ -54,7 +58,7 @@ class JobEncryptionContext(BaseModel):
 class TransferEncryptionSettings(BaseModel):
     """Per-file encryption settings used by the sidecar to derive a single file key."""
 
-    job_key: bytes = Field(min_length=KEY_SIZE_BYTES, max_length=KEY_SIZE_BYTES)
+    job_key: SecretBytes = Field(min_length=KEY_SIZE_BYTES, max_length=KEY_SIZE_BYTES)
     job_id: str = Field(min_length=1, max_length=MAX_JOB_ID_LENGTH)
     file_id: str
     file_role: Literal["input", "output"]
