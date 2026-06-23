@@ -13,13 +13,14 @@ import shutil
 import tempfile
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.client import ClientSession
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
@@ -83,6 +84,13 @@ def e_tag() -> str:
     return "1212132546546321-1"
 
 
+_LAST_MODIFIED: Final[datetime] = datetime.now(UTC)
+
+
+def constant_last_modified() -> datetime:
+    return _LAST_MODIFIED
+
+
 @pytest.fixture
 def symlink_to_file_with_data() -> Iterator[Path]:
     file_name: Path = this_node_file_name()
@@ -94,7 +102,7 @@ def symlink_to_file_with_data() -> Iterator[Path]:
     file_path.write_text("some dummy data")
     assert file_path.exists()
     # using a relative symlink, only these are supported
-    os.symlink(os.path.relpath(file_path, "."), symlink_path)
+    os.symlink(os.path.relpath(file_path, "."), symlink_path)  # noqa: PTH211
     assert symlink_path.exists()
 
     yield symlink_path
@@ -224,7 +232,7 @@ async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> N
     )
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.upload_path",
-        return_value=UploadedFile(simcore_store_id(), e_tag),
+        return_value=UploadedFile(simcore_store_id(), e_tag, constant_last_modified()),
     )
 
 
@@ -252,7 +260,14 @@ class PortParams(NamedTuple):
 
 
 @pytest.mark.parametrize(
-    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value, new_value, exp_new_value, exp_new_get_value",
+    "port_cfg, "
+    "exp_value_type, "
+    "exp_value_converter, "
+    "exp_value, "
+    "exp_get_value, "
+    "new_value, "
+    "exp_new_value, "
+    "exp_new_get_value",
     [
         pytest.param(
             *PortParams(
@@ -318,6 +333,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/no_file/{this_node_file_name().name}",
                     e_tag=e_tag(),
+                    last_modified=constant_last_modified(),
                 ),
                 exp_new_get_value=download_file_folder_name() / "no_file" / this_node_file_name().name,
             ),
@@ -339,6 +355,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/no_file_with_default/{this_node_file_name().name}",
                     e_tag=e_tag(),
+                    last_modified=constant_last_modified(),
                 ),
                 exp_new_get_value=download_file_folder_name() / "no_file_with_default" / this_node_file_name().name,
             ),
@@ -417,6 +434,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/some_file_on_datcore/{this_node_file_name().name}",
                     e_tag=e_tag(),
+                    last_modified=constant_last_modified(),
                 ),
                 exp_new_get_value=download_file_folder_name() / "some_file_on_datcore" / this_node_file_name().name,
             ),
@@ -442,6 +460,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/download_link/{this_node_file_name().name}",
                     e_tag=e_tag(),
+                    last_modified=constant_last_modified(),
                 ),
                 exp_new_get_value=download_file_folder_name() / "download_link" / this_node_file_name().name,
             ),
@@ -468,6 +487,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/download_link_with_file_to_key/{this_node_file_name().name}",
                     e_tag=e_tag(),
+                    last_modified=constant_last_modified(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "download_link_with_file_to_key"
@@ -559,7 +579,7 @@ class PortParams(NamedTuple):
         ),
     ],
 )
-async def test_valid_port(
+async def test_valid_port(  # noqa: C901
     common_fixtures: None,
     user_id: int,
     project_id: str,
@@ -586,8 +606,9 @@ async def test_valid_port(
         io_log_redirect_cb: LogRedirectCB | None = _io_log_redirect_cb
 
         @staticmethod
-        async def get(key: str, progress_bar: ProgressBarData | None = None):
-            # this gets called when a node links to another node we return the get value but for files it needs to be a real one
+        async def get(_key: str, _progress_bar: ProgressBarData | None = None):
+            # this gets called when a node links to another node we return the get
+            # value but for files it needs to be a real one
             return another_node_file if port_cfg["type"].startswith("data:") else exp_get_value
 
         @classmethod
@@ -599,7 +620,7 @@ async def test_valid_port(
             )
 
         @staticmethod
-        async def save_to_db_cb(node_ports):
+        async def save_to_db_cb(_node_ports):
             return
 
     fake_node_ports = FakeNodePorts(
@@ -608,7 +629,7 @@ async def test_valid_port(
         node_uuid=node_uuid,
     )
     port = Port(**port_cfg)
-    port._node_ports = fake_node_ports
+    port._node_ports = fake_node_ports  # noqa: SLF001
 
     # check schema
     for k, v in port_cfg.items():
@@ -619,7 +640,7 @@ async def test_valid_port(
             assert v == getattr(port, camel_key)
 
     # check payload
-    assert port._py_value_converter == exp_value_converter
+    assert port._py_value_converter == exp_value_converter  # noqa: SLF001
 
     assert port.value == exp_value
 
@@ -697,7 +718,7 @@ async def test_invalid_file_type_setter(
     common_fixtures: None, project_id: str, node_uuid: str, port_cfg: dict[str, Any]
 ):
     port = Port(**port_cfg)
-    port._node_ports = AsyncMock()
+    port._node_ports = AsyncMock()  # noqa: SLF001
     # set a file that does not exist
     with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set("some/dummy/file/name")

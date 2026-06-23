@@ -76,6 +76,7 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
         filename=filename,
         content_type=guess_type(stored_file_meta.file_name)[0] or "application/octet-stream",
         e_tag=stored_file_meta.entity_tag,
+        last_modified=stored_file_meta.last_modified,
         checksum=stored_file_meta.sha256_checksum,
     )
 
@@ -214,7 +215,7 @@ class StorageApi(BaseServiceClientApi):
                     future_enveloped = Envelope[FileUploadCompleteFutureResponse].model_validate_json(resp.text)
                     assert future_enveloped.data  # nosec
                     if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                        raise TryAgain()
+                        raise TryAgain  # noqa: TRY301
 
                     assert future_enveloped.data.e_tag  # nosec
                     _logger.debug(
@@ -224,8 +225,8 @@ class StorageApi(BaseServiceClientApi):
                     )
                     return future_enveloped.data.e_tag
         except TryAgain as exc:
-            raise BackendTimeoutError() from exc
-        raise BackendTimeoutError()
+            raise BackendTimeoutError from exc
+        raise BackendTimeoutError
 
     @_exception_mapper(http_status_map={})
     async def abort_file_upload(self, *, user_id: int, file: File) -> None:
@@ -237,7 +238,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper(http_status_map={})
     async def create_soft_link(self, *, user_id: int, target_s3_path: str, as_file_id: UUID) -> File:
-        assert len(target_s3_path.split("/")) == 3  # nosec
+        assert len(target_s3_path.split("/")) == 3  # nosec  # noqa: PLR2004
 
         # define api-prefixed object-path for link
         file_id: str = f"{as_file_id}"

@@ -213,11 +213,9 @@ async def upload_file(
     content_length: str | None = Header(None),
 ):
     """Uploads a single file to the system"""
-    # TODO: For the moment we upload file here and re-upload to S3
+    # We upload file here and re-upload to S3
     # using a pre-signed link. This is far from ideal since we are using the api-server as a
     # passby service for all uploaded data which can be a lot.
-    # Next refactor should consider a solution that directly uploads from the client to S3
-    # avoiding the data traffic via this service
 
     assert request  # nosec
 
@@ -255,6 +253,7 @@ async def upload_file(
     assert isinstance(upload_result, UploadedFile)  # nosec
 
     file_meta.e_tag = upload_result.etag
+    file_meta.last_modified = upload_result.last_modified
     return OutputFile.from_domain_model(file_meta)
 
 
@@ -265,8 +264,10 @@ async def upload_file(
 # Since there is no immediate need of this functions, we decided to disable it
 # but keep it here as a reminder for future re-designs
 #
-async def upload_files(files: list[UploadFile] = FileParam(...)):
+async def upload_files(files: list[UploadFile] | None = None):
     """Uploads multiple files to the system"""
+    if files is None:
+        files = FileParam()
     raise NotImplementedError
 
 
@@ -410,6 +411,8 @@ async def complete_multipart_upload(
     assert e_tag is not None  # nosec
 
     file.e_tag = e_tag
+    # NOTE: the upload completes here, so last_modified is set together with e_tag
+    file.last_modified = datetime.datetime.now(datetime.UTC)
     return file
 
 

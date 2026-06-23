@@ -70,6 +70,13 @@ class File(ApiServerOutputSchema):
         ),
     ] = None
     e_tag: Annotated[ETag | None, Field(default=None, description="S3 entity tag")] = None
+    last_modified: Annotated[
+        datetime.datetime | None,
+        Field(
+            default=None,
+            description="Timestamp of the last modification of the file, set together with e_tag",
+        ),
+    ] = None
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -109,6 +116,7 @@ class File(ApiServerOutputSchema):
             content_type=file.content_type,
             sha256_checksum=file.sha256_checksum,
             e_tag=file.e_tag,
+            last_modified=file.last_modified,
         )
 
 

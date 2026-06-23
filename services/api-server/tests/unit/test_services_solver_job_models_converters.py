@@ -2,6 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from datetime import UTC, datetime
+
 import pytest
 from faker import Faker
 from models_library.projects import Project
@@ -9,8 +11,9 @@ from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLin
 from pydantic import RootModel, TypeAdapter, create_model
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.files import File
-from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
+from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobStatus
 from simcore_service_api_server.models.schemas.solvers import Solver
+from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 from simcore_service_api_server.services_http.solver_job_models_converters import (
     create_job_from_project,
     create_job_inputs_from_node_inputs,
@@ -66,8 +69,7 @@ def test_create_project_model_for_job(faker: Faker):
 
 
 def test_job_to_node_inputs_conversion():
-    # TODO: add here service input schemas and cast correctly?
-
+    last_modified = datetime(2024, 1, 2, 3, 4, 5, tzinfo=UTC)
     # Two equivalent inputs
     job_inputs = JobInputs(
         values={
@@ -80,6 +82,7 @@ def test_job_to_node_inputs_conversion():
                 filename="input.txt",
                 id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
                 e_tag="859fda0cb82fc4acb4686510a172d9a9-1",
+                last_modified=last_modified,
             ),
         }
     )
@@ -97,6 +100,7 @@ def test_job_to_node_inputs_conversion():
             path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
             eTag="859fda0cb82fc4acb4686510a172d9a9-1",
             label="input.txt",
+            lastModified=last_modified,
         ),
     }
 
@@ -120,7 +124,12 @@ def test_create_job_from_project(faker: Faker):
         {
             "uuid": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
-            "description": 'Study associated to solver job:\n{\n  "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "inputs_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",\n  "created_at": "2021-03-26T10:43:27.828975"\n}',
+            "description": (
+                'Study associated to solver job:\n{\n  "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  '
+                '"name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",'
+                '\n  "inputs_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",\n  '
+                '"created_at": "2021-03-26T10:43:27.828975"\n}'
+            ),
             "thumbnail": "https://2xx2gy2ovf3r21jclkjio3x8-wpengine.netdna-ssl.com/wp-content/uploads/2018/12/API-Examples.jpg",
             "prjOwner": "foo@itis.swiss",
             "type": "STANDARD",
@@ -150,7 +159,9 @@ def test_create_job_from_project(faker: Faker):
                     "outputs": {
                         "output_1": {
                             "store": 0,
-                            "path": "f925e30f-19de-42dc-acab-3ce93ea0a0a7/e694de0b-2e91-5be7-9319-d89404170991/single_number.txt",
+                            "path": (
+                                "f925e30f-19de-42dc-acab-3ce93ea0a0a7/e694de0b-2e91-5be7-9319-d89404170991/single_number.txt"
+                            ),
                             "eTag": "6c22e9b968b205c0dd3614edd1b28d35-1",
                         },
                         "output_2": 1,
@@ -239,15 +250,7 @@ def test_create_job_from_project(faker: Faker):
 
 @pytest.mark.skip(reason="TODO: next PR")
 def test_create_jobstatus_from_task():
-    from simcore_service_api_server.models.schemas.jobs import JobStatus
-    from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
-
-    task = ComputationTaskGet.model_validate({})  # TODO:
+    task = ComputationTaskGet.model_validate({})
     job_status: JobStatus = create_jobstatus_from_task(task)
 
     assert job_status.job_id == task.id
-
-    # TODO: activate
-    # #frozen = True
-    # #allow_mutation = False
-    # and remove take_snapshot by generating A NEW JobStatus!

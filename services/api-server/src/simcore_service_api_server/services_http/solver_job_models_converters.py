@@ -61,7 +61,6 @@ def create_node_inputs_from_job_inputs(
     inputs: JobInputs,
 ) -> dict[InputID, InputTypes]:
     # map Job inputs with solver inputs
-    # TODO: ArgumentType -> InputTypes dispatcher
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
@@ -69,17 +68,15 @@ def create_node_inputs_from_job_inputs(
         assert TypeAdapter(KeyIDStr).validate_python(name) is not None  # nosec
 
         if isinstance(value, File):
-            # FIXME: ensure this aligns with storage policy
             node_inputs[KeyIDStr(name)] = SimCoreFileLink(
                 store=0,
                 path=f"api/{value.id}/{value.filename}",
                 label=value.filename,
                 eTag=value.e_tag,
+                lastModified=value.last_modified,
             )
         else:
             node_inputs[KeyIDStr(name)] = value
-
-    # TODO: validate Inputs??
 
     return node_inputs
 
@@ -95,13 +92,13 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
         assert TypeAdapter(InputTypes).validate_python(value) == value  # nosec
 
         if isinstance(value, SimCoreFileLink):
-            # FIXME: ensure this aligns with storage policy
             _api, file_id, filename = value.path.split("/")
             assert _api == "api"  # nosec
             input_values[name] = File(
                 id=file_id,  # type: ignore[arg-type]
                 filename=filename,
                 e_tag=value.e_tag,
+                last_modified=value.last_modified,
             )
         else:
             # NOTE: JobInputs pydantic model will parse&validate these values
@@ -140,8 +137,7 @@ def create_new_project_for_job(
     project_id = job.id
     solver_id = get_node_id(project_id, solver_or_program.id)
 
-    # map Job inputs with solveri nputs
-    # TODO: ArgumentType -> InputTypes dispatcher and reversed
+    # map Job inputs with solver inputs
     solver_inputs: dict[InputID, InputTypes] = create_node_inputs_from_job_inputs(inputs)
 
     solver_service = Node(

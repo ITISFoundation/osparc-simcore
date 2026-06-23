@@ -37,16 +37,14 @@ def get_project_and_file_inputs_from_job_inputs(
 ) -> ProjectInputs:
     job_inputs_dict = job_inputs.values
 
-    # TODO make sure all values are set at some point
-
     for name, value in job_inputs.values.items():
         if isinstance(value, File):
-            # FIXME: ensure this aligns with storage policy
             file_inputs[InputID(name)] = SimCoreFileLink(
                 store=0,
                 path=SimcoreS3FileID(f"api/{value.id}/{value.filename}"),
                 label=value.filename,
                 eTag=value.e_tag,
+                lastModified=value.last_modified,
             )
 
     new_inputs: list[ProjectInputUpdate] = []
