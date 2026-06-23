@@ -26,7 +26,6 @@ def mock_lifespans(mocker: MockerFixture) -> None:
     mocker.patch("simcore_service_notifications.core.application.configure_postgres_database")
 
     for configure_fn in (
-        "configure_postgres_liveness",
         "configure_smtp_config_check",
         "configure_rabbitmq_client",
         "configure_rpc_api",
