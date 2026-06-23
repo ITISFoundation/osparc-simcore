@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 import mimetypes
 import zipfile
-from collections.abc import AsyncIterable, Mapping
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -367,21 +367,6 @@ async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
     mocked_log_publishing_cb.assert_called()
 
 
-def _upload_file_to_remote(local_file: Path, remote_url: AnyUrl, storage_kwargs: Mapping[str, Any]) -> None:
-    with (
-        cast(
-            fsspec.core.OpenFile,
-            fsspec.open(
-                f"{remote_url}",
-                mode="wb",
-                **storage_kwargs,
-            ),
-        ) as dest_fp,
-        local_file.open("rb") as src_fp,
-    ):
-        dest_fp.write(src_fp.read())
-
-
 async def test_pull_compressed_zip_file_from_remote(
     remote_parameters: StorageParameters,
     tmp_path: Path,
@@ -404,7 +389,18 @@ async def test_pull_compressed_zip_file_from_remote(
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
 
-    _upload_file_to_remote(local_zip_file_path, destination_url, storage_kwargs)
+    with (
+        cast(
+            fsspec.core.OpenFile,
+            fsspec.open(
+                f"{destination_url}",
+                mode="wb",
+                **storage_kwargs,
+            ),
+        ) as dest_fp,
+        local_zip_file_path.open("rb") as src_fp,
+    ):
+        dest_fp.write(src_fp.read())
 
     # now we want to download that file so it becomes the source
     src_url = destination_url
@@ -492,7 +488,18 @@ async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
 
-    _upload_file_to_remote(local_zip_file_path, destination_url, storage_kwargs)
+    with (
+        cast(
+            fsspec.core.OpenFile,
+            fsspec.open(
+                f"{destination_url}",
+                mode="wb",
+                **storage_kwargs,
+            ),
+        ) as dest_fp,
+        local_zip_file_path.open("rb") as src_fp,
+    ):
+        dest_fp.write(src_fp.read())
 
     # now we want to download that file so it becomes the source
     src_url = destination_url
