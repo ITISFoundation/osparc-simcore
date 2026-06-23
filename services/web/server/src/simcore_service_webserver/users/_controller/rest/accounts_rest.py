@@ -229,6 +229,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
         pre_registration_email=approval_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
+        bcc_emails=approval_data.bcc_emails,
         invitation_url=f"{approval_data.invitation_url}" if approval_data.invitation_url else None,
         message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
     )
@@ -307,9 +308,10 @@ async def reject_user_account(request: web.Request) -> web.Response:
     # Reject the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _accounts_service.reject_user_account(
         request.app,
-        pre_registration_email=rejection_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
+        pre_registration_email=rejection_data.email,
+        bcc_emails=rejection_data.bcc_emails,
         message_content=rejection_data.message_content.model_dump() if rejection_data.message_content else None,
     )
     assert pre_registration_id  # nosec
