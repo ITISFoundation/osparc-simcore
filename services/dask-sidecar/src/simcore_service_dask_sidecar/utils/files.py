@@ -180,7 +180,9 @@ async def pull_file_from_remote(
             # we need to extract the file, so we create a temporary directory
             # where the file will be downloaded and extracted
             tmp_dir = await exit_stack.enter_async_context(aiofiles.tempfile.TemporaryDirectory())
-            download_dst_path = Path(f"{tmp_dir}") / Path(URL(f"{src_url}").path).name
+            # NOTE: the URL path is percent-encoded (spaces -> '%20'); decode it via yarl
+            # so the local file name matches the real name and can be unzipped
+            download_dst_path = Path(tmp_dir) / Path(URL(f"{src_url}").path).name
         else:
             # no extraction needed, so we can use the provided dst_path directly
             download_dst_path = dst_path

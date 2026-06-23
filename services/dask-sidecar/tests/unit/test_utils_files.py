@@ -481,9 +481,8 @@ async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
         s3_settings=remote_parameters.s3_settings,
     )
     assert not dst_path.exists()
-    for file in download_folder.glob("*"):
-        assert file.exists()
-        assert file.name in file_names_within_zip_file
+    extracted_file_names = {file.name for file in download_folder.glob("*")}
+    assert extracted_file_names == file_names_within_zip_file
     mocked_log_publishing_cb.assert_called()
 
 
