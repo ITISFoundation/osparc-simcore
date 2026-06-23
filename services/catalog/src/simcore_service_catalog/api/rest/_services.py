@@ -205,8 +205,6 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    _service_key: str,
-    _service_version: str,
     service_in_manifest: Annotated[ServiceMetaDataPublished, Depends(get_service_from_manifest)],
     groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
     services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],

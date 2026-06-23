@@ -596,24 +596,6 @@
             }
           },
           {
-            "name": "_service_key",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": " Service Key"
-            }
-          },
-          {
-            "name": "_service_version",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": " Service Version"
-            }
-          },
-          {
             "name": "x-simcore-products-name",
             "in": "header",
             "required": false,
