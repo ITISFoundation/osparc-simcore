@@ -35,13 +35,16 @@ def _execute_queries(
         for statement in sql_statements:
             try:
                 with connection.begin():
-                    connection.execute(statement)
+                    connection.execute(sa.text(statement))
 
             except Exception as e:  # pylint: disable=broad-except
-                # when running tests initially the TEMPLATE_DB_TO_RESTORE dose not exist and will cause an error
-                # which can safely be ignored. The debug message is here to catch future errors which and
-                # avoid time wasting
-                print(f"SQL error which can be ignored {e}")
+                if ignore_errors:
+                    # when running tests initially the TEMPLATE_DB_TO_RESTORE does not exist and will cause an error
+                    # which can safely be ignored. The debug message is here to catch future errors and
+                    # avoid time wasting
+                    print(f"SQL error which can be ignored: {e}")
+                else:
+                    raise
 
 
 def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine) -> None:
