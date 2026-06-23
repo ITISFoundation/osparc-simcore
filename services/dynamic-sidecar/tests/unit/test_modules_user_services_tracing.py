@@ -738,11 +738,11 @@ def reader(traces_directory: Path) -> RotatingTraceFileReader:
 
 
 async def _drain_batches(reader: RotatingTraceFileReader, *, drain: bool) -> list[bytes]:
-    """Iterates pending batches, committing each, and returns the forwarded content."""
+    """Iterates pending chunks, committing each, and returns the forwarded content."""
     sent: list[bytes] = []
-    async for batch in reader.iter_pending(drain=drain):
-        sent.append(batch.content)
-        await batch.commit()
+    async for content in reader.iter_pending(drain=drain):
+        sent.append(content)
+        await reader.commit()
     return sent
 
 
