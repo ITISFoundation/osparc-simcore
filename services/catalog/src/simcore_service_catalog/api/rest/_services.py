@@ -10,6 +10,7 @@ from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.services import ServiceType
 from models_library.services_authoring import Author
 from models_library.services_metadata_published import ServiceMetaDataPublished
+from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -205,6 +206,8 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
+    service_key: ServiceKey,  # noqa: ARG001  # pylint: disable=unused-argument  # bound to path, resolved via get_service_from_manifest
+    service_version: ServiceVersion,  # noqa: ARG001  # pylint: disable=unused-argument  # bound to path, resolved via get_service_from_manifest
     service_in_manifest: Annotated[ServiceMetaDataPublished, Depends(get_service_from_manifest)],
     groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
     services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
