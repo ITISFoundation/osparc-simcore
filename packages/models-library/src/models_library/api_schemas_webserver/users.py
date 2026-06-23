@@ -361,7 +361,7 @@ class _InvitationDetails(InputSchema):
 
 class UserAccountApprove(InputSchema):
     email: EmailStr
-    bcc_emails: list[LowerCaseEmailStr] | None = None
+    bcc_emails: list[EmailStr] | None = None
     invitation_url: HttpUrl
     message_content: MessageContent | None = None
 
@@ -383,7 +383,7 @@ class UserAccountPreviewApprovalGet(OutputSchema):
 
 class UserAccountReject(InputSchema):
     email: EmailStr
-    bcc_emails: list[LowerCaseEmailStr] | None = None
+    bcc_emails: list[EmailStr] | None = None
     message_content: MessageContent | None = None
 
 
