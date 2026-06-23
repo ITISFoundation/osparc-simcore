@@ -43,7 +43,7 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
         postgres_db,
         table=users,
         values=random_user(
-            name="test",
+            name=f"test_{uuid4().hex}",
         ),
         pk_col=users.c.id,
     ) as user_row:
@@ -240,7 +240,7 @@ def create_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., str]]:
             )
             row = result.first()
             assert row
-            new_task_id = row[comp_tasks.c.task_id]
+            new_task_id = row.task_id
         created_task_ids.append(new_task_id)
         return node_uuid
 
