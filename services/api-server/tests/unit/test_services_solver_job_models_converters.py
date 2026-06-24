@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from datetime import UTC, datetime
 
 import pytest
 from faker import Faker
@@ -69,7 +68,6 @@ def test_create_project_model_for_job(faker: Faker):
 
 
 def test_job_to_node_inputs_conversion():
-    last_modified = datetime(2024, 1, 2, 3, 4, 5, tzinfo=UTC)
     # Two equivalent inputs
     job_inputs = JobInputs(
         values={
@@ -82,7 +80,6 @@ def test_job_to_node_inputs_conversion():
                 filename="input.txt",
                 id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
                 e_tag="859fda0cb82fc4acb4686510a172d9a9-1",
-                last_modified=last_modified,
             ),
         }
     )
@@ -100,7 +97,6 @@ def test_job_to_node_inputs_conversion():
             path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
             eTag="859fda0cb82fc4acb4686510a172d9a9-1",
             label="input.txt",
-            lastModified=last_modified,
         ),
     }
 

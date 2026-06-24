@@ -84,7 +84,6 @@ def test_convert_between_file_models():
     assert apiserver_file_meta.filename == "extensionless"
     assert apiserver_file_meta.content_type == "application/octet-stream"  # default
     assert apiserver_file_meta.e_tag == storage_file_meta.entity_tag
-    assert apiserver_file_meta.last_modified == storage_file_meta.last_modified
 
     with pytest.raises(ValueError):  # noqa: PT011
         to_file_api_model(TypeAdapter(StorageFileID).validate_python(f"{uuid4()}/{uuid4()}/foo.txt"))
