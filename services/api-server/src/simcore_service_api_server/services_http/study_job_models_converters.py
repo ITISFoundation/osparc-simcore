@@ -44,7 +44,6 @@ def get_project_and_file_inputs_from_job_inputs(
                 path=SimcoreS3FileID(f"api/{value.id}/{value.filename}"),
                 label=value.filename,
                 eTag=value.e_tag,
-                lastModified=value.last_modified,
             )
 
     new_inputs: list[ProjectInputUpdate] = []
