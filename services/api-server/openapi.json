@@ -9447,19 +9447,6 @@
               }
             ],
             "description": "S3 entity tag"
-          },
-          "last_modified": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Modified",
-            "description": "Timestamp of the last modification of the file, set together with e_tag"
           }
         },
         "type": "object",

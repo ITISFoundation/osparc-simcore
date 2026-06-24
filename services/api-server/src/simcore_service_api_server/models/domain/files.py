@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import quote as _quote
@@ -56,10 +55,6 @@ class File(BaseModel):
         alias="checksum",  # alias for backwards compatibility
     )
     e_tag: ETag | None = Field(default=None, description="S3 entity tag")
-    last_modified: datetime | None = Field(
-        default=None,
-        description="Timestamp of the last modification of the file, set together with e_tag",
-    )
     program_job_file_path: Annotated[
         FileInProgramJobData | None,
         Field(
