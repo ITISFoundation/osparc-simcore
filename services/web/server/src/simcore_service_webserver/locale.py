@@ -45,6 +45,9 @@ async def locale_middleware(request: web.Request, handler: Handler) -> web.Strea
     return await handler(request)
 
 
+locale_middleware.__middleware_name__ = f"{__name__}.locale_middleware"  # type: ignore[attr-defined]
+
+
 async def get_user_locale(
     app: web.Application,
     *,
