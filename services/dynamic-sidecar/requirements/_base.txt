@@ -113,7 +113,7 @@ h11==0.16.0
     #   httpcore
     #   uvicorn
     #   wsproto
-h2==4.2.0
+h2==4.3.0
     # via httpx
 hpack==4.1.0
     # via h2
