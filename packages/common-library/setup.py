@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from setuptools import find_packages, setup
+from setuptools.command.build_py import build_py as _build_py
 
 
 def read_reqs(reqs_path: Path) -> set[str]:
@@ -18,6 +19,25 @@ def read_reqs(reqs_path: Path) -> set[str]:
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+def _compile_locale(locale_dir: Path) -> None:
+    """Compile all .po files to .mo in-place using polib (no system msgfmt required)."""
+    if not locale_dir.is_dir():
+        return
+    import polib  # available as a build-system requirement (pyproject.toml)  # noqa: PLC0415
+
+    for po_path in locale_dir.glob("*/LC_MESSAGES/messages.po"):
+        mo_path = po_path.with_suffix(".mo")
+        polib.pofile(str(po_path)).save_as_mofile(str(mo_path))
+
+
+class BuildPy(_build_py):
+    """Extends build_py to compile locale .po files to .mo before packaging."""
+
+    def run(self) -> None:
+        _compile_locale(CURRENT_DIR / "src" / "common_library" / "locale")
+        super().run()
 
 
 INSTALL_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_base.in"))  # WEAK requirements
@@ -42,9 +62,10 @@ SETUP = {
     "license": "MIT license",
     "install_requires": INSTALL_REQUIREMENTS,
     "packages": find_packages(where="src"),
-    "package_data": {"": ["py.typed"]},
+    "package_data": {"": ["py.typed"], "common_library": ["locale/*/LC_MESSAGES/*.mo"]},
     "package_dir": {"": "src"},
     "include_package_data": True,
+    "cmdclass": {"build_py": BuildPy},
     "test_suite": "tests",
     "tests_require": TEST_REQUIREMENTS,
     "extras_require": {"test": TEST_REQUIREMENTS},

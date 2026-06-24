@@ -66,6 +66,8 @@ python-dotenv==1.2.2
     #   pydantic-settings
 termcolor==3.3.0
     # via pytest-sugar
+types-polib==1.2.0.20260518
+    # via -r requirements/_test.in
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
