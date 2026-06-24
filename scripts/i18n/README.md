@@ -103,3 +103,14 @@ Checks that no `user_message()` calls use f-strings (f-strings break xgettext ex
 ```bash
 make -C scripts/i18n clean   # removes _partials/, messages.pot, all .po and .mo
 ```
+
+
+## Open in a PO editor
+
+Any standard `.po` editor works — the `CTX-*` fields appear as normal translator
+comments and are fully editable:
+
+- **Poedit** — GUI, shows `CTX-SNIPPET` and `CTX-INTERPRETATION` in the sidebar
+- **Gtranslator** — GNOME desktop editor
+- **Virtaal** — lightweight cross-platform option
+- **VS Code** — install the *i18n Ally* or *gettext* extension for inline review

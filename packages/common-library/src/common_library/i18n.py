@@ -26,6 +26,9 @@ DEFAULT_LOCALE: Final[str] = "en"
 
 # Locales with compiled .mo catalogues shipped in this package.
 # Extend this tuple as new languages are added to the extraction pipeline.
+# NOTE: "en" has no .mo catalog — prose-as-key means the msgid IS the English
+# string; NullTranslations returns it verbatim. It is kept here because it is
+# the DEFAULT_LOCALE and is used as a valid value in function signatures.
 type SupportedLocale = Literal["en", "es_ES", "zh_CN"]
 _DOMAIN: Final[str] = "messages"
 _LOCALE_DIR: Final[str] = str(importlib.resources.files("common_library") / "locale")
