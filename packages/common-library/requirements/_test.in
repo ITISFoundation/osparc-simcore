@@ -10,6 +10,7 @@
 
 coverage
 faker
+polib
 pydantic-settings
 pytest
 pytest-asyncio
