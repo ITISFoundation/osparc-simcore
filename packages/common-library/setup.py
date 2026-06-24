@@ -32,7 +32,7 @@ def _compile_locale(locale_dir: Path) -> None:
         polib.pofile(str(po_path)).save_as_mofile(str(mo_path))
 
 
-class BuildPy(_build_py):
+class BuildPyRunner(_build_py):
     """Extends build_py to compile locale .po files to .mo before packaging."""
 
     def run(self) -> None:
@@ -65,7 +65,7 @@ SETUP = {
     "package_data": {"": ["py.typed"], "common_library": ["locale/*/LC_MESSAGES/*.mo"]},
     "package_dir": {"": "src"},
     "include_package_data": True,
-    "cmdclass": {"build_py": BuildPy},
+    "cmdclass": {"build_py": BuildPyRunner},
     "test_suite": "tests",
     "tests_require": TEST_REQUIREMENTS,
     "extras_require": {"test": TEST_REQUIREMENTS},
