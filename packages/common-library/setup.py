@@ -1,24 +1,9 @@
-import re
-import sys
 from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import setup
 from setuptools.command.build_py import build_py as _build_py
 
-
-def read_reqs(reqs_path: Path) -> set[str]:
-    return {
-        r
-        for r in re.findall(
-            r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
-            reqs_path.read_text(),
-            re.MULTILINE,
-        )
-        if isinstance(r, str)
-    }
-
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_LOCALE_DIR = Path(__file__).resolve().parent / "src" / "common_library" / "locale"
 
 
 def _compile_locale(locale_dir: Path) -> None:
@@ -28,50 +13,15 @@ def _compile_locale(locale_dir: Path) -> None:
     import polib  # available as a build-system requirement (pyproject.toml)  # noqa: PLC0415
 
     for po_path in locale_dir.glob("*/LC_MESSAGES/messages.po"):
-        mo_path = po_path.with_suffix(".mo")
-        polib.pofile(str(po_path)).save_as_mofile(str(mo_path))
+        polib.pofile(str(po_path)).save_as_mofile(str(po_path.with_suffix(".mo")))
 
 
 class BuildPyRunner(_build_py):
     """Extends build_py to compile locale .po files to .mo before packaging."""
 
     def run(self) -> None:
-        _compile_locale(CURRENT_DIR / "src" / "common_library" / "locale")
+        _compile_locale(_LOCALE_DIR)
         super().run()
 
 
-INSTALL_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_base.in"))  # WEAK requirements
-
-TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))  # STRICK requirements
-
-
-SETUP = {
-    "name": "simcore-common-library",
-    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    "author": "Giancarlo Romeo (giancarloromeo)",
-    "description": "Core service library for simcore pydantic common",
-    "python_requires": "~=3.13",
-    "classifiers": [
-        "Development Status :: 2 - Pre-Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Natural Language :: English",
-        "Programming Language :: Python :: 3.13",
-    ],
-    "long_description": Path(CURRENT_DIR / "README.md").read_text(),
-    "license": "MIT license",
-    "install_requires": INSTALL_REQUIREMENTS,
-    "packages": find_packages(where="src"),
-    "package_data": {"": ["py.typed"], "common_library": ["locale/*/LC_MESSAGES/*.mo"]},
-    "package_dir": {"": "src"},
-    "include_package_data": True,
-    "cmdclass": {"build_py": BuildPyRunner},
-    "test_suite": "tests",
-    "tests_require": TEST_REQUIREMENTS,
-    "extras_require": {"test": TEST_REQUIREMENTS},
-    "zip_safe": False,
-}
-
-
-if __name__ == "__main__":
-    setup(**SETUP)
+setup(cmdclass={"build_py": BuildPyRunner})

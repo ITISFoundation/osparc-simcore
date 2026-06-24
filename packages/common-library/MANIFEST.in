@@ -1,2 +1,0 @@
-recursive-include src/common_library/locale *.mo
-recursive-include src/common_library/locale *.po

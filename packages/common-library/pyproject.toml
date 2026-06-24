@@ -1,3 +1,80 @@
 [build-system]
 requires = ["setuptools", "wheel", "polib"]
 build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "simcore-common-library"
+dynamic = ["version"]
+description = "Core service library for simcore pydantic common"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Giancarlo Romeo", email = "giancarloromeo@example.com" }]
+requires-python = "~=3.13"
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = ["orjson", "pydantic", "pydantic-extra-types"]
+
+[project.optional-dependencies]
+test = [
+  "coverage",
+  "faker",
+  "polib",
+  "types-polib",
+  "pydantic-settings",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-icdiff",
+  "pytest-instafail",
+  "pytest-mock",
+  "pytest-runner",
+  "pytest-sugar",
+  "python-dotenv",
+]
+
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+"common_library" = ["locale/*/LC_MESSAGES/*.mo", "locale/*/LC_MESSAGES/*.po"]
+
+[tool.setuptools.dynamic]
+version = { file = "VERSION" }
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "diagnostics: can be used to run diagnostics against deployed data (e.g. database, registry etc)",
+  "testit: marks test to run during development",
+]
+
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+
+
+[tool.bumpversion]
+current_version = "0.1.0"
+commit = true
+message = "packages/common-library version: {current_version} \u2192 {new_version}"
+tag = false
+commit_args = "--no-verify"
+
+[[tool.bumpversion.files]]
+filename = "VERSION"
