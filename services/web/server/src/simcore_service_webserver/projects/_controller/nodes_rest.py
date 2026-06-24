@@ -308,8 +308,9 @@ async def _stop_dynamic_service_task(
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
         error_code = getattr(exc, "error_code", None) or create_error_code(exc)
-        user_error_msg = user_message(
-            f"Could not stop dynamic service {dynamic_service_stop.project_id}.{dynamic_service_stop.node_id}"
+        user_error_msg = user_message("Could not stop dynamic service {project_id}.{node_id}").format(
+            project_id=dynamic_service_stop.project_id,
+            node_id=dynamic_service_stop.node_id,
         )
         _logger.debug(
             **create_troubleshooting_log_kwargs(

@@ -164,7 +164,7 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
 
     console.print("[extract ERROR] Disallowed f-strings in translation calls:")
     for path, lineno, line_text in violations:
-        console.print(f"  [error] {path}:{lineno}: use _('template {{name}}').format(name=...)")
+        console.print(f"  [error] {path}:{lineno}: use user_message('template {{name}}').format(name=...)")
         if line_text:
             console.print(f"          {line_text}")
 

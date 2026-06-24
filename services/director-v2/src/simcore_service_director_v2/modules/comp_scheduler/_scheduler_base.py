@@ -236,10 +236,9 @@ class BaseCompScheduler(ABC):
                 user_id=user_id,
                 project_id=project_id,
                 log=user_message(
-                    f"Project pipeline execution for iteration {iteration} "
-                    f"has completed with status: {run_result.value}",
+                    "Project pipeline execution for iteration {iteration} has completed with status: {run_result}",
                     _version=1,
-                ),
+                ).format(iteration=iteration, run_result=run_result.value),
                 log_level=logging.INFO,
             )
         await publish_pipeline_scheduling_state(self.rabbitmq_client, user_id, project_id, run_result)

@@ -1,4 +1,3 @@
-# pylint: disable=dangerous-default-value
 import asyncio
 import logging
 from collections.abc import Callable, Coroutine, Mapping
@@ -19,7 +18,8 @@ from ..models.schemas.errors import ErrorGet
 _logger = logging.getLogger(__name__)
 
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = user_message(
-    "Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. Thank you for your patience. [{}]",
+    "Something went wrong on our end. We've been notified and will resolve this issue"
+    " as soon as possible. Thank you for your patience. [{}]",
     _version=1,
 )
 
@@ -47,8 +47,8 @@ DEFAULT_BACKEND_SERVICE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 }
 
 
-ServiceHTTPStatus: TypeAlias = int
-ApiHTTPStatus: TypeAlias = int
+type ServiceHTTPStatus = int
+type ApiHTTPStatus = int
 
 
 class ToApiTuple(NamedTuple):
@@ -59,8 +59,8 @@ class ToApiTuple(NamedTuple):
 # service to public-api status maps
 BackEndErrorType = TypeVar("BackEndErrorType", bound=BaseBackEndError)
 RpcExceptionType = TypeVar("RpcExceptionType", bound=Exception)  # need more specific rpc exception base class
-HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, BackEndErrorType]
-RabbitMqRpcExceptionMap: TypeAlias = Mapping[RpcExceptionType, BackEndErrorType]
+HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, BackEndErrorType]  # noqa: UP040
+RabbitMqRpcExceptionMap: TypeAlias = Mapping[RpcExceptionType, BackEndErrorType]  # noqa: UP040
 
 
 def _get_http_exception_kwargs(
@@ -81,12 +81,12 @@ def _get_http_exception_kwargs(
         status.HTTP_504_GATEWAY_TIMEOUT,
     }:
         status_code = service_error.response.status_code
-        detail = user_message(f"The {service_name} service was unavailable.")
+        detail = user_message("The {service_name} service was unavailable.").format(service_name=service_name)
         if retry_after := service_error.response.headers.get("Retry-After"):
             headers["Retry-After"] = retry_after
     else:
         status_code = status.HTTP_502_BAD_GATEWAY
-        detail = user_message(f"Received unexpected response from {service_name}")
+        detail = user_message("Received unexpected response from {service_name}").format(service_name=service_name)
 
     if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         _logger.exception(
@@ -118,7 +118,7 @@ def service_exception_handler(
         yield
 
     except ValidationError as exc:
-        detail = user_message(f"{service_name} service returned invalid response")
+        detail = user_message("{service_name} service returned invalid response").format(service_name=service_name)
         _logger.exception("Invalid data exchanged with %s service. %s", service_name, detail)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail, headers=headers) from exc
 
@@ -129,8 +129,8 @@ def service_exception_handler(
         raise HTTPException(status_code=status_code, detail=detail, headers=headers) from exc
 
     except BaseException as exc:  # currently no baseclass for rpc errors
-        if (
-            type(exc) == asyncio.TimeoutError
+        if isinstance(
+            exc, asyncio.TimeoutError
         ):  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
             raise HTTPException(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
@@ -156,12 +156,15 @@ def service_exception_handler(
 def service_exception_mapper(
     *,
     service_name: str,
-    http_status_map: HttpStatusMap = {},
-    rpc_exception_map: RabbitMqRpcExceptionMap = {},
+    http_status_map: HttpStatusMap | None = None,
+    rpc_exception_map: RabbitMqRpcExceptionMap | None = None,
 ) -> Callable[
     [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
 ]:
+    http_status_map = http_status_map or {}
+    rpc_exception_map = rpc_exception_map or {}
+
     def _decorator(member_func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]):
         _assert_correct_kwargs(
             func=member_func,
@@ -178,11 +181,13 @@ def service_exception_mapper(
     return _decorator
 
 
-def _assert_correct_kwargs(func: Callable, exception_types: set[BackEndErrorType]):
+def _assert_correct_kwargs(func: Callable, exception_types: set[BackEndErrorType]):  # noqa: UP047
     _required_kwargs = {name for name, param in signature(func).parameters.items() if param.kind == param.KEYWORD_ONLY}
     for exc_type in exception_types:
         assert isinstance(exc_type, type)  # nosec
         _exception_inputs = exc_type.named_fields()
-        assert _exception_inputs.issubset(_required_kwargs), (
-            f"{_exception_inputs - _required_kwargs} are inputs to `{exc_type.__name__}.msg_template` but not a kwarg in the decorated coroutine `{func.__module__}.{func.__name__}`"
-        )  # nosec
+        assert _exception_inputs.issubset(_required_kwargs), (  # nosec
+            f"{_exception_inputs - _required_kwargs} are inputs to"
+            f" `{exc_type.__name__}.msg_template` but not a kwarg in the decorated"
+            f" coroutine `{func.__module__}.{func.__name__}`"
+        )
