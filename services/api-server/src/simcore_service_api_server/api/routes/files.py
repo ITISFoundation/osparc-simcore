@@ -253,7 +253,6 @@ async def upload_file(
     assert isinstance(upload_result, UploadedFile)  # nosec
 
     file_meta.e_tag = upload_result.etag
-    file_meta.last_modified = upload_result.last_modified
     return OutputFile.from_domain_model(file_meta)
 
 
@@ -411,8 +410,6 @@ async def complete_multipart_upload(
     assert e_tag is not None  # nosec
 
     file.e_tag = e_tag
-    # NOTE: the upload completes here, so last_modified is set together with e_tag
-    file.last_modified = datetime.datetime.now(datetime.UTC)
     return file
 
 

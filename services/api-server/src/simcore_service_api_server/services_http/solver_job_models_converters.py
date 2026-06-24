@@ -73,7 +73,6 @@ def create_node_inputs_from_job_inputs(
                 path=f"api/{value.id}/{value.filename}",
                 label=value.filename,
                 eTag=value.e_tag,
-                lastModified=value.last_modified,
             )
         else:
             node_inputs[KeyIDStr(name)] = value
@@ -98,7 +97,6 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
                 id=file_id,  # type: ignore[arg-type]
                 filename=filename,
                 e_tag=value.e_tag,
-                last_modified=value.last_modified,
             )
         else:
             # NOTE: JobInputs pydantic model will parse&validate these values
