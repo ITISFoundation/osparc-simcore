@@ -33,12 +33,13 @@ from ..services import configure_smtp_config_check
 from .settings import ApplicationSettings
 
 
-def _configure_plugins(
+def _configure_plugins_common(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
+    """Configure plugins shared by all service modes."""
     configure_postgres_database(
         app_lifespan,
         settings=settings.NOTIFICATIONS_POSTGRES,
@@ -46,10 +47,6 @@ def _configure_plugins(
     )
     configure_postgres_liveness(app_lifespan)
     configure_smtp_config_check(app_lifespan)
-
-    if settings.NOTIFICATIONS_SERVICE_MODE is ServiceMode.SERVER:
-        configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
-        configure_rpc_api(app_lifespan)
 
     assert settings.NOTIFICATIONS_CELERY is not None  # nosec
     configure_redis_client(
@@ -67,6 +64,46 @@ def _configure_plugins(
             app_lifespan,
             tracing_config=tracing_config,
         )
+
+
+def _configure_plugins_server(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> None:
+    """Configure plugins for SERVER mode."""
+    configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
+    configure_rpc_api(app_lifespan)
+
+
+def _configure_plugins_worker(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> None:
+    """Configure plugins for WORKER mode."""
+    # Worker-specific plugin configuration (if any)
+    pass
+
+
+_MODE_PLUGIN_STRATEGIES = {
+    ServiceMode.SERVER: _configure_plugins_server,
+    ServiceMode.WORKER: _configure_plugins_worker,
+}
+
+
+def _configure_plugins(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> None:
+    """Configure application plugins based on service mode."""
+    _configure_plugins_common(app, app_lifespan, settings, tracing_config)
+    strategy = _MODE_PLUGIN_STRATEGIES[settings.NOTIFICATIONS_SERVICE_MODE]
+    strategy(app, app_lifespan, settings, tracing_config)
 
 
 def create_app(

@@ -49,13 +49,13 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def _configure_plugins(
+def _configure_plugins_common(
     app: FastAPI,
     app_lifespan: LifespanManager,
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
-    """Configure all application plugins in the correct dependency order."""
+    """Configure plugins shared by all service modes."""
     # Setup httpx client lifecycle
     configure_httpx_client(
         app_lifespan,
@@ -81,16 +81,53 @@ def _configure_plugins(
     # DSM provider (data storage manager)
     configure_dsm_provider(app_lifespan)
 
-    # DSM cleaner (depends on DSM provider and Celery)
-    if settings.STORAGE_CLEANER_INTERVAL_S and settings.STORAGE_SERVICE_MODE is ServiceMode.SERVER:
-        configure_dsm_cleaner(app_lifespan)
-
     # Monitoring and tracing
     if settings.STORAGE_MONITORING_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
 
     if tracing_config.tracing_enabled:
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
+
+
+def _configure_plugins_server(
+    app: FastAPI,
+    app_lifespan: LifespanManager,
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> None:
+    """Configure plugins for SERVER mode."""
+    # DSM cleaner (depends on DSM provider and Celery)
+    if settings.STORAGE_CLEANER_INTERVAL_S:
+        configure_dsm_cleaner(app_lifespan)
+
+
+def _configure_plugins_worker(
+    app: FastAPI,
+    app_lifespan: LifespanManager,
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> None:
+    """Configure plugins for WORKER mode."""
+    # Worker-specific plugin configuration (if any)
+    pass
+
+
+_MODE_PLUGIN_STRATEGIES = {
+    ServiceMode.SERVER: _configure_plugins_server,
+    ServiceMode.WORKER: _configure_plugins_worker,
+}
+
+
+def _configure_plugins(
+    app: FastAPI,
+    app_lifespan: LifespanManager,
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> None:
+    """Configure all application plugins based on service mode."""
+    _configure_plugins_common(app, app_lifespan, settings, tracing_config)
+    strategy = _MODE_PLUGIN_STRATEGIES[settings.STORAGE_SERVICE_MODE]
+    strategy(app, app_lifespan, settings, tracing_config)
 
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
