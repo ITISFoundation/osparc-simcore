@@ -123,9 +123,12 @@ class MessageService:
         addressing: Addressing,
         ref: TemplateRef,
         context: dict[str, Any],
+        locale: str = "en",
         owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
-        preview = await self.template_service.preview_template(product_name=product_name, ref=ref, context=context)
+        preview = await self.template_service.preview_template(
+            product_name=product_name, ref=ref, context=context, locale=locale
+        )
 
         message = EmailMessage(
             addressing=addressing,

@@ -1,6 +1,7 @@
 from typing import Any, Final
 
 from aiohttp import web
+from common_library.i18n import DEFAULT_LOCALE
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
@@ -29,6 +30,7 @@ from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message_from_template as remote_send_message_from_template,
 )
 
+from ..locale import get_user_locale
 from ..models import WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
@@ -210,7 +212,19 @@ async def send_message_from_template(
     reply_to: Contact | None = None,
     template_name: str,
     context: dict[str, Any],
+    locale: str | None = None,
 ) -> tuple[TaskUUID | GroupUUID, TaskName]:
+    # Resolve recipient locale: explicit argument > DB-stored user preference > EN.
+    # For multi-recipient (group_ids) we fall back to EN because each recipient
+    # may have a different preference; per-recipient rendering is a future enhancement.
+    resolved_locale: str
+    if locale is not None:
+        resolved_locale = locale
+    elif user_id is not None and not group_ids:
+        resolved_locale = await get_user_locale(app, user_id=user_id, product_name=product_name)
+    else:
+        resolved_locale = DEFAULT_LOCALE
+
     match channel:
         case Channel.email:
             addressing = await _create_email_addressing(
@@ -230,6 +244,7 @@ async def send_message_from_template(
             TemplateRef(channel=channel, template_name=template_name).model_dump()
         ),
         context=context,
+        locale=resolved_locale,
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,

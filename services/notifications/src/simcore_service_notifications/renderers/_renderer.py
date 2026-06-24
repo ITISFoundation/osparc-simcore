@@ -11,4 +11,6 @@ class Renderer(ABC):
         self,
         template: Template,
         context: dict[str, Any],
+        *,
+        locale: str = "en",
     ) -> TemplatePreview[Content]: ...

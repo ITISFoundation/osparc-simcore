@@ -1,8 +1,9 @@
 import logging
-from typing import Any, NamedTuple, TypeAlias
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.i18n import DEFAULT_LOCALE, get_translator
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rest_error import ErrorGet
@@ -14,6 +15,7 @@ from servicelib.status_codes_utils import (
     is_error,
 )
 
+from ..locale import RQ_LOCALE_KEY
 from ._base import AiohttpExceptionHandler, ExceptionHandlersMap
 
 _logger = logging.getLogger(__name__)
@@ -34,7 +36,7 @@ class HttpErrorInfo(NamedTuple):
     msg_template: str  # sets HTTPError.reason
 
 
-ExceptionToHttpErrorMap: TypeAlias = dict[type[Exception], HttpErrorInfo]
+type ExceptionToHttpErrorMap = dict[type[Exception], HttpErrorInfo]
 
 
 def create_error_context_from_request(request: web.Request) -> dict[str, Any]:
@@ -86,8 +88,13 @@ def create_exception_handler_from_http_info(
         request: web.Request,
         exception: BaseException,
     ) -> web.Response:
+        # Resolve locale then translate the template before substituting
+        # exception attributes, so placeholders ({user_id}, …) survive.
+        locale = request.get(RQ_LOCALE_KEY, DEFAULT_LOCALE)
+        translated_template = get_translator(locale).gettext(msg_template)
+
         # safe formatting, i.e. does not raise
-        user_msg = msg_template.format_map(_DefaultDict(getattr(exception, "__dict__", {})))
+        user_msg = translated_template.format_map(_DefaultDict(getattr(exception, "__dict__", {})))
 
         error = ErrorGet.model_construct(message=user_msg, status=status_code)
 

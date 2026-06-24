@@ -74,6 +74,13 @@ class SendMessageFromTemplateRequest(BaseModel):
             description="Template context variables. Must conform to the context_schema of the referenced template.",
         ),
     ]
+    locale: Annotated[
+        str,
+        Field(
+            default="en",
+            description="BCP-47-style locale used to render translated template content, e.g. 'es_ES', 'zh_CN'.",
+        ),
+    ] = "en"
     owner_metadata: OwnerMetadata | None = None
 
     @staticmethod

@@ -24,7 +24,11 @@ class TemplateService:
     product_repository: ProductRepository
 
     async def preview_template(
-        self, product_name: ProductName, ref: TemplateRef, context: dict[str, Any]
+        self,
+        product_name: ProductName,
+        ref: TemplateRef,
+        context: dict[str, Any],
+        locale: str = "en",
     ) -> TemplatePreview:
         product_data = await self.product_repository.get_product(product_name)
         context_with_product = {**context, "product": asdict(product_data)}
@@ -57,6 +61,7 @@ class TemplateService:
         return self.renderer.preview_template(
             template=template,
             context=validated_context.model_dump(),
+            locale=locale,
         )
 
     def search_templates(self, channel: str | None, template_name: str | None) -> list[Template]:

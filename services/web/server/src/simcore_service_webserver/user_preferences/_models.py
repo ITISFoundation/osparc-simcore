@@ -107,6 +107,13 @@ class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference
     value: list[int] | None = None
 
 
+class LocaleUserPreference(FrontendUserPreference):
+    """Persisted user locale (BCP-47-inspired tag, e.g. 'en', 'es_ES', 'zh_CN')."""
+
+    preference_identifier: PreferenceIdentifier = "userLocale"
+    value: str | None = None  # None → resolve from request headers / default EN
+
+
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
@@ -127,6 +134,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
     TwoFAFrontendUserPreference,
     BillingCenterUsageColumnOrderFrontendUserPreference,
+    LocaleUserPreference,
 ]
 
 _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {
