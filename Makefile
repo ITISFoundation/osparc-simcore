@@ -153,17 +153,6 @@ help: ## help on rule's targets
 	@awk 'BEGIN {FS = ":.*?## "}; /^[^.[:space:]].*?:.*?## / {if ($$1 != "help" && NF == 2) {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}}' $(MAKEFILE_LIST)
 
 
-test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
-	# Checking python version
-	@.venv/bin/python ./scripts/test_python_version.py
-
-
-.PHONY: _check_venv_active
-_check_venv_active:
-	# Checking whether virtual environment was activated
-	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
-
-
 ## DOCKER BUILD -------------------------------
 #
 # - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
@@ -598,41 +587,9 @@ promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-G
 
 ## ENVIRONMENT -------------------------------
 
-.PHONY: devenv devenv-all node-env
+include scripts/makefiles/python-env.mk
 
-.check-uv-installed:
-		@echo "Checking if 'uv' is installed..."
-		@if ! command -v uv >/dev/null 2>&1; then \
-				curl -LsSf https://astral.sh/uv/install.sh | sh; \
-		else \
-				printf "\033[32m'uv' is installed. Version: \033[0m"; \
-				uv --version; \
-		fi
-		# upgrading uv
-		@if [ "${CI}" != "true" ]; then \
-			uv self --quiet update; \
-		else \
-			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
-		fi
-
-.venv: .check-uv-installed
-	@uv venv $@
-	@echo "# upgrading tools to latest version in" && $@/bin/python --version
-	@uv pip list --python $@
-
-devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json .vscode/mcp.json ## create a development environment (configs, virtual-env, hooks, ...)
-	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
-	# Installing pre-commit hooks in current .git repo
-	@$</bin/pre-commit install
-	@echo "To activate the venv, execute 'source .venv/bin/activate'"
-
-
-devenv-all: devenv ## sets up extra development tools (everything else besides python)
-	# Upgrading client compiler
-	@$(MAKE_C) services/static-webserver/client upgrade
-	# Building tools
-	@$(MAKE_C) scripts/json-schema-to-openapi-schema
-
+.PHONY: node-env
 
 node_modules: package.json
 	# checking npm installed
@@ -911,14 +868,6 @@ _running_containers = $(shell docker ps -aq)
 	@git clean -n $(_git_clean_args)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-
-clean-venv: devenv ## Purges .venv into original configuration
-	# Cleaning your venv
-	@uv pip sync  --quiet $(CURDIR)/requirements/devenv.txt
-	@uv pip list
-
-clean-hooks: ## Uninstalls git pre-commit hooks
-	@-pre-commit uninstall 2> /dev/null || rm .git/hooks/pre-commit
 
 clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
