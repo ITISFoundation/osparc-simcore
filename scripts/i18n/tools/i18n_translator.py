@@ -315,10 +315,30 @@ def _save_po_atomic(po: polib.POFile, out: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _git_repo_root() -> str | None:
+    """Return the absolute repo root, or None if not in a git repo."""
+    try:
+        return (
+            subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],  # noqa: S607
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            or None
+        )
+    except Exception:
+        return None
+
+
+_REPO_ROOT: str | None = _git_repo_root()
+
+
 def _get_blame_commit(filepath: str, lineno: int) -> BlameCommitResult:
     """Returns short commit hash for the given file:line, or 'unknown'.
 
     Handles uncommitted changes by attempting to get the previous commit.
+    filepath is relative to the repo root.
     """
     try:
         result = subprocess.run(  # noqa: S603
@@ -326,6 +346,7 @@ def _get_blame_commit(filepath: str, lineno: int) -> BlameCommitResult:
             capture_output=True,
             text=True,
             check=True,
+            cwd=_REPO_ROOT,
         )
         first_line = result.stdout.splitlines()[0]
         commit = first_line.split()[0][:7]

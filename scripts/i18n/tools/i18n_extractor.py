@@ -187,7 +187,7 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
 #   CTX-VERSION:         → translation/version stamp by i18n_translator.py
 
 
-def get_blame_commit(filepath: str, lineno: int) -> str:
+def get_blame_commit(filepath: str, lineno: int, cwd: Path | None = None) -> str:
     """Return short commit hash for file:line, or 'unknown' when unavailable."""
     try:
         result = subprocess.run(  # noqa: S603
@@ -195,6 +195,7 @@ def get_blame_commit(filepath: str, lineno: int) -> str:
             capture_output=True,
             text=True,
             check=True,
+            cwd=cwd,
         )
         first_line = result.stdout.splitlines()[0]
         return first_line.split()[0][:7]
@@ -288,7 +289,7 @@ def enrich(pot_path: Path, repo_root: Path) -> None:
 
         snippet_lines = [f"  {'>>>' if i + 1 == lineno else '   '} {lines[i]}" for i in range(start, end)]
 
-        snippet_version = get_blame_commit(filepath, lineno)
+        snippet_version = get_blame_commit(filepath, lineno, cwd=repo_root)
 
         # entry.comment (#. lines) is left untouched -- it holds @TRANSLATOR notes.
         passthrough, ctx_fields, _ = parse_ctx_comment(entry.tcomment or "")

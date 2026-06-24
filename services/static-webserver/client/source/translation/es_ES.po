@@ -352,7 +352,7 @@ msgstr "Solicita acceso a "
 
 #: osparc/store/Data.js
 msgid "Oops... more than 10.000 items to be listed here. Maybe it's time to make a folder :)."
-msgstr "Vaya... hay más de 10.000 elementos para mostrar aquí. Quizá sea memento de crear una carpeta :)."
+msgstr "Vaya... hay más de 10.000 elementos para mostrar aquí. Quizá sea momento de crear una carpeta :)."
 
 #: osparc/store/Data.js
 msgid "Unsuccessful file copy"
