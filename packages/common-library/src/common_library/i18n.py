@@ -14,6 +14,7 @@ that passes the English msgid through unchanged — i.e. a safe no-op fallback.
 """
 
 import gettext
+import importlib.resources
 import logging
 import re
 from pathlib import Path
@@ -27,7 +28,8 @@ DEFAULT_LOCALE: Final[str] = "en"
 # Extend this tuple as new languages are added to the extraction pipeline.
 type SupportedLocale = Literal["en", "es_ES", "zh_CN"]
 _DOMAIN: Final[str] = "messages"
-_LOCALE_DIR: Final[Path] = Path(__file__).parent / "locale"
+_LOCALE_DIR: Final[str] = str(importlib.resources.files("common_library") / "locale")
+assert Path(_LOCALE_DIR).is_dir(), f"locale directory not found: {_LOCALE_DIR}"  # nosec
 
 # Module-level cache: locale string → loaded translator.
 # Access is single-threaded (asyncio event loop), so a plain dict is safe.
@@ -63,7 +65,7 @@ def _load(locale: str) -> gettext.NullTranslations:
     try:
         return gettext.translation(
             _DOMAIN,
-            localedir=str(_LOCALE_DIR),
+            localedir=_LOCALE_DIR,
             languages=[locale],
         )
     except FileNotFoundError:
