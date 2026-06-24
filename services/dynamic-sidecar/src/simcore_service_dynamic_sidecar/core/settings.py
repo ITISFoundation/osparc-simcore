@@ -56,7 +56,7 @@ class SystemMonitorSettings(BaseApplicationSettings):
 
 class UserServicesTracingSettings(BaseApplicationSettings):
     USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME: Annotated[str, Field(description="official OTEL Collector image")] = (
-        "otel/opentelemetry-collector"
+        "otel/opentelemetry-collector-contrib"
     )
 
     USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL: Annotated[

@@ -187,7 +187,7 @@ def test_inject_otel_collector_adds_service(
 
     assert _OTEL_COLLECTOR_SERVICE_NAME in parsed_spec["services"]
     collector = parsed_spec["services"][_OTEL_COLLECTOR_SERVICE_NAME]
-    assert collector["image"] == "otel/opentelemetry-collector:0.144.0"
+    assert collector["image"] == "otel/opentelemetry-collector-contrib:0.144.0"
     assert collector["stop_grace_period"] == "15s"
     assert "depends_on" not in collector
     assert "/fake/mount:/traces" in collector["volumes"]
@@ -294,7 +294,9 @@ async def test_validate_compose_spec_without_tracing_no_otel(
         assert "OTEL_EXPORTER_OTLP_ENDPOINT" not in env_str
 
 
-def test_no_contrib_collector_image_used(user_tracing_settings: UserServicesTracingSettings):
-    assert user_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME == "otel/opentelemetry-collector", (
-        "Ensure only the minimal otel/opentelemetry-collector image is used the larger image is not necessary"
+def test_contrib_collector_image_used(user_tracing_settings: UserServicesTracingSettings):
+    assert user_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME == "otel/opentelemetry-collector-contrib", (
+        "Must use the 'contrib' distribution: the injected collector uses the 'file' exporter and the "
+        "trace-shipper uses the 'otlpjsonfile' receiver and 'file_storage' extension, none of which ship "
+        "in the 'core' otel/opentelemetry-collector image"
     )
