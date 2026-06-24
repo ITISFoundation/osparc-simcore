@@ -229,7 +229,7 @@ qx.Class.define("osparc.widget.ProgressSequence", {
         const subTask = this.addNewTask(message);
         osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
           value: percent,
-          progressLabel: "0%"
+          progressLabel: osparc.utils.Utils.safeToFixed(percent * 100, 2) + "%"
         });
       }
     },
