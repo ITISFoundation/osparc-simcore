@@ -67,16 +67,13 @@ class UserServicesTracingSettings(BaseApplicationSettings):
         ),
     ] = timedelta(seconds=10)
     USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS: Annotated[
-        int,
-        Field(description="max rotated trace files kept by collector"),
+        int, Field(description="max rotated trace files kept by collector")
     ] = 5
     USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB: Annotated[
-        int,
-        Field(description="file size in MB that triggers rotation"),
-    ] = 10
+        int, Field(description="file size in MB that triggers rotation")
+    ] = 1
     USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD: Annotated[
-        timedelta,
-        Field(description="time collector gets to flush on SIGTERM"),
+        timedelta, Field(description="time collector gets to flush on SIGTERM")
     ] = timedelta(seconds=15)
 
     # resource caps shared by the injected collector and the trace-shipper containers

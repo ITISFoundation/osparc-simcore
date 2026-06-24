@@ -22,10 +22,7 @@ def _docker_error(status_code: int) -> DockerError:
 
 
 @pytest.fixture
-def platform_tracing_settings() -> Mock:
-    # stub of settings_library.tracing.TracingSettings (only the fields the module reads);
-    # avoids constructing the real model, which keeps the test independent of the platform
-    # settings schema
+def platform_tracing_settings_stub() -> Mock:
     return Mock(
         TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION="0.144.0",
         TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT="http://platform-collector.testing",
@@ -41,14 +38,14 @@ def user_services_tracing_settings() -> UserServicesTracingSettings:
 
 @pytest.fixture
 def settings_stub(
-    platform_tracing_settings: Mock,
+    platform_tracing_settings_stub: Mock,
     user_services_tracing_settings: UserServicesTracingSettings,
 ) -> Mock:
     return Mock(
         DYNAMIC_SIDECAR_COMPOSE_NAMESPACE="dy-sidecar_test_namespace",
         DY_SIDECAR_RUN_ID="run-id-123",
         DY_SIDECAR_NODE_ID="node-id-456",
-        DYNAMIC_SIDECAR_TRACING=platform_tracing_settings,
+        DYNAMIC_SIDECAR_TRACING=platform_tracing_settings_stub,
         DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG=user_services_tracing_settings,
     )
 
@@ -72,7 +69,7 @@ def app_stub(settings_stub: Mock, mounted_volumes_stub: Mock) -> Mock:
 
 
 @pytest.fixture
-def fake_docker_client(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+def docker_client_stub(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     """Patches ``_docker_client`` to yield a controllable mock aiodocker client."""
     client = AsyncMock()
 
@@ -90,9 +87,9 @@ def fake_docker_client(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
 
 
 def test_generate_shipper_config_reads_files_and_ships_to_platform(
-    platform_tracing_settings: Mock,
+    platform_tracing_settings_stub: Mock,
 ):
-    config = yaml.safe_load(user_services_tracing._generate_shipper_config(platform_tracing_settings))  # noqa: SLF001
+    config = yaml.safe_load(user_services_tracing._generate_shipper_config(platform_tracing_settings_stub))  # noqa: SLF001
 
     receiver = config["receivers"]["otlpjsonfile"]
     assert receiver["include"] == ["/traces/spans*.jsonl"]
@@ -117,9 +114,9 @@ def test_generate_shipper_config_reads_files_and_ships_to_platform(
     assert config["service"]["extensions"] == ["file_storage/shipper"]
 
 
-def test_platform_otlp_traces_endpoint(platform_tracing_settings: Mock):
+def test_platform_otlp_traces_endpoint(platform_tracing_settings_stub: Mock):
     assert (
-        user_services_tracing._platform_otlp_traces_endpoint(platform_tracing_settings)  # noqa: SLF001
+        user_services_tracing._platform_otlp_traces_endpoint(platform_tracing_settings_stub)  # noqa: SLF001
         == "http://platform-collector.testing:4318/v1/traces"
     )
 
@@ -135,18 +132,20 @@ def test_shipper_container_name_is_deterministic_and_sanitized(settings_stub: Mo
 def test_build_shipper_container_config(
     settings_stub: Mock,
     user_services_tracing_settings: UserServicesTracingSettings,
-    platform_tracing_settings: Mock,
+    platform_tracing_settings_stub: Mock,
 ):
     config = user_services_tracing._build_shipper_container_config(  # noqa: SLF001
         settings=settings_stub,
         user_services_tracing_settings=user_services_tracing_settings,
-        platform_tracing_settings=platform_tracing_settings,
+        platform_tracing_settings=platform_tracing_settings_stub,
         traces_volume_bind="/host/traces:/traces",
     )
 
     assert config["Image"] == (f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME}:0.144.0")
     host_config = config["HostConfig"]
+    assert isinstance(host_config, dict)
     assert host_config["Binds"] == ["/host/traces:/traces"]
+    assert isinstance(host_config["NetworkMode"], str)
     assert host_config["NetworkMode"].startswith("container:")  # shares sidecar netns
     assert host_config["RestartPolicy"] == {"Name": "unless-stopped"}
     # resource caps (Docker Engine API equivalents of compose mem_limit/cpus/cpu_shares)
@@ -157,7 +156,7 @@ def test_build_shipper_container_config(
     )
     assert host_config["CpuShares"] == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES
     assert config["Env"] == [
-        f"OTEL_COLLECTOR_CONFIG={user_services_tracing._generate_shipper_config(platform_tracing_settings)}"  # noqa: SLF001
+        f"OTEL_COLLECTOR_CONFIG={user_services_tracing._generate_shipper_config(platform_tracing_settings_stub)}"  # noqa: SLF001
     ]
     # no file deletion -> the filelog.allowFileDeletion feature gate must NOT be set
     assert not any("filelog.allowFileDeletion" in arg for arg in config["Cmd"])
@@ -169,23 +168,23 @@ def test_build_shipper_container_config(
 #
 
 
-async def test_create_collector_runs_container(app_stub: Mock, fake_docker_client: AsyncMock):
+async def test_create_collector_runs_container(app_stub: Mock, docker_client_stub: AsyncMock):
     await user_services_tracing.create_user_services_trace_collector(app_stub)
 
-    fake_docker_client.containers.run.assert_awaited_once()
-    _, kwargs = fake_docker_client.containers.run.call_args
+    docker_client_stub.containers.run.assert_awaited_once()
+    _, kwargs = docker_client_stub.containers.run.call_args
     assert kwargs["name"] == user_services_tracing._shipper_container_name(app_stub.state.settings)  # noqa: SLF001
 
 
-async def test_create_collector_is_idempotent_on_conflict(app_stub: Mock, fake_docker_client: AsyncMock):
-    fake_docker_client.containers.run.side_effect = _docker_error(status.HTTP_409_CONFLICT)
+async def test_create_collector_is_idempotent_on_conflict(app_stub: Mock, docker_client_stub: AsyncMock):
+    docker_client_stub.containers.run.side_effect = _docker_error(status.HTTP_409_CONFLICT)
 
     # must NOT raise: the shipper already exists
     await user_services_tracing.create_user_services_trace_collector(app_stub)
 
 
-async def test_create_collector_reraises_unexpected_errors(app_stub: Mock, fake_docker_client: AsyncMock):
-    fake_docker_client.containers.run.side_effect = _docker_error(status.HTTP_500_INTERNAL_SERVER_ERROR)
+async def test_create_collector_reraises_unexpected_errors(app_stub: Mock, docker_client_stub: AsyncMock):
+    docker_client_stub.containers.run.side_effect = _docker_error(status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     with pytest.raises(DockerError):
         await user_services_tracing.create_user_services_trace_collector(app_stub)
@@ -196,16 +195,16 @@ async def test_create_collector_reraises_unexpected_errors(app_stub: Mock, fake_
 #
 
 
-async def test_remove_collector_is_idempotent_when_absent(app_stub: Mock, fake_docker_client: AsyncMock):
-    fake_docker_client.containers.get.side_effect = _docker_error(status.HTTP_404_NOT_FOUND)
+async def test_remove_collector_is_idempotent_when_absent(app_stub: Mock, docker_client_stub: AsyncMock):
+    docker_client_stub.containers.get.side_effect = _docker_error(status.HTTP_404_NOT_FOUND)
 
     # must NOT raise when the container is already gone
     await user_services_tracing.remove_user_services_trace_collector(app_stub)
 
 
-async def test_remove_collector_stops_and_deletes(app_stub: Mock, fake_docker_client: AsyncMock):
+async def test_remove_collector_stops_and_deletes(app_stub: Mock, docker_client_stub: AsyncMock):
     container = AsyncMock()
-    fake_docker_client.containers.get.return_value = container
+    docker_client_stub.containers.get.return_value = container
 
     await user_services_tracing.remove_user_services_trace_collector(app_stub)
 
