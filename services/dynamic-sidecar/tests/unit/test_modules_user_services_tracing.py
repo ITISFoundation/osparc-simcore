@@ -1,10 +1,8 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 
-import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -21,11 +19,6 @@ pytest_simcore_ops_services_selection: list[str] = []
 
 def _docker_error(status_code: int) -> DockerError:
     return DockerError(status_code, {"message": f"error {status_code}"})
-
-
-def _span_files(traces_path: Path) -> list[Path]:
-    # sync helper so async tests don't call pathlib.glob directly
-    return list(traces_path.glob("spans*.jsonl"))
 
 
 @pytest.fixture
@@ -104,7 +97,10 @@ def test_generate_shipper_config_reads_files_and_ships_to_platform(
     receiver = config["receivers"]["otlpjsonfile"]
     assert receiver["include"] == ["/traces/spans*.jsonl"]
     assert receiver["start_at"] == "beginning"
-    assert receiver["delete_after_read"] is True  # filesystem is the checkpoint
+    # the live file is tailed by persisted offset and NEVER deleted (the injected collector
+    # keeps it open and would keep appending to a deleted inode -> dropped spans)
+    assert "delete_after_read" not in receiver
+    assert receiver["storage"] == "file_storage/shipper"
 
     exporter = config["exporters"]["otlp_http"]
     assert exporter["traces_endpoint"] == "http://platform-collector.testing:4318/v1/traces"
@@ -163,8 +159,8 @@ def test_build_shipper_container_config(
     assert config["Env"] == [
         f"OTEL_COLLECTOR_CONFIG={user_services_tracing._generate_shipper_config(platform_tracing_settings)}"  # noqa: SLF001
     ]
-    # delete_after_read needs this feature gate enabled on the command line
-    assert "--feature-gates=filelog.allowFileDeletion" in config["Cmd"]
+    # no file deletion -> the filelog.allowFileDeletion feature gate must NOT be set
+    assert not any("filelog.allowFileDeletion" in arg for arg in config["Cmd"])
     assert config["Labels"]["io.simcore.dynamic-sidecar.trace-shipper"] == "true"
 
 
@@ -215,41 +211,6 @@ async def test_remove_collector_stops_and_deletes(app_stub: Mock, fake_docker_cl
 
     container.stop.assert_awaited_once()
     container.delete.assert_awaited_once_with(force=True)
-
-
-#
-# drain (delete_after_read makes the filesystem the checkpoint)
-#
-
-
-async def test_drain_returns_once_span_files_are_gone(app_stub: Mock):
-    traces_path: Path = app_stub.state.mounted_volumes.disk_traces_path
-    (traces_path / "spans.jsonl").write_bytes(b"{}\n")
-    (traces_path / "spans-1.jsonl").write_bytes(b"{}\n")
-
-    async def _ship_then_clear() -> None:
-        await asyncio.sleep(0.1)
-        for span_file in _span_files(traces_path):
-            span_file.unlink()
-
-    ship = asyncio.create_task(_ship_then_clear())
-    await user_services_tracing._drain_remaining_span_files(app_stub)  # noqa: SLF001
-    await ship
-
-    assert _span_files(traces_path) == []
-
-
-async def test_drain_respects_timeout_when_files_remain(app_stub: Mock):
-    app_stub.state.settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG = UserServicesTracingSettings(
-        USER_SERVICES_TRACING_DRAIN_TIMEOUT=timedelta(seconds=0.1),
-    )
-    traces_path: Path = app_stub.state.mounted_volumes.disk_traces_path
-    (traces_path / "spans.jsonl").write_bytes(b"{}\n")  # never shipped
-
-    # returns (logs a warning) instead of hanging
-    await user_services_tracing._drain_remaining_span_files(app_stub)  # noqa: SLF001
-
-    assert _span_files(traces_path)  # the unshipped file is still there
 
 
 #

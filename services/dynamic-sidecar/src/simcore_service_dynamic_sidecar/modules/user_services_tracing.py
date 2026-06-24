@@ -22,14 +22,11 @@ Lifecycle & ownership:
   send queue is persisted via ``file_storage`` so a shipper restart never drops in-flight data.
 """
 
-import asyncio
 import logging
 import os
 import socket
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import timedelta
-from pathlib import Path
 from typing import Final
 
 import yaml
@@ -58,7 +55,6 @@ _CONTAINER_NAME_SUFFIX: Final[str] = "otel-trace-shipper"
 _CONTAINER_NAME_PREFIX: Final[str] = "otc"
 # Docker Engine API expresses a CPU-core quota as NanoCpus (cores * 1e9)
 _NANO_CPUS_PER_CORE: Final[int] = 10**9
-_DRAIN_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=0.5)
 
 
 @asynccontextmanager
@@ -100,8 +96,7 @@ def _generate_shipper_config(platform_tracing_settings: TracingSettings) -> str:
             "otlpjsonfile": {
                 "include": [f"{_TRACES_MOUNT_POINT}/{_SPANS_FILES_GLOB}"],
                 "start_at": "beginning",
-                # deletes each span file once it has been shipped
-                "delete_after_read": True,
+                "storage": "file_storage/shipper",
             }
         },
         "exporters": {
@@ -140,11 +135,8 @@ def _build_shipper_container_config(
     return {
         "Image": image,
         "User": f"{os.getuid()}:{os.getgid()}",
-        # 'filelog.allowFileDeletion' gate is required by the otlpjsonfile receiver's
-        # 'delete_after_read' option (filesystem is our shipped/not-shipped checkpoint)
         "Cmd": [
             "--config=env:OTEL_COLLECTOR_CONFIG",
-            "--feature-gates=filelog.allowFileDeletion",
         ],
         "Env": [f"OTEL_COLLECTOR_CONFIG={config_yaml}"],
         "Labels": {
@@ -201,37 +193,12 @@ async def create_user_services_trace_collector(app: FastAPI) -> None:
                 raise
 
 
-async def _drain_remaining_span_files(app: FastAPI) -> None:
-    """Waits (bounded) until the shipper has shipped (and ``delete_after_read``-deleted) all
-    span files, so nothing is lost when the shared volume is torn down."""
-    settings: ApplicationSettings = app.state.settings
-    mounted_volumes: MountedVolumes = app.state.mounted_volumes
-    traces_path: Path = mounted_volumes.disk_traces_path
-    timeout = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG.USER_SERVICES_TRACING_DRAIN_TIMEOUT.total_seconds()
-
-    async def _wait_until_shipped() -> None:
-        while await asyncio.to_thread(lambda: list(traces_path.glob(_SPANS_FILES_GLOB))):  # noqa: ASYNC110
-            await asyncio.sleep(_DRAIN_POLL_INTERVAL.total_seconds())
-
-    try:
-        await asyncio.wait_for(_wait_until_shipped(), timeout=timeout)
-    except TimeoutError:
-        _logger.warning("Trace-shipper drain timed out after %.1fs, some traces may be lost", timeout)
-
-
 async def remove_user_services_trace_collector(app: FastAPI) -> None:
-    """Idempotently drains and removes the trace-shipper container.
-
-    Called when the user services are being removed. First waits (bounded) for the shipper to
-    ship all remaining span files, then stops and deletes it. Safe to call when the container
-    does not exist.
-    """
+    """Idempotently stops and removes the trace-shipper container."""
     settings: ApplicationSettings = app.state.settings
     container_name = _shipper_container_name(settings)
 
     with log_context(_logger, logging.INFO, f"remove trace-shipper container '{container_name}'"):
-        await _drain_remaining_span_files(app)
-
         async with _docker_client() as client:
             try:
                 container = await client.containers.get(container_name)
