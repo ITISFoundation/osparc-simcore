@@ -8,10 +8,10 @@ import pytest
 from common_library.i18n import DEFAULT_LOCALE
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
+from simcore_service_api_server._locale_middleware import LocaleMiddleware
 from simcore_service_api_server.exceptions.handlers._http_exceptions import (
     http_exception_handler,
 )
-from simcore_service_api_server.locale import LocaleMiddleware
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse

@@ -13,12 +13,12 @@ from servicelib.fastapi.tracing import (
 from servicelib.tracing import TracingConfig
 
 from .. import exceptions
+from .._locale_middleware import LocaleMiddleware
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import setup_task_manager
 from ..clients.postgres import setup_postgres
-from ..locale import LocaleMiddleware
 from ..services_http import director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
