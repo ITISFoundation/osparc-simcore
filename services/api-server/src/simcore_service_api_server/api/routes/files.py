@@ -263,10 +263,8 @@ async def upload_file(
 # Since there is no immediate need of this functions, we decided to disable it
 # but keep it here as a reminder for future re-designs
 #
-async def upload_files(files: list[UploadFile] | None = None):
+async def upload_files(files: Annotated[list[UploadFile], FileParam]):
     """Uploads multiple files to the system"""
-    if files is None:
-        files = FileParam()
     raise NotImplementedError
 
 
