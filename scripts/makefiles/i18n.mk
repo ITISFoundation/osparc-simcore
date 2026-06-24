@@ -18,7 +18,7 @@ I18N_TOOLS          := $(REPO_BASE_DIR)/scripts/i18n/tools
 I18N_LOCALE_DIR     := $(REPO_BASE_DIR)/packages/common-library/src/common_library/locale
 I18N_PARTIALS       := $(I18N_LOCALE_DIR)/_partials
 
-.PHONY: i18n-extract i18n-translate i18n-compile i18n-check
+.PHONY: i18n-extract i18n-translate i18n-compile i18n-check i18n-info
 
 i18n-extract: ## Extract user_message() strings -> _partials/$(I18N_COMPONENT_NAME).pot
 	@mkdir -p $(I18N_PARTIALS)
@@ -39,3 +39,25 @@ i18n-check: ## Validate no f-strings in user_message() calls
 	uv run $(I18N_TOOLS)/i18n_extractor.py validate \
 	  --src $$(realpath --relative-to=$(REPO_BASE_DIR) $(I18N_SRC_DIR)) \
 	  --langs python
+
+.PHONY: i18n-info
+i18n-info: ## Show versions of required i18n tools (gettext suite, uv, git)
+	@echo 'i18n required tools:'
+	@for tool in xgettext msgcat msginit msgmerge msgfmt; do \
+	  if command -v $$tool > /dev/null 2>&1; then \
+	    version=$$($$tool --version 2>&1 | head -1); \
+	    printf '  %-14s [ok]     %s\n' "$$tool" "$$version"; \
+	  else \
+	    printf '  %-14s [MISSING] apt-get install gettext\n' "$$tool"; \
+	  fi; \
+	done
+	@if command -v uv > /dev/null 2>&1; then \
+	  printf '  %-14s [ok]     %s\n' "uv" "$$(uv --version 2>&1 | head -1)"; \
+	else \
+	  printf '  %-14s [MISSING] curl -LsSf https://astral.sh/uv/install.sh | sh\n' "uv"; \
+	fi
+	@if command -v git > /dev/null 2>&1; then \
+	  printf '  %-14s [ok]     %s\n' "git" "$$(git --version 2>&1 | head -1)"; \
+	else \
+	  printf '  %-14s [MISSING] apt-get install git\n' "git"; \
+	fi
