@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import hashlib
 import mimetypes
 import zipfile
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -88,6 +89,32 @@ def remote_parameters(
     }[
         request.param  # type: ignore
     ]
+
+
+@pytest.fixture
+def upload_file_to_remote(
+    remote_parameters: StorageParameters,
+) -> Iterator[Callable[[Path, AnyUrl], None]]:
+    storage_kwargs: dict[str, Any] = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+
+    uploaded_files: list[fsspec.core.OpenFile] = []
+
+    def _upload(local_path: Path, remote_url: AnyUrl) -> None:
+        open_file = cast(
+            fsspec.core.OpenFile,
+            fsspec.open(f"{remote_url}", mode="wb", **storage_kwargs),
+        )
+        with open_file as dest_fp, local_path.open("rb") as src_fp:
+            dest_fp.write(src_fp.read())
+        uploaded_files.append(open_file)
+
+    yield _upload
+
+    for open_file in uploaded_files:
+        with contextlib.suppress(Exception):
+            open_file.fs.rm(open_file.path)
 
 
 async def test_push_file_to_remote(
@@ -369,6 +396,7 @@ async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
 
 async def test_pull_compressed_zip_file_from_remote(
     remote_parameters: StorageParameters,
+    upload_file_to_remote: Callable[[Path, AnyUrl], None],
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -385,22 +413,7 @@ async def test_pull_compressed_zip_file_from_remote(
             file_names_within_zip_file.add(local_test_file.name)
 
     destination_url = TypeAdapter(AnyUrl).validate_python(f"{remote_parameters.remote_file_url}.zip")
-    storage_kwargs = {}
-    if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
-
-    with (
-        cast(
-            fsspec.core.OpenFile,
-            fsspec.open(
-                f"{destination_url}",
-                mode="wb",
-                **storage_kwargs,
-            ),
-        ) as dest_fp,
-        local_zip_file_path.open("rb") as src_fp,
-    ):
-        dest_fp.write(src_fp.read())
+    upload_file_to_remote(local_zip_file_path, destination_url)
 
     # now we want to download that file so it becomes the source
     src_url = destination_url
@@ -462,6 +475,7 @@ async def test_pull_compressed_zip_file_from_remote(
 
 async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
     remote_parameters: StorageParameters,
+    upload_file_to_remote: Callable[[Path, AnyUrl], None],
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -484,22 +498,7 @@ async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
     assert "%20" in f"{destination_url}"
     assert " " not in f"{destination_url}"
 
-    storage_kwargs = {}
-    if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
-
-    with (
-        cast(
-            fsspec.core.OpenFile,
-            fsspec.open(
-                f"{destination_url}",
-                mode="wb",
-                **storage_kwargs,
-            ),
-        ) as dest_fp,
-        local_zip_file_path.open("rb") as src_fp,
-    ):
-        dest_fp.write(src_fp.read())
+    upload_file_to_remote(local_zip_file_path, destination_url)
 
     # now we want to download that file so it becomes the source
     src_url = destination_url
