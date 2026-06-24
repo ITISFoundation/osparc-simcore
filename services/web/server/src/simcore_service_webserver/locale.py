@@ -63,5 +63,5 @@ async def get_user_locale(
         preference_class=LocaleUserPreference,
     )
     if pref is not None and pref.value:
-        return pref.value
+        return str(pref.value)
     return DEFAULT_LOCALE
