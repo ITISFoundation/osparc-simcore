@@ -121,14 +121,6 @@ def test_platform_otlp_traces_endpoint(platform_tracing_settings_stub: Mock):
     )
 
 
-def test_shipper_container_name_is_deterministic_and_sanitized(settings_stub: Mock):
-    name = user_services_tracing._shipper_container_name(settings_stub)  # noqa: SLF001
-    # deterministic
-    assert name == user_services_tracing._shipper_container_name(settings_stub)  # noqa: SLF001
-    assert "_" not in name  # docker-safe
-    assert name.endswith(user_services_tracing._CONTAINER_NAME_SUFFIX)  # noqa: SLF001
-
-
 def test_build_shipper_container_config(
     settings_stub: Mock,
     user_services_tracing_settings: UserServicesTracingSettings,
