@@ -41,6 +41,7 @@ Requires provider-specific API key env vars only when needed
 
 import json
 import logging
+import os
 import re
 import subprocess
 import threading
@@ -48,7 +49,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import NamedTuple
+from typing import Final, NamedTuple
 
 import litellm
 import polib
@@ -174,15 +175,22 @@ def _load_glossary(path: str) -> GlossaryData:
 
 
 # Placeholders like {min_size} or %s must survive translation unchanged
-PLACEHOLDER_RE = re.compile(r"(\{[^}]+\}|%[sdif]|%\d+\$s)")
-TRAILING_WHITESPACE_RE = re.compile(r"(\s+)$")
+PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%[sdif]|%\d+\$s)")
+TRAILING_WHITESPACE_RE: Final = re.compile(r"(\s+)$")
 
 
 # Default base URLs per model prefix — prevents env-var bleed across providers.
 # (e.g. OPENAI_BASE_URL pointing to Ollama would otherwise break openai/* models)
-_PREFIX_BASE_URLS: dict[str, str] = {
+_PREFIX_BASE_URLS: Final[dict[str, str]] = {
     "ollama": "http://localhost:11434",
     "openai": "https://api.openai.com/v1",
+}
+
+# Providers used in the Makefile that require an API key env var.
+# ollama runs locally and needs no key.
+_PROVIDER_API_KEY_ENV: Final[dict[str, str]] = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
 }
 
 
@@ -191,8 +199,15 @@ class LiteLLMProvider:
 
     def __init__(self, model: str, base_url: str | None = None) -> None:
         self._model = model
-        prefix = model.split("/")[0] if "/" in model else ""
+        prefix = model.split("/", maxsplit=1)[0] if "/" in model else ""
         self._base_url = base_url or _PREFIX_BASE_URLS.get(prefix)
+        required_env = _PROVIDER_API_KEY_ENV.get(prefix)
+        if required_env and not os.environ.get(required_env):
+            msg = (
+                f"Provider {prefix!r} requires {required_env} to be set. "
+                f"Add it to the .env file at the repo root, e.g.:\n  {required_env}=your-key-here"
+            )
+            raise typer.BadParameter(msg, param_hint="--model")
 
     def _generate_json(self, prompt: str) -> dict[str, str]:
         kwargs: dict = {
@@ -228,7 +243,7 @@ def _validate_model(model: str) -> None:
     if model in litellm.model_list:
         return
     # Custom/self-hosted models use a known provider prefix (e.g. openai/my-model).
-    prefix = model.split("/")[0] if "/" in model else ""
+    prefix = model.split("/", maxsplit=1)[0] if "/" in model else ""
     if prefix in litellm.models_by_provider:
         return
     msg = f"Unknown model {model!r}. Run `models` to list known models/providers."
@@ -331,7 +346,7 @@ def _git_repo_root() -> str | None:
         return None
 
 
-_REPO_ROOT: str | None = _git_repo_root()
+_REPO_ROOT: Final[str | None] = _git_repo_root()
 
 
 def _get_blame_commit(filepath: str, lineno: int) -> BlameCommitResult:
@@ -508,10 +523,6 @@ def _parse_translator_comments(entry: polib.POEntry) -> TranslatorContext:
         elif line.startswith("CTX-SNIPPET-VERSION:"):
             in_snippet = False
             snippet_version = line[len("CTX-SNIPPET-VERSION:") :].strip()
-        elif line.startswith("CTX-INTERP:"):
-            # Backward-compatible read path for older files.
-            in_snippet = False
-            interp = line[len("CTX-INTERP:") :].strip()
         elif line.startswith("CTX-VERSION:"):
             in_snippet = False
             version = line[len("CTX-VERSION:") :].strip()
