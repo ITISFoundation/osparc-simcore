@@ -517,6 +517,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/file_port_link/{this_node_file_name().name}",
                     e_tag=e_tag(),
+                    last_modified=constant_last_modified(),
                 ),
                 exp_new_get_value=download_file_folder_name() / "file_port_link" / this_node_file_name().name,
             ),
@@ -547,6 +548,7 @@ class PortParams(NamedTuple):
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/file_port_link_with_file_to_key_map/{this_node_file_name().name}",
                     e_tag=e_tag(),
+                    last_modified=constant_last_modified(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "file_port_link_with_file_to_key_map"
