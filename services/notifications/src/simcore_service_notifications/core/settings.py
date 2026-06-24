@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
-from models_library.basic_types import LogLevel
+from models_library.basic_types import LogLevel, ServiceMode
 from models_library.notifications.errors import (
     NotificationsProductSMTPSettingsNotFoundError,
 )
@@ -230,7 +230,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    NOTIFICATIONS_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
+    NOTIFICATIONS_SERVICE_MODE: Annotated[
+        ServiceMode,
+        Field(description="Service mode: SERVER or WORKER"),
+    ] = ServiceMode.SERVER
 
     NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
         int,
@@ -284,10 +287,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @model_validator(mode="after")
     def _worker_requires_smtp_settings(self) -> "ApplicationSettings":
-        if self.NOTIFICATIONS_WORKER_MODE and self.NOTIFICATIONS_SMTP_SETTINGS is None:
+        if self.NOTIFICATIONS_SERVICE_MODE is ServiceMode.WORKER and self.NOTIFICATIONS_SMTP_SETTINGS is None:
             msg = (
                 "NOTIFICATIONS_SMTP_SETTINGS must be configured when "
-                "NOTIFICATIONS_WORKER_MODE is enabled "
+                "NOTIFICATIONS_SERVICE_MODE is WORKER "
                 "(per-product SMTP settings are required by the worker)."
             )
             raise ValueError(msg)

@@ -23,6 +23,7 @@ from servicelib.fastapi.tracing import (
     configure_fastapi_app_tracing,
 )
 from servicelib.tracing import TracingConfig
+from settings_library.basic_types import ServiceMode
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -81,7 +82,7 @@ def _configure_plugins(
     configure_dsm_provider(app_lifespan)
 
     # DSM cleaner (depends on DSM provider and Celery)
-    if settings.STORAGE_CLEANER_INTERVAL_S and not settings.STORAGE_WORKER_MODE:
+    if settings.STORAGE_CLEANER_INTERVAL_S and settings.STORAGE_SERVICE_MODE is ServiceMode.SERVER:
         configure_dsm_cleaner(app_lifespan)
 
     # Monitoring and tracing
@@ -94,7 +95,9 @@ def _configure_plugins(
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     # Determine the correct startup banner based on worker mode
-    started_banner = APP_WORKER_STARTED_BANNER_MSG if settings.STORAGE_WORKER_MODE else APP_STARTED_BANNER_MSG
+    started_banner = (
+        APP_WORKER_STARTED_BANNER_MSG if settings.STORAGE_SERVICE_MODE is ServiceMode.WORKER else APP_STARTED_BANNER_MSG
+    )
 
     with configure_app_lifespan(
         starting_banner=APP_STARTING_BANNER_MSG,

@@ -4,7 +4,7 @@ from re import Pattern
 from typing import Annotated, ClassVar, Final, TypeAlias
 
 import annotated_types
-from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
+from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel, ServiceMode
 from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 from pydantic_core import core_schema
 
@@ -18,11 +18,13 @@ from .basic_regex import (
 assert issubclass(LogLevel, Enum)  # nosec
 assert issubclass(BootModeEnum, Enum)  # nosec
 assert issubclass(BuildTargetEnum, Enum)  # nosec
+assert issubclass(ServiceMode, Enum)  # nosec
 
 __all__: tuple[str, ...] = (
     "BootModeEnum",
     "BuildTargetEnum",
     "LogLevel",
+    "ServiceMode",
 )
 
 

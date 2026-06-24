@@ -71,6 +71,7 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.redis._client import RedisClientSDK
 from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
+from settings_library.basic_types import ServiceMode
 from settings_library.celery import CelerySettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -890,7 +891,8 @@ async def output_file(
     file.user_id = user_id
     async with sqlalchemy_async_engine.begin() as conn:
         stmt = (
-            file_meta_data.insert()
+            file_meta_data
+            .insert()
             .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
             .returning(literal_column("*"))
         )
@@ -913,7 +915,8 @@ async def fake_datcore_tokens(
     created_token_ids = []
     async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(
-            tokens.insert()
+            tokens
+            .insert()
             .values(
                 user_id=user_id,
                 token_service="pytest",  # noqa: S106
@@ -979,7 +982,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 def worker_app_settings(
     app_settings: ApplicationSettings,
 ) -> ApplicationSettings:
-    worker_test_app_settings = app_settings.model_copy(update={"STORAGE_WORKER_MODE": True}, deep=True)
+    worker_test_app_settings = app_settings.model_copy(update={"STORAGE_SERVICE_MODE": ServiceMode.WORKER}, deep=True)
     print(f"{worker_test_app_settings.model_dump_json(indent=2)=}")
     return worker_test_app_settings
 

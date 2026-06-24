@@ -4,7 +4,7 @@ from common_library.logging.logging_utils_filtering import LoggerName, MessageSu
 from fastapi import FastAPI
 from pydantic import AliasChoices, Field, PositiveInt, field_validator, model_validator
 from settings_library.application import BaseApplicationSettings
-from settings_library.basic_types import LogLevel, PortInt
+from settings_library.basic_types import LogLevel, PortInt, ServiceMode
 from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
@@ -101,7 +101,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    STORAGE_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
+    STORAGE_SERVICE_MODE: Annotated[
+        ServiceMode,
+        Field(description="Service mode: SERVER or WORKER"),
+    ] = ServiceMode.SERVER
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod

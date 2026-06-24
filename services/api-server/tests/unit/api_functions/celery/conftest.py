@@ -120,7 +120,7 @@ async def with_api_server_celery_worker(
         service_name="api-server-worker-test",
     )
     # Signals must be explicitly connected
-    monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
+    monkeypatch.setenv("API_SERVER_SERVICE_MODE", "WORKER")
     app_settings = ApplicationSettings.create_from_envs()
 
     app_server = FastAPIAppServer(app=create_app(app_settings, tracing_config))

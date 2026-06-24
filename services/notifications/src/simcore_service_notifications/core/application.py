@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
+from models_library.basic_types import ServiceMode
 from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.monitoring import (
     configure_prometheus_instrumentation,
@@ -46,7 +47,7 @@ def _configure_plugins(
     configure_postgres_liveness(app_lifespan)
     configure_smtp_config_check(app_lifespan)
 
-    if not settings.NOTIFICATIONS_WORKER_MODE:
+    if settings.NOTIFICATIONS_SERVICE_MODE is ServiceMode.SERVER:
         configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
         configure_rpc_api(app_lifespan)
 
@@ -78,7 +79,11 @@ def create_app(
         service_name=APP_NAME, tracing_settings=settings.NOTIFICATIONS_TRACING
     )
 
-    started_banner = APP_WORKER_STARTED_BANNER_MSG if settings.NOTIFICATIONS_WORKER_MODE else APP_STARTED_BANNER_MSG
+    started_banner = (
+        APP_WORKER_STARTED_BANNER_MSG
+        if settings.NOTIFICATIONS_SERVICE_MODE is ServiceMode.WORKER
+        else APP_STARTED_BANNER_MSG
+    )
 
     assert settings.SC_BOOT_MODE  # nosec
     with configure_app_lifespan(
