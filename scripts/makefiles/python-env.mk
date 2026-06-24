@@ -1,11 +1,12 @@
 #
 # Targets for managing the repo-base Python virtual environment.
 #
-# All uv artifact directories are redirected inside the repo so that both
-# interactive and SANDBOXED (e.g. VS Code agent) shells can write to them.
-# The sandbox can write to the workspace directory but not to ~/.cache or
-# ~/.local/share/uv, so placing UV_CACHE_DIR and UV_PYTHON_INSTALL_DIR
-# inside the repo removes that restriction.
+# All uv artifacts — the `uv` binary itself, its cache and the managed Python
+# toolchain — are redirected inside the repo so that a SANDBOXED shell (e.g. the
+# VS Code agent) is fully self-contained and never needs anything from $HOME.
+# The sandbox can write to the workspace directory but not to ~/.local/bin,
+# ~/.cache or ~/.local/share/uv, so placing UV_INSTALL_DIR, UV_CACHE_DIR and
+# UV_PYTHON_INSTALL_DIR inside the repo removes that restriction.
 #
 # Included from the repository root Makefile via:
 #   include scripts/makefiles/python-env.mk
@@ -22,10 +23,18 @@ VENV_DIR                := $(REPO_BASE_DIR)/.venv
 
 # Redirect all uv I/O into the repo so sandbox-restricted shells can write.
 # Callers may override these via environment variables before invoking make.
+UV_INSTALL_DIR        ?= $(REPO_BASE_DIR)/.uv-bin
 UV_CACHE_DIR          ?= $(REPO_BASE_DIR)/.uv-cache
 UV_PYTHON_INSTALL_DIR ?= $(REPO_BASE_DIR)/.uv-python
+export UV_INSTALL_DIR
 export UV_CACHE_DIR
 export UV_PYTHON_INSTALL_DIR
+
+# Resolve the uv binary by absolute path so no $HOME entry on PATH is ever
+# required. It always lives in the repo-local UV_INSTALL_DIR; .check-uv-installed
+# creates it there if missing. Keeping it deterministic (never a $HOME copy)
+# guarantees the .venv/bin/uv symlink stays valid in a sandbox too.
+UV := $(UV_INSTALL_DIR)/uv
 
 # ---------------------------------------------------------------------------
 # Guards / checks
@@ -47,30 +56,35 @@ _check_venv_active:
 
 .check-uv-installed:
 	@echo "Checking if 'uv' is installed..."
-	@if \! command -v uv >/dev/null 2>&1; then \
-		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	@if test ! -x $(UV); then \
+		echo "Installing 'uv' into $(UV_INSTALL_DIR) (repo-local) ..."; \
+		curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$(UV_INSTALL_DIR)" sh; \
 	else \
 		printf "\033[32m'uv' is installed. Version: \033[0m"; \
-		uv --version; \
+		$(UV) --version; \
 	fi
-	# Upgrading uv — skipped in CI and in non-interactive (sandbox) sessions
-	@if [ "${CI}" \!= "true" ] && [ -t 0 ]; then \
-		uv self --quiet update; \
-	else \
-		echo "Skipping 'uv self update' (CI=${CI}, non-interactive or sandbox)"; \
-	fi
+	# Note: no 'uv self update' — the repo-local install (custom UV_INSTALL_DIR)
+	# is "unmanaged" and cannot self-update. To upgrade, remove $(UV_INSTALL_DIR)
+	# and re-run 'make devenv' to re-bootstrap.
 
 # ---------------------------------------------------------------------------
 # Virtual environment
 # ---------------------------------------------------------------------------
 
 # The .venv directory is the Make target; uv creates it.
+# `.check-uv-installed` is an order-only prerequisite (after `|`): it must run
+# before the venv is created, but its always-out-of-date (phony) status must not
+# force an existing .venv to be rebuilt.
 # Python is installed into UV_PYTHON_INSTALL_DIR (repo-local) when not already present.
-$(VENV_DIR): .check-uv-installed
+$(VENV_DIR): | .check-uv-installed
 	# Creating virtual environment at $(VENV_DIR) with Python $(EXPECTED_PYTHON_VERSION)
-	@uv venv --python $(EXPECTED_PYTHON_VERSION) $@
+	@$(UV) venv --python $(EXPECTED_PYTHON_VERSION) $@
+	# Exposing repo-local uv inside the venv so that activating it puts uv on
+	# PATH. This lets bare 'uv ...' recipes (e.g. service 'make install-dev')
+	# resolve the repo-local binary without any external dependency.
+	@ln -sf $(UV) $@/bin/uv
 	@echo "# Python version in venv:" && $@/bin/python --version
-	@uv pip list --python $@
+	@$(UV) pip list --python $@
 
 # Convenience alias so existing 'make .venv' invocations keep working
 .venv: $(VENV_DIR)
@@ -82,7 +96,10 @@ $(VENV_DIR): .check-uv-installed
 .PHONY: devenv devenv-all
 
 devenv: $(VENV_DIR) test_python_version .vscode/settings.json .vscode/launch.json .vscode/mcp.json ## create a development environment (configs, virtual-env, hooks, ...)
-	@uv pip --quiet install --python $(VENV_DIR) --requirements $(REPO_BASE_DIR)/requirements/devenv.txt
+	# Ensuring repo-local uv is reachable on PATH once the venv is activated
+	# (idempotent; also covers venvs created before this symlink existed).
+	@ln -sf $(UV) $(VENV_DIR)/bin/uv
+	@$(UV) pip --quiet install --python $(VENV_DIR) --requirements $(REPO_BASE_DIR)/requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$(VENV_DIR)/bin/pre-commit install
 	@echo "To activate the venv, execute 'source $(VENV_DIR)/bin/activate'"
@@ -101,8 +118,8 @@ devenv-all: devenv ## sets up extra development tools (everything else besides p
 
 clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	@uv pip sync --quiet $(REPO_BASE_DIR)/requirements/devenv.txt
-	@uv pip list
+	@$(UV) pip sync --quiet $(REPO_BASE_DIR)/requirements/devenv.txt
+	@$(UV) pip list
 
 clean-hooks: ## Uninstalls git pre-commit hooks
 	@-pre-commit uninstall 2> /dev/null || rm .git/hooks/pre-commit
