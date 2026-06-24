@@ -51,7 +51,7 @@ from ..models.domain.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
-
+_EXPECTED_S3_PATH_PARTS: Final[int] = 3
 
 _logger = logging.getLogger(__name__)
 
@@ -238,7 +238,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper(http_status_map={})
     async def create_soft_link(self, *, user_id: int, target_s3_path: str, as_file_id: UUID) -> File:
-        assert len(target_s3_path.split("/")) == 3  # nosec  # noqa: PLR2004
+        assert len(target_s3_path.split("/")) == _EXPECTED_S3_PATH_PARTS  # nosec
 
         # define api-prefixed object-path for link
         file_id: str = f"{as_file_id}"
