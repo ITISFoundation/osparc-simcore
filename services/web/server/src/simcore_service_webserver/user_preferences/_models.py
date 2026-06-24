@@ -1,6 +1,7 @@
 from typing import Final
 
 from aiohttp import web
+from common_library.i18n import SupportedLocale
 from models_library.authentication import TwoFactorAuthenticationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
@@ -111,7 +112,7 @@ class LocaleUserPreference(FrontendUserPreference):
     """Persisted user locale (BCP-47-inspired tag, e.g. 'en', 'es_ES', 'zh_CN')."""
 
     preference_identifier: PreferenceIdentifier = "userLocale"
-    value: str | None = None  # None → resolve from request headers / default EN
+    value: SupportedLocale | None = None  # None → resolve from request headers / default EN
 
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [

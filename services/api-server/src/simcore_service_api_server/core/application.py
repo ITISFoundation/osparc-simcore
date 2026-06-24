@@ -18,6 +18,7 @@ from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import setup_task_manager
 from ..clients.postgres import setup_postgres
+from ..locale import LocaleMiddleware
 from ..services_http import director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
@@ -138,6 +139,9 @@ def create_app(  # noqa: C901
 
     if settings.API_SERVER_PROFILING:
         configure_profiler(app)
+
+    if settings.API_SERVER_I18N:
+        app.add_middleware(LocaleMiddleware)
 
     exceptions.setup_exception_handlers(app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG)
 

@@ -67,6 +67,15 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ] = False
 
+    API_SERVER_I18N: Annotated[
+        bool,
+        Field(
+            description=(
+                "Enable server-side i18n for user-facing error messages. Requires API_SERVER_DEV_FEATURES_ENABLED=1."
+            ),
+        ),
+    ] = False
+
     # LOGGING
     LOG_LEVEL: Annotated[
         LogLevel,

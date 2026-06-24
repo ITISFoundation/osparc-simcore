@@ -1,6 +1,7 @@
 import logging
 
 from common_library.error_codes import create_error_code
+from common_library.i18n import DEFAULT_LOCALE, get_translator
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
@@ -29,7 +30,8 @@ def make_handler_for_exception(
         assert request  # nosec
         assert isinstance(exception, exception_cls)  # nosec
 
-        user_error_msg = error_message
+        locale = getattr(request.state, "locale", DEFAULT_LOCALE)
+        user_error_msg = get_translator(locale).gettext(error_message)
         if add_exception_to_message:
             user_error_msg += f" {exception}"
 

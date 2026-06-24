@@ -8,6 +8,10 @@ Locale precedence (highest → lowest):
 The DB-stored ``LocaleUserPreference`` is NOT read inside the middleware to
 avoid an async DB call on every request.  Code paths that need the persisted
 preference (e.g. email rendering) should call ``get_user_locale`` directly.
+
+The middleware is gated on ``WEBSERVER_I18N``.  When the flag is off the key
+is still written (as DEFAULT_LOCALE) so downstream code never needs to guard
+against a missing ``RQ_LOCALE_KEY``.
 """
 
 from typing import Final
@@ -16,6 +20,7 @@ from aiohttp import web
 from common_library.i18n import DEFAULT_LOCALE, normalize_locale
 from servicelib.aiohttp.typing_extension import Handler
 
+from .application_keys import APP_SETTINGS_APPKEY
 from .user_preferences._models import LocaleUserPreference
 from .user_preferences.user_preferences_service import get_frontend_user_preference
 
@@ -24,29 +29,19 @@ RQ_LOCALE_KEY: Final[str] = f"{__name__}.locale"
 _X_APP_LOCALE_HEADER: Final[str] = "X-App-Locale"
 
 
-def get_request_locale(request: web.Request) -> str:
-    """Return the locale resolved for this request (set by the locale middleware).
-
-    Falls back to header-based resolution if the middleware did not run (e.g.
-    in unit tests that don't register the full middleware stack).
-    """
-    if (locale := request.get(RQ_LOCALE_KEY)) is not None:
-        return locale
-    return _resolve_from_headers(request)
-
-
-def _resolve_from_headers(request: web.Request) -> str:
-    if raw := request.headers.get(_X_APP_LOCALE_HEADER):
-        return normalize_locale(raw)
-    if raw := request.headers.get("Accept-Language"):
-        return normalize_locale(raw)
-    return DEFAULT_LOCALE
-
-
 @web.middleware
 async def locale_middleware(request: web.Request, handler: Handler) -> web.StreamResponse:
     """Resolves locale from request headers and stores it in ``request[RQ_LOCALE_KEY]``."""
-    request[RQ_LOCALE_KEY] = _resolve_from_headers(request)
+    settings = request.app[APP_SETTINGS_APPKEY]
+    if settings.WEBSERVER_I18N:
+        for header in (_X_APP_LOCALE_HEADER, "Accept-Language"):
+            if raw := request.headers.get(header):
+                request[RQ_LOCALE_KEY] = normalize_locale(raw)
+                break
+        else:
+            request[RQ_LOCALE_KEY] = DEFAULT_LOCALE
+    else:
+        request[RQ_LOCALE_KEY] = DEFAULT_LOCALE
     return await handler(request)
 
 

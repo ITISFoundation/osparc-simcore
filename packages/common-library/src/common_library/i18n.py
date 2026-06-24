@@ -17,11 +17,15 @@ import gettext
 import logging
 import re
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 _logger = logging.getLogger(__name__)
 
 DEFAULT_LOCALE: Final[str] = "en"
+
+# Locales with compiled .mo catalogues shipped in this package.
+# Extend this tuple as new languages are added to the extraction pipeline.
+type SupportedLocale = Literal["en", "es_ES", "zh_CN"]
 _DOMAIN: Final[str] = "messages"
 _LOCALE_DIR: Final[Path] = Path(__file__).parent / "locale"
 
