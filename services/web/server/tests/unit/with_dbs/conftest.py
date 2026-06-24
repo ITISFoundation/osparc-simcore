@@ -485,6 +485,7 @@ def create_dynamic_service_mock(
             "service_state": random.choice(list(ServiceState)),  # noqa: S311
             "user_id": faker.pyint(min_value=1),
             "project_id": faker.uuid4(cast_to=None),
+            "product_name": "osparc",
         } | service_override_kwargs
 
         running_service = DynamicServiceGet(**service_config)
