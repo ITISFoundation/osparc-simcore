@@ -78,21 +78,6 @@ class UserServicesTracingSettings(BaseApplicationSettings):
         timedelta,
         Field(description="time collector gets to flush on SIGTERM"),
     ] = timedelta(seconds=15)
-    USER_SERVICES_TRACING_DRAIN_TIMEOUT: Annotated[
-        timedelta,
-        Field(description="max time for final drain on shutdown"),
-    ] = timedelta(seconds=30)
-    USER_SERVICES_TRACING_MAX_BATCH_SIZE: Annotated[
-        ByteSize,
-        Field(description="max data forwarded to platform collector per scrape cycle"),
-    ] = TypeAdapter(ByteSize).validate_python("5MiB")
-    USER_SERVICES_TRACING_SCRAPE_INTERVAL: Annotated[
-        timedelta, Field(description="how often to check for rotated trace files")
-    ] = timedelta(seconds=10)
-    USER_SERVICES_TRACING_FORWARD_TIMEOUT: Annotated[
-        timedelta,
-        Field(description="HTTP timeout when forwarding traces to the platform collector"),
-    ] = timedelta(seconds=30)
 
     # resource caps shared by the injected collector and the trace-shipper containers
     USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT: Annotated[
@@ -112,9 +97,6 @@ class UserServicesTracingSettings(BaseApplicationSettings):
     _validate_stop_grace_period = validate_numeric_string_as_timedelta(
         "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD"
     )
-    _validate_drain_timeout = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_DRAIN_TIMEOUT")
-    _validate_scrape_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_SCRAPE_INTERVAL")
-    _validate_forward_timeout = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_FORWARD_TIMEOUT")
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
