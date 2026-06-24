@@ -25472,12 +25472,6 @@
             "title": "Thumbnail"
           },
           "workbench": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Node-Input"
-            },
-            "propertyNames": {
-              "$ref": "#/components/schemas/UUIDStr"
-            },
             "type": "object",
             "title": "Workbench"
           },
@@ -25666,12 +25660,6 @@
             ]
           },
           "workbench": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Node-Output"
-            },
-            "propertyNames": {
-              "$ref": "#/components/schemas/UUIDStr"
-            },
             "type": "object",
             "title": "Workbench"
           },
@@ -25963,12 +25951,6 @@
             ]
           },
           "workbench": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Node-Output"
-            },
-            "propertyNames": {
-              "$ref": "#/components/schemas/UUIDStr"
-            },
             "type": "object",
             "title": "Workbench"
           },
@@ -28606,12 +28588,6 @@
           "workbench": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/WorkbenchUI"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/UUIDStr"
-                },
                 "type": "object"
               },
               {
@@ -28623,12 +28599,6 @@
           "slideshow": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/SlideshowUI"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/UUIDStr"
-                },
                 "type": "object"
               },
               {
@@ -28652,12 +28622,6 @@
           "annotations": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/AnnotationUI-Input"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/UUIDStr"
-                },
                 "type": "object"
               },
               {
@@ -28720,12 +28684,6 @@
           "workbench": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/WorkbenchUI"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/UUIDStr"
-                },
                 "type": "object"
               },
               {
@@ -28737,12 +28695,6 @@
           "slideshow": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/SlideshowUI"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/UUIDStr"
-                },
                 "type": "object"
               },
               {
@@ -28766,12 +28718,6 @@
           "annotations": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/AnnotationUI-Output"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/UUIDStr"
-                },
                 "type": "object"
               },
               {
@@ -29356,10 +29302,6 @@
       "UNDEFINED_SIZE_TYPE": {
         "type": "integer",
         "const": -1
-      },
-      "UUIDStr": {
-        "type": "string",
-        "pattern": "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
       },
       "UnitExtraInfoLicense": {
         "properties": {
