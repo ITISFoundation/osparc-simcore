@@ -372,7 +372,7 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.29
+python-multipart==0.0.32
     # via fastapi
 pytz==2024.1
     # via
