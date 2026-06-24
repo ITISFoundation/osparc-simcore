@@ -128,6 +128,17 @@ qx.Class.define("osparc.widget.ProgressSequence", {
           visibility: (value >= 0) ? "visible" : "excluded"
         });
       }
+    },
+
+    createCreatingStudyProgress: function(loadingPage) {
+      const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
+      const progressSequence = new osparc.widget.ProgressSequence(title).set({
+        minHeight: 180 // four tasks
+      });
+      progressSequence.addOverallProgressBar();
+      loadingPage.clearMessages();
+      loadingPage.addWidgetToMessages(progressSequence);
+      return progressSequence;
     }
   },
 
@@ -187,6 +198,51 @@ qx.Class.define("osparc.widget.ProgressSequence", {
       this._add(newTask);
       this.__tasks.push(newTask);
       return newTask;
+    },
+
+    /**
+     * Applies a long-running-task update ("updateReceived"): updates the overall progress and the per-step task progress.
+     */
+    applyPollTaskUpdate: function(updateData) {
+      if (!("task_progress" in updateData)) {
+        return;
+      }
+      const message = updateData["task_progress"]["message"];
+      const percent = osparc.data.PollTask.extractProgress(updateData);
+      this.setOverallProgress(percent);
+      if (!message) {
+        return;
+      }
+      const existingTask = this.getTask(message);
+      if (existingTask) {
+        // update existing task
+        osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
+          value: percent,
+          progressLabel: osparc.utils.Utils.safeToFixed(percent * 100, 2) + "%"
+        });
+      } else {
+        // complete the previous steps and move on to the new one
+        this.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
+          value: 1,
+          progressLabel: "100%"
+        }));
+        const subTask = this.addNewTask(message);
+        osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
+          value: percent,
+          progressLabel: "0%"
+        });
+      }
+    },
+
+    /**
+     * Forces the overall progress and every task to 100%.
+     */
+    completeAllTasks: function() {
+      this.setOverallProgress(1);
+      this.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
+        value: 1,
+        progressLabel: "100%"
+      }));
     }
   }
 });

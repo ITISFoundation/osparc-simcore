@@ -92,13 +92,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.setLoadingPageHeader(qx.locale.Manager.tr("Preparing ") + osparc.product.Utils.getStudyAlias());
       this.showLoadingPage();
 
-      const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
-      const progressSequence = new osparc.widget.ProgressSequence(title).set({
-        minHeight: 180 // four tasks
-      });
-      progressSequence.addOverallProgressBar();
-      this.__loadingPage.clearMessages();
-      this.__loadingPage.addWidgetToMessages(progressSequence);
+      const progressSequence = osparc.widget.ProgressSequence.createCreatingStudyProgress(this.__loadingPage);
 
       const params = {
         url: {
@@ -115,34 +109,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       pollTasks.createPollingTask(pollPromise, interval)
         .then(task => {
           task.addListener("updateReceived", e => {
-            const updateData = e.getData();
-            if ("task_progress" in updateData) {
-              const taskProgress = updateData["task_progress"];
-              const message = taskProgress["message"];
-              const percent = osparc.data.PollTask.extractProgress(updateData);
-              progressSequence.setOverallProgress(percent);
-              const existingTask = message ? progressSequence.getTask(message) : null;
-              if (existingTask) {
-                // update task
-                osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
-                  value: percent,
-                  progressLabel: osparc.utils.Utils.safeToFixed(percent * 100, 2) + "%"
-                });
-              } else if (message) {
-                // new task
-                // all the previous steps to 100%
-                progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
-                  value: 1,
-                  progressLabel: "100%"
-                }));
-                // and move to the next new task
-                const subTask = progressSequence.addNewTask(message);
-                osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
-                  value: percent,
-                  progressLabel: "0%"
-                });
-              }
-            }
+            progressSequence.applyPollTaskUpdate(e.getData());
           }, this);
 
           task.addListener("resultReceived", e => {
@@ -151,12 +118,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             if (!projectId) {
               throw new Error(qx.locale.Manager.tr("Missing project id in dispatch result"));
             }
-            // all the steps to 100%
-            progressSequence.setOverallProgress(1);
-            progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
-              value: 1,
-              progressLabel: "100%"
-            }));
+            progressSequence.completeAllTasks();
             osparc.store.Store.getInstance().setCurrentStudyId(projectId);
             this.__loadingPage.clearMessages();
             this.startStudy(projectId);
