@@ -41,3 +41,9 @@ info: ## displays package info
 #
 # SUBTASKS
 #
+
+
+# ---------------------------------------------------------------------------
+# i18n — extract translatable strings for this package
+# ---------------------------------------------------------------------------
+include $(REPO_BASE_DIR)/scripts/makefiles/i18n.mk

@@ -22,7 +22,8 @@
   "defaultTarget": "source",
   "locales": [
     "en_US",
-    "es_ES"
+    "es_ES",
+    "zh_CN"
   ],
   "writeAllTranslations": true,
   "applications": [

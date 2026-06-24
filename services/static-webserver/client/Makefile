@@ -106,6 +106,31 @@ translate-extract: translate-extract ## the generated .po files goes to source/t
 	python ./scripts/post-translate.py
 
 
+# AI translation of frontend .po files (extraction is done by translate-extract above)
+_REPO_ROOT          := $(shell git rev-parse --show-toplevel)
+_I18N_TRANSLATOR    := $(_REPO_ROOT)/scripts/i18n/tools/i18n_translator.py
+_TRANS_DIR          := $(CURDIR)/source/translation
+_TEMPLATE_PO        := $(_TRANS_DIR)/en_US.po
+_FRONTEND_LANGS     ?= es_ES zh_CN
+MODEL               ?= openai/gpt-4o
+
+.PHONY: i18n-translate
+i18n-translate: ## AI translate frontend .po files (es_ES, zh_CN) from en_US.po template
+	@for lang in $(_FRONTEND_LANGS); do \
+	  out=$(_TRANS_DIR)/$$lang.po; \
+	  echo "  [translate] frontend $$lang -> $$out"; \
+	  in_po_flag=""; \
+	  if [ -f "$$out" ]; then in_po_flag="--in-po $$out"; fi; \
+	  uv run --env-file $(_REPO_ROOT)/.env $(_I18N_TRANSLATOR) translate \
+	    --pot $(_TEMPLATE_PO) \
+	    $$in_po_flag \
+	    --lang $$lang \
+	    --model $(MODEL) \
+	    --log-file $(_TRANS_DIR)/translate-$$lang.log \
+	    --out $$out; \
+	done
+
+
 # misc --------------------------
 .PHONY: shell
 shell: ## runs /bin/sh in 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
