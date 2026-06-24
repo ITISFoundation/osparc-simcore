@@ -58,13 +58,14 @@ async def compute_node_hash(
 
             # ensure we do not get pydantic types for hashing here, only jsoneable stuff
             if isinstance(payload, BaseModel):
-                payload = payload.model_dump(by_alias=True, exclude_unset=True)
+                payload = payload.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
             # remove the payload if it is null and it was resolved
             if payload is not None:
                 resolved_payload[port_type][port_key] = payload
 
-    # WARNING: Here we cannot change to json_serialization.json_dumps because if would create a different dump string and therefore a different hash
+    # WARNING: Here we cannot change to json_serialization.json_dumps because if would create a different dump string
+    # and therefore a different hash
     # typically test_node_ports_v2_serialization_v2.py::test_dump will fail if you do this change.
     # NOTE that these hashes might have been already stored elsewhere
     block_string = json.dumps(resolved_payload, sort_keys=True).encode("utf-8")
