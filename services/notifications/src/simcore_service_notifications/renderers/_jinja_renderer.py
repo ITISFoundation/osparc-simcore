@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from common_library.i18n import get_translator
+from common_library.i18n import SupportedLocale, get_translator
 
 from ..models.content import Content, for_channel
 from ..models.template import Template, TemplatePreview
@@ -18,8 +18,11 @@ class JinjaRenderer(Renderer):
         template: Template,
         context: dict[str, Any],
         *,
-        locale: str = "en",
+        locale: SupportedLocale = "en",
     ) -> TemplatePreview[Content]:
+        # NOTE: locale → .mo catalogue path: common_library/locale/<locale>/LC_MESSAGES/messages.mo
+        # Compiled by the i18n extraction pipeline (see common_library.i18n). Unknown locales
+        # fall back to a NullTranslations that passes English msgids through unchanged.
         translator = get_translator(locale)
         # Pass gettext/ngettext as render-time context variables so they
         # shadow env.globals and make the call thread-safe (no env mutation).

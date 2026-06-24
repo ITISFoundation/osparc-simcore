@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from common_library.i18n import SupportedLocale
+
 from ..models.content import Content
 from ..models.template import Template, TemplatePreview
 
@@ -12,5 +14,5 @@ class Renderer(ABC):
         template: Template,
         context: dict[str, Any],
         *,
-        locale: str = "en",
+        locale: SupportedLocale = "en",
     ) -> TemplatePreview[Content]: ...

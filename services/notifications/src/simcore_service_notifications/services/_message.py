@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from common_library.i18n import SupportedLocale
 from models_library.celery import (
     GroupUUID,
     OwnerMetadata,
@@ -123,7 +124,7 @@ class MessageService:
         addressing: Addressing,
         ref: TemplateRef,
         context: dict[str, Any],
-        locale: str = "en",
+        locale: SupportedLocale = "en",
         owner_metadata: OwnerMetadata | None = None,
     ) -> tuple[TaskUUID | GroupUUID, TaskName]:
         preview = await self.template_service.preview_template(
