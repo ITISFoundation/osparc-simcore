@@ -46,6 +46,14 @@ repos:
         language: script
         types: [file]
         entry: scripts/precommit/validate-docker-compose.bash
+  # - repo: local
+  #   hooks:
+  #     - id: check-i18n-dirs
+  #       name: check-i18n-dirs
+  #       language: script
+  #       types: [python]
+  #       pass_filenames: false
+  #       entry: scripts/precommit/check-i18n-dirs.bash
   - repo: https://github.com/crate-ci/typos
     rev: v1.40.0
     hooks:
