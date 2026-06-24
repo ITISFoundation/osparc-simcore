@@ -492,10 +492,11 @@ def _build_translation_job(
     version = "unknown"
     if entry.occurrences:
         filepath, lineno_str = entry.occurrences[0]
-        commit_result = _get_blame_commit(filepath, int(lineno_str))
-        commit = commit_result.commit if isinstance(commit_result, BlameCommitFound) else "unknown"
-        ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-        version = f"{commit} {ts}"
+        if lineno_str:
+            commit_result = _get_blame_commit(filepath, int(lineno_str))
+            commit = commit_result.commit if isinstance(commit_result, BlameCommitFound) else "unknown"
+            ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+            version = f"{commit} {ts}"
 
     return TranslationCompleted(entry=entry, state=state, result=result, version=version)
 
@@ -588,7 +589,7 @@ def _is_stale(  # noqa: PLR0911
     if use_git and entry.occurrences:
         filepath, lineno_str = entry.occurrences[0]
         try:
-            current = _get_blame_commit(filepath, int(lineno_str))
+            current = _get_blame_commit(filepath, int(lineno_str)) if lineno_str else None
             if isinstance(current, BlameCommitFound):
                 return current.commit != stored_commit
         except Exception:  # noqa: S110
