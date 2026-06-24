@@ -2,6 +2,8 @@
 
 UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
 
+REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 .PHONY: all
 all: install test-dev
@@ -46,14 +48,6 @@ test-ci: _check_venv_active ## runs all tests [DEV]
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
 
-
-.PHONY: help
-# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## this colorful help
-	@echo "Recipes for tests"
-	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
 
 
 .PHONY: _check_venv_active
