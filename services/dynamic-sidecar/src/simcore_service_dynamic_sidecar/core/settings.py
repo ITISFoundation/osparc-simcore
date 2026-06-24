@@ -94,6 +94,20 @@ class UserServicesTracingSettings(BaseApplicationSettings):
         Field(description="HTTP timeout when forwarding traces to the platform collector"),
     ] = timedelta(seconds=30)
 
+    # resource caps shared by the injected collector and the trace-shipper containers
+    USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT: Annotated[
+        ByteSize,
+        Field(description="memory limit for the OTEL collector containers"),
+    ] = TypeAdapter(ByteSize).validate_python("256MiB")
+    USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT: Annotated[
+        float,
+        Field(description="CPU cores limit for the OTEL collector containers"),
+    ] = 0.30
+    USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES: Annotated[
+        int,
+        Field(description="relative CPU weight for the OTEL collector containers"),
+    ] = 16
+
     _validate_flush_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL")
     _validate_stop_grace_period = validate_numeric_string_as_timedelta(
         "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD"

@@ -36,7 +36,6 @@ import yaml
 from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
 from fastapi import FastAPI, status
-from pydantic import ByteSize, TypeAdapter
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
@@ -57,7 +56,8 @@ _CONTAINER_NAME_SUFFIX: Final[str] = "otel-trace-shipper"
 # own namespace ("otc" = octel trace shipper): keeps the shipper out of the dy-sidecar
 # container namespace so it is never matched / reaped by dy-sidecar name-prefix lookups
 _CONTAINER_NAME_PREFIX: Final[str] = "otc"
-_SHIPPER_MEMORY_LIMIT: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("256MiB")
+# Docker Engine API expresses a CPU-core quota as NanoCpus (cores * 1e9)
+_NANO_CPUS_PER_CORE: Final[int] = 10**9
 _DRAIN_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=0.5)
 
 
@@ -157,7 +157,13 @@ def _build_shipper_container_config(
             # share the sidecar's network namespace -> same DNS/egress to the platform
             "NetworkMode": f"container:{socket.gethostname()}",
             "RestartPolicy": {"Name": "unless-stopped"},
-            "Memory": _SHIPPER_MEMORY_LIMIT,
+            # resource caps shared with the injected collector (Docker Engine API equivalents
+            # of compose mem_limit/cpus/cpu_shares)
+            "Memory": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT,
+            "NanoCpus": int(
+                user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT * _NANO_CPUS_PER_CORE
+            ),
+            "CpuShares": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES,
         },
     }
 

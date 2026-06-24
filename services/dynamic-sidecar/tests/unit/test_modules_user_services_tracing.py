@@ -153,6 +153,13 @@ def test_build_shipper_container_config(
     assert host_config["Binds"] == ["/host/traces:/traces"]
     assert host_config["NetworkMode"].startswith("container:")  # shares sidecar netns
     assert host_config["RestartPolicy"] == {"Name": "unless-stopped"}
+    # resource caps (Docker Engine API equivalents of compose mem_limit/cpus/cpu_shares)
+    assert host_config["Memory"] == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT
+    assert host_config["NanoCpus"] == int(
+        user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT
+        * user_services_tracing._NANO_CPUS_PER_CORE  # noqa: SLF001
+    )
+    assert host_config["CpuShares"] == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES
     assert config["Env"] == [
         f"OTEL_COLLECTOR_CONFIG={user_services_tracing._generate_shipper_config(platform_tracing_settings)}"  # noqa: SLF001
     ]
