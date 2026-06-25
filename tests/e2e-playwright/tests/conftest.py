@@ -403,7 +403,13 @@ def log_in_and_out(
                 assert response_info.value.ok, f"{response_info.value.json()}"
 
     assert not ws_info.value.is_closed()
-    restartable_wb = RobustWebSocket(page, ws_info.value)
+
+    # Reload to ensure we have the latest frontend version,
+    # avoiding the permanent "new version available" flash message
+    with page.expect_websocket() as ws_info_after_reload:
+        page.reload(wait_until="networkidle")
+    assert not ws_info_after_reload.value.is_closed()
+    restartable_wb = RobustWebSocket(page, ws_info_after_reload.value)
 
     # Welcome to Sim4Life
     page.wait_for_timeout(5000)
