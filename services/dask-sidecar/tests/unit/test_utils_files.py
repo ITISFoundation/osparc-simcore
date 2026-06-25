@@ -122,6 +122,7 @@ def upload_file_to_remote(
             open_file.fs.rm(open_file.path)
 
 
+@pytest.fixture
 def encryption_settings() -> TransferEncryptionSettings:
     return TransferEncryptionSettings(
         job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
