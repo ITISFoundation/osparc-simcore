@@ -360,6 +360,48 @@ def encrypt_stream(
         chunk_index += 1
 
 
+def _read_chunk_record(src: BinaryIO, *, max_ct_len: int) -> tuple[bool, bytes]:
+    """Read and validate a single chunk record from ``src``.
+
+    Returns ``(is_final, ct_and_tag)``.
+
+    Raises:
+        AesGcmStreamAuthError: If the final chunk is missing (stream truncated before it).
+        AesGcmStreamFormatError: If the record is malformed or its ciphertext is truncated.
+    """
+    prefix = _read_exact(src, _CHUNK_PREFIX_STRUCT.size)
+    if prefix is None:
+        msg = "Truncated stream: missing final chunk"
+        raise AesGcmStreamAuthError(msg)
+
+    chunk_flags, ct_len = _CHUNK_PREFIX_STRUCT.unpack(prefix)
+    if chunk_flags & ~_KNOWN_CHUNK_FLAGS_MASK:
+        msg = f"Invalid chunk record: unknown flag bits set ({chunk_flags:#04x})"
+        raise AesGcmStreamFormatError(msg)
+    if ct_len < TAG_SIZE_BYTES:
+        msg = "Invalid chunk record: ciphertext shorter than authentication tag"
+        raise AesGcmStreamFormatError(msg)
+    if ct_len > max_ct_len:
+        msg = f"Invalid chunk record: ciphertext exceeds advertised chunk size ({ct_len} > {max_ct_len})"
+        raise AesGcmStreamFormatError(msg)
+
+    ct_and_tag = _read_exact(src, ct_len)
+    if ct_and_tag is None:
+        msg = "Truncated stream: incomplete chunk ciphertext"
+        raise AesGcmStreamFormatError(msg)
+
+    return bool(chunk_flags & _FINAL_CHUNK_FLAG), ct_and_tag
+
+
+def _decrypt_chunk(aesgcm: AESGCM, *, nonce: bytes, ct_and_tag: bytes, aad: bytes) -> bytes:
+    """Decrypt one chunk, mapping an authentication failure to ``AesGcmStreamAuthError``."""
+    try:
+        return aesgcm.decrypt(nonce, ct_and_tag, aad)
+    except InvalidTag as error:
+        msg = "AES-GCM authentication failed"
+        raise AesGcmStreamAuthError(msg) from error
+
+
 def decrypt_stream(
     src: BinaryIO,
     dst: BinaryIO,
@@ -399,31 +441,7 @@ def decrypt_stream(
     total_plaintext_bytes = 0
     seen_final = False
     while not seen_final:
-        prefix = _read_exact(src, _CHUNK_PREFIX_STRUCT.size)
-        if prefix is None:
-            msg = "Truncated stream: missing final chunk"
-            raise AesGcmStreamAuthError(msg)
-
-        chunk_flags, ct_len = _CHUNK_PREFIX_STRUCT.unpack(prefix)
-        if chunk_flags & ~_KNOWN_CHUNK_FLAGS_MASK:
-            msg = f"Invalid chunk record: unknown flag bits set ({chunk_flags:#04x})"
-            raise AesGcmStreamFormatError(msg)
-        if ct_len < TAG_SIZE_BYTES:
-            msg = "Invalid chunk record: ciphertext shorter than authentication tag"
-            raise AesGcmStreamFormatError(msg)
-        if ct_len > _chunk_size + TAG_SIZE_BYTES:
-            msg = (
-                "Invalid chunk record: ciphertext exceeds advertised chunk size "
-                f"({ct_len} > {_chunk_size + TAG_SIZE_BYTES})"
-            )
-            raise AesGcmStreamFormatError(msg)
-
-        is_final = bool(chunk_flags & _FINAL_CHUNK_FLAG)
-        ct_and_tag = _read_exact(src, ct_len)
-        if ct_and_tag is None:
-            msg = "Truncated stream: incomplete chunk ciphertext"
-            raise AesGcmStreamFormatError(msg)
-
+        is_final, ct_and_tag = _read_chunk_record(src, max_ct_len=_chunk_size + TAG_SIZE_BYTES)
         nonce = _chunk_nonce(base_nonce_seed, chunk_index)
         aad = _build_chunk_aad(
             chunk_index=chunk_index,
@@ -432,11 +450,7 @@ def decrypt_stream(
             file_id=file_id,
             file_role=file_role,
         )
-        try:
-            plaintext = aesgcm.decrypt(nonce, ct_and_tag, aad)
-        except InvalidTag as error:
-            msg = "AES-GCM authentication failed"
-            raise AesGcmStreamAuthError(msg) from error
+        plaintext = _decrypt_chunk(aesgcm, nonce=nonce, ct_and_tag=ct_and_tag, aad=aad)
 
         dst.write(plaintext)
         total_plaintext_bytes += len(plaintext)
