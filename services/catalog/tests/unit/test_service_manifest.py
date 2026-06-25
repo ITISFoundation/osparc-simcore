@@ -6,6 +6,8 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
+
 import pytest
 import toolz
 from fastapi import FastAPI
@@ -39,6 +41,10 @@ async def director_client(
     _client = get_director_client(app)
     assert app.state.director_api == _client
     assert isinstance(_client, DirectorClient)
+
+    # ensures this client's manifest API caches are reset
+    await manifest.reset_services_caches(_client)
+
     return _client
 
 
@@ -131,3 +137,157 @@ async def test_get_batch_services(
         # NOTE: simpler to visualize
         for got, expected in zip(got_services, expected_services, strict=True):
             assert got == expected
+
+
+async def test_get_batch_services_uses_single_bulk_director_call(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    # a batch spanning several (non function) services
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    # NOTE: `all_services_map` fixture warms up the bulk fetch via `get_services_map`,
+    # whereas `get_batch_services` goes through this client's cached services map
+    await manifest.reset_services_caches(director_client)
+    mocked_director_rest_api["list_services"].reset()
+    mocked_director_rest_api["get_service"].reset()
+
+    got_services = await manifest.get_batch_services(selection, director_client)
+
+    assert [(s.key, s.version) for s in got_services] == selection
+
+    # resolves the whole selection with a single bulk director call ...
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    # ... and never fans out to the per-service endpoint
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_coalesces_concurrent_cold_cache_calls(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    # ensure a cold cache so all concurrent calls race on the populate step
+    await manifest.reset_services_caches(director_client)
+    mocked_director_rest_api["list_services"].reset()
+    mocked_director_rest_api["get_service"].reset()
+
+    # a burst of concurrent callers on a cold cache
+    results = await asyncio.gather(*(manifest.get_batch_services(selection, director_client) for _ in range(10)))
+
+    for got_services in results:
+        assert [(s.key, s.version) for s in got_services] == selection
+
+    # the stampede lock collapses the burst into a single bulk director call
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_when_director_slower_than_lease_keeps_results_correct(
+    monkeypatch: pytest.MonkeyPatch,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    # NOTE: documents the degraded behaviour when the director bulk fetch is slower than
+    # the stampede `lease`. The lock expires mid-flight (RedLock lets every waiter pass
+    # after `lease`), so request coalescing is defeated and each concurrent caller
+    # re-issues its own fetch. The guarantee that must still hold is correctness: despite
+    # the lost coalescing, every caller receives complete, correct results.
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    num_callers = 5
+    release_director = asyncio.Event()
+    all_callers_in_flight = asyncio.Event()
+    call_count = 0
+
+    async def _slow_get_services_map(_director_client: DirectorClient) -> manifest.ServiceMetaDataPublishedDict:
+        nonlocal call_count
+        call_count += 1
+        if call_count == num_callers:
+            # every caller has re-issued its own fetch (the lease expired for all waiters)
+            all_callers_in_flight.set()
+        # stays "in flight" until the test releases it, i.e. slower than the lease
+        await release_director.wait()
+        return all_services_map
+
+    monkeypatch.setattr(manifest, "get_services_map", _slow_get_services_map)
+
+    # a lease far shorter than the (blocked) director response time
+    short_lease = 0.05
+    director_client.services_cache_lease = short_lease
+    try:
+        # rebuild this client's caches so the new (short) lease takes effect
+        await manifest.reset_services_caches(director_client)
+
+        # a burst of concurrent callers racing on a cold cache
+        callers = asyncio.gather(*(manifest.get_batch_services(selection, director_client) for _ in range(num_callers)))
+
+        # wait until the lease has expired for every waiter so they have all re-issued
+        # their own fetch (signalled by the slow fetch itself, no fixed sleep needed)
+        async with asyncio.timeout(5):
+            await all_callers_in_flight.wait()
+
+        # all the in-flight fetches can now complete
+        release_director.set()
+        results = await callers
+
+        # correctness is preserved for every caller despite the expired lease ...
+        for got_services in results:
+            assert [(s.key, s.version) for s in got_services] == selection
+
+        # ... but the slow response defeated coalescing: every caller fetched on its own
+        assert call_count == num_callers
+    finally:
+        director_client.services_cache_lease = 30  # restore the default
+        await manifest.reset_services_caches(director_client)
+
+
+async def test_get_batch_services_returns_keyerror_for_missing(
+    director_client: DirectorClient,
+):
+    selection = [("simcore/services/comp/does-not-exist", "1.0.0")]
+
+    got_services = await manifest.get_batch_services(selection, director_client)
+
+    assert len(got_services) == 1
+    assert isinstance(got_services[0], KeyError)
+
+
+def test_director_client_reads_services_cache_config_from_settings(
+    director_client: DirectorClient,
+):
+    # the per-client cache configuration is read from settings at construction
+    # (see CATALOG_DIRECTOR_BULK_FETCH_LEASE / CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED)
+    assert director_client.services_cache_lease == 30
+    assert director_client.services_caching_enabled is True
+
+
+async def test_set_services_caching_disabled_always_fetches_fresh(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    # NOTE: when caching is disabled (CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED=False) the
+    # result is never stored, so every call hits the director afresh.
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    await manifest.reset_services_caches(director_client)
+    mocked_director_rest_api["list_services"].reset()
+
+    director_client.services_caching_enabled = False
+    try:
+        for expected_call_count in (1, 2, 3):
+            got_services = await manifest.get_batch_services(selection, director_client)
+
+            assert [(s.key, s.version) for s in got_services] == selection
+            # no caching: each call re-issues the bulk director fetch
+            assert mocked_director_rest_api["list_services"].call_count == expected_call_count
+    finally:
+        director_client.services_caching_enabled = True  # restore caching for other tests

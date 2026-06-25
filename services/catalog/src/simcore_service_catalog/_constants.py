@@ -12,7 +12,7 @@ RESPONSE_MODEL_POLICY: Final[dict[str, Any]] = {
 
 SECOND: Final[int] = 1
 MINUTE: Final[int] = 60 * SECOND
-DIRECTOR_CACHING_TTL: Final[int] = 5 * MINUTE
+DIRECTOR_CACHING_TTL: Final[int] = 15 * MINUTE
 LIST_SERVICES_CACHING_TTL: Final[int] = 30 * SECOND
 
 SIMCORE_SERVICE_SETTINGS_LABELS: Final[str] = "simcore.service.settings"
