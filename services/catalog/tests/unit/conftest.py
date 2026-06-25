@@ -37,7 +37,6 @@ from servicelib.tracing import TracingConfig
 from simcore_service_catalog._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
-from simcore_service_catalog.service import manifest
 
 pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
@@ -139,11 +138,6 @@ async def app(
     ):
         captured = capfd.readouterr()
         assert APP_STARTED_BANNER_MSG.strip() in captured.out
-
-        # NOTE: manifest API caches are process-global (keyed only by the registry),
-        # so reset them to keep tests isolated from each other
-        await manifest.get_service.cache.clear()
-        await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
 
         yield app_under_test
 

@@ -42,9 +42,8 @@ async def director_client(
     assert app.state.director_api == _client
     assert isinstance(_client, DirectorClient)
 
-    # ensures manifest API caches are reset
-    assert await manifest.get_service.cache.clear()
-    assert await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    # ensures this client's manifest API caches are reset
+    await manifest.reset_services_caches(_client)
 
     return _client
 
@@ -150,8 +149,8 @@ async def test_get_batch_services_uses_single_bulk_director_call(
     assert len(selection) > 1
 
     # NOTE: `all_services_map` fixture warms up the bulk fetch via `get_services_map`,
-    # whereas `get_batch_services` goes through the cached `_get_cached_services_map`
-    await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    # whereas `get_batch_services` goes through this client's cached services map
+    await manifest.reset_services_caches(director_client)
     mocked_director_rest_api["list_services"].reset()
     mocked_director_rest_api["get_service"].reset()
 
@@ -174,7 +173,7 @@ async def test_get_batch_services_coalesces_concurrent_cold_cache_calls(
     assert len(selection) > 1
 
     # ensure a cold cache so all concurrent calls race on the populate step
-    await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    await manifest.reset_services_caches(director_client)
     mocked_director_rest_api["list_services"].reset()
     mocked_director_rest_api["get_service"].reset()
 
@@ -221,9 +220,10 @@ async def test_get_batch_services_when_director_slower_than_lease_keeps_results_
 
     # a lease far shorter than the (blocked) director response time
     short_lease = 0.05
-    manifest.set_services_cache_lease(short_lease)
+    director_client.services_cache_lease = short_lease
     try:
-        await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+        # rebuild this client's caches so the new (short) lease takes effect
+        await manifest.reset_services_caches(director_client)
 
         # a burst of concurrent callers racing on a cold cache
         callers = asyncio.gather(*(manifest.get_batch_services(selection, director_client) for _ in range(num_callers)))
@@ -244,7 +244,8 @@ async def test_get_batch_services_when_director_slower_than_lease_keeps_results_
         # ... but the slow response defeated coalescing: every caller fetched on its own
         assert call_count == num_callers
     finally:
-        manifest.set_services_cache_lease(30)  # restore the import-time default
+        director_client.services_cache_lease = 30  # restore the default
+        await manifest.reset_services_caches(director_client)
 
 
 async def test_get_batch_services_returns_keyerror_for_missing(
@@ -258,15 +259,13 @@ async def test_get_batch_services_returns_keyerror_for_missing(
     assert isinstance(got_services[0], KeyError)
 
 
-def test_set_services_cache_lease_reconfigures_both_caches():
-    try:
-        manifest.set_services_cache_lease(123)
-
-        assert manifest._get_service_cache.lease == 123  # noqa: SLF001
-        assert manifest._get_cached_services_map_cache.lease == 123  # noqa: SLF001
-    finally:
-        # restore the import-time default to keep other tests isolated
-        manifest.set_services_cache_lease(30)  # restore the default (see CATALOG_DIRECTOR_BULK_FETCH_LEASE)
+def test_director_client_reads_services_cache_config_from_settings(
+    director_client: DirectorClient,
+):
+    # the per-client cache configuration is read from settings at construction
+    # (see CATALOG_DIRECTOR_BULK_FETCH_LEASE / CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED)
+    assert director_client.services_cache_lease == 30
+    assert director_client.services_caching_enabled is True
 
 
 async def test_set_services_caching_disabled_always_fetches_fresh(
@@ -279,10 +278,10 @@ async def test_set_services_caching_disabled_always_fetches_fresh(
     selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
     assert len(selection) > 1
 
-    await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    await manifest.reset_services_caches(director_client)
     mocked_director_rest_api["list_services"].reset()
 
-    manifest.set_services_caching_enabled(enabled=False)
+    director_client.services_caching_enabled = False
     try:
         for expected_call_count in (1, 2, 3):
             got_services = await manifest.get_batch_services(selection, director_client)
@@ -291,4 +290,4 @@ async def test_set_services_caching_disabled_always_fetches_fresh(
             # no caching: each call re-issues the bulk director fetch
             assert mocked_director_rest_api["list_services"].call_count == expected_call_count
     finally:
-        manifest.set_services_caching_enabled(enabled=True)  # restore caching for other tests
+        director_client.services_caching_enabled = True  # restore caching for other tests

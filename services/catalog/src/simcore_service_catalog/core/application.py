@@ -25,7 +25,6 @@ from ..api.rpc.events import configure_rpc_api
 from ..clients.director import configure_director
 from ..clients.rabbitmq import configure_rabbitmq_client
 from ..repository.events import configure_default_product_name
-from ..service import manifest
 from ..service.function_services import configure_function_services
 from .background_tasks import configure_background_tasks
 from .settings import ApplicationSettings
@@ -74,9 +73,6 @@ def create_app(
             "Application settings: %s",
             json_dumps(settings, indent=2, sort_keys=True),
         )
-    # configure the director services caches from settings
-    manifest.set_services_cache_lease(settings.CATALOG_DIRECTOR_BULK_FETCH_LEASE)
-    manifest.set_services_caching_enabled(enabled=settings.CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED)
     with configure_app_lifespan(
         logging_lifespan=logging_lifespan,
         starting_banner=APP_STARTING_BANNER_MSG,

@@ -101,11 +101,8 @@ async def background_sync_task_mocked(
 async def director_client(app: FastAPI) -> DirectorClient:
     director_api = get_director_client(app)
 
-    # ensures manifest API cache is reset
-    assert hasattr(manifest.get_service, "cache")
-    assert await manifest.get_service.cache.clear()
-    assert hasattr(manifest._get_cached_services_map, "cache")  # noqa: SLF001
-    assert await manifest._get_cached_services_map.cache.clear()  # noqa: SLF001
+    # ensures this client's manifest API caches are reset
+    await manifest.reset_services_caches(director_api)
 
     return director_api
 

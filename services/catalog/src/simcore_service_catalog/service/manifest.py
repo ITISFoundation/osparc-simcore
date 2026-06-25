@@ -81,19 +81,52 @@ async def get_services_map(
     return services
 
 
-_get_service_cache: Final = cached_stampede(
-    ttl=DIRECTOR_CACHING_TTL,
-    # NOTE: `lease` coalesces a cold-cache burst for the *same* service into a single
-    # director call (the others await the in-flight populate), avoiding a stampede.
-    # This is a placeholder: the actual value comes from `CATALOG_DIRECTOR_BULK_FETCH_LEASE`
-    # and is applied at startup (see `set_services_cache_lease`).
-    lease=1,
-    namespace=__name__,
-    key_builder=lambda f, *_args, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
-)
+_SERVICE_CACHE_KEY: Final = "service"
+_SERVICES_MAP_CACHE_KEY: Final = "services_map"
 
 
-@_get_service_cache
+def _get_or_create_cache(
+    director_client: DirectorClient,
+    name: str,
+    populate: Any,
+    key_builder: Any,
+) -> Any:
+    # NOTE: the cache is attached to the *director client instance* so that distinct
+    # apps never share cache state. It is built lazily (once per client).
+    # `_uuid` namespaces each client's entries in aiocache's in-memory store.
+    cached_fn = director_client.services_caches.get(name)
+    if cached_fn is None:
+        cached_fn = cached_stampede(
+            ttl=DIRECTOR_CACHING_TTL,
+            lease=director_client.services_cache_lease,
+            namespace=f"{__name__}:{director_client._uuid}",  # noqa: SLF001
+            key_builder=key_builder,
+            skip_cache_func=lambda _result: not director_client.services_caching_enabled,
+        )(populate)
+        director_client.services_caches[name] = cached_fn
+    return cached_fn
+
+
+async def reset_services_caches(director_client: DirectorClient) -> None:
+    # NOTE: clears this client's manifest caches and drops the cached callables so that
+    # they are rebuilt from the client's current configuration (e.g. after changing the
+    # lease). Mainly used for test isolation / forcing a cold cache.
+    for cached_fn in director_client.services_caches.values():
+        await cached_fn.cache.clear()
+    director_client.services_caches.clear()
+
+
+async def _populate_service(
+    director_client: DirectorClient,
+    *,
+    key: ServiceKey,
+    version: ServiceVersion,
+) -> ServiceMetaDataPublished:
+    if is_function_service(key):
+        return get_function_service(key=key, version=version)
+    return await director_client.get_service(service_key=key, service_version=version)
+
+
 async def get_service(
     director_client: DirectorClient,
     *,
@@ -105,49 +138,21 @@ async def get_service(
 
     raises if does not exist or if validation fails
     """
-    if is_function_service(key):
-        service = get_function_service(key=key, version=version)
-    else:
-        service = await director_client.get_service(service_key=key, service_version=version)
-    return service
+    cached_fn = _get_or_create_cache(
+        director_client,
+        _SERVICE_CACHE_KEY,
+        _populate_service,
+        lambda f, *_args, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
+    )
+    return await cached_fn(director_client, key=key, version=version)
 
 
-_get_cached_services_map_cache: Final = cached_stampede(
-    ttl=DIRECTOR_CACHING_TTL,
-    # NOTE: `lease` locks the populate step so that a burst of concurrent calls on a
-    # cold cache results in a *single* director bulk fetch (the others await the
-    # in-flight populate and read the freshly cached value) instead of a thundering herd.
-    # This is a placeholder: the actual value comes from `CATALOG_DIRECTOR_BULK_FETCH_LEASE`
-    # and is applied at startup (see `set_services_cache_lease`).
-    lease=1,
-    namespace=__name__,
-    key_builder=lambda f, *_args, **_kwargs: f.__name__,
-)
-
-
-@_get_cached_services_map_cache
-async def _get_cached_services_map(
+async def _populate_services_map(
     director_client: DirectorClient,
 ) -> ServiceMetaDataPublishedDict:
     # NOTE: caches the *entire* registry manifest so that resolving a batch of
     # services requires a single director call instead of one call per service.
     return await get_services_map(director_client)
-
-
-def set_services_cache_lease(lease_seconds: float) -> None:
-    # NOTE: aiocache binds `lease` when the cache decorators above are created at import
-    # time, so the value coming from settings is applied here at application startup.
-    _get_service_cache.lease = lease_seconds
-    _get_cached_services_map_cache.lease = lease_seconds
-
-
-def set_services_caching_enabled(*, enabled: bool) -> None:
-    # NOTE: when disabled, `skip_cache_func` returns True so aiocache never stores a
-    # result and every call fetches fresh from the director. Applied at startup, before
-    # any traffic, so the cache is never populated. Exposed so caching can be turned off
-    # in production for testing/debugging (see `CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED`).
-    for cache in (_get_service_cache, _get_cached_services_map_cache):
-        cache.skip_cache_func = lambda _result: not enabled
 
 
 async def get_batch_services(
@@ -156,7 +161,13 @@ async def get_batch_services(
 ) -> list[ServiceMetaDataPublished | BaseException]:
     # NOTE: resolves the whole manifest in a single (cached) bulk fetch and looks
     # up the selection, avoiding a per-service fan-out of director calls.
-    services_map = await _get_cached_services_map(director_client=director_client)
+    cached_fn = _get_or_create_cache(
+        director_client,
+        _SERVICES_MAP_CACHE_KEY,
+        _populate_services_map,
+        lambda f, *_args, **_kwargs: f.__name__,
+    )
+    services_map = await cached_fn(director_client)
     batch: list[ServiceMetaDataPublished | BaseException] = []
     for key, version in selection:
         service = services_map.get((key, version))
