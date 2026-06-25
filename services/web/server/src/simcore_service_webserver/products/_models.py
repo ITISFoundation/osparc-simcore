@@ -33,7 +33,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
-from sqlalchemy import Column
+from sqlalchemy import Column, DefaultClause
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 
@@ -235,9 +235,11 @@ class Product(BaseModel):
                         },
                         # defaults from sqlalchemy table
                         **{
-                            str(c.name): c.server_default.arg  # type: ignore[union-attr]
+                            f"{c.name}": c.server_default.arg
                             for c in products.columns
-                            if isinstance(c, Column) and c.server_default and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
+                            if isinstance(c, Column)
+                            and isinstance(c.server_default, DefaultClause)
+                            and isinstance(c.server_default.arg, str)
                         },
                     },
                     # Example of data in the database with a url set with blanks
