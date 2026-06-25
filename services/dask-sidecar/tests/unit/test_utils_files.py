@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import hashlib
 import mimetypes
 import zipfile
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -90,6 +91,32 @@ def remote_parameters(
     ]
 
 
+@pytest.fixture
+def upload_file_to_remote(
+    remote_parameters: StorageParameters,
+) -> Iterator[Callable[[Path, AnyUrl], None]]:
+    storage_kwargs: dict[str, Any] = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+
+    uploaded_files: list[fsspec.core.OpenFile] = []
+
+    def _upload(local_path: Path, remote_url: AnyUrl) -> None:
+        open_file = cast(
+            fsspec.core.OpenFile,
+            fsspec.open(f"{remote_url}", mode="wb", **storage_kwargs),
+        )
+        with open_file as dest_fp, local_path.open("rb") as src_fp:
+            dest_fp.write(src_fp.read())
+        uploaded_files.append(open_file)
+
+    yield _upload
+
+    for open_file in uploaded_files:
+        with contextlib.suppress(Exception):
+            open_file.fs.rm(open_file.path)
+
+
 async def test_push_file_to_remote(
     remote_parameters: StorageParameters,
     tmp_path: Path,
@@ -98,6 +125,42 @@ async def test_push_file_to_remote(
 ):
     # let's create some file with text inside
     src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+    # push it to the remote
+    await push_file_to_remote(
+        src_path,
+        remote_parameters.remote_file_url,
+        mocked_log_publishing_cb,
+        remote_parameters.s3_settings,
+    )
+
+    # check the remote is actually having the file in
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+
+    with cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            f"{remote_parameters.remote_file_url}",
+            mode="rt",
+            **storage_kwargs,
+        ),
+    ) as fp:
+        assert fp.read() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_push_file_with_spaces_in_name_to_remote(
+    remote_parameters: StorageParameters,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # let's create some file with spaces/parentheses in its local name
+    src_path = tmp_path / "some file with spaces (1) (2).txt"
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
     assert src_path.exists()
@@ -333,6 +396,7 @@ async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
 
 async def test_pull_compressed_zip_file_from_remote(
     remote_parameters: StorageParameters,
+    upload_file_to_remote: Callable[[Path, AnyUrl], None],
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -349,22 +413,7 @@ async def test_pull_compressed_zip_file_from_remote(
             file_names_within_zip_file.add(local_test_file.name)
 
     destination_url = TypeAdapter(AnyUrl).validate_python(f"{remote_parameters.remote_file_url}.zip")
-    storage_kwargs = {}
-    if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
-
-    with (
-        cast(
-            fsspec.core.OpenFile,
-            fsspec.open(
-                f"{destination_url}",
-                mode="wb",
-                **storage_kwargs,
-            ),
-        ) as dest_fp,
-        local_zip_file_path.open("rb") as src_fp,
-    ):
-        dest_fp.write(src_fp.read())
+    upload_file_to_remote(local_zip_file_path, destination_url)
 
     # now we want to download that file so it becomes the source
     src_url = destination_url
@@ -421,6 +470,54 @@ async def test_pull_compressed_zip_file_from_remote(
     for file in download_folder.glob("*"):
         assert file.exists()
         assert file.name in file_names_within_zip_file
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
+    remote_parameters: StorageParameters,
+    upload_file_to_remote: Callable[[Path, AnyUrl], None],
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    local_zip_file_path = tmp_path / "archive with spaces (1) (2).zip"
+    file_names_within_zip_file = set()
+    with zipfile.ZipFile(local_zip_file_path, compression=zipfile.ZIP_DEFLATED, mode="w") as zfp:
+        for file_number in range(5):
+            local_test_file = tmp_path / f"{file_number}_{faker.file_name()}"
+            local_test_file.write_text(faker.text())
+            assert local_test_file.exists()
+            zfp.write(local_test_file, local_test_file.name)
+            file_names_within_zip_file.add(local_test_file.name)
+
+    # NOTE: the remote file name contains spaces, which get percent-encoded in the URL
+    destination_url = TypeAdapter(AnyUrl).validate_python(
+        f"{remote_parameters.remote_file_url} with spaces (1) (2).zip"
+    )
+
+    assert "%20" in f"{destination_url}"
+    assert " " not in f"{destination_url}"
+
+    upload_file_to_remote(local_zip_file_path, destination_url)
+
+    # now we want to download that file so it becomes the source
+    src_url = destination_url
+
+    # if destination is not a zip, then we decompress
+    download_folder = tmp_path / "download"
+    download_folder.mkdir(parents=True, exist_ok=True)
+    assert download_folder.exists()
+    dst_path = download_folder / faker.file_name()
+    await pull_file_from_remote(
+        src_url=src_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+    )
+    assert not dst_path.exists()
+    extracted_file_names = {file.name for file in download_folder.glob("*")}
+    assert extracted_file_names == file_names_within_zip_file
     mocked_log_publishing_cb.assert_called()
 
 
