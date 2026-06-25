@@ -54,6 +54,20 @@ _check_venv_active:
 # uv bootstrap
 # ---------------------------------------------------------------------------
 
+.PHONY: rebootstrap-uv
+
+# NOTE: no 'uv self update' — the repo-local install (custom UV_INSTALL_DIR)
+# is "unmanaged" and cannot self-update. Use 'make rebootstrap-uv' to
+# re-install the repo-local binary.
+rebootstrap-uv: ## Reinstalls repo-local uv (unmanaged install in UV_INSTALL_DIR)
+	@echo "Rebootstrapping repo-local 'uv' in $(UV_INSTALL_DIR) ..."
+	@rm -rf $(UV_INSTALL_DIR)
+	@$(MAKE_C) .check-uv-installed
+	@if test -d $(VENV_DIR)/bin; then \
+		ln -sf $(UV) $(VENV_DIR)/bin/uv; \
+	fi
+	@$(UV) --version
+
 .check-uv-installed:
 	@echo "Checking if 'uv' is installed..."
 	@if test ! -x $(UV); then \
@@ -63,9 +77,7 @@ _check_venv_active:
 		printf "\033[32m'uv' is installed. Version: \033[0m"; \
 		$(UV) --version; \
 	fi
-	# Note: no 'uv self update' — the repo-local install (custom UV_INSTALL_DIR)
-	# is "unmanaged" and cannot self-update. To upgrade, remove $(UV_INSTALL_DIR)
-	# and re-run 'make devenv' to re-bootstrap.
+
 
 # ---------------------------------------------------------------------------
 # Virtual environment
@@ -77,11 +89,7 @@ _check_venv_active:
 # force an existing .venv to be rebuilt.
 # Python is installed into UV_PYTHON_INSTALL_DIR (repo-local) when not already present.
 $(VENV_DIR): | .check-uv-installed
-	# Creating virtual environment at $(VENV_DIR) with Python $(EXPECTED_PYTHON_VERSION)
 	@$(UV) venv --python $(EXPECTED_PYTHON_VERSION) $@
-	# Exposing repo-local uv inside the venv so that activating it puts uv on
-	# PATH. This lets bare 'uv ...' recipes (e.g. service 'make install-dev')
-	# resolve the repo-local binary without any external dependency.
 	@ln -sf $(UV) $@/bin/uv
 	@echo "# Python version in venv:" && $@/bin/python --version
 	@$(UV) pip list --python $@
