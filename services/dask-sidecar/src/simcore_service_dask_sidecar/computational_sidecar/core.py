@@ -70,6 +70,67 @@ class ComputationalSidecar:
     s3_settings: S3Settings | None
     encryption: JobEncryptionContext | None
 
+    def _build_input_encryption(self, input_key: str) -> TransferEncryptionSettings | None:
+        if self.encryption is None or input_key not in self.encryption.input_port_to_file_id:
+            return None
+        return TransferEncryptionSettings(
+            job_key=self.encryption.job_key,
+            job_id=self.encryption.job_id,
+            file_id=self.encryption.input_port_to_file_id[input_key],
+            file_role="input",
+        )
+
+    def _prepare_input_download(
+        self,
+        input_key: str,
+        input_params: FileUrl,
+        task_volumes: TaskSharedVolumes,
+    ) -> Coroutine:
+        file_name = input_params.file_mapping or Path(URL(f"{input_params.url}").path.strip("/")).name
+        destination_path = task_volumes.inputs_folder / file_name
+
+        need_unzipping = check_need_unzipping(input_params.url, input_params.file_mime_type, destination_path)
+        if input_params.file_mapping and need_unzipping:
+            raise ServiceInputsUseFileToKeyMapButReceivesZipDataError(
+                service_key=self.task_parameters.image,
+                service_version=self.task_parameters.tag,
+                input_key=input_key,
+                file_to_key_map=input_params.file_mapping,
+            )
+
+        if destination_path.parent != task_volumes.inputs_folder:
+            # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,
+            # if extra subfolders via file-mapping,
+            # then we make them first
+            destination_path.parent.mkdir(parents=True)
+
+        return pull_file_from_remote(
+            input_params.url,
+            input_params.file_mime_type,
+            destination_path,
+            log_publishing_cb=self._publish_sidecar_log,
+            s3_settings=self.s3_settings,
+            encryption=self._build_input_encryption(input_key),
+        )
+
+    async def _download_and_decrypt_input(self, input_key: str, task: Coroutine) -> None:
+        try:
+            await task
+        except AesGcmStreamError as exc:
+            # NOTE: the low-level crypto error stays internal to the sidecar (it is not
+            # importable on the dask client). We log it here for diagnosis and re-raise a
+            # well-defined, client-importable worker error WITHOUT chaining it as cause,
+            # so the exception survives pickling across the dask boundary.
+            _logger.warning("Failed to decrypt input %s: %s", input_key, exc, exc_info=exc)
+            raise ServiceEncryptionError(
+                service_key=self.task_parameters.image,
+                service_version=self.task_parameters.tag,
+                operation="decrypt",
+                file_role="input",
+                file_id=input_key,
+                error_message=f"{exc}",
+            ) from None
+
     async def _write_input_data(
         self,
         task_volumes: TaskSharedVolumes,
@@ -84,67 +145,14 @@ class ComputationalSidecar:
 
         for input_key, input_params in self.task_parameters.input_data.items():
             if isinstance(input_params, FileUrl):
-                file_name = input_params.file_mapping or Path(URL(f"{input_params.url}").path.strip("/")).name
-
-                destination_path = task_volumes.inputs_folder / file_name
-
-                need_unzipping = check_need_unzipping(input_params.url, input_params.file_mime_type, destination_path)
-                if input_params.file_mapping and need_unzipping:
-                    raise ServiceInputsUseFileToKeyMapButReceivesZipDataError(
-                        service_key=self.task_parameters.image,
-                        service_version=self.task_parameters.tag,
-                        input_key=input_key,
-                        file_to_key_map=input_params.file_mapping,
-                    )
-
-                if destination_path.parent != task_volumes.inputs_folder:
-                    # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,
-                    # if extra subfolders via file-mapping,
-                    # then we make them first
-                    destination_path.parent.mkdir(parents=True)
-
-                download_tasks.append(
-                    (
-                        input_key,
-                        pull_file_from_remote(
-                            input_params.url,
-                            input_params.file_mime_type,
-                            destination_path,
-                            log_publishing_cb=self._publish_sidecar_log,
-                            s3_settings=self.s3_settings,
-                            encryption=(
-                                TransferEncryptionSettings(
-                                    job_key=self.encryption.job_key,
-                                    job_id=self.encryption.job_id,
-                                    file_id=self.encryption.input_port_to_file_id[input_key],
-                                    file_role="input",
-                                )
-                                if self.encryption and input_key in self.encryption.input_port_to_file_id
-                                else None
-                            ),
-                        ),
-                    )
-                )
+                download_tasks.append((input_key, self._prepare_input_download(input_key, input_params, task_volumes)))
             else:
                 local_input_data_file[input_key] = input_params
+
         # NOTE: temporary solution until new version is created
         for input_key, task in download_tasks:
-            try:
-                await task
-            except AesGcmStreamError as exc:
-                # NOTE: the low-level crypto error stays internal to the sidecar (it is not
-                # importable on the dask client). We log it here for diagnosis and re-raise a
-                # well-defined, client-importable worker error WITHOUT chaining it as cause,
-                # so the exception survives pickling across the dask boundary.
-                _logger.warning("Failed to decrypt input %s: %s", input_key, exc, exc_info=exc)
-                raise ServiceEncryptionError(
-                    service_key=self.task_parameters.image,
-                    service_version=self.task_parameters.tag,
-                    operation="decrypt",
-                    file_role="input",
-                    file_id=input_key,
-                    error_message=f"{exc}",
-                ) from None
+            await self._download_and_decrypt_input(input_key, task)
+
         input_data_file.write_text(json_dumps(local_input_data_file))
 
         await self._publish_sidecar_log("All the input data were downloaded.")
