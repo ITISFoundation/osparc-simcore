@@ -21,7 +21,7 @@ from pydantic.config import JsonDict
 KEY_SIZE_BYTES: Final[int] = 32  # AES-256 job key length (simcore-aesgcm-stream-v1)
 MAX_JOB_ID_LENGTH: Final[int] = 0xFFFF  # protocol cap; sidecar enforces UTF-8 byte bound
 
-_JOB_KEY_EXAMPLE: Final[bytes] = b"0123456789abcdef0123456789abcdef"
+_JOB_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 _JOB_ID_EXAMPLE: Final[str] = "correct-horse-battery-staple"
 
 
