@@ -32,7 +32,7 @@ class BootModeEnum(StrEnum):
 
     def is_devel_mode(self) -> bool:
         """returns True if this boot mode is used for development"""
-        return self in (self.DEBUG, self.DEVELOPMENT, self.LOCAL)
+        return self in {self.DEBUG, self.DEVELOPMENT, self.LOCAL}
 
 
 class BuildTargetEnum(StrEnum):
