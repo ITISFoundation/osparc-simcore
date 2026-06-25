@@ -3,6 +3,7 @@
 from importlib.metadata import distribution, version
 from typing import Final
 
+from common_library.basic_types import ServiceMode
 from packaging.version import Version
 
 _current_distribution = distribution("simcore-service-notifications")
@@ -21,17 +22,19 @@ def get_summary() -> str:
 SUMMARY: Final[str] = get_summary()
 
 
-## https://patorjk.com/software/taag/#p=display&f=Standard&t=Notifications
-APP_STARTED_BANNER_MSG = rf"""
+# https://patorjk.com/software/taag/#p=display&f=Standard&t=Notifications
+def get_started_banner(service_mode: ServiceMode) -> str:
+    match service_mode:
+        case ServiceMode.SERVER:
+            return rf"""
   _   _       _   _  __ _           _   _
  | \ | | ___ | |_(_)/ _(_) ___ __ _| |_(_) ___  _ __  ___
  |  \| |/ _ \| __| | |_| |/ __/ _` | __| |/ _ \| '_ \/ __|
  | |\  | (_) | |_| |  _| | (_| (_| | |_| | (_) | | | \__ \
  |_| \_|\___/ \__|_|_| |_|\___\__,_|\__|_|\___/|_| |_|___/
     {API_VTAG}"""
-
-
-APP_WORKER_STARTED_BANNER_MSG = rf"""
+        case ServiceMode.WORKER:
+            return rf"""
   _   _       _   _  __ _           _   _                    __        __         _
  | \ | | ___ | |_(_)/ _(_) ___ __ _| |_(_) ___  _ __  ___    \ \      / /__  _ __| | _____ _ __
  |  \| |/ _ \| __| | |_| |/ __/ _` | __| |/ _ \| '_ \/ __|____\ \ /\ / / _ \| '__| |/ / _ \ '__|

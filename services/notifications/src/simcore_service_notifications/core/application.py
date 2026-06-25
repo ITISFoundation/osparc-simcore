@@ -17,11 +17,10 @@ from .._meta import (
     API_VTAG,
     APP_NAME,
     APP_SHUTDOWN_BANNER_MSG,
-    APP_STARTED_BANNER_MSG,
     APP_STARTING_BANNER_MSG,
-    APP_WORKER_STARTED_BANNER_MSG,
     SUMMARY,
     VERSION,
+    get_started_banner,
 )
 from ..api.rest.routes import configure_rest_api
 from ..api.rpc.routes import configure_rpc_api
@@ -85,17 +84,11 @@ def create_app(
         service_name=APP_NAME, tracing_settings=settings.NOTIFICATIONS_TRACING
     )
 
-    started_banner = (
-        APP_WORKER_STARTED_BANNER_MSG
-        if settings.NOTIFICATIONS_SERVICE_MODE is ServiceMode.WORKER
-        else APP_STARTED_BANNER_MSG
-    )
-
     assert settings.SC_BOOT_MODE  # nosec
     with configure_app_lifespan(
         logging_lifespan=logging_lifespan,
         starting_banner=APP_STARTING_BANNER_MSG,
-        started_banner=started_banner,
+        started_banner=get_started_banner(settings.NOTIFICATIONS_SERVICE_MODE),
         shutdown_complete_banner=APP_SHUTDOWN_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
