@@ -101,8 +101,6 @@ def _configure_app(
 
             setup_rest_api_routes(app, API_VTAG)
             set_exception_handlers(app)
-        case ServiceMode.WORKER:
-            pass  # Workers skip server-specific setup
 
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
