@@ -3,8 +3,6 @@
 Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
 
-import logging
-
 from common_library.basic_types import BootModeEnum
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
@@ -29,11 +27,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .._meta import (
     API_VERSION,
     API_VTAG,
-    APP_FINISHED_BANNER_MSG,
     APP_NAME,
-    APP_STARTED_BANNER_MSG,
     APP_STARTING_BANNER_MSG,
-    APP_WORKER_STARTED_BANNER_MSG,
+    SERVICE_FINISHED_BANNER_MSG,
+    get_started_banner,
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..dsm import configure_dsm_provider
@@ -45,8 +42,6 @@ from ..modules.rabbitmq import configure_rabbitmq_client
 from ..modules.redis import configure_redis_clients
 from ..modules.s3 import configure_s3_client
 from .settings import ApplicationSettings
-
-_logger = logging.getLogger(__name__)
 
 
 def _configure_app(
@@ -112,14 +107,11 @@ def _configure_app(
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     # Determine the correct startup banner based on worker mode
-    started_banner = (
-        APP_WORKER_STARTED_BANNER_MSG if settings.STORAGE_SERVICE_MODE is ServiceMode.WORKER else APP_STARTED_BANNER_MSG
-    )
 
     with configure_app_lifespan(
         starting_banner=APP_STARTING_BANNER_MSG,
-        started_banner=started_banner,
-        shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
+        started_banner=get_started_banner(settings.STORAGE_SERVICE_MODE),
+        shutdown_complete_banner=SERVICE_FINISHED_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
             debug=settings.SC_BOOT_MODE in {BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL},

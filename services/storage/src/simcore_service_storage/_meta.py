@@ -1,5 +1,6 @@
 from typing import Final
 
+from common_library.basic_types import ServiceMode
 from models_library.basic_types import VersionStr
 from packaging.version import Version
 from servicelib.utils_meta import PackageInfo
@@ -16,19 +17,22 @@ SUMMARY: Final[str] = info.get_summary()
 APP_NAME: Final[str] = info.app_name
 APP_STARTING_BANNER_MSG: Final[str] = info.get_starting_banner()
 
-## https://patorjk.com/software/taag/#p=display&f=Standard&t=Storage
-APP_STARTED_BANNER_MSG = r"""
-  ____  _
- / ___|| |_ ___  _ __ __ _  __ _  ___
- \___ \| __/ _ \| '__/ _` |/ _` |/ _ \
-  ___) | || (_) | | | (_| | (_| |  __/
- |____/ \__\___/|_|  \__,_|\__, |\___|
-                           |___/          {}
+
+# https://patorjk.com/software/taag/#p=display&f=Standard&t=Storage
+def get_started_banner(service_mode: ServiceMode) -> str:
+    match service_mode:
+        case ServiceMode.SERVER:
+            return r"""
+ ____  _
+/ ___|| |_ ___  _ __ __ _  __ _  ___
+\___ \| __/ _ \| '__/ _` |/ _` |/ _ \
+___) | || (_) | | | (_| | (_| |  __/
+|____/ \__\___/|_|  \__,_|\__, |\___|
+                        |___/          {}
 
 """.format(f"v{__version__}")
-
-APP_WORKER_STARTED_BANNER_MSG = r"""
-
+        case ServiceMode.WORKER:
+            return r"""
   ____  _                                __        __         _
  / ___|| |_ ___  _ __ __ _  __ _  ___    \ \      / /__  _ __| | _____ _ __
  \___ \| __/ _ \| '__/ _` |/ _` |/ _ \____\ \ /\ / / _ \| '__| |/ / _ \ '__|
@@ -38,4 +42,5 @@ APP_WORKER_STARTED_BANNER_MSG = r"""
 
 """.format(f"v{__version__}")
 
-APP_FINISHED_BANNER_MSG = info.get_finished_banner()
+
+SERVICE_FINISHED_BANNER_MSG = info.get_finished_banner()
