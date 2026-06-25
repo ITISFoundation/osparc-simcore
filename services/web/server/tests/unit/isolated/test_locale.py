@@ -47,7 +47,7 @@ async def locale_test_client(
 
 async def test_locale_middleware_x_app_locale_header(
     locale_test_client: Callable[..., Awaitable[TestClient]],
-) -> None:
+):
     client = await locale_test_client(i18n_enabled=True)
     resp = await client.get("/", headers={"X-App-Locale": "es_ES"})
     data = await resp.json()
@@ -56,7 +56,7 @@ async def test_locale_middleware_x_app_locale_header(
 
 async def test_locale_middleware_accept_language_fallback(
     locale_test_client: Callable[..., Awaitable[TestClient]],
-) -> None:
+):
     client = await locale_test_client(i18n_enabled=True)
     resp = await client.get("/", headers={"Accept-Language": "zh-CN,en;q=0.9"})
     data = await resp.json()
@@ -65,7 +65,7 @@ async def test_locale_middleware_accept_language_fallback(
 
 async def test_locale_middleware_default_when_no_headers(
     locale_test_client: Callable[..., Awaitable[TestClient]],
-) -> None:
+):
     client = await locale_test_client(i18n_enabled=True)
     resp = await client.get("/")
     data = await resp.json()
@@ -74,7 +74,7 @@ async def test_locale_middleware_default_when_no_headers(
 
 async def test_locale_middleware_default_when_i18n_disabled(
     locale_test_client: Callable[..., Awaitable[TestClient]],
-) -> None:
+):
     client = await locale_test_client(i18n_enabled=False)
     resp = await client.get("/", headers={"X-App-Locale": "es_ES"})
     data = await resp.json()
@@ -86,7 +86,7 @@ async def test_locale_middleware_default_when_i18n_disabled(
 # ---------------------------------------------------------------------------
 
 
-async def test_get_user_locale_returns_stored_preference() -> None:
+async def test_get_user_locale_returns_stored_preference():
     mock_app = MagicMock()
     mock_pref = LocaleUserPreference(value="es_ES")
 
@@ -99,7 +99,7 @@ async def test_get_user_locale_returns_stored_preference() -> None:
         assert locale == "es_ES"
 
 
-async def test_get_user_locale_fallback_when_no_preference() -> None:
+async def test_get_user_locale_fallback_when_no_preference():
     mock_app = MagicMock()
 
     with patch(
@@ -111,7 +111,7 @@ async def test_get_user_locale_fallback_when_no_preference() -> None:
         assert locale == DEFAULT_LOCALE
 
 
-async def test_get_user_locale_fallback_when_preference_value_is_none() -> None:
+async def test_get_user_locale_fallback_when_preference_value_is_none():
     mock_app = MagicMock()
 
     with patch(
