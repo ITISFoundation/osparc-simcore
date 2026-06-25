@@ -579,6 +579,16 @@ function extractWorkbenchData(data) {
   return workbenchData;
 }
 
+function getNodeIdFromServiceKey(workbench, serviceKeyFragment) {
+  let nodeId = null;
+  Object.entries(workbench).forEach(([nId, nodeData]) => {
+    if (nodeData["key"].includes(serviceKeyFragment)) {
+      nodeId = nId;
+    }
+  });
+  return nodeId;
+}
+
 function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
   let snapshotUrl = null;
 
@@ -695,6 +705,7 @@ module.exports = {
   createScreenshotsDir,
   takeScreenshot,
   extractWorkbenchData,
+  getNodeIdFromServiceKey,
   parseCommandLineArguments,
   parseCommandLineArgumentsAnonymous,
   parseCommandLineArgumentsStudyDispatcherParams,

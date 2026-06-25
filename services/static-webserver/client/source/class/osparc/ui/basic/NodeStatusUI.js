@@ -9,7 +9,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
   extend: qx.ui.basic.Atom,
 
   construct: function(node) {
-    this.base(arguments, this.tr("Idle"), "@FontAwesome5Solid/clock/12");
+    this.base(arguments, this.tr("Idle"), "@FontAwesomeSolid/clock/12");
 
     this.exclude();
     if (node) {

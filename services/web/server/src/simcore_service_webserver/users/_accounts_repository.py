@@ -29,7 +29,7 @@ from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
-from .exceptions import (
+from .errors import (
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,
@@ -142,7 +142,7 @@ async def list_user_pre_registrations(
         Tuple of (list of pre-registration records, total count)
     """
     # Base query conditions
-    where_conditions = []
+    where_conditions: list[sa.ColumnElement[bool]] = []
 
     # Apply filters if provided
     if filter_by_pre_email is not None:
@@ -424,12 +424,12 @@ def _build_left_outer_join_query(
     product_name: ProductName | None,
     columns: tuple,
 ) -> sa.sql.Select | None:
-    left_where_conditions = []
+    left_where_conditions: list[sa.ColumnElement[bool]] = []
     if email_like is not None:
         left_where_conditions.append(users_pre_registration_details.c.pre_email.like(email_like))
-    join_condition = users.c.id == users_pre_registration_details.c.user_id
     if product_name:
-        join_condition = join_condition & (users_pre_registration_details.c.product_name == product_name)
+        left_where_conditions.append(users_pre_registration_details.c.product_name == product_name)
+    join_condition = users.c.id == users_pre_registration_details.c.user_id
     left_outer_join = sa.select(*columns).select_from(users_pre_registration_details.outerjoin(users, join_condition))
 
     return left_outer_join.where(sa.and_(*left_where_conditions)) if left_where_conditions else None
@@ -442,7 +442,7 @@ def _build_right_outer_join_query(
     product_name: ProductName | None,
     columns: tuple,
 ) -> sa.sql.Select | None:
-    right_where_conditions = []
+    right_where_conditions: list[sa.ColumnElement[bool]] = []
     if email_like is not None:
         right_where_conditions.append(users.c.email.like(email_like))
     if user_name_like is not None:
@@ -543,7 +543,7 @@ async def search_merged_pre_and_registered_users(
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.execute(final_query)
-        return result.fetchall()
+        return list(result.fetchall())
 
 
 async def list_merged_pre_and_registered_users(

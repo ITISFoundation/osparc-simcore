@@ -30,7 +30,7 @@ from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
-from ..resource_manager.user_sessions import is_user_connected
+from ..resource_manager.resource_manager_service import is_user_connected
 from ..users import users_service
 from . import (
     _conversation_message_repository,
@@ -122,7 +122,7 @@ async def _notify_support_reply(
 
             recipient_user = await users_service.get_user(app, conversation_creator_user_id)
             recipient_name = (
-                f"{recipient_user.get('first_name', '')} {recipient_user.get('last_name', '')}".strip()
+                f"{recipient_user.get('first_name') or ''} {recipient_user.get('last_name') or ''}".strip()
                 or recipient_user["email"]
             )
 

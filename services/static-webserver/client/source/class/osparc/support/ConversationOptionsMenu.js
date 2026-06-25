@@ -45,7 +45,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
       switch (id) {
         case "rename-button":
           control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/i-cursor/12",
+            icon: "@FontAwesomeSolid/i-cursor/12",
             label: this.tr("Rename..."),
           });
           control.addListener("execute", () => this.__renameConversation());
@@ -53,7 +53,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
           break;
         case "open-project-button":
           control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/external-link-alt/12",
+            icon: "@FontAwesomeSolid/external-link-alt/12",
             label: this.tr("Project details"),
           });
           control.addListener("execute", () => this.__openProjectDetails());
@@ -61,7 +61,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
           break;
         case "copy-ticket-id-button":
           control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/copy/12",
+            icon: "@FontAwesomeSolid/copy/12",
             label: this.tr("Copy Ticket ID"),
           });
           control.addListener("execute", () => this.__copyTicketId());
@@ -69,7 +69,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
           break;
         case "archive-button":
           control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/archive/12",
+            icon: "@FontAwesomeSolid/archive/12",
             label: this.tr("Archive"),
           });
           control.addListener("execute", () => this.__toggleArchive());
@@ -77,7 +77,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
           break;
         case "delete-button":
           control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/trash-alt/12",
+            icon: "@FontAwesomeSolid/trash-alt/12",
             label: this.tr("Delete"),
           });
           control.addListener("execute", () => this.__deleteConversation());
@@ -128,12 +128,12 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
     __updateArchiveButton: function(button, isArchived) {
       if (isArchived) {
         button.set({
-          icon: "@FontAwesome5Solid/box-open/12",
+          icon: "@FontAwesomeSolid/box-open/12",
           label: this.tr("Unarchive"),
         });
       } else {
         button.set({
-          icon: "@FontAwesome5Solid/archive/12",
+          icon: "@FontAwesomeSolid/archive/12",
           label: this.tr("Archive"),
         });
       }
@@ -141,10 +141,7 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
 
     __renameConversation: function() {
       const conversation = this.getConversation();
-      let oldName = conversation.getName();
-      if (oldName === "null") {
-        oldName = "";
-      }
+      let oldName = conversation.getName() || "";
       const title = this.tr("Rename Conversation");
       const supportCenter = osparc.ui.window.SingletonWindow.getWindowById("support-center");
       const renamer = new osparc.widget.Renamer(oldName, null, title, supportCenter).set({

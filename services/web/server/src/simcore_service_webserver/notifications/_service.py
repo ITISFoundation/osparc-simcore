@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from typing import Any, Final
 
 from aiohttp import web
@@ -31,10 +30,8 @@ from servicelib.rabbitmq.rpc_interfaces.notifications import (
 )
 
 from ..models import WebServerOwnerMetadata
-from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
-from ._helpers import get_product_data
 from ._models import (
     Contact,
     EmailAddressing,
@@ -81,23 +78,16 @@ async def _collect_active_recipients(app: web.Application, group_ids: list[Group
 async def _create_email_addressing(
     app: web.Application,
     *,
-    product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     reply_to: Contact | None = None,
+    bcc: list[Contact] | None = None,
 ) -> EmailAddressing:
     """Build email addressing (from/to) for all recipients.
 
     Raises:
         NotificationsNoActiveRecipientsError: If no active recipients found.
     """
-    product = products_service.get_product(app, product_name)
-
-    from_contact = EmailContact(
-        name=f"{product.display_name} Support",
-        email=product.support_email,
-    )
-
     to_contacts: list[EmailContact] = []
 
     if group_ids:
@@ -110,19 +100,19 @@ async def _create_email_addressing(
         raise NotificationsNoActiveRecipientsError
 
     return EmailAddressing(
-        from_=from_contact,
         to=to_contacts,
         reply_to=reply_to,
+        bcc=bcc,
     )
 
 
 async def _create_email_message(
     app: web.Application,
     *,
-    product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
+    bcc: list[Contact] | None = None,
 ) -> EmailMessage:
     """Build a single email message dict with all recipients.
 
@@ -131,9 +121,9 @@ async def _create_email_message(
     """
     addressing = await _create_email_addressing(
         app,
-        product_name=product_name,
         group_ids=group_ids,
         external_contacts=external_contacts,
+        bcc=bcc,
     )
 
     return EmailMessage(
@@ -150,14 +140,11 @@ async def preview_template(
     ref: TemplateRef,
     context: dict[str, Any],
 ) -> TemplatePreview:
-    product_data = get_product_data(app, product_name=product_name)
-
-    enriched_context = {**context, "product": asdict(product_data)}
-
     rpc_response = await remote_preview_template(
         get_rabbitmq_rpc_client(app),
+        product_name=product_name,
         ref=_RPC_TEMPLATE_REF_ADAPTER.validate_python(ref.model_dump()),
-        context=enriched_context,
+        context=context,
     )
     return TemplatePreview(**rpc_response.model_dump())
 
@@ -185,21 +172,23 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
+    bcc: list[Contact] | None = None,
 ) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
         case Channel.email:
             message = await _create_email_message(
                 app,
-                product_name=product_name,
                 group_ids=group_ids,
                 external_contacts=external_contacts,
                 content=content,
+                bcc=bcc,
             )
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
     response = await remote_send_message(
         get_rabbitmq_rpc_client(app),
+        product_name=product_name,
         message=_RPC_MESSAGE_ADAPTER.validate_python(message.model_dump()),
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
@@ -226,7 +215,6 @@ async def send_message_from_template(
         case Channel.email:
             addressing = await _create_email_addressing(
                 app,
-                product_name=product_name,
                 group_ids=group_ids,
                 external_contacts=external_contacts,
                 reply_to=reply_to,
@@ -234,16 +222,14 @@ async def send_message_from_template(
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
-    product_data = get_product_data(app, product_name=product_name)
-    enriched_context = {**context, "product": asdict(product_data)}
-
     response = await remote_send_message_from_template(
         get_rabbitmq_rpc_client(app),
+        product_name=product_name,
         addressing=_RPC_ADDRESSING_ADAPTER.validate_python(addressing.model_dump()),
         template_ref=_RPC_TEMPLATE_REF_ADAPTER.validate_python(
             TemplateRef(channel=channel, template_name=template_name).model_dump()
         ),
-        context=enriched_context,
+        context=context,
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,

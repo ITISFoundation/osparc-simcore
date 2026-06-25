@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.83.0"
+    "version": "0.84.0"
   },
   "servers": [
     {
@@ -960,9 +960,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1001,9 +999,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1025,9 +1021,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1058,9 +1052,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1099,9 +1091,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1152,9 +1142,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1162,9 +1150,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1203,9 +1189,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1213,9 +1197,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1237,9 +1219,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1247,9 +1227,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1280,9 +1258,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1290,9 +1266,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9453,9 +9427,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9505,9 +9477,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9540,9 +9510,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9584,9 +9552,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9636,9 +9602,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9703,9 +9667,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9713,9 +9675,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9765,9 +9725,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9775,9 +9733,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9810,9 +9766,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9820,9 +9774,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -11948,6 +11900,39 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Envelope_PricingPlanToServiceAdminGet_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/studies/{study_id}:dispatch": {
+      "post": {
+        "tags": [
+          "studies-dispatcher"
+        ],
+        "summary": "Dispatch Study",
+        "description": "Start an async clone of a published study into the requesting user's account. Returns 202 Accepted + TaskGet for polling via /tasks-legacy/{task_id}.",
+        "operationId": "dispatch_study",
+        "parameters": [
+          {
+            "name": "study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Study Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskGet_"
                 }
               }
             }
@@ -14926,6 +14911,10 @@
         ],
         "title": "BootOption"
       },
+      "BootOptions": {
+        "additionalProperties": true,
+        "type": "object"
+      },
       "CatalogLatestServiceGet": {
         "properties": {
           "key": {
@@ -16320,6 +16309,14 @@
         ],
         "title": "ConnectServiceToPricingPlanBodyParams"
       },
+      "ConversationID": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ConversationMessageID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "ConversationMessagePatch": {
         "properties": {
           "content": {
@@ -16340,14 +16337,10 @@
       "ConversationMessageRestGet": {
         "properties": {
           "messageId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Messageid"
+            "$ref": "#/components/schemas/ConversationMessageID"
           },
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "userGroupId": {
             "$ref": "#/components/schemas/GroupID"
@@ -16390,6 +16383,11 @@
           "NOTIFICATION"
         ],
         "title": "ConversationMessageType"
+      },
+      "ConversationName": {
+        "type": "string",
+        "maxLength": 50,
+        "minLength": 1
       },
       "ConversationPatch": {
         "properties": {
@@ -16455,18 +16453,21 @@
       "ConversationRestGet": {
         "properties": {
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "productName": {
             "type": "string",
             "title": "Productname"
           },
           "name": {
-            "type": "string",
-            "maxLength": 50,
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "projectUuid": {
             "anyOf": [
@@ -22927,49 +22928,6 @@
             ],
             "description": "values of output properties"
           },
-          "outputNode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnode",
-            "deprecated": true
-          },
-          "outputNodes": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnodes",
-            "description": "Used in group-nodes. Node IDs of those connected to the output",
-            "deprecated": true
-          },
-          "parent": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent",
-            "description": "Parent's (group-nodes') node ID s. Used to group",
-            "deprecated": true
-          },
           "position": {
             "anyOf": [
               {
@@ -23169,49 +23127,6 @@
             ],
             "description": "values of output properties"
           },
-          "outputNode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnode",
-            "deprecated": true
-          },
-          "outputNodes": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnodes",
-            "description": "Used in group-nodes. Node IDs of those connected to the output",
-            "deprecated": true
-          },
-          "parent": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent",
-            "description": "Parent's (group-nodes') node ID s. Used to group",
-            "deprecated": true
-          },
           "position": {
             "anyOf": [
               {
@@ -23392,6 +23307,11 @@
             "type": "string",
             "title": "Userid",
             "description": "the user that started the service"
+          },
+          "productName": {
+            "type": "string",
+            "title": "Productname",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -23403,7 +23323,8 @@
           "serviceHost",
           "servicePort",
           "serviceState",
-          "userId"
+          "userId",
+          "productName"
         ],
         "title": "NodeGet"
       },
@@ -23520,6 +23441,23 @@
             ],
             "title": "Inputsrequired"
           },
+          "inputsUnits": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputsunits"
+          },
           "inputNodes": {
             "anyOf": [
               {
@@ -23551,14 +23489,12 @@
           "bootOptions": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/BootOptions"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Bootoptions"
+            ]
           },
           "outputs": {
             "anyOf": [
@@ -23584,8 +23520,7 @@
               "pattern": "^[-_a-zA-Z0-9]+$"
             },
             "type": "array",
-            "title": "Port Keys",
-            "default": []
+            "title": "Port Keys"
           }
         },
         "type": "object",
@@ -27329,6 +27264,11 @@
             "title": "Is Collaborative",
             "description": "True if service allows collaboration (multi-tenant access)",
             "default": false
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -27340,7 +27280,8 @@
           "service_uuid",
           "service_host",
           "service_port",
-          "service_state"
+          "service_state",
+          "product_name"
         ],
         "title": "RunningDynamicServiceDetails"
       },
@@ -29425,6 +29366,21 @@
             "format": "email",
             "title": "Email"
           },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
+          },
           "invitationUrl": {
             "type": "string",
             "maxLength": 2083,
@@ -29851,6 +29807,21 @@
             "type": "string",
             "format": "email",
             "title": "Email"
+          },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
           },
           "messageContent": {
             "anyOf": [
@@ -30788,8 +30759,14 @@
       "_ConversationsCreateBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "type": {
             "$ref": "#/components/schemas/ConversationType"
@@ -30809,7 +30786,6 @@
         },
         "type": "object",
         "required": [
-          "name",
           "type"
         ],
         "title": "_ConversationsCreateBodyParams"

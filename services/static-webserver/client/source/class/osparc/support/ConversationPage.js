@@ -72,7 +72,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         case "back-button":
           control = new qx.ui.form.Button().set({
             toolTipText: this.tr("Return to Conversations"),
-            icon: "@FontAwesome5Solid/arrow-left/16",
+            icon: "@FontAwesomeSolid/arrow-left/16",
             backgroundColor: "transparent"
           });
           control.addListener("execute", () => {
@@ -113,7 +113,7 @@ qx.Class.define("osparc.support.ConversationPage", {
             allowGrowY: false,
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
           this.getChildControl("conversation-header-layout").addAt(control, 2);

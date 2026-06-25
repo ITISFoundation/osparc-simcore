@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.basic_types import SHA256Str
 from pydantic import ByteSize
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -14,10 +15,31 @@ log = logging.getLogger(__name__)
 
 
 async def get_updated_project(sqlalchemy_async_engine: AsyncEngine, project_id: str) -> dict[str, Any]:
+    """Reads the project and its nodes from the DB.
+
+    NOTE: Node fields use DB column names (snake_case: input_nodes, run_hash, etc.)
+    rather than API/model aliases (camelCase: inputNodes, runHash). This is intentional
+    since the storage service operates on raw DB dicts, not on serialized API models.
+    """
     async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))
         row = result.one()
-        return row._asdict()
+        project = row._asdict()
+
+        # Build workbench dict from projects_nodes table
+        nodes_result = await conn.execute(sa.select(projects_nodes).where(projects_nodes.c.project_uuid == project_id))
+        workbench: dict[str, Any] = {}
+        for node_row in nodes_result:
+            node_dict = node_row._asdict()
+            node_id = str(node_dict.pop("node_id"))
+            node_dict.pop("project_node_id", None)
+            node_dict.pop("project_uuid", None)
+            node_dict.pop("created", None)
+            node_dict.pop("modified", None)
+            node_dict.pop("required_resources", None)
+            workbench[node_id] = node_dict
+        project["workbench"] = workbench
+        return project
 
 
 class FileIDDict(TypedDict):

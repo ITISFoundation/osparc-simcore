@@ -6,7 +6,6 @@ anyio==4.12.1
     # via httpx
 certifi==2026.2.25
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
@@ -19,7 +18,6 @@ httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   osparc
 idna==3.11
@@ -32,9 +30,8 @@ mdurl==0.1.2
     # via markdown-it-py
 nest-asyncio==1.6.0
     # via osparc
-orjson==3.11.7
+orjson==3.11.9
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
 osparc==0.8.3
@@ -45,7 +42,6 @@ packaging==26.0
     # via osparc
 pydantic==2.11.10
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -58,7 +54,6 @@ pydantic-extra-types==2.11.1
     # via -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
 pydantic-settings==2.7.0
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   osparc
@@ -94,6 +89,5 @@ typing-inspection==0.4.2
     # via pydantic
 urllib3==2.7.0
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   osparc-client

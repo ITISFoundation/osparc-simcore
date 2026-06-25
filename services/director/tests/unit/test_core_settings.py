@@ -38,6 +38,60 @@ def test_invalid_client_timeout_raises(app_environment: EnvVarsDict, monkeypatch
         ApplicationSettings.create_from_envs()
 
 
+def test_redis_backend_requires_redis_settings_when_caching_enabled(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "DIRECTOR_REGISTRY_CACHING": "True",
+            "DIRECTOR_REDIS": "null",
+        },
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match="DIRECTOR_REGISTRY_CACHING=True requires DIRECTOR_REDIS settings",
+    ):
+        ApplicationSettings.create_from_envs()
+
+
+def test_redis_backend_does_not_require_redis_settings_when_caching_disabled(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "DIRECTOR_REGISTRY_CACHING": "False",
+            "DIRECTOR_REDIS": "null",
+        },
+    )
+
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.DIRECTOR_REDIS is None
+
+
+def test_redis_settings_can_be_configured(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "DIRECTOR_REGISTRY_CACHING": "True",
+            "DIRECTOR_REDIS": '{"REDIS_SECURE": false, "REDIS_HOST": "redis", "REDIS_PORT": 6379}',
+        },
+    )
+
+    settings = ApplicationSettings.create_from_envs()
+
+    assert settings.DIRECTOR_REDIS is not None
+    assert settings.DIRECTOR_REDIS.REDIS_HOST == "redis"
+    assert settings.DIRECTOR_REDIS.REDIS_PORT == 6379
+
+
 def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("DIRECTOR_DEFAULT_MAX_MEMORY", raising=False)
 

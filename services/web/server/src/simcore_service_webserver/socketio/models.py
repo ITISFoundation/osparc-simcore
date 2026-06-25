@@ -94,3 +94,10 @@ class WebSocketNodeProgress(
             event_type=self.event_type,
             data=jsonable_encoder(self, exclude={"event_type"}),
         )
+
+
+__all__: tuple[str, ...] = (
+    "WebSocketMessageBase",
+    "WebSocketNodeProgress",
+    "WebSocketProjectProgress",
+)

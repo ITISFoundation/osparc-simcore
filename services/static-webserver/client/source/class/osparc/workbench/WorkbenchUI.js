@@ -225,7 +225,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addDeleteItemButton: function() {
       const deleteItemButton = this.__deleteItemButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/trash/18",
+        icon: "@FontAwesomeSolid/trash/18",
         width: this.self().BUTTON_SIZE,
         height: this.self().BUTTON_SIZE,
         visibility: "excluded"
@@ -330,7 +330,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const boxWidth = osparc.workbench.NodeUI.NODE_WIDTH;
       const boxHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
       const circleSize = 26;
-      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/"+circleSize).set({
+      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/"+circleSize).set({
         opacity: 0.8
       });
       temporaryNodeUI.getContentElement().addClass("rotate");
@@ -836,6 +836,20 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
       const nodeUI2 = this.getNodeUI(node2Id);
+      if (!nodeUI1 || !nodeUI2) {
+        // NodeUI not yet created (e.g. RTC: node added in same patch batch).
+        // Retry after the missing node's UI is added to the workbench.
+        const missingNodeId = !nodeUI1 ? node1Id : node2Id;
+        const workbench = this.__getWorkbench();
+        const missingNode = workbench.getNode(missingNodeId);
+        if (missingNode) {
+          workbench.addListenerOnce("nodeAdded", () => {
+            // give WorkbenchView time to create the nodeUI from the same event
+            setTimeout(() => this._createEdgeBetweenNodes(node1Id, node2Id, false), 100);
+          }, this);
+        }
+        return;
+      }
       if (nodeUI1.getCurrentBounds() === null || nodeUI2.getCurrentBounds() === null) {
         console.error("bounds not ready");
         return;

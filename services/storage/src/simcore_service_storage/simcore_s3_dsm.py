@@ -122,10 +122,15 @@ async def _add_frontend_needed_data(
 
     prj_names_mapping: dict[ProjectID | NodeID, str] = {}
 
-    async for proj_data in ProjectRepository.instance(engine).list_valid_projects_in(include_uuids=project_ids):
-        prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
-            NodeID(node_id): node_data.label for node_id, node_data in proj_data.workbench.items()
-        }
+    mapping = await ProjectRepository.instance(engine).get_project_id_and_node_id_to_names_map(
+        project_uuids=project_ids
+    )
+    for project_id, names in mapping.items():
+        for id_str, name in names.items():
+            if id_str == f"{project_id}":
+                prj_names_mapping[project_id] = name
+            else:
+                prj_names_mapping[NodeID(id_str)] = name
 
     clean_data: list[FileMetaData] = []
     for d in data:
@@ -168,7 +173,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 dataset_id=prj_data.uuid,
                 display_name=prj_data.name,
             )
-            async for prj_data in ProjectRepository.instance(get_db_engine(self.app)).list_valid_projects_in(
+            async for prj_data in ProjectRepository.instance(get_db_engine(self.app)).list_project_names(
                 include_uuids=readable_projects_ids
             )
         ]

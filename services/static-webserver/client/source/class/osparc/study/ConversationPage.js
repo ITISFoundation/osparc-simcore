@@ -38,7 +38,7 @@ qx.Class.define("osparc.study.ConversationPage", {
 
 
     this.bind("conversation", this.getChildControl("button"), "label", {
-      converter: conversation => conversation ? conversation.getName() : this.tr("new")
+      converter: conversation => conversation ? (conversation.getName() || this.tr("new")) : this.tr("new")
     });
     this.getChildControl("button").set({
       font: "text-13",
@@ -106,7 +106,7 @@ qx.Class.define("osparc.study.ConversationPage", {
         padding: 0,
         backgroundColor: "transparent",
       };
-      const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/10").set({
+      const renameButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/pencil-alt/10").set({
         ...buttonsAesthetics,
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
@@ -140,7 +140,7 @@ qx.Class.define("osparc.study.ConversationPage", {
         column: 3
       });
 
-      const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+      const closeButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/times/12").set({
         ...buttonsAesthetics,
         paddingLeft: 4, // adds spacing between buttons
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
@@ -175,7 +175,7 @@ qx.Class.define("osparc.study.ConversationPage", {
     },
 
     renameConversation: function(newName) {
-      this.getChildControl("button").setLabel(newName);
+      this.getChildControl("button").setLabel(newName || this.tr("new"));
     },
 
     __updateMessagesNumber: function() {

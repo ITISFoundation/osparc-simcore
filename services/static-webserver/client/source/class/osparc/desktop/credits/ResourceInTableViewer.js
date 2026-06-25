@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
           break;
         case "fetching-image":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/circle-notch/12",
+            source: "@FontAwesomeSolid/circle-notch/12",
             alignX: "center",
             alignY: "middle",
             visibility: "excluded"
@@ -85,7 +85,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
           layout.add(control);
           break;
         case "reload-button":
-          control = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14").set({
+          control = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesomeSolid/sync-alt/14").set({
             allowStretchY: false,
             alignY: "bottom"
           });

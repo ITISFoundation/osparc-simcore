@@ -69,7 +69,7 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-orjson==3.11.7
+orjson==3.11.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -144,12 +144,10 @@ simple-websocket==1.1.0
     # via python-engineio
 six==1.17.0
     # via python-dateutil
-sqlalchemy==1.4.54
+sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-sqlalchemy2-stubs==0.0.2a38
-    # via sqlalchemy
 starlette==0.52.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -168,7 +166,7 @@ typing-extensions==4.15.0
     #   pydantic-core
     #   pydantic-extra-types
     #   pyee
-    #   sqlalchemy2-stubs
+    #   sqlalchemy
     #   typing-inspection
 typing-inspection==0.4.2
     # via

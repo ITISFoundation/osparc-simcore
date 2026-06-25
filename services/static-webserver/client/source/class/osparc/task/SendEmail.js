@@ -27,7 +27,7 @@ qx.Class.define("osparc.task.SendEmail", {
   },
 
   statics: {
-    ICON: "@FontAwesome5Solid/envelope",
+    ICON: "@FontAwesomeSolid/envelope",
 
     sendEmailTaskReceived: function(task, subject = "") {
       const sendEmailTaskUI = new osparc.task.SendEmail(subject);

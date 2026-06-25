@@ -5,6 +5,7 @@ from aiohttp import web
 from models_library.conversations import (
     ConversationGetDB,
     ConversationID,
+    ConversationName,
     ConversationPatchDB,
     ConversationStatus,
     ConversationType,
@@ -40,7 +41,7 @@ async def create(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    name: str,
+    name: ConversationName | None,
     project_uuid: ProjectID | None,
     user_group_id: GroupID,
     type_: ConversationType,
@@ -295,9 +296,6 @@ async def update(
         **updates.model_dump(exclude_unset=True),
         conversations.c.modified.name: func.now(),
     }
-    _name = _updates.get("name", "Default")
-    if _name is None:
-        _updates["name"] = "no name"
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(

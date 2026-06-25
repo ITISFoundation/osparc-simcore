@@ -12,7 +12,7 @@ from models_library.notifications.celery import (
 )
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api.celery.tasks import (
-    send_email_message,
+    send_email_message_task,
 )
 from tenacity import (
     AsyncRetrying,
@@ -50,11 +50,12 @@ async def test_send_mail(
     user_email = faker.email()
     task_uuid = await task_manager.submit_task(
         TaskExecutionMetadata(
-            name=send_email_message.__name__,
+            name=send_email_message_task.__name__,
         ),
         owner_metadata=owner_metadata,
+        product_name="thetestproduct",
         message=EmailMessage(
-            from_=EmailContact(email=faker.email()),
+            from_=EmailContact(email="support@test-domain.com"),
             to=EmailContact(email=user_email),
             content=EmailContent(
                 subject="Test Email",
@@ -90,12 +91,13 @@ async def test_send_mail_with_bcc_and_attachment(
     attachment_filename = "invoice.pdf"
 
     task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=send_email_message.__name__),
+        TaskExecutionMetadata(name=send_email_message_task.__name__),
         owner_metadata=owner_metadata,
+        product_name="thetestproduct",
         message=EmailMessage(
-            from_=EmailContact(email=faker.email()),
+            from_=EmailContact(email="support@test-domain.com"),
             to=EmailContact(email=faker.email()),
-            bcc=bcc_contact,
+            bcc=[bcc_contact],
             content=EmailContent(
                 subject="Test with BCC and attachment",
                 body_text="Plain text body",
@@ -125,3 +127,8 @@ async def test_send_mail_with_bcc_and_attachment(
         assert len(attachments) == 1
         assert attachments[0].get_filename() == attachment_filename
         assert attachments[0].get_content() == attachment_content
+
+        # RFC 5322 required headers
+        assert sent_msg["Date"] is not None
+        assert sent_msg["Message-ID"] is not None
+        assert "@test-domain.com>" in sent_msg["Message-ID"]

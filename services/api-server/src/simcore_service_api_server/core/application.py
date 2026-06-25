@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from packaging.version import Version
-from servicelib.fastapi.profiler import initialize_profiler
+from servicelib.fastapi.profiler import configure_profiler
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
@@ -50,7 +50,7 @@ def _label_title_and_version(settings: ApplicationSettings, title: str, version:
     return title, version
 
 
-def create_app(
+def create_app(  # noqa: C901
     settings: ApplicationSettings | None = None,
     tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
@@ -94,7 +94,7 @@ def create_app(
         setup_tracing(app, tracing_config)
 
     if settings.API_SERVER_POSTGRES:
-        setup_postgres(app)
+        setup_postgres(app, tracing_config=tracing_config)
 
     setup_rabbitmq(app)
 
@@ -137,7 +137,7 @@ def create_app(
     app.add_event_handler("shutdown", on_shutdown)
 
     if settings.API_SERVER_PROFILING:
-        initialize_profiler(app)
+        configure_profiler(app)
 
     exceptions.setup_exception_handlers(app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG)
 

@@ -14,20 +14,9 @@ RUN mkdir /project/build-output
 
 FROM touch AS build-client
 
-# Installs contributions
-# Install packages (warning: cache might keep these library out-of-date!)
-# TODO: should we freeze packages??
-RUN \
-  --mount=type=bind,source=compile.json,target=compile.json \
-  --mount=type=bind,source=qx-lock.json,target=qx-lock.json \
-  --mount=type=bind,source=Manifest.json,target=Manifest.json \
-  qx package update &&\
-  qx package install &&\
-  ls -la qx_packages
-# -> /project/qx_packages
-
-
 # Copy sources and compile inside the image
+# Note: all libraries are local (see compile.json "libraries" + qx_libs/),
+# so no "qx package install" step is needed.
 ARG VCS_URL=undefined
 ARG VCS_REF="undefined"
 ARG VCS_REF_CLIENT=undefined
@@ -42,6 +31,7 @@ RUN \
   --mount=type=bind,source=compile.json,target=compile.json \
   --mount=type=bind,source=qx-lock.json,target=qx-lock.json \
   --mount=type=bind,source=Manifest.json,target=Manifest.json \
+  --mount=type=bind,source=qx_libs,target=qx_libs \
   node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))' && \
   qx compile --target=build \
   --set-env osparc.vcsOriginUrl="${VCS_URL}" \

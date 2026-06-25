@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -23,6 +23,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
+    WORKBENCH_NODE_ALIAS_TO_COLUMN,
     ProjectNode,
     ProjectNodeCreate,
 )
@@ -35,12 +36,9 @@ from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..folders import _folders_repository as folders_folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
-from ..storage.api import (
-    copy_data_folders_from_project,
-    get_project_total_size_simcore_s3,
-)
-from ..workspaces.api import check_user_workspace_access, get_user_workspace
+from ..storage.api import copy_data_folders_from_project, get_project_total_size_simcore_s3
 from ..workspaces.errors import WorkspaceAccessForbiddenError
+from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
 from . import _folders_repository, _projects_repository, _projects_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
@@ -130,7 +128,9 @@ async def _prepare_project_copy(
 
     copy_project_nodes_coro = None
     if len(nodes_map) > 0:
-        copy_project_nodes_coro = _copy_project_nodes_from_source_project(app, source_project, nodes_map)
+        copy_project_nodes_coro = _copy_project_nodes_from_source_project(
+            app, source_project, nodes_map, clean_output_data=(deep_copy is False)
+        )
 
     copy_file_coro = None
     if deep_copy and len(nodes_map) > 0:
@@ -146,27 +146,58 @@ async def _prepare_project_copy(
     return new_project, copy_project_nodes_coro, copy_file_coro
 
 
+# Fields to clear when copying without data (snake_case names matching ProjectNodeCreate)
+_NODE_FIELDS_TO_CLEAN_ON_COPY = {"outputs", "progress", "run_hash"}
+
+
+def _remap_port_links(inputs: dict | None, nodes_map: NodesMap) -> dict | None:
+    """Remap PortLink node_uuid references in inputs using nodes_map (old UUID -> new UUID)."""
+    if not inputs:
+        return inputs
+    remapped: dict[str, Any] = {}
+    for port_key, port_value in inputs.items():
+        if isinstance(port_value, dict) and "nodeUuid" in port_value:
+            old_uuid = f"{port_value['nodeUuid']}"
+            new_uuid = nodes_map.get(old_uuid, old_uuid)
+            remapped[port_key] = {**port_value, "nodeUuid": new_uuid}
+        elif isinstance(port_value, PortLink):
+            old_uuid = f"{port_value.node_uuid}"
+            new_uuid = nodes_map.get(old_uuid, old_uuid)
+            remapped[port_key] = port_value.model_copy(update={"node_uuid": NodeID(new_uuid)})
+        else:
+            remapped[port_key] = port_value
+    return remapped
+
+
 async def _copy_project_nodes_from_source_project(
     app: web.Application,
     source_project: ProjectDict,
     nodes_map: NodesMap,
+    *,
+    clean_output_data: bool = False,
 ) -> dict[NodeID, ProjectNodeCreate]:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     def _mapped_node_id(node: ProjectNode) -> NodeID:
         return NodeID(nodes_map[f"{node.node_id}"])
 
-    return {
-        _mapped_node_id(node): ProjectNodeCreate(
-            node_id=_mapped_node_id(node),
-            **{
-                k: v
-                for k, v in node.model_dump().items()
-                if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
-            },
-        )
-        for node in await db.list_project_nodes(ProjectID(source_project["uuid"]))
-    }
+    valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+    result = {}
+    for node in await db.list_project_nodes(ProjectID(source_project["uuid"])):
+        node_data = {
+            k: v
+            for k, v in node.model_dump().items()
+            if k in valid_fields and not (clean_output_data and k in _NODE_FIELDS_TO_CLEAN_ON_COPY)
+        }
+        # Remap PortLink references in inputs and input_nodes to use new node UUIDs
+        if "inputs" in node_data:
+            node_data["inputs"] = _remap_port_links(node_data["inputs"], nodes_map)
+        if node_data.get("input_nodes"):
+            node_data["input_nodes"] = [nodes_map.get(f"{nid}", f"{nid}") for nid in node_data["input_nodes"]]
+        new_node_id = _mapped_node_id(node)
+        result[new_node_id] = ProjectNodeCreate(node_id=new_node_id, **node_data)
+    return result
 
 
 async def _copy_files_from_source_project(
@@ -240,20 +271,23 @@ async def _compose_project_data(
                 new_project[key] = non_null_value
     else:
         # when predefined_project is ProjectCreateNew
-        project_nodes = {
-            NodeID(node_id): ProjectNodeCreate(
-                node_id=NodeID(node_id),
-                required_resources=jsonable_encoder(
-                    await catalog_service.get_service_resources(
-                        app, user_id, node_data["key"], node_data["version"], product_name
-                    )
-                ),
-                key=node_data.get("key"),
-                version=node_data.get("version"),
-                label=node_data.get("label"),
+        # when predefined_project is ProjectCreateNew
+        # Convert workbench JSON (camelCase aliases) to ProjectNodeCreate fields (snake_case columns)
+        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+        project_nodes = {}
+        for node_id, node_data in predefined_project.get("workbench", {}).items():
+            create_kwargs = {
+                WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
+                for k, v in node_data.items()
+                if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
+            }
+            create_kwargs["required_resources"] = jsonable_encoder(
+                await catalog_service.get_service_resources(
+                    app, user_id, node_data["key"], node_data["version"], product_name
+                )
             )
-            for node_id, node_data in predefined_project.get("workbench", {}).items()
-        }
+            project_nodes[NodeID(node_id)] = ProjectNodeCreate(node_id=NodeID(node_id), **create_kwargs)
 
         new_project = predefined_project
 

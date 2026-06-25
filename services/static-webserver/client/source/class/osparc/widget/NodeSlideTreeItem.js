@@ -92,7 +92,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
           this.addWidget(control);
           break;
         case "move-up-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/10").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/arrow-up/10").set({
             toolTipText: this.tr("Move up"),
             appearance: "form-button-transparent",
           });
@@ -106,7 +106,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
           this.addWidget(control);
           break;
         case "move-down-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-down/10").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/arrow-down/10").set({
             toolTipText: this.tr("Move down"),
             appearance: "form-button-transparent",
           });
@@ -117,7 +117,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
           this.addWidget(control);
           break;
         case "hide-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/10").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/eye/10").set({
             toolTipText: this.tr("Hide node"),
             marginRight: 5,
             appearance: "form-button-transparent",
@@ -130,7 +130,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
           this.addWidget(control);
           break;
         case "show-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-slash/10").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/eye-slash/10").set({
             toolTipText: this.tr("Show node"),
             marginRight: 5,
             appearance: "form-button-transparent",
@@ -143,7 +143,7 @@ qx.Class.define("osparc.widget.NodeSlideTreeItem", {
           this.addWidget(control);
           break;
         case "instructions-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/10").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/edit/10").set({
             toolTipText: this.tr("Edit Instructions"),
             marginRight: 5,
             appearance: "form-button-transparent",

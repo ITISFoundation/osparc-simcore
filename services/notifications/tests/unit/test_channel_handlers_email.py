@@ -1,5 +1,6 @@
 import itertools
 from collections import Counter
+from unittest.mock import MagicMock
 
 import pytest
 from models_library.notifications import Channel
@@ -9,7 +10,10 @@ from models_library.notifications.rpc import (
     EmailContact,
     EmailContent,
     EmailMessage,
+    SenderIdentity,
 )
+from simcore_service_notifications.core.settings import NotificationsSMTPSettings
+from simcore_service_notifications.models.product import Product, ProductFooter, ProductUI
 from simcore_service_notifications.services.channel_handlers._email import (
     EmailChannelHandler,
     _interleave_recipients_by_domain,
@@ -93,13 +97,12 @@ def test_interleave_many_domains_one_each():
 
 def _make_message(
     *,
-    bcc: EmailContact | None = None,
+    bcc: list[EmailContact] | None = None,
     attachments: list[EmailAttachment] | None = None,
 ) -> EmailMessage:
     return EmailMessage(
         channel=Channel.email,
         addressing=EmailAddressing(
-            from_=EmailContact(name="Sender", email="sender@example.com"),
             to=[_contact("user@example.com")],
             bcc=bcc,
             attachments=attachments,
@@ -108,17 +111,71 @@ def _make_message(
     )
 
 
-def test_prepare_messages_includes_bcc():
-    bcc = EmailContact(name="Billing", email="billing@example.com")
-    payloads = EmailChannelHandler.prepare_messages(_make_message(bcc=bcc))
+_TEST_PRODUCT = Product(
+    name="osparc",
+    display_name="oSPARC",
+    vendor_display_inline="oSPARC by SPEAG",
+    support_email="support@example.com",
+    homepage_url="https://osparc.io",
+    ui=ProductUI(),
+    footer=ProductFooter(
+        social_links=[],
+        company_name="SPEAG",
+        company_address="Zurich",
+        company_links=[],
+    ),
+)
+
+
+def _mock_settings() -> MagicMock:
+    smtp_config = NotificationsSMTPSettings.model_validate(
+        {
+            "mail_servers": {
+                "local": {"host": "localhost", "port": 25, "protocol": "UNENCRYPTED"},
+            },
+            "products": {
+                "osparc": {
+                    "mail_server": "local",
+                    "domain": "example.com",
+                    "local_parts": {"support": "support", "no_reply": "no-reply"},
+                    "extra_headers": {},
+                },
+            },
+        }
+    )
+    settings = MagicMock()
+    settings.NOTIFICATIONS_SMTP_SETTINGS = smtp_config
+    return settings
+
+
+@pytest.mark.parametrize(
+    "bcc_emails",
+    [
+        pytest.param([], id="no_bcc"),
+        pytest.param(["billing@example.com"], id="single_bcc"),
+        pytest.param(["billing@example.com", "finance@example.com"], id="two_bcc"),
+    ],
+)
+def test_prepare_messages_includes_bcc(bcc_emails: list[str]):
+    bcc = [EmailContact(name=email.split("@")[0], email=email) for email in bcc_emails]
+    payloads = EmailChannelHandler.prepare_messages(
+        _make_message(bcc=bcc or None), product=_TEST_PRODUCT, settings=_mock_settings()
+    )
 
     assert len(payloads) == 1
-    assert payloads[0]["bcc"]["email"] == "billing@example.com"
+    if bcc_emails:
+        assert [c["email"] for c in payloads[0]["bcc"]] == bcc_emails
+    else:
+        assert "bcc" not in payloads[0]
 
 
 def test_prepare_messages_includes_attachments():
     attachment = EmailAttachment(content=b"%PDF-1.4", filename="invoice.pdf")
-    payloads = EmailChannelHandler.prepare_messages(_make_message(attachments=[attachment]))
+    payloads = EmailChannelHandler.prepare_messages(
+        _make_message(attachments=[attachment]),
+        product=_TEST_PRODUCT,
+        settings=_mock_settings(),
+    )
 
     assert len(payloads) == 1
     assert payloads[0]["attachments"] is not None
@@ -127,8 +184,21 @@ def test_prepare_messages_includes_attachments():
 
 
 def test_prepare_messages_without_bcc_and_attachments():
-    payloads = EmailChannelHandler.prepare_messages(_make_message())
+    payloads = EmailChannelHandler.prepare_messages(_make_message(), product=_TEST_PRODUCT, settings=_mock_settings())
 
     assert len(payloads) == 1
     assert "bcc" not in payloads[0]
     assert "attachments" not in payloads[0]
+
+
+def test_resolve_from_contact_support():
+    contact = EmailChannelHandler.resolve_from_contact(_TEST_PRODUCT, SenderIdentity.SUPPORT, _mock_settings())
+
+    assert contact.email == "support@example.com"
+    assert contact.name == f"{_TEST_PRODUCT.display_name} support"
+
+
+def test_resolve_from_contact_no_reply():
+    contact = EmailChannelHandler.resolve_from_contact(_TEST_PRODUCT, SenderIdentity.NO_REPLY, _mock_settings())
+
+    assert contact.email == "no-reply@example.com"

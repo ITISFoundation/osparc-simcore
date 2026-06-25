@@ -1,7 +1,3 @@
-from ._models import (
-    PreferredWalletIdFrontendUserPreference,
-    TwoFAFrontendUserPreference,
-)
 from ._service import (
     get_frontend_user_preference,
     get_frontend_user_preferences_aggregation,
@@ -9,10 +5,8 @@ from ._service import (
 )
 
 __all__: tuple[str, ...] = (
-    "PreferredWalletIdFrontendUserPreference",
-    "TwoFAFrontendUserPreference",
+    # functions
     "get_frontend_user_preference",
     "get_frontend_user_preferences_aggregation",
     "set_frontend_user_preference",
-)
-# nopycln: file
+)  # nopycln: file

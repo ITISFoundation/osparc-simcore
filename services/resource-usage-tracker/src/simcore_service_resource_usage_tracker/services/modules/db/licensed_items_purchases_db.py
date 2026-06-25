@@ -123,7 +123,7 @@ async def list_(
         result = await conn.stream(list_query)
         items: list[LicensedItemsPurchasesDB] = [LicensedItemsPurchasesDB.model_validate(row) async for row in result]
 
-        return cast(int, total_count), items
+        return total_count, items
 
 
 async def get(

@@ -41,6 +41,8 @@ botocore-stubs==1.40.74
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore
+cachebox==5.2.3
+    # via deepdiff
 certifi==2025.11.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -69,7 +71,7 @@ cryptography==46.0.5
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-deepdiff==8.6.1
+deepdiff==9.1.0
     # via -r requirements/_test.in
 docker==7.1.0
     # via

@@ -24,6 +24,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.utils.LanguageManager.isSwitchUseful()) {
+      this.__addLanguageSetting();
+    }
+
     if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addCreditsIndicatorSettings();
     }
@@ -45,6 +49,43 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
   members: {
     getChildrenCount: function() {
       return this._getChildren().length;
+    },
+
+    __addLanguageSetting: function() {
+      const box = new osparc.widget.SectionBox(this.tr("Language"));
+
+      box.addHelper(this.tr("Translations are AI-generated and may contain errors. Please report any issues to help us improve them."));
+
+      const form = new qx.ui.form.Form();
+
+      const languageSB = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
+      languageSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
+      osparc.utils.LanguageManager.getAvailableLocales().forEach(localeCode => {
+        const label = osparc.utils.LanguageManager.getLocaleLabel(localeCode);
+        const lItem = new qx.ui.form.ListItem(label, null, localeCode);
+        languageSB.add(lItem);
+      });
+
+      const currentLocale = qx.locale.Manager.getInstance().getLocale();
+      languageSB.getSelectables().forEach(selectable => {
+        if (selectable.getModel() === currentLocale) {
+          languageSB.setSelection([selectable]);
+        }
+      });
+
+      languageSB.addListener("changeValue", e => {
+        const selectable = e.getData();
+        if (selectable) {
+          osparc.utils.LanguageManager.setLocale(selectable.getModel());
+        }
+      });
+      form.add(languageSB, this.tr("Language"));
+
+      box.add(new qx.ui.form.renderer.Single(form));
+
+      this._add(box);
     },
 
     __addCreditsIndicatorSettings: function() {

@@ -181,6 +181,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects?from_study={templateId}"
           },
+          postDispatchStudy: {
+            method: "POST",
+            url: statics.API + "/studies/{studyId}:dispatch"
+          },
           patch: {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}"
@@ -1147,6 +1151,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/user-accounts?review_status=REVIEWED&offset={offset}&limit={limit}&registered={registered}"
           },
+          getRegisteredUsers: {
+            method: "GET",
+            url: statics.API + "/admin/user-accounts?registered=true&offset={offset}&limit={limit}&order_by={orderBy}"
+          },
           previewApproval: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:preview-approval"
@@ -1785,7 +1793,7 @@ qx.Class.define("osparc.data.Resources", {
           params["url"] = {};
         }
         params["url"]["offset"] = offset;
-        params["url"]["limit"] = 10;
+        params["url"]["limit"] = params["url"]["limit"] || 10;
         const options = {
           resolveWResponse: true
         };

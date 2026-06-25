@@ -1257,6 +1257,10 @@
         "type": "object",
         "title": "CallbacksMapping"
       },
+      "ComposeSpecLabelDict": {
+        "additionalProperties": true,
+        "type": "object"
+      },
       "ComputationCreate": {
         "properties": {
           "user_id": {
@@ -2903,6 +2907,11 @@
             "title": "Is Collaborative",
             "description": "True if service allows collaboration (multi-tenant access)",
             "default": false
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -2914,7 +2923,8 @@
           "service_uuid",
           "service_host",
           "service_port",
-          "service_state"
+          "service_state",
+          "product_name"
         ],
         "title": "RunningDynamicServiceDetails"
       },
@@ -2948,8 +2958,7 @@
           "simcore.service.compose-spec": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/ComposeSpecLabelDict"
               },
               {
                 "type": "null"
@@ -3175,16 +3184,9 @@
             "description": "contains hardware information so we know on which hardware to run the service"
           },
           "product_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Product Name",
-            "description": "Current product upon which this service is scheduledIf set to None, the current product is undefined. Mostly for backwards compatibility"
+            "description": "Current product upon which this service is scheduled"
           },
           "product_api_base_url": {
             "anyOf": [
@@ -3217,7 +3219,8 @@
           "request_dns",
           "request_scheme",
           "request_simcore_user_agent",
-          "proxy_service_name"
+          "proxy_service_name",
+          "product_name"
         ],
         "title": "SchedulerData"
       },
