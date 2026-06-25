@@ -19,7 +19,7 @@ from dask_task_models_library.container_tasks.encryption import (
     TransferEncryptionSettings,
 )
 from faker import Faker
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, SecretBytes, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
@@ -100,9 +100,9 @@ def remote_parameters(
 def upload_file_to_remote(
     remote_parameters: StorageParameters,
 ) -> Iterator[Callable[[Path, AnyUrl], None]]:
-    storage_kwargs: dict[str, Any] = {}
+    storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
 
     uploaded_files: list[fsspec.core.OpenFile] = []
 
@@ -120,9 +120,11 @@ def upload_file_to_remote(
     for open_file in uploaded_files:
         with contextlib.suppress(Exception):
             open_file.fs.rm(open_file.path)
+
+
 def encryption_settings() -> TransferEncryptionSettings:
     return TransferEncryptionSettings(
-        job_key=generate_key(),
+        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         job_id="job-1",
         file_id="file-1",
         file_role="input",
@@ -152,7 +154,7 @@ async def test_push_file_to_remote(
     # check the remote is actually having the file in
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
 
     with cast(
         fsspec.core.OpenFile,
@@ -181,14 +183,15 @@ async def test_push_file_with_spaces_in_name_to_remote(
     await push_file_to_remote(
         src_path,
         remote_parameters.remote_file_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
 
     # check the remote is actually having the file in
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
 
     with cast(
         fsspec.core.OpenFile,
@@ -260,7 +263,7 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
 
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
     open_files = fsspec.open_files(
         f"zip://*::{destination_url}",
         mode="rt",
@@ -280,7 +283,7 @@ async def test_pull_file_from_remote(
 ):
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
     # put some file on the remote
     TEXT_IN_FILE = faker.text()
     with cast(
@@ -415,7 +418,7 @@ async def test_pull_file_from_remote_decrypt_with_wrong_key_raises_auth_error(
     )
 
     wrong_key_settings = TransferEncryptionSettings(
-        job_key=generate_key(),
+        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         job_id=encryption_settings.job_id,
         file_id=encryption_settings.file_id,
         file_role=encryption_settings.file_role,
@@ -475,7 +478,7 @@ async def test_push_then_pull_file_with_encryption_roundtrip(
 
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
     with cast(
         fsspec.core.OpenFile,
         fsspec.open(
@@ -730,6 +733,7 @@ async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert not dst_path.exists()
     extracted_file_names = {file.name for file in download_folder.glob("*")}

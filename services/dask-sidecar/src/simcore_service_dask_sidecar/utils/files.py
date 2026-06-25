@@ -18,7 +18,7 @@ import repro_zipfile
 from dask_task_models_library.container_tasks.encryption import (
     TransferEncryptionSettings,
 )
-from pydantic import ByteSize, FileUrl, TypeAdapter
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
