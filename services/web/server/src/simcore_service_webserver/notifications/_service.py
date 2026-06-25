@@ -1,4 +1,4 @@
-from typing import Any, Final, cast
+from typing import Any, Final
 
 from aiohttp import web
 from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
@@ -223,7 +223,7 @@ async def send_message_from_template(
     elif user_id is not None and not group_ids:
         resolved_locale = await get_user_locale(app, user_id=user_id, product_name=product_name)
     else:
-        resolved_locale = cast(SupportedLocale, DEFAULT_LOCALE)
+        resolved_locale = DEFAULT_LOCALE
 
     match channel:
         case Channel.email:

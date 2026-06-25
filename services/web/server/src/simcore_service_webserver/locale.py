@@ -70,4 +70,4 @@ async def get_user_locale(
     )
     if pref is not None and pref.value:
         return pref.value
-    return cast(SupportedLocale, DEFAULT_LOCALE)
+    return DEFAULT_LOCALE
