@@ -72,7 +72,7 @@ def _load(locale: str) -> gettext.NullTranslations:
             languages=[locale],
         )
     except FileNotFoundError:
-        _logger.debug("No catalogue for locale %r (domain=%r); using EN pass-through", locale, _DOMAIN)
+        _logger.warning("No catalogue for locale %r (domain=%r); using EN pass-through", locale, _DOMAIN)
         return gettext.NullTranslations()
 
 
