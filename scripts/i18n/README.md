@@ -6,6 +6,18 @@ Output catalog: `packages/common-library/src/common_library/locale/`
 
 ---
 
+## Terminology
+
+**Internationalization (i18n):** Engineering the product to support multiple languages and locales without hardcoding locale-specific assumptions.
+Example: the `user_message()` API, locale-aware request middleware, runtime catalog lookup via gettext.
+
+**Localization (l10n):** Adapting the product for specific locales (translating strings, formatting dates/currency, switching layout direction, etc.).
+Example: the extraction, translation, and compilation workflow orchestrated by this Makefile.
+
+**Relationship:** i18n is prerequisite infrastructure (built once, per-service); l10n is the process this folder automates (repeated per target market).
+
+---
+
 ## Quick Start
 
 ```bash

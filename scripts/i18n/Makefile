@@ -80,7 +80,7 @@ else
   PARALLEL_FLAG := --no-parallel
 endif
 
-ifdef BASE_URL
+ifneq ($(BASE_URL),)
   BASE_URL_FLAG := --base-url $(BASE_URL)
 else
   BASE_URL_FLAG :=
