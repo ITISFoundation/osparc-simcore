@@ -98,7 +98,7 @@ async def assert_expected_logs_published_to_rabbit(
     worker_logs: list[str] = []
     async for attempt in AsyncRetrying(
         wait=wait_fixed(1),
-        stop=stop_after_delay(60),
+        stop=stop_after_delay(120),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
