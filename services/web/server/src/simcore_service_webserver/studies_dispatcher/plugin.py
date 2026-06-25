@@ -23,10 +23,13 @@ def _setup_studies_access(app: web.Application, _settings: StudiesDispatcherSett
     # However, the trailing slash in case of a TLD is not a different resource, with and without slash are identical.
     # To handle this special case, we add a route with a trailing slash to redirect to the same handler as the one
     # without a trailing slash.
+    # NOTE: the trailing-slash alias is left unnamed on purpose: it is the *same* resource as
+    # `get_redirection_to_study_page` (RFC 3986) and therefore must not appear as a separate
+    # entrypoint in the OpenAPI contract.
     app.router.add_routes(
         [
             web.get(r"/study/{id}", get_redirection_to_study_page, name="get_redirection_to_study_page"),
-            web.get(r"/study/{id}/", get_redirection_to_study_page, name="get_redirection_to_study_page_with_slash"),
+            web.get(r"/study/{id}/", get_redirection_to_study_page),
         ]
     )
 
