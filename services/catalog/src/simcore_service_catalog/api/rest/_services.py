@@ -10,7 +10,6 @@ from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.services import ServiceType
 from models_library.services_authoring import Author
 from models_library.services_metadata_published import ServiceMetaDataPublished
-from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -22,6 +21,7 @@ from ..._constants import (
     RESPONSE_MODEL_POLICY,
 )
 from ...clients.director import DirectorClient
+from ...core.settings import ApplicationSettings
 from ...models.services_db import ServiceAccessRightsDB, ServiceMetaDataDBGet
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
@@ -86,10 +86,16 @@ async def _get_registry_services(director_client: DirectorClient) -> dict[str, A
     return cast(dict[str, Any], await director_client.get("/services"))
 
 
-def set_services_caching_enabled(*, enabled: bool) -> None:
-    # NOTE: when disabled, `skip_cache_func` returns True so aiocache never stores a
-    # result and every call fetches fresh from the director. Applied at startup, before
-    # any traffic, so the cache is never populated (see `CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED`).
+def configure_services_caching(settings: ApplicationSettings) -> None:
+    """Configures the REST-layer services caches from the application settings.
+
+    Call this once at startup (before any traffic) to make the cache dependency on
+    settings explicit, rather than mutating the module-level cache decorators implicitly.
+
+    When `CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED` is disabled, `skip_cache_func` returns
+    True so aiocache never stores a result and every call fetches fresh from the director.
+    """
+    enabled = settings.CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED
     for cache in (_list_services_cache, _registry_services_cache):
         cache.skip_cache_func = lambda _result: not enabled
 
@@ -206,8 +212,6 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service_key: ServiceKey,  # noqa: ARG001  # pylint: disable=unused-argument  # bound to path, resolved via get_service_from_manifest
-    service_version: ServiceVersion,  # noqa: ARG001  # pylint: disable=unused-argument  # bound to path, resolved via get_service_from_manifest
     service_in_manifest: Annotated[ServiceMetaDataPublished, Depends(get_service_from_manifest)],
     groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
     services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
