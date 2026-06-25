@@ -89,7 +89,7 @@ def test_convert_between_file_models():
     with pytest.raises(ValueError):  # noqa: PT011
         to_file_api_model(storage_file_meta)
 
-    # does not use pydantic validation here else will fail
+    # do not use pyndatic validation here or the test will failour otuside the function
     storage_file_meta.file_id = "api/NOTUUID/foo.txt"
     with pytest.raises(ValidationError):
         to_file_api_model(storage_file_meta)
