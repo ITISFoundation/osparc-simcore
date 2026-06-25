@@ -43,4 +43,4 @@ ___) | || (_) | | | (_| | (_| |  __/
 """.format(f"v{__version__}")
 
 
-SERVICE_FINISHED_BANNER_MSG = info.get_finished_banner()
+APP_FINISHED_BANNER_MSG = info.get_finished_banner()

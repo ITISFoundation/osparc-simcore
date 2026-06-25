@@ -27,9 +27,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .._meta import (
     API_VERSION,
     API_VTAG,
+    APP_FINISHED_BANNER_MSG,
     APP_NAME,
     APP_STARTING_BANNER_MSG,
-    SERVICE_FINISHED_BANNER_MSG,
     get_started_banner,
 )
 from ..api.rest.routes import setup_rest_api_routes
@@ -111,7 +111,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     with configure_app_lifespan(
         starting_banner=APP_STARTING_BANNER_MSG,
         started_banner=get_started_banner(settings.STORAGE_SERVICE_MODE),
-        shutdown_complete_banner=SERVICE_FINISHED_BANNER_MSG,
+        shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
             debug=settings.SC_BOOT_MODE in {BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL},
