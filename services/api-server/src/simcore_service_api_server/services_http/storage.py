@@ -76,7 +76,6 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
         filename=filename,
         content_type=guess_type(stored_file_meta.file_name)[0] or "application/octet-stream",
         e_tag=stored_file_meta.entity_tag,
-        last_modified=stored_file_meta.last_modified,
         checksum=stored_file_meta.sha256_checksum,
     )
 
