@@ -308,6 +308,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     _projects_repository_legacy = ProjectDBAPI.get_from_app_context(app)
 
     new_project: ProjectDict = {}
+    project_was_inserted = False
     copy_file_coro = None
     project_nodes = None
     try:
@@ -390,6 +391,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             hidden=copy_data,
             project_nodes=project_nodes,
         )
+        # From this point on the project row exists: any subsequent failure must
+        # trigger cleanup so we do not leave a half-created project behind.
+        project_was_inserted = True
         # add parent linking if needed
         await set_project_ancestors(
             app,
@@ -465,8 +469,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         _project_product_name = await _projects_repository_legacy.get_project_product(project_uuid=new_project["uuid"])
         if _project_product_name != product_name:
-            if project_uuid := new_project.get("uuid"):
-                await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, _project_product_name)
+            # Cleanup is handled centrally by the error handlers below.
             raise web.HTTPBadRequest(  # noqa: TRY301
                 text=f"Project product name mismatch {product_name=} {_project_product_name=}"
             )
@@ -488,7 +491,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         raise web.HTTPForbidden from exc
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
-        if project_uuid := new_project.get("uuid"):
+        if project_was_inserted and (project_uuid := new_project.get("uuid")):
             await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
         raise web.HTTPNotFound(text=f"{exc}") from exc
 
@@ -497,13 +500,17 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             "cancelled create_project for user_id='%s'. Cleaning up",
             user_id,
         )
-        if project_uuid := new_project.get("uuid"):
+        if project_was_inserted and (project_uuid := new_project.get("uuid")):
             await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
         raise
 
     except web.HTTPException:
-        # Pre-insertion validation HTTP errors (e.g. invalid data, not found, forbidden)
-        # do not need cleanup. Post-insertion cases handle their own cleanup before raising.
+        # Regardless of the HTTP error raised, if the project was already inserted we
+        # always clean it up to avoid leftovers. Pre-insertion validation errors
+        # (invalid data, not found, forbidden) leave nothing to clean up.
+        # The original HTTP error is re-raised unchanged (interface preserved).
+        if project_was_inserted and (project_uuid := new_project.get("uuid")):
+            await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
         raise
 
     except Exception:
@@ -511,7 +518,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             "Unexpected error during create_project for user_id='%s'. Cleaning up",
             user_id,
         )
-        if project_uuid := new_project.get("uuid"):
+        if project_was_inserted and (project_uuid := new_project.get("uuid")):
             await _best_effort_cleanup(app, project_uuid, user_id, simcore_user_agent, product_name)
         raise
 
