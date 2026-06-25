@@ -5,7 +5,7 @@ def user_message(msg: str, *, _version: int | None = None) -> str:
     gettext msgid, so no separate key registry is needed.  The string returned
     by this function is the canonical msgid used by the i18n pipeline
     (``common_library.i18n``).  Extraction tools scan call
-    sites of ``user_message`` to build the gettext catalogue; at runtime callers
+    sites of ``user_message`` to build the gettext catalog; at runtime callers
     pass the returned msgid to ``get_translator(locale).gettext(msgid)`` to
     obtain the localised string.
 

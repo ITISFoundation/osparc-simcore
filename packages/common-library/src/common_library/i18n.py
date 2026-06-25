@@ -22,7 +22,7 @@ from typing import Final, Literal
 
 _logger = logging.getLogger(__name__)
 
-# Locales with compiled .mo catalogues shipped in this package.
+# Locales with compiled .mo catalogs shipped in this package.
 # Extend this tuple as new languages are added to the extraction pipeline.
 # NOTE: "en" has no .mo catalog — prose-as-key means the msgid IS the English
 # string; NullTranslations returns it verbatim. It is kept here because it is
@@ -73,7 +73,7 @@ def _load(locale: str) -> gettext.NullTranslations:
             languages=[locale],
         )
     except FileNotFoundError:
-        _logger.warning("No catalogue for locale %r (domain=%r); using EN pass-through", locale, _DOMAIN)
+        _logger.warning("No catalog for locale %r (domain=%r); using EN pass-through", locale, _DOMAIN)
         return gettext.NullTranslations()
 
 

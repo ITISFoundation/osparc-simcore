@@ -20,7 +20,7 @@ class JinjaRenderer(Renderer):
         *,
         locale: SupportedLocale = DEFAULT_LOCALE,
     ) -> TemplatePreview[Content]:
-        # NOTE: locale → .mo catalogue path: common_library/locale/<locale>/LC_MESSAGES/messages.mo
+        # NOTE: locale → .mo catalog path: common_library/locale/<locale>/LC_MESSAGES/messages.mo
         # Compiled by the i18n extraction pipeline (see common_library.i18n). Unknown locales
         # fall back to a NullTranslations that passes English msgids through unchanged.
         translator = get_translator(locale)

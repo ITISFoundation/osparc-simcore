@@ -81,7 +81,7 @@ def test_locale_middleware_invalid_header_falls_back_to_default(client: TestClie
 
 
 # ---------------------------------------------------------------------------
-# Exception handler - locale-aware translation fallback (no .mo catalogue)
+# Exception handler - locale-aware translation fallback (no .mo catalog)
 # ---------------------------------------------------------------------------
 
 
