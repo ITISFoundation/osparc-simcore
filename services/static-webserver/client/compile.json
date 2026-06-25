@@ -21,9 +21,9 @@
   ],
   "defaultTarget": "source",
   "locales": [
-    "en_US",
+    "en",
     "es_ES",
-    "zh"
+    "zh_CN"
   ],
   "writeAllTranslations": true,
   "applications": [

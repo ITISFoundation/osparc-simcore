@@ -1,6 +1,7 @@
 """Tests for common_library.i18n"""
 
 import gettext
+import json
 from pathlib import Path
 from typing import Final
 
@@ -59,6 +60,26 @@ def test_default_locale() -> None:
 )
 def test_normalize_locale(raw: str, expected: str) -> None:
     assert normalize_locale(raw) == expected
+
+
+def test_frontend_locales_are_supported_by_backend():
+    repo_root = Path(__file__).resolve().parents[3]
+    compile_json = repo_root / "services" / "static-webserver" / "client" / "compile.json"
+    assert compile_json.exists(), f"Frontend locale source not found: {compile_json}"
+
+    data = json.loads(compile_json.read_text(encoding="utf-8"))
+    frontend_locales = data.get("locales", [])
+    assert frontend_locales, "No frontend locales configured in compile.json"
+
+    backend_supported_locales = {DEFAULT_LOCALE, *_TRANSLATED_LOCALES}
+    unsupported_frontend_locales = {
+        locale for locale in frontend_locales if normalize_locale(str(locale)) not in backend_supported_locales
+    }
+
+    assert not unsupported_frontend_locales, (
+        "Frontend locales must be supported by backend gettext catalogs. "
+        f"Unsupported locales: {sorted(unsupported_frontend_locales)}"
+    )
 
 
 def test_setup_translations_prewarms_cache() -> None:
