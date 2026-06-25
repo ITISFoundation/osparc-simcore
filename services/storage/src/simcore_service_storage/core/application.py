@@ -104,8 +104,6 @@ def _configure_app(
 
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
-    # Determine the correct startup banner based on worker mode
-
     with configure_app_lifespan(
         starting_banner=APP_STARTING_BANNER_MSG,
         started_banner=get_started_banner(settings.STORAGE_SERVICE_MODE),
