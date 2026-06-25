@@ -85,8 +85,11 @@ def test_convert_between_file_models():
     assert apiserver_file_meta.content_type == "application/octet-stream"  # default
     assert apiserver_file_meta.e_tag == storage_file_meta.entity_tag
 
+    storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(f"{uuid4()}/{uuid4()}/foo.txt")
     with pytest.raises(ValueError):  # noqa: PT011
-        to_file_api_model(TypeAdapter(StorageFileID).validate_python(f"{uuid4()}/{uuid4()}/foo.txt"))
+        to_file_api_model(storage_file_meta)
 
+    # does not use pydantic validation here else will fail
+    storage_file_meta.file_id = "api/NOTUUID/foo.txt"
     with pytest.raises(ValidationError):
-        to_file_api_model(TypeAdapter(StorageFileID).validate_python("api/NOTUUID/foo.txt"))
+        to_file_api_model(storage_file_meta)
