@@ -238,8 +238,8 @@ async def list_function_jobs_with_status(
                 function_jobs_table.c.uuid.in_(collection_subquery),
             )
 
-        total_count_result = await conn.scalar(
-            func.count().select().select_from(function_jobs_table).where(filter_conditions)
+        total_count_result = (
+            await conn.scalar(func.count().select().select_from(function_jobs_table).where(filter_conditions)) or 0
         )
         if total_count_result == 0:
             return [], PageMetaInfoLimitOffset(total=0, offset=pagination_offset, limit=pagination_limit, count=0)

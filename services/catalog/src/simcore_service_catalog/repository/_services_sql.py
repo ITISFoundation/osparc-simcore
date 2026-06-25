@@ -17,6 +17,7 @@ from simcore_postgres_database.models.services_compatibility import (
 )
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import get_columns_from_db_model
+from sqlalchemy import ColumnElement
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER, array_agg
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import func
@@ -40,12 +41,11 @@ def list_services_stmt(
         conditions: list[Any] = []
 
         # access rights
-        logic_operator = and_ if combine_access_with_and else or_
-        default = bool(combine_access_with_and)
+        execute_clause = services_access_rights.c.execute_access if execute_access else sa.true()
+        write_clause = services_access_rights.c.write_access if write_access else sa.true()
 
-        access_query_part = logic_operator(  # type: ignore[type-var]
-            services_access_rights.c.execute_access if execute_access else default,
-            services_access_rights.c.write_access if write_access else default,
+        access_query_part = (
+            and_(execute_clause, write_clause) if combine_access_with_and else or_(execute_clause, write_clause)
         )
         conditions.append(access_query_part)
 
@@ -131,7 +131,7 @@ def apply_services_filters(
     if filters.version_display_pattern:
         # Convert glob pattern to SQL LIKE pattern and handle NULL values
         sql_pattern = filters.version_display_pattern.replace("*", "%")
-        version_display_condition = services_meta_data.c.version_display.like(sql_pattern)
+        version_display_condition: ColumnElement[bool] = services_meta_data.c.version_display.like(sql_pattern)
 
         if sql_pattern == "%":
             conditions.append(
@@ -139,10 +139,10 @@ def apply_services_filters(
                     version_display_condition,
                     # If pattern==*, also match NULL when rest is empty
                     services_meta_data.c.version_display.is_(None),
-                )
+                )  # type: ignore[arg-type]
             )
         else:
-            conditions.append(version_display_condition)
+            conditions.append(version_display_condition)  # type: ignore[arg-type]
 
     if conditions:
         stmt = stmt.where(sa.and_(*conditions))
@@ -170,7 +170,7 @@ def latest_services_total_count_stmt(
                 (user_to_groups.c.gid == services_access_rights.c.gid) & (user_to_groups.c.uid == user_id),
             )
         )
-        .where(access_rights)
+        .where(access_rights)  # type: ignore[arg-type]
     )
 
     if filters:
@@ -206,7 +206,7 @@ def list_latest_services_stmt(
                 (user_to_groups.c.gid == services_access_rights.c.gid) & (user_to_groups.c.uid == user_id),
             )
         )
-        .where(access_rights)
+        .where(access_rights)  # type: ignore[arg-type]
         .order_by(
             services_meta_data.c.key,
             sa.desc(by_version(services_meta_data.c.version)),  # latest first
