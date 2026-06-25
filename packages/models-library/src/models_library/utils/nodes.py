@@ -64,7 +64,7 @@ async def compute_node_hash(
             if payload is not None:
                 resolved_payload[port_type][port_key] = payload
 
-    # WARNING: Here we cannot change to json_serialization.json_dumps because if would create a different dump string
+    # WARNING: Here we cannot change to json_serialization.json_dumps because it would create a different dump string
     # and therefore a different hash
     # typically test_node_ports_v2_serialization_v2.py::test_dump will fail if you do this change.
     # NOTE that these hashes might have been already stored elsewhere
