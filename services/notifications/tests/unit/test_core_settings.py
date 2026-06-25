@@ -4,6 +4,7 @@
 
 
 import pytest
+from models_library.basic_types import ServiceMode
 from models_library.notifications.errors import (
     NotificationsProductSMTPSettingsNotFoundError,
 )
@@ -15,7 +16,6 @@ from simcore_service_notifications.core.settings import (
     ApplicationSettings,
     NotificationsSMTPSettings,
     ProductSMTPSettings,
-    ServiceMode,
     SMTPSettings,
 )
 
@@ -31,21 +31,25 @@ def test_valid_application_settings(mock_environment: EnvVarsDict):
 
 def test_product_smtp_settings_rejects_disallowed_headers():
     with pytest.raises(ValidationError):
-        ProductSMTPSettings.model_validate({
-            "mail_server": "aws",
-            "domain": "osparc.io",
-            "extra_headers": {"x-invalid-header": "value"},
-            "local_parts": {"support": "support", "no_reply": "no-reply"},
-        })
+        ProductSMTPSettings.model_validate(
+            {
+                "mail_server": "aws",
+                "domain": "osparc.io",
+                "extra_headers": {"x-invalid-header": "value"},
+                "local_parts": {"support": "support", "no_reply": "no-reply"},
+            }
+        )
 
 
 def test_product_smtp_settings_valid():
-    product_smtp = ProductSMTPSettings.model_validate({
-        "mail_server": "aws",
-        "domain": "osparc.io",
-        "extra_headers": {},
-        "local_parts": {"support": "support", "no_reply": "no-reply"},
-    })
+    product_smtp = ProductSMTPSettings.model_validate(
+        {
+            "mail_server": "aws",
+            "domain": "osparc.io",
+            "extra_headers": {},
+            "local_parts": {"support": "support", "no_reply": "no-reply"},
+        }
+    )
 
     assert product_smtp.mail_server == "aws"
     assert product_smtp.domain == "osparc.io"
@@ -101,19 +105,21 @@ def test_notifications_smtp_settings_rejects_invalid_mail_server_reference():
 
 
 def test_notifications_smtp_settings_get_unknown_product_raises():
-    settings = NotificationsSMTPSettings.model_validate({
-        "mail_servers": {
-            "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
-        },
-        "products": {
-            "osparc": {
-                "mail_server": "aws",
-                "domain": "osparc.io",
-                "extra_headers": {},
-                "local_parts": {"support": "support", "no_reply": "no-reply"},
+    settings = NotificationsSMTPSettings.model_validate(
+        {
+            "mail_servers": {
+                "aws": {"host": "mailpit", "port": 1025, "protocol": "UNENCRYPTED"},
             },
-        },
-    })
+            "products": {
+                "osparc": {
+                    "mail_server": "aws",
+                    "domain": "osparc.io",
+                    "extra_headers": {},
+                    "local_parts": {"support": "support", "no_reply": "no-reply"},
+                },
+            },
+        }
+    )
 
     with pytest.raises(NotificationsProductSMTPSettingsNotFoundError, match="unknown_product"):
         settings.get_product_smtp_settings("unknown_product")

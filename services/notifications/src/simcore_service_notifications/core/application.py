@@ -71,6 +71,8 @@ def _configure_plugins(
             configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
             configure_rpc_api(app_lifespan)
             configure_rest_api(app)
+        case ServiceMode.WORKER:
+            pass  # Workers skip server-specific setup
 
 
 def create_app(
