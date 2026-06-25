@@ -109,6 +109,7 @@ async def search_public_user(
         sa.select(*_public_user_cols(caller_id=caller_id))
         .where(
             in_product_subq
+            & (users.c.status == UserStatus.ACTIVE)
             & (
                 (is_public(users.c.privacy_hide_username, caller_id) & users.c.name.ilike(_pattern))
                 | (is_public(users.c.privacy_hide_email, caller_id) & users.c.email.ilike(_pattern))

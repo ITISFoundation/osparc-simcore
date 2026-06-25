@@ -3,14 +3,18 @@ import logging
 import asyncpg.exceptions
 from aiohttp import web
 from models_library.groups import Group, GroupID, GroupType
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from servicelib.logging_utils import log_catch
 from sqlalchemy.exc import DatabaseError
 
+from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..groups.groups_service import get_group_by_gid
 from ..projects._projects_repository_legacy import (
     PROJECT_DBAPI_APPKEY,
     ProjectAccessRights,
+    ProjectDBAPI,
 )
 from ..projects.api import (
     create_project_group_without_checking_permissions,
@@ -21,6 +25,27 @@ from ..users import users_service
 from ..users.errors import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
+
+
+async def try_get_product_name(app: web.Application, project_id: ProjectID) -> ProductName | None:
+    """Resolves the product name of a project.
+
+    The database is the authoritative source. When the project no longer exists
+    in the database (edge case during garbage collection), it falls back to the
+    dynamic-scheduler which tracks the product name of currently running services.
+
+    Returns:
+        the resolved product name, or ``None`` when the product cannot be determined
+    """
+    project_repo = ProjectDBAPI.get_from_app_context(app)
+    try:
+        project_at_db = await project_repo.get_project_db(project_id)
+        return project_at_db.product_name
+    except ProjectNotFoundError:
+        with log_catch(_logger, reraise=False):
+            running_services = await dynamic_scheduler_service.list_dynamic_services(app, project_id=project_id)
+            return running_services[0].product_name if running_services else None
+    return None
 
 
 async def _fetch_new_project_owner_from_groups(

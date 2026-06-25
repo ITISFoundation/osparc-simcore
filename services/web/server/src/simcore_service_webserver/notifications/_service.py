@@ -81,6 +81,7 @@ async def _create_email_addressing(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     reply_to: Contact | None = None,
+    bcc: list[Contact] | None = None,
 ) -> EmailAddressing:
     """Build email addressing (from/to) for all recipients.
 
@@ -101,6 +102,7 @@ async def _create_email_addressing(
     return EmailAddressing(
         to=to_contacts,
         reply_to=reply_to,
+        bcc=bcc,
     )
 
 
@@ -110,6 +112,7 @@ async def _create_email_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
+    bcc: list[Contact] | None = None,
 ) -> EmailMessage:
     """Build a single email message dict with all recipients.
 
@@ -120,6 +123,7 @@ async def _create_email_message(
         app,
         group_ids=group_ids,
         external_contacts=external_contacts,
+        bcc=bcc,
     )
 
     return EmailMessage(
@@ -168,6 +172,7 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
+    bcc: list[Contact] | None = None,
 ) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
         case Channel.email:
@@ -176,6 +181,7 @@ async def send_message(
                 group_ids=group_ids,
                 external_contacts=external_contacts,
                 content=content,
+                bcc=bcc,
             )
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)

@@ -22,12 +22,16 @@ async function runTutorial () {
 
   try {
     const page = await tutorial.beforeScript();
-    const studyData = await tutorial.openStudyLink();
+    const studyResp = await tutorial.openStudyLink();
+    const studyData = studyResp["data"];
+    const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    const vtkNodeId = workbenchData["nodeIds"][1];
+    const vtkNodeId = utils.getNodeIdFromServiceKey(studyData["workbench"], "3d-viewer-gpu");
+    if (!vtkNodeId) {
+      throw new Error('Could not find node with service key "3d-viewer-gpu"');
+    }
     await tutorial.waitForServices(
-      workbenchData["studyId"],
+      studyId,
       [vtkNodeId],
       startTimeout,
       false

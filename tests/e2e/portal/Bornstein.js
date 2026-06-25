@@ -22,12 +22,17 @@ async function runTutorial () {
 
   try {
     const page = await tutorial.beforeScript();
-    const studyData = await tutorial.openStudyLink();
+    const studyResp = await tutorial.openStudyLink();
+    const studyData = studyResp["data"];
+    const studyId = studyData["uuid"];
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    const bornsteinViewerId = utils.getNodeIdFromServiceKey(studyData["workbench"], "bornstein-viewer");
+    if (!bornsteinViewerId) {
+      throw new Error('Could not find node with service key "bornstein-viewer"');
+    }
     await tutorial.waitForServices(
-      workbenchData["studyId"],
-      [workbenchData["nodeIds"][0]],
+      studyId,
+      [bornsteinViewerId],
       startTimeout
     );
 
