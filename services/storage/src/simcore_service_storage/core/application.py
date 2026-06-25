@@ -49,13 +49,12 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def _configure_plugins_common(
+def _configure_app(
     app: FastAPI,
     app_lifespan: LifespanManager,
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
-    """Configure plugins shared by all service modes."""
     # Setup httpx client lifecycle
     configure_httpx_client(
         app_lifespan,
@@ -88,46 +87,25 @@ def _configure_plugins_common(
     if tracing_config.tracing_enabled:
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
 
+    match settings.STORAGE_SERVICE_MODE:
+        case ServiceMode.SERVER:
+            if settings.STORAGE_CLEANER_INTERVAL_S:
+                configure_dsm_cleaner(app_lifespan)
+            # Setup routes and exception handlers (outside the lifespan context)
 
-def _configure_plugins_server(
-    app: FastAPI,
-    app_lifespan: LifespanManager,
-    settings: ApplicationSettings,
-    tracing_config: TracingConfig,
-) -> None:
-    """Configure plugins for SERVER mode."""
-    # DSM cleaner (depends on DSM provider and Celery)
-    if settings.STORAGE_CLEANER_INTERVAL_S:
-        configure_dsm_cleaner(app_lifespan)
+            # Configure middleware (in reverse order due to how middleware is applied)
+            if settings.STORAGE_PROFILING:
+                app.add_middleware(ProfilerMiddleware)
 
+            if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
+                # middleware to time requests (ONLY for development)
+                app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
 
-def _configure_plugins_worker(
-    app: FastAPI,
-    app_lifespan: LifespanManager,
-    settings: ApplicationSettings,
-    tracing_config: TracingConfig,
-) -> None:
-    """Configure plugins for WORKER mode."""
-    # Worker-specific plugin configuration (if any)
-    pass
+            app.add_middleware(GZipMiddleware)
+            app.add_middleware(RequestCancellationMiddleware)
 
-
-_MODE_PLUGIN_STRATEGIES = {
-    ServiceMode.SERVER: _configure_plugins_server,
-    ServiceMode.WORKER: _configure_plugins_worker,
-}
-
-
-def _configure_plugins(
-    app: FastAPI,
-    app_lifespan: LifespanManager,
-    settings: ApplicationSettings,
-    tracing_config: TracingConfig,
-) -> None:
-    """Configure all application plugins based on service mode."""
-    _configure_plugins_common(app, app_lifespan, settings, tracing_config)
-    strategy = _MODE_PLUGIN_STRATEGIES[settings.STORAGE_SERVICE_MODE]
-    strategy(app, app_lifespan, settings, tracing_config)
+            setup_rest_api_routes(app, API_VTAG)
+            set_exception_handlers(app)
 
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
@@ -158,22 +136,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         app.state.settings = settings
         app.state.tracing_config = tracing_config
 
-        # Configure all plugins in dependency order
-        _configure_plugins(app, app_lifespan, settings, tracing_config)
+        _configure_app(app, app_lifespan, settings, tracing_config)
 
-        # Configure middleware (in reverse order due to how middleware is applied)
-        if settings.STORAGE_PROFILING:
-            app.add_middleware(ProfilerMiddleware)
-
-        if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
-            # middleware to time requests (ONLY for development)
-            app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
-
-        app.add_middleware(GZipMiddleware)
-        app.add_middleware(RequestCancellationMiddleware)
-
-    # Setup routes and exception handlers (outside the lifespan context)
-    setup_rest_api_routes(app, API_VTAG)
-    set_exception_handlers(app)
 
     return app
