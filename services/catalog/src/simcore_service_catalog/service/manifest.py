@@ -99,7 +99,7 @@ def _get_or_create_cache(
         cached_fn = cached_stampede(
             ttl=DIRECTOR_CACHING_TTL,
             lease=director_client.services_cache_lease,
-            namespace=f"{__name__}:{director_client._uuid}",  # noqa: SLF001
+            namespace=f"{__name__}:{director_client._uuid}",  # noqa: SLF001 # pylint: disable=protected-access
             key_builder=key_builder,
             skip_cache_func=lambda _result: not director_client.services_caching_enabled,
         )(populate)
