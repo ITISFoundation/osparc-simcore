@@ -16,6 +16,13 @@ def _setup_studies_access(app: web.Application, _settings: StudiesDispatcherSett
     # The handler manages login-required logic internally and always redirects to the
     # SPA error page — never returning a raw HTTP response. Middleware filtering is a
     # deferred concern for a future refactoring pass.
+    #
+    # The alias handles cases where TLD like sarvalidations.site are redirected to a study or template
+    # According to RFC 3986, the trailing slash in URLs with paths is part of the path and should be treated as a
+    # different resource.
+    # However, the trailing slash in case of a TLD is not a different resource, with and without slash are identical.
+    # To handle this special case, we add a route with a trailing slash to redirect to the same handler as the one
+    # without a trailing slash.
     app.router.add_routes(
         [
             web.get(r"/study/{id}", get_redirection_to_study_page, name="get_redirection_to_study_page"),
