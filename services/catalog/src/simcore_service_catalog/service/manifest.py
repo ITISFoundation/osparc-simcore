@@ -144,7 +144,10 @@ async def get_service(
         _populate_service,
         lambda f, *_args, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
     )
-    return await cached_fn(director_client, key=key, version=version)
+    return cast(
+        ServiceMetaDataPublished,
+        await cached_fn(director_client, key=key, version=version),
+    )
 
 
 async def _populate_services_map(
