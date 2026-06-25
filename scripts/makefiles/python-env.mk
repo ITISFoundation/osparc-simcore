@@ -48,7 +48,7 @@ test_python_version: ## Check Python version, throw error if compilation would f
 
 _check_venv_active:
 	# Checking whether virtual environment was activated
-	@python3 -c "import sys; assert sys.base_prefix\!=sys.prefix"
+	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 # ---------------------------------------------------------------------------
 # uv bootstrap
