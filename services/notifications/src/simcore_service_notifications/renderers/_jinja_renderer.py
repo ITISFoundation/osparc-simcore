@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from common_library.i18n import SupportedLocale, get_translator
+from common_library.i18n import DEFAULT_LOCALE, SupportedLocale, get_translator
 
 from ..models.content import Content, for_channel
 from ..models.template import Template, TemplatePreview
@@ -18,7 +18,7 @@ class JinjaRenderer(Renderer):
         template: Template,
         context: dict[str, Any],
         *,
-        locale: SupportedLocale = "en",
+        locale: SupportedLocale = DEFAULT_LOCALE,
     ) -> TemplatePreview[Content]:
         # NOTE: locale → .mo catalogue path: common_library/locale/<locale>/LC_MESSAGES/messages.mo
         # Compiled by the i18n extraction pipeline (see common_library.i18n). Unknown locales

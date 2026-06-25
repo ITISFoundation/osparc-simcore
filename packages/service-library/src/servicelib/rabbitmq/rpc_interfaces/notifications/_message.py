@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from common_library.i18n import SupportedLocale
+from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
 from models_library.celery import OwnerMetadata
 from models_library.notifications.rpc import (
     NOTIFICATIONS_RPC_NAMESPACE,
@@ -53,7 +53,7 @@ async def send_message_from_template(
     addressing: Addressing,
     template_ref: TemplateRef,
     context: dict[str, Any],
-    locale: SupportedLocale = "en",
+    locale: SupportedLocale = DEFAULT_LOCALE,
     owner_metadata: OwnerMetadata | None = None,
 ) -> SendMessageResponse:
     result = await rabbitmq_rpc_client.request(

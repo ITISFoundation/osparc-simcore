@@ -2,7 +2,7 @@ import logging
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from common_library.i18n import SupportedLocale
+from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -29,7 +29,7 @@ class TemplateService:
         product_name: ProductName,
         ref: TemplateRef,
         context: dict[str, Any],
-        locale: SupportedLocale = "en",
+        locale: SupportedLocale = DEFAULT_LOCALE,
     ) -> TemplatePreview:
         product_data = await self.product_repository.get_product(product_name)
         context_with_product = {**context, "product": asdict(product_data)}
