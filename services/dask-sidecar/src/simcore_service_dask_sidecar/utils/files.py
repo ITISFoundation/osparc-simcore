@@ -192,7 +192,7 @@ async def _run_plain_copy(
         (
             data_read,
             data_written,
-        ) = await asyncio.get_event_loop().run_in_executor(None, _file_chunk_streamer, src_fp, dst_fp)
+        ) = await asyncio.get_running_loop().run_in_executor(None, _file_chunk_streamer, src_fp, dst_fp)
         elapsed_time = time.perf_counter() - t
         total_data_written += data_written or 0
         await log_publishing_cb(
@@ -357,7 +357,7 @@ async def pull_file_from_remote(
             await log_publishing_cb(f"Uncompressing '{download_dst_path.name}'...", logging.INFO)
             logger.debug("%s is a zip file and will be now uncompressed", download_dst_path)
             with repro_zipfile.ReproducibleZipFile(download_dst_path, "r") as zip_obj:
-                await asyncio.get_event_loop().run_in_executor(None, zip_obj.extractall, dst_path.parents[0])
+                await asyncio.get_running_loop().run_in_executor(None, zip_obj.extractall, dst_path.parents[0])
             # finally remove the zip archive
             await log_publishing_cb(f"Uncompressing '{download_dst_path.name}' complete.", logging.INFO)
 
@@ -384,7 +384,7 @@ async def _push_file_to_http_link(file_to_upload: Path, dst_url: AnyUrl, log_pub
                     _file_progress_cb,
                     log_publishing_cb=log_publishing_cb,
                     text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
-                    main_loop=asyncio.get_event_loop(),
+                    main_loop=asyncio.get_running_loop(),
                 )
             }
         ),
@@ -446,7 +446,7 @@ async def push_file_to_remote(
             )
 
             with repro_zipfile.ReproducibleZipFile(archive_file_path, mode="w", compression=zipfile.ZIP_STORED) as zfp:
-                await asyncio.get_event_loop().run_in_executor(None, zfp.write, src_path, src_path.name)
+                await asyncio.get_running_loop().run_in_executor(None, zfp.write, src_path, src_path.name)
             logger.debug("%s created.", archive_file_path)
             assert archive_file_path.exists()  # nosec
             file_to_upload = archive_file_path

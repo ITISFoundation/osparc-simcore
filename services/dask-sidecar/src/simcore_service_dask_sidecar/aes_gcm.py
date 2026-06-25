@@ -3,8 +3,8 @@
 This module defines and implements ``simcore-aesgcm-stream-v1``, a streaming
 authenticated-encryption protocol for arbitrarily large files/objects. Plaintext is
 never fully materialised in memory: encryption and decryption operate on file-like
-binary objects (``BinaryIO``) and process data in fixed-size chunks, so memory usage is
-bounded by ``chunk_size``.
+binary objects (``BinaryIO``) and process data in fixed-size chunks. Decryption memory is
+bounded by ``chunk_size``; encryption keeps one chunk of lookahead, so its peak is ~2x ``chunk_size``.
 
 This docstring is the normative specification. Any independent implementation (e.g. a
 libsodium-based client) that follows it byte-for-byte interoperates with this one.
@@ -312,7 +312,8 @@ def encrypt_stream(
     """Encrypt ``src`` into ``dst`` using the streaming AES-256-GCM protocol.
 
     Reads plaintext from ``src`` in ``chunk_size`` blocks and writes a versioned
-    self-describing stream to ``dst``. Memory usage is bounded by ``chunk_size``.
+    self-describing stream to ``dst``. Because a one-chunk lookahead is used to flag the
+    final chunk, peak memory usage is bounded by ~2x ``chunk_size``.
 
     This call is synchronous/blocking; offload it to a thread when used in async code.
 
@@ -460,7 +461,7 @@ def encrypt_file(
     file_role: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
 ) -> None:
-    """Utility function to encrypt a file following the streaming AES-GCM protocol, given and key/context.
+    """Utility function to encrypt a file following the streaming AES-GCM protocol, given a key/context.
 
     Arguments:
         job_key -- a 32-byte key used for encryption; must be the same as the one used for decryption
