@@ -33,28 +33,12 @@ from ..services import configure_smtp_config_check
 from .settings import ApplicationSettings
 
 
-def _configure_plugins_common(
+def _configure_plugins(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
-    """Configure plugins shared by all service modes."""
-    configure_postgres_database(
-        app_lifespan,
-        settings=settings.NOTIFICATIONS_POSTGRES,
-        tracing_config=tracing_config,
-    )
-    configure_postgres_liveness(app_lifespan)
-    configure_smtp_config_check(app_lifespan)
-
-    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
-    configure_redis_client(
-        app_lifespan,
-        settings=settings.NOTIFICATIONS_CELERY.CELERY_REDIS_RESULT_BACKEND,
-    )
-    configure_task_manager(app_lifespan)
-
     if settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
 
@@ -65,45 +49,28 @@ def _configure_plugins_common(
             tracing_config=tracing_config,
         )
 
+    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
 
-def _configure_plugins_server(
-    app: FastAPI,
-    app_lifespan: LifespanManager[FastAPI],
-    settings: ApplicationSettings,
-    tracing_config: TracingConfig,
-) -> None:
-    """Configure plugins for SERVER mode."""
-    configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
-    configure_rpc_api(app_lifespan)
+    configure_redis_client(
+        app_lifespan,
+        settings=settings.NOTIFICATIONS_CELERY.CELERY_REDIS_RESULT_BACKEND,
+    )
+    configure_task_manager(app_lifespan)
 
+    match settings.NOTIFICATIONS_SERVICE_MODE:
+        case ServiceMode.SERVER:
+            configure_postgres_database(
+                app_lifespan,
+                settings=settings.NOTIFICATIONS_POSTGRES,
+                tracing_config=tracing_config,
+            )
+            configure_postgres_liveness(app_lifespan)
 
-def _configure_plugins_worker(
-    app: FastAPI,
-    app_lifespan: LifespanManager[FastAPI],
-    settings: ApplicationSettings,
-    tracing_config: TracingConfig,
-) -> None:
-    """Configure plugins for WORKER mode."""
-    # Worker-specific plugin configuration (if any)
-    pass
+            configure_smtp_config_check(app_lifespan)
 
-
-_MODE_PLUGIN_STRATEGIES = {
-    ServiceMode.SERVER: _configure_plugins_server,
-    ServiceMode.WORKER: _configure_plugins_worker,
-}
-
-
-def _configure_plugins(
-    app: FastAPI,
-    app_lifespan: LifespanManager[FastAPI],
-    settings: ApplicationSettings,
-    tracing_config: TracingConfig,
-) -> None:
-    """Configure application plugins based on service mode."""
-    _configure_plugins_common(app, app_lifespan, settings, tracing_config)
-    strategy = _MODE_PLUGIN_STRATEGIES[settings.NOTIFICATIONS_SERVICE_MODE]
-    strategy(app, app_lifespan, settings, tracing_config)
+            configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
+            configure_rpc_api(app_lifespan)
+            configure_rest_api(app)
 
 
 def create_app(
@@ -143,7 +110,5 @@ def create_app(
         app.state.tracing_config = tracing_config
 
         _configure_plugins(app, app_lifespan, settings, tracing_config)
-
-    configure_rest_api(app)
 
     return app
