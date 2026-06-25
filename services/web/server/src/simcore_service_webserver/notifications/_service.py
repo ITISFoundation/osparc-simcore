@@ -1,7 +1,7 @@
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from aiohttp import web
-from common_library.i18n import DEFAULT_LOCALE
+from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
@@ -212,18 +212,18 @@ async def send_message_from_template(
     reply_to: Contact | None = None,
     template_name: str,
     context: dict[str, Any],
-    locale: str | None = None,
+    locale: SupportedLocale | None = None,
 ) -> tuple[TaskUUID | GroupUUID, TaskName]:
     # Resolve recipient locale: explicit argument > DB-stored user preference > EN.
     # For multi-recipient (group_ids) we fall back to EN because each recipient
     # may have a different preference; per-recipient rendering is a future enhancement.
-    resolved_locale: str
+    resolved_locale: SupportedLocale
     if locale is not None:
         resolved_locale = locale
     elif user_id is not None and not group_ids:
         resolved_locale = await get_user_locale(app, user_id=user_id, product_name=product_name)
     else:
-        resolved_locale = DEFAULT_LOCALE
+        resolved_locale = cast(SupportedLocale, DEFAULT_LOCALE)
 
     match channel:
         case Channel.email:

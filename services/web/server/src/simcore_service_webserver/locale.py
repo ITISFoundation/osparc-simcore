@@ -14,10 +14,10 @@ is still written (as DEFAULT_LOCALE) so downstream code never needs to guard
 against a missing ``RQ_LOCALE_KEY``.
 """
 
-from typing import Final
+from typing import Final, cast
 
 from aiohttp import web
-from common_library.i18n import DEFAULT_LOCALE, normalize_locale
+from common_library.i18n import DEFAULT_LOCALE, SupportedLocale, normalize_locale
 from servicelib.aiohttp.typing_extension import Handler
 
 from .application_keys import APP_SETTINGS_APPKEY
@@ -53,18 +53,21 @@ async def get_user_locale(
     *,
     user_id: int,
     product_name: str,
-) -> str:
+) -> SupportedLocale:
     """Look up the user's persisted ``LocaleUserPreference`` and return the locale string.
 
     Falls back to ``DEFAULT_LOCALE`` when no preference has been saved.
     Intended for use in background / non-request code (e.g. email dispatch).
     """
-    pref = await get_frontend_user_preference(
-        app,
-        user_id=user_id,
-        product_name=product_name,
-        preference_class=LocaleUserPreference,
+    pref = cast(
+        LocaleUserPreference | None,
+        await get_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            preference_class=LocaleUserPreference,
+        ),
     )
     if pref is not None and pref.value:
-        return str(pref.value)
-    return DEFAULT_LOCALE
+        return pref.value
+    return cast(SupportedLocale, DEFAULT_LOCALE)
