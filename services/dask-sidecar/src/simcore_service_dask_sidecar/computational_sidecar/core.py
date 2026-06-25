@@ -116,10 +116,10 @@ class ComputationalSidecar:
                                 TransferEncryptionSettings(
                                     job_key=self.encryption.job_key,
                                     job_id=self.encryption.job_id,
-                                    file_id=input_key,
+                                    file_id=self.encryption.input_port_to_file_id[input_key],
                                     file_role="input",
                                 )
-                                if self.encryption
+                                if self.encryption and input_key in self.encryption.input_port_to_file_id
                                 else None
                             ),
                         ),

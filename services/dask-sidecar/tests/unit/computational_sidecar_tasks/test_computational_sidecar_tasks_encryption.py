@@ -88,20 +88,26 @@ async def test_run_computational_sidecar_with_encryption(
     log_rabbit_client_parser: mock.AsyncMock,
     dask_client: distributed.Client,
 ):
+    input_port_key = "input_file_1"
+    output_port_key = "output_file_1"
+    # the client encrypts with its own file_id, which deliberately differs from the port key
+    client_input_file_id = "client-side-input-id-1"
+
     job_encryption_context = JobEncryptionContext(
         job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         job_id="pytest-encryption-job",
+        input_port_to_file_id={input_port_key: client_input_file_id},
     )
     job_key = job_encryption_context.job_key.get_secret_value()
     job_id = job_encryption_context.job_id
 
-    input_port_key = "input_file_1"
-    output_port_key = "output_file_1"
     plaintext = b"this is the very secret payload that must travel encrypted\nline 2\n"
     computation_marker = "this was added during computation"
     expected_plaintext_output = plaintext + f"{computation_marker}\n".encode()
 
-    # 1. upload an encrypted input file on S3 (as the client would do)
+    # 1. upload an encrypted input file on S3 (as the client would do).
+    #    NOTE: the client encrypts with its own file_id (which may differ from the port key);
+    #    the sidecar uses the input_port_to_file_id mapping to derive the matching key.
     encrypted_input_url = s3_remote_file_url(file_path="encrypted_input.dat")
     s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     with fsspec.open(f"{encrypted_input_url}", mode="wb", **s3_storage_kwargs) as fp:
@@ -110,7 +116,7 @@ async def test_run_computational_sidecar_with_encryption(
                 plaintext,
                 job_key=job_key,
                 job_id=job_id,
-                file_id=input_port_key,
+                file_id=client_input_file_id,
                 file_role="input",
             )
         )
@@ -223,11 +229,12 @@ async def test_run_computational_sidecar_with_wrong_encryption_context_raises(
     dask_client: distributed.Client,
 ):
     # the context the task will decrypt the input with
+    input_port_key = "input_file_1"
     job_encryption_context = JobEncryptionContext(
         job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         job_id="pytest-encryption-job",
+        input_port_to_file_id={input_port_key: input_port_key},
     )
-    input_port_key = "input_file_1"
     plaintext = b"this is the very secret payload that must travel encrypted\n"
 
     # the context the client encrypts the input with: exactly ONE field is wrong, so that
