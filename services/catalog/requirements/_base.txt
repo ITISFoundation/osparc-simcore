@@ -98,7 +98,7 @@ h11==0.16.0
     # via
     #   httpcore
     #   uvicorn
-h2==4.2.0
+h2==4.3.0
     # via httpx
 hpack==4.1.0
     # via h2
@@ -302,7 +302,7 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.29
+python-multipart==0.0.32
     # via fastapi
 pyyaml==6.0.3
     # via
@@ -347,7 +347,7 @@ sniffio==1.3.1
     # via
     #   anyio
     #   asgi-lifespan
-sqlalchemy==1.4.54
+sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -389,6 +389,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
+    #   sqlalchemy
     #   typer
     #   typing-inspection
 typing-inspection==0.4.1
