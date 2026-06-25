@@ -11,7 +11,9 @@ import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
+from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from tenacity import retry_if_exception, stop_after_attempt
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -24,6 +26,15 @@ from .helpers.typing_env import EnvVarsDict
 _TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
 
 
+def _is_server_connection_drop(error: sa_exc.OperationalError) -> bool:
+    error_msg = str(error).lower()
+    return "server closed the connection unexpectedly" in error_msg
+
+
+def _is_retryable_operational_error(error: BaseException) -> bool:
+    return isinstance(error, sa_exc.OperationalError) and _is_server_connection_drop(error)
+
+
 def _execute_queries(
     postgres_engine: sa.engine.Engine,
     sql_statements: list[str],
@@ -31,20 +42,30 @@ def _execute_queries(
     ignore_errors: bool = False,
 ) -> None:
     """runs the queries in the list in order"""
-    with postgres_engine.connect() as connection:
-        for statement in sql_statements:
-            try:
-                with connection.begin():
-                    connection.execute(sa.text(statement))
-
-            except Exception as e:  # pylint: disable=broad-except
-                if ignore_errors:
-                    # when running tests initially the TEMPLATE_DB_TO_RESTORE does not exist and will cause an error
-                    # which can safely be ignored. The debug message is here to catch future errors and
-                    # avoid time wasting
-                    print(f"SQL error which can be ignored: {e}")
-                else:
-                    raise
+    for statement in sql_statements:
+        try:
+            for attempt in tenacity.Retrying(
+                retry=retry_if_exception(_is_retryable_operational_error),
+                stop=stop_after_attempt(2),
+                reraise=True,
+            ):
+                with attempt:
+                    try:
+                        with postgres_engine.connect() as connection, connection.begin():
+                            connection.execute(sa.text(statement))
+                    except sa_exc.OperationalError as e:
+                        if _is_server_connection_drop(e):
+                            # Recreate stale pooled connections before the retry.
+                            postgres_engine.dispose()
+                        raise
+        except Exception as e:  # pylint: disable=broad-except
+            if ignore_errors:
+                # when running tests initially the TEMPLATE_DB_TO_RESTORE does not exist and will cause an error
+                # which can safely be ignored. The debug message is here to catch future errors and
+                # avoid time wasting
+                print(f"SQL error which can be ignored: {e}")
+                continue
+            raise
 
 
 def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine) -> None:
@@ -72,6 +93,7 @@ def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.en
 
 def _drop_template_db(postgres_engine: sa.engine.Engine) -> None:
     # remove the template db
+    postgres_engine.dispose()
     queries = [
         # drop template database
         f"ALTER DATABASE {_TEMPLATE_DB_TO_RESTORE} is_template false;",
@@ -145,7 +167,7 @@ def postgres_dsn(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict) -
         "password": env_vars_for_docker_compose["POSTGRES_PASSWORD"],
         "database": env_vars_for_docker_compose["POSTGRES_DB"],
         "host": get_localhost_ip(),
-        "port": get_service_published_port("postgres", env_vars_for_docker_compose["POSTGRES_PORT"]),
+        "port": get_service_published_port("postgres", int(env_vars_for_docker_compose["POSTGRES_PORT"])),
     }
 
     return pg_config
