@@ -33,6 +33,7 @@ async def _get_node_from_db(project_id: str, node_uuid: str, connection: AsyncCo
             (comp_tasks.c.node_id == node_uuid) & (comp_tasks.c.project_id == project_id),
         )
     )
+    assert rows_count is not None  # nosec
     if rows_count > 1:
         _logger.error("the node id %s is not unique", node_uuid)
     result = await connection.execute(

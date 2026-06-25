@@ -385,7 +385,7 @@ python-dotenv==1.2.1
     #   uvicorn
 python-engineio==4.12.3
     # via python-socketio
-python-multipart==0.0.29
+python-multipart==0.0.32
     # via fastapi
 python-socketio==5.14.3
     # via -r requirements/_base.in
@@ -442,7 +442,7 @@ sortedcontainers==2.4.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-sqlalchemy==1.4.54
+sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -503,6 +503,7 @@ typing-extensions==4.15.0
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
+    #   sqlalchemy
     #   typer
     #   typing-inspection
 typing-inspection==0.4.2

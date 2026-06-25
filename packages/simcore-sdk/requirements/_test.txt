@@ -313,14 +313,12 @@ six==1.17.0
     #   -c requirements/_base.txt
     #   python-dateutil
     #   rfc3339-validator
-sqlalchemy==1.4.54
+sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a38
-    # via sqlalchemy
 sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
@@ -346,7 +344,7 @@ typing-extensions==4.15.0
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   sqlalchemy2-stubs
+    #   sqlalchemy
     #   typing-inspection
 typing-inspection==0.4.2
     # via

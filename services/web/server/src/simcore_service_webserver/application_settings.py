@@ -559,7 +559,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def public_dict(self) -> dict[str, Any]:
         """Config publicly available"""
 
-        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT
+        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY
         config.update(
             self._export_by_alias(
                 include={
