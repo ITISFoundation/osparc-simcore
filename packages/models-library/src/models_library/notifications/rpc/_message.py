@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from common_library.i18n import SupportedLocale
+from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
@@ -78,10 +78,9 @@ class SendMessageFromTemplateRequest(BaseModel):
     locale: Annotated[
         SupportedLocale,
         Field(
-            default="en",
             description="BCP-47-style locale used to render translated template content, e.g. 'es_ES', 'zh_CN'.",
         ),
-    ] = "en"
+    ] = DEFAULT_LOCALE
     owner_metadata: OwnerMetadata | None = None
 
     @staticmethod

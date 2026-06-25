@@ -22,8 +22,6 @@ from typing import Final, Literal
 
 _logger = logging.getLogger(__name__)
 
-DEFAULT_LOCALE: Final[str] = "en"
-
 # Locales with compiled .mo catalogues shipped in this package.
 # Extend this tuple as new languages are added to the extraction pipeline.
 # NOTE: "en" has no .mo catalog — prose-as-key means the msgid IS the English
@@ -33,6 +31,9 @@ type SupportedLocale = Literal["en", "es_ES", "zh_CN"]
 _DOMAIN: Final[str] = "messages"
 _LOCALE_DIR: Final[str] = str(importlib.resources.files("common_library") / "locale")
 assert Path(_LOCALE_DIR).is_dir(), f"locale directory not found: {_LOCALE_DIR}"  # nosec
+
+DEFAULT_LOCALE: Final[SupportedLocale] = "en"
+
 
 # Module-level cache: locale string → loaded translator.
 # Access is single-threaded (asyncio event loop), so a plain dict is safe.
