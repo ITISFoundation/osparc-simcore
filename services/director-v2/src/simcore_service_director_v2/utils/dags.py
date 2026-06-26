@@ -80,15 +80,6 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
 
 
 def compute_dag_computational_fingerprint(dag: nx.DiGraph) -> str:
-    """Returns a deterministic hash of the computationally-relevant projection of a DAG.
-
-    The projection captures, per node, the service ``key``/``version``, ``inputs`` and
-    ``outputs``. Since ``inputs`` embed the port-links to upstream nodes, the topology is
-    captured implicitly.
-
-    Non-computational metadata (e.g. node label/name, progress, boot options) is
-    intentionally ignored so that patching such fields does not invalidate the pipeline.
-    """
     projection = {
         node_id: {
             "key": data.get("key"),
@@ -105,11 +96,11 @@ def compute_dag_computational_fingerprint(dag: nx.DiGraph) -> str:
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
     # if the node state is in the modified state already
-    if node["state"] in [
+    if node["state"] in {
         None,
         RunningState.ABORTED,
         RunningState.FAILED,
-    ]:
+    }:
         return True
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
