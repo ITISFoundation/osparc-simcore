@@ -38,6 +38,7 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.run_hash,
     projects_nodes.c.state,
     projects_nodes.c.boot_options,
+    projects_nodes.c.ui,
 ]
 
 # Mapping from Node model alias (camelCase) to DB column name (snake_case)
@@ -138,9 +139,9 @@ async def get_by_project(
         stream = await conn.stream(query)
         assert stream  # nosec
 
-        result: list[tuple[NodeID, Node]] = []
-        async for row in stream:
-            result.append((NodeID(row.node_id), Node.model_validate(row, from_attributes=True)))
+        result: list[tuple[NodeID, Node]] = [
+            (NodeID(row.node_id), Node.model_validate(row, from_attributes=True)) async for row in stream
+        ]
 
         return result
 
