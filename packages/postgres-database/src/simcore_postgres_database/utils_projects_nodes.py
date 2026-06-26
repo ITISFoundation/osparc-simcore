@@ -61,6 +61,7 @@ class ProjectNodeCreate(BaseModel):
     run_hash: str | None = None
     state: dict[str, Any] | None = None
     boot_options: dict[str, Any] | None = None
+    ui: dict[str, Any] | None = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
@@ -128,7 +129,8 @@ def create_workbench_subquery(project_id: str) -> Subquery:
     )
 
     return (
-        sa.select(
+        sa
+        .select(
             projects_nodes.c.project_uuid,
             sa.func.json_object_agg(projects_nodes.c.node_id, workbench_obj).label("workbench"),
         )
@@ -171,7 +173,8 @@ class ProjectNodesRepo:
         ]
 
         insert_stmt = (
-            projects_nodes.insert()
+            projects_nodes
+            .insert()
             .values(values)
             .returning(*[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid])
         )
@@ -202,9 +205,9 @@ class ProjectNodesRepo:
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
         """
-        list_stmt = sqlalchemy.select(
-            *[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid]
-        ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
+        list_stmt = sqlalchemy.select(*[
+            c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid
+        ]).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
         result = await connection.execute(list_stmt)
         assert result  # nosec
         rows = result.mappings().all()
@@ -239,7 +242,8 @@ class ProjectNodesRepo:
             ProjectsNodesNodeNotFound: _description_
         """
         update_stmt = (
-            projects_nodes.update()
+            projects_nodes
+            .update()
             .values(**values)
             .where(
                 (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
@@ -273,7 +277,8 @@ class ProjectNodesRepo:
         NOTE: Do not use this in an asyncio.gather call as this will fail!
         """
         result = await connection.execute(
-            sqlalchemy.select(
+            sqlalchemy
+            .select(
                 projects_node_to_pricing_unit.c.pricing_plan_id,
                 projects_node_to_pricing_unit.c.pricing_unit_id,
             )
