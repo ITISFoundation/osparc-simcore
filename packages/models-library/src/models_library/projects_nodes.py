@@ -33,7 +33,7 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .projects_nodes_layout import Position
+from .projects_nodes_layout import NodeUI, Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
@@ -347,6 +347,13 @@ class Node(BaseModel):
                 "The user selection should be stored here, and it will overwrite the "
                 "services's defaults."
             ),
+        ),
+    ] = None
+
+    ui: Annotated[
+        NodeUI | None,
+        Field(
+            description="Front-end per-node UI state (e.g. position, marker)",
         ),
     ] = None
 

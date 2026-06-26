@@ -21,19 +21,11 @@ from pydantic.config import JsonDict
 from pydantic_extra_types.color import Color
 
 from ..projects_nodes_io import NodeID, NodeIDStr
+from ..projects_nodes_layout import NodeUI
 from ..utils.common_validators import empty_str_to_none_pre_validator
 from ._base import OutputSchema
-from .projects_nodes_ui import MarkerUI, PositionUI
 
-
-class WorkbenchUI(BaseModel):
-    position: Annotated[
-        PositionUI,
-        Field(description="The node position in the workbench"),
-    ]
-    marker: MarkerUI | None = None
-
-    model_config = ConfigDict(extra="forbid")
+WorkbenchUI = NodeUI
 
 
 class SlideshowUI(TypedDict):

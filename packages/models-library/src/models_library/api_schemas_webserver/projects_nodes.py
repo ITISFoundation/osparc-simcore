@@ -13,6 +13,7 @@ from ..products import ProductName
 from ..projects import ProjectID
 from ..projects_nodes import InputID, InputsDict, PartialNode, UnitStr
 from ..projects_nodes_io import NodeID
+from ..projects_nodes_layout import NodeUI
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_base import ServiceKeyVersion
 from ..services_enums import ServiceState
@@ -66,6 +67,7 @@ class NodePatch(InputSchemaWithoutCamelCase):
     ] = None
     boot_options: Annotated[BootOptions | None, Field(alias="bootOptions")] = None
     outputs: dict[str, Any] | None = None  # NOTE: it is used by frontend for File Picker
+    ui: NodeUI | None = None
 
     def to_domain_model(self) -> PartialNode:
         data = self.model_dump(
