@@ -2,7 +2,6 @@ import logging
 from uuid import UUID
 
 from aiohttp import web
-from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
@@ -56,6 +55,9 @@ async def create_or_update_pipeline(
     product_name: ProductName,
     product_api_base_url: str,
 ) -> DataType:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
 
@@ -75,22 +77,11 @@ async def create_or_update_pipeline(
         ),
     }
 
-    try:
-        computation_task_out, _ = await request_director_v2(
-            app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
-        )
-        assert isinstance(computation_task_out, dict)  # nosec
-        return computation_task_out
-
-    except DirectorV2ServiceError as exc:
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                f"Could not create pipeline from project {project_id}",
-                error=exc,
-                error_context={**body, "backend_url": backend_url},
-            )
-        )
-        raise
+    computation_task_out, _ = await request_director_v2(
+        app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
+    )
+    assert isinstance(computation_task_out, dict)  # nosec
+    return computation_task_out
 
 
 @log_decorator(logger=_logger)

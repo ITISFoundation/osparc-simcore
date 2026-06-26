@@ -117,7 +117,6 @@ from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
-from ..director_v2.exceptions import DirectorV2ServiceError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
 from ..products import products_web
@@ -1154,10 +1153,9 @@ async def delete_project_node(
 
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
-    with suppress(DirectorV2ServiceError):
-        await director_v2_service.create_or_update_pipeline(
-            request.app, user_id, project_uuid, product_name, product_api_base_url
-        )
+    await director_v2_service.create_or_update_pipeline(
+        request.app, user_id, project_uuid, product_name, product_api_base_url
+    )
     await dynamic_scheduler_service.update_projects_networks(request.app, project_id=project_uuid)
 
 
@@ -1266,14 +1264,13 @@ async def patch_project_node(
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
-    with suppress(DirectorV2ServiceError):
-        await director_v2_service.create_or_update_pipeline(
-            app,
-            user_id,
-            project_id,
-            product_name=product_name,
-            product_api_base_url=product_api_base_url,
-        )
+    await director_v2_service.create_or_update_pipeline(
+        app,
+        user_id,
+        project_id,
+        product_name=product_name,
+        product_api_base_url=product_api_base_url,
+    )
     if _node_patch_exclude_unset.get("label"):
         await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 
