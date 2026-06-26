@@ -102,6 +102,37 @@ def test_compute_dag_computational_fingerprint_ignores_non_computational_metadat
     assert compute_dag_computational_fingerprint(dag) != baseline
 
 
+def test_compute_dag_computational_fingerprint_is_invariant_to_internal_key_order():
+    dag = nx.DiGraph()
+    dag.add_node(
+        "node_1",
+        name="sleeper",
+        key="simcore/services/comp/sleeper",
+        version="1.0.0",
+        inputs={"in_1": 4, "in_2": {"a": 1, "b": 2}},
+        run_hash=None,
+        outputs={"out_1": 2, "out_2": {"x": 3, "y": 4}},
+        state=RunningState.SUCCESS,
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    baseline = compute_dag_computational_fingerprint(dag)
+
+    reordered_dag = nx.DiGraph()
+    reordered_dag.add_node(
+        "node_1",
+        name="sleeper",
+        key="simcore/services/comp/sleeper",
+        version="1.0.0",
+        inputs={"in_2": {"b": 2, "a": 1}, "in_1": 4},
+        run_hash=None,
+        outputs={"out_2": {"y": 4, "x": 3}, "out_1": 2},
+        state=RunningState.SUCCESS,
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+
+    assert compute_dag_computational_fingerprint(reordered_dag) == baseline
+
+
 def test_computational_fingerprint_matches_between_workbench_and_tasks(
     fake_workbench: NodesDict,
 ):
