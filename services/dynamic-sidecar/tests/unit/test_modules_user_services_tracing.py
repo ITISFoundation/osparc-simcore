@@ -9,9 +9,11 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import yaml
 from aiodocker import DockerError
-from fastapi import status
-from simcore_service_dynamic_sidecar.core.settings import UserServicesTracingSettings
+from fastapi import FastAPI, status
+from settings_library.tracing import TracingSettings
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings, UserServicesTracingSettings
 from simcore_service_dynamic_sidecar.modules import user_services_tracing
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 pytest_simcore_core_services_selection: list[str] = []
 pytest_simcore_ops_services_selection: list[str] = []
@@ -22,13 +24,13 @@ def _docker_error(status_code: int) -> DockerError:
 
 
 @pytest.fixture
-def platform_tracing_settings_stub() -> Mock:
-    return Mock(
-        TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION="0.144.0",
-        TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT="http://platform-collector.testing",
-        TRACING_OPENTELEMETRY_COLLECTOR_PORT=4318,
-        TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=1.0,
-    )
+def platform_tracing_settings_stub() -> TracingSettings:
+    stub = Mock(spec=TracingSettings)
+    stub.TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION = "0.144.0"
+    stub.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT = "http://platform-collector.testing"
+    stub.TRACING_OPENTELEMETRY_COLLECTOR_PORT = 4318
+    stub.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY = 1.0
+    return stub
 
 
 @pytest.fixture
@@ -38,31 +40,32 @@ def user_services_tracing_settings() -> UserServicesTracingSettings:
 
 @pytest.fixture
 def settings_stub(
-    platform_tracing_settings_stub: Mock,
+    platform_tracing_settings_stub: TracingSettings,
     user_services_tracing_settings: UserServicesTracingSettings,
-) -> Mock:
-    return Mock(
-        DYNAMIC_SIDECAR_COMPOSE_NAMESPACE="dy-sidecar_test_namespace",
-        DY_SIDECAR_RUN_ID="run-id-123",
-        DY_SIDECAR_NODE_ID="node-id-456",
-        DYNAMIC_SIDECAR_TRACING=platform_tracing_settings_stub,
-        DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG=user_services_tracing_settings,
-    )
+) -> ApplicationSettings:
+    stub = Mock(spec=ApplicationSettings)
+    stub.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "dy-sidecar_test_namespace"
+    stub.DY_SIDECAR_RUN_ID = "run-id-123"
+    stub.DY_SIDECAR_NODE_ID = "node-id-456"
+    stub.DYNAMIC_SIDECAR_TRACING = platform_tracing_settings_stub
+    stub.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG = user_services_tracing_settings
+    return stub
 
 
 @pytest.fixture
-def mounted_volumes_stub(tmp_path: Path) -> Mock:
+def mounted_volumes_stub(tmp_path: Path) -> MountedVolumes:
     traces_path = tmp_path / "traces"
     traces_path.mkdir()
-    return Mock(
-        disk_traces_path=traces_path,
-        get_traces_docker_volume=AsyncMock(return_value=f"{traces_path}:/traces"),
-    )
+    stub = Mock(spec=MountedVolumes)
+    stub.disk_traces_path = traces_path
+    stub.get_traces_docker_volume = AsyncMock(return_value=f"{traces_path}:/traces")
+    return stub
 
 
 @pytest.fixture
-def app_stub(settings_stub: Mock, mounted_volumes_stub: Mock) -> Mock:
-    app = Mock()
+def app_stub(settings_stub: ApplicationSettings, mounted_volumes_stub: MountedVolumes) -> FastAPI:
+    app = Mock(spec=FastAPI)
+    app.state = Mock()
     app.state.settings = settings_stub
     app.state.mounted_volumes = mounted_volumes_stub
     return app
@@ -122,7 +125,7 @@ def test_platform_otlp_traces_endpoint(platform_tracing_settings_stub: Mock):
 
 
 def test_build_shipper_container_config(
-    settings_stub: Mock,
+    settings_stub: ApplicationSettings,
     user_services_tracing_settings: UserServicesTracingSettings,
     platform_tracing_settings_stub: Mock,
 ):
@@ -160,7 +163,7 @@ def test_build_shipper_container_config(
 #
 
 
-async def test_create_collector_runs_container(app_stub: Mock, docker_client_stub: AsyncMock):
+async def test_create_collector_runs_container(app_stub: FastAPI, docker_client_stub: AsyncMock):
     await user_services_tracing.create_user_services_trace_collector(app_stub)
 
     docker_client_stub.containers.run.assert_awaited_once()
@@ -168,14 +171,14 @@ async def test_create_collector_runs_container(app_stub: Mock, docker_client_stu
     assert kwargs["name"] == user_services_tracing._shipper_container_name(app_stub.state.settings)  # noqa: SLF001
 
 
-async def test_create_collector_is_idempotent_on_conflict(app_stub: Mock, docker_client_stub: AsyncMock):
+async def test_create_collector_is_idempotent_on_conflict(app_stub: FastAPI, docker_client_stub: AsyncMock):
     docker_client_stub.containers.run.side_effect = _docker_error(status.HTTP_409_CONFLICT)
 
     # must NOT raise: the shipper already exists
     await user_services_tracing.create_user_services_trace_collector(app_stub)
 
 
-async def test_create_collector_reraises_unexpected_errors(app_stub: Mock, docker_client_stub: AsyncMock):
+async def test_create_collector_reraises_unexpected_errors(app_stub: FastAPI, docker_client_stub: AsyncMock):
     docker_client_stub.containers.run.side_effect = _docker_error(status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     with pytest.raises(DockerError):
@@ -187,14 +190,14 @@ async def test_create_collector_reraises_unexpected_errors(app_stub: Mock, docke
 #
 
 
-async def test_remove_collector_is_idempotent_when_absent(app_stub: Mock, docker_client_stub: AsyncMock):
+async def test_remove_collector_is_idempotent_when_absent(app_stub: FastAPI, docker_client_stub: AsyncMock):
     docker_client_stub.containers.get.side_effect = _docker_error(status.HTTP_404_NOT_FOUND)
 
     # must NOT raise when the container is already gone
     await user_services_tracing.remove_user_services_trace_collector(app_stub)
 
 
-async def test_remove_collector_stops_and_deletes(app_stub: Mock, docker_client_stub: AsyncMock):
+async def test_remove_collector_stops_and_deletes(app_stub: FastAPI, docker_client_stub: AsyncMock):
     container = AsyncMock()
     docker_client_stub.containers.get.return_value = container
 
@@ -213,7 +216,7 @@ async def test_remove_collector_stops_and_deletes(app_stub: Mock, docker_client_
 @pytest.mark.parametrize("opt_in", [True, False])
 def test_is_user_services_tracing_enabled(
     monkeypatch: pytest.MonkeyPatch,
-    app_stub: Mock,
+    app_stub: FastAPI,
     tracing_enabled: bool,
     opt_in: bool,
 ):
