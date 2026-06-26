@@ -23,7 +23,7 @@
   "locales": [
     "en_US",
     "es_ES",
-    "zh_CN"
+    "zh"
   ],
   "writeAllTranslations": true,
   "applications": [
