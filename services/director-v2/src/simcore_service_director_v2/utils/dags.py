@@ -1,20 +1,18 @@
 import contextlib
 import datetime
-import hashlib
 import logging
+from collections.abc import Callable, Coroutine
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 import arrow
 import networkx as nx
-from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.nodes import compute_node_hash
 
 from ..models.comp_tasks import CompTaskAtDB
@@ -79,18 +77,35 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     return dag_graph
 
 
-def compute_dag_computational_fingerprint(dag: nx.DiGraph) -> str:
-    projection = {
-        node_id: {
-            "key": data.get("key"),
-            "version": data.get("version"),
-            "inputs": jsonable_encoder(data.get("inputs")),
-            "outputs": jsonable_encoder(data.get("outputs")),
-        }
+def _create_node_io_payload_cb(
+    graph_data: nx.classes.reportviews.NodeDataView,
+) -> Callable[[NodeID], Coroutine[Any, Any, dict[str, Any]]]:
+    """Builds the callback used by ``compute_node_hash`` to resolve a node's
+    (and its port-linked predecessors') inputs/outputs from the DAG."""
+
+    async def _get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
+        result: dict[str, Any] = graph_data[f"{node_id}"]
+        return result
+
+    return _get_node_io_payload_cb
+
+
+async def compute_dag_computational_hashes(dag: nx.DiGraph) -> dict[NodeIDStr, str]:
+    """Computes the run hash of every computational node in the DAG.
+
+    Uses ``compute_node_hash``, which resolves port links to the actual upstream
+    output values. This ensures that a change in a linked node's value propagates
+    into the dependent node's hash (a raw ``inputs`` projection would miss it, since
+    a port link only stores a reference to the upstream node/port).
+    """
+    graph_data: nx.classes.reportviews.NodeDataView = dag.nodes.data()
+    get_node_io_payload_cb = _create_node_io_payload_cb(graph_data)
+
+    return {
+        node_id: await compute_node_hash(cast(NodeID, node_id), get_node_io_payload_cb)
         for node_id, data in dag.nodes.data()
+        if data.get("node_class") is NodeClass.COMPUTATIONAL
     }
-    block_string = json_dumps(projection, sort_keys=True).encode("utf-8")
-    return hashlib.sha256(block_string).hexdigest()
 
 
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
@@ -110,11 +125,7 @@ async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDa
             return True
 
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    async def get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
-        result: dict[str, Any] = graph_data[f"{node_id}"]
-        return result
-
-    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
+    computed_hash = await compute_node_hash(node_id, _create_node_io_payload_cb(graph_data))
     return bool(computed_hash != node["run_hash"])
 
 

@@ -13,7 +13,7 @@ from uuid import uuid4
 import networkx as nx
 import pytest
 from models_library.projects import NodesDict
-from models_library.projects_nodes import NodeState
+from models_library.projects_nodes import Node, NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
@@ -23,8 +23,9 @@ from simcore_service_director_v2.models.comp_tasks import (
     Image,
     NodeSchema,
 )
+from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dags import (
-    compute_dag_computational_fingerprint,
+    compute_dag_computational_hashes,
     compute_pipeline_details,
     create_complete_dag,
     create_complete_dag_from_tasks,
@@ -58,35 +59,35 @@ def _make_fingerprint_dag() -> nx.DiGraph:
     return dag
 
 
-def test_compute_dag_computational_fingerprint_ignores_non_computational_metadata():
+async def test_compute_dag_computational_hashes_ignores_non_computational_metadata():
     dag = _make_fingerprint_dag()
-    baseline = compute_dag_computational_fingerprint(dag)
+    baseline = await compute_dag_computational_hashes(dag)
 
     # deterministic for the same content
-    assert compute_dag_computational_fingerprint(_make_fingerprint_dag()) == baseline
+    assert await compute_dag_computational_hashes(_make_fingerprint_dag()) == baseline
 
-    # changing non-computational metadata does NOT change the fingerprint
+    # changing metadata that does not affect the run hash does NOT change the result
     for attr, value in [
         ("name", "renamed"),
         ("run_hash", "some-hash"),
         ("state", RunningState.FAILED),
+        ("key", "simcore/services/comp/other"),
+        ("version", "2.0.0"),
     ]:
         dag = _make_fingerprint_dag()
         dag.nodes["node_1"][attr] = value
-        assert compute_dag_computational_fingerprint(dag) == baseline, attr
+        assert await compute_dag_computational_hashes(dag) == baseline, attr
 
-    # changing computational data DOES change the fingerprint
+    # changing inputs/outputs DOES change the hash
     for attr, value in [
-        ("key", "simcore/services/comp/other"),
-        ("version", "2.0.0"),
         ("inputs", {"in_1": 5}),
         ("outputs", {"out_1": 3}),
     ]:
         dag = _make_fingerprint_dag()
         dag.nodes["node_1"][attr] = value
-        assert compute_dag_computational_fingerprint(dag) != baseline, attr
+        assert await compute_dag_computational_hashes(dag) != baseline, attr
 
-    # adding a node changes the fingerprint -> node-set is part of the projection
+    # adding a computational node changes the result -> node-set is part of the mapping
     dag = _make_fingerprint_dag()
     dag.add_node(
         "node_2",
@@ -99,10 +100,10 @@ def test_compute_dag_computational_fingerprint_ignores_non_computational_metadat
         state=RunningState.SUCCESS,
         node_class=NodeClass.COMPUTATIONAL,
     )
-    assert compute_dag_computational_fingerprint(dag) != baseline
+    assert await compute_dag_computational_hashes(dag) != baseline
 
 
-def test_compute_dag_computational_fingerprint_is_invariant_to_internal_key_order():
+async def test_compute_dag_computational_hashes_is_invariant_to_internal_key_order():
     dag = nx.DiGraph()
     dag.add_node(
         "node_1",
@@ -115,7 +116,7 @@ def test_compute_dag_computational_fingerprint_is_invariant_to_internal_key_orde
         state=RunningState.SUCCESS,
         node_class=NodeClass.COMPUTATIONAL,
     )
-    baseline = compute_dag_computational_fingerprint(dag)
+    baseline = await compute_dag_computational_hashes(dag)
 
     reordered_dag = nx.DiGraph()
     reordered_dag.add_node(
@@ -130,38 +131,46 @@ def test_compute_dag_computational_fingerprint_is_invariant_to_internal_key_orde
         node_class=NodeClass.COMPUTATIONAL,
     )
 
-    assert compute_dag_computational_fingerprint(reordered_dag) == baseline
+    assert await compute_dag_computational_hashes(reordered_dag) == baseline
 
 
-def test_computational_fingerprint_matches_between_workbench_and_tasks(
+async def test_computational_hashes_match_between_workbench_and_tasks(
     fake_workbench: NodesDict,
 ):
-    node_id, node = next(iter(fake_workbench.items()))
-    task = CompTaskAtDB.model_construct(
-        project_id=uuid4(),
-        node_id=NodeID(node_id),
-        schema=NodeSchema(inputs={}, outputs={}),
-        inputs=node.inputs,
-        outputs=node.outputs,
-        image=Image(name=node.key, tag=node.version),
-        state=RunningState.SUCCESS,
-        internal_id=1,
-        node_class=NodeClass.COMPUTATIONAL,
-        created=datetime.datetime.now(tz=datetime.UTC),
-        modified=datetime.datetime.now(tz=datetime.UTC),
-        last_heartbeat=None,
-        progress=1.00,
-    )
+    def _make_task(node_id: str, node: Node) -> CompTaskAtDB:
+        return CompTaskAtDB.model_construct(
+            project_id=uuid4(),
+            node_id=NodeID(node_id),
+            schema=NodeSchema(inputs={}, outputs={}),
+            inputs=node.inputs,
+            outputs=node.outputs,
+            image=Image(name=node.key, tag=node.version),
+            state=RunningState.SUCCESS,
+            internal_id=1,
+            node_class=to_node_class(node.key),
+            created=datetime.datetime.now(tz=datetime.UTC),
+            modified=datetime.datetime.now(tz=datetime.UTC),
+            last_heartbeat=None,
+            progress=1.00,
+            run_hash=node.run_hash,
+        )
 
-    workbench_dag = create_complete_dag({node_id: node})
-    tasks_dag = create_complete_dag_from_tasks([task])
+    tasks = [_make_task(node_id, node) for node_id, node in fake_workbench.items()]
 
-    assert compute_dag_computational_fingerprint(workbench_dag) == compute_dag_computational_fingerprint(tasks_dag)
+    workbench_dag = create_complete_dag(fake_workbench)
+    tasks_dag = create_complete_dag_from_tasks(tasks)
 
-    # a different image version must change the fingerprint -> guard proceeds
-    task_bumped = task.model_copy(update={"image": Image(name=node.key, tag="9.9.9")})
-    assert compute_dag_computational_fingerprint(workbench_dag) != compute_dag_computational_fingerprint(
-        create_complete_dag_from_tasks([task_bumped])
+    assert await compute_dag_computational_hashes(workbench_dag) == await compute_dag_computational_hashes(tasks_dag)
+
+    # changing a computational node's outputs must change its hash -> guard proceeds
+    comp_node_id, comp_node = next((node_id, node) for node_id, node in fake_workbench.items() if "/comp/" in node.key)
+    changed_node = comp_node.model_copy(update={"outputs": {"out_1": "changed-value"}})
+    changed_tasks = [
+        _make_task(node_id, changed_node if node_id == comp_node_id else node)
+        for node_id, node in fake_workbench.items()
+    ]
+    assert await compute_dag_computational_hashes(workbench_dag) != await compute_dag_computational_hashes(
+        create_complete_dag_from_tasks(changed_tasks)
     )
 
 

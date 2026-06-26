@@ -73,7 +73,7 @@ from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
 from ...utils.computations_tasks import validate_pipeline
 from ...utils.dags import (
-    compute_dag_computational_fingerprint,
+    compute_dag_computational_hashes,
     compute_pipeline_details,
     create_complete_dag,
     create_complete_dag_from_tasks,
@@ -267,8 +267,8 @@ async def _create_or_update_pipeline_and_tasks(  # noqa: PLR0913 # pylint: disab
         else await comp_tasks_repo.list_tasks(project.uuid)
     )
     if existing_tasks and (
-        compute_dag_computational_fingerprint(complete_dag)
-        == compute_dag_computational_fingerprint(create_complete_dag_from_tasks(existing_tasks))
+        await compute_dag_computational_hashes(complete_dag)
+        == await compute_dag_computational_hashes(create_complete_dag_from_tasks(existing_tasks))
     ):
         return existing_tasks, False
 
