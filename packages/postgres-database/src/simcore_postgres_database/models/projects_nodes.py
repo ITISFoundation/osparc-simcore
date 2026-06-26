@@ -142,6 +142,13 @@ projects_nodes = sa.Table(
         comment="Some services provide alternative parameters to be injected at boot time."
         "The user selection should be stored here, and it will overwrite the services's defaults",
     ),
+    sa.Column(
+        "ui",
+        JSONB,
+        nullable=True,
+        comment="Front-end per-node UI state (e.g. position, marker). "
+        "Replaces the per-node entries previously stored in projects.ui.workbench",
+    ),
     sa.UniqueConstraint("project_uuid", "node_id"),
 )
 
