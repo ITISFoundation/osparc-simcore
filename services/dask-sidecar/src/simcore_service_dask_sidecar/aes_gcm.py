@@ -284,8 +284,6 @@ def encrypt_stream(
     self-describing stream to ``dst``. Because a one-chunk lookahead is used to flag the
     final chunk, peak memory usage is bounded by ~2x ``chunk_size``.
 
-    This call is synchronous/blocking; offload it to a thread when used in async code.
-
     Raises:
         AesGcmStreamError: If ``root_key`` length or ``chunk_size`` are invalid.
     """
@@ -384,8 +382,6 @@ def decrypt_stream(
     Re-derives the per-file key, reconstructs per-chunk nonces and AAD, verifies every
     chunk's authentication tag and streams plaintext to ``dst``. Fails hard on any
     tampering, truncation, wrong key/context or unexpected trailing data.
-
-    This call is synchronous/blocking; offload it to a thread when used in async code.
 
     Raises:
         AesGcmStreamError: If ``root_key`` length is invalid.
