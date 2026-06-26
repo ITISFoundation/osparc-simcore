@@ -8,15 +8,18 @@ KEY_SIZE_BYTES: Final[int] = 32  # AES-256 root key length (simcore-aesgcm-strea
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 
 
+_RootKeyType = Annotated[
+    SecretBytes,
+    Field(
+        min_length=KEY_SIZE_BYTES,
+        max_length=KEY_SIZE_BYTES,
+        description="Secret root key used to derive every per-file key (HKDF over root_key/file_id)",
+    ),
+]
+
+
 class JobEncryptionContext(BaseModel):
-    root_key: Annotated[
-        SecretBytes,
-        Field(
-            min_length=KEY_SIZE_BYTES,
-            max_length=KEY_SIZE_BYTES,
-            description="Secret root key used to derive every per-file key (HKDF over root_key/file_id)",
-        ),
-    ]
+    root_key: _RootKeyType
     input_port_to_file_id: Annotated[
         dict[str, str],
         Field(
@@ -47,14 +50,7 @@ class JobEncryptionContext(BaseModel):
 
 
 class TransferEncryptionSettings(BaseModel):
-    root_key: Annotated[
-        SecretBytes,
-        Field(
-            min_length=KEY_SIZE_BYTES,
-            max_length=KEY_SIZE_BYTES,
-            description="Secret root key used to derive the per-file key",
-        ),
-    ]
+    root_key: _RootKeyType
     file_id: Annotated[
         str,
         Field(description="Per-file identifier mixed into key derivation"),
