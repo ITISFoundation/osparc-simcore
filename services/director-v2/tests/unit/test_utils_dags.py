@@ -105,11 +105,6 @@ def test_compute_dag_computational_fingerprint_ignores_non_computational_metadat
 def test_computational_fingerprint_matches_between_workbench_and_tasks(
     fake_workbench: NodesDict,
 ):
-    """The guard compares the fingerprint of the project's complete DAG against the one
-    rebuilt from the persisted comp_tasks. This verifies both representations produce the
-    same fingerprint for the same computational projection (skip path), and diverge when
-    the service version changes (proceed path).
-    """
     node_id, node = next(iter(fake_workbench.items()))
     task = CompTaskAtDB.model_construct(
         project_id=uuid4(),
