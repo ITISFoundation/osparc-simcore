@@ -70,14 +70,6 @@ class ComputationalSidecar:
     s3_settings: S3Settings | None
     encryption: JobEncryptionContext | None
 
-    def _build_input_encryption(self, input_key: str) -> TransferEncryptionSettings | None:
-        if self.encryption is None or input_key not in self.encryption.input_port_to_file_id:
-            return None
-        return TransferEncryptionSettings(
-            root_key=self.encryption.root_key,
-            file_id=self.encryption.input_port_to_file_id[input_key],
-        )
-
     def _prepare_input_download(
         self,
         input_key: str,
@@ -108,7 +100,14 @@ class ComputationalSidecar:
             destination_path,
             log_publishing_cb=self._publish_sidecar_log,
             s3_settings=self.s3_settings,
-            encryption=self._build_input_encryption(input_key),
+            encryption=(
+                TransferEncryptionSettings(
+                    root_key=self.encryption.root_key,
+                    file_id=self.encryption.input_port_to_file_id[input_key],
+                )
+                if self.encryption is not None and input_key in self.encryption.input_port_to_file_id
+                else None
+            ),
         )
 
     async def _download_and_decrypt_input(self, input_key: str, task: Coroutine) -> None:
