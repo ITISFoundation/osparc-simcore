@@ -45,6 +45,7 @@ _TRACES_MOUNT_POINT: Final[str] = "/traces"
 _SPANS_FILES_GLOB: Final[str] = "spans*.jsonl"
 # the shipper's own bookkeeping (persistent send queue); kept off the spans glob
 _SHIPPER_STATE_DIR: Final[str] = f"{_TRACES_MOUNT_POINT}/.trace-shipper-state"
+_FILE_STORAGE_EXTENSION_NAME: Final[str] = "file_storage/shipper"
 
 _CONTAINER_NAME_SUFFIX: Final[str] = "otel-trace-shipper"
 # own namespace ("otc" = octel trace shipper): keeps the shipper out of the dy-sidecar
@@ -83,7 +84,7 @@ def _platform_otlp_traces_endpoint(platform_tracing_settings: TracingSettings) -
 def _generate_shipper_config(platform_tracing_settings: TracingSettings) -> str:
     config = {
         "extensions": {
-            "file_storage/shipper": {
+            _FILE_STORAGE_EXTENSION_NAME: {
                 "directory": _SHIPPER_STATE_DIR,
                 # create the state dir on first boot (it lives on the shared traces volume)
                 "create_directory": True,
@@ -93,18 +94,18 @@ def _generate_shipper_config(platform_tracing_settings: TracingSettings) -> str:
             "otlpjsonfile": {
                 "include": [f"{_TRACES_MOUNT_POINT}/{_SPANS_FILES_GLOB}"],
                 "start_at": "beginning",
-                "storage": "file_storage/shipper",
+                "storage": _FILE_STORAGE_EXTENSION_NAME,
             }
         },
         "exporters": {
             "otlp_http": {
                 "traces_endpoint": _platform_otlp_traces_endpoint(platform_tracing_settings),
                 "retry_on_failure": {"enabled": True},
-                "sending_queue": {"enabled": True, "storage": "file_storage/shipper"},
+                "sending_queue": {"enabled": True, "storage": _FILE_STORAGE_EXTENSION_NAME},
             }
         },
         "service": {
-            "extensions": ["file_storage/shipper"],
+            "extensions": [_FILE_STORAGE_EXTENSION_NAME],
             "pipelines": {
                 "traces": {
                     "receivers": ["otlpjsonfile"],
@@ -146,7 +147,7 @@ def _build_shipper_container_config(
             # share the sidecar's network namespace -> same DNS/egress to the platform
             "NetworkMode": f"container:{socket.gethostname()}",
             "RestartPolicy": {"Name": "unless-stopped"},
-            # resource caps shared with the injected collector (Docker Engine API equivalents
+            # same resource caps as the injected collector (Docker Engine API equivalents
             # of compose mem_limit/cpus/cpu_shares)
             "Memory": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT,
             "NanoCpus": int(
