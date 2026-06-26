@@ -2,7 +2,6 @@ import asyncio
 import functools
 import logging
 import urllib.parse
-import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import suppress
 from pprint import pformat
@@ -150,16 +149,6 @@ class DirectorClient:
 
         self.default_max_memory = settings.DIRECTOR_DEFAULT_MAX_MEMORY
         self.default_max_nano_cpus = settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS
-
-        # NOTE: the services-manifest caches are *attached to this client instance* (not
-        # module-global) so that distinct apps never share cache state. `_uuid`
-        # gives each client a unique cache namespace; `services_caches` holds the lazily
-        # built cached callables. Both are populated/used by the manifest service.
-        # SEE services/catalog/src/simcore_service_catalog/service/manifest.py
-        self._uuid: str = uuid.uuid4().hex
-        self.services_cache_lease: float = settings.CATALOG_DIRECTOR_BULK_FETCH_LEASE
-        self.services_caching_enabled: bool = settings.CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED
-        self.services_caches: dict[str, Any] = {}
 
     async def close(self):
         await self.client.aclose()
