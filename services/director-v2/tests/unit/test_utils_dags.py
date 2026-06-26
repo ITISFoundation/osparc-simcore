@@ -24,8 +24,10 @@ from simcore_service_director_v2.models.comp_tasks import (
     NodeSchema,
 )
 from simcore_service_director_v2.utils.dags import (
+    compute_dag_computational_fingerprint,
     compute_pipeline_details,
     create_complete_dag,
+    create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
 )
@@ -38,6 +40,103 @@ def test_create_complete_dag_graph(
     dag_graph = create_complete_dag(fake_workbench)
     assert nx.is_directed_acyclic_graph(dag_graph)
     assert nx.to_dict_of_lists(dag_graph) == fake_workbench_complete_adjacency
+
+
+def _make_fingerprint_dag() -> nx.DiGraph:
+    dag = nx.DiGraph()
+    dag.add_node(
+        "node_1",
+        name="sleeper",
+        key="simcore/services/comp/sleeper",
+        version="1.0.0",
+        inputs={"in_1": 4},
+        run_hash=None,
+        outputs={"out_1": 2},
+        state=RunningState.SUCCESS,
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    return dag
+
+
+def test_compute_dag_computational_fingerprint_ignores_non_computational_metadata():
+    dag = _make_fingerprint_dag()
+    baseline = compute_dag_computational_fingerprint(dag)
+
+    # deterministic for the same content
+    assert compute_dag_computational_fingerprint(_make_fingerprint_dag()) == baseline
+
+    # changing non-computational metadata does NOT change the fingerprint
+    for attr, value in [
+        ("name", "renamed"),
+        ("run_hash", "some-hash"),
+        ("state", RunningState.FAILED),
+    ]:
+        dag = _make_fingerprint_dag()
+        dag.nodes["node_1"][attr] = value
+        assert compute_dag_computational_fingerprint(dag) == baseline, attr
+
+    # changing computational data DOES change the fingerprint
+    for attr, value in [
+        ("key", "simcore/services/comp/other"),
+        ("version", "2.0.0"),
+        ("inputs", {"in_1": 5}),
+        ("outputs", {"out_1": 3}),
+    ]:
+        dag = _make_fingerprint_dag()
+        dag.nodes["node_1"][attr] = value
+        assert compute_dag_computational_fingerprint(dag) != baseline, attr
+
+    # adding a node changes the fingerprint -> node-set is part of the projection
+    dag = _make_fingerprint_dag()
+    dag.add_node(
+        "node_2",
+        name="another",
+        key="simcore/services/comp/sleeper",
+        version="1.0.0",
+        inputs={},
+        run_hash=None,
+        outputs={},
+        state=RunningState.SUCCESS,
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    assert compute_dag_computational_fingerprint(dag) != baseline
+
+
+def test_computational_fingerprint_matches_between_workbench_and_tasks(
+    fake_workbench: NodesDict,
+):
+    """The guard compares the fingerprint of the project's complete DAG against the one
+    rebuilt from the persisted comp_tasks. This verifies both representations produce the
+    same fingerprint for the same computational projection (skip path), and diverge when
+    the service version changes (proceed path).
+    """
+    node_id, node = next(iter(fake_workbench.items()))
+    task = CompTaskAtDB.model_construct(
+        project_id=uuid4(),
+        node_id=NodeID(node_id),
+        schema=NodeSchema(inputs={}, outputs={}),
+        inputs=node.inputs,
+        outputs=node.outputs,
+        image=Image(name=node.key, tag=node.version),
+        state=RunningState.SUCCESS,
+        internal_id=1,
+        node_class=NodeClass.COMPUTATIONAL,
+        created=datetime.datetime.now(tz=datetime.UTC),
+        modified=datetime.datetime.now(tz=datetime.UTC),
+        last_heartbeat=None,
+        progress=1.00,
+    )
+
+    workbench_dag = create_complete_dag({node_id: node})
+    tasks_dag = create_complete_dag_from_tasks([task])
+
+    assert compute_dag_computational_fingerprint(workbench_dag) == compute_dag_computational_fingerprint(tasks_dag)
+
+    # a different image version must change the fingerprint -> guard proceeds
+    task_bumped = task.model_copy(update={"image": Image(name=node.key, tag="9.9.9")})
+    assert compute_dag_computational_fingerprint(workbench_dag) != compute_dag_computational_fingerprint(
+        create_complete_dag_from_tasks([task_bumped])
+    )
 
 
 @dataclass

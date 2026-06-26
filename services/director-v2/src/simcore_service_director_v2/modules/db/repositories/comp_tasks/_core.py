@@ -48,13 +48,9 @@ class CompTasksRepository(BaseRepository):
         self,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
-        tasks: list[CompTaskAtDB] = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")):
-                task_db = CompTaskAtDB.model_validate(row)
-                tasks.append(task_db)
-
-        return tasks
+            result = await conn.execute(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
+            return [CompTaskAtDB.model_validate(row) for row in result]
 
     async def list_computational_tasks(
         self,

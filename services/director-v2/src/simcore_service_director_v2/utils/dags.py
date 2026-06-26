@@ -1,17 +1,20 @@
 import contextlib
 import datetime
+import hashlib
 import logging
 from copy import deepcopy
 from typing import Any
 
 import arrow
 import networkx as nx
+from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.nodes import compute_node_hash
 
 from ..models.comp_tasks import CompTaskAtDB
@@ -74,6 +77,29 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
                 if isinstance(input_data, PortLink):
                     dag_graph.add_edge(str(input_data.node_uuid), f"{task.node_id}")
     return dag_graph
+
+
+def compute_dag_computational_fingerprint(dag: nx.DiGraph) -> str:
+    """Returns a deterministic hash of the computationally-relevant projection of a DAG.
+
+    The projection captures, per node, the service ``key``/``version``, ``inputs`` and
+    ``outputs``. Since ``inputs`` embed the port-links to upstream nodes, the topology is
+    captured implicitly.
+
+    Non-computational metadata (e.g. node label/name, progress, boot options) is
+    intentionally ignored so that patching such fields does not invalidate the pipeline.
+    """
+    projection = {
+        node_id: {
+            "key": data.get("key"),
+            "version": data.get("version"),
+            "inputs": jsonable_encoder(data.get("inputs")),
+            "outputs": jsonable_encoder(data.get("outputs")),
+        }
+        for node_id, data in dag.nodes.data()
+    }
+    block_string = json_dumps(projection, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(block_string).hexdigest()
 
 
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
