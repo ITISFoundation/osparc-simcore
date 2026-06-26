@@ -157,11 +157,10 @@ async def test_computational_hashes_match_between_workbench_and_tasks(
 
     tasks = [_make_task(node_id, node) for node_id, node in fake_workbench.items()]
 
-    workbench_dag = create_complete_dag(fake_workbench)
-    tasks_dag = create_complete_dag_from_tasks(tasks)
+    workbench_hashes = await compute_dag_computational_hashes(workbench_dag)
+    tasks_hashes = await compute_dag_computational_hashes(tasks_dag)
 
-    assert await compute_dag_computational_hashes(workbench_dag) == await compute_dag_computational_hashes(tasks_dag)
-
+    assert workbench_hashes == tasks_hashes
     # changing a computational node's outputs must change its hash -> guard proceeds
     comp_node_id, comp_node = next((node_id, node) for node_id, node in fake_workbench.items() if "/comp/" in node.key)
     changed_node = comp_node.model_copy(update={"outputs": {"out_1": "changed-value"}})
