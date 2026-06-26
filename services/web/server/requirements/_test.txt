@@ -297,7 +297,7 @@ referencing==0.35.1
     #   jsonschema-path
     #   jsonschema-specifications
     #   types-jsonschema
-requests==2.32.4
+requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker

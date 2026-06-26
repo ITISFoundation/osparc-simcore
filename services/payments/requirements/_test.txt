@@ -148,7 +148,7 @@ python-socketio==5.13.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.32.4
+requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker

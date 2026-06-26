@@ -138,7 +138,7 @@ pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-requests==2.32.5
+requests==2.34.2
     # via docker
 simple-websocket==1.1.0
     # via python-engineio
