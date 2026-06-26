@@ -373,7 +373,7 @@ async def get_project_workbench(
     project_uuid: str,
 ) -> dict[str, Any]:
     project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(f"{project_uuid}"))
-    exclude_fields = {"node_id", "required_resources", "created", "modified"}
+    exclude_fields = {"node_id", "required_resources", "created", "modified", "ui"}
     workbench: dict[str, Any] = {}
 
     project_nodes = await project_nodes_repo.list(connection)
@@ -393,7 +393,7 @@ async def get_projects_workbenches(
     if not project_uuids:
         return {}
 
-    _excluded_columns: Final = {"project_node_id", "required_resources", "created", "modified"}
+    _excluded_columns: Final = {"project_node_id", "required_resources", "created", "modified", "ui"}
     _selected_columns = [c for c in projects_nodes_table.columns if c.name not in _excluded_columns]
 
     stmt = sa.select(*_selected_columns).where(projects_nodes_table.c.project_uuid.in_(project_uuids))
