@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from datetime import datetime
 from typing import cast
 
@@ -129,7 +130,7 @@ async def list_(
         result = await conn.stream(list_query)
         items: list[LicensedItemCheckoutDB] = [LicensedItemCheckoutDB.model_validate(row) async for row in result]
 
-        return cast(int, total_count), items
+        return total_count, items
 
 
 async def get(
@@ -164,23 +165,23 @@ async def update(
     product_name: ProductName,
     stopped_at: datetime,
 ) -> LicensedItemCheckoutDB:
-    update_stmt = (
-        resource_tracker_licensed_items_checkouts.update()
-        .values(
-            modified=sa.func.now(),
-            stopped_at=stopped_at,
-        )
-        .where(
-            (resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id == licensed_item_checkout_id)
-            & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
-            & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
-        )
-        .returning(sa.literal_column("*"))
-    )
-
+    row: object | None
     async with transaction_context(engine, connection) as conn:
-        result = await conn.execute(update_stmt)
-        row = result.first()
+        row = (
+            await conn.execute(
+                resource_tracker_licensed_items_checkouts.update()
+                .values(
+                    modified=sa.func.now(),
+                    stopped_at=stopped_at,
+                )
+                .where(
+                    (resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id == licensed_item_checkout_id)
+                    & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
+                    & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
+                )
+                .returning(sa.literal_column("*"))
+            )
+        ).first()
         if row is None:
             raise LicensedItemCheckoutNotFoundError(licensed_item_checkout_id=licensed_item_checkout_id)
         return LicensedItemCheckoutDB.model_validate(row)
@@ -224,21 +225,21 @@ async def force_release_license_seats_by_run_id(
     the unhealthy service.
     Currently, this functionality is primarily used to handle the release of a single seat allocated to the VIP model.
     """
-    update_stmt = (
-        resource_tracker_licensed_items_checkouts.update()
-        .values(
-            modified=sa.func.now(),
-            stopped_at=sa.func.now(),
-        )
-        .where(
-            (resource_tracker_licensed_items_checkouts.c.service_run_id == service_run_id)
-            & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
-        )
-        .returning(sa.literal_column("*"))
-    )
-
+    released_seats: Sequence[object]
     async with transaction_context(engine, connection) as conn:
-        result = await conn.execute(update_stmt)
-        released_seats = result.fetchall()
+        released_seats = (
+            await conn.execute(
+                resource_tracker_licensed_items_checkouts.update()
+                .values(
+                    modified=sa.func.now(),
+                    stopped_at=sa.func.now(),
+                )
+                .where(
+                    (resource_tracker_licensed_items_checkouts.c.service_run_id == service_run_id)
+                    & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
+                )
+                .returning(sa.literal_column("*"))
+            )
+        ).fetchall()
         if released_seats:
             _logger.error("Force release of %s seats: %s", len(released_seats), released_seats)

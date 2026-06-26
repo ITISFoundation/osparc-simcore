@@ -9,6 +9,7 @@ from ..access_rights import ExecutableAccessRights
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
 from ..groups import GroupID
+from ..products import ProductName
 from ..projects import ProjectID
 from ..projects_nodes import InputID, InputsDict, PartialNode, UnitStr
 from ..projects_nodes_io import NodeID
@@ -126,24 +127,13 @@ class NodeGet(OutputSchema):
         description="the service message",
     )
     user_id: str = Field(..., description="the user that started the service")
+
+    product_name: Annotated[ProductName, Field(description="Product upon which this service is scheduled.")]
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                # computational
-                {
-                    "published_port": 30000,
-                    "entrypoint": "/the/entry/point/is/here",
-                    "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "service_key": "simcore/services/comp/itis/sleeper",
-                    "service_version": "1.2.3",
-                    "service_host": "jupyter_E1O2E-LAH",
-                    "service_port": 8081,
-                    "service_basepath": "/x/E1O2E-LAH",
-                    "service_state": "pending",
-                    "service_message": "no suitable node (insufficient resources on 1 node)",
-                    "user_id": "123",
-                },
-                # dynamic
+                # legacy dynamic service (director-v0 /v0/running_interactive_services)
                 {
                     "published_port": 30000,
                     "entrypoint": "/the/entry/point/is/here",
@@ -156,6 +146,7 @@ class NodeGet(OutputSchema):
                     "service_state": "pending",
                     "service_message": "no suitable node (insufficient resources on 1 node)",
                     "user_id": "123",
+                    "product_name": "osparc",
                 },
             ]
         }

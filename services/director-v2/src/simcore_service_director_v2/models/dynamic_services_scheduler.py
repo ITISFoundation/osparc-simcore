@@ -445,13 +445,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         )
         return url
 
-    product_name: Annotated[
-        str | None,
-        Field(
-            description="Current product upon which this service is scheduled"
-            "If set to None, the current product is undefined. Mostly for backwards compatibility",
-        ),
-    ] = None
+    product_name: Annotated[str, Field(description="Current product upon which this service is scheduled")]
 
     product_api_base_url: Annotated[
         str | None,

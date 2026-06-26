@@ -45,7 +45,7 @@ class EmailMessage(BaseModel):
     to: EmailContact
     reply_to: EmailContact | None = None
     cc: EmailContact | None = None
-    bcc: EmailContact | None = None
+    bcc: list[EmailContact] | None = None
 
     # Content fields
     content: EmailContent
