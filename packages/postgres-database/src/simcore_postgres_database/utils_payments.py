@@ -14,8 +14,8 @@ from .models.payments_transactions import PaymentTransactionState, payments_tran
 _logger = logging.getLogger(__name__)
 
 
-type PaymentID = str
-PaymentTransactionRow: TypeAlias = Row  # used in isinstance(...) checks; keep as a runtime class alias (do not convert to a PEP 695 `type ... = ...` alias)  # noqa: UP040
+PaymentID: TypeAlias = str
+PaymentTransactionRow: TypeAlias = Row
 
 
 UNSET: Final[str] = "__UNSET__"
@@ -157,5 +157,5 @@ async def get_user_payments_transactions(
         stmt = stmt.limit(limit)
 
     result = await connection.execute(stmt)
-    rows = list(result.fetchall())
+    rows = result.fetchall()
     return total_number_of_items, rows

@@ -1,7 +1,6 @@
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any, TypedDict
-from urllib.parse import quote_plus
 
 import simcore_postgres_database.cli
 import sqlalchemy as sa
@@ -45,15 +44,7 @@ def migrated_pg_tables_context(
     using migration upgrade/downgrade routines
     """
 
-    user = quote_plus(postgres_config["user"])
-    password = quote_plus(postgres_config["password"])
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
-        user=user,
-        password=password,
-        host=postgres_config["host"],
-        port=postgres_config["port"],
-        database=postgres_config["database"],
-    )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_config)
 
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback

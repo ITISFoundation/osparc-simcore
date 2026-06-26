@@ -1,7 +1,6 @@
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import Insert as PostgresInsert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -34,8 +33,8 @@ class BasePreferencesRepo:
             "payload": payload,
         }
 
-        insert_stmt: PostgresInsert = pg_insert(cls.model).values(**data)
-        upsert_stmt: Any = insert_stmt.on_conflict_do_update(
+        insert_stmt = pg_insert(cls.model).values(**data)
+        upsert_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[
                 cls.model.c.user_id,
                 cls.model.c.product_name,

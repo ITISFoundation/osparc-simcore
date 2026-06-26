@@ -831,12 +831,12 @@ async def auto_add_user_to_groups(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
         async for row in result:
-            inclusion_rules = row.inclusion_rules
+            inclusion_rules = row[groups.c.inclusion_rules]
             for prop, rule_pattern in inclusion_rules.items():
                 if prop not in user:
                     continue
                 if re.search(rule_pattern, user[prop]):
-                    possible_group_ids.add(row.gid)
+                    possible_group_ids.add(row[groups.c.gid])
 
         # now add the user to these groups if possible
         for gid in possible_group_ids:

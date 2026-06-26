@@ -208,7 +208,7 @@ async def list_functions(  # noqa: PLR0913
         )
 
         # Get total count
-        total_count = await conn.scalar(func.count().select().select_from(base_query.subquery())) or 0
+        total_count = await conn.scalar(func.count().select().select_from(base_query.subquery()))
         if total_count == 0:
             return [], PageMetaInfoLimitOffset(total=0, offset=pagination_offset, limit=pagination_limit, count=0)
 

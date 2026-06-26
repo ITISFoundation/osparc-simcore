@@ -442,7 +442,7 @@ sortedcontainers==2.4.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-sqlalchemy==2.0.51
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -503,7 +503,6 @@ typing-extensions==4.15.0
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
-    #   sqlalchemy
     #   typer
     #   typing-inspection
 typing-inspection==0.4.2

@@ -1,5 +1,4 @@
 from logging.config import fileConfig
-from typing import Any, cast
 
 from alembic import context
 from simcore_postgres_database.settings import target_metadatas
@@ -24,7 +23,7 @@ target_metadata = target_metadatas
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
-# my_important_option = config.get_main_option("my_important_option")  # noqa: ERA001
+# my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
 
@@ -56,10 +55,8 @@ def run_migrations_online():
 
     """
     # pylint: disable=no-member
-    section = config.get_section(config.config_ini_section)
-    assert section is not None  # nosec
     connectable = engine_from_config(
-        cast(dict[str, Any], section),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

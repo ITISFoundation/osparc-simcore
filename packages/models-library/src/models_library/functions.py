@@ -426,7 +426,6 @@ class FunctionAccessRights(BaseModel):
         alias_generator=snake_to_camel,
         populate_by_name=True,
         extra="forbid",
-        from_attributes=True,
     )
 
 

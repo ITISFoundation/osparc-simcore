@@ -13,6 +13,9 @@ from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 assert APP_CLIENT_SESSION_KEY  # nosec
 assert APP_CONFIG_KEY  # nosec
 
+# Public config per product returned in /config
+APP_PUBLIC_CONFIG_PER_PRODUCT: Final[str] = f"{__name__}.APP_PUBLIC_CONFIG_PER_PRODUCT"
+
 FRONTEND_APPS_AVAILABLE = frozenset(
     # These are the apps built right now by static-webserver/client
     {

@@ -247,7 +247,6 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.select(sa.func.count()).select_from(sa.table("users_secrets"))).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
-        conn.rollback()
 
         # INSERT users with password hashes (emulates data in-place before migration)
         users_data_with_hashed_password = [
@@ -295,7 +294,6 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         assert len(password_hashes_before) == 2
         assert password_hashes_before[inserted_user_ids[0]] == "hashed_password_1"
         assert password_hashes_before[inserted_user_ids[1]] == "hashed_password_2"
-        conn.commit()
 
     # MIGRATE UPGRADE: this should move password hashes to users_secrets
     # packages/postgres-database/src/simcore_postgres_database/migration/versions/5679165336c8_new_users_secrets.py
@@ -315,7 +313,6 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT password_hash FROM users"))
         assert "psycopg2.errors.UndefinedColumn" in f"{exc_info.value}"
-        conn.rollback()
 
     # MIGRATE DOWNGRADE: this should move password hashes back to users
     simcore_postgres_database.cli.downgrade.callback("61b98a60e934")
@@ -325,7 +322,6 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT COUNT(*) FROM users_secrets")).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
-        conn.rollback()
 
         # Verify password hashes are back in users table
         result = conn.execute(
@@ -566,7 +562,6 @@ def test_pre_registration_reconciliation_migration_upgrade_downgrade(  # noqa: P
                 "extras": "{}",
             },
         ).scalar_one()
-        conn.commit()
 
     # --- ACT: run migration upgrade ---
     simcore_postgres_database.cli.upgrade.callback("7f8d9b1c2e4f")

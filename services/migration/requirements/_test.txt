@@ -73,16 +73,18 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-sqlalchemy==2.0.51
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 tenacity==9.1.4
     # via -r requirements/_test.in
 typing-extensions==4.15.0
     # via
     #   mypy
-    #   sqlalchemy
+    #   sqlalchemy2-stubs
 urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

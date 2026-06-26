@@ -31,26 +31,21 @@ async def create_wallet(
     thumbnail: str | None,
 ) -> WalletDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
-        row = (
-            (
-                await conn.execute(
-                    wallets.insert()
-                    .values(
-                        name=wallet_name,
-                        description=description,
-                        owner=owner,
-                        thumbnail=thumbnail,
-                        status=WalletStatus.ACTIVE,
-                        created=func.now(),
-                        modified=func.now(),
-                        product_name=product_name,
-                    )
-                    .returning(literal_column("*"))
-                )
+        result = await conn.execute(
+            wallets.insert()
+            .values(
+                name=wallet_name,
+                description=description,
+                owner=owner,
+                thumbnail=thumbnail,
+                status=WalletStatus.ACTIVE,
+                created=func.now(),
+                modified=func.now(),
+                product_name=product_name,
             )
-            .mappings()
-            .one()
+            .returning(literal_column("*"))
         )
+        row = result.mappings().one()
         return WalletDB.model_validate(row)
 
 
@@ -199,24 +194,19 @@ async def update_wallet(
     product_name: ProductName,
 ) -> WalletDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
-        row = (
-            (
-                await conn.execute(
-                    wallets.update()
-                    .values(
-                        name=name,
-                        description=description,
-                        thumbnail=thumbnail,
-                        status=status,
-                        modified=func.now(),
-                    )
-                    .where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
-                    .returning(literal_column("*"))
-                )
+        result = await conn.execute(
+            wallets.update()
+            .values(
+                name=name,
+                description=description,
+                thumbnail=thumbnail,
+                status=status,
+                modified=func.now(),
             )
-            .mappings()
-            .one_or_none()
+            .where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
+            .returning(literal_column("*"))
         )
+        row = result.mappings().one_or_none()
         if row is None:
             raise WalletNotFoundError(details=f"Wallet {wallet_id} not found.")
         return WalletDB.model_validate(row)

@@ -5,15 +5,12 @@
 import json
 from collections.abc import AsyncIterator, Iterator
 from typing import Final
-from urllib.parse import quote_plus
 
 import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
-from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from tenacity import retry_if_exception, stop_after_attempt
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -26,15 +23,6 @@ from .helpers.typing_env import EnvVarsDict
 _TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
 
 
-def _is_server_connection_drop(error: sa_exc.OperationalError) -> bool:
-    error_msg = str(error).lower()
-    return "server closed the connection unexpectedly" in error_msg
-
-
-def _is_retryable_operational_error(error: BaseException) -> bool:
-    return isinstance(error, sa_exc.OperationalError) and _is_server_connection_drop(error)
-
-
 def _execute_queries(
     postgres_engine: sa.engine.Engine,
     sql_statements: list[str],
@@ -42,30 +30,17 @@ def _execute_queries(
     ignore_errors: bool = False,
 ) -> None:
     """runs the queries in the list in order"""
-    for statement in sql_statements:
-        try:
-            for attempt in tenacity.Retrying(
-                retry=retry_if_exception(_is_retryable_operational_error),
-                stop=stop_after_attempt(2),
-                reraise=True,
-            ):
-                with attempt:
-                    try:
-                        with postgres_engine.connect() as connection, connection.begin():
-                            connection.execute(sa.text(statement))
-                    except sa_exc.OperationalError as e:
-                        if _is_server_connection_drop(e):
-                            # Recreate stale pooled connections before the retry.
-                            postgres_engine.dispose()
-                        raise
-        except Exception as e:  # pylint: disable=broad-except
-            if ignore_errors:
-                # when running tests initially the TEMPLATE_DB_TO_RESTORE does not exist and will cause an error
-                # which can safely be ignored. The debug message is here to catch future errors and
+    with postgres_engine.connect() as connection:
+        for statement in sql_statements:
+            try:
+                with connection.begin():
+                    connection.execute(statement)
+
+            except Exception as e:  # pylint: disable=broad-except
+                # when running tests initially the TEMPLATE_DB_TO_RESTORE dose not exist and will cause an error
+                # which can safely be ignored. The debug message is here to catch future errors which and
                 # avoid time wasting
-                print(f"SQL error which can be ignored: {e}")
-                continue
-            raise
+                print(f"SQL error which can be ignored {e}")
 
 
 def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine) -> None:
@@ -93,7 +68,6 @@ def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.en
 
 def _drop_template_db(postgres_engine: sa.engine.Engine) -> None:
     # remove the template db
-    postgres_engine.dispose()
     queries = [
         # drop template database
         f"ALTER DATABASE {_TEMPLATE_DB_TO_RESTORE} is_template false;",
@@ -117,13 +91,7 @@ def postgres_with_template_db(
 def drop_db_engine(postgres_dsn: PostgresTestConfig) -> sa.engine.Engine:
     postgres_dsn_copy = postgres_dsn.copy()  # make a copy to change these parameters
     postgres_dsn_copy["database"] = "postgres"
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
-        user=quote_plus(postgres_dsn_copy["user"]),
-        password=quote_plus(postgres_dsn_copy["password"]),
-        host=postgres_dsn_copy["host"],
-        port=postgres_dsn_copy["port"],
-        database=postgres_dsn_copy["database"],
-    )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn_copy)
     return sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
 
 
@@ -167,7 +135,7 @@ def postgres_dsn(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict) -
         "password": env_vars_for_docker_compose["POSTGRES_PASSWORD"],
         "database": env_vars_for_docker_compose["POSTGRES_DB"],
         "host": get_localhost_ip(),
-        "port": get_service_published_port("postgres", int(env_vars_for_docker_compose["POSTGRES_PORT"])),
+        "port": get_service_published_port("postgres", env_vars_for_docker_compose["POSTGRES_PORT"]),
     }
 
     return pg_config
@@ -178,13 +146,7 @@ _MINUTE: Final[int] = 60
 
 @pytest.fixture(scope="module")
 def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
-        user=quote_plus(postgres_dsn["user"]),
-        password=quote_plus(postgres_dsn["password"]),
-        host=postgres_dsn["host"],
-        port=postgres_dsn["port"],
-        database=postgres_dsn["database"],
-    )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn)
 
     engine = sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
     assert isinstance(engine, sa.engine.Engine)  # nosec
@@ -226,8 +188,7 @@ async def sqlalchemy_async_engine(
 ) -> AsyncIterator[AsyncEngine]:
     # NOTE: prevent having to import this if latest sqlalchemy not installed
 
-    sync_dsn = postgres_db.url.render_as_string(hide_password=False)
-    engine = create_async_engine(sync_dsn.replace("postgresql+psycopg2://", "postgresql+asyncpg://"))
+    engine = create_async_engine(f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg"))
     assert engine
     yield engine
 

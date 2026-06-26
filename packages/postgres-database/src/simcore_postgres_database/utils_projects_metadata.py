@@ -7,7 +7,6 @@ import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy.dialects.postgresql import Insert as PostgresInsert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -178,8 +177,8 @@ async def set_project_ancestors(
         "root_parent_project_uuid": (f"{root_parent_project_uuid}" if root_parent_project_uuid is not None else None),
         "root_parent_node_id": (f"{root_parent_node_id}" if root_parent_node_id is not None else None),
     }
-    insert_stmt: PostgresInsert = pg_insert(projects_metadata).values(**data)
-    upsert_stmt: Any = insert_stmt.on_conflict_do_update(
+    insert_stmt = pg_insert(projects_metadata).values(**data)
+    upsert_stmt = insert_stmt.on_conflict_do_update(
         index_elements=[projects_metadata.c.project_uuid],
         set_=data,
     ).returning(sa.literal_column("*"))
@@ -226,8 +225,8 @@ async def set_project_custom_metadata(
         "project_uuid": f"{project_uuid}",
         "custom": custom_metadata,
     }
-    insert_stmt: PostgresInsert = pg_insert(projects_metadata).values(**data)
-    upsert_stmt: Any = insert_stmt.on_conflict_do_update(
+    insert_stmt = pg_insert(projects_metadata).values(**data)
+    upsert_stmt = insert_stmt.on_conflict_do_update(
         index_elements=[projects_metadata.c.project_uuid],
         set_=data,
     ).returning(sa.literal_column("*"))

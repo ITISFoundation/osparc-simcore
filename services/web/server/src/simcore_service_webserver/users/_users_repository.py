@@ -211,12 +211,12 @@ async def get_active_users_email_data_by_ids(
 
 async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> UserID:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
-        user_id = await conn.scalar(
+        user_id: UserID = await conn.scalar(
             sa.select(
                 users.c.id,
             ).where(users.c.primary_gid == primary_gid)
         )
-        return _parse_as_user(user_id)
+        return user_id
 
 
 async def get_user_email_legacy(engine: AsyncEngine, *, user_id: UserID | None) -> str:

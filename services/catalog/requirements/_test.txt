@@ -178,12 +178,14 @@ sniffio==1.3.1
     #   -c requirements/_base.txt
     #   anyio
     #   asgi-lifespan
-sqlalchemy==2.0.51
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 types-psycopg2==2.9.21.20260223
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
@@ -193,7 +195,7 @@ typing-extensions==4.14.1
     #   -c requirements/_base.txt
     #   alembic
     #   mypy
-    #   sqlalchemy
+    #   sqlalchemy2-stubs
 urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

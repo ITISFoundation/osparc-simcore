@@ -144,10 +144,12 @@ simple-websocket==1.1.0
     # via python-engineio
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.0.51
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 starlette==0.52.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -166,7 +168,7 @@ typing-extensions==4.15.0
     #   pydantic-core
     #   pydantic-extra-types
     #   pyee
-    #   sqlalchemy
+    #   sqlalchemy2-stubs
     #   typing-inspection
 typing-inspection==0.4.2
     # via

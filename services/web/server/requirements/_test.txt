@@ -341,12 +341,14 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-sqlalchemy==2.0.51
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 starlette==0.47.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -382,7 +384,7 @@ typing-extensions==4.14.1
     #   pydantic
     #   pydantic-core
     #   rich-toolkit
-    #   sqlalchemy
+    #   sqlalchemy2-stubs
     #   typer
     #   typing-inspection
 typing-inspection==0.4.1

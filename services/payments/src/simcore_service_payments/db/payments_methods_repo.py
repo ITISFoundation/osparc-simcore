@@ -1,5 +1,4 @@
 import datetime
-from typing import Any
 
 import sqlalchemy as sa
 from arrow import utcnow
@@ -79,7 +78,7 @@ class PaymentsMethodsRepo(BaseRepository):
             if row.completed_at is not None:
                 raise PaymentMethodAlreadyAckedError(payment_method_id=payment_method_id)
 
-            result: Any = await conn.execute(
+            result = await conn.execute(
                 payments_methods.update()
                 .values(completed_at=sa.func.now(), state=completion_state, **optional)
                 .where(payments_methods.c.payment_method_id == payment_method_id)
@@ -178,7 +177,7 @@ class PaymentsMethodsRepo(BaseRepository):
         wallet_id: WalletID,
     ) -> PaymentsMethodsDB | None:
         async with self.db_engine.begin() as conn:
-            result: Any = await conn.execute(
+            result = await conn.execute(
                 payments_methods.delete()
                 .where(
                     (payments_methods.c.user_id == user_id)

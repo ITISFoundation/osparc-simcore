@@ -57,9 +57,9 @@ class GroupsRepository(BaseRepository):
         service_owners: dict[PositiveInt, LowerCaseEmailStr | None] = {}
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                sa.select(users.c.primary_gid, users.c.email).where(users.c.primary_gid.in_(gids))
+                sa.select([users.c.primary_gid, users.c.email]).where(users.c.primary_gid.in_(gids))
             ):
-                service_owners[row.primary_gid] = (
-                    TypeAdapter(LowerCaseEmailStr).validate_python(row.email) if row.email else None
+                service_owners[row[users.c.primary_gid]] = (
+                    TypeAdapter(LowerCaseEmailStr).validate_python(row[users.c.email]) if row[users.c.email] else None
                 )
         return service_owners

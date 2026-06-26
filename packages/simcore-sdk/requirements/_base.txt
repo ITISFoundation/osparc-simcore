@@ -287,7 +287,7 @@ shellingham==1.5.4
     # via typer
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.0.51
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -325,7 +325,6 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
-    #   sqlalchemy
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic

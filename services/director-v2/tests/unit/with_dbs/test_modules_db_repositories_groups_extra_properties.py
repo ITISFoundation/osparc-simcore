@@ -56,7 +56,7 @@ def mock_env(
     # NOTE: drops the default internet policy added by the migration to test
     # otherwise any user will always have access to the internet
     with postgres_db.connect() as con:
-        con.execute(groups_extra_properties.delete().where(groups_extra_properties.c.group_id == 1))
+        con.execute(groups_extra_properties.delete(groups_extra_properties.c.group_id == 1))
     return env_vars
 
 
@@ -66,7 +66,7 @@ def give_internet_to_group(
 ) -> Iterator[Callable[..., dict]]:
     to_remove = []
 
-    def creator(group_id: int, has_internet_access: bool, product_name: str | None = None) -> dict[str, Any]:
+    def creator(group_id: int, has_internet_access: bool, product_name: str = None) -> dict[str, Any]:
         with postgres_db.connect() as con:
             groups_extra_properties_config = {
                 "group_id": group_id,
@@ -84,7 +84,7 @@ def give_internet_to_group(
             result = con.execute(
                 sa.select(groups_extra_properties).where(groups_extra_properties.c.group_id == group_id)
             )
-            entry = result.mappings().first()
+            entry = result.first()
             assert entry
             print(f"--> created {entry=}")
             to_remove.append(group_id)
@@ -137,7 +137,7 @@ async def test_regression_group_id_is_not_unique(mock_env: EnvVarsDict, postgres
         result = con.execute(groups.insert().values(groups_config).returning(sa.literal_column("*")))
         return result.first()[0]
 
-    def _insert_product(con: sa.engine.Connection, group_id: int, name: str) -> None:
+    def _insert_product(con: sa.engine.Connection, group_id: int, name: str) -> int:
         product_config = {
             "name": name,
             "group_id": group_id,
@@ -146,7 +146,7 @@ async def test_regression_group_id_is_not_unique(mock_env: EnvVarsDict, postgres
         }
         con.execute(products.insert().values(product_config))
 
-    def _insert_groups_extra_properties(con: sa.engine.Connection, group_id: int, product_name: str) -> None:
+    def _insert_groups_extra_properties(con: sa.engine.Connection, group_id: int, product_name: str) -> int:
         groups_extra_properties_config = {
             "product_name": product_name,
             "group_id": group_id,

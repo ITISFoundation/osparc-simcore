@@ -238,12 +238,14 @@ sortedcontainers==2.4.0
     #   -c requirements/_base.txt
     #   distributed
     #   fakeredis
-sqlalchemy==2.0.51
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
+sqlalchemy2-stubs==0.0.2a38
+    # via sqlalchemy
 tblib==3.2.2
     # via
     #   -c requirements/_base.txt
@@ -270,7 +272,7 @@ typing-extensions==4.15.0
     #   -c requirements/_base.txt
     #   alembic
     #   mypy
-    #   sqlalchemy
+    #   sqlalchemy2-stubs
 urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

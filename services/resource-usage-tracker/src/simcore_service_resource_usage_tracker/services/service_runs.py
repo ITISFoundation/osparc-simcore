@@ -32,7 +32,7 @@ from .modules.db import service_runs_db
 _PRESIGNED_LINK_EXPIRATION_SEC = 7200
 
 
-async def list_service_runs(  # noqa: PLR0913
+async def list_service_runs(
     db_engine: AsyncEngine,
     *,
     user_id: UserID,

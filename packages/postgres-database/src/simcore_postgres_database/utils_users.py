@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from common_library.users_enums import AccountRequestStatus
 from sqlalchemy import Column
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.engine import Row
+from sqlalchemy.engine.result import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Select

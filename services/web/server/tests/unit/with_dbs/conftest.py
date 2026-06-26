@@ -520,7 +520,7 @@ def postgres_dsn(docker_services: Services, docker_ip: str | Any, default_app_cf
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
-    DSN = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+    DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
     url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
@@ -561,8 +561,7 @@ def postgres_db(postgres_dsn: dict, postgres_service: str) -> Iterator[sa.engine
 @pytest.fixture
 async def asyncpg_engine(postgres_db: sa.engine.Engine, is_pdb_enabled: bool) -> AsyncIterable[AsyncEngine]:
     # NOTE: call to postgres BEFORE app starts
-    sync_dsn = postgres_db.url.render_as_string(hide_password=False)
-    dsn = sync_dsn.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+    dsn = f"{postgres_db.url}".replace("postgresql://", "postgresql+asyncpg://")
     minsize = 1
     maxsize = 50
 

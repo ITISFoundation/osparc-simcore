@@ -71,18 +71,6 @@ def downgrade():
         )
     )
 
-    # users created without local credentials have no users_secrets row.
-    # Backfill a non-empty placeholder before restoring the legacy NOT NULL column.
-    op.execute(
-        sa.DDL(
-            """
-        UPDATE users
-        SET password_hash = '__MIGRATED_NO_PASSWORD__'
-        WHERE password_hash IS NULL
-    """
-        )
-    )
-
     # Now make the column NOT NULL
     op.alter_column("users", "password_hash", nullable=False)
 

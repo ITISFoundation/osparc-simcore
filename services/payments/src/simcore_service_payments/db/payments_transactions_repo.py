@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any
 
 import sqlalchemy as sa
 from models_library.api_schemas_payments.errors import (
@@ -110,7 +109,7 @@ class PaymentsTransactionsRepo(BaseRepository):
 
             assert row.initiated_at  # nosec
 
-            result: Any = await connection.execute(
+            result = await connection.execute(
                 payments_transactions.update()
                 .values(
                     completed_at=sa.func.now(),

@@ -272,7 +272,7 @@ async def get_licensed_item_by_key_version(
         row = result.one_or_none()
         if row is None:
             raise LicensedKeyVersionNotFoundError(key=key, version=version)
-        return LicensedItem.model_validate(row, from_attributes=True)
+        return LicensedItem.model_validate(dict(row))
 
 
 async def list_licensed_items(
@@ -337,6 +337,6 @@ async def list_licensed_items(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[LicensedItem] = [LicensedItem.model_validate(row, from_attributes=True) async for row in result]
+        items: list[LicensedItem] = [LicensedItem.model_validate(dict(row)) async for row in result]
 
         return cast(int, total_count), items

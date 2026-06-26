@@ -2,7 +2,6 @@ from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
-from urllib.parse import quote_plus
 from uuid import UUID
 
 import typer
@@ -17,10 +16,8 @@ from sqlalchemy.engine.cursor import ResultProxy
 
 @contextmanager
 def db_connection(db_config: DBConfig) -> Iterator[Connection]:
-    user = quote_plus(db_config.user)
-    password = quote_plus(db_config.password)
     engine = create_engine(
-        f"postgresql+psycopg2://{user}:{password}@{db_config.address}/{db_config.database}",
+        f"postgresql://{db_config.user}:{db_config.password}@{db_config.address}/{db_config.database}",
         echo=True,
     )
     with engine.connect() as con:
@@ -29,12 +26,14 @@ def db_connection(db_config: DBConfig) -> Iterator[Connection]:
 
 def _project_uuid_exists_in_destination(connection: Connection, project_id: str) -> bool:
     query = select(projects.c.id).where(projects.c.uuid == f"{project_id}")
-    return len(list(connection.execute(query))) > 0
+    exists = len(list(connection.execute(query))) > 0
+    return exists
 
 
 def _meta_data_exists_in_destination(connection: Connection, file_id: str) -> bool:
     query = select(file_meta_data.c.file_id).where(file_meta_data.c.file_id == f"{file_id}")
-    return len(list(connection.execute(query))) > 0
+    exists = len(list(connection.execute(query))) > 0
+    return exists
 
 
 def _get_project(connection: Connection, project_uuid: UUID) -> ResultProxy:

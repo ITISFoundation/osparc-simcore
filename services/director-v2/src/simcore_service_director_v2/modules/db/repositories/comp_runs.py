@@ -22,11 +22,10 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import CursorResult
 from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import or_
-from sqlalchemy.sql.elements import ColumnElement, literal_column
+from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....core.errors import (
@@ -172,11 +171,11 @@ class CompRunsRepository(BaseRepository):
                                 which are not processed since then (default: {None})
         """
 
-        conditions: list[ColumnElement[bool]] = []
+        conditions = []
         if filter_by_state:
             conditions.append(or_(*[comp_runs.c.result == RUNNING_STATE_TO_DB[s] for s in filter_by_state]))
 
-        scheduling_or_conditions: list[ColumnElement[bool]] = []
+        scheduling_or_conditions = []
         if never_scheduled:
             scheduling_or_conditions.append(comp_runs.c.scheduled.is_(None))
         if scheduled_since is not None:
@@ -465,7 +464,7 @@ class CompRunsRepository(BaseRepository):
                 if iteration is None:
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
-                result: CursorResult = await conn.execute(
+                result = await conn.execute(
                     comp_runs.insert()
                     .values(
                         user_id=user_id,
@@ -489,7 +488,7 @@ class CompRunsRepository(BaseRepository):
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
     ) -> CompRunsAtDB | None:
         async with transaction_context(self.db_engine) as conn:
-            result: CursorResult = await conn.execute(
+            result = await conn.execute(
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_uuid == f"{project_id}")
