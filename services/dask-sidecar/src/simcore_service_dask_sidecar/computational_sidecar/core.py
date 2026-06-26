@@ -225,7 +225,6 @@ class ComputationalSidecar:
         try:
             await push_task
         except AesGcmStreamError as exc:
-            _logger.warning("Failed to encrypt output %s: %s", output_key, exc, exc_info=exc)
             raise ServiceEncryptionError(
                 service_key=self.task_parameters.image,
                 service_version=self.task_parameters.tag,
