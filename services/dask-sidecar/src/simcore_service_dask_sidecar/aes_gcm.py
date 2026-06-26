@@ -1,13 +1,41 @@
 """Streaming AES-256-GCM file/object encryption — normative cross-language protocol.
 
 This module defines and implements ``simcore-aesgcm-stream-v1``, a streaming
-authenticated-encryption protocol for arbitrarily large files/objects. Plaintext is
-never fully materialised in memory: encryption and decryption operate on file-like
-binary objects (``BinaryIO``) and process data in fixed-size chunks. Decryption memory is
-bounded by ``chunk_size``; encryption keeps one chunk of lookahead, so its peak is ~2x ``chunk_size``.
+authenticated-encryption protocol for arbitrarily large files/objects. The data (the raw
+bytes to protect) is never fully materialised in memory: encryption and decryption
+operate on file-like binary objects (``BinaryIO``) and process the data in fixed-size
+chunks. Decryption memory is bounded by ``chunk_size``; encryption keeps one chunk of
+lookahead, so its peak is ~2x ``chunk_size``.
 
 This docstring is the normative specification. Any independent implementation (e.g. a
 libsodium-based client) that follows it byte-for-byte interoperates with this one.
+
+
+Glossary
+--------
+The protocol relies on a few standard cryptography terms (as used by the ``cryptography``
+library). Defined here so the rest of the module reads unambiguously:
+
+* **data**: the raw, unencrypted bytes to protect (what cryptographers call "plaintext").
+  We deliberately say *data*, not *plaintext*, because the content is arbitrary bytes,
+  not text. This matches ``AESGCM.encrypt(nonce, data, ...)``.
+* **ciphertext**: the encrypted bytes produced from the data; reveals nothing about it.
+* **AEAD** (Authenticated Encryption with Associated Data): encryption that also
+  guarantees integrity/authenticity — any tampering is detected on decryption.
+* **AES-256-GCM**: the concrete AEAD cipher used here, with a 256-bit (32-byte) key.
+* **tag**: a 16-byte authentication tag appended to each ciphertext; decryption fails if
+  it does not verify (tampering, wrong key/context, truncation).
+* **nonce** ("number used once"): a 12-byte value, unique per chunk, that must never be
+  reused with the same key. Here it is derived from a per-file random seed and the chunk
+  index.
+* **AAD** (Associated/Additional Authenticated Data): extra context that is authenticated
+  by the tag but *not* encrypted (e.g. version, ``file_id``, chunk index).
+* **HKDF** (HMAC-based Key Derivation Function): derives a fresh per-file key from a
+  master secret and a context.
+* **root_key**: the 32-byte master secret. Per-file keys are derived from it; it is never
+  used directly to encrypt data.
+* **file_key**: the per-file key derived via HKDF from ``root_key`` and ``file_id``.
+* **chunk**: a fixed-size slice of the data encrypted independently as one AEAD record.
 
 
 Conventions
@@ -32,12 +60,12 @@ Constants
     key size       = 32 bytes                       # AES-256
     nonce size     = 12 bytes                       # AES-GCM nonce
     tag size       = 16 bytes                       # AES-GCM authentication tag
-    default chunk  = 1024 * 1024 bytes              # plaintext chunk size (writer default)
+    default chunk  = 1024 * 1024 bytes              # data chunk size (writer default)
 
 
 Cryptographic primitives
 -------------------------
-* AEAD: AES-256-GCM. ``AESGCM.encrypt(nonce, plaintext, aad)`` returns
+* AEAD: AES-256-GCM. ``AESGCM.encrypt(nonce, data, aad)`` returns
   ``ciphertext || tag`` where ``tag`` is the trailing 16 bytes.
 * KDF: HKDF-SHA256 with ``salt`` empty (none).
 
@@ -59,7 +87,7 @@ Stream header (28 bytes, struct format ">8sHHI12s")
     offset 0  : magic            (8 bytes)  = b"SCAGSTRM"
     offset 8  : version          (uint16)   = 1
     offset 10 : flags            (uint16)   = 0   (reserved; must be 0)
-    offset 12 : chunk_size       (uint32)   plaintext chunk size; must be > 0
+    offset 12 : chunk_size       (uint32)   data chunk size; must be > 0
     offset 16 : base_nonce_seed  (12 bytes) random, generated fresh per encryption
 
 
@@ -91,11 +119,11 @@ Per-chunk record (written sequentially after the header)
 
     offset 0 : chunk_flags  (uint8)    bit0 = final-chunk marker; other bits must be 0
     offset 1 : ct_len       (uint32)   byte length of (ciphertext || tag)
-    offset 5 : ct_and_tag   (ct_len bytes) = AESGCM.encrypt(nonce_i, plaintext_i, aad_i)
+    offset 5 : ct_and_tag   (ct_len bytes) = AESGCM.encrypt(nonce_i, data_i, aad_i)
 
-The plaintext length of a chunk is ``ct_len - 16`` (tag size). Thus ``ct_len`` must be
+The data length of a chunk is ``ct_len - 16`` (tag size). Thus ``ct_len`` must be
 >= 16. The final chunk is encoded identically except ``chunk_flags`` bit0 = 1. An empty
-plaintext input still produces exactly one final chunk whose plaintext length is 0
+data input still produces exactly one final chunk whose data length is 0
 (``ct_len`` == 16).
 
 
@@ -113,7 +141,7 @@ Protocol invariants (enforced on decryption)
 9. Exactly one chunk has the final marker set, and it is the last chunk read.
 10. No bytes may follow the final chunk.
 11. Any authentication-tag failure, truncation or violation of the above aborts
-    decryption (no plaintext beyond the failing chunk is emitted as valid output).
+    decryption (no data beyond the failing chunk is emitted as valid output).
 """
 
 import os
@@ -243,7 +271,7 @@ def _parse_header(
     src: BinaryIO,
 ) -> Annotated[
     tuple[int, bytes],
-    Field(description="(plaintext chunk_size, 12-byte per-file base nonce seed) from the header"),
+    Field(description="(data chunk_size, 12-byte per-file base nonce seed) from the header"),
 ]:
     header = _read_exact(src, _HEADER_STRUCT.size)
     if header is None:
@@ -275,12 +303,12 @@ def encrypt_stream(
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
     progress_cb: Annotated[
         Callable[[int], None] | None,
-        Field(description="Called after each chunk with the cumulative plaintext bytes processed so far"),
+        Field(description="Called after each chunk with the cumulative data bytes processed so far"),
     ] = None,
 ) -> None:
     """Encrypt ``src`` into ``dst`` using the streaming AES-256-GCM protocol.
 
-    Reads plaintext from ``src`` in ``chunk_size`` blocks and writes a versioned
+    Reads data from ``src`` in ``chunk_size`` blocks and writes a versioned
     self-describing stream to ``dst``. Because a one-chunk lookahead is used to flag the
     final chunk, peak memory usage is bounded by ~2x ``chunk_size``.
 
@@ -297,7 +325,7 @@ def encrypt_stream(
     dst.write(_HEADER_STRUCT.pack(FORMAT_MAGIC, FORMAT_VERSION, 0, chunk_size, base_nonce_seed))
 
     chunk_index = 0
-    total_plaintext_bytes = 0
+    total_data_bytes = 0
     # One-chunk lookahead so the final chunk can be flagged unambiguously, including
     # the empty-input case (which still emits exactly one final chunk).
     pending = src.read(chunk_size)
@@ -314,9 +342,9 @@ def encrypt_stream(
         dst.write(_CHUNK_PREFIX_STRUCT.pack(_FINAL_CHUNK_FLAG if is_final else 0, len(ct_and_tag)))
         dst.write(ct_and_tag)
 
-        total_plaintext_bytes += len(pending)
+        total_data_bytes += len(pending)
         if progress_cb is not None:
-            progress_cb(total_plaintext_bytes)
+            progress_cb(total_data_bytes)
 
         if is_final:
             break
@@ -374,13 +402,13 @@ def decrypt_stream(
     file_id: str,
     progress_cb: Annotated[
         Callable[[int], None] | None,
-        Field(description="Called after each chunk with the cumulative plaintext bytes processed so far"),
+        Field(description="Called after each chunk with the cumulative data bytes processed so far"),
     ] = None,
 ) -> None:
     """Decrypt a stream produced by :func:`encrypt_stream` from ``src`` into ``dst``.
 
     Re-derives the per-file key, reconstructs per-chunk nonces and AAD, verifies every
-    chunk's authentication tag and streams plaintext to ``dst``. Fails hard on any
+    chunk's authentication tag and streams data to ``dst``. Fails hard on any
     tampering, truncation, wrong key/context or unexpected trailing data.
 
     Raises:
@@ -397,7 +425,7 @@ def decrypt_stream(
     aesgcm = AESGCM(file_key)
 
     chunk_index = 0
-    total_plaintext_bytes = 0
+    total_data_bytes = 0
     seen_final = False
     while not seen_final:
         is_final, ct_and_tag = _read_chunk_record(src, max_ct_len=_chunk_size + TAG_SIZE_BYTES)
@@ -407,12 +435,12 @@ def decrypt_stream(
             is_final=is_final,
             file_id=file_id,
         )
-        plaintext = _decrypt_chunk(aesgcm, nonce=nonce, ct_and_tag=ct_and_tag, aad=aad)
+        data = _decrypt_chunk(aesgcm, nonce=nonce, ct_and_tag=ct_and_tag, aad=aad)
 
-        dst.write(plaintext)
-        total_plaintext_bytes += len(plaintext)
+        dst.write(data)
+        total_data_bytes += len(data)
         if progress_cb is not None:
-            progress_cb(total_plaintext_bytes)
+            progress_cb(total_data_bytes)
 
         seen_final = is_final
         chunk_index += 1
@@ -423,7 +451,7 @@ def decrypt_stream(
 
 
 def encrypt_file(
-    src: Annotated[Path, Field(description="Path to plaintext input file")],
+    src: Annotated[Path, Field(description="Path to unencrypted (data) input file")],
     dst: Annotated[Path, Field(description="Path to encrypted output file")],
     *,
     root_key: bytes,
@@ -456,7 +484,7 @@ def encrypt_file(
 
 def decrypt_file(
     src: Annotated[Path, Field(description="Path to encrypted input file")],
-    dst: Annotated[Path, Field(description="Path to plaintext output file")],
+    dst: Annotated[Path, Field(description="Path to unencrypted (data) output file")],
     *,
     root_key: bytes,
     file_id: str,
