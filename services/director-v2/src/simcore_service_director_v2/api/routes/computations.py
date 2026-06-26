@@ -259,16 +259,6 @@ async def _create_or_update_pipeline_and_tasks(  # noqa: PLR0913 # pylint: disab
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> tuple[list[CompTaskAtDB], bool]:
-    """Persists the pipeline & tasks unless the computational projection is unchanged.
-
-    NOTE: protects the pipeline against changes that are not relevant for computation
-    (e.g. renaming a node). When neither starting nor forcing a restart, and the
-    computational projection of the project (service key/version, inputs, outputs and
-    topology) is unchanged, the expensive pipeline/tasks upsert (catalog + pricing + RPC)
-    is skipped and the pipeline is reported as already up-to-date.
-
-    Returns (comp_tasks, pipeline_started).
-    """
     assert computation.product_name  # nosec
 
     existing_tasks = (
