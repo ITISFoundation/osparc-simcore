@@ -270,7 +270,13 @@ class BaseProjectDB:
             )
 
         project: dict[str, Any] = dict(project_row)
-        project["workbench"] = await get_project_workbench(connection, project_uuid)
+        workbench, workbench_ui = await get_project_workbench(connection, project_uuid)
+        project["workbench"] = workbench
+
+        # Reconstruct ui.workbench from the per-node `ui` column (source of truth)
+        project_ui = dict(project["ui"]) if project.get("ui") else {}
+        project_ui["workbench"] = workbench_ui or None
+        project["ui"] = project_ui
 
         if "tags" not in exclude_foreign:
             tags = await self._get_tags_by_project(connection, project_id=project_row["id"])
@@ -371,10 +377,17 @@ def patch_workbench(
 async def get_project_workbench(
     connection: AsyncConnection,
     project_uuid: str,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Returns the project workbench and the reconstructed ui.workbench.
+
+    Per-node UI (position, marker) is stored in `projects_nodes.ui` (source of truth),
+    so it is excluded from the workbench node-data and returned separately to rebuild
+    `projects.ui.workbench`.
+    """
     project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(f"{project_uuid}"))
     exclude_fields = {"node_id", "required_resources", "created", "modified", "ui"}
     workbench: dict[str, Any] = {}
+    workbench_ui: dict[str, Any] = {}
 
     project_nodes = await project_nodes_repo.list(connection)
     for project_node in project_nodes:
@@ -382,7 +395,9 @@ async def get_project_workbench(
         # Convert snake_case keys to camelCase to match the original workbench JSON schema
         node_data = {snake_to_camel(k): v for k, v in node_data.items()}
         workbench[f"{project_node.node_id}"] = node_data
-    return workbench
+        if project_node.ui:
+            workbench_ui[f"{project_node.node_id}"] = project_node.ui
+    return workbench, workbench_ui
 
 
 async def get_projects_workbenches(
