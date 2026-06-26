@@ -1,42 +1,38 @@
 """Services Manifest API Documentation
 
-The `service.manifest` module provides a read-only API to access the services catalog. The term "Manifest"
-refers to a detailed, finalized list, traditionally used to denote items that are recorded as part of an
-official inventory or log, emphasizing the immutable nature of the data.
+The `service.manifest` module provides a read-only API to access the services catalog. The term "Manifest" refers to a detailed, finalized list,
+traditionally used to denote items that are recorded as part of an official inventory or log, emphasizing the immutable nature of the data.
 
 ### Service Registration
 Services are registered within the manifest in two distinct methods:
 
 1. **Docker Registry Integration:**
-   - Services can be registered by pushing a Docker image, complete with appropriate labels and tags,
-     to a Docker registry.
-   - These are generally services registered through the Docker registry method, catering primarily to
-     end-user functionalities.
+   - Services can be registered by pushing a Docker image, complete with appropriate labels and tags, to a Docker registry.
+   - These are generally services registered through the Docker registry method, catering primarily to end-user functionalities.
    - Example services include user-oriented applications like `sleeper`.
 
 2. **Function Service Definition:**
-   - Services can also be directly defined in the codebase as function services, which typically support
-     framework operations.
-   - These services are usually defined programmatically within the code and are integral to the
-     framework's infrastructure.
+   - Services can also be directly defined in the codebase as function services, which typically support framework operations.
+   - These services are usually defined programmatically within the code and are integral to the framework's infrastructure.
    - Examples include utility services like `FilePicker`.
 
 
 ### Usage
-This API is designed for read-only interactions, allowing users to retrieve information about registered
-services but not to modify the registry. This ensures data integrity and consistency across the system.
+This API is designed for read-only interactions, allowing users to retrieve information about registered services but not to modify the registry.
+This ensures data integrity and consistency across the system.
 
 
 """
 
 import logging
-from typing import Any, Final, cast
+from typing import Any, TypeAlias, cast
 
-from aiocache.decorators import cached_stampede  # type: ignore[import-untyped]
+from aiocache import cached  # type: ignore[import-untyped]
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
+from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
 from ..clients.director import DirectorClient
@@ -46,7 +42,7 @@ from .function_services import get_function_service, is_function_service
 _logger = logging.getLogger(__name__)
 
 
-type ServiceMetaDataPublishedDict = dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished]
+ServiceMetaDataPublishedDict: TypeAlias = dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished]
 
 
 _error_already_logged: set[tuple[str | None, str | None]] = set()
@@ -81,52 +77,11 @@ async def get_services_map(
     return services
 
 
-_SERVICE_CACHE_KEY: Final = "service"
-_SERVICES_MAP_CACHE_KEY: Final = "services_map"
-
-
-def _get_or_create_cache(
-    director_client: DirectorClient,
-    name: str,
-    populate: Any,
-    key_builder: Any,
-) -> Any:
-    # NOTE: the cache is attached to the *director client instance* so that distinct
-    # apps never share cache state. It is built lazily (once per client).
-    # `_uuid` namespaces each client's entries in aiocache's in-memory store.
-    cached_fn = director_client.services_caches.get(name)
-    if cached_fn is None:
-        cached_fn = cached_stampede(
-            ttl=DIRECTOR_CACHING_TTL,
-            lease=director_client.services_cache_lease,
-            namespace=f"{__name__}:{director_client._uuid}",  # noqa: SLF001 # pylint: disable=protected-access
-            key_builder=key_builder,
-            skip_cache_func=lambda _result: not director_client.services_caching_enabled,
-        )(populate)
-        director_client.services_caches[name] = cached_fn
-    return cached_fn
-
-
-async def reset_services_caches(director_client: DirectorClient) -> None:
-    # NOTE: clears this client's manifest caches and drops the cached callables so that
-    # they are rebuilt from the client's current configuration (e.g. after changing the
-    # lease). Mainly used for test isolation / forcing a cold cache.
-    for cached_fn in director_client.services_caches.values():
-        await cached_fn.cache.clear()
-    director_client.services_caches.clear()
-
-
-async def _populate_service(
-    director_client: DirectorClient,
-    *,
-    key: ServiceKey,
-    version: ServiceVersion,
-) -> ServiceMetaDataPublished:
-    if is_function_service(key):
-        return get_function_service(key=key, version=version)
-    return await director_client.get_service(service_key=key, service_version=version)
-
-
+@cached(
+    ttl=DIRECTOR_CACHING_TTL,
+    namespace=__name__,
+    key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
+)
 async def get_service(
     director_client: DirectorClient,
     *,
@@ -138,43 +93,23 @@ async def get_service(
 
     raises if does not exist or if validation fails
     """
-    cached_fn = _get_or_create_cache(
-        director_client,
-        _SERVICE_CACHE_KEY,
-        _populate_service,
-        lambda f, *_args, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
-    )
-    return cast(
-        ServiceMetaDataPublished,
-        await cached_fn(director_client, key=key, version=version),
-    )
-
-
-async def _populate_services_map(
-    director_client: DirectorClient,
-) -> ServiceMetaDataPublishedDict:
-    # NOTE: caches the *entire* registry manifest so that resolving a batch of
-    # services requires a single director call instead of one call per service.
-    return await get_services_map(director_client)
+    if is_function_service(key):
+        service = get_function_service(key=key, version=version)
+    else:
+        service = await director_client.get_service(service_key=key, service_version=version)
+    return service
 
 
 async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
     director_client: DirectorClient,
 ) -> list[ServiceMetaDataPublished | BaseException]:
-    # NOTE: resolves the whole manifest in a single (cached) bulk fetch and looks
-    # up the selection, avoiding a per-service fan-out of director calls.
-    cached_fn = _get_or_create_cache(
-        director_client,
-        _SERVICES_MAP_CACHE_KEY,
-        _populate_services_map,
-        lambda f, *_args, **_kwargs: f.__name__,
+    batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
+        *(get_service(key=k, version=v, director_client=director_client) for k, v in selection),
+        reraise=False,
+        log=_logger,
+        tasks_group_prefix="manifest.get_batch_services",
     )
-    services_map = await cached_fn(director_client)
-    batch: list[ServiceMetaDataPublished | BaseException] = []
-    for key, version in selection:
-        service = services_map.get((key, version))
-        batch.append(service if service is not None else KeyError((key, version)))
     return batch
 
 

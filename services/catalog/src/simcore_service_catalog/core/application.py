@@ -73,6 +73,7 @@ def create_app(
             "Application settings: %s",
             json_dumps(settings, indent=2, sort_keys=True),
         )
+
     with configure_app_lifespan(
         logging_lifespan=logging_lifespan,
         starting_banner=APP_STARTING_BANNER_MSG,
@@ -94,6 +95,7 @@ def create_app(
         # STATE
         app.state.settings = settings
         app.state.tracing_config = tracing_config
+
         _configure_plugins(app, app_lifespan, settings, tracing_config)
 
     # ROUTES & ERROR HANDLERS
