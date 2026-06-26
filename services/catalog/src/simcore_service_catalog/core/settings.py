@@ -104,7 +104,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
-    CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
 
     CATALOG_DIRECTOR_BULK_FETCH_LEASE: Annotated[
         PositiveInt,

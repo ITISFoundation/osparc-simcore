@@ -291,3 +291,29 @@ async def test_set_services_caching_disabled_always_fetches_fresh(
             assert mocked_director_rest_api["list_services"].call_count == expected_call_count
     finally:
         director_client.services_caching_enabled = True  # restore caching for other tests
+
+
+async def test_warm_services_cache_seeds_listing_cache_so_no_director_call(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    # a batch spanning several (non function) services
+    selection = [(s.key, s.version) for s in all_services_map.values() if not is_function_service(s.key)]
+    assert len(selection) > 1
+
+    # seed this client's (otherwise cold) services-map cache from an already-fetched
+    # manifest map, as the registry-sync background task does
+    await manifest.reset_services_caches(director_client)
+    await manifest.warm_services_cache(director_client, all_services_map)
+
+    mocked_director_rest_api["list_services"].reset()
+    mocked_director_rest_api["get_service"].reset()
+
+    got_services = await manifest.get_batch_services(selection, director_client)
+
+    assert [(s.key, s.version) for s in got_services] == selection
+
+    # the listing path is served entirely from the warmed cache: director is never hit
+    assert not mocked_director_rest_api["list_services"].called
+    assert not mocked_director_rest_api["get_service"].called

@@ -9,19 +9,20 @@
 
 """
 
-import asyncio
+import datetime
 import logging
 from collections.abc import AsyncIterator
-from contextlib import suppress
 from pprint import pformat
 from typing import Final
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI, HTTPException
 from fastapi_lifespan_manager import LifespanManager, State
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
+from servicelib.background_task import create_periodic_task
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -106,14 +107,14 @@ async def _create_services_in_database(
             )
 
 
-async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
+async def _ensure_registry_and_database_are_synced(
+    app: FastAPI,
+    services_in_manifest_map: dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished],
+) -> None:
     """Ensures that the services listed in the database is in sync with the registry
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    director_api = get_director_client(app)
-    services_in_manifest_map = await manifest.get_services_map(director_api)
-
     services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
@@ -168,54 +169,42 @@ async def _run_sync_services(app: FastAPI):
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
 
+    director_api = get_director_client(app)
+    services_in_manifest_map = await manifest.get_services_map(director_api)
+
+    # warm this client's services-map cache used by the listing path, so that
+    # requests are served from cache instead of triggering a cold-cache bulk
+    # fetch against the director/registry
+    await manifest.warm_services_cache(director_api, services_in_manifest_map)
+
     # check that the list of services is in sync with the registry
-    await _ensure_registry_and_database_are_synced(app)
+    await _ensure_registry_and_database_are_synced(app, services_in_manifest_map)
 
     # check that the published services are available to everyone
     # (templates are published to GUESTs, so their services must be also accessible)
     await _ensure_published_templates_accessible(engine, default_product)
 
 
-async def _sync_services_task(app: FastAPI) -> None:
-    while app.state.registry_syncer_running:
-        try:
-            _logger.debug("Syncing services between registry and database...")
-
-            await _run_sync_services(app)
-
-            await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
-
-        except asyncio.CancelledError:
-            # task is stopped
-            _logger.info("registry syncing task cancelled")
-            raise
-
-        except Exception:  # pylint: disable=broad-except
-            if not app.state.registry_syncer_running:
-                _logger.warning("registry syncing task forced to stop")
-                break
-            _logger.exception("Unexpected error while syncing registry entries, restarting now...")
-            # wait a bit before retrying, so it does not block everything until the director is up
-            await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE)
+_TASK_NAME: Final[str] = "registry-sync-task"
+_STOP_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(minutes=3)
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
-    # FIXME: added this variable to overcome the state in which the
-    # task cancelation is ignored and the exceptions enter in a loop
-    # that never stops the background task. This flag is an additional
-    # mechanism to enforce stopping the background task
-    app.state.registry_syncer_running = True
-    task = asyncio.create_task(_sync_services_task(app))
-    app.state.registry_sync_task = task
+    # NOTE: create_periodic_task keeps the task alive across failures (the
+    # iteration is retried indefinitely) and guarantees a clean cancellation
+    # on shutdown, so no extra "running" flag is needed to stop it.
+    app.state.registry_sync_task = create_periodic_task(
+        _run_sync_services,
+        interval=datetime.timedelta(seconds=app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME),
+        task_name=_TASK_NAME,
+        app=app,
+    )
     _logger.info("registry syncing task started")
 
 
 async def stop_registry_sync_task(app: FastAPI) -> None:
     if task := app.state.registry_sync_task:
-        with suppress(asyncio.CancelledError):
-            app.state.registry_syncer_running = False
-            task.cancel()
-            await task
+        await cancel_wait_task(task, max_delay=_STOP_TIMEOUT.total_seconds())
         app.state.registry_sync_task = None
     _logger.info("registry syncing task stopped")
 

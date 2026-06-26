@@ -178,6 +178,33 @@ async def get_batch_services(
     return batch
 
 
+async def warm_services_cache(
+    director_client: DirectorClient,
+    services: ServiceMetaDataPublishedDict,
+) -> None:
+    """Seeds this client's services-map cache used by the listing path.
+
+    The registry-sync background task already fetches the full manifest map in a
+    single `/services` call. Seeding the (otherwise cold) services-map cache with that
+    result lets ``get_batch_services`` serve listings from cache instead of triggering
+    the costly bulk fetch on the critical path. Re-seeding only refreshes the TTL.
+
+    NOTE: the value is written directly into the cache (rather than going through the
+    cached callable) so that the already-fetched map is reused, avoiding a second
+    `/services` round-trip on every background cycle.
+    """
+    if not director_client.services_caching_enabled:
+        return
+
+    cached_fn = _get_or_create_cache(
+        director_client,
+        _SERVICES_MAP_CACHE_KEY,
+        _populate_services_map,
+        lambda f, *_args, **_kwargs: f.__name__,
+    )
+    await cached_fn.cache.set(_populate_services_map.__name__, services, ttl=DIRECTOR_CACHING_TTL)
+
+
 async def get_service_ports(
     director_client: DirectorClient,
     *,
