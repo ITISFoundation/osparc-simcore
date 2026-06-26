@@ -185,7 +185,6 @@ async def create_user_services_trace_collector(app: FastAPI) -> None:
                 await client.containers.run(config=container_config, name=container_name)
             except DockerError as e:
                 if e.status == status.HTTP_409_CONFLICT:
-                    # name already in use: shipper is already running -> idempotent no-op
                     _logger.info("trace-shipper '%s' already exists, leaving it running", container_name)
                     return
                 raise
