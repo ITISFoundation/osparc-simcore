@@ -70,7 +70,7 @@ class ComputationalSidecar:
     s3_settings: S3Settings | None
     encryption: JobEncryptionContext | None
 
-    def _prepare_input_download(
+    def _create_download_for_input(
         self,
         input_key: str,
         input_params: FileUrl,
@@ -142,7 +142,9 @@ class ComputationalSidecar:
 
         for input_key, input_params in self.task_parameters.input_data.items():
             if isinstance(input_params, FileUrl):
-                download_tasks.append((input_key, self._prepare_input_download(input_key, input_params, task_volumes)))
+                download_tasks.append(
+                    (input_key, self._create_download_for_input(input_key, input_params, task_volumes))
+                )
             else:
                 local_input_data_file[input_key] = input_params
 
