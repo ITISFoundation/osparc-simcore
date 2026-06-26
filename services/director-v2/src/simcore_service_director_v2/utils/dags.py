@@ -3,7 +3,7 @@ import datetime
 import logging
 from collections.abc import Callable, Coroutine
 from copy import deepcopy
-from typing import Any, cast
+from typing import Any
 
 import arrow
 import networkx as nx
@@ -14,6 +14,8 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
+
+from simcore_service_director_v2.models.dynamic_services_scheduler import TypeAdapter
 
 from ..models.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
@@ -102,7 +104,7 @@ async def compute_dag_computational_hashes(dag: nx.DiGraph) -> dict[NodeIDStr, s
     get_node_io_payload_cb = _create_node_io_payload_cb(graph_data)
 
     return {
-        node_id: await compute_node_hash(cast(NodeID, node_id), get_node_io_payload_cb)
+        node_id: await compute_node_hash(TypeAdapter(NodeID).validate_python(node_id), get_node_io_payload_cb)
         for node_id, data in dag.nodes.data()
         if data.get("node_class") is NodeClass.COMPUTATIONAL
     }
