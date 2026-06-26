@@ -48,28 +48,24 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-def _encrypt_to_bytes(plaintext: bytes, *, job_key: bytes, job_id: str, file_id: str, file_role: str) -> bytes:
+def _encrypt_to_bytes(plaintext: bytes, *, root_key: bytes, file_id: str) -> bytes:
     encrypted = io.BytesIO()
     encrypt_stream(
         io.BytesIO(plaintext),
         encrypted,
-        job_key=job_key,
-        job_id=job_id,
+        root_key=root_key,
         file_id=file_id,
-        file_role=file_role,
     )
     return encrypted.getvalue()
 
 
-def _decrypt_to_bytes(ciphertext: bytes, *, job_key: bytes, job_id: str, file_id: str, file_role: str) -> bytes:
+def _decrypt_to_bytes(ciphertext: bytes, *, root_key: bytes, file_id: str) -> bytes:
     decrypted = io.BytesIO()
     decrypt_stream(
         io.BytesIO(ciphertext),
         decrypted,
-        job_key=job_key,
-        job_id=job_id,
+        root_key=root_key,
         file_id=file_id,
-        file_role=file_role,
     )
     return decrypted.getvalue()
 
@@ -94,12 +90,10 @@ async def test_run_computational_sidecar_with_encryption(
     client_input_file_id = "client-side-input-id-1"
 
     job_encryption_context = JobEncryptionContext(
-        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
-        job_id="pytest-encryption-job",
+        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         input_port_to_file_id={input_port_key: client_input_file_id},
     )
-    job_key = job_encryption_context.job_key.get_secret_value()
-    job_id = job_encryption_context.job_id
+    root_key = job_encryption_context.root_key.get_secret_value()
 
     plaintext = b"this is the very secret payload that must travel encrypted\nline 2\n"
     computation_marker = "this was added during computation"
@@ -114,10 +108,8 @@ async def test_run_computational_sidecar_with_encryption(
         fp.write(  # type: ignore[attr-defined]
             _encrypt_to_bytes(
                 plaintext,
-                job_key=job_key,
-                job_id=job_id,
+                root_key=root_key,
                 file_id=client_input_file_id,
-                file_role="input",
             )
         )
 
@@ -193,10 +185,8 @@ async def test_run_computational_sidecar_with_encryption(
     #    including the text added during the computation
     decrypted_output = _decrypt_to_bytes(
         encrypted_output,
-        job_key=job_key,
-        job_id=job_id,
+        root_key=root_key,
         file_id=output_port_key,
-        file_role="output",
     )
     assert decrypted_output == expected_plaintext_output, (
         f"decrypted output does not match expected payload.\n"
@@ -216,10 +206,10 @@ async def test_run_computational_sidecar_with_encryption(
 )
 @pytest.mark.parametrize(
     "wrong_field",
-    ["job_key", "job_id", "file_id"],
+    ["root_key", "file_id"],
 )
 async def test_run_computational_sidecar_with_wrong_encryption_context_raises(
-    wrong_field: Literal["job_key", "job_id", "file_id"],
+    wrong_field: Literal["root_key", "file_id"],
     app_environment: EnvVarsDict,
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
@@ -231,25 +221,20 @@ async def test_run_computational_sidecar_with_wrong_encryption_context_raises(
     # the context the task will decrypt the input with
     input_port_key = "input_file_1"
     job_encryption_context = JobEncryptionContext(
-        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
-        job_id="pytest-encryption-job",
+        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         input_port_to_file_id={input_port_key: input_port_key},
     )
     plaintext = b"this is the very secret payload that must travel encrypted\n"
 
     # the context the client encrypts the input with: exactly ONE field is wrong, so that
-    # the per-file key derived by the task (HKDF over job_key/job_id/file_id/file_role)
+    # the per-file key derived by the task (HKDF over root_key/file_id)
     # no longer matches and AES-GCM authentication must fail.
     encrypt_params: dict[str, str | bytes] = {
-        "job_key": job_encryption_context.job_key.get_secret_value(),
-        "job_id": job_encryption_context.job_id,
+        "root_key": job_encryption_context.root_key.get_secret_value(),
         "file_id": input_port_key,
-        "file_role": "input",
     }
-    if wrong_field == "job_key":
-        encrypt_params["job_key"] = generate_key()  # a different, unrelated key
-    elif wrong_field == "job_id":
-        encrypt_params["job_id"] = "some-other-job-id"
+    if wrong_field == "root_key":
+        encrypt_params["root_key"] = generate_key()  # a different, unrelated key
     else:
         encrypt_params["file_id"] = "some-other-file-id"
 
@@ -260,10 +245,8 @@ async def test_run_computational_sidecar_with_wrong_encryption_context_raises(
         fp.write(  # type: ignore[attr-defined]
             _encrypt_to_bytes(
                 plaintext,
-                job_key=encrypt_params["job_key"],  # type: ignore[arg-type]
-                job_id=encrypt_params["job_id"],  # type: ignore[arg-type]
+                root_key=encrypt_params["root_key"],  # type: ignore[arg-type]
                 file_id=encrypt_params["file_id"],  # type: ignore[arg-type]
-                file_role=encrypt_params["file_role"],  # type: ignore[arg-type]
             )
         )
 

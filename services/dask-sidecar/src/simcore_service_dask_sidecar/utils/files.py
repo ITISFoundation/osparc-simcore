@@ -228,10 +228,8 @@ async def _run_crypto_copy(
         transfer,
         cast(BinaryIO, src_fp),
         cast(BinaryIO, dst_fp),
-        job_key=encryption.job_key.get_secret_value(),
-        job_id=encryption.job_id,
+        root_key=encryption.root_key.get_secret_value(),
         file_id=encryption.file_id,
-        file_role=encryption.file_role,
         progress_cb=progress_logger,
     )
     await main_loop.run_in_executor(None, blocking_transfer)

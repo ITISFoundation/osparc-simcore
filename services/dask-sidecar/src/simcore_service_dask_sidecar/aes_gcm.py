@@ -44,15 +44,12 @@ Cryptographic primitives
 
 Per-file key derivation (HKDF-SHA256)
 -------------------------------------
-``file_role`` is mandatory and must be exactly ``"input"`` or ``"output"``
-(case-sensitive). The per-file key is::
+The per-file key is::
 
-    info     = protocol_label || uint16(version)
-               || lp(job_id) || lp(file_id) || lp(file_role)
-    file_key = HKDF-SHA256(ikm=job_key, length=32, salt=<empty>, info=info)
+    info     = protocol_label || uint16(version) || lp(file_id)
+    file_key = HKDF-SHA256(ikm=root_key, length=32, salt=<empty>, info=info)
 
-Distinct ``(job_id, file_id, file_role)`` triples therefore yield independent keys
-(domain separation).
+Distinct ``file_id`` values therefore yield independent keys (domain separation).
 
 
 Stream header (28 bytes, struct format ">8sHHI12s")
@@ -82,12 +79,10 @@ Per-chunk AAD (chunk index ``i``)
 ::
 
     chunk_flags = uint8; bit0 = 1 if final chunk else 0; all other bits 0
-    aad_i = magic || uint16(version) || chunk_flags || uint64(i)
-            || lp(job_id) || lp(file_id) || lp(file_role)
+    aad_i = magic || uint16(version) || chunk_flags || uint64(i) || lp(file_id)
 
-The AAD binds magic/version, ``job_id``, ``file_id``, ``file_role``, the chunk index and
-the final-chunk marker, preventing reordering, truncation, replay and cross-file
-substitution of chunks.
+The AAD binds magic/version, ``file_id``, the chunk index and the final-chunk marker,
+preventing reordering, truncation, replay and cross-file substitution of chunks.
 
 
 Per-chunk record (written sequentially after the header)
@@ -110,19 +105,16 @@ Protocol invariants (enforced on decryption)
 2. Header ``version`` must equal 1.
 3. Header ``flags`` must be 0.
 4. Header ``chunk_size`` must be > 0.
-5. ``file_role`` must be exactly ``"input"`` or ``"output"`` (case-sensitive).
-6. ``job_key`` must be exactly 32 bytes.
-7. For every chunk record, ``chunk_flags & ~bit0`` must be 0 (unknown bits rejected).
-8. For every chunk record, ``ct_len`` must be >= 16.
-9. Chunks are decrypted in order starting at index 0; each chunk's AAD/nonce uses its
+5. ``root_key`` must be exactly 32 bytes.
+6. For every chunk record, ``chunk_flags & ~bit0`` must be 0 (unknown bits rejected).
+7. For every chunk record, ``ct_len`` must be >= 16.
+8. Chunks are decrypted in order starting at index 0; each chunk's AAD/nonce uses its
    own index.
-10. Exactly one chunk has the final marker set, and it is the last chunk read.
-11. No bytes may follow the final chunk.
-12. Any authentication-tag failure, truncation or violation of the above aborts
+9. Exactly one chunk has the final marker set, and it is the last chunk read.
+10. No bytes may follow the final chunk.
+11. Any authentication-tag failure, truncation or violation of the above aborts
     decryption (no plaintext beyond the failing chunk is emitted as valid output).
 """
-
-from __future__ import annotations
 
 import os
 import struct
@@ -144,8 +136,6 @@ DEFAULT_CHUNK_SIZE_BYTES: Final[int] = 1024 * 1024
 PROTOCOL_LABEL: Final[bytes] = b"simcore-aesgcm-stream-v1"
 FORMAT_MAGIC: Final[bytes] = b"SCAGSTRM"
 FORMAT_VERSION: Final[int] = 1
-
-ALLOWED_FILE_ROLES: Final[frozenset[str]] = frozenset({"input", "output"})
 
 _MAX_LP_STRING_BYTES: Final[int] = 0xFFFF
 _FINAL_CHUNK_FLAG: Final[int] = 0b0000_0001
@@ -174,20 +164,13 @@ class AesGcmStreamAuthError(AesGcmStreamError):
 
 
 def generate_key() -> bytes:
-    """Return a fresh random 32-byte job key suitable for AES-256-GCM derivation."""
+    """Return a fresh random 32-byte root key suitable for AES-256-GCM derivation."""
     return os.urandom(KEY_SIZE_BYTES)
 
 
-def _validate_key(job_key: bytes) -> None:
-    if len(job_key) != KEY_SIZE_BYTES:
-        msg = f"Invalid job key: expected {KEY_SIZE_BYTES} bytes, got {len(job_key)}"
-        raise AesGcmStreamError(msg)
-
-
-def _validate_file_role(file_role: str) -> None:
-    if file_role not in ALLOWED_FILE_ROLES:
-        allowed = ", ".join(sorted(ALLOWED_FILE_ROLES))
-        msg = f"Invalid file_role {file_role!r}: must be one of {allowed}"
+def _validate_key(root_key: bytes) -> None:
+    if len(root_key) != KEY_SIZE_BYTES:
+        msg = f"Invalid root key: expected {KEY_SIZE_BYTES} bytes, got {len(root_key)}"
         raise AesGcmStreamError(msg)
 
 
@@ -206,21 +189,13 @@ def _length_prefixed(value: str) -> bytes:
 
 
 def _derive_file_key(
-    job_key: bytes,
+    root_key: bytes,
     *,
-    job_id: str,
     file_id: str,
-    file_role: str,
 ) -> bytes:
-    info = (
-        PROTOCOL_LABEL
-        + _U16_STRUCT.pack(FORMAT_VERSION)
-        + _length_prefixed(job_id)
-        + _length_prefixed(file_id)
-        + _length_prefixed(file_role)
-    )
+    info = PROTOCOL_LABEL + _U16_STRUCT.pack(FORMAT_VERSION) + _length_prefixed(file_id)
     hkdf = HKDF(algorithm=SHA256(), length=KEY_SIZE_BYTES, salt=None, info=info)
-    return hkdf.derive(job_key)
+    return hkdf.derive(root_key)
 
 
 def _chunk_nonce(base_nonce_seed: bytes, chunk_index: int) -> bytes:
@@ -235,9 +210,7 @@ def _build_chunk_aad(
     *,
     chunk_index: int,
     is_final: bool,
-    job_id: str,
     file_id: str,
-    file_role: str,
 ) -> bytes:
     chunk_flags = _FINAL_CHUNK_FLAG if is_final else 0
     return (
@@ -245,9 +218,7 @@ def _build_chunk_aad(
         + _U16_STRUCT.pack(FORMAT_VERSION)
         + bytes([chunk_flags])
         + _U64_STRUCT.pack(chunk_index)
-        + _length_prefixed(job_id)
         + _length_prefixed(file_id)
-        + _length_prefixed(file_role)
     )
 
 
@@ -299,10 +270,8 @@ def encrypt_stream(
     src: BinaryIO,
     dst: BinaryIO,
     *,
-    job_key: bytes,
-    job_id: str,
+    root_key: bytes,
     file_id: str,
-    file_role: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
     progress_cb: Annotated[
         Callable[[int], None] | None,
@@ -318,13 +287,12 @@ def encrypt_stream(
     This call is synchronous/blocking; offload it to a thread when used in async code.
 
     Raises:
-        AesGcmStreamError: If ``job_key`` length, ``file_role`` or ``chunk_size`` are invalid.
+        AesGcmStreamError: If ``root_key`` length or ``chunk_size`` are invalid.
     """
-    _validate_key(job_key)
-    _validate_file_role(file_role)
+    _validate_key(root_key)
     _validate_chunk_size(chunk_size)
 
-    file_key = _derive_file_key(job_key, job_id=job_id, file_id=file_id, file_role=file_role)
+    file_key = _derive_file_key(root_key, file_id=file_id)
     aesgcm = AESGCM(file_key)
     base_nonce_seed = os.urandom(NONCE_SIZE_BYTES)
 
@@ -342,9 +310,7 @@ def encrypt_stream(
         aad = _build_chunk_aad(
             chunk_index=chunk_index,
             is_final=is_final,
-            job_id=job_id,
             file_id=file_id,
-            file_role=file_role,
         )
         ct_and_tag = aesgcm.encrypt(nonce, pending, aad)
         dst.write(_CHUNK_PREFIX_STRUCT.pack(_FINAL_CHUNK_FLAG if is_final else 0, len(ct_and_tag)))
@@ -406,10 +372,8 @@ def decrypt_stream(
     src: BinaryIO,
     dst: BinaryIO,
     *,
-    job_key: bytes,
-    job_id: str,
+    root_key: bytes,
     file_id: str,
-    file_role: str,
     progress_cb: Annotated[
         Callable[[int], None] | None,
         Field(description="Called after each chunk with the cumulative plaintext bytes processed so far"),
@@ -424,17 +388,16 @@ def decrypt_stream(
     This call is synchronous/blocking; offload it to a thread when used in async code.
 
     Raises:
-        AesGcmStreamError: If ``job_key`` length or ``file_role`` are invalid.
+        AesGcmStreamError: If ``root_key`` length is invalid.
         AesGcmStreamFormatError: If the header or a chunk record is malformed,
             unsupported or truncated.
         AesGcmStreamAuthError: If authentication fails or the final chunk is missing.
     """
-    _validate_key(job_key)
-    _validate_file_role(file_role)
+    _validate_key(root_key)
 
     _chunk_size, base_nonce_seed = _parse_header(src)
 
-    file_key = _derive_file_key(job_key, job_id=job_id, file_id=file_id, file_role=file_role)
+    file_key = _derive_file_key(root_key, file_id=file_id)
     aesgcm = AESGCM(file_key)
 
     chunk_index = 0
@@ -446,9 +409,7 @@ def decrypt_stream(
         aad = _build_chunk_aad(
             chunk_index=chunk_index,
             is_final=is_final,
-            job_id=job_id,
             file_id=file_id,
-            file_role=file_role,
         )
         plaintext = _decrypt_chunk(aesgcm, nonce=nonce, ct_and_tag=ct_and_tag, aad=aad)
 
@@ -469,19 +430,15 @@ def encrypt_file(
     src: Annotated[Path, Field(description="Path to plaintext input file")],
     dst: Annotated[Path, Field(description="Path to encrypted output file")],
     *,
-    job_key: bytes,
-    job_id: str,
+    root_key: bytes,
     file_id: str,
-    file_role: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
 ) -> None:
     """Utility function to encrypt a file following the streaming AES-GCM protocol, given a key/context.
 
     Arguments:
-        job_key -- a 32-byte key used for encryption; must be the same as the one used for decryption
-        job_id -- a string identifier for the job; must be the same as the one used for decryption
+        root_key -- a 32-byte key used for encryption; must be the same as the one used for decryption
         file_id -- a string identifier for the file; must be the same as the one used for decryption
-        file_role -- a string identifier for the file role; must be the same as the one used for decryption
 
     Keyword Arguments:
         src -- source file path
@@ -489,16 +446,14 @@ def encrypt_file(
         chunk_size -- size of each encrypted chunk in bytes (default: {DEFAULT_CHUNK_SIZE_BYTES})
 
     Raises:
-        AesGcmStreamError: If ``job_key`` length, ``file_role`` or ``chunk_size`` are invalid.
+        AesGcmStreamError: If ``root_key`` length or ``chunk_size`` are invalid.
     """
     with src.open("rb") as src_stream, dst.open("wb") as dst_stream:
         encrypt_stream(
             src_stream,
             dst_stream,
-            job_key=job_key,
-            job_id=job_id,
+            root_key=root_key,
             file_id=file_id,
-            file_role=file_role,
             chunk_size=chunk_size,
         )
 
@@ -507,27 +462,22 @@ def decrypt_file(
     src: Annotated[Path, Field(description="Path to encrypted input file")],
     dst: Annotated[Path, Field(description="Path to plaintext output file")],
     *,
-    job_key: bytes,
-    job_id: str,
+    root_key: bytes,
     file_id: str,
-    file_role: str,
 ) -> None:
     """Utility function to decrypt a file following the streaming AES-GCM protocol,
     given the same key/context used for encryption.
 
     Arguments:
-        job_key -- a 32-byte key used for decryption; must be the same as the one used for encryption
-        job_id -- a string identifier for the job; must be the same as the one used for encryption
+        root_key -- a 32-byte key used for decryption; must be the same as the one used for encryption
         file_id -- a string identifier for the file; must be the same as the one used for encryption
-        file_role -- a string identifier for the file role; must be the same as the one used for encryption
-                    and either "input" or "output"
 
     Keyword Arguments:
         src -- source file path
         dst -- destination file path
 
     Raises:
-        AesGcmStreamError: If ``job_key`` length or ``file_role`` are invalid.
+        AesGcmStreamError: If ``root_key`` length is invalid.
         AesGcmStreamFormatError: If the header or a chunk record is malformed/unsupported.
         AesGcmStreamAuthError: If authentication fails or the stream is truncated.
     """
@@ -535,8 +485,6 @@ def decrypt_file(
         decrypt_stream(
             src_stream,
             dst_stream,
-            job_key=job_key,
-            job_id=job_id,
+            root_key=root_key,
             file_id=file_id,
-            file_role=file_role,
         )

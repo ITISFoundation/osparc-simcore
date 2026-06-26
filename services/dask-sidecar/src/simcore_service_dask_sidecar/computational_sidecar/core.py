@@ -74,10 +74,8 @@ class ComputationalSidecar:
         if self.encryption is None or input_key not in self.encryption.input_port_to_file_id:
             return None
         return TransferEncryptionSettings(
-            job_key=self.encryption.job_key,
-            job_id=self.encryption.job_id,
+            root_key=self.encryption.root_key,
             file_id=self.encryption.input_port_to_file_id[input_key],
-            file_role="input",
         )
 
     def _prepare_input_download(
@@ -198,10 +196,8 @@ class ComputationalSidecar:
                                 s3_settings=self.s3_settings,
                                 encryption=(
                                     TransferEncryptionSettings(
-                                        job_key=self.encryption.job_key,
-                                        job_id=self.encryption.job_id,
+                                        root_key=self.encryption.root_key,
                                         file_id=output_key,
-                                        file_role="output",
                                     )
                                     if self.encryption
                                     else None

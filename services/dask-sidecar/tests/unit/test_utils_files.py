@@ -125,10 +125,8 @@ def upload_file_to_remote(
 @pytest.fixture
 def encryption_settings() -> TransferEncryptionSettings:
     return TransferEncryptionSettings(
-        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
-        job_id="job-1",
+        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         file_id="file-1",
-        file_role="input",
     )
 
 
@@ -419,10 +417,8 @@ async def test_pull_file_from_remote_decrypt_with_wrong_key_raises_auth_error(
     )
 
     wrong_key_settings = TransferEncryptionSettings(
-        job_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
-        job_id=encryption_settings.job_id,
+        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         file_id=encryption_settings.file_id,
-        file_role=encryption_settings.file_role,
     )
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         await pull_file_from_remote(
