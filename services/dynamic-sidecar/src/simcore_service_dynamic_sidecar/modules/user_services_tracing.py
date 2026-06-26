@@ -5,9 +5,6 @@ container** ("trace shipper") whose only job is to read the OTLP-JSON span files
 the shared ``/traces`` volume by the *injected* collector (see ``core/validation.py``) and
 push them to the platform's OTLP/HTTP endpoint.
 
-Why a container instead of custom code: the collector already solves — robustly — every hard
-part we would otherwise hand-roll (tailing the live file, following it across rotation,
-batching, retry/backoff, restart resumption).
 
 Lifecycle & ownership:
 
