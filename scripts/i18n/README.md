@@ -27,18 +27,20 @@ make -C scripts/i18n all
 
 ## Step-by-Step
 
-| Step | Target        | Description                                                               |
-| ---- | ------------- | ------------------------------------------------------------------------- |
-| 1    | `extract-all` | Scan `I18N_DIRS` for `user_message()` calls → per-service `.pot` partials |
-| 2    | `merge`       | `msgcat` partials → `messages.pot`, then enrich with CTX snippets         |
-| 3    | `translate`   | AI translate stale entries (one `.po` per `LANG`)                         |
-| 4    | `compile`     | `msgfmt` `.po` → `.mo`                                                    |
+| Step | Target               | Description                                                                 |
+| ---- | -------------------- | --------------------------------------------------------------------------- |
+| 1    | `extract-all`        | Scan `I18N_DIRS` for `user_message()` + frontend for `this.tr()` → `.pot`s  |
+| 2    | `merge`              | `msgcat` backend partials + frontend → `messages.pot`, then enrich with CTX |
+| 3    | `translate`          | AI translate stale backend entries (one `.po` per `LANG`)                   |
+| 4    | `compile`            | `msgfmt` backend `.po` → `.mo`                                              |
+| 5    | `frontend-translate` | AI translate frontend entries from master template                          |
 
 ```bash
 make -C scripts/i18n extract-all
 make -C scripts/i18n merge
 make -C scripts/i18n translate
 make -C scripts/i18n compile
+make -C scripts/i18n frontend-translate
 ```
 
 ## Key Variables
@@ -93,14 +95,18 @@ grep -r 'user_message(' services packages --include='*.py' -l \
 
 ## Frontend
 
-Frontend extraction is handled by qooxdoo (`translate-extract`). Only AI translation is run here:
+Frontend extraction is now handled by xgettext (same as backend). Extraction happens as part of `make extract-all`:
 
 ```bash
-make -C scripts/i18n frontend-translate                        # default CLIENT_LANGS
-make -C scripts/i18n frontend-translate CLIENT_LANGS="de_DE"   # specific language
+make -C scripts/i18n extract-all                        # extracts backend + frontend
+make -C scripts/i18n extract-frontend                   # frontend only (for testing)
+make -C scripts/i18n translate-frontend                 # translate from master template
+make -C scripts/i18n translate-frontend CLIENT_LANGS="de_DE"   # specific language
 ```
 
-Template: `services/static-webserver/client/source/translation/en_US.po`
+Frontend `.po` files are output to: `services/static-webserver/client/source/translation/{lang}.po`
+
+**Note:** The old qooxdoo extraction method is still available via `make -C services/static-webserver/client qx-extract` (DEPRECATED, for fallback only).
 
 ## Validation
 
@@ -113,7 +119,7 @@ Checks that no `user_message()` calls use f-strings (f-strings break xgettext ex
 ## Cleanup
 
 ```bash
-make -C scripts/i18n clean   # removes _partials/, messages.pot, all .po and .mo
+make -C scripts/i18n clean   # removes _partials/, messages.pot, frontend.pot, all .po and .mo
 ```
 
 

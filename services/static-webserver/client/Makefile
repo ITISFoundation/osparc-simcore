@@ -98,15 +98,17 @@ define qx_translate_extract =
 			qx compile --update-po-files
 endef
 
-.PHONY: i18n-extract
-i18n-extract: ## the generated .po files goes to source/translation https://qooxdoo.org/documentation/v7.8/#/development/howto/internationalization?id=translation
+.PHONY: qx-extract
+qx-extract: ## [DEPRECATED → use `make -C scripts/i18n all` instead] extract translatable strings using qooxdoo's built-in xgettext integration. Output goes to source/translation/
 	# qx compile --update-po-files
 	$(docker_compose) run $(if $(detached),--detach --name=$(detached),--rm) qooxdoo-kit $(qx_translate_extract)
-	# remove entries no longer present in the source code
+	## remove entries no longer present in the source code
 	python ./scripts/post-extract.py
 
 
-# AI translation of frontend .po files (extraction is done by translate-extract above)
+# AI translation of frontend .po files (extraction is done via xgettext in scripts/i18n/Makefile)
+# Translation is now orchestrated from the repo root: make -C scripts/i18n translate-frontend
+# This target is kept for backward compatibility / manual testing only
 _REPO_ROOT          := $(shell git rev-parse --show-toplevel)
 _I18N_TRANSLATOR    := $(_REPO_ROOT)/scripts/i18n/tools/i18n_translator.py
 _TRANS_DIR          := $(CURDIR)/source/translation
@@ -114,8 +116,8 @@ _TEMPLATE_PO        := $(_TRANS_DIR)/en_US.po
 _FRONTEND_LANGS     ?= es_ES zh_CN
 MODEL               ?= openai/gpt-4o
 
-.PHONY: i18n-translate
-i18n-translate: ## AI translate frontend .po files (es_ES, zh_CN) from en_US.po template
+.PHONY: i18n-translate-local
+i18n-translate-local: ## [DEPRECATED → use `make -C scripts/i18n translate-frontend` instead] local i18n translation of frontend .po files
 	@for lang in $(_FRONTEND_LANGS); do \
 	  out=$(_TRANS_DIR)/$$lang.po; \
 	  echo "  [translate] frontend $$lang -> $$out"; \

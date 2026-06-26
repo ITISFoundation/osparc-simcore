@@ -40,6 +40,7 @@ console = Console()
 # xgettext language flag per file extension
 LANG_MAP = {
     ".py": "Python",
+    ".js": "JavaScript",  # qooxdoo frontend
     ".cpp": "C++",
     ".cxx": "C++",
     ".cc": "C++",
@@ -315,6 +316,7 @@ def collect_sources(src_dir: Path, langs: list[str] | None) -> list[Path]:
     if langs:
         lang_to_exts = {
             "python": {".py"},
+            "javascript": {".js"},  # qooxdoo frontend
             "cpp": {".cpp", ".cxx", ".cc", ".h"},
             "c": {".c", ".h"},
             "mfc": {".rc", ".cpp", ".h"},
