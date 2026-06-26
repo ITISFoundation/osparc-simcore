@@ -317,6 +317,17 @@ async def patch_project_and_notify_users(
         new_partial_project_data=patch_project_data,
     )
 
+    # Back-compat fan-out: per-node UI is now the source of truth in projects_nodes.ui.
+    # When a patch touches projects.ui.workbench, propagate each node's UI to its column.
+    if (ui_patch := patch_project_data.get("ui")) and (workbench_ui := ui_patch.get("workbench")):
+        for node_id_str, node_ui in workbench_ui.items():
+            await _projects_nodes_repository.update(
+                app,
+                project_id=project_uuid,
+                node_id=NodeID(node_id_str),
+                partial_node=PartialNode.model_construct(ui=node_ui),
+            )
+
     app_settings = get_application_settings(app)
     if app_settings.WEBSERVER_REALTIME_COLLABORATION is not None:
         (
