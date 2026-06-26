@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Annotated, Any, Final, cast
+from typing import Annotated, Any, TypeAlias, cast
 
 from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -21,7 +21,6 @@ from ..._constants import (
     RESPONSE_MODEL_POLICY,
 )
 from ...clients.director import DirectorClient
-from ...core.settings import ApplicationSettings
 from ...models.services_db import ServiceAccessRightsDB, ServiceMetaDataDBGet
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
@@ -31,7 +30,7 @@ from .._dependencies.services import get_service_from_manifest
 
 _logger = logging.getLogger(__name__)
 
-type ServicesSelection = set[tuple[str, str]]
+ServicesSelection: TypeAlias = set[tuple[str, str]]
 
 
 def _compose_service_details(
@@ -65,41 +64,6 @@ def _build_cache_key(fct, *_, **kwargs):
     return f"{fct.__name__}_{kwargs['user_id']}_{kwargs['x_simcore_products_name']}_{kwargs['details']}"
 
 
-_list_services_cache: Final = cached(
-    ttl=LIST_SERVICES_CACHING_TTL,
-    key_builder=_build_cache_key,
-    # NOTE: this call is pretty expensive and can be called several times
-    # (when e2e runs or by the webserver when listing projects) therefore
-    # a cache is setup here
-)
-
-_registry_services_cache: Final = cached(
-    ttl=DIRECTOR_CACHING_TTL,
-    key_builder=lambda *_args, **_kwargs: "list_director_services",
-)
-
-
-@_registry_services_cache
-async def _get_registry_services(director_client: DirectorClient) -> dict[str, Any]:
-    # NOTE: caching this step brings down the time to generate the listing at the
-    # expense of being sometimes a bit out of date
-    return cast(dict[str, Any], await director_client.get("/services"))
-
-
-def configure_services_caching(settings: ApplicationSettings) -> None:
-    """Configures the REST-layer services caches from the application settings.
-
-    Call this once at startup (before any traffic) to make the cache dependency on
-    settings explicit, rather than mutating the module-level cache decorators implicitly.
-
-    When `CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED` is disabled, `skip_cache_func` returns
-    True so aiocache never stores a result and every call fetches fresh from the director.
-    """
-    enabled = settings.CATALOG_DIRECTOR_SERVICES_CACHE_ENABLED
-    for cache in (_list_services_cache, _registry_services_cache):
-        cache.skip_cache_func = lambda _result: not enabled
-
-
 router = APIRouter()
 
 
@@ -111,7 +75,13 @@ router = APIRouter()
     description="Use instead rpc._service.list_services_paginated -> PageRpcServicesGetV2",
 )
 @cancel_on_disconnect
-@_list_services_cache
+@cached(
+    ttl=LIST_SERVICES_CACHING_TTL,
+    key_builder=_build_cache_key,
+    # NOTE: this call is pretty expensive and can be called several times
+    # (when e2e runs or by the webserver when listing projects) therefore
+    # a cache is setup here
+)
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     *,
@@ -165,12 +135,17 @@ async def list_services(
             for key, version in services_in_db
         ]
 
+    # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
+    @cached(ttl=DIRECTOR_CACHING_TTL)
+    async def cached_registry_services() -> dict[str, Any]:
+        return cast(dict[str, Any], await director_client.get("/services"))
+
     (
         services_in_registry,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
-        _get_registry_services(director_client),
+        cached_registry_services(),
         services_repo.batch_get_services_access_rights_or_none(
             key_versions=services_in_db,
             product_name=x_simcore_products_name,

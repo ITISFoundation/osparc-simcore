@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
-# pylint: disable=protected-access
 
 
 from collections.abc import Callable
@@ -101,8 +100,9 @@ async def background_sync_task_mocked(
 async def director_client(app: FastAPI) -> DirectorClient:
     director_api = get_director_client(app)
 
-    # ensures this client's manifest API caches are reset
-    await manifest.reset_services_caches(director_api)
+    # ensures manifest API cache is reset
+    assert hasattr(manifest.get_service, "cache")
+    assert await manifest.get_service.cache.clear()
 
     return director_api
 
@@ -122,7 +122,6 @@ async def test_list_latest_catalog_services(
     assert limit < num_services
 
     assert not mocked_director_rest_api["get_service"].called
-    assert not mocked_director_rest_api["list_services"].called
 
     total_count, page_found_items = await catalog_services.list_latest_catalog_services(
         services_repo,
@@ -136,11 +135,8 @@ async def test_list_latest_catalog_services(
     assert total_count == num_services
     assert page_found_items
     assert len(page_found_items) <= limit
-
-    # the listing path resolves the manifest with a single bulk director call ...
-    assert mocked_director_rest_api["list_services"].called
-    # ... instead of fanning out one `get_service` call per listed service
-    assert not mocked_director_rest_api["get_service"].called
+    assert mocked_director_rest_api["get_service"].called
+    assert mocked_director_rest_api["get_service"].call_count == limit
 
     for item in page_found_items:
         assert item.access_rights
@@ -158,8 +154,8 @@ async def test_list_latest_catalog_services(
         assert got.model_dump(exclude={"history"}) == item.model_dump(exclude={"release"})
         assert item.release in got.history
 
-    # only the per-item `get_catalog_service` lookups hit the single-service endpoint
-    assert mocked_director_rest_api["get_service"].call_count == len(page_found_items)
+    # since it is cached, it should only call it `limit` times
+    assert mocked_director_rest_api["get_service"].call_count == limit
 
 
 async def test_batch_get_my_services(
@@ -183,7 +179,7 @@ async def test_batch_get_my_services(
     other_service_key = "simcore/services/comp/other-service"
     other_service_version = "2.1.2"
 
-    expected_retirement = datetime.utcnow() + timedelta(days=1)  # noqa: DTZ003  # NOTE: old offset-naive column
+    expected_retirement = datetime.utcnow() + timedelta(days=1)  # NOTE: old offset-naive column
 
     # Owned by user
     fake_service_1 = create_fake_service_data(

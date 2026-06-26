@@ -103,7 +103,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-requests==2.32.5
+requests==2.34.2
     # via jsonschema-path
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
