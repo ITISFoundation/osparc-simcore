@@ -3,16 +3,16 @@ import logging
 from aiohttp import web
 from pydantic import ValidationError
 
-from ..application_keys import APP_SETTINGS_APPKEY
+from ..application_keys import (
+    APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY,
+    APP_SETTINGS_APPKEY,
+)
 from ..application_setup import (
     ModuleCategory,
     app_setup_func,
     ensure_single_setup,
 )
-from ..constants import (
-    APP_PUBLIC_CONFIG_PER_PRODUCT,
-    INDEX_RESOURCE_NAME,
-)
+from ..constants import INDEX_RESOURCE_NAME
 from ..db.plugin import setup_db
 from ..invitations.plugin import setup_invitations
 from ..login_accounts.plugin import setup_login_account
@@ -87,7 +87,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     for product_name, settings in login_settings_per_product.items():
         public_data_per_product[product_name] = {"invitation_required": settings.LOGIN_REGISTRATION_INVITATION_REQUIRED}
 
-    app.setdefault(APP_PUBLIC_CONFIG_PER_PRODUCT, public_data_per_product)
+    app.setdefault(APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY, public_data_per_product)
 
 
 @app_setup_func(
