@@ -14,8 +14,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
-
-from simcore_service_director_v2.models.dynamic_services_scheduler import TypeAdapter
+from pydantic import TypeAdapter
 
 from ..models.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
