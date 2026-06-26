@@ -84,6 +84,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.select(sa.func.count()).select_from(projects_to_jobs)).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        conn.rollback()
 
         # INSERT data (emulates data in-place)
         user_data = random_user(
@@ -146,7 +147,7 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
                     "inputs_checksum": "015ba4cd5cf00c511a8217deb65c242e3b15dc6ae4b1ecf94982d693887d9e8a",
                     "created_at": "2025-01-27T13:12:58.676564Z"
                     }
-                    """
+                    """  # noqa: E501
                 ),
                 prj_owner=user_id,
             ),
@@ -202,6 +203,8 @@ def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engi
                 """
             ).bindparams(project_uuid=prj_prepared["uuid"], product_name=product_name)
             conn.execute(stmt)
+
+        conn.commit()
 
     # MIGRATE UPGRADE: this should populate
     simcore_postgres_database.cli.upgrade.callback("head")

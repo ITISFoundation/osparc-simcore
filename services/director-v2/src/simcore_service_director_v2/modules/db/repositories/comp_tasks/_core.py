@@ -15,7 +15,7 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
-from sqlalchemy import literal_column
+from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from .....core.errors import ComputationalTaskNotFoundError
@@ -197,11 +197,12 @@ class CompTasksRepository(BaseRepository):
                     exclusion_rule.add("outputs")
                 else:
                     update_values = {}
-                on_update_stmt = insert_stmt.on_conflict_do_update(
-                    index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                    set_=comp_task_db.to_db_model(exclude=exclusion_rule) | update_values,
-                ).returning(literal_column("*"))
-                result = await conn.execute(on_update_stmt)
+                result = await conn.execute(
+                    insert_stmt.on_conflict_do_update(
+                        index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
+                        set_=comp_task_db.to_db_model(exclude=exclusion_rule) | update_values,
+                    ).returning(literal_column("*"))
+                )
                 row = result.one()
                 inserted_comp_tasks_db.append(CompTaskAtDB.model_validate(row))
                 _logger.debug(
@@ -219,7 +220,7 @@ class CompTasksRepository(BaseRepository):
             msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
         ):
             async with self.db_engine.begin() as conn:
-                result = await conn.execute(
+                result: CursorResult = await conn.execute(
                     sa.update(comp_tasks)
                     .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}"))
                     .values(**task_kwargs)
