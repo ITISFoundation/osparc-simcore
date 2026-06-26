@@ -91,19 +91,28 @@ def _create_node_io_payload_cb(
     return _get_node_io_payload_cb
 
 
-async def compute_dag_computational_hashes(dag: nx.DiGraph) -> dict[NodeIDStr, str]:
-    """Computes the run hash of every computational node in the DAG.
+async def compute_dag_computational_hashes(
+    dag: nx.DiGraph,
+) -> dict[NodeIDStr, tuple[str, str, str]]:
+    """Computes a comparable fingerprint of every computational node in the DAG.
 
-    Uses ``compute_node_hash``, which resolves port links to the actual upstream
-    output values. This ensures that a change in a linked node's value propagates
-    into the dependent node's hash (a raw ``inputs`` projection would miss it, since
-    a port link only stores a reference to the upstream node/port).
+    Each node maps to its ``(key, version, io_hash)`` where ``io_hash`` comes from
+    ``compute_node_hash``, which resolves port links to the actual upstream output
+    values. This ensures that a change in a linked node's value propagates into the
+    dependent node's hash (a raw ``inputs`` projection would miss it, since a port
+    link only stores a reference to the upstream node/port). ``key`` and ``version``
+    are included so that a service upgrade (which does not alter inputs/outputs) is
+    still detected as a change.
     """
     graph_data: nx.classes.reportviews.NodeDataView = dag.nodes.data()
     get_node_io_payload_cb = _create_node_io_payload_cb(graph_data)
 
     return {
-        node_id: await compute_node_hash(TypeAdapter(NodeID).validate_python(node_id), get_node_io_payload_cb)
+        node_id: (
+            f"{data['key']}",
+            f"{data['version']}",
+            await compute_node_hash(TypeAdapter(NodeID).validate_python(node_id), get_node_io_payload_cb),
+        )
         for node_id, data in dag.nodes.data()
         if data.get("node_class") is NodeClass.COMPUTATIONAL
     }
