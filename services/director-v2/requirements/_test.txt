@@ -221,7 +221,7 @@ redis==7.4.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-requests==2.32.5
+requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
