@@ -26,7 +26,7 @@ from .user_preferences.user_preferences_service import get_frontend_user_prefere
 
 RQ_LOCALE_KEY: Final[str] = f"{__name__}.locale"
 
-_X_APP_LOCALE_HEADER: Final[str] = "X-App-Locale"
+_X_APP_LOCALE_HEADER: Final[str] = "X-Simcore-Language"
 
 
 @web.middleware
