@@ -796,11 +796,9 @@ qx.Class.define("osparc.data.model.Node", {
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
-          } else if (osparc.utils.Ports.isDataAParameter(inputsCopy[key])) {
+          } else if (osparc.utils.Ports.isDataAParameter(inputsCopy[key]) && metadataInputs && metadataInputs[key] && metadataInputs[key].defaultValue !== undefined) {
             // resolve template placeholder (e.g. "{{stimulation_mode}}") to the service metadata's default value
-            if (metadataInputs && metadataInputs[key] && metadataInputs[key].defaultValue !== undefined) {
-              inputData[key] = metadataInputs[key].defaultValue;
-            }
+            inputData[key] = metadataInputs[key].defaultValue;
           } else {
             inputData[key] = inputsCopy[key];
           }
