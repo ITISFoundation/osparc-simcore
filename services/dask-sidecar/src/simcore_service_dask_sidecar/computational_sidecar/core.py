@@ -67,7 +67,7 @@ class ComputationalSidecar:
     s3_settings: S3Settings | None
     encryption: JobEncryptionContext | None
 
-    def _create_download_for_input(
+    def _create_file_download_task(
         self,
         input_key: str,
         input_params: FileUrl,
@@ -115,12 +115,12 @@ class ComputationalSidecar:
         for input_key, input_params in self.task_parameters.input_data.items():
             if isinstance(input_params, FileUrl):
                 download_tasks.append(
-                    (input_key, self._create_download_for_input(input_key, input_params, task_volumes))
+                    (input_key, self._create_file_download_task(input_key, input_params, task_volumes))
                 )
             else:
                 local_input_data_file[input_key] = input_params
 
-        # NOTE: concurrent download cannot be done as download is done in a flat folder
+        # NOTE: concurrent download cannot be done as download is done in a flat folder and might override files with same name
         for _, task in download_tasks:
             await task
 
