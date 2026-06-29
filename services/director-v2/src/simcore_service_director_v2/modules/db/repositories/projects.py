@@ -6,7 +6,7 @@ from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
-from ..tables import projects, projects_nodes
+from ..tables import projects
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -31,20 +31,6 @@ class ProjectsRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.one_or_none()
             return ProjectAtDB.model_validate(row) if row else None
-
-    async def is_node_present_in_workbench(self, project_id: ProjectID, node_uuid: NodeID) -> bool:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
-            stmt = (
-                sa.select(sa.literal(1))
-                .where(
-                    projects_nodes.c.project_uuid == str(project_id),
-                    projects_nodes.c.node_id == str(node_uuid),
-                )
-                .limit(1)
-            )
-
-            result = await conn.execute(stmt)
-            return result.scalar_one_or_none() is not None
 
     async def get_project_id_from_node(self, node_id: NodeID) -> ProjectID:
         async with self.db_engine.connect() as conn:
