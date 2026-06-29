@@ -9,7 +9,7 @@ The DB-stored ``LocaleUserPreference`` is NOT read inside the middleware to
 avoid an async DB call on every request.  Code paths that need the persisted
 preference (e.g. email rendering) should call ``get_user_locale`` directly.
 
-The middleware is gated on ``WEBSERVER_I18N``.  When the flag is off the key
+The middleware is gated on ``WEBSERVER_LOCALIZED_MESSAGES_ENABLED``.  When the flag is off the key
 is still written (as DEFAULT_LOCALE) so downstream code never needs to guard
 against a missing ``RQ_LOCALE_KEY``.
 """
@@ -39,7 +39,7 @@ def translate_message(message: str, request: web.Request) -> str:
 async def locale_middleware(request: web.Request, handler: Handler) -> web.StreamResponse:
     """Resolves locale from request headers and stores it in ``request[RQ_LOCALE_KEY]``."""
     settings = request.app[APP_SETTINGS_APPKEY]
-    if settings.WEBSERVER_I18N:
+    if settings.WEBSERVER_LOCALIZED_MESSAGES_ENABLED:
         for header in (X_SIMCORE_LANGUAGE, _ACCEPT_LANGUAGE_HEADER):
             if raw := request.headers.get(header):
                 request[RQ_LOCALE_KEY] = normalize_locale(raw)

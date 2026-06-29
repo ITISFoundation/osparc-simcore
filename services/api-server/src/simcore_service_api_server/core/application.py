@@ -140,7 +140,7 @@ def create_app(  # noqa: C901
     if settings.API_SERVER_PROFILING:
         configure_profiler(app)
 
-    if settings.API_SERVER_I18N:
+    if settings.API_SERVER_LOCALIZED_MESSAGES_ENABLED:
         app.add_middleware(LocaleMiddleware)
 
     exceptions.setup_exception_handlers(app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG)

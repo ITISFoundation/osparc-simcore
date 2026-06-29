@@ -25,9 +25,9 @@ async def locale_test_client(
 ) -> Callable[..., Awaitable[TestClient]]:
     """Returns a factory that builds a minimal aiohttp client with/ or without locale middleware."""
 
-    async def _make(*, i18n_enabled: bool) -> TestClient:
+    async def _make(*, localized_messages_enabled: bool) -> TestClient:
         mock_settings = MagicMock()
-        mock_settings.WEBSERVER_I18N = i18n_enabled
+        mock_settings.WEBSERVER_LOCALIZED_MESSAGES_ENABLED = localized_messages_enabled
 
         app = web.Application(middlewares=[locale_middleware])
         app[APP_SETTINGS_APPKEY] = mock_settings
@@ -50,7 +50,7 @@ async def test_locale_middleware_x_app_locale_header(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
     """Uses the explicit locale header when i18n is enabled."""
-    client = await locale_test_client(i18n_enabled=True)
+    client = await locale_test_client(localized_messages_enabled=True)
     resp = await client.get("/", headers={X_SIMCORE_LANGUAGE: "es_ES"})
     data = await resp.json()
     assert data["locale"] == "es_ES"
@@ -60,7 +60,7 @@ async def test_locale_middleware_accept_language_fallback(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
     """Falls back to Accept-Language when app-specific header is missing."""
-    client = await locale_test_client(i18n_enabled=True)
+    client = await locale_test_client(localized_messages_enabled=True)
     resp = await client.get("/", headers={"Accept-Language": "zh-CN,en;q=0.9"})
     data = await resp.json()
     assert data["locale"] == "zh_CN"
@@ -70,7 +70,7 @@ async def test_locale_middleware_default_when_no_headers(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
     """Uses default locale when no locale headers are provided."""
-    client = await locale_test_client(i18n_enabled=True)
+    client = await locale_test_client(localized_messages_enabled=True)
     resp = await client.get("/")
     data = await resp.json()
     assert data["locale"] == DEFAULT_LOCALE
@@ -80,7 +80,7 @@ async def test_locale_middleware_default_when_i18n_disabled(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
     """Always uses default locale when i18n support is disabled."""
-    client = await locale_test_client(i18n_enabled=False)
+    client = await locale_test_client(localized_messages_enabled=False)
     resp = await client.get("/", headers={X_SIMCORE_LANGUAGE: "es_ES"})
     data = await resp.json()
     assert data["locale"] == DEFAULT_LOCALE

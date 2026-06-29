@@ -5,7 +5,7 @@ Locale precedence (highest → lowest):
     2. ``Accept-Language`` header (first tag, normalised to gettext form).
     3. ``"en"`` — hard default.
 
-The middleware is only registered when ``API_SERVER_I18N=1`` in settings.
+The middleware is only registered when ``API_SERVER_LOCALIZED_MESSAGES_ENABLED=1`` in settings.
 When it does not run, exception handlers fall back to ``DEFAULT_LOCALE`` via
 ``getattr(request.state, "locale", DEFAULT_LOCALE)``.
 """

@@ -123,10 +123,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = False
 
-    WEBSERVER_I18N: Annotated[
+    WEBSERVER_LOCALIZED_MESSAGES_ENABLED: Annotated[
         bool,
         Field(
-            description="Enable server-side i18n for user-facing error messages and email templates.",
+            description="Enable server-side translation for user-facing messages.",
         ),
     ] = False
 
