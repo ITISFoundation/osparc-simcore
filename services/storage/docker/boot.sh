@@ -47,7 +47,7 @@ SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 echo "$INFO" "Starting service..."
 
-if [ "${STORAGE_SERVICE_MODE:-}" = "WORKER" ]; then
+if [ "${STORAGE_BOOT_SERVER_MODE:-}" = "AS_CELERY_WORKER" ]; then
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart \
       --directory /devel/packages \
