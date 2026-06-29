@@ -1454,8 +1454,8 @@ services:
     environment:
       <<: *api_server_environment
       API_SERVER_TRACING: "null"
+      API_SERVER_BOOT_SERVER_MODE: WORKER
       API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      API_SERVER_SERVICE_MODE: "WORKER"
       HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
       CELERY_POOL: threads

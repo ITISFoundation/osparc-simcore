@@ -1,9 +1,10 @@
 from functools import cached_property
 from typing import Annotated
 
+from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
-from models_library.basic_types import BootModeEnum, LogLevel, ServiceMode
+from models_library.basic_types import BootModeEnum, LogLevel
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
@@ -151,10 +152,10 @@ class ApplicationSettings(BasicSettings):
         ),
     ]
 
-    API_SERVER_SERVICE_MODE: Annotated[
-        ServiceMode,
-        Field(description="Service mode: SERVER or WORKER"),
-    ] = ServiceMode.SERVER
+    API_SERVER_BOOT_SERVICE_MODE: Annotated[
+        BootServerMode,
+        Field(description="Boot mode: REST API server or Celery worker"),
+    ] = BootServerMode.AS_REST
 
     @cached_property
     def debug(self) -> bool:
@@ -167,6 +168,5 @@ __all__: tuple[str, ...] = (
     "BasicSettings",
     "DirectorV2Settings",
     "StorageSettings",
-    "WebServerSettings",
     "WebServerSettings",
 )
