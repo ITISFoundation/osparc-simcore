@@ -151,5 +151,5 @@ def test_non_worker_mode_allows_missing_smtp_settings(mock_environment: EnvVarsD
 
     settings = ApplicationSettings.create_from_envs()
 
-    assert settings.NOTIFICATIONS_SERVICE_MODE is BootServerMode.AS_REST
+    assert settings.NOTIFICATIONS_BOOT_SERVER_MODE is BootServerMode.AS_REST
     assert settings.NOTIFICATIONS_SMTP_SETTINGS is None

@@ -56,7 +56,7 @@ def _configure_plugins(
     )
     configure_task_manager(app_lifespan)
 
-    match settings.NOTIFICATIONS_SERVICE_MODE:
+    match settings.NOTIFICATIONS_BOOT_SERVER_MODE:
         case BootServerMode.AS_REST:
             configure_postgres_database(
                 app_lifespan,
@@ -88,7 +88,7 @@ def create_app(
     with configure_app_lifespan(
         logging_lifespan=logging_lifespan,
         starting_banner=APP_STARTING_BANNER_MSG,
-        started_banner=get_started_banner(settings.NOTIFICATIONS_SERVICE_MODE),
+        started_banner=get_started_banner(settings.NOTIFICATIONS_BOOT_SERVER_MODE),
         shutdown_complete_banner=APP_SHUTDOWN_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
