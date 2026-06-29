@@ -3,6 +3,7 @@
 Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
 
+from celery_library.basic_types import BootServerMode
 from common_library.basic_types import BootModeEnum
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
@@ -21,7 +22,6 @@ from servicelib.fastapi.tracing import (
     configure_fastapi_app_tracing,
 )
 from servicelib.tracing import TracingConfig
-from settings_library.basic_types import ServiceMode
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -82,8 +82,8 @@ def _configure_app(
     if tracing_config.tracing_enabled:
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
 
-    match settings.STORAGE_SERVICE_MODE:
-        case ServiceMode.SERVER:
+    match settings.STORAGE_BOOT_SERVER_MODE:
+        case BootServerMode.AS_REST:
             if settings.STORAGE_CLEANER_INTERVAL_S:
                 configure_dsm_cleaner(app_lifespan)
             # Setup routes and exception handlers (outside the lifespan context)
@@ -106,7 +106,7 @@ def _configure_app(
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     with configure_app_lifespan(
         starting_banner=APP_STARTING_BANNER_MSG,
-        started_banner=get_started_banner(settings.STORAGE_SERVICE_MODE),
+        started_banner=get_started_banner(settings.STORAGE_BOOT_SERVER_MODE),
         shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
