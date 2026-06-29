@@ -146,7 +146,7 @@ def test_worker_mode_with_smtp_settings_is_valid(mock_environment: EnvVarsDict, 
 
 
 def test_non_worker_mode_allows_missing_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("NOTIFICATIONS_BOOT_SERVER_MODE", "AS)REST")
+    monkeypatch.setenv("NOTIFICATIONS_BOOT_SERVER_MODE", "AS_REST")
     monkeypatch.delenv("NOTIFICATIONS_SMTP_SETTINGS", raising=False)
 
     settings = ApplicationSettings.create_from_envs()
