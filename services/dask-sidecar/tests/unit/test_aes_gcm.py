@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Final
 
 import pytest
-from simcore_service_dask_sidecar import aes_gcm
-from simcore_service_dask_sidecar.aes_gcm import (
+from simcore_service_dask_sidecar.utils import aes_gcm
+from simcore_service_dask_sidecar.utils.aes_gcm import (
     _CHUNK_PREFIX_STRUCT,
     _HEADER_STRUCT,
     _MAX_CHUNK_INDEX_EXCLUSIVE,

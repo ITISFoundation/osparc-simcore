@@ -35,8 +35,8 @@ from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..aes_gcm import AesGcmStreamError
 from ..settings import ApplicationSettings
+from ..utils.aes_gcm import AesGcmStreamError
 from ..utils.dask import TaskPublisher
 from ..utils.files import (
     check_need_unzipping,

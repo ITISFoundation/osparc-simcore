@@ -32,7 +32,7 @@ from pytest_simcore.helpers.dask_sidecar_tasks import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
-from simcore_service_dask_sidecar.aes_gcm import (
+from simcore_service_dask_sidecar.utils.aes_gcm import (
     FORMAT_MAGIC,
     decrypt_stream,
     encrypt_stream,

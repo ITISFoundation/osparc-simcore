@@ -23,8 +23,8 @@ from pydantic import AnyUrl, SecretBytes, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
-from simcore_service_dask_sidecar.aes_gcm import FORMAT_MAGIC, AesGcmStreamAuthError, generate_key
 from simcore_service_dask_sidecar.errors import HTTPDestinationEncryptionNotSupportedError
+from simcore_service_dask_sidecar.utils.aes_gcm import FORMAT_MAGIC, AesGcmStreamAuthError, generate_key
 from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,

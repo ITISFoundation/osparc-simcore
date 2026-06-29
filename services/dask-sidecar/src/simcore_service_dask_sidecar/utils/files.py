@@ -24,8 +24,8 @@ from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..aes_gcm import decrypt_stream, encrypt_stream
 from ..errors import HTTPDestinationEncryptionNotSupportedError
+from .aes_gcm import decrypt_stream, encrypt_stream
 
 logger = logging.getLogger(__name__)
 
