@@ -17,7 +17,7 @@ against a missing ``RQ_LOCALE_KEY``.
 from typing import Final, cast
 
 from aiohttp import web
-from common_library.i18n import DEFAULT_LOCALE, SupportedLocale, normalize_locale
+from common_library.i18n import DEFAULT_LOCALE, SupportedLocale, get_translator, normalize_locale
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import X_SIMCORE_LANGUAGE
 
@@ -28,6 +28,11 @@ from .user_preferences.user_preferences_service import get_frontend_user_prefere
 RQ_LOCALE_KEY: Final[str] = f"{__name__}.locale"
 
 _ACCEPT_LANGUAGE_HEADER: Final[str] = "Accept-Language"
+
+
+def translate_message(message: str, request: web.Request) -> str:
+    """Translate a user_message()-marked string to the request locale."""
+    return get_translator(request.get(RQ_LOCALE_KEY, DEFAULT_LOCALE)).gettext(message)
 
 
 @web.middleware

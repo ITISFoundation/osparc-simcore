@@ -17,6 +17,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
+from ....locale import translate_message
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import session_access_required
@@ -258,7 +259,7 @@ async def complete_reset_password(request: web.Request):
 
         await confirmation_service.delete_confirmation(confirmation)
 
-        return flash_response(MSG_PASSWORD_CHANGED)
+        return flash_response(translate_message(MSG_PASSWORD_CHANGED, request))
 
     raise web.HTTPUnauthorized(
         text=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(support_email=product.support_email),

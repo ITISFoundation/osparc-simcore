@@ -17,6 +17,7 @@ from ....groups.groups_service import (
     auto_add_user_to_product_group,
 )
 from ....invitations.api import is_service_invitation_code
+from ....locale import translate_message
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact
 from ....products import products_web
@@ -52,6 +53,7 @@ from ...constants import (
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
     MSG_CANT_SEND_MAIL,
+    MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
@@ -263,8 +265,7 @@ async def register(request: web.Request):
             raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
         return flash_response(
-            "You are registered successfully! To activate your account, please, "
-            f"click on the verification link in the email we sent you to {registration.email}.",
+            translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
             "INFO",
         )
 
