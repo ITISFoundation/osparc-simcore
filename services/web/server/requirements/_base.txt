@@ -405,7 +405,7 @@ referencing==0.35.1
     #   -c requirements/../../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.4
+requests==2.34.2
     # via
     #   opentelemetry-exporter-otlp-proto-http
     #   twilio
