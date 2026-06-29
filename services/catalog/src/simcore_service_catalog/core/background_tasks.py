@@ -37,8 +37,6 @@ from ..service import access_rights, manifest
 
 _logger = logging.getLogger(__name__)
 
-_TASK_NAME_REGISTRY_SYNC: Final[str] = "catalog_registry_sync_task"
-
 
 async def _list_services_in_database(
     db_engine: AsyncEngine,
@@ -189,7 +187,6 @@ async def background_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
             registry_sync_task = create_periodic_task(
                 _run_sync_services,
                 interval=datetime.timedelta(seconds=app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME),
-                task_name=_TASK_NAME_REGISTRY_SYNC,
                 app=app,
             )
         yield {}

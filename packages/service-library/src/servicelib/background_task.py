@@ -34,6 +34,17 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+def _create_task_name(task: Callable[..., Any]) -> str:
+    """Builds a namespaced task identifier from the callable, analogous to logger
+    names (e.g. ``logging.getLogger(__name__)``), so the name can be used to filter
+    and trace where a task originates, e.g.
+    ``simcore_service_catalog.core.background_tasks._run_sync_services``.
+    """
+    qualname = getattr(task, "__qualname__", None) or getattr(task, "__name__", None) or repr(task)
+    module = getattr(task, "__module__", None)
+    return f"{module}.{qualname}" if module else qualname
+
+
 def periodic(
     *,
     interval: datetime.timedelta,
@@ -87,12 +98,21 @@ def create_periodic_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
-    task_name: str,
+    task_name: str | None = None,
     raise_on_error: bool = False,
     wait_before_running: datetime.timedelta = datetime.timedelta(0),
     early_wake_up_event: asyncio.Event | None = None,
     **kwargs,
 ) -> asyncio.Task:
+    """Creates an :class:`asyncio.Task` that runs ``task`` periodically until cancelled.
+
+    If ``task_name`` is omitted, a namespaced name is derived from the callable (see
+    :func:`_create_task_name`). Extra ``**kwargs`` are forwarded to ``task`` on every call.
+    The caller owns the returned task and is responsible for cancelling it (e.g. via
+    ``cancel_wait_task``); prefer :func:`periodic_task` when a managed lifetime is enough.
+    """
+    resolved_task_name = task_name or _create_task_name(task)
+
     @delayed_start(wait_before_running)
     @periodic(
         interval=interval,
@@ -102,8 +122,8 @@ def create_periodic_task(
     async def _() -> None:
         await task(**kwargs)
 
-    with log_context(_logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"):
-        return asyncio.create_task(_(), name=task_name)
+    with log_context(_logger, logging.DEBUG, msg=f"create periodic background task '{resolved_task_name}'"):
+        return asyncio.create_task(_(), name=resolved_task_name)
 
 
 @contextlib.asynccontextmanager
@@ -111,11 +131,16 @@ async def periodic_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
-    task_name: str,
+    task_name: str | None = None,
     stop_timeout: float = _DEFAULT_STOP_TIMEOUT_S,
     raise_on_error: bool = False,
     **kwargs,
 ) -> AsyncIterator[asyncio.Task]:
+    """Async context manager that runs ``task`` periodically and cancels it on exit.
+
+    Wraps :func:`create_periodic_task` and guarantees the task is stopped (within
+    ``stop_timeout`` seconds) when the context is left, even if an exception occurs.
+    """
     asyncio_task: asyncio.Task | None = None
     try:
         asyncio_task = create_periodic_task(
