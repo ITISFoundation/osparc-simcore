@@ -792,9 +792,16 @@ qx.Class.define("osparc.data.model.Node", {
         const inputLinks = {};
         const inputData = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
+        const metadataInputs = this.getMetadata() ? this.getMetadata()["inputs"] : null;
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
+          } else if (osparc.utils.Ports.isDataAParameter(inputsCopy[key]) && inputsCopy[key] === "{{" + key + "}}") {
+            // unresolved template placeholder (e.g. "{{stimulation_mode}}") that maps to its own port key:
+            // resolve it to the service metadata's default value so the model holds a valid input.
+            if (metadataInputs && metadataInputs[key] && metadataInputs[key].defaultValue !== undefined) {
+              inputData[key] = metadataInputs[key].defaultValue;
+            }
           } else {
             inputData[key] = inputsCopy[key];
           }
