@@ -148,7 +148,7 @@ class ComputationalSidecar:
             else:
                 local_input_data_file[input_key] = input_params
 
-        # NOTE: temporary solution until new version is created
+        # NOTE: concurrent download cannot be done as download is done in a flat folder
         for input_key, task in download_tasks:
             await self._download_and_decrypt_input(input_key, task)
 
