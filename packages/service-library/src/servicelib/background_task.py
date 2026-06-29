@@ -96,11 +96,20 @@ def create_periodic_task(
 ) -> asyncio.Task:
     """Creates an :class:`asyncio.Task` that runs ``task`` periodically until cancelled.
 
-    If ``task_name`` is omitted, a namespaced name is derived from the callable (see
-    :func:`servicelib.utils.get_callable_namespaced_name`). Extra ``**kwargs`` are
-    forwarded to ``task`` on every call.
     The caller owns the returned task and is responsible for cancelling it (e.g. via
     ``cancel_wait_task``); prefer :func:`periodic_task` when a managed lifetime is enough.
+
+    Arguments:
+        task -- the coroutine function to run on every iteration
+        interval -- the interval between two consecutive runs
+        task_name -- name given to the underlying asyncio task. If omitted, a namespaced
+            name is derived from the callable (see
+            :func:`servicelib.utils.get_callable_namespaced_name`)
+        raise_on_error -- if True, an exception raised by ``task`` stops the periodic
+            loop; if False (default) the task is retried indefinitely until cancelled
+        wait_before_running -- delay before the first run (default: no delay)
+        early_wake_up_event -- when set, wakes up the task before ``interval`` elapses
+        **kwargs -- forwarded to ``task`` on every call
     """
     resolved_task_name = task_name or get_callable_namespaced_name(task)
 
@@ -129,8 +138,19 @@ async def periodic_task(
 ) -> AsyncIterator[asyncio.Task]:
     """Async context manager that runs ``task`` periodically and cancels it on exit.
 
-    Wraps :func:`create_periodic_task` and guarantees the task is stopped (within
-    ``stop_timeout`` seconds) when the context is left, even if an exception occurs.
+    Wraps :func:`create_periodic_task` and guarantees the task is stopped when the
+    context is left, even if an exception occurs. Yields the underlying asyncio task.
+
+    Arguments:
+        task -- the coroutine function to run on every iteration
+        interval -- the interval between two consecutive runs
+        task_name -- name given to the underlying asyncio task. If omitted, a namespaced
+            name is derived from the callable (see
+            :func:`servicelib.utils.get_callable_namespaced_name`)
+        stop_timeout -- maximum time to wait for the task to stop on exit
+        raise_on_error -- if True, an exception raised by ``task`` stops the periodic
+            loop; if False (default) the task is retried indefinitely until cancelled
+        **kwargs -- forwarded to ``task`` on every call
     """
     asyncio_task: asyncio.Task | None = None
     try:
@@ -144,6 +164,4 @@ async def periodic_task(
         yield asyncio_task
     finally:
         if asyncio_task is not None:
-            # NOTE: this stopping is shielded to prevent the cancellation to propagate
-            # into the stopping procedure
             await cancel_wait_task(asyncio_task, max_delay=stop_timeout)
