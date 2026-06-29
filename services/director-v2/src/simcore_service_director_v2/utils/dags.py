@@ -82,8 +82,8 @@ def _create_node_io_payload_cb(
     graph_data: nx.classes.reportviews.NodeDataView,
 ) -> Callable[[NodeID], Coroutine[Any, Any, dict[str, Any]]]:
     async def _get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
-        result: dict[str, Any] = graph_data[f"{node_id}"]
-        return result
+        node = graph_data[f"{node_id}"]
+        return {"inputs": node.get("inputs"), "outputs": node.get("outputs")}
 
     return _get_node_io_payload_cb
 
