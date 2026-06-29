@@ -59,21 +59,22 @@ from .....models.dynamic_services_scheduler import (
     DockerStatus,
     SchedulerData,
 )
-from .....modules.catalog import CatalogClient
-from .....modules.instrumentation import (
+from .....utils.db import get_repository
+from ....catalog import CatalogClient
+from ....db.repositories.projects_networks import ProjectsNetworksRepository
+from ....db.repositories.projects_nodes import ProjectsNodesRepository
+from ....db.repositories.user_preferences_frontend import (
+    UserPreferencesFrontendRepository,
+)
+from ....director_v0 import DirectorV0Client
+from ....instrumentation import (
     get_instrumentation,
     get_metrics_labels,
     get_rate,
     track_duration,
 )
-from .....modules.osparc_variables._api_auth import create_unique_api_name_for
-from .....utils.db import get_repository
-from ....db.repositories.projects_networks import ProjectsNetworksRepository
-from ....db.repositories.user_preferences_frontend import (
-    UserPreferencesFrontendRepository,
-)
-from ....director_v0 import DirectorV0Client
 from ....long_running_tasks import get_long_running_client_helper
+from ....osparc_variables._api_auth import create_unique_api_name_for
 from ....osparc_variables._api_auth_rpc import delete_api_key_by_key
 from ...api_client import (
     SidecarsClient,
@@ -88,7 +89,6 @@ from ...docker_api import (
     try_to_remove_network,
 )
 from ...errors import EntrypointContainerNotFoundError
-from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 
 if TYPE_CHECKING:
     # NOTE: TYPE_CHECKING is True when static type checkers are running,
