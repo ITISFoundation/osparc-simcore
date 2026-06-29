@@ -124,7 +124,7 @@ class _ThreadSafeProgressLogger:
     """Thread-safe progress callback for blocking transfers run in an executor.
 
     The callback is invoked from a worker thread with the cumulative number of
-    plaintext bytes processed so far, and schedules throttled progress logs back onto
+    data bytes processed so far, and schedules throttled progress logs back onto
     the main event loop via ``asyncio.run_coroutine_threadsafe``.
     """
 
@@ -192,7 +192,7 @@ async def _run_plain_copy(
         (
             data_read,
             data_written,
-        ) = await asyncio.get_running_loop().run_in_executor(None, _file_chunk_streamer, src_fp, dst_fp)
+        ) = await asyncio.to_thread(_file_chunk_streamer, src_fp, dst_fp)
         elapsed_time = time.perf_counter() - t
         total_data_written += data_written or 0
         await log_publishing_cb(
