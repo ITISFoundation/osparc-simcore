@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from common_library.i18n import DEFAULT_LOCALE, SupportedLocale, get_translator
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale, get_translator
 
 from ..models.content import Content, for_channel
 from ..models.template import Template, TemplatePreview
@@ -21,7 +21,7 @@ class JinjaRenderer(Renderer):
         locale: SupportedLocale = DEFAULT_LOCALE,
     ) -> TemplatePreview[Content]:
         # NOTE: locale → .mo catalog path: common_library/locale/<locale>/LC_MESSAGES/messages.mo
-        # Compiled by the i18n extraction pipeline (see common_library.i18n). Unknown locales
+        # Compiled by the i18n extraction pipeline (see common_library.gettext_support). Unknown locales
         # fall back to a NullTranslations that passes English msgids through unchanged.
         translator = get_translator(locale)
         # Pass gettext/ngettext as render-time context variables so they

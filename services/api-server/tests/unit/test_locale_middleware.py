@@ -5,7 +5,7 @@ locale-aware exception handlers in the api-server.
 """
 
 import pytest
-from common_library.i18n import DEFAULT_LOCALE
+from common_library.gettext_support import DEFAULT_LOCALE
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 from simcore_service_api_server._locale_middleware import LocaleMiddleware

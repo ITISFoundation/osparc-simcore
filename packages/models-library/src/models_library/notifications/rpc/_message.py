@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 

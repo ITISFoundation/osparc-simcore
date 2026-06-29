@@ -3,7 +3,7 @@ from typing import Any, NamedTuple
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
-from common_library.i18n import DEFAULT_LOCALE, get_translator
+from common_library.gettext_support import DEFAULT_LOCALE, get_translator
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rest_error import ErrorGet

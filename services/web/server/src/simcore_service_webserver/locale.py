@@ -17,7 +17,7 @@ against a missing ``RQ_LOCALE_KEY``.
 from typing import Final, cast
 
 from aiohttp import web
-from common_library.i18n import DEFAULT_LOCALE, SupportedLocale, get_translator, normalize_locale
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale, get_translator, normalize_locale
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import X_SIMCORE_LANGUAGE
 

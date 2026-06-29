@@ -1,7 +1,7 @@
 import logging
 
 from common_library.error_codes import create_error_code
-from common_library.i18n import DEFAULT_LOCALE, get_translator
+from common_library.gettext_support import DEFAULT_LOCALE, get_translator
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse

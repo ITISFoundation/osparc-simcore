@@ -1,4 +1,4 @@
-from common_library.i18n import DEFAULT_LOCALE, get_translator
+from common_library.gettext_support import DEFAULT_LOCALE, get_translator
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse

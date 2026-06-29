@@ -12,7 +12,7 @@ When it does not run, exception handlers fall back to ``DEFAULT_LOCALE`` via
 
 from typing import Final
 
-from common_library.i18n import DEFAULT_LOCALE, normalize_locale
+from common_library.gettext_support import DEFAULT_LOCALE, normalize_locale
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response

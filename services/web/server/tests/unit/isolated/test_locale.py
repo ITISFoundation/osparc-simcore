@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from common_library.i18n import DEFAULT_LOCALE
+from common_library.gettext_support import DEFAULT_LOCALE
 from servicelib.common_headers import X_SIMCORE_LANGUAGE
 from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.locale import RQ_LOCALE_KEY, get_user_locale, locale_middleware

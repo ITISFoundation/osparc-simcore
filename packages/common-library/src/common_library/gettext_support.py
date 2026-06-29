@@ -1,7 +1,7 @@
-"""Server-side i18n helpers (gettext-based, no global install).
+"""Server-side gettext support helpers (no global install).
 
 Usage (per-request or per-render):
-    from common_library.i18n import get_translator
+    from common_library.gettext_support import get_translator
 
     translator = get_translator(locale)
     translated = translator.gettext(msgid)
@@ -10,7 +10,7 @@ Catalogue layout (built by the external extraction pipeline):
     <package_root>/locale/<lang>/LC_MESSAGES/messages.mo
 
 When no .mo file exists for a locale the call returns a NullTranslations object
-that passes the English msgid through unchanged — i.e. a safe no-op fallback.
+that passes the English msgid through unchanged - i.e. a safe no-op fallback.
 """
 
 import gettext
@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 
 # Locales with compiled .mo catalogs shipped in this package.
 # Extend this tuple as new languages are added to the extraction pipeline.
-# NOTE: "en" has no .mo catalog — prose-as-key means the msgid IS the English
+# NOTE: "en" has no .mo catalog - prose-as-key means the msgid IS the English
 # string; NullTranslations returns it verbatim. It is kept here because it is
 # the DEFAULT_LOCALE and is used as a valid value in function signatures.
 type SupportedLocale = Literal["en", "es_ES", "zh_CN"]
@@ -34,12 +34,11 @@ assert Path(_LOCALE_DIR).is_dir(), f"locale directory not found: {_LOCALE_DIR}" 
 
 DEFAULT_LOCALE: Final[SupportedLocale] = "en"
 
-
-# Module-level cache: locale string → loaded translator.
+# Module-level cache: locale string -> loaded translator.
 # Access is single-threaded (asyncio event loop), so a plain dict is safe.
 _cache: dict[str, gettext.NullTranslations] = {}
 
-# Accept-Language tag normalisation: "es-ES" → "es_ES", "zh-hans" → "zh_hans"
+# Accept-Language tag normalisation: "es-ES" -> "es_ES", "zh-hans" -> "zh_hans"
 _ACCEPT_LANG_RE: re.Pattern[str] = re.compile(r"^([a-zA-Z]{2,3})(?:[_-]([a-zA-Z]{2,8}))?")
 
 
@@ -47,10 +46,10 @@ def normalize_locale(raw: str) -> str:
     """Normalise an Accept-Language tag or HTTP header value to a gettext locale string.
 
     Examples:
-        "es-ES"              → "es_ES"
-        "zh-CN,zh;q=0.9"    → "zh_CN"
-        "en"                 → "en"
-        "  ES_es ; q=0.8"   → "es_ES"
+        "es-ES"              -> "es_ES"
+        "zh-CN,zh;q=0.9"    -> "zh_CN"
+        "en"                 -> "en"
+        "  ES_es ; q=0.8"   -> "es_ES"
     """
     # Take the first tag, stopping at the first comma or semicolon
     first_tag = re.split(r"[,;]", raw, maxsplit=1)[0].strip()

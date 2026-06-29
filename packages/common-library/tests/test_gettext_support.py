@@ -1,4 +1,4 @@
-"""Tests for common_library.i18n"""
+"""Tests for common_library.gettext_support."""
 
 import gettext
 import json
@@ -7,7 +7,7 @@ from typing import Final
 
 import polib
 import pytest
-from common_library.i18n import (
+from common_library.gettext_support import (
     _LOCALE_DIR,
     DEFAULT_LOCALE,
     get_translator,

@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from models_library.celery import (
     GroupUUID,
     OwnerMetadata,

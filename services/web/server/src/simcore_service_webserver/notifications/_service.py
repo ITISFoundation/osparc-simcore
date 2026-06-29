@@ -1,7 +1,7 @@
 from typing import Any, Final
 
 from aiohttp import web
-from common_library.i18n import DEFAULT_LOCALE, SupportedLocale
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (

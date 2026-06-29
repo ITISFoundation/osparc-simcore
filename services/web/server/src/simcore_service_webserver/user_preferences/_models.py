@@ -1,7 +1,7 @@
 from typing import Final
 
 from aiohttp import web
-from common_library.i18n import SupportedLocale
+from common_library.gettext_support import SupportedLocale
 from models_library.authentication import TwoFactorAuthenticationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
