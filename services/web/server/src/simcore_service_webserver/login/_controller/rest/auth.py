@@ -8,7 +8,6 @@ from models_library.authentication import TwoFactorAuthenticationMethod
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.users import UserRole
 
@@ -23,6 +22,7 @@ from ....session.access_policies import (
 )
 from ....user_preferences import user_preferences_service
 from ....user_preferences.models import TwoFAFrontendUserPreference
+from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response, flash_response
 from ... import _auth_service, _login_service, _security_service, _twofa_service
 from ...constants import (

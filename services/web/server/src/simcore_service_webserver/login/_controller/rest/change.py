@@ -5,7 +5,6 @@ from aiohttp.web import RouteTableDef
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.notifications import Channel
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
@@ -19,6 +18,7 @@ from ....products.models import Product
 from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_requests_validation import parse_request_body_as
 from ....web_utils import flash_response
 from ... import _auth_service, _confirmation_web
 from ..._login_service import (

@@ -10,10 +10,6 @@ from pydantic import (
     TypeAdapter,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
@@ -24,6 +20,7 @@ from ....session.access_policies import session_access_required
 from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from ....web_utils import flash_response
 from ... import (
     _auth_service,
