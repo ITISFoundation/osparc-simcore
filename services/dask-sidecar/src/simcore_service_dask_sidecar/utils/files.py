@@ -14,7 +14,7 @@ import aiofiles
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
 import repro_zipfile
-from pydantic import ByteSize, FileUrl, TypeAdapter
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
@@ -96,8 +96,8 @@ def _file_chunk_streamer(src: IOBase, dst: IOBase):
 
 
 async def _copy_file(
-    src_url: AnyUrl,
-    dst_url: AnyUrl,
+    src_url: AnyUrl | Path,
+    dst_url: AnyUrl | Path,
     *,
     log_publishing_cb: LogPublishingCB,
     text_prefix: str,
@@ -180,14 +180,15 @@ async def pull_file_from_remote(
             # we need to extract the file, so we create a temporary directory
             # where the file will be downloaded and extracted
             tmp_dir = await exit_stack.enter_async_context(aiofiles.tempfile.TemporaryDirectory())
-            download_dst_path = Path(f"{tmp_dir}") / Path(src_url.path).name
+            # NOTE: the URL path is percent-encoded
+            download_dst_path = Path(tmp_dir) / Path(URL(f"{src_url}").path).name
         else:
             # no extraction needed, so we can use the provided dst_path directly
             download_dst_path = dst_path
 
         await _copy_file(
             src_url,
-            TypeAdapter(FileUrl).validate_python(f"{download_dst_path.as_uri()}"),
+            download_dst_path,
             src_storage_cfg=cast(dict[str, Any], storage_kwargs),
             log_publishing_cb=log_publishing_cb,
             text_prefix=f"Downloading '{src_location_str}':",
@@ -250,7 +251,7 @@ async def _push_file_to_remote(
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
     await _copy_file(
-        TypeAdapter(FileUrl).validate_python(file_to_upload.as_uri()),
+        file_to_upload,
         dst_url,
         dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
