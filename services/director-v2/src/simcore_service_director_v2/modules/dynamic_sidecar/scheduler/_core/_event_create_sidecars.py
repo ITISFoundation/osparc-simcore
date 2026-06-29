@@ -29,12 +29,12 @@ from .....core.dynamic_services_settings.sidecar import (
 from .....core.errors import ProjectNotFoundError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import NetworkId, SchedulerData
-from .....modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
+from ....db.repositories.projects_nodes import ProjectsNodesRepository
 from ...docker_api import (
     constrain_service_to_node,
     create_network,
