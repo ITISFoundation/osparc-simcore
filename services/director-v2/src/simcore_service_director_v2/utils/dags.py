@@ -81,9 +81,6 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
 def _create_node_io_payload_cb(
     graph_data: nx.classes.reportviews.NodeDataView,
 ) -> Callable[[NodeID], Coroutine[Any, Any, dict[str, Any]]]:
-    """Builds the callback used by ``compute_node_hash`` to resolve a node's
-    (and its port-linked predecessors') inputs/outputs from the DAG."""
-
     async def _get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
         result: dict[str, Any] = graph_data[f"{node_id}"]
         return result
