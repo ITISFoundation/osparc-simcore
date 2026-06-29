@@ -18,7 +18,11 @@ from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ...errors import HTTPDestinationEncryptionNotSupportedError
+from ...errors import (
+    FileTransferEncryptionError,
+    HTTPDestinationEncryptionNotSupportedError,
+)
+from ..aes_gcm import AesGcmStreamError
 from ._copy import _copy_file
 from ._progress import LogPublishingCB, _file_progress_cb
 from ._s3 import HTTP_FILE_SYSTEM_SCHEMES, S3FsSettingsDict, _s3fs_settings_from_s3_settings
@@ -74,16 +78,27 @@ async def _push_file_to_remote(
     if s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
-    await _copy_file(
-        file_to_upload,
-        dst_url,
-        src_storage_cfg=None,
-        dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
-        log_publishing_cb=log_publishing_cb,
-        text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
-        encryption=encryption,
-        encryption_mode="encrypt" if encryption else None,
-    )
+    try:
+        await _copy_file(
+            file_to_upload,
+            dst_url,
+            src_storage_cfg=None,
+            dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
+            log_publishing_cb=log_publishing_cb,
+            text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
+            encryption=encryption,
+            encryption_mode="encrypt" if encryption else None,
+        )
+    except AesGcmStreamError as exc:
+        # translate the low-level crypto failure into a sidecar error so callers do not
+        # depend on the crypto primitives. file_id is the one used for key derivation.
+        assert encryption is not None  # nosec
+        raise FileTransferEncryptionError(
+            operation="encrypt",
+            file_role="output",
+            file_id=encryption.file_id,
+            error_message=f"{exc}",
+        ) from exc
 
 
 async def push_file_to_remote(

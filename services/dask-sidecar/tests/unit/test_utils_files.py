@@ -23,8 +23,11 @@ from pydantic import AnyUrl, SecretBytes, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
-from simcore_service_dask_sidecar.errors import HTTPDestinationEncryptionNotSupportedError
-from simcore_service_dask_sidecar.utils.aes_gcm import FORMAT_MAGIC, AesGcmStreamAuthError, generate_key
+from simcore_service_dask_sidecar.errors import (
+    FileTransferEncryptionError,
+    HTTPDestinationEncryptionNotSupportedError,
+)
+from simcore_service_dask_sidecar.utils.aes_gcm import FORMAT_MAGIC, generate_key
 from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,
@@ -420,7 +423,7 @@ async def test_pull_file_from_remote_decrypt_with_wrong_key_raises_auth_error(
         root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
         file_id=encryption_settings.file_id,
     )
-    with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
+    with pytest.raises(FileTransferEncryptionError, match="authentication failed") as exc_info:
         await pull_file_from_remote(
             src_url=TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
             target_mime_type=None,
@@ -429,6 +432,9 @@ async def test_pull_file_from_remote_decrypt_with_wrong_key_raises_auth_error(
             s3_settings=None,
             encryption=wrong_key_settings,
         )
+    assert exc_info.value.operation == "decrypt"
+    assert exc_info.value.file_role == "input"
+    assert exc_info.value.file_id == wrong_key_settings.file_id
 
 
 @pytest.mark.parametrize("scheme", ["http", "https"])

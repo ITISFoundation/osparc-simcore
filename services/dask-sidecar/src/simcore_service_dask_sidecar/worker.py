@@ -26,6 +26,7 @@ from .utils.dask import (
     TaskPublisher,
     get_current_task_resources,
     monitor_task_abortion,
+    sanitize_exceptions_across_dask_boundary,
 )
 from .utils.logs import setup_app_logging
 
@@ -92,6 +93,7 @@ async def dask_teardown(worker: distributed.Worker) -> None:
         ...
 
 
+@sanitize_exceptions_across_dask_boundary
 async def _run_computational_sidecar_async(
     *,
     task_parameters: ContainerTaskParameters,

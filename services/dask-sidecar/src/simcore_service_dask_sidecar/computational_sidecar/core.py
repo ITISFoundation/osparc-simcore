@@ -15,10 +15,8 @@ from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.encryption import (
     JobEncryptionContext,
-    TransferEncryptionSettings,
 )
 from dask_task_models_library.container_tasks.errors import (
-    ServiceEncryptionError,
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
     ServiceOutOfMemoryError,
     ServiceRuntimeError,
@@ -36,7 +34,6 @@ from settings_library.s3 import S3Settings
 from yarl import URL
 
 from ..settings import ApplicationSettings
-from ..utils.aes_gcm import AesGcmStreamError
 from ..utils.dask import TaskPublisher
 from ..utils.files import (
     check_need_unzipping,
@@ -100,33 +97,8 @@ class ComputationalSidecar:
             destination_path,
             log_publishing_cb=self._publish_sidecar_log,
             s3_settings=self.s3_settings,
-            encryption=(
-                TransferEncryptionSettings(
-                    root_key=self.encryption.root_key,
-                    file_id=self.encryption.input_port_to_file_id[input_key],
-                )
-                if self.encryption is not None and input_key in self.encryption.input_port_to_file_id
-                else None
-            ),
+            encryption=(self.encryption.transfer_settings_for_input(input_key) if self.encryption else None),
         )
-
-    async def _download_and_decrypt_input(self, input_key: str, task: Coroutine) -> None:
-        try:
-            await task
-        except AesGcmStreamError as exc:
-            # NOTE: the low-level crypto error stays internal to the sidecar (it is not
-            # importable on the dask client). We log it here for diagnosis and re-raise a
-            # well-defined, client-importable worker error WITHOUT chaining it as cause,
-            # so the exception survives pickling across the dask boundary.
-            _logger.warning("Failed to decrypt input %s: %s", input_key, exc, exc_info=exc)
-            raise ServiceEncryptionError(
-                service_key=self.task_parameters.image,
-                service_version=self.task_parameters.tag,
-                operation="decrypt",
-                file_role="input",
-                file_id=input_key,
-                error_message=f"{exc}",
-            ) from None
 
     async def _write_input_data(
         self,
@@ -149,8 +121,8 @@ class ComputationalSidecar:
                 local_input_data_file[input_key] = input_params
 
         # NOTE: concurrent download cannot be done as download is done in a flat folder
-        for input_key, task in download_tasks:
-            await self._download_and_decrypt_input(input_key, task)
+        for _, task in download_tasks:
+            await task
 
         input_data_file.write_text(json_dumps(local_input_data_file))
 
@@ -188,21 +160,13 @@ class ComputationalSidecar:
 
                     src_path = task_volumes.outputs_folder / output_params.file_mapping
                     upload_tasks.append(
-                        self._encrypt_and_push_output(
-                            output_key,
-                            push_file_to_remote(
-                                src_path,
-                                output_params.url,
-                                log_publishing_cb=self._publish_sidecar_log,
-                                s3_settings=self.s3_settings,
-                                encryption=(
-                                    TransferEncryptionSettings(
-                                        root_key=self.encryption.root_key,
-                                        file_id=output_key,
-                                    )
-                                    if self.encryption
-                                    else None
-                                ),
+                        push_file_to_remote(
+                            src_path,
+                            output_params.url,
+                            log_publishing_cb=self._publish_sidecar_log,
+                            s3_settings=self.s3_settings,
+                            encryption=(
+                                self.encryption.transfer_settings_for_output(output_key) if self.encryption else None
                             ),
                         )
                     )
@@ -218,23 +182,6 @@ class ComputationalSidecar:
                 service_version=self.task_parameters.tag,
                 exc=exc,
             ) from exc
-
-    async def _encrypt_and_push_output(self, output_key: str, push_task: Coroutine) -> None:
-        # NOTE: re-raises encryption failures as a well-defined, client-importable worker
-        # error. The low-level crypto error stays internal to the sidecar (not importable on
-        # the dask client), so it is logged here and NOT chained as cause, ensuring the
-        # worker error survives pickling across the dask boundary.
-        try:
-            await push_task
-        except AesGcmStreamError as exc:
-            raise ServiceEncryptionError(
-                service_key=self.task_parameters.image,
-                service_version=self.task_parameters.tag,
-                operation="encrypt",
-                file_role="output",
-                file_id=output_key,
-                error_message=f"{exc}",
-            ) from None
 
     async def _publish_sidecar_log(self, log: LogMessageStr, log_level: LogLevelInt = logging.INFO) -> None:
         await self.task_publishers.publish_logs(message=f"[sidecar] {log}", log_level=log_level)

@@ -14,6 +14,8 @@ from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 from yarl import URL
 
+from ...errors import FileTransferEncryptionError
+from ..aes_gcm import AesGcmStreamError
 from ._copy import _copy_file
 from ._progress import LogPublishingCB
 from ._s3 import S3_FILE_SYSTEM_SCHEMES, S3FsSettingsDict, _s3fs_settings_from_s3_settings
@@ -75,16 +77,27 @@ async def pull_file_from_remote(
             # no extraction needed, so we can use the provided dst_path directly
             download_dst_path = dst_path
 
-        await _copy_file(
-            src_url,
-            download_dst_path,
-            src_storage_cfg=cast(dict[str, Any], storage_kwargs),
-            dst_storage_cfg=None,
-            log_publishing_cb=log_publishing_cb,
-            text_prefix=f"Downloading '{src_location_str}':",
-            encryption=encryption,
-            encryption_mode="decrypt" if encryption else None,
-        )
+        try:
+            await _copy_file(
+                src_url,
+                download_dst_path,
+                src_storage_cfg=cast(dict[str, Any], storage_kwargs),
+                dst_storage_cfg=None,
+                log_publishing_cb=log_publishing_cb,
+                text_prefix=f"Downloading '{src_location_str}':",
+                encryption=encryption,
+                encryption_mode="decrypt" if encryption else None,
+            )
+        except AesGcmStreamError as exc:
+            # translate the low-level crypto failure into a sidecar error so callers do not
+            # depend on the crypto primitives. file_id is the one used for key derivation.
+            assert encryption is not None  # nosec
+            raise FileTransferEncryptionError(
+                operation="decrypt",
+                file_role="input",
+                file_id=encryption.file_id,
+                error_message=f"{exc}",
+            ) from exc
 
         await log_publishing_cb(
             f"Download of '{src_location_str}' into local file '{download_dst_path}' complete.",

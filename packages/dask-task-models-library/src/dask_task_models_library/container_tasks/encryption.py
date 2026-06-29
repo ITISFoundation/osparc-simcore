@@ -30,6 +30,17 @@ class JobEncryptionContext(BaseModel):
         ),
     ]
 
+    def transfer_settings_for_input(self, input_key: str) -> "TransferEncryptionSettings | None":
+        """Returns the per-file transfer settings for an input port, or None when that port is not encrypted."""
+        file_id = self.input_port_to_file_id.get(input_key)
+        if file_id is None:
+            return None
+        return TransferEncryptionSettings(root_key=self.root_key, file_id=file_id)
+
+    def transfer_settings_for_output(self, output_key: str) -> "TransferEncryptionSettings":
+        """Returns the per-file transfer settings for an output (the file_id is the output key)."""
+        return TransferEncryptionSettings(root_key=self.root_key, file_id=output_key)
+
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(
