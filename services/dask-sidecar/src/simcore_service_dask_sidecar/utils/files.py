@@ -216,12 +216,11 @@ async def _run_crypto_copy(
     log_publishing_cb: LogPublishingCB,
     text_prefix: str,
 ) -> None:
-    main_loop = asyncio.get_running_loop()
     progress_logger = _ThreadSafeProgressLogger(
         file_size=file_size,
         log_publishing_cb=log_publishing_cb,
         text_prefix=text_prefix,
-        main_loop=main_loop,
+        main_loop=asyncio.get_running_loop(),
     )
     transfer = encrypt_stream if encryption_mode == "encrypt" else decrypt_stream
     blocking_transfer = functools.partial(
@@ -232,7 +231,7 @@ async def _run_crypto_copy(
         file_id=encryption.file_id,
         progress_cb=progress_logger,
     )
-    await main_loop.run_in_executor(None, blocking_transfer)
+    await asyncio.to_thread(blocking_transfer)
     # force a final progress log on completion
     await progress_logger.emit_final()
 
