@@ -183,6 +183,7 @@ async def _run_sync_services(app: FastAPI):
 
 
 async def background_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    registry_sync_task = None
     try:
         with log_context(_logger, logging.DEBUG, msg="starting registry syncing task"):
             registry_sync_task = create_periodic_task(
