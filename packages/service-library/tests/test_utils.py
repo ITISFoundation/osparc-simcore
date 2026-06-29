@@ -14,6 +14,7 @@ from pytest_mock import MockerFixture
 from servicelib.utils import (
     ensure_ends_with,
     fire_and_forget_task,
+    get_callable_namespaced_name,
     limited_as_completed,
     limited_gather,
     logged_gather,
@@ -289,3 +290,25 @@ async def test_limited_gather_cancellation(slow_successful_coros_list: list[Coro
         task for task in asyncio.all_tasks(asyncio.get_running_loop()) if task is not asyncio.current_task()
     ]
     assert not unfinished_tasks
+
+
+def _free_function() -> None: ...
+
+
+class _Sample:
+    def method(self) -> None: ...
+
+    @staticmethod
+    def static_method() -> None: ...
+
+
+def test_get_callable_namespaced_name():
+    # free function: qualname matches the function name
+    assert get_callable_namespaced_name(_free_function) == f"{__name__}._free_function"
+
+    # function inside a class: qualname includes the class name
+    assert get_callable_namespaced_name(_Sample.method) == f"{__name__}._Sample.method"
+    # bound method resolves to the same namespaced name
+    assert get_callable_namespaced_name(_Sample().method) == f"{__name__}._Sample.method"
+    # static method inside a class
+    assert get_callable_namespaced_name(_Sample.static_method) == f"{__name__}._Sample.static_method"

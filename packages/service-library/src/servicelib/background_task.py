@@ -11,6 +11,7 @@ from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
 from .logging_utils import log_catch, log_context
+from .utils import get_callable_namespaced_name
 
 _logger = logging.getLogger(__name__)
 
@@ -32,17 +33,6 @@ class SleepUsingAsyncioEvent:
 
 P = ParamSpec("P")
 R = TypeVar("R")
-
-
-def _create_task_name(task: Callable[..., Any]) -> str:
-    """Builds a namespaced task identifier from the callable, analogous to logger
-    names (e.g. ``logging.getLogger(__name__)``), so the name can be used to filter
-    and trace where a task originates, e.g.
-    ``simcore_service_catalog.core.background_tasks._run_sync_services``.
-    """
-    qualname = getattr(task, "__qualname__", None) or getattr(task, "__name__", None) or repr(task)
-    module = getattr(task, "__module__", None)
-    return f"{module}.{qualname}" if module else qualname
 
 
 def periodic(
@@ -107,11 +97,12 @@ def create_periodic_task(
     """Creates an :class:`asyncio.Task` that runs ``task`` periodically until cancelled.
 
     If ``task_name`` is omitted, a namespaced name is derived from the callable (see
-    :func:`_create_task_name`). Extra ``**kwargs`` are forwarded to ``task`` on every call.
+    :func:`servicelib.utils.get_callable_namespaced_name`). Extra ``**kwargs`` are
+    forwarded to ``task`` on every call.
     The caller owns the returned task and is responsible for cancelling it (e.g. via
     ``cancel_wait_task``); prefer :func:`periodic_task` when a managed lifetime is enough.
     """
-    resolved_task_name = task_name or _create_task_name(task)
+    resolved_task_name = task_name or get_callable_namespaced_name(task)
 
     @delayed_start(wait_before_running)
     @periodic(
