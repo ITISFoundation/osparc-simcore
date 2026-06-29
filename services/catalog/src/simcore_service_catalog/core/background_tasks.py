@@ -193,7 +193,8 @@ async def background_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
             )
         yield {}
     finally:
-        await cancel_wait_task(registry_sync_task)
+        if registry_sync_task:
+            await cancel_wait_task(registry_sync_task)
         _logger.info("registry syncing task stopped")
 
 
