@@ -18,6 +18,7 @@ from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
+from ..locale import translate_message
 from ..login import login_service
 from ..login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
 from ..login.constants import (
@@ -149,7 +150,7 @@ async def unregister_account(request: web.Request):
 
         # logout
         await login_service.notify_user_logout(request.app, user_id=req_ctx.user_id, client_session_id=None)
-        response = flash_response(MSG_LOGGED_OUT, "INFO")
+        response = flash_response(translate_message(MSG_LOGGED_OUT, request), "INFO")
         await security_web.forget_identity(request, response)
 
         # send email in the background
