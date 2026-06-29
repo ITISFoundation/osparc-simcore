@@ -152,7 +152,7 @@ class ApplicationSettings(BasicSettings):
         ),
     ]
 
-    API_SERVER_BOOT_SERVICE_MODE: Annotated[
+    API_SERVER_BOOT_SERVER_MODE: Annotated[
         BootServerMode,
         Field(description="Boot mode: REST API server or Celery worker"),
     ] = BootServerMode.AS_REST
