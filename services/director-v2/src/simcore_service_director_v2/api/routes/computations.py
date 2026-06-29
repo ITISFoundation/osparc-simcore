@@ -73,7 +73,6 @@ from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
 from ...utils.computations_tasks import validate_pipeline
 from ...utils.dags import (
-    compute_dag_computational_hashes,
     compute_pipeline_details,
     create_complete_dag,
     create_complete_dag_from_tasks,
@@ -248,7 +247,6 @@ async def _create_or_update_pipeline_and_tasks(  # noqa: PLR0913 # pylint: disab
     computation: ComputationCreate,
     app: FastAPI,
     project: ProjectAtDB,
-    complete_dag: nx.DiGraph,
     minimal_computational_dag: nx.DiGraph,
     comp_pipelines_repo: CompPipelinesRepository,
     comp_tasks_repo: CompTasksRepository,
@@ -260,14 +258,6 @@ async def _create_or_update_pipeline_and_tasks(  # noqa: PLR0913 # pylint: disab
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> tuple[list[CompTaskAtDB], bool]:
     assert computation.product_name  # nosec
-
-    if not computation.start_pipeline and not computation.subgraph and not (computation.force_restart or False):
-        existing_tasks = await comp_tasks_repo.list_tasks(project.uuid)
-        if existing_tasks:
-            new_hashes = await compute_dag_computational_hashes(complete_dag)
-            old_hashes = await compute_dag_computational_hashes(create_complete_dag_from_tasks(existing_tasks))
-            if new_hashes == old_hashes:
-                return existing_tasks, False
 
     await comp_pipelines_repo.upsert_pipeline(
         project.uuid,
@@ -384,7 +374,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
             computation=computation,
             app=request.app,
             project=project,
-            complete_dag=complete_dag,
             minimal_computational_dag=minimal_computational_dag,
             comp_pipelines_repo=comp_pipelines_repo,
             comp_tasks_repo=comp_tasks_repo,

@@ -12,9 +12,8 @@ from uuid import uuid4
 
 import networkx as nx
 import pytest
-from faker import Faker
 from models_library.projects import NodesDict
-from models_library.projects_nodes import Node, NodeState
+from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
@@ -24,12 +23,9 @@ from simcore_service_director_v2.models.comp_tasks import (
     Image,
     NodeSchema,
 )
-from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dags import (
-    compute_dag_computational_hashes,
     compute_pipeline_details,
     create_complete_dag,
-    create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
 )
@@ -42,145 +38,6 @@ def test_create_complete_dag_graph(
     dag_graph = create_complete_dag(fake_workbench)
     assert nx.is_directed_acyclic_graph(dag_graph)
     assert nx.to_dict_of_lists(dag_graph) == fake_workbench_complete_adjacency
-
-
-def _make_fingerprint_dag(node_id: str) -> nx.DiGraph:
-    dag = nx.DiGraph()
-    dag.add_node(
-        node_id,
-        name="sleeper",
-        key="simcore/services/comp/sleeper",
-        version="1.0.0",
-        inputs={"in_1": 4},
-        run_hash=None,
-        outputs={"out_1": 2},
-        state=RunningState.SUCCESS,
-        node_class=NodeClass.COMPUTATIONAL,
-    )
-    return dag
-
-
-async def test_compute_dag_computational_hashes_ignores_non_computational_metadata(
-    faker: Faker,
-):
-    node_1_id = faker.uuid4()
-    node_2_id = faker.uuid4()
-    dag = _make_fingerprint_dag(node_1_id)
-    baseline = await compute_dag_computational_hashes(dag)
-
-    # deterministic for the same content
-    assert await compute_dag_computational_hashes(_make_fingerprint_dag(node_1_id)) == baseline
-
-    # changing metadata that does not affect the fingerprint does NOT change the result
-    for attr, value in [
-        ("name", "renamed"),
-        ("run_hash", "some-hash"),
-        ("state", RunningState.FAILED),
-    ]:
-        dag = _make_fingerprint_dag(node_1_id)
-        dag.nodes[node_1_id][attr] = value
-        assert await compute_dag_computational_hashes(dag) == baseline, attr
-
-    # changing inputs/outputs or the service key/version DOES change the fingerprint
-    for attr, value in [
-        ("inputs", {"in_1": 5}),
-        ("outputs", {"out_1": 3}),
-        ("key", "simcore/services/comp/other"),
-        ("version", "2.0.0"),
-    ]:
-        dag = _make_fingerprint_dag(node_1_id)
-        dag.nodes[node_1_id][attr] = value
-        assert await compute_dag_computational_hashes(dag) != baseline, attr
-
-    # adding a computational node changes the result -> node-set is part of the mapping
-    dag = _make_fingerprint_dag(node_1_id)
-    dag.add_node(
-        node_2_id,
-        name="another",
-        key="simcore/services/comp/sleeper",
-        version="1.0.0",
-        inputs={},
-        run_hash=None,
-        outputs={},
-        state=RunningState.SUCCESS,
-        node_class=NodeClass.COMPUTATIONAL,
-    )
-    assert await compute_dag_computational_hashes(dag) != baseline
-
-
-async def test_compute_dag_computational_hashes_is_invariant_to_internal_key_order(
-    faker: Faker,
-):
-    node_1_id = faker.uuid4()
-    dag = nx.DiGraph()
-    dag.add_node(
-        node_1_id,
-        name="sleeper",
-        key="simcore/services/comp/sleeper",
-        version="1.0.0",
-        inputs={"in_1": 4, "in_2": {"a": 1, "b": 2}},
-        run_hash=None,
-        outputs={"out_1": 2, "out_2": {"x": 3, "y": 4}},
-        state=RunningState.SUCCESS,
-        node_class=NodeClass.COMPUTATIONAL,
-    )
-    baseline = await compute_dag_computational_hashes(dag)
-
-    reordered_dag = nx.DiGraph()
-    reordered_dag.add_node(
-        node_1_id,
-        name="sleeper",
-        key="simcore/services/comp/sleeper",
-        version="1.0.0",
-        inputs={"in_2": {"b": 2, "a": 1}, "in_1": 4},
-        run_hash=None,
-        outputs={"out_2": {"y": 4, "x": 3}, "out_1": 2},
-        state=RunningState.SUCCESS,
-        node_class=NodeClass.COMPUTATIONAL,
-    )
-
-    assert await compute_dag_computational_hashes(reordered_dag) == baseline
-
-
-async def test_computational_hashes_match_between_workbench_and_tasks(
-    fake_workbench: NodesDict,
-):
-    def _make_task(node_id: str, node: Node) -> CompTaskAtDB:
-        return CompTaskAtDB.model_construct(
-            project_id=uuid4(),
-            node_id=NodeID(node_id),
-            schema=NodeSchema(inputs={}, outputs={}),
-            inputs=node.inputs,
-            outputs=node.outputs,
-            image=Image(name=node.key, tag=node.version),
-            state=RunningState.SUCCESS,
-            internal_id=1,
-            node_class=to_node_class(node.key),
-            created=datetime.datetime.now(tz=datetime.UTC),
-            modified=datetime.datetime.now(tz=datetime.UTC),
-            last_heartbeat=None,
-            progress=1.00,
-            run_hash=node.run_hash,
-        )
-
-    tasks = [_make_task(node_id, node) for node_id, node in fake_workbench.items()]
-
-    workbench_dag = create_complete_dag(fake_workbench)
-    tasks_dag = create_complete_dag_from_tasks(tasks)
-    workbench_hashes = await compute_dag_computational_hashes(workbench_dag)
-    tasks_hashes = await compute_dag_computational_hashes(tasks_dag)
-
-    assert workbench_hashes == tasks_hashes
-    # changing a computational node's outputs must change its hash -> guard proceeds
-    comp_node_id, comp_node = next((node_id, node) for node_id, node in fake_workbench.items() if "/comp/" in node.key)
-    changed_node = comp_node.model_copy(update={"outputs": {"out_1": "changed-value"}})
-    changed_tasks = [
-        _make_task(node_id, changed_node if node_id == comp_node_id else node)
-        for node_id, node in fake_workbench.items()
-    ]
-    assert await compute_dag_computational_hashes(workbench_dag) != await compute_dag_computational_hashes(
-        create_complete_dag_from_tasks(changed_tasks)
-    )
 
 
 @dataclass

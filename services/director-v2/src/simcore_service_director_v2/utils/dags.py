@@ -14,7 +14,6 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
-from pydantic import TypeAdapter
 
 from ..models.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
@@ -86,34 +85,6 @@ def _create_node_io_payload_cb(
         return result
 
     return _get_node_io_payload_cb
-
-
-async def compute_dag_computational_hashes(
-    dag: nx.DiGraph,
-) -> dict[NodeIDStr, tuple[str, str, str]]:
-    """Computes a comparable fingerprint of every computational node in the DAG.
-
-    Each node maps to its ``(key, version, io_hash)`` where ``io_hash`` comes from
-    ``compute_node_hash``, which resolves port links to the actual upstream output
-    values. This ensures that a change in a linked node's value propagates into the
-    dependent node's hash (a raw ``inputs`` projection would miss it, since a port
-    link only stores a reference to the upstream node/port). ``key`` and ``version``
-    are included so that a service upgrade (which does not alter inputs/outputs) is
-    still detected as a change.
-    """
-    graph_data: nx.classes.reportviews.NodeDataView = dag.nodes.data()
-    get_node_io_payload_cb = _create_node_io_payload_cb(graph_data)
-    node_id_adapter = TypeAdapter(NodeID)
-
-    return {
-        node_id: (
-            f"{data['key']}",
-            f"{data['version']}",
-            await compute_node_hash(node_id_adapter.validate_python(node_id), get_node_io_payload_cb),
-        )
-        for node_id, data in graph_data
-        if data.get("node_class") is NodeClass.COMPUTATIONAL
-    }
 
 
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
