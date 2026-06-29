@@ -738,7 +738,7 @@ services:
         - *s3_settings
         - *tracing_open_telemetry_environments
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
-      STORAGE_SERVICE_MODE: "SERVER"
+      STORAGE_BOOT_SERVER_MODE: AS_REST
       STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
       STORAGE_MONITORING_ENABLED: 1
       STORAGE_PROFILING: ${STORAGE_PROFILING}
@@ -755,9 +755,9 @@ services:
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_BOOT_SERVER_MODE: AS_CELERY_WORKER
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      STORAGE_SERVICE_MODE: "WORKER"
       HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 100
       CELERY_POOL: threads
@@ -769,9 +769,9 @@ services:
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_BOOT_SERVER_MODE: AS_CELERY_WORKER
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      STORAGE_SERVICE_MODE: "WORKER"
       HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 1
       CELERY_QUEUES: cpu_bound
@@ -1414,13 +1414,13 @@ services:
         - *storage_settings
         - *tracing_open_telemetry_environments
 
+      API_SERVER_BOOT_SERVER_MODE: AS_REST
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
       API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       API_SERVER_TRACING: ${API_SERVER_TRACING}
       API_SERVER_LOGLEVEL: ${API_SERVER_LOGLEVEL}
       API_SERVER_PROFILING: ${API_SERVER_PROFILING}
-      API_SERVER_SERVICE_MODE: "SERVER"
 
       # NOTE: points to wb-api server
       WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
@@ -1453,8 +1453,8 @@ services:
     hostname: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *api_server_environment
+      API_SERVER_BOOT_SERVER_MODE: AS_CELERY_WORKER
       API_SERVER_TRACING: "null"
-      API_SERVER_BOOT_SERVER_MODE: WORKER
       API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
@@ -1492,11 +1492,11 @@ services:
         - *rabbit_settings
         - *redis_settings
         - *tracing_open_telemetry_environments
+      NOTIFICATIONS_BOOT_SERVER_MODE: AS_REST
       NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
       NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
-      NOTIFICATIONS_SERVICE_MODE: "SERVER"
       CELERY_EPHEMERAL_RESULT_EXPIRES: ${NOTIFICATIONS_CELERY_EPHEMERAL_RESULT_EXPIRES}
     networks: &notifications_networks
       - default
@@ -1511,10 +1511,11 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
+
+      NOTIFICATIONS_BOOT_SERVER_MODE: AS_CELERY_WORKER
       NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      NOTIFICATIONS_SERVICE_MODE: "WORKER"
       HEALTHCHECK_MODE: heartbeat
       # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
       NOTIFICATIONS_EMAIL_RATE_LIMIT: ${NOTIFICATIONS_EMAIL_RATE_LIMIT}
