@@ -34,6 +34,17 @@ class ProjectsNodesRepository(BaseRepository):
             result = await conn.execute(stmt)
             return [NodeID(node_id) for node_id in result.scalars()]
 
+    async def exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            stmt = sa.select(
+                sa.exists().where(
+                    projects_nodes.c.project_uuid == f"{project_id}",
+                    projects_nodes.c.node_id == f"{node_id}",
+                )
+            )
+            result = await conn.execute(stmt)
+            return result.scalar_one()
+
     async def get(self, project_id: ProjectID, node_id: NodeID) -> Node | None:
         async with pass_or_acquire_connection(self.db_engine) as conn:
             stmt = sa.select(*_NODE_COLUMNS).where(

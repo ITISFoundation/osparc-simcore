@@ -68,7 +68,6 @@ from .....modules.instrumentation import (
 )
 from .....modules.osparc_variables._api_auth import create_unique_api_name_for
 from .....utils.db import get_repository
-from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
@@ -89,6 +88,7 @@ from ...docker_api import (
     try_to_remove_network,
 )
 from ...errors import EntrypointContainerNotFoundError
+from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 
 if TYPE_CHECKING:
     # NOTE: TYPE_CHECKING is True when static type checkers are running,
@@ -408,10 +408,10 @@ async def attempt_pod_removal_and_data_saving(app: FastAPI, scheduler_data: Sche
         # to try and save the data, nodeports will raise errors
         # and sidecar will hang
 
-        projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
+        projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
 
-        can_really_save = await projects_repository.is_node_present_in_workbench(
-            project_id=scheduler_data.project_id, node_uuid=scheduler_data.node_uuid
+        can_really_save = await projects_nodes_repository.exists(
+            project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
         )
 
     if can_really_save and scheduler_data.dynamic_sidecar.were_containers_created:
