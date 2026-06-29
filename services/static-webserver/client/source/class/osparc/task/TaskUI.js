@@ -136,7 +136,7 @@ qx.Class.define("osparc.task.TaskUI", {
         if ("message" in data["task_progress"] && !this.getChildControl("subtitle").getValue()) {
           this.getChildControl("subtitle").setValue(data["task_progress"]["message"]);
         }
-        this.getChildControl("progress").setValue((osparc.data.PollTask.extractProgress(data) * 100) + "%");
+        this.getChildControl("progress").setValue(osparc.utils.Utils.safeToFixed(osparc.data.PollTask.extractProgress(data) * 100, 2) + "%");
       }
     },
 

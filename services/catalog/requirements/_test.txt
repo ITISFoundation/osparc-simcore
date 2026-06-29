@@ -162,7 +162,7 @@ referencing==0.35.1
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.4
+requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -178,14 +178,12 @@ sniffio==1.3.1
     #   -c requirements/_base.txt
     #   anyio
     #   asgi-lifespan
-sqlalchemy==1.4.54
+sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a38
-    # via sqlalchemy
 types-psycopg2==2.9.21.20260223
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
@@ -195,7 +193,7 @@ typing-extensions==4.14.1
     #   -c requirements/_base.txt
     #   alembic
     #   mypy
-    #   sqlalchemy2-stubs
+    #   sqlalchemy
 urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

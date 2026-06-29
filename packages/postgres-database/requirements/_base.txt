@@ -34,7 +34,7 @@ pydantic-core==2.33.2
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/../../../packages/common-library/requirements/_base.in
-sqlalchemy==1.4.54
+sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -45,6 +45,7 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   sqlalchemy
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic

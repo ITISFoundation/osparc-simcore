@@ -151,14 +151,14 @@ def _assert_project_db_row(postgres_db: sa.engine.Engine, project: dict[str, Any
     expected_db_entries.update(kwargs)
     assert row
     # Remove last_change_date from strict equality check
-    project_entries_in_db = {k: row[k] for k in expected_db_entries}
+    project_entries_in_db = {k: getattr(row, k) for k in expected_db_entries}
     project_last_change = project_entries_in_db.pop("last_change_date", None)
     expected_db_entries.pop("last_change_date", None)
     assert project_entries_in_db == expected_db_entries
     # last_change_date should be >= creation_date
     assert project_last_change is not None
-    assert row["creation_date"] is not None
-    assert project_last_change >= row["creation_date"]
+    assert row.creation_date is not None
+    assert project_last_change >= row.creation_date
 
 
 @pytest.fixture

@@ -132,7 +132,7 @@ redis==7.4.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-requests==2.32.4
+requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -145,13 +145,11 @@ sniffio==1.3.1
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via fakeredis
-sqlalchemy==1.4.54
+sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-sqlalchemy2-stubs==0.0.2a38
-    # via sqlalchemy
 termcolor==3.3.0
     # via pytest-sugar
 types-psycopg2==2.9.21.20260223
@@ -161,7 +159,7 @@ typing-extensions==4.14.1
     #   -c requirements/_base.txt
     #   mypy
     #   pyee
-    #   sqlalchemy2-stubs
+    #   sqlalchemy
 urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
