@@ -262,10 +262,15 @@ async def _create_or_update_pipeline_and_tasks(  # noqa: PLR0913 # pylint: disab
 ) -> tuple[list[CompTaskAtDB], bool]:
     assert computation.product_name  # nosec
 
-    if not computation.start_pipeline:
+    if (
+        not computation.start_pipeline
+        and not computation.subgraph
+        and not (computation.force_restart or False)
+    ):
         existing_tasks = await comp_tasks_repo.list_tasks(project.uuid)
         if existing_tasks and (
-            await compute_dag_computational_hashes(complete_dag) == hashes_from_comp_tasks(existing_tasks)
+            await compute_dag_computational_hashes(complete_dag)
+            == hashes_from_comp_tasks(existing_tasks)
         ):
             return existing_tasks, False
 
