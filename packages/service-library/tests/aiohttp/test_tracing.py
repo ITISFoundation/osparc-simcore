@@ -6,7 +6,6 @@ import asyncio
 import importlib
 from collections.abc import Callable
 from functools import partial
-from typing import Any
 
 import pip
 import pytest
@@ -20,34 +19,19 @@ from settings_library.tracing import TracingSettings
 
 
 @pytest.fixture
-def tracing_settings_in(request):
+def tracing_settings_in(request: pytest.FixtureRequest) -> tuple[str, int, float]:
     return request.param
 
 
 @pytest.fixture()
-def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_settings_in):
-    endpoint_mocked = False
+def tracing_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_settings_in: tuple[str, int, float]) -> None:
     if tracing_settings_in[0]:
-        endpoint_mocked = True
         monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}")
-    port_mocked = False
     if tracing_settings_in[1]:
-        port_mocked = True
         monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}")
-    sampling_probability_mocked = False
     if tracing_settings_in[2]:
-        sampling_probability_mocked = True
         monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{tracing_settings_in[2]}")
     monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION", "0.144.0")
-    yield
-    if endpoint_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
-    if port_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
-    if sampling_probability_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY")
-
-    monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION")
 
 
 @pytest.mark.parametrize(
@@ -60,8 +44,8 @@ def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_set
 async def test_valid_tracing_settings(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     app = web.Application()
     service_name = "simcore_service_webserver"
@@ -83,8 +67,8 @@ async def test_valid_tracing_settings(
 async def test_invalid_tracing_settings(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     with pytest.raises(ValidationError):
         TracingSettings.create_from_envs()
@@ -123,8 +107,8 @@ def manage_package(request):
 async def test_tracing_setup_package_detection(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
     manage_package,
 ):
     package_name = manage_package
@@ -150,8 +134,8 @@ async def test_tracing_setup_package_detection(
 async def test_trace_id_in_response_header(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
     server_response: web.Response | web.HTTPException,
 ) -> None:
     app = web.Application()
@@ -193,8 +177,8 @@ async def test_trace_id_in_response_header(
 async def test_tracing_opentelemetry_sampling_probability_effective(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     """
     This test checks that the TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY setting in TracingSettings
@@ -240,8 +224,8 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
 async def test_tracing_finds_project_id_and_node_id_if_available(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     app = web.Application()
 
