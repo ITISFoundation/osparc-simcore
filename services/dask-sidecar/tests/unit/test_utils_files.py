@@ -319,7 +319,7 @@ async def test_push_file_to_remote_logs_progress_when_elapsed_time_is_zero(
     src_path.write_bytes(b"payload")
     dst_path = tmp_path / "uploaded.txt"
     mocker.patch(
-        "simcore_service_dask_sidecar.utils.files.time.perf_counter",
+        "simcore_service_dask_sidecar.utils.files._copy.time.perf_counter",
         return_value=10.0,
     )
 
