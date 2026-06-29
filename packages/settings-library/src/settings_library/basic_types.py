@@ -1,19 +1,17 @@
 from enum import Enum
 from typing import Annotated
 
-from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel, ServiceMode
+from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from pydantic import Field, StringConstraints
 
 assert issubclass(LogLevel, Enum)  # nosec
 assert issubclass(BootModeEnum, Enum)  # nosec
 assert issubclass(BuildTargetEnum, Enum)  # nosec
-assert issubclass(ServiceMode, Enum)  # nosec
 
 __all__: tuple[str, ...] = (
     "BootModeEnum",
     "BuildTargetEnum",
     "LogLevel",
-    "ServiceMode",
 )
 
 

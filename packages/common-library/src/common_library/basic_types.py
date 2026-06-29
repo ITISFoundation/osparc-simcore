@@ -46,8 +46,3 @@ class BuildTargetEnum(StrEnum):
     CACHE = "cache"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
-
-
-class ServiceMode(StrEnum):
-    SERVER = "SERVER"
-    WORKER = "WORKER"
