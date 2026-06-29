@@ -2,8 +2,6 @@ import logging
 
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
-from models_library.projects import ProjectAtDB
-from models_library.projects_nodes_io import NodeIDStr
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
@@ -18,12 +16,14 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
+from .....core.errors import ProjectNodeNotFoundError, ProjectNotFoundError
 from .....models.dynamic_services_scheduler import SchedulerData
 from .....modules.catalog import CatalogClient
 from .....modules.instrumentation import get_instrumentation, get_metrics_labels
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
+from ....db.repositories.projects_nodes import ProjectsNodesRepository
 from ....db.repositories.users import UsersRepository
 from ...api_client import get_sidecars_client
 from ...docker_compose_specs import assemble_spec
@@ -130,9 +130,18 @@ async def create_user_services(  # pylint: disable=too-many-statements
 
     # data from project
     projects_repository = get_repository(app, ProjectsRepository)
-    project: ProjectAtDB = await projects_repository.get(project_id=scheduler_data.project_id)
+    project = await projects_repository.get(project_id=scheduler_data.project_id)
+    if project is None:
+        raise ProjectNotFoundError(project_id=scheduler_data.project_id)
+
     project_name = project.name
-    node_name = project.workbench[NodeIDStr(scheduler_data.node_uuid)].label
+
+    projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
+    node = await projects_nodes_repository.get(project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid)
+    if node is None:
+        raise ProjectNodeNotFoundError(project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid)
+
+    node_name = node.label
 
     # data from user
     users_repository = get_repository(app, UsersRepository)
