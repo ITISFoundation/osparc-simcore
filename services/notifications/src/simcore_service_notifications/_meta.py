@@ -3,7 +3,7 @@
 from importlib.metadata import distribution, version
 from typing import Final
 
-from common_library.basic_types import ServiceMode
+from celery_library.basic_types import BootServerMode
 from packaging.version import Version
 
 _current_distribution = distribution("simcore-service-notifications")
@@ -23,9 +23,9 @@ SUMMARY: Final[str] = get_summary()
 
 
 # https://patorjk.com/software/taag/#p=display&f=Standard&t=Notifications
-def get_started_banner(service_mode: ServiceMode) -> str:
-    match service_mode:
-        case ServiceMode.SERVER:
+def get_started_banner(boot_server_mode: BootServerMode) -> str:
+    match boot_server_mode:
+        case BootServerMode.AS_REST:
             return rf"""
   _   _       _   _  __ _           _   _
  | \ | | ___ | |_(_)/ _(_) ___ __ _| |_(_) ___  _ __  ___
@@ -33,7 +33,7 @@ def get_started_banner(service_mode: ServiceMode) -> str:
  | |\  | (_) | |_| |  _| | (_| (_| | |_| | (_) | | | \__ \
  |_| \_|\___/ \__|_|_| |_|\___\__,_|\__|_|\___/|_| |_|___/
     {API_VTAG}"""
-        case ServiceMode.WORKER:
+        case BootServerMode.AS_CELERY_WORKER:
             return rf"""
   _   _       _   _  __ _           _   _                    __        __         _
  | \ | | ___ | |_(_)/ _(_) ___ __ _| |_(_) ___  _ __  ___    \ \      / /__  _ __| | _____ _ __
