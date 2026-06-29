@@ -1,7 +1,7 @@
 """Per-request locale resolution for the web-server.
 
 Locale precedence (highest → lowest):
-    1. ``X-App-Locale`` request header (set explicitly by the front-end).
+    1. ``X-Simcore-Language`` request header (set explicitly by the front-end).
     2. ``Accept-Language`` header (first tag, normalised to gettext form).
     3. ``"en"`` — hard default.
 
@@ -19,6 +19,7 @@ from typing import Final, cast
 from aiohttp import web
 from common_library.i18n import DEFAULT_LOCALE, SupportedLocale, normalize_locale
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.common_headers import X_SIMCORE_LANGUAGE
 
 from .application_keys import APP_SETTINGS_APPKEY
 from .user_preferences._models import LocaleUserPreference
@@ -26,7 +27,7 @@ from .user_preferences.user_preferences_service import get_frontend_user_prefere
 
 RQ_LOCALE_KEY: Final[str] = f"{__name__}.locale"
 
-_X_APP_LOCALE_HEADER: Final[str] = "X-Simcore-Language"
+_ACCEPT_LANGUAGE_HEADER: Final[str] = "Accept-Language"
 
 
 @web.middleware
@@ -34,7 +35,7 @@ async def locale_middleware(request: web.Request, handler: Handler) -> web.Strea
     """Resolves locale from request headers and stores it in ``request[RQ_LOCALE_KEY]``."""
     settings = request.app[APP_SETTINGS_APPKEY]
     if settings.WEBSERVER_I18N:
-        for header in (_X_APP_LOCALE_HEADER, "Accept-Language"):
+        for header in (X_SIMCORE_LANGUAGE, _ACCEPT_LANGUAGE_HEADER):
             if raw := request.headers.get(header):
                 request[RQ_LOCALE_KEY] = normalize_locale(raw)
                 break
@@ -45,7 +46,9 @@ async def locale_middleware(request: web.Request, handler: Handler) -> web.Strea
     return await handler(request)
 
 
-locale_middleware.__middleware_name__ = f"{__name__}.locale_middleware"  # type: ignore[attr-defined]
+locale_middleware.__middleware_name__ = (  # type: ignore[attr-defined]
+    f"{__name__}.locale_middleware"
+)
 
 
 async def get_user_locale(

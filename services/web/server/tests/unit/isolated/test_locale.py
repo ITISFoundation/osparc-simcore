@@ -9,6 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from common_library.i18n import DEFAULT_LOCALE
+from servicelib.common_headers import X_SIMCORE_LANGUAGE
 from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.locale import RQ_LOCALE_KEY, get_user_locale, locale_middleware
 from simcore_service_webserver.user_preferences._models import LocaleUserPreference
@@ -22,7 +23,7 @@ from simcore_service_webserver.user_preferences._models import LocaleUserPrefere
 async def locale_test_client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
 ) -> Callable[..., Awaitable[TestClient]]:
-    """Returns a factory that builds a minimal aiohttp client with locale middleware."""
+    """Returns a factory that builds a minimal aiohttp client with/ or without locale middleware."""
 
     async def _make(*, i18n_enabled: bool) -> TestClient:
         mock_settings = MagicMock()
@@ -48,8 +49,9 @@ async def locale_test_client(
 async def test_locale_middleware_x_app_locale_header(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
+    """Uses the explicit locale header when i18n is enabled."""
     client = await locale_test_client(i18n_enabled=True)
-    resp = await client.get("/", headers={"X-App-Locale": "es_ES"})
+    resp = await client.get("/", headers={X_SIMCORE_LANGUAGE: "es_ES"})
     data = await resp.json()
     assert data["locale"] == "es_ES"
 
@@ -57,6 +59,7 @@ async def test_locale_middleware_x_app_locale_header(
 async def test_locale_middleware_accept_language_fallback(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
+    """Falls back to Accept-Language when app-specific header is missing."""
     client = await locale_test_client(i18n_enabled=True)
     resp = await client.get("/", headers={"Accept-Language": "zh-CN,en;q=0.9"})
     data = await resp.json()
@@ -66,6 +69,7 @@ async def test_locale_middleware_accept_language_fallback(
 async def test_locale_middleware_default_when_no_headers(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
+    """Uses default locale when no locale headers are provided."""
     client = await locale_test_client(i18n_enabled=True)
     resp = await client.get("/")
     data = await resp.json()
@@ -75,8 +79,9 @@ async def test_locale_middleware_default_when_no_headers(
 async def test_locale_middleware_default_when_i18n_disabled(
     locale_test_client: Callable[..., Awaitable[TestClient]],
 ):
+    """Always uses default locale when i18n support is disabled."""
     client = await locale_test_client(i18n_enabled=False)
-    resp = await client.get("/", headers={"X-App-Locale": "es_ES"})
+    resp = await client.get("/", headers={X_SIMCORE_LANGUAGE: "es_ES"})
     data = await resp.json()
     assert data["locale"] == DEFAULT_LOCALE
 
@@ -87,6 +92,7 @@ async def test_locale_middleware_default_when_i18n_disabled(
 
 
 async def test_get_user_locale_returns_stored_preference():
+    """Returns the persisted locale preference when available."""
     mock_app = MagicMock()
     mock_pref = LocaleUserPreference(value="es_ES")
 
@@ -100,6 +106,7 @@ async def test_get_user_locale_returns_stored_preference():
 
 
 async def test_get_user_locale_fallback_when_no_preference():
+    """Falls back to default locale when preference is absent."""
     mock_app = MagicMock()
 
     with patch(
@@ -112,6 +119,7 @@ async def test_get_user_locale_fallback_when_no_preference():
 
 
 async def test_get_user_locale_fallback_when_preference_value_is_none():
+    """Falls back to default locale when stored value is null."""
     mock_app = MagicMock()
 
     with patch(
