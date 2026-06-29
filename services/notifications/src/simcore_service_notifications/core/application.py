@@ -1,6 +1,6 @@
+from celery_library.basic_types import BootServerMode
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
-from models_library.basic_types import ServiceMode
 from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.monitoring import (
     configure_prometheus_instrumentation,
@@ -57,7 +57,7 @@ def _configure_plugins(
     configure_task_manager(app_lifespan)
 
     match settings.NOTIFICATIONS_SERVICE_MODE:
-        case ServiceMode.SERVER:
+        case BootServerMode.AS_REST:
             configure_postgres_database(
                 app_lifespan,
                 settings=settings.NOTIFICATIONS_POSTGRES,
@@ -70,7 +70,7 @@ def _configure_plugins(
             configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
             configure_rpc_api(app_lifespan)
             configure_rest_api(app)
-        case ServiceMode.WORKER:
+        case BootServerMode.AS_CELERY_WORKER:
             pass  # Workers skip server-specific setup
 
 
