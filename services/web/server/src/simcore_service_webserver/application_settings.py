@@ -127,7 +127,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool,
         Field(
             description="Enable server-side i18n for user-facing error messages and email templates.",
-            json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True},
         ),
     ] = False
 
