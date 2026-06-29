@@ -6,6 +6,7 @@ import urllib.parse
 from collections import deque
 from collections.abc import AsyncGenerator, AsyncIterator, Sequence
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Final, Literal, Protocol, cast
 
@@ -451,7 +452,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         self,
         *,
         bucket: S3BucketName,
-    ) -> list[tuple[UploadID, S3ObjectKey]]:
+    ) -> list[tuple[UploadID, S3ObjectKey, datetime]]:
         """Returns all the currently ongoing multipart uploads
 
         NOTE: minio does not implement the same behaviour as AWS here and will
@@ -467,6 +468,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             (
                 upload.get("UploadId", "undefined-uploadid"),
                 S3ObjectKey(upload.get("Key", "undefined-key")),
+                upload.get("Initiated", datetime.now(tz=UTC)),
             )
             for upload in response.get("Uploads", [])
         ]
