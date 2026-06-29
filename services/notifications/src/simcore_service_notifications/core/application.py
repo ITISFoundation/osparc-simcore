@@ -56,22 +56,23 @@ def _configure_plugins(
     )
     configure_task_manager(app_lifespan)
 
-    match settings.NOTIFICATIONS_BOOT_SERVER_MODE:
-        case BootServerMode.AS_REST_API_SERVER:
-            configure_postgres_database(
-                app_lifespan,
-                settings=settings.NOTIFICATIONS_POSTGRES,
-                tracing_config=tracing_config,
-            )
-            configure_postgres_liveness(app_lifespan)
+    mode = settings.NOTIFICATIONS_BOOT_SERVER_MODE
 
-            configure_smtp_config_check(app_lifespan)
+    if mode is BootServerMode.AS_REST_API_SERVER:
+        configure_postgres_database(
+            app_lifespan,
+            settings=settings.NOTIFICATIONS_POSTGRES,
+            tracing_config=tracing_config,
+        )
+        configure_postgres_liveness(app_lifespan)
 
-            configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
-            configure_rpc_api(app_lifespan)
-            configure_rest_api(app)
-        case BootServerMode.AS_CELERY_WORKER:
-            pass  # Workers skip server-specific setup
+        configure_smtp_config_check(app_lifespan)
+
+        configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
+        configure_rpc_api(app_lifespan)
+        configure_rest_api(app)
+    else:
+        assert mode is BootServerMode.AS_CELERY_WORKER  # nosec
 
 
 def create_app(
