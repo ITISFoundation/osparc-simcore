@@ -130,7 +130,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
 
     # data from project
     projects_repository = get_repository(app, ProjectsRepository)
-    project: ProjectAtDB = await projects_repository.get_project(project_id=scheduler_data.project_id)
+    project: ProjectAtDB = await projects_repository.get(project_id=scheduler_data.project_id)
     project_name = project.name
     node_name = project.workbench[NodeIDStr(scheduler_data.node_uuid)].label
 

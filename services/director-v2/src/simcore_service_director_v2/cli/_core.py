@@ -84,7 +84,7 @@ async def _save_node_state(
 async def async_project_save_state(project_id: ProjectID, save_attempts: int) -> None:
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
-        project_at_db = await projects_repository.get_project(project_id)
+        project_at_db = await projects_repository.get(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
         nodes_failed_to_save: list[NodeIDStr] = []
@@ -214,7 +214,7 @@ async def _get_nodes_render_data(
 ) -> list[RenderData]:
     projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
 
-    project_at_db = await projects_repository.get_project(project_id)
+    project_at_db = await projects_repository.get(project_id)
 
     render_data: list[RenderData] = []
     async with AsyncClient() as client:

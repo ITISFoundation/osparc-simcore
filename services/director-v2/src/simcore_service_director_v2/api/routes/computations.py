@@ -144,7 +144,7 @@ async def _get_project_metadata(
         assert project_ancestors.root_node_id is not None  # nosec
 
         async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
-            prj = await project_repo.get_project(project_uuid)
+            prj = await project_repo.get(project_uuid)
             node_id_str = f"{node_id}"
             if node_id_str not in prj.workbench:
                 _logger.error(
@@ -287,7 +287,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     )
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get_project(computation.project_id)
+        project: ProjectAtDB = await project_repo.get(computation.project_id)
 
         # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
@@ -421,7 +421,7 @@ async def get_computation(
     )
 
     # check that project actually exists
-    await project_repo.get_project(project_id)
+    await project_repo.get(project_id)
 
     try:
         pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
@@ -492,7 +492,7 @@ async def stop_computation(
     )
     try:
         # check the project exists
-        await project_repo.get_project(project_id)
+        await project_repo.get(project_id)
         # get the project pipeline
         pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
         pipeline_dag = pipeline_at_db.get_graph()
@@ -545,7 +545,7 @@ async def delete_computation(
 ) -> None:
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get_project(project_id)
+        project: ProjectAtDB = await project_repo.get(project_id)
         # check if current state allow to stop the computation
         pipeline_state = RunningState.UNKNOWN
         with contextlib.suppress(ComputationalRunNotFoundError):

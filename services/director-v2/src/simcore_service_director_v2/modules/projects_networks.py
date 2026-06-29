@@ -247,7 +247,7 @@ async def update_from_workbench(
 
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
-    project: ProjectAtDB = await projects_repository.get_project(project_id)
+    project: ProjectAtDB = await projects_repository.get(project_id)
     assert project.prj_owner  # nosec
     new_networks_with_aliases = await _get_networks_with_aliases_for_default_network(
         project_id=project_id,
