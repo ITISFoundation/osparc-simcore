@@ -57,7 +57,7 @@ def _configure_plugins(
     configure_task_manager(app_lifespan)
 
     match settings.NOTIFICATIONS_BOOT_SERVER_MODE:
-        case BootServerMode.AS_REST:
+        case BootServerMode.AS_REST_API_SERVER:
             configure_postgres_database(
                 app_lifespan,
                 settings=settings.NOTIFICATIONS_POSTGRES,

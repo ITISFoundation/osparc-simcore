@@ -25,7 +25,7 @@ SUMMARY: Final[str] = get_summary()
 # https://patorjk.com/software/taag/#p=display&f=Standard&t=Notifications
 def get_started_banner(boot_server_mode: BootServerMode) -> str:
     match boot_server_mode:
-        case BootServerMode.AS_REST:
+        case BootServerMode.AS_REST_API_SERVER:
             return rf"""
   _   _       _   _  __ _           _   _
  | \ | | ___ | |_(_)/ _(_) ___ __ _| |_(_) ___  _ __  ___

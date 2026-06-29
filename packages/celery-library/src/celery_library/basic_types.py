@@ -10,5 +10,5 @@ class BootServerMode(StrAutoEnum):
     enabling flexible deployment strategies and execution contexts.
     """
 
-    AS_REST = auto()
+    AS_REST_API_SERVER = auto()
     AS_CELERY_WORKER = auto()

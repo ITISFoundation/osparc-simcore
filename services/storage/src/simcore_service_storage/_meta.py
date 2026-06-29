@@ -21,7 +21,7 @@ APP_STARTING_BANNER_MSG: Final[str] = info.get_starting_banner()
 # https://patorjk.com/software/taag/#p=display&f=Standard&t=Storage
 def get_started_banner(boot_server_mode: BootServerMode) -> str:
     match boot_server_mode:
-        case BootServerMode.AS_REST:
+        case BootServerMode.AS_REST_API_SERVER:
             return r"""
  ____  _
 / ___|| |_ ___  _ __ __ _  __ _  ___

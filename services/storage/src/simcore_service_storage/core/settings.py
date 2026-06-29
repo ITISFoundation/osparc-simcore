@@ -105,7 +105,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     STORAGE_BOOT_SERVER_MODE: Annotated[
         BootServerMode,
         Field(description="Boot mode: REST API server or Celery worker"),
-    ] = BootServerMode.AS_REST
+    ] = BootServerMode.AS_REST_API_SERVER
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod

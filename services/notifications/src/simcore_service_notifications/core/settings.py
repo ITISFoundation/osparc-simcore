@@ -234,7 +234,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     NOTIFICATIONS_BOOT_SERVER_MODE: Annotated[
         BootServerMode,
         Field(description="Boot mode: REST API server or Celery worker"),
-    ] = BootServerMode.AS_REST
+    ] = BootServerMode.AS_REST_API_SERVER
 
     NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
         int,
