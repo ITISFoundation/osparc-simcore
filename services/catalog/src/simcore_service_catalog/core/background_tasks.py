@@ -24,6 +24,7 @@ from packaging.version import Version
 from pydantic import ValidationError
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_context
+from servicelib.tracing import traced
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -168,6 +169,7 @@ async def _ensure_published_templates_accessible(db_engine: AsyncEngine, default
         await services_repo.upsert_service_access_rights(missing_services_access_rights)
 
 
+@traced
 async def _run_sync_services(app: FastAPI):
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
