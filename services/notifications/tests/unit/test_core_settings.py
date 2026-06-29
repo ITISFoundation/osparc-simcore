@@ -4,7 +4,7 @@
 
 
 import pytest
-from models_library.basic_types import ServiceMode
+from celery_library.basic_types import BootServerMode
 from models_library.notifications.errors import (
     NotificationsProductSMTPSettingsNotFoundError,
 )
@@ -129,7 +129,7 @@ def test_notifications_smtp_settings_get_unknown_product_raises():
 
 
 def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("NOTIFICATIONS_SERVICE_MODE", "WORKER")
+    monkeypatch.setenv("NOTIFICATIONS_BOOT_SERVER_MODE", "AS_CELERY_WORKER")
     monkeypatch.delenv("NOTIFICATIONS_SMTP_SETTINGS", raising=False)
 
     with pytest.raises(ValidationError, match="NOTIFICATIONS_SMTP_SETTINGS must be configured"):
@@ -137,19 +137,19 @@ def test_worker_mode_requires_smtp_settings(mock_environment: EnvVarsDict, monke
 
 
 def test_worker_mode_with_smtp_settings_is_valid(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("NOTIFICATIONS_SERVICE_MODE", "WORKER")
+    monkeypatch.setenv("NOTIFICATIONS_BOOT_SERVER_MODE", "AS_CELERY_WORKER")
 
     settings = ApplicationSettings.create_from_envs()
 
-    assert settings.NOTIFICATIONS_SERVICE_MODE is ServiceMode.WORKER
+    assert settings.NOTIFICATIONS_BOOT_SERVER_MODE is BootServerMode.AS_CELERY_WORKER
     assert settings.NOTIFICATIONS_SMTP_SETTINGS is not None
 
 
 def test_non_worker_mode_allows_missing_smtp_settings(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("NOTIFICATIONS_SERVICE_MODE", "SERVER")
+    monkeypatch.setenv("NOTIFICATIONS_BOOT_SERVER_MODE", "AS)REST")
     monkeypatch.delenv("NOTIFICATIONS_SMTP_SETTINGS", raising=False)
 
     settings = ApplicationSettings.create_from_envs()
 
-    assert settings.NOTIFICATIONS_SERVICE_MODE is ServiceMode.SERVER
+    assert settings.NOTIFICATIONS_SERVICE_MODE is BootServerMode.AS_REST
     assert settings.NOTIFICATIONS_SMTP_SETTINGS is None
