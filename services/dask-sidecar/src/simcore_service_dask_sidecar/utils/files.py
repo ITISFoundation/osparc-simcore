@@ -27,7 +27,7 @@ from yarl import URL
 from ..errors import HTTPDestinationEncryptionNotSupportedError
 from .aes_gcm import decrypt_stream, encrypt_stream
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 S3_FILE_SYSTEM_SCHEMES: Final = ["s3", "s3a"]
@@ -352,7 +352,7 @@ async def pull_file_from_remote(
 
         if need_unzipping:
             await log_publishing_cb(f"Uncompressing '{download_dst_path.name}'...", logging.INFO)
-            logger.debug("%s is a zip file and will be now uncompressed", download_dst_path)
+            _logger.debug("%s is a zip file and will be now uncompressed", download_dst_path)
             with repro_zipfile.ReproducibleZipFile(download_dst_path, "r") as zip_obj:
                 await asyncio.to_thread(zip_obj.extractall, dst_path.parents[0])
             # finally remove the zip archive
@@ -396,7 +396,7 @@ async def _push_file_to_remote(
     s3_settings: S3Settings | None,
     encryption: TransferEncryptionSettings | None,
 ) -> None:
-    logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
+    _logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
     assert dst_url.path  # nosec
 
     storage_kwargs: S3FsSettingsDict | dict[str, Any] = {}
@@ -444,7 +444,7 @@ async def push_file_to_remote(
 
             with repro_zipfile.ReproducibleZipFile(archive_file_path, mode="w", compression=zipfile.ZIP_STORED) as zfp:
                 await asyncio.to_thread(zfp.write, src_path, src_path.name)
-            logger.debug("%s created.", archive_file_path)
+            _logger.debug("%s created.", archive_file_path)
             assert archive_file_path.exists()  # nosec
             file_to_upload = archive_file_path
             await log_publishing_cb(
@@ -457,7 +457,7 @@ async def push_file_to_remote(
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             if encryption is not None:
                 raise HTTPDestinationEncryptionNotSupportedError(scheme=dst_url.scheme)
-            logger.debug("destination is a http presigned link")
+            _logger.debug("destination is a http presigned link")
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:
             await _push_file_to_remote(
