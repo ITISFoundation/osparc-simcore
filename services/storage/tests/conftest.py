@@ -26,6 +26,7 @@ from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery_library import CeleryTaskManager
 from celery_library.backends import RedisTaskStore
+from celery_library.basic_types import BootServerMode
 from celery_library.types import register_celery_types
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
@@ -71,7 +72,6 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.redis._client import RedisClientSDK
 from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
-from settings_library.basic_types import ServiceMode
 from settings_library.celery import CelerySettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -891,8 +891,7 @@ async def output_file(
     file.user_id = user_id
     async with sqlalchemy_async_engine.begin() as conn:
         stmt = (
-            file_meta_data
-            .insert()
+            file_meta_data.insert()
             .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
             .returning(literal_column("*"))
         )
@@ -915,8 +914,7 @@ async def fake_datcore_tokens(
     created_token_ids = []
     async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(
-            tokens
-            .insert()
+            tokens.insert()
             .values(
                 user_id=user_id,
                 token_service="pytest",  # noqa: S106
@@ -982,7 +980,9 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 def worker_app_settings(
     app_settings: ApplicationSettings,
 ) -> ApplicationSettings:
-    worker_test_app_settings = app_settings.model_copy(update={"STORAGE_SERVICE_MODE": ServiceMode.WORKER}, deep=True)
+    worker_test_app_settings = app_settings.model_copy(
+        update={"STORAGE_BOOT_SERVER_MODE": BootServerMode.AS_CELERY_WORKER}, deep=True
+    )
     print(f"{worker_test_app_settings.model_dump_json(indent=2)=}")
     return worker_test_app_settings
 
