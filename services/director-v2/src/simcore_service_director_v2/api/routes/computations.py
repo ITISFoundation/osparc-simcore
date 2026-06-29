@@ -79,7 +79,6 @@ from ...utils.dags import (
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
-    hashes_from_comp_tasks,
 )
 from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
@@ -262,19 +261,11 @@ async def _create_or_update_pipeline_and_tasks(  # noqa: PLR0913 # pylint: disab
 ) -> tuple[list[CompTaskAtDB], bool]:
     assert computation.product_name  # nosec
 
-    if (
-        not computation.start_pipeline
-        and not computation.subgraph
-        and not (computation.force_restart or False)
-    ):
+    if not computation.start_pipeline and not computation.subgraph and not (computation.force_restart or False):
         existing_tasks = await comp_tasks_repo.list_tasks(project.uuid)
         if existing_tasks:
             new_hashes = await compute_dag_computational_hashes(complete_dag)
-            old_hashes = hashes_from_comp_tasks(existing_tasks)
-            if not old_hashes:
-                old_hashes = await compute_dag_computational_hashes(
-                    create_complete_dag_from_tasks(existing_tasks)
-                )
+            old_hashes = await compute_dag_computational_hashes(create_complete_dag_from_tasks(existing_tasks))
             if new_hashes == old_hashes:
                 return existing_tasks, False
 

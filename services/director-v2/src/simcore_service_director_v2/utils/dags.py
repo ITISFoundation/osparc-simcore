@@ -116,20 +116,6 @@ async def compute_dag_computational_hashes(
     }
 
 
-def hashes_from_comp_tasks(
-    tasks: list[CompTaskAtDB],
-) -> dict[NodeIDStr, tuple[str, str, str]]:
-    return {
-        f"{task.node_id}": (
-            f"{task.image.name}",
-            f"{task.image.tag}",
-            f"{task.run_hash}",
-        )
-        for task in tasks
-        if task.node_class is NodeClass.COMPUTATIONAL and task.run_hash is not None
-    }
-
-
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
     # if the node state is in the modified state already
