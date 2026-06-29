@@ -103,14 +103,15 @@ async def compute_dag_computational_hashes(
     """
     graph_data: nx.classes.reportviews.NodeDataView = dag.nodes.data()
     get_node_io_payload_cb = _create_node_io_payload_cb(graph_data)
+    node_id_adapter = TypeAdapter(NodeID)
 
     return {
         node_id: (
             f"{data['key']}",
             f"{data['version']}",
-            await compute_node_hash(TypeAdapter(NodeID).validate_python(node_id), get_node_io_payload_cb),
+            await compute_node_hash(node_id_adapter.validate_python(node_id), get_node_io_payload_cb),
         )
-        for node_id, data in dag.nodes.data()
+        for node_id, data in graph_data
         if data.get("node_class") is NodeClass.COMPUTATIONAL
     }
 
