@@ -15,10 +15,8 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
-from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .....core.errors import ComputationalTaskNotFoundError
 from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
@@ -49,12 +47,14 @@ class CompTasksRepository(BaseRepository):
     async def list_tasks(
         self,
         project_id: ProjectID,
-        *,
-        connection: AsyncConnection | None = None,
     ) -> list[CompTaskAtDB]:
-        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            result = await conn.execute(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
-            return [CompTaskAtDB.model_validate(row) for row in result]
+        tasks: list[CompTaskAtDB] = []
+        async with self.db_engine.connect() as conn:
+            async for row in await conn.stream(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")):
+                task_db = CompTaskAtDB.model_validate(row)
+                tasks.append(task_db)
+
+        return tasks
 
     async def list_computational_tasks(
         self,

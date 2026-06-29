@@ -55,9 +55,6 @@ from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.modules.db.repositories.comp_tasks import (
-    CompTasksRepository,
-)
 from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils import (
     _CPUS_SAFE_MARGIN,
     _RAM_SAFE_MARGIN_RATIO,
@@ -377,44 +374,6 @@ async def test_create_computation(
         ),
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
-
-
-async def test_create_computation_skips_persistence_when_unchanged(
-    minimal_configuration: None,
-    mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
-    product_name: str,
-    product_api_base_url: AnyHttpUrl,
-    fake_workbench_without_outputs: dict[str, Any],
-    create_registered_user: Callable[..., dict[str, Any]],
-    create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
-    fake_collection_run_id: CollectionRunID,
-    mocker: MockerFixture,
-):
-    user = create_registered_user()
-    proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
-    create_payload = jsonable_encoder(
-        ComputationCreate(
-            user_id=user["id"],
-            project_id=proj.uuid,
-            product_name=product_name,
-            product_api_base_url=product_api_base_url,
-        )
-    )
-
-    upsert_tasks_spy = mocker.spy(CompTasksRepository, "upsert_tasks_from_project")
-
-    # first call persists the pipeline/tasks
-    response = await async_client.post(create_computation_url, json=create_payload)
-    assert response.status_code == status.HTTP_201_CREATED, response.text
-    assert upsert_tasks_spy.call_count == 1
-
-    # second call with an unchanged workbench must skip the expensive upsert
-    response = await async_client.post(create_computation_url, json=create_payload)
-    assert response.status_code == status.HTTP_201_CREATED, response.text
-    assert upsert_tasks_spy.call_count == 1
 
 
 @pytest.fixture

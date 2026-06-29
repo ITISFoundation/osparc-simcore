@@ -60,7 +60,6 @@ from ...core.errors import (
     WalletNotEnoughCreditsError,
 )
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
-from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
@@ -242,58 +241,6 @@ async def _try_start_pipeline(
     return True
 
 
-async def _create_or_update_pipeline_and_tasks(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
-    *,
-    computation: ComputationCreate,
-    app: FastAPI,
-    project: ProjectAtDB,
-    minimal_computational_dag: nx.DiGraph,
-    comp_pipelines_repo: CompPipelinesRepository,
-    comp_tasks_repo: CompTasksRepository,
-    catalog_client: CatalogClient,
-    rut_client: ResourceUsageTrackerClient,
-    rpc_client: RabbitMQRPCClient,
-    project_repo: ProjectsRepository,
-    users_repo: UsersRepository,
-    projects_metadata_repo: ProjectsMetadataRepository,
-) -> tuple[list[CompTaskAtDB], bool]:
-    assert computation.product_name  # nosec
-
-    await comp_pipelines_repo.upsert_pipeline(
-        project.uuid,
-        minimal_computational_dag,
-        publish=computation.start_pipeline or False,
-    )
-    min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
-    comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
-        project=project,
-        catalog_client=catalog_client,
-        published_nodes=min_computation_nodes if computation.start_pipeline else [],
-        user_id=computation.user_id,
-        product_name=computation.product_name,
-        rut_client=rut_client,
-        wallet_info=computation.wallet_info,
-        rabbitmq_rpc_client=rpc_client,
-    )
-
-    pipeline_started = False
-    if computation.start_pipeline:
-        if insufficient_credits:
-            _raise_if_insufficient_credits(computation)
-
-        pipeline_started = await _try_start_pipeline(
-            app,
-            project_repo=project_repo,
-            computation=computation,
-            minimal_dag=minimal_computational_dag,
-            project=project,
-            users_repo=users_repo,
-            projects_metadata_repo=projects_metadata_repo,
-        )
-
-    return comp_tasks, pipeline_started
-
-
 @router.post(
     "",
     description="Create and optionally start a new computation",
@@ -370,22 +317,41 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         if computation.start_pipeline:
             await _check_pipeline_startable(minimal_computational_dag, computation, catalog_client)
 
-        comp_tasks, pipeline_started = await _create_or_update_pipeline_and_tasks(
-            computation=computation,
-            app=request.app,
-            project=project,
-            minimal_computational_dag=minimal_computational_dag,
-            comp_pipelines_repo=comp_pipelines_repo,
-            comp_tasks_repo=comp_tasks_repo,
-            catalog_client=catalog_client,
-            rut_client=rut_client,
-            rpc_client=rpc_client,
-            project_repo=project_repo,
-            users_repo=users_repo,
-            projects_metadata_repo=projects_metadata_repo,
+        # ok so put the tasks in the db
+        await comp_pipelines_repo.upsert_pipeline(
+            project.uuid,
+            minimal_computational_dag,
+            publish=computation.start_pipeline or False,
         )
-        if computation.start_pipeline and not pipeline_started:
-            response.status_code = status.HTTP_200_OK
+        assert computation.product_name  # nosec
+        min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
+        comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
+            project=project,
+            catalog_client=catalog_client,
+            published_nodes=min_computation_nodes if computation.start_pipeline else [],
+            user_id=computation.user_id,
+            product_name=computation.product_name,
+            rut_client=rut_client,
+            wallet_info=computation.wallet_info,
+            rabbitmq_rpc_client=rpc_client,
+        )
+
+        pipeline_started = False
+        if computation.start_pipeline:
+            if insufficient_credits:
+                _raise_if_insufficient_credits(computation)
+
+            pipeline_started = await _try_start_pipeline(
+                request.app,
+                project_repo=project_repo,
+                computation=computation,
+                minimal_dag=minimal_computational_dag,
+                project=project,
+                users_repo=users_repo,
+                projects_metadata_repo=projects_metadata_repo,
+            )
+            if not pipeline_started:
+                response.status_code = status.HTTP_200_OK
 
         # get run details if any
         last_run: CompRunsAtDB | None = None

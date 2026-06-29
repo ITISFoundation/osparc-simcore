@@ -1,7 +1,6 @@
 import contextlib
 import datetime
 import logging
-from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from typing import Any
 
@@ -77,24 +76,14 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     return dag_graph
 
 
-def _create_node_io_payload_cb(
-    graph_data: nx.classes.reportviews.NodeDataView,
-) -> Callable[[NodeID], Coroutine[Any, Any, dict[str, Any]]]:
-    async def _get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
-        result: dict[str, Any] = graph_data[f"{node_id}"]
-        return result
-
-    return _get_node_io_payload_cb
-
-
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
     # if the node state is in the modified state already
-    if node["state"] in {
+    if node["state"] in [
         None,
         RunningState.ABORTED,
         RunningState.FAILED,
-    }:
+    ]:
         return True
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
@@ -104,7 +93,11 @@ async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDa
             return True
 
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    computed_hash = await compute_node_hash(node_id, _create_node_io_payload_cb(graph_data))
+    async def get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
+        result: dict[str, Any] = graph_data[f"{node_id}"]
+        return result
+
+    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
     return bool(computed_hash != node["run_hash"])
 
 
