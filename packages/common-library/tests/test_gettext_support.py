@@ -52,6 +52,8 @@ def test_default_locale() -> None:
     "raw, expected",
     [
         ("es-ES", "es_ES"),  # region present → lang_REGION
+        ("en_US", "en"),  # frontend emits en_US; backend canonical locale is en
+        ("zh", "zh_CN"),  # frontend emits bare zh; backend uses zh_CN catalogs
         ("zh-CN,zh;q=0.9", "zh_CN"),  # Accept-Language header, picks first tag
         ("en", "en"),  # no region
         ("  ES_es ; q=0.8", "es_ES"),  # leading whitespace + mixed case

@@ -58,9 +58,14 @@ def normalize_locale(raw: str) -> str:
         return DEFAULT_LOCALE
     lang = m.group(1).lower()
     region = m.group(2)
-    if region:
-        return f"{lang}_{region.upper()}"
-    return lang
+    normalized = f"{lang}_{region.upper()}" if region else lang
+
+    if normalized.startswith("en_"):
+        return DEFAULT_LOCALE
+    # Frontend emits bare "zh" due to qooxdoo constraints; backend catalogs are zh_CN.
+    if normalized == "zh":
+        return "zh_CN"
+    return normalized
 
 
 def _load(locale: str) -> gettext.NullTranslations:
