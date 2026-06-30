@@ -10,15 +10,19 @@ from servicelib.docker_constants import (
     DEFAULT_USER_SERVICES_NETWORK_NAME,
     SUFFIX_EGRESS_PROXY_NAME,
 )
-from servicelib.tracing import SourceOrigin, create_standard_attributes
 
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.user_services_tracing import (
+    OTEL_COLLECTOR_SERVICE_NAME,
+    UserServicesTracingSettings,
+    build_otel_collector_compose_service,
+    build_otel_resource_attributes,
+)
 from .docker_compose_utils import docker_compose_config
-from .settings import ApplicationSettings, UserServicesTracingSettings
+from .settings import ApplicationSettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
-_OTEL_COLLECTOR_SERVICE_NAME: Final[str] = "dy-otel-http-collector"
 _TEMPLATE_DIRECTIVE_NUM_PARTS: Final[int] = 2
 
 _logger = logging.getLogger(__name__)
@@ -189,131 +193,6 @@ def parse_compose_spec(compose_file_content: str) -> Any:
         raise InvalidComposeSpecError(msg) from e
 
 
-def _generate_otel_collector_config(
-    user_services_tracing_settings: UserServicesTracingSettings,
-    settings: ApplicationSettings,
-) -> str:
-    # NOTE: added to collector container so they are always present
-    attributes = create_standard_attributes(
-        user_id=settings.DY_SIDECAR_USER_ID,
-        project_id=settings.DY_SIDECAR_PROJECT_ID,
-        node_id=settings.DY_SIDECAR_NODE_ID,
-        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
-        run_id=settings.DY_SIDECAR_RUN_ID,
-        source_origin=SourceOrigin.USER_SERVICE,
-    )
-
-    config = {
-        "receivers": {
-            "otlp": {
-                "protocols": {
-                    "http": {"endpoint": "0.0.0.0:4318"},
-                }
-            }
-        },
-        "processors": {
-            "batch": {"timeout": "5s"},
-            "resource": {"attributes": [{"key": k, "value": v, "action": "upsert"} for k, v in attributes.items()]},
-        },
-        "exporters": {
-            "file": {
-                "path": "/traces/spans.jsonl",
-                "rotation": {
-                    "max_megabytes": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB,
-                    "max_backups": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MAX_BACKUPS,
-                },
-                "flush_interval": (
-                    f"{int(user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL.total_seconds())}s"
-                ),
-            }
-        },
-        "service": {
-            "pipelines": {
-                "traces": {
-                    "receivers": ["otlp"],
-                    "processors": ["batch", "resource"],
-                    "exporters": ["file"],
-                }
-            }
-        },
-    }
-    return yaml.safe_dump(config, default_flow_style=False)
-
-
-def _build_otel_resource_attributes(settings: ApplicationSettings) -> str:
-    attrs = create_standard_attributes(
-        service_key=settings.DY_SIDECAR_SERVICE_KEY,
-        service_version=settings.DY_SIDECAR_SERVICE_VERSION,
-        source_origin=None,
-    )
-    return ",".join(f"{k}={v}" for k, v in attrs.items() if v)
-
-
-def _inject_otel_collector(
-    parsed_compose_spec: dict[str, Any],
-    settings: ApplicationSettings,
-    user_services_tracing_settings: UserServicesTracingSettings,
-    traces_volume_mount: str,
-    user_service_names: list[str],
-) -> str:
-    """Injects the OTEL Collector service into the compose spec.
-
-    Returns the collector's container name for use in OTEL_EXPORTER_OTLP_ENDPOINT.
-    """
-    collector_config_yaml = _generate_otel_collector_config(user_services_tracing_settings, settings)
-
-    collector_container_name = _assemble_container_name(
-        settings,
-        _OTEL_COLLECTOR_SERVICE_NAME,
-        _OTEL_COLLECTOR_SERVICE_NAME,
-        len(parsed_compose_spec["services"]),
-    )
-
-    # already checked and is set
-    assert settings.DYNAMIC_SIDECAR_TRACING  # nosec
-
-    collector_image = (
-        f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME}:"
-        f"{settings.DYNAMIC_SIDECAR_TRACING.TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION}"
-    )
-
-    collector_service: dict[str, Any] = {
-        "image": collector_image,
-        "container_name": collector_container_name,
-        "user": f"{os.getuid()}:{os.getgid()}",
-        "command": ["--config=env:OTEL_COLLECTOR_CONFIG"],
-        "environment": [
-            f"OTEL_COLLECTOR_CONFIG={collector_config_yaml}",
-        ],
-        "volumes": [
-            traces_volume_mount,
-        ],
-        "mem_limit": f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT}",
-        "cpus": f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT}",
-        "cpu_shares": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES,
-        "stop_grace_period": (
-            f"{int(user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD.total_seconds())}s"
-        ),
-    }
-
-    parsed_compose_spec["services"][_OTEL_COLLECTOR_SERVICE_NAME] = collector_service
-
-    # Make user services depend on collector so Docker Compose stops them FIRST
-    # (reverse dependency order), giving the collector time to receive final spans
-    # before it gets SIGTERM.
-    # NOTE: _remap_service_keys always flattens depends_on to a list (dropping
-    # long-form conditions), so we normalise to list here unconditionally.
-    for svc_name in user_service_names:
-        svc_data = parsed_compose_spec["services"][svc_name]
-        depends_on = svc_data.get("depends_on", [])
-        if isinstance(depends_on, dict):
-            depends_on = list(depends_on)
-        depends_on.append(_OTEL_COLLECTOR_SERVICE_NAME)
-        svc_data["depends_on"] = depends_on
-
-    return collector_container_name
-
-
 class ComposeSpecValidation(NamedTuple):
     compose_spec: str
     current_container_names: list[str]
@@ -370,40 +249,71 @@ async def _mount_shared_volumes(
         service_content["volumes"] = service_volumes
 
 
+def _inject_otel_collector(
+    parsed_compose_spec: dict[str, Any],
+    settings: ApplicationSettings,
+    user_services_tracing_settings: UserServicesTracingSettings,
+    traces_volume_mount: str,
+    user_service_names: list[str],
+    collector_container_name: str,
+) -> None:
+    parsed_compose_spec["services"][OTEL_COLLECTOR_SERVICE_NAME] = build_otel_collector_compose_service(
+        user_services_tracing_settings,
+        settings,
+        collector_container_name,
+        traces_volume_mount,
+    )
+
+    # Make user services depend on the collector so docker stops them FIRST
+    # giving the collector time to receive final spans, before it gets SIGTERM.
+    for svc_name in user_service_names:
+        svc_data = parsed_compose_spec["services"][svc_name]
+        depends_on = svc_data.get("depends_on", [])
+        if isinstance(depends_on, dict):
+            depends_on = list(depends_on)
+        depends_on.append(OTEL_COLLECTOR_SERVICE_NAME)
+        svc_data["depends_on"] = depends_on
+
+
 async def _inject_tracing(
     parsed_compose_spec: dict[str, Any],
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     spec_services_to_container_name: dict[str, str],
 ) -> None:
-    """Injects OTEL collector and env vars into user services when tracing is enabled."""
     user_services_tracing_settings = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
     spec_services = parsed_compose_spec["services"]
-
-    traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
     user_service_keys = list(spec_services.keys())
 
-    collector_container_name = _inject_otel_collector(
+    collector_container_name = _assemble_container_name(
+        settings,
+        OTEL_COLLECTOR_SERVICE_NAME,
+        OTEL_COLLECTOR_SERVICE_NAME,
+        len(spec_services),
+    )
+
+    traces_volume_mount = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
+    _inject_otel_collector(
         parsed_compose_spec,
         settings,
         user_services_tracing_settings,
         traces_volume_mount,
         user_service_keys,
+        collector_container_name,
     )
 
-    # inject OTEL env vars into each user service
-    resource_attributes = _build_otel_resource_attributes(settings)
+    resource_attributes = build_otel_resource_attributes(settings)
     for service_key in user_service_keys:
         service_env = spec_services[service_key].get("environment", [])
-        otel_env_vars = [
-            f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{collector_container_name}:4318",
-            f"OTEL_SERVICE_NAME={spec_services_to_container_name[service_key]}",
-            f"OTEL_RESOURCE_ATTRIBUTES={resource_attributes}",
-        ]
-        service_env.extend(otel_env_vars)
+        service_env.extend(
+            [
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{collector_container_name}:4318",
+                f"OTEL_SERVICE_NAME={spec_services_to_container_name[service_key]}",
+                f"OTEL_RESOURCE_ATTRIBUTES={resource_attributes}",
+            ]
+        )
 
-    # track the collector in container names
-    spec_services_to_container_name[_OTEL_COLLECTOR_SERVICE_NAME] = collector_container_name
+    spec_services_to_container_name[OTEL_COLLECTOR_SERVICE_NAME] = collector_container_name
 
 
 def _remap_service_keys(
@@ -439,7 +349,12 @@ async def get_and_validate_compose_spec(
     await _mount_shared_volumes(settings, spec_services, mounted_volumes)
 
     if is_user_services_tracing_enabled:
-        await _inject_tracing(parsed_compose_spec, settings, mounted_volumes, spec_services_to_container_name)
+        await _inject_tracing(
+            parsed_compose_spec,
+            settings,
+            mounted_volumes,
+            spec_services_to_container_name,
+        )
 
     _connect_user_services_to_shared_network(
         parsed_compose_spec,

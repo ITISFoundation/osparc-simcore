@@ -1,30 +1,19 @@
-"""Ships user-service traces to the platform OTEL collector via a sidecar collector container.
+"""The trace-forwarder container: reads OTLP-JSON span files from the shared ``/traces`` volume
+and pushes them to the platform's OTLP/HTTP endpoint.
 
-Instead of forwarding spans in Python, the dynamic-sidecar runs a small **OTEL Collector
-container** ("trace shipper") whose only job is to read the OTLP-JSON span files written to
-the shared ``/traces`` volume by the *injected* collector (see ``core/validation.py``) and
-push them to the platform's OTLP/HTTP endpoint.
-
-
-Lifecycle & ownership:
-
-* The shipper is **created** when the user services start and **removed** when they are
-  removed (hooked from ``modules/long_running_tasks.py``). Both operations are idempotent.
-* Between those two events Docker keeps it alive: it runs with ``RestartPolicy=unless-stopped``,
-  so a crash (or daemon restart) brings it back with no supervision from the sidecar.
-* It shares the sidecar's network namespace (``network_mode: container:<sidecar>``), so it
-  reaches the platform collector with the exact same DNS/egress the sidecar has.
-* ``delete_after_read`` makes the filesystem the checkpoint: a shipped span file is deleted,
-  so "has everything been shipped?" is simply "are there any ``spans*.jsonl`` left?". The
-  send queue is persisted via ``file_storage`` so a shipper restart never drops in-flight data.
+Lifecycle: created when user services start, removed when they stop (both idempotent).
+Docker keeps it alive between those two events via ``RestartPolicy=unless-stopped``.
+The send queue is persisted via ``file_storage`` so a forwarder restart never drops in-flight data.
 """
+
+from __future__ import annotations
 
 import logging
 import os
 import socket
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import yaml
 from aiodocker import Docker, DockerError
@@ -35,20 +24,23 @@ from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
-from ..core.settings import ApplicationSettings, UserServicesTracingSettings
-from .mounted_fs import MountedVolumes
+from ._settings import UserServicesTracingSettings
+
+if TYPE_CHECKING:
+    from ...core.settings import ApplicationSettings
+    from ..mounted_fs import MountedVolumes
 
 _logger = logging.getLogger(__name__)
 
 # span files written by the injected collector on the shared volume (live + size-rotated)
 _TRACES_MOUNT_POINT: Final[str] = "/traces"
 _SPANS_FILES_GLOB: Final[str] = "spans*.jsonl"
-# the shipper's own bookkeeping (persistent send queue); kept off the spans glob
-_SHIPPER_STATE_DIR: Final[str] = f"{_TRACES_MOUNT_POINT}/.trace-shipper-state"
-_FILE_STORAGE_EXTENSION_NAME: Final[str] = "file_storage/shipper"
+# the forwarder's own bookkeeping (persistent send queue); kept off the spans glob
+_FORWARDER_STATE_DIR: Final[str] = f"{_TRACES_MOUNT_POINT}/.trace-forwarder-state"
+_FILE_STORAGE_EXTENSION_NAME: Final[str] = "file_storage/forwarder"
 
-_CONTAINER_NAME_SUFFIX: Final[str] = "otel-trace-shipper"
-# own namespace ("otc" = octel trace shipper): keeps the shipper out of the dy-sidecar
+_CONTAINER_NAME_SUFFIX: Final[str] = "otel-trace-forwarder"
+# own namespace ("otc" = octel trace forwarder): keeps the forwarder out of the dy-sidecar
 # container namespace so it is never matched / reaped by dy-sidecar name-prefix lookups
 _CONTAINER_NAME_PREFIX: Final[str] = "otc"
 # Docker Engine API expresses a CPU-core quota as NanoCpus (cores * 1e9)
@@ -67,7 +59,7 @@ def is_user_services_tracing_enabled(app: FastAPI) -> bool:
     return tracing_config.tracing_enabled and settings.DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN
 
 
-def _shipper_container_name(settings: ApplicationSettings) -> str:
+def _forwarder_container_name(settings: ApplicationSettings) -> str:
     # deterministic so create / remove / any external reaper all agree on the name;
     # uses its own "otc" namespace (NOT the dy-sidecar one) to avoid name collisions
     return f"{_CONTAINER_NAME_PREFIX}-{settings.DY_SIDECAR_NODE_ID}-{_CONTAINER_NAME_SUFFIX}"
@@ -81,11 +73,11 @@ def _platform_otlp_traces_endpoint(platform_tracing_settings: TracingSettings) -
     )
 
 
-def _generate_shipper_config(platform_tracing_settings: TracingSettings) -> str:
+def _generate_forwarder_config(platform_tracing_settings: TracingSettings) -> str:
     config = {
         "extensions": {
             _FILE_STORAGE_EXTENSION_NAME: {
-                "directory": _SHIPPER_STATE_DIR,
+                "directory": _FORWARDER_STATE_DIR,
                 # create the state dir on first boot (it lives on the shared traces volume)
                 "create_directory": True,
             },
@@ -117,7 +109,7 @@ def _generate_shipper_config(platform_tracing_settings: TracingSettings) -> str:
     return yaml.safe_dump(config, default_flow_style=False)
 
 
-def _build_shipper_container_config(
+def _build_forwarder_container_config(
     *,
     settings: ApplicationSettings,
     user_services_tracing_settings: UserServicesTracingSettings,
@@ -128,7 +120,7 @@ def _build_shipper_container_config(
         f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME}:"
         f"{platform_tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION}"
     )
-    config_yaml = _generate_shipper_config(platform_tracing_settings)
+    config_yaml = _generate_forwarder_config(platform_tracing_settings)
 
     return {
         "Image": image,
@@ -138,7 +130,7 @@ def _build_shipper_container_config(
         ],
         "Env": [f"OTEL_COLLECTOR_CONFIG={config_yaml}"],
         "Labels": {
-            "io.simcore.dynamic-sidecar.trace-shipper": "true",
+            "io.simcore.dynamic-sidecar.trace-forwarder": "true",
             "io.simcore.service-run-id": f"{settings.DY_SIDECAR_RUN_ID}",
             "io.simcore.node-id": f"{settings.DY_SIDECAR_NODE_ID}",
         },
@@ -159,7 +151,7 @@ def _build_shipper_container_config(
 
 
 async def create_user_services_trace_collector(app: FastAPI) -> None:
-    """Idempotently creates and starts the trace-shipper container.
+    """Idempotently creates and starts the trace-forwarder container.
 
     Called once the user services (and the injected collector writing the span files) are up.
     Safe to call repeatedly: if the container already exists it is left running.
@@ -169,33 +161,33 @@ async def create_user_services_trace_collector(app: FastAPI) -> None:
     platform_tracing_settings = settings.DYNAMIC_SIDECAR_TRACING
     assert platform_tracing_settings is not None  # nosec
 
-    container_name = _shipper_container_name(settings)
+    container_name = _forwarder_container_name(settings)
     traces_volume_bind = await mounted_volumes.get_traces_docker_volume(settings.DY_SIDECAR_RUN_ID)
 
-    container_config = _build_shipper_container_config(
+    container_config = _build_forwarder_container_config(
         settings=settings,
         user_services_tracing_settings=settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG,
         platform_tracing_settings=platform_tracing_settings,
         traces_volume_bind=traces_volume_bind,
     )
 
-    with log_context(_logger, logging.INFO, f"create trace-shipper container '{container_name}'"):
+    with log_context(_logger, logging.INFO, f"create trace-forwarder container '{container_name}'"):
         async with _docker_client() as client:
             try:
                 await client.containers.run(config=container_config, name=container_name)
             except DockerError as e:
                 if e.status == status.HTTP_409_CONFLICT:
-                    _logger.info("trace-shipper '%s' already exists, leaving it running", container_name)
+                    _logger.info("trace-forwarder '%s' already exists, leaving it running", container_name)
                     return
                 raise
 
 
 async def remove_user_services_trace_collector(app: FastAPI) -> None:
-    """Idempotently stops and removes the trace-shipper container."""
+    """Idempotently stops and removes the trace-forwarder container."""
     settings: ApplicationSettings = app.state.settings
-    container_name = _shipper_container_name(settings)
+    container_name = _forwarder_container_name(settings)
 
-    with log_context(_logger, logging.INFO, f"remove trace-shipper container '{container_name}'"):
+    with log_context(_logger, logging.INFO, f"remove trace-forwarder container '{container_name}'"):
         async with _docker_client() as client:
             try:
                 container = await client.containers.get(container_name)

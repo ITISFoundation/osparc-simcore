@@ -11,19 +11,19 @@ from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_dynamic_sidecar.core.application import create_app
-from simcore_service_dynamic_sidecar.core.settings import (
-    ApplicationSettings,
-    UserServicesTracingSettings,
-)
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.core.validation import (
-    _OTEL_COLLECTOR_SERVICE_NAME,
-    _build_otel_resource_attributes,
-    _generate_otel_collector_config,
     _inject_otel_collector,
     get_and_validate_compose_spec,
 )
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
-from simcore_service_dynamic_sidecar.modules.user_services_tracing import is_user_services_tracing_enabled
+from simcore_service_dynamic_sidecar.modules.user_services_tracing import (
+    OTEL_COLLECTOR_SERVICE_NAME,
+    UserServicesTracingSettings,
+    build_otel_collector_config,
+    build_otel_resource_attributes,
+    is_user_services_tracing_enabled,
+)
 
 
 @pytest.fixture
@@ -117,11 +117,11 @@ def _has_otel_collector(services: dict) -> bool:
     return any("otel" in name for name in services)
 
 
-def test_generate_otel_collector_config_flush_interval_matches_settings(
+def testbuild_otel_collector_config_flush_interval_matches_settings(
     app_settings_with_tracing: ApplicationSettings,
     user_tracing_settings: UserServicesTracingSettings,
 ):
-    config_yaml = _generate_otel_collector_config(user_tracing_settings, app_settings_with_tracing)
+    config_yaml = build_otel_collector_config(user_tracing_settings, app_settings_with_tracing)
     config = yaml.safe_load(config_yaml)
 
     expected = f"{int(user_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL.total_seconds())}s"
@@ -129,11 +129,11 @@ def test_generate_otel_collector_config_flush_interval_matches_settings(
     assert "max_elapsed" not in config["exporters"]["file"]["rotation"]
 
 
-def test_generate_otel_collector_config_structure(
+def testbuild_otel_collector_config_structure(
     app_settings_with_tracing: ApplicationSettings,
     user_tracing_settings: UserServicesTracingSettings,
 ):
-    config_yaml = _generate_otel_collector_config(user_tracing_settings, app_settings_with_tracing)
+    config_yaml = build_otel_collector_config(user_tracing_settings, app_settings_with_tracing)
     config = yaml.safe_load(config_yaml)
 
     assert "receivers" in config
@@ -153,10 +153,10 @@ def test_generate_otel_collector_config_structure(
     assert "traces" in config["service"]["pipelines"]
 
 
-def test_build_otel_resource_attributes(
+def testbuild_otel_resource_attributes(
     app_settings_with_tracing: ApplicationSettings,
 ):
-    attrs = _build_otel_resource_attributes(app_settings_with_tracing)
+    attrs = build_otel_resource_attributes(app_settings_with_tracing)
 
     assert "simcore.service_key=" in attrs
     assert "simcore.service_version=" in attrs
@@ -177,26 +177,28 @@ def test_inject_otel_collector_adds_service(
         },
     }
 
-    container_name = _inject_otel_collector(
+    container_name = "otel-collector"
+    _inject_otel_collector(
         parsed_spec,
         app_settings_with_tracing,
         user_tracing_settings,
         "/fake/mount:/traces",
         ["jupyter-lab", "data-processor"],
+        container_name,
     )
 
-    assert _OTEL_COLLECTOR_SERVICE_NAME in parsed_spec["services"]
-    collector = parsed_spec["services"][_OTEL_COLLECTOR_SERVICE_NAME]
+    assert OTEL_COLLECTOR_SERVICE_NAME in parsed_spec["services"]
+    collector = parsed_spec["services"][OTEL_COLLECTOR_SERVICE_NAME]
     assert collector["image"] == "otel/opentelemetry-collector-contrib:0.144.0"
     assert collector["stop_grace_period"] == "15s"
     assert "depends_on" not in collector
     assert "/fake/mount:/traces" in collector["volumes"]
-    assert container_name
-    assert "http" in _OTEL_COLLECTOR_SERVICE_NAME, "Service name should reflect HTTP-only protocol"
+    assert collector["container_name"] == container_name
+    assert "http" in OTEL_COLLECTOR_SERVICE_NAME, "Service name should reflect HTTP-only protocol"
 
     # User services depend on collector (so Docker stops them first)
     for svc_key in ("jupyter-lab", "data-processor"):
-        assert parsed_spec["services"][svc_key]["depends_on"] == [_OTEL_COLLECTOR_SERVICE_NAME]
+        assert parsed_spec["services"][svc_key]["depends_on"] == [OTEL_COLLECTOR_SERVICE_NAME]
 
 
 def test_inject_otel_collector_normalises_long_form_depends_on_to_list(
@@ -225,13 +227,14 @@ def test_inject_otel_collector_normalises_long_form_depends_on_to_list(
         user_tracing_settings,
         "/fake/mount:/traces",
         ["web-app"],
+        "otel-collector",
     )
 
     depends_on = parsed_spec["services"]["web-app"]["depends_on"]
     assert isinstance(depends_on, list)
     assert "db" in depends_on
     assert "redis" in depends_on
-    assert _OTEL_COLLECTOR_SERVICE_NAME in depends_on
+    assert OTEL_COLLECTOR_SERVICE_NAME in depends_on
 
 
 async def test_validate_compose_spec_with_tracing_injects_otel(
@@ -297,6 +300,6 @@ async def test_validate_compose_spec_without_tracing_no_otel(
 def test_contrib_collector_image_used(user_tracing_settings: UserServicesTracingSettings):
     assert user_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME == "otel/opentelemetry-collector-contrib", (
         "Must use the 'contrib' distribution: the injected collector uses the 'file' exporter and the "
-        "trace-shipper uses the 'otlpjsonfile' receiver and 'file_storage' extension, none of which ship "
+        "trace-forwarder uses the 'otlpjsonfile' receiver and 'file_storage' extension, none of which ship "
         "in the 'core' otel/opentelemetry-collector image"
     )

@@ -11,9 +11,12 @@ import yaml
 from aiodocker import DockerError
 from fastapi import FastAPI, status
 from settings_library.tracing import TracingSettings
-from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings, UserServicesTracingSettings
-from simcore_service_dynamic_sidecar.modules import user_services_tracing
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.modules.user_services_tracing import (
+    UserServicesTracingSettings,
+    _otel_forwarder,
+)
 
 pytest_simcore_core_services_selection: list[str] = []
 pytest_simcore_ops_services_selection: list[str] = []
@@ -80,7 +83,7 @@ def docker_client_stub(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     async def _cm() -> AsyncIterator[AsyncMock]:
         yield client
 
-    monkeypatch.setattr(user_services_tracing, "_docker_client", _cm)
+    monkeypatch.setattr(_otel_forwarder, "_docker_client", _cm)
     return client
 
 
@@ -89,10 +92,10 @@ def docker_client_stub(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
 #
 
 
-def test_generate_shipper_config_reads_files_and_ships_to_platform(
+def test_generate_forwarder_config_reads_files_and_ships_to_platform(
     platform_tracing_settings_stub: Mock,
 ):
-    config = yaml.safe_load(user_services_tracing._generate_shipper_config(platform_tracing_settings_stub))  # noqa: SLF001
+    config = yaml.safe_load(_otel_forwarder._generate_forwarder_config(platform_tracing_settings_stub))  # noqa: SLF001
 
     receiver = config["receivers"]["otlpjsonfile"]
     assert receiver["include"] == ["/traces/spans*.jsonl"]
@@ -100,36 +103,36 @@ def test_generate_shipper_config_reads_files_and_ships_to_platform(
     # the live file is tailed by persisted offset and NEVER deleted (the injected collector
     # keeps it open and would keep appending to a deleted inode -> dropped spans)
     assert "delete_after_read" not in receiver
-    assert receiver["storage"] == "file_storage/shipper"
+    assert receiver["storage"] == "file_storage/forwarder"
 
     exporter = config["exporters"]["otlp_http"]
     assert exporter["traces_endpoint"] == "http://platform-collector.testing:4318/v1/traces"
     assert exporter["retry_on_failure"]["enabled"] is True
-    assert exporter["sending_queue"]["storage"] == "file_storage/shipper"
+    assert exporter["sending_queue"]["storage"] == "file_storage/forwarder"
 
-    assert "file_storage/shipper" in config["extensions"]
+    assert "file_storage/forwarder" in config["extensions"]
     # the state dir lives on the shared volume and must be auto-created on first boot
-    assert config["extensions"]["file_storage/shipper"]["create_directory"] is True
+    assert config["extensions"]["file_storage/forwarder"]["create_directory"] is True
     assert config["service"]["pipelines"]["traces"] == {
         "receivers": ["otlpjsonfile"],
         "exporters": ["otlp_http"],
     }
-    assert config["service"]["extensions"] == ["file_storage/shipper"]
+    assert config["service"]["extensions"] == ["file_storage/forwarder"]
 
 
 def test_platform_otlp_traces_endpoint(platform_tracing_settings_stub: Mock):
     assert (
-        user_services_tracing._platform_otlp_traces_endpoint(platform_tracing_settings_stub)  # noqa: SLF001
+        _otel_forwarder._platform_otlp_traces_endpoint(platform_tracing_settings_stub)  # noqa: SLF001
         == "http://platform-collector.testing:4318/v1/traces"
     )
 
 
-def test_build_shipper_container_config(
+def test_build_forwarder_container_config(
     settings_stub: ApplicationSettings,
     user_services_tracing_settings: UserServicesTracingSettings,
     platform_tracing_settings_stub: Mock,
 ):
-    config = user_services_tracing._build_shipper_container_config(  # noqa: SLF001
+    config = _otel_forwarder._build_forwarder_container_config(  # noqa: SLF001
         settings=settings_stub,
         user_services_tracing_settings=user_services_tracing_settings,
         platform_tracing_settings=platform_tracing_settings_stub,
@@ -146,16 +149,15 @@ def test_build_shipper_container_config(
     # resource caps (Docker Engine API equivalents of compose mem_limit/cpus/cpu_shares)
     assert host_config["Memory"] == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT
     assert host_config["NanoCpus"] == int(
-        user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT
-        * user_services_tracing._NANO_CPUS_PER_CORE  # noqa: SLF001
+        user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT * _otel_forwarder._NANO_CPUS_PER_CORE  # noqa: SLF001
     )
     assert host_config["CpuShares"] == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES
     assert config["Env"] == [
-        f"OTEL_COLLECTOR_CONFIG={user_services_tracing._generate_shipper_config(platform_tracing_settings_stub)}"  # noqa: SLF001
+        f"OTEL_COLLECTOR_CONFIG={_otel_forwarder._generate_forwarder_config(platform_tracing_settings_stub)}"  # noqa: SLF001
     ]
     # no file deletion -> the filelog.allowFileDeletion feature gate must NOT be set
     assert not any("filelog.allowFileDeletion" in arg for arg in config["Cmd"])
-    assert config["Labels"]["io.simcore.dynamic-sidecar.trace-shipper"] == "true"
+    assert config["Labels"]["io.simcore.dynamic-sidecar.trace-forwarder"] == "true"
 
 
 #
@@ -164,25 +166,25 @@ def test_build_shipper_container_config(
 
 
 async def test_create_collector_runs_container(app_stub: FastAPI, docker_client_stub: AsyncMock):
-    await user_services_tracing.create_user_services_trace_collector(app_stub)
+    await _otel_forwarder.create_user_services_trace_collector(app_stub)
 
     docker_client_stub.containers.run.assert_awaited_once()
     _, kwargs = docker_client_stub.containers.run.call_args
-    assert kwargs["name"] == user_services_tracing._shipper_container_name(app_stub.state.settings)  # noqa: SLF001
+    assert kwargs["name"] == _otel_forwarder._forwarder_container_name(app_stub.state.settings)  # noqa: SLF001
 
 
 async def test_create_collector_is_idempotent_on_conflict(app_stub: FastAPI, docker_client_stub: AsyncMock):
     docker_client_stub.containers.run.side_effect = _docker_error(status.HTTP_409_CONFLICT)
 
-    # must NOT raise: the shipper already exists
-    await user_services_tracing.create_user_services_trace_collector(app_stub)
+    # must NOT raise: the forwarder already exists
+    await _otel_forwarder.create_user_services_trace_collector(app_stub)
 
 
 async def test_create_collector_reraises_unexpected_errors(app_stub: FastAPI, docker_client_stub: AsyncMock):
     docker_client_stub.containers.run.side_effect = _docker_error(status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     with pytest.raises(DockerError):
-        await user_services_tracing.create_user_services_trace_collector(app_stub)
+        await _otel_forwarder.create_user_services_trace_collector(app_stub)
 
 
 #
@@ -194,14 +196,14 @@ async def test_remove_collector_is_idempotent_when_absent(app_stub: FastAPI, doc
     docker_client_stub.containers.get.side_effect = _docker_error(status.HTTP_404_NOT_FOUND)
 
     # must NOT raise when the container is already gone
-    await user_services_tracing.remove_user_services_trace_collector(app_stub)
+    await _otel_forwarder.remove_user_services_trace_collector(app_stub)
 
 
 async def test_remove_collector_stops_and_deletes(app_stub: FastAPI, docker_client_stub: AsyncMock):
     container = AsyncMock()
     docker_client_stub.containers.get.return_value = container
 
-    await user_services_tracing.remove_user_services_trace_collector(app_stub)
+    await _otel_forwarder.remove_user_services_trace_collector(app_stub)
 
     container.stop.assert_awaited_once()
     container.delete.assert_awaited_once_with(force=True)
@@ -221,6 +223,6 @@ def test_is_user_services_tracing_enabled(
     opt_in: bool,
 ):
     app_stub.state.settings.DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN = opt_in
-    monkeypatch.setattr(user_services_tracing, "get_tracing_config", lambda _app: Mock(tracing_enabled=tracing_enabled))
+    monkeypatch.setattr(_otel_forwarder, "get_tracing_config", lambda _app: Mock(tracing_enabled=tracing_enabled))
 
-    assert user_services_tracing.is_user_services_tracing_enabled(app_stub) is (tracing_enabled and opt_in)
+    assert _otel_forwarder.is_user_services_tracing_enabled(app_stub) is (tracing_enabled and opt_in)
