@@ -10,13 +10,13 @@ from models_library.api_schemas_webserver.notifications import (
     TemplatePreviewGet,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
 
 from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...security.decorators import permission_required
+from ...web_requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from .. import notifications_service
 from .._models import TemplateRef
 from ._rest_exceptions import handle_notifications_exceptions

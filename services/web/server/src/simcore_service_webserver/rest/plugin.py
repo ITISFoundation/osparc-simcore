@@ -17,6 +17,7 @@ from swagger_ui import api_doc  # type: ignore
 
 from .._meta import API_VTAG
 from ..application_setup import ModuleCategory, app_setup_func
+from ..locale import locale_middleware
 from ..security.plugin import setup_security
 from . import _handlers
 from ._utils import get_openapi_specs_path
@@ -51,6 +52,7 @@ def setup_rest(app: web.Application):
         [
             error_middleware_factory(api_version=API_VTAG),
             envelope_middleware_factory(api_version=API_VTAG),
+            locale_middleware,
         ]
     )
 

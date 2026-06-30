@@ -25,11 +25,6 @@ from models_library.resource_tracker import (
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, ConfigDict
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq._errors import RPCServerError
@@ -43,6 +38,11 @@ from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from . import _pricing_plans_admin_service as pricing_plans_admin_service
 from ._pricing_plans_models import PricingPlanGetPathParams
 

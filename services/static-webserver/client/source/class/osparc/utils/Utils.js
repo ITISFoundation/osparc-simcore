@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /* ************************************************************************
 
    osparc - the simcore frontend
@@ -637,7 +638,9 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isDateLike: function(v) {
-      if (typeof v === "string") return !isNaN(new Date(v));
+      if (typeof v === "string") {
+        return !isNaN(new Date(v));
+      }
       return false;
     },
 
@@ -719,6 +722,7 @@ qx.Class.define("osparc.utils.Utils", {
       const formatted = dtf.format(date);
 
       // Timezone city
+      // eslint-disable-next-line new-cap
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const city = tz.split("/").pop().replace("_", " ");
 
@@ -913,7 +917,7 @@ qx.Class.define("osparc.utils.Utils", {
       return {
         major: Number(match[1]),
         minor: Number(match[2]),
-        patch: match[3] !== undefined ? Number(match[3]) : 0,
+        patch: match[3] === undefined ? 0 : Number(match[3]),
         preRelease: match[4] || null,
       };
     },
@@ -1163,7 +1167,9 @@ qx.Class.define("osparc.utils.Utils", {
         let loaded = 0;
         while (true) {
           const {done, value} = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
           loaded += value.byteLength;
           await writable.write(value);
           progressCb({
@@ -1190,7 +1196,9 @@ qx.Class.define("osparc.utils.Utils", {
         let loaded = 0;
         while (true) {
           const {done, value} = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
           chunks.push(value);
           loaded += value.byteLength;
           progressCb({
@@ -1402,7 +1410,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     camelToTitle: function(str) {
       return str
-        .replace(/([A-Z])/g, ' $1')          // insert space before capital letters
+        .replace(/([A-Z])/g, " $1")           // insert space before capital letters
         .replace(/^./, c => c.toUpperCase()); // capitalize first letter
     },
 
@@ -1565,11 +1573,13 @@ qx.Class.define("osparc.utils.Utils", {
           e.preventDefault();
 
           const dom = textArea.getContentElement().getDomElement();
-          if (!dom) return;
+          if (!dom) {
+            return;
+          }
 
           const value = textArea.getValue() || "";
-          const start = dom.selectionStart != null ? dom.selectionStart : value.length;
-          const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
+          const start = dom.selectionStart == null ? value.length : dom.selectionStart;
+          const end = dom.selectionEnd == null ? value.length : dom.selectionEnd;
 
           const newValue = value.substring(0, start) + "\n" + value.substring(end);
           const newPos = start + 1;
@@ -1579,7 +1589,9 @@ qx.Class.define("osparc.utils.Utils", {
 
           qx.event.Timer.once(function() {
             const dom2 = textArea.getContentElement().getDomElement();
-            if (!dom2) return;
+            if (!dom2) {
+              return;
+            }
             dom2.selectionStart = newPos;
             dom2.selectionEnd = newPos;
           }, this, 0);

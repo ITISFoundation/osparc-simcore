@@ -4,11 +4,11 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import session_access_required
+from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response
 from ... import _auth_service, _twofa_service
 from ...constants import (

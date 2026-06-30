@@ -8,10 +8,6 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from pydantic import BaseModel
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -33,6 +29,7 @@ from ...security.decorators import permission_required
 from ...socketio.server import get_socket_server
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
+from ...web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from .. import _projects_service, projects_wallets_service
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions

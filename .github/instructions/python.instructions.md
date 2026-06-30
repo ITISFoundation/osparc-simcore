@@ -53,7 +53,7 @@ async def process_users(
 * **Docstring conventions**:
   - Keep docstrings **concise**, focusing on overall function purpose
   - Include `Raises:` section for exceptions
-  - Avoid repeating information already captured in type annotations
+  - Avoid repeating information already captured in type annotations or in function names
   - Most information should be deducible from function name, parameter names, types, and annotations
 
 ### Code Style & Formatting

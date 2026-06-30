@@ -10,6 +10,29 @@
 # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 #
 services:
+  # Shared base images consumed by every python service Dockerfile via
+  # `FROM ${DOCKER_REGISTRY}/simcore-{runtime,build}-base:${BASE_TAG}`.
+  #
+  # - On local/test builds (no push) the Makefile links these targets in-memory as
+  #   build contexts, so no registry is needed (see scripts/common.Makefile / root Makefile).
+  # - On deploy (push) builds the service FROM pulls the pre-built & pushed base images.
+  #
+  # NOTE: these targets are NOT part of SERVICES_NAMES_TO_BUILD, they are only built
+  # when referenced (as a build context or explicitly via `make build-base`).
+  simcore-runtime-base:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-runtime-base:${BASE_TAG:-latest}
+    build:
+      context: ../
+      dockerfile: services/_base_images/Dockerfile
+      target: runtime-base
+
+  simcore-build-base:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-build-base:${BASE_TAG:-latest}
+    build:
+      context: ../
+      dockerfile: services/_base_images/Dockerfile
+      target: build-base
+
   service-integration:
     image: local/service-integration:${BUILD_TARGET:?build_target_required}
     build:

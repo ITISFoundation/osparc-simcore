@@ -85,7 +85,7 @@ qx.Class.define("osparc.ui.form.DateTimeField", {
 
       if (date) {
         // Prevent past dates
-        if (date < now.setHours(0,0,0,0)) {
+        if (date < now.setHours(0, 0, 0, 0)) {
           this.__dateField.setValue(new Date());
           return;
         }

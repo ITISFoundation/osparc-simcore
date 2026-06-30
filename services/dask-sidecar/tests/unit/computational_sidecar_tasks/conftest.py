@@ -8,28 +8,15 @@ import asyncio
 import datetime
 import json
 import logging
-import re
 import threading
 from collections.abc import AsyncIterator, Callable, Iterable
-
-# copied out from dask
-from dataclasses import dataclass
-from pprint import pformat
 from random import randint
-from typing import Any
 from unittest import mock
 
 import distributed
-import fsspec
 import pytest
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.errors import (
-    ServiceInputsUseFileToKeyMapButReceivesZipDataError,
-    ServiceOutOfMemoryError,
-    ServiceRuntimeError,
-    ServiceTimeoutLoggingError,
-)
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
@@ -37,18 +24,16 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from dask_task_models_library.container_tasks.protocol import (
-    ContainerTaskParameters,
-    TaskOwner,
-)
+from dask_task_models_library.container_tasks.protocol import TaskOwner
 from faker import Faker
 from models_library.basic_types import EnvVarKey
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import BootMode
 from packaging import version
-from pydantic import AnyUrl, ByteSize, SecretStr, TypeAdapter
+from pydantic import AnyUrl, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.dask_sidecar_tasks import ServiceExampleParam
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client import RabbitMQClient
@@ -57,30 +42,13 @@ from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
 )
-from simcore_service_dask_sidecar.computational_sidecar.errors import (
-    ServiceBadFormattedOutputError,
-)
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
     ImageLabels,
 )
 from simcore_service_dask_sidecar.utils.dask import _DEFAULT_MAX_RESOURCES
-from simcore_service_dask_sidecar.utils.files import (
-    _s3fs_settings_from_s3_settings,
-)
-from simcore_service_dask_sidecar.worker import run_computational_sidecar
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    stop_after_delay,
-    wait_fixed,
-)
 
 _logger = logging.getLogger(__name__)
-
-pytest_simcore_core_services_selection = [
-    "rabbit",
-]
 
 
 @pytest.fixture()
@@ -129,42 +97,6 @@ def dask_subsystem_mock(
         "dask_client": dask_client_mock,
         "dask_task_state": dask_task_mock,
     }
-
-
-@dataclass(slots=True, kw_only=True)
-class ServiceExampleParam:
-    docker_basic_auth: DockerBasicAuth
-    service_key: str
-    service_version: str
-    command: list[str]
-    input_data: TaskInputData
-    output_data_keys: TaskOutputDataSchema
-    log_file_url: AnyUrl
-    expected_output_data: TaskOutputData
-    expected_logs: list[str]
-    integration_version: version.Version
-    task_envs: dict[EnvVarKey, str]
-    task_owner: TaskOwner
-    boot_mode: BootMode
-    s3_settings: S3Settings
-
-    def sidecar_params(self) -> dict[str, Any]:
-        return {
-            "task_parameters": ContainerTaskParameters(
-                image=self.service_key,
-                tag=self.service_version,
-                input_data=self.input_data,
-                output_data_keys=self.output_data_keys,
-                command=self.command,
-                envs=self.task_envs,
-                labels={},
-                task_owner=self.task_owner,
-                boot_mode=self.boot_mode,
-            ),
-            "docker_auth": self.docker_basic_auth,
-            "log_file_url": self.log_file_url,
-            "s3_settings": self.s3_settings,
-        }
 
 
 def _bash_check_env_exist(variable_name: str, variable_value: str) -> list[str]:
@@ -541,283 +473,11 @@ async def log_rabbit_client_parser(
             _logger.warning("RabbitMQ worker thread did not terminate properly")
 
 
-def test_run_computational_sidecar_real_fct(
-    caplog_info_level: pytest.LogCaptureFixture,
-    app_environment: EnvVarsDict,
-    dask_subsystem_mock: dict[str, mock.Mock],
-    sleeper_task: ServiceExampleParam,
-    mocked_get_image_labels: mock.Mock,
-    s3_settings: S3Settings,
-    log_rabbit_client_parser: mock.AsyncMock,
-):
-    output_data = run_computational_sidecar(
-        **sleeper_task.sidecar_params(),
-    )
-    mocked_get_image_labels.assert_called_once_with(
-        mock.ANY,
-        sleeper_task.docker_basic_auth,
-        sleeper_task.service_key,
-        sleeper_task.service_version,
-    )
-    assert log_rabbit_client_parser.called
-
-    # check that the task produces expected logs
-    for log in sleeper_task.expected_logs:
-        r = re.compile(rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})")
-        search_results = list(filter(r.search, caplog_info_level.messages))
-        assert len(search_results) > 0, (
-            f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
-        )
-    for log in sleeper_task.expected_logs:
-        assert re.search(
-            rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})",
-            caplog_info_level.text,
-        )
-    # check that the task produce the expected data, not less not more
-    for k, v in sleeper_task.expected_output_data.items():
-        assert k in output_data
-        assert output_data[k] == v
-
-    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
-
-    for k, v in output_data.items():
-        assert k in sleeper_task.expected_output_data
-        assert v == sleeper_task.expected_output_data[k]
-
-        # if there are file urls in the output, check they exist
-        if isinstance(v, FileUrl):
-            with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
-                assert fp.details.get("size") > 0  # type: ignore
-
-    # check the task has created a log file
-    with fsspec.open(f"{sleeper_task.log_file_url}", mode="rt", **s3_storage_kwargs) as fp:
-        saved_logs = fp.read()  # type: ignore
-    assert saved_logs
-    for log in sleeper_task.expected_logs:
-        assert log in saved_logs
-
-
-@pytest.mark.parametrize("integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True)
-def test_run_multiple_computational_sidecar_dask(
-    dask_client: distributed.Client,
-    sleeper_task: ServiceExampleParam,
-    mocked_get_image_labels: mock.Mock,
-):
-    NUMBER_OF_TASKS = 50
-
-    futures = [
-        dask_client.submit(
-            run_computational_sidecar,
-            **sleeper_task.sidecar_params(),
-            resources={},
-        )
-        for _ in range(NUMBER_OF_TASKS)
-    ]
-
-    results = dask_client.gather(futures)
-    assert results
-    assert isinstance(results, list)
-    # for result in results:
-    # check that the task produce the expected data, not less not more
-    for output_data in results:
-        for k, v in sleeper_task.expected_output_data.items():
-            assert k in output_data
-            assert output_data[k] == v
-
-    mocked_get_image_labels.assert_called()
-
-
 @pytest.fixture
 def progress_event_handler(dask_client: distributed.Client) -> mock.Mock:
     mocked_parser = mock.Mock()
     dask_client.subscribe_topic(TaskProgressEvent.topic_name(), mocked_parser)
     return mocked_parser
-
-
-def _assert_parse_progresses_from_progress_event_handler(
-    progress_event_handler: mock.Mock,
-) -> list[float]:
-    assert progress_event_handler.called
-    worker_progresses = [
-        TaskProgressEvent.model_validate_json(msg.args[0][1]).progress for msg in progress_event_handler.call_args_list
-    ]
-    assert worker_progresses == sorted(set(worker_progresses)), "ordering of progress values incorrectly sorted!"
-    assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
-    assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
-    return worker_progresses
-
-
-@pytest.mark.parametrize("integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True)
-async def test_run_computational_sidecar_dask(
-    app_environment: EnvVarsDict,
-    sleeper_task: ServiceExampleParam,
-    progress_event_handler: mock.Mock,
-    mocked_get_image_labels: mock.Mock,
-    s3_settings: S3Settings,
-    log_rabbit_client_parser: mock.AsyncMock,
-    dask_client: distributed.Client,
-):
-    future = dask_client.submit(
-        run_computational_sidecar,
-        **sleeper_task.sidecar_params(),
-        resources={},
-    )
-
-    worker_name = next(iter(dask_client.scheduler_info()["workers"]))
-    assert worker_name
-    output_data = future.result()
-    assert output_data
-    assert isinstance(output_data, TaskOutputData)
-
-    # check that the task produces expected logs
-    _assert_parse_progresses_from_progress_event_handler(progress_event_handler)
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert log_rabbit_client_parser.called
-            worker_logs = [
-                message
-                for msg in log_rabbit_client_parser.call_args_list
-                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
-            ]
-
-            print(f"<-- we got {len(worker_logs)} lines of logs")
-
-            for log in sleeper_task.expected_logs:
-                r = re.compile(rf"^({log}).*")
-                search_results = list(filter(r.search, worker_logs))
-                assert len(search_results) > 0, (
-                    f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
-                )
-
-    # check that the task produce the expected data, not less not more
-    assert isinstance(output_data, TaskOutputData)
-    for k, v in sleeper_task.expected_output_data.items():
-        assert k in output_data
-        assert output_data[k] == v
-
-    s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
-    for k, v in output_data.items():
-        assert k in sleeper_task.expected_output_data
-        assert v == sleeper_task.expected_output_data[k]
-
-        # if there are file urls in the output, check they exist
-        if isinstance(v, FileUrl):
-            with fsspec.open(f"{v.url}", **s3_storage_kwargs) as fp:
-                assert fp.details.get("size") > 0  # type: ignore
-    mocked_get_image_labels.assert_called()
-
-
-@pytest.mark.parametrize(
-    "integration_version, boot_mode, task_owner",
-    [("1.0.0", BootMode.CPU, "no_parent_node")],
-    indirect=True,
-)
-async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub(
-    dask_client: distributed.Client,
-    sidecar_task: Callable[..., ServiceExampleParam],
-    progress_event_handler: mock.Mock,
-    mocked_get_image_labels: mock.Mock,
-    log_rabbit_client_parser: mock.AsyncMock,
-):
-    mocked_get_image_labels.assert_not_called()
-    NUMBER_OF_LOGS = 20000
-    future = dask_client.submit(
-        run_computational_sidecar,
-        **sidecar_task(
-            command=[
-                "/bin/bash",
-                "-c",
-                " && ".join(
-                    [
-                        f'N={NUMBER_OF_LOGS}; for ((i=1; i<=N; i++));do echo "This is iteration $i"; '
-                        f'echo "progress: $i/{NUMBER_OF_LOGS}"; done '
-                    ]
-                ),
-            ],
-        ).sidecar_params(),
-        resources={},
-    )
-    output_data = future.result()
-    assert output_data is not None
-    assert isinstance(output_data, TaskOutputData)
-
-    # check that the task produces expected logs
-    _assert_parse_progresses_from_progress_event_handler(progress_event_handler)
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert log_rabbit_client_parser.called
-
-            worker_logs = [
-                message
-                for msg in log_rabbit_client_parser.call_args_list
-                for message in LoggerRabbitMessage.model_validate_json(msg.args[0]).messages
-            ]
-            # check all the awaited logs are in there
-            filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
-            assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
-    mocked_get_image_labels.assert_called()
-
-
-@pytest.mark.parametrize(
-    "integration_version, boot_mode, task_owner",
-    [("1.0.0", BootMode.CPU, "no_parent_node")],
-    indirect=True,
-)
-def test_failing_service_raises_exception(
-    caplog_info_level: pytest.LogCaptureFixture,
-    app_environment: EnvVarsDict,
-    dask_subsystem_mock: dict[str, mock.Mock],
-    failing_ubuntu_task: ServiceExampleParam,
-    mocked_get_image_labels: mock.Mock,
-):
-    with pytest.raises(ServiceRuntimeError):
-        run_computational_sidecar(**failing_ubuntu_task.sidecar_params())
-
-
-@pytest.mark.parametrize(
-    "integration_version, boot_mode, task_owner",
-    [("1.0.0", BootMode.CPU, "no_parent_node")],
-    indirect=True,
-)
-def test_running_service_that_generates_unexpected_data_raises_exception(
-    caplog_info_level: pytest.LogCaptureFixture,
-    app_environment: EnvVarsDict,
-    dask_subsystem_mock: dict[str, mock.Mock],
-    sleeper_task_unexpected_output: ServiceExampleParam,
-):
-    with pytest.raises(ServiceBadFormattedOutputError):
-        run_computational_sidecar(
-            **sleeper_task_unexpected_output.sidecar_params(),
-        )
-
-
-@pytest.mark.parametrize(
-    "integration_version, boot_mode, task_owner",
-    [("1.0.0", BootMode.CPU, "no_parent_node")],
-    indirect=True,
-)
-def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_raises_exception(
-    caplog_info_level: pytest.LogCaptureFixture,
-    app_environment: EnvVarsDict,
-    dask_subsystem_mock: dict[str, mock.Mock],
-    task_with_file_to_key_map_in_input_data: ServiceExampleParam,
-):
-    with pytest.raises(ServiceInputsUseFileToKeyMapButReceivesZipDataError):
-        run_computational_sidecar(
-            **task_with_file_to_key_map_in_input_data.sidecar_params(),
-        )
 
 
 @pytest.fixture
@@ -831,104 +491,3 @@ def with_short_max_silence_timeout(
             "DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT": f"{datetime.timedelta(seconds=0.5)}",
         },
     )
-
-
-@pytest.mark.parametrize(
-    "integration_version, boot_mode, task_owner",
-    [("1.0.0", BootMode.CPU, "no_parent_node")],
-    indirect=True,
-)
-def test_delayed_logging_with_small_timeout_raises_exception(
-    app_environment: EnvVarsDict,
-    with_short_max_silence_timeout: EnvVarsDict,
-    dask_subsystem_mock: dict[str, mock.Mock],
-    sidecar_task: Callable[..., ServiceExampleParam],
-    mocked_get_image_labels: mock.Mock,
-):
-    """https://github.com/aio-libs/aiodocker/issues/901"""
-
-    # Configure the task to sleep first and then generate logs
-    waiting_task = sidecar_task(
-        command=[
-            "/bin/bash",
-            "-c",
-            'echo "Starting task"; sleep 5; echo "After sleep"',
-        ]
-    )
-
-    # Execute the task and expect a timeout exception in the logs
-    with pytest.raises(ServiceTimeoutLoggingError):
-        run_computational_sidecar(**waiting_task.sidecar_params())
-
-
-@pytest.mark.parametrize(
-    "integration_version, boot_mode, task_owner",
-    [("1.0.0", BootMode.CPU, "no_parent_node")],
-    indirect=True,
-)
-def test_run_sidecar_with_managed_monitor_container_log_task_raising(
-    app_environment: EnvVarsDict,
-    dask_subsystem_mock: dict[str, mock.Mock],
-    sidecar_task: Callable[..., ServiceExampleParam],
-    mocked_get_image_labels: mock.Mock,
-    mocker: MockerFixture,
-):
-    mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.managed_monitor_container_log_task",
-        side_effect=RuntimeError("Simulated log monitoring failure"),
-    )
-
-    # Configure the task to sleep first and then generate logs
-    waiting_task = sidecar_task(
-        command=[
-            "/bin/bash",
-            "-c",
-            'echo "Starting task"; sleep 5; echo "After sleep"',
-        ]
-    )
-
-    # Execute the task and expect a timeout exception in the logs
-    with pytest.raises(RuntimeError, match="Simulated log monitoring failure"):
-        run_computational_sidecar(**waiting_task.sidecar_params())
-
-
-# now a test that checks if a service goes out of memory
-@pytest.mark.parametrize(
-    "integration_version, boot_mode, task_owner",
-    [("1.0.0", BootMode.CPU, "no_parent_node")],
-    indirect=True,
-)
-def test_run_sidecar_with_service_exceeding_memory_limit(
-    app_environment: EnvVarsDict,
-    dask_client: distributed.Client,
-    sidecar_task: Callable[..., ServiceExampleParam],
-    mocked_get_image_labels: mock.Mock,
-):
-    # Configure the task to exceed memory limit
-    # NOTE: We allocate memory gradually (1MB chunks in a loop) instead of a single
-    # large bytearray to ensure pages are actually committed and the kernel OOM killer
-    # fires reliably. A single large malloc can fail with MemoryError (exit code 1)
-    # instead of triggering OOMKilled, depending on the host's overcommit settings.
-    memory_limit = TypeAdapter(ByteSize).validate_python("50MiB")
-    memory_exceeding_task = sidecar_task(
-        service_key="python",
-        service_version="3.11-slim",
-        command=[
-            "python",
-            "-c",
-            "import sys; blocks = [];\n"
-            "while True:\n"
-            "    blocks.append(bytearray(1024*1024))\n"
-            "    print(f'Allocated {len(blocks)} MiB', flush=True)\n",
-        ],
-    )
-
-    # Execute the task and expect a runtime error due to memory limit exceeded
-
-    future = dask_client.submit(
-        run_computational_sidecar,
-        **memory_exceeding_task.sidecar_params(),
-        resources={"RAM": memory_limit},
-    )
-    with pytest.raises(ServiceOutOfMemoryError):
-        future.result()

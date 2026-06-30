@@ -14,12 +14,6 @@ from models_library.rest_ordering import OrderBy
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_headers_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -35,6 +29,12 @@ from ...security import security_web
 from ...security.decorators import permission_required
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
+from ...web_requests_validation import (
+    parse_request_body_as,
+    parse_request_headers_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .. import _crud_api_create, _crud_api_read, _projects_service
 from .._permalink_service import update_or_pop_permalink_in_project
 from ..models import ProjectDict

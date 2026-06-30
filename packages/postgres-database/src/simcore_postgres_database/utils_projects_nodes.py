@@ -4,16 +4,13 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
-import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy.sql.selectable import Subquery
 
-from .models.projects import projects
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
 from .utils_aiosqlalchemy import map_db_exception
@@ -94,53 +91,6 @@ class ProjectNode(ProjectNodeCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
-def create_workbench_subquery(project_id: str) -> Subquery:
-    workbench_obj = sa.func.json_strip_nulls(
-        sa.func.json_build_object(
-            "key",
-            projects_nodes.c.key,
-            "version",
-            projects_nodes.c.version,
-            "label",
-            projects_nodes.c.label,
-            "progress",
-            projects_nodes.c.progress,
-            "thumbnail",
-            projects_nodes.c.thumbnail,
-            "inputAccess",
-            projects_nodes.c.input_access,
-            "inputNodes",
-            projects_nodes.c.input_nodes,
-            "inputs",
-            projects_nodes.c.inputs,
-            "inputsRequired",
-            projects_nodes.c.inputs_required,
-            "inputsUnits",
-            projects_nodes.c.inputs_units,
-            "outputs",
-            projects_nodes.c.outputs,
-            "runHash",
-            projects_nodes.c.run_hash,
-            "state",
-            projects_nodes.c.state,
-            "bootOptions",
-            projects_nodes.c.boot_options,
-        )
-    )
-
-    return (
-        sa
-        .select(
-            projects_nodes.c.project_uuid,
-            sa.func.json_object_agg(projects_nodes.c.node_id, workbench_obj).label("workbench"),
-        )
-        .select_from(projects_nodes.join(projects, projects_nodes.c.project_uuid == projects.c.uuid))
-        .where(projects.c.uuid == project_id)
-        .group_by(projects_nodes.c.project_uuid)
-        .subquery()
-    )
-
-
 @dataclass(frozen=True, kw_only=True)
 class ProjectNodesRepo:
     project_uuid: uuid.UUID
@@ -173,8 +123,7 @@ class ProjectNodesRepo:
         ]
 
         insert_stmt = (
-            projects_nodes
-            .insert()
+            projects_nodes.insert()
             .values(values)
             .returning(*[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid])
         )
@@ -205,9 +154,9 @@ class ProjectNodesRepo:
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
         """
-        list_stmt = sqlalchemy.select(*[
-            c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid
-        ]).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
+        list_stmt = sqlalchemy.select(
+            *[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid]
+        ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
         result = await connection.execute(list_stmt)
         assert result  # nosec
         rows = result.mappings().all()
@@ -242,8 +191,7 @@ class ProjectNodesRepo:
             ProjectsNodesNodeNotFound: _description_
         """
         update_stmt = (
-            projects_nodes
-            .update()
+            projects_nodes.update()
             .values(**values)
             .where(
                 (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
@@ -277,8 +225,7 @@ class ProjectNodesRepo:
         NOTE: Do not use this in an asyncio.gather call as this will fail!
         """
         result = await connection.execute(
-            sqlalchemy
-            .select(
+            sqlalchemy.select(
                 projects_node_to_pricing_unit.c.pricing_plan_id,
                 projects_node_to_pricing_unit.c.pricing_unit_id,
             )
