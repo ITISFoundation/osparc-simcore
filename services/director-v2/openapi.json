@@ -1360,6 +1360,17 @@
             ],
             "title": "Collection Run Id",
             "description": "In case start_pipeline is True, this is the collection run id to which the comp run belongs."
+          },
+          "encryption": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobEncryptionContextMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional job encryption context to decrypt input files and encrypt output files"
           }
         },
         "type": "object",
@@ -2340,6 +2351,36 @@
           }
         }
       },
+      "JobEncryptionContextMetadata": {
+        "properties": {
+          "root_key": {
+            "type": "string",
+            "format": "password",
+            "title": "Root Key",
+            "description": "base64-encoded 32-byte root key shared by all tasks of the job",
+            "writeOnly": true
+          },
+          "input_port_to_file_id": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "propertyNames": {
+              "format": "uuid"
+            },
+            "type": "object",
+            "title": "Input Port To File Id",
+            "description": "Per computational node, maps each encrypted input port key to the file_id the client used to derive its key (may differ from the port key). Only listed inputs are decrypted."
+          }
+        },
+        "type": "object",
+        "required": [
+          "root_key"
+        ],
+        "title": "JobEncryptionContextMetadata"
+      },
       "LegacyState": {
         "properties": {
           "old_state_path": {
@@ -2554,6 +2595,11 @@
           "is_disabled"
         ],
         "title": "ObservationItem"
+      },
+      "OutputName": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
       },
       "PathMappingsLabel": {
         "properties": {
@@ -3370,8 +3416,7 @@
             "additionalProperties": {
               "additionalProperties": true,
               "propertyNames": {
-                "maxLength": 100,
-                "minLength": 1
+                "$ref": "#/components/schemas/OutputName"
               },
               "type": "object"
             },
