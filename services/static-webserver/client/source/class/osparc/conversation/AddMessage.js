@@ -96,6 +96,14 @@ qx.Class.define("osparc.conversation.AddMessage", {
           textArea.set({
             maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
           });
+          // Enter posts the message, Shift+Enter inserts a new line
+          textArea.addListener("keydown", e => {
+            if (e.getKeyIdentifier() === "Enter" && !e.isShiftPressed() && !e.isCtrlPressed()) {
+              e.preventDefault();
+              e.stopPropagation();
+              this.__addCommentPressed();
+            }
+          }, this);
           textArea.addListener("appear", () => {
             textArea.focus();
             textArea.activate();
@@ -116,7 +124,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "add-comment-button": {
           control = new qx.ui.form.Button(null, "@FontAwesomeSolid/arrow-up/16").set({
-            toolTipText: this.tr("Ctrl+Enter"),
+            toolTipText: this.tr("Enter"),
             backgroundColor: "input-background",
             allowGrowX: false,
             alignX: "right",
