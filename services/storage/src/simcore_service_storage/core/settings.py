@@ -1,5 +1,6 @@
 from typing import Annotated, Self
 
+from celery_library.basic_types import BootServerMode
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from pydantic import AliasChoices, Field, PositiveInt, field_validator, model_validator
@@ -101,7 +102,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    STORAGE_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
+    STORAGE_BOOT_SERVER_MODE: Annotated[
+        BootServerMode,
+        Field(description="Boot mode: REST API server or Celery worker"),
+    ] = BootServerMode.AS_REST_API_SERVER
 
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
