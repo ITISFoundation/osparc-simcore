@@ -545,6 +545,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       username.getContentElement().setAttribute("aria-hidden", "true");
       username.getContentElement().setAttribute("tabindex", "-1");
       // add it off-screen so it does not introduce an extra vertical gap
+      // eslint-disable-next-line no-underscore-dangle
       box._add(username, { left: -10000, top: -10000 });
 
       const currentPassword = new osparc.ui.form.PasswordField().set({

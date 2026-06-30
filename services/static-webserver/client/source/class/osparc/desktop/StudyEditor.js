@@ -479,9 +479,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbenchPatches = [];
       const studyPatches = [];
       for (const jsonPatch of jsonPatches) {
-        if (jsonPatch.path.startsWith('/ui/')) {
+        if (jsonPatch.path.startsWith("/ui/")) {
           uiPatches.push(jsonPatch);
-        } else if (jsonPatch.path.startsWith('/workbench/')) {
+        } else if (jsonPatch.path.startsWith("/workbench/")) {
           workbenchPatches.push(jsonPatch);
         } else {
           studyPatches.push(jsonPatch);

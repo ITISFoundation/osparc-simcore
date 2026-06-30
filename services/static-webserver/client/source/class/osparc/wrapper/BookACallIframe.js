@@ -78,13 +78,13 @@ qx.Class.define("osparc.wrapper.BookACallIframe", {
       const colorManager = qx.theme.manager.Color.getInstance();
       const iframe = this.getContentElement().getDomElement();
       const theme = {
-        '--bs-body-bg': colorManager.resolve("background-main-1"),
-        '--osparc-text-color': colorManager.resolve("text"),
-        '--osparc-primary': colorManager.resolve("product-color"),
+        "--bs-body-bg": colorManager.resolve("background-main-1"),
+        "--osparc-text-color": colorManager.resolve("text"),
+        "--osparc-primary": colorManager.resolve("product-color"),
       };
       const url = new URL(this.getServiceUrl());
       iframe.contentWindow.postMessage({
-        type: 'osparc-theme',
+        type: "osparc-theme",
         theme
       }, url.origin); // targetOrigin = iframe origin
     },

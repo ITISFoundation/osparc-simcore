@@ -57,7 +57,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
   members: {
     _createChildControlImpl: function(id, hash) {
       let control;
-      switch(id) {
+      switch (id) {
         case "sub-subtitle":
           control = new qx.ui.basic.Label().set({
             font: "text-12",

@@ -149,10 +149,10 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
         ) {
           osparc.store.Users.getInstance().getUser(selectedUsers["selectedGids"][0])
             .then(user => {
-              if (user.getGroupId() !== osparc.store.Groups.getInstance().getMyGroupId()) {
-                this.setTargetUser(user);
-              } else {
+              if (user.getGroupId() === osparc.store.Groups.getInstance().getMyGroupId()) {
                 osparc.FlashMessenger.logAs(this.tr("You cannot transfer projects to yourself"), "ERROR");
+              } else {
+                this.setTargetUser(user);
               }
             });
         }
@@ -181,26 +181,6 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
     __shareAndLeaveOwnership: function() {
       osparc.FlashMessenger.logAs(this.tr("This option is not yet enabled."), "WARNING", 10000);
       return;
-
-      this.setEnabled(false);
-      this.getChildControl("share-and-leave-button").setFetching(true);
-      this.__shareAllProjects()
-        .then(allMyStudies => {
-          return this.__removeMyOwnerships(allMyStudies);
-        })
-        .then(() => {
-          const msg = this.tr("All projects have been shared with the target user and you have been removed as co-owner.");
-          osparc.FlashMessenger.logAs(msg, "INFO", 10000);
-          this.fireEvent("transferred");
-        })
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logError(err);
-        })
-        .finally(() => {
-          this.setEnabled(true);
-          this.getChildControl("share-and-leave-button").setFetching(false);
-        });
     },
 
     __filterMyOwnedStudies: function(allMyReadStudies) {
@@ -219,7 +199,7 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
     __shareAllProjects: function() {
       const targetUser = this.getTargetUser();
       if (targetUser === null) {
-        return;
+        return Promise.reject(new Error("No target user selected"));
       }
       const targetGroupId = targetUser.getGroupId();
 

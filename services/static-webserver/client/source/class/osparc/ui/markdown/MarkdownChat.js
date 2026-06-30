@@ -191,7 +191,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
       const meas = root.querySelector("." + this.self().MD_MEASURE) || root;
 
       // Force reflow so measurements reflect the latest DOM changes
-      void meas.offsetHeight;
+      meas.getBoundingClientRect();
 
       const rH = meas.scrollHeight;
       const rW = meas.scrollWidth;
