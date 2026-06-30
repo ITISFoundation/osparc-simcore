@@ -287,19 +287,82 @@ jobs:
               - 'mypy.ini'
             anything-js:
               - '**/*.js'
-  build-test-images:
+  deploy-vars:
+    name: compute deploy variables
     needs: changes
+    runs-on: ubuntu-latest
+    outputs:
+      is-deploy: ${{ steps.vars.outputs.is-deploy }}
+      tag-prefix: ${{ steps.vars.outputs.tag-prefix }}
+      temp-tag-base: ${{ steps.vars.outputs.temp-tag-base }}
+      build-matrix: ${{ steps.vars.outputs.build-matrix }}
+    steps:
+      - name: compute tag prefix and temporary tag
+        id: vars
+        run: |
+          tag_prefix=""
+          if [ "${GITHUB_REF}" == "refs/heads/master" ]; then
+            tag_prefix="master-github"
+          elif [[ "${GITHUB_REF}" == refs/heads/hotfix_v* ]]; then
+            tag_prefix="hotfix-github"
+          elif [[ "${GITHUB_REF}" == refs/heads/hotfix_staging_* ]]; then
+            tag_prefix="hotfix-staging-github"
+          fi
+          is_deploy="false"
+          if [ "${{ github.event_name }}" == "push" ] && [ -n "$tag_prefix" ]; then
+            is_deploy="true"
+          fi
+          # amd64 legs always run (their .tar artifacts feed the test jobs);
+          # arm64 legs are added only on deploy branches (push-only, for multi-arch publishing)
+          include='[{"type":"backend","arch":"amd64","os":"ubuntu-24.04"},{"type":"frontend","arch":"amd64","os":"ubuntu-24.04"}]'
+          if [ "$is_deploy" == "true" ]; then
+            include=$(echo "$include" | jq -c '. + [{"type":"backend","arch":"arm64","os":"ubuntu-24.04-arm"},{"type":"frontend","arch":"arm64","os":"ubuntu-24.04-arm"}]')
+          fi
+          {
+            echo "is-deploy=$is_deploy"
+            echo "tag-prefix=$tag_prefix"
+            echo "temp-tag-base=${tag_prefix}-tmp-${GITHUB_SHA}"
+            echo "build-matrix={\"include\":$include}"
+          } >> "$GITHUB_OUTPUT"
+
+  build-test-images:
+    needs: [changes, deploy-vars]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     strategy:
-      matrix:
-        type: [backend, frontend]
       fail-fast: false
+      matrix: ${{ fromJSON(needs.deploy-vars.outputs.build-matrix) }}
     uses: ./.github/workflows/_reusable-build-images.yml
+    secrets: inherit
     with:
       build-backend: ${{ matrix.type == 'backend' }}
       build-frontend: ${{ matrix.type == 'frontend' }}
-      os: ubuntu-24.04
+      os: ${{ matrix.os }}
       python-version: "3.13"
+      push-temp: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
+      temp-tag: ${{ needs.deploy-vars.outputs.temp-tag-base }}-${{ matrix.arch }}
+      build-artifacts: ${{ matrix.arch == 'amd64' }}
+      platforms: ${{ matrix.arch == 'arm64' && 'linux/arm64' || '' }}
+
+  fuse-temp:
+    name: fuse multi-arch temporary images
+    needs: [deploy-vars, build-test-images]
+    if: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
+    runs-on: ubuntu-24.04
+    env:
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v7.0.0
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v4
+      - name: login to Dockerhub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: fuse amd64 + arm64 into a single multi-arch manifest
+        run: |
+          export DOCKER_IMAGE_TAG="${{ needs.deploy-vars.outputs.temp-tag-base }}"
+          ./ci/deploy/dockerhub-fuse.bash
 
   unit-test-webserver-01:
     needs: changes
@@ -1821,8 +1884,8 @@ jobs:
 
   deploy:
     name: deploy to dockerhub
-    if: github.event_name == 'push'
-    needs: [unit-tests, integration-tests, system-tests]
+    needs: [deploy-vars, unit-tests, integration-tests, system-tests, fuse-temp]
+    if: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -1836,30 +1899,22 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v7.0.0
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-          show-system-versions: false
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: "*"
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v4
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'
         name: deploy master image
         env:
           TAG_PREFIX: master-github
-        run: ./ci/deploy/dockerhub-deploy.bash -n
+        run: ./ci/deploy/dockerhub-deploy.bash
       - if: contains(github.ref, 'refs/heads/hotfix_v')
         name: deploy release hotfix image
         env:
           TAG_PREFIX: hotfix-github
-        run: ./ci/deploy/dockerhub-deploy.bash -n
+        run: ./ci/deploy/dockerhub-deploy.bash
       - if: contains(github.ref, 'refs/heads/hotfix_staging_')
         name: deploy staging hotfix image
         env:
           TAG_PREFIX: hotfix-staging-github
-        run: ./ci/deploy/dockerhub-deploy.bash -n
+        run: ./ci/deploy/dockerhub-deploy.bash

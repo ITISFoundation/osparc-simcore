@@ -204,17 +204,16 @@ docker buildx bake --allow=fs.read=.. \
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
       --allow=fs.write=$(local-dest) \
-			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
-			,--load\
+			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar$(comma)name=local/$(service):production") \
+			,$(if $(push),,--load)\
 		)\
 	)\
 	$(if $(push),\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-				--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
+				--set $(service).tags= \
 		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).output="type=registry$(comma)\
-			compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
+			--set $(service).output="type=image$(comma)name=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG)$(comma)push=true$(comma)compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
 		)\
 	,) \
 	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
@@ -1004,8 +1003,3 @@ release-staging release-prod: .check-on-master-branch  ## Helper to create a sta
 .PHONY: release-hotfix release-staging-hotfix
 release-hotfix release-staging-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional or make release-staging-hotfix name=Sprint version=2)
 	$(create_github_release_url)
-
-.PHONY: docker-image-fuse
-docker-image-fuse:
-	$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-		docker buildx imagetools create --tag $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG)-$(SUFFIX) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG);)
