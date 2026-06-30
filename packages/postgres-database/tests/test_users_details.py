@@ -398,6 +398,52 @@ async def test_get_billing_details_for_a_different_product(
 
 
 @pytest.mark.acceptance_test(
+    "skip pre-registration rows with missing country in https://github.com/ITISFoundation/private-issues/issues/600"
+)
+async def test_get_billing_details_skips_rows_without_country(
+    asyncpg_engine: AsyncEngine,
+    pre_registered_user: PreRegisteredUserData,
+    faker: Faker,
+    product_factory: CreateProductCallable,
+):
+    pre_email, valid_pre_registration_data = pre_registered_user
+
+    other_product = await product_factory("other-product")
+    invalid_other_product_pre_registration = random_pre_registration_details(
+        faker,
+        pre_email=pre_email,
+        product_name=other_product["name"],
+        country=None,
+    )
+
+    async with transaction_context(asyncpg_engine) as connection:
+        repo = UsersRepo(asyncpg_engine)
+
+        await connection.execute(
+            sa.insert(users_pre_registration_details).values(**invalid_other_product_pre_registration)
+        )
+
+        new_user = await repo.new_user(
+            connection,
+            email=pre_email,
+            password_hash="123456",  # noqa: S106
+            status=UserStatus.ACTIVE,
+            expires_at=None,
+        )
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
+        )
+
+    invoice_data = await repo.get_billing_details(user_id=new_user.id, product_name=other_product["name"])
+    assert invoice_data is not None
+
+    user_address = UserAddress.create_from_db(invoice_data)
+    assert user_address.country == valid_pre_registration_data["country"]
+
+
+@pytest.mark.acceptance_test(
     "pre-registration user update in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
 )
 async def test_update_user_from_pre_registration(

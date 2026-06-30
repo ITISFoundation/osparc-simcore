@@ -371,6 +371,9 @@ class UsersRepo:
           3. any other product
         and, within the same rank, the most recently created row.
 
+        Rows missing required billing fields (currently at least ``country``)
+        are excluded to prevent downstream validation errors.
+
         - Returns None if the user has no pre-registration with billing details.
         """
         product_match_rank = sa.case(
@@ -397,7 +400,7 @@ class UsersRepo:
                         users.c.id == users_pre_registration_details.c.user_id,
                     )
                 )
-                .where(users.c.id == user_id)
+                .where((users.c.id == user_id) & users_pre_registration_details.c.country.is_not(None))
                 .order_by(
                     product_match_rank.asc(),
                     users_pre_registration_details.c.created.desc(),
