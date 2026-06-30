@@ -209,6 +209,8 @@ qx.Class.define("osparc.conversation.MessageList", {
     },
 
     __scrollToBottom: function() {
+      // ensure pending layout changes (e.g. image-driven resize) are applied before measuring
+      qx.ui.core.queue.Manager.flush();
       const messagesScroll = this.getChildControl("messages-container-scroll");
       messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
     },
