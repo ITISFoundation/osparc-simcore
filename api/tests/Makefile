@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),$(if $(clean),,--upgrade))
 
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
@@ -12,8 +12,7 @@ all: install test-dev
 requirements.txt: requirements.in
 	# pip compiling $<
 	uv pip compile $(UPGRADE_OPTION) \
-		--no-header \
-		--output-file $@ $<
+		--output-file=$@ $<
 reqs: requirements.txt ## alias to compile requirements.txt
 
 
