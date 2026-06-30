@@ -21,6 +21,8 @@
  * @ignore(Quill)
  */
 
+/* global Quill */
+
 /**
  * A qooxdoo wrapper for
  * <a href='https://quilljs.com/' target='_blank'>Quill</a>
@@ -207,7 +209,9 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
       // If options not provided, try to get from container userData
       if (!options) {
         const container = element.parentElement;
+        // eslint-disable-next-line no-underscore-dangle
         if (container && container.__userData) {
+          // eslint-disable-next-line no-underscore-dangle
           options = container.__userData.quillOptions;
         }
       }
@@ -224,8 +228,8 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
 
     setHTML: function(quill, html) {
       return;
-      const delta = quill.clipboard.convert(html);
-      quill.setContents(delta, "silent");
+      // const delta = quill.clipboard.convert(html);
+      // quill.setContents(delta, "silent");
     },
 
     getText: function(quill) {
