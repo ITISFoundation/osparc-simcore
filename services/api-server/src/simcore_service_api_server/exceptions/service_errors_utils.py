@@ -4,7 +4,7 @@ from collections.abc import Callable, Coroutine, Mapping
 from contextlib import contextmanager
 from functools import wraps
 from inspect import signature
-from typing import Any, Concatenate, NamedTuple, ParamSpec, TypeAlias, TypeVar
+from typing import Any, Concatenate, NamedTuple
 
 import httpx
 from common_library.user_messages import user_message
@@ -57,10 +57,8 @@ class ToApiTuple(NamedTuple):
 
 
 # service to public-api status maps
-BackEndErrorType = TypeVar("BackEndErrorType", bound=BaseBackEndError)
-RpcExceptionType = TypeVar("RpcExceptionType", bound=Exception)  # need more specific rpc exception base class
-HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, BackEndErrorType]  # noqa: UP040
-RabbitMqRpcExceptionMap: TypeAlias = Mapping[RpcExceptionType, BackEndErrorType]  # noqa: UP040
+type HttpStatusMap[BackEndErrorT: BaseBackEndError] = Mapping[ServiceHTTPStatus, BackEndErrorT]
+type RabbitMqRpcExceptionMap[RpcExcT: Exception, BackEndErrorT: BaseBackEndError] = Mapping[RpcExcT, BackEndErrorT]
 
 
 def _get_http_exception_kwargs(
@@ -96,11 +94,6 @@ def _get_http_exception_kwargs(
             f"{status_code}",
         )
     return status_code, detail, headers
-
-
-Self = TypeVar("Self")
-P = ParamSpec("P")
-R = TypeVar("R")
 
 
 @contextmanager
@@ -153,26 +146,26 @@ def service_exception_handler(
         raise
 
 
-def service_exception_mapper(
+def service_exception_mapper[SelfT, **P, R](
     *,
     service_name: str,
     http_status_map: HttpStatusMap | None = None,
     rpc_exception_map: RabbitMqRpcExceptionMap | None = None,
 ) -> Callable[
-    [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
-    Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
+    [Callable[Concatenate[SelfT, P], Coroutine[Any, Any, R]]],
+    Callable[Concatenate[SelfT, P], Coroutine[Any, Any, R]],
 ]:
     http_status_map = http_status_map or {}
     rpc_exception_map = rpc_exception_map or {}
 
-    def _decorator(member_func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]):
+    def _decorator(member_func: Callable[Concatenate[SelfT, P], Coroutine[Any, Any, R]]):
         _assert_correct_kwargs(
             func=member_func,
             exception_types=set(http_status_map.values()).union(set(rpc_exception_map.values())),
         )
 
         @wraps(member_func)
-        async def _wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
+        async def _wrapper(self: SelfT, *args: P.args, **kwargs: P.kwargs) -> R:
             with service_exception_handler(service_name, http_status_map, rpc_exception_map, **kwargs):
                 return await member_func(self, *args, **kwargs)
 
@@ -181,7 +174,7 @@ def service_exception_mapper(
     return _decorator
 
 
-def _assert_correct_kwargs(func: Callable, exception_types: set[BackEndErrorType]):  # noqa: UP047
+def _assert_correct_kwargs[ExcT: BaseBackEndError](func: Callable, exception_types: set[ExcT]) -> None:
     _required_kwargs = {name for name, param in signature(func).parameters.items() if param.kind == param.KEYWORD_ONLY}
     for exc_type in exception_types:
         assert isinstance(exc_type, type)  # nosec
