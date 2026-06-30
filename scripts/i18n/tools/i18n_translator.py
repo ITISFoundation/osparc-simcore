@@ -227,6 +227,23 @@ class LiteLLMProvider:
         return json.loads(raw)
 
 
+class DryRunProvider:
+    """Provider stand-in for `--plan`: composes/logs the prompt but never calls the LLM.
+
+    Same `_generate_json` interface as `LiteLLMProvider` (duck-typed), so the whole
+    translation pipeline runs unchanged. It needs no API key and no model validation;
+    it prints the composed prompt to the console and returns a fixed stub so the run
+    can be inspected without spending tokens.
+    """
+
+    _STUB: Final[dict[str, str]] = {"interpretation": "(dry-run)", "translation": "(dry-run)"}
+
+    def _generate_json(self, prompt: str) -> dict[str, str]:
+        console.print("[dim]\\[dry-run prompt][/dim]")
+        console.print(prompt)
+        return dict(self._STUB)
+
+
 # ---------------------------------------------------------------------------
 # Model discovery / validation
 # ---------------------------------------------------------------------------
@@ -642,61 +659,8 @@ def _build_logger(log_file: Path | None) -> logging.Logger | None:
     return logger
 
 
-def _run_plan(pot: Path, in_po: Path | None, lang: str, use_git: bool) -> None:
-    """Classify entries (NEW/UPDATED/SKIPPED) without calling the LLM or saving.
-
-    Reuses the exact staleness logic of a real run so the report matches what
-    `translate` would actually do, but spends no tokens and writes nothing.
-    """
-    msgid_max_len: Final = 80
-    source_path = in_po if in_po and in_po.exists() else pot
-    po = polib.pofile(str(source_path))
-    pot_creation_at = _parse_catalog_timestamp(po.metadata.get("POT-Creation-Date", ""))
-
-    table = Table(title=f"Translation plan ({lang}) — no LLM calls, nothing saved")
-    table.add_column("State", no_wrap=True)
-    table.add_column("msgid", ratio=2, overflow="fold")
-    table.add_column("Location", ratio=1, overflow="ellipsis", no_wrap=True, style="dim")
-
-    total = new_count = updated_count = skipped = 0
-    for entry in po:
-        total += 1
-        ctx = _parse_translator_comments(entry)
-        state = _classify_entry_state(
-            entry=entry,
-            ctx=ctx,
-            use_git=use_git,
-            pot_creation_at=pot_creation_at,
-        )
-        location = ""
-        if entry.occurrences:
-            filepath, lineno = entry.occurrences[0]
-            location = f"{filepath}:{lineno}" if lineno else filepath
-        msgid = entry.msgid if len(entry.msgid) <= msgid_max_len else f"{entry.msgid[: msgid_max_len - 3]}..."
-
-        if isinstance(state, EntryNew):
-            new_count += 1
-            table.add_row("[cyan]NEW[/cyan]", msgid, location)
-        elif isinstance(state, EntryUpdated):
-            updated_count += 1
-            table.add_row("[yellow]UPDATED[/yellow]", msgid, location)
-        else:
-            # SKIPPED entries are already fresh; omitted from the table to keep
-            # the focus on what would change.
-            skipped += 1
-
-    console.print(table)
-    console.print(
-        f"[bold]\\[plan][/bold] {total} entries: "
-        f"[cyan]{new_count} NEW[/cyan], "
-        f"[yellow]{updated_count} UPDATED[/yellow], "
-        f"[dim]{skipped} SKIPPED[/dim] "
-        f"→ would translate {new_count + updated_count} (0 tokens spent)"
-    )
-
-
 @app.command()
-def translate(  # noqa: C901, PLR0913, PLR0915
+def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     out: Path = typer.Option(..., help="Output .po file path"),
     pot: Path = typer.Option(Path("messages.pot"), help="Source .pot template"),
     in_po: Path | None = typer.Option(
@@ -749,17 +713,23 @@ def translate(  # noqa: C901, PLR0913, PLR0915
         False,
         "--plan",
         help=(
-            "Show which entries would be translated (NEW/UPDATED/SKIPPED) without "
-            "calling the LLM or saving. Spends no tokens and needs no API key."
+            "Dry-run: compose and log the exact LLM prompts (with a stub '(dry-run)' "
+            "response) for entries that WOULD be translated, without calling the LLM "
+            "or saving. Spends no tokens and needs no API key; prompts are printed and "
+            "appended to the log file."
         ),
     ),
 ) -> None:
     """Translate a .pot/.po catalog into a language-specific .po."""
     if plan:
-        _run_plan(pot=pot, in_po=in_po, lang=lang, use_git=use_git)
-        return
-
-    _validate_model(model)
+        # Dry-run: run the real pipeline but with a provider that logs the composed
+        # prompt instead of calling the LLM, and never persist the output.
+        dry_run = True
+        parallel = False
+        progress = False
+        incremental_save = False
+    else:
+        _validate_model(model)
 
     data = _load_glossary(str(glossary_file))
     glossary = data.glossaries.get(lang, {})
@@ -767,8 +737,13 @@ def translate(  # noqa: C901, PLR0913, PLR0915
 
     effective_log_file = log_file or (out.parent / "translate.log")
     logger = _build_logger(effective_log_file)
-    provider = LiteLLMProvider(model=model, base_url=base_url)
-    console.print(f"[bold]\\[provider][/bold] model={model}" + (f" base_url={base_url}" if base_url else ""))
+    provider: LiteLLMProvider | DryRunProvider = (
+        DryRunProvider() if plan else LiteLLMProvider(model=model, base_url=base_url)
+    )
+    if plan:
+        console.print("[bold]\\[provider][/bold] dry-run (no LLM call, nothing saved)")
+    else:
+        console.print(f"[bold]\\[provider][/bold] model={model}" + (f" base_url={base_url}" if base_url else ""))
 
     source_path = in_po if in_po and in_po.exists() else pot
     po = polib.pofile(str(source_path))
@@ -909,9 +884,11 @@ def translate(  # noqa: C901, PLR0913, PLR0915
             apply_job(job)
             total += 1
 
+    summary_label = "plan" if plan else "done"
+    translated_label = "would translate" if plan else "translated"
     console.print(
-        f"\n[bold]\\[done][/bold] {total} entries: "
-        f"[green]{translated} translated[/green], "
+        f"\n[bold]\\[{summary_label}][/bold] {total} entries: "
+        f"[green]{translated} {translated_label}[/green], "
         f"[cyan]{new_count} NEW[/cyan], "
         f"[yellow]{updated_count} UPDATED[/yellow], "
         f"[dim]{skipped} SKIPPED[/dim], "
