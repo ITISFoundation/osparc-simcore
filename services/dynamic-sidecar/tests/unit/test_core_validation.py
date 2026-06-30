@@ -12,7 +12,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
 from simcore_service_dynamic_sidecar.core.validation import (
-    _connect_user_services,
+    _connect_user_services_to_shared_network,
     get_and_validate_compose_spec,
     parse_compose_spec,
 )
@@ -122,7 +122,7 @@ def test_inject_backend_networking(networks: None | dict, incoming_compose_file:
     """
     parsed_compose_spec = parse_compose_spec(incoming_compose_file)
     parsed_compose_spec["networks"] = networks
-    _connect_user_services(parsed_compose_spec, allow_internet_access=allow_internet_access)
+    _connect_user_services_to_shared_network(parsed_compose_spec, allow_internet_access=allow_internet_access)
     assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["networks"]
     assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["services"]["iseg-app"]["networks"]
     assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["services"]["iseg-web"]["networks"]

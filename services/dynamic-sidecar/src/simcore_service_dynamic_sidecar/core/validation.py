@@ -134,7 +134,9 @@ def _merge_env_vars(
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
 
 
-def _connect_user_services(parsed_compose_spec: dict[str, Any], *, allow_internet_access: bool) -> None:
+def _connect_user_services_to_shared_network(
+    parsed_compose_spec: dict[str, Any], *, allow_internet_access: bool
+) -> None:
     """
     Put all containers in the compose spec in the same network.
     The network name must only be unique inside the user defined spec.
@@ -318,59 +320,54 @@ class ComposeSpecValidation(NamedTuple):
     original_to_current_container_names: dict[str, str]
 
 
-async def _process_service_entries(
+def _assign_container_names(
     settings: ApplicationSettings,
     spec_services: dict[str, Any],
-    mounted_volumes: MountedVolumes,
 ) -> dict[str, str]:
-    """Processes each service: assigns container names, injects env vars and volumes.
-
-    Returns a mapping from service key to assigned container name.
-    """
     spec_services_to_container_name: dict[str, str] = {}
-
     for index, service in enumerate(spec_services):
         service_content = spec_services[service]
-
-        # assemble and inject the container name
         user_given_container_name = service_content.get("container_name", "")
         container_name = _assemble_container_name(settings, service, user_given_container_name, index)
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
+    return spec_services_to_container_name
 
-        # inject forwarded environment variables
+
+def _inject_forwarded_env_vars(spec_services: dict[str, Any]) -> None:
+    for service, service_content in spec_services.items():
         environment_entries = service_content.get("environment", [])
         service_settings_env_vars = _get_forwarded_env_vars(service)
         service_content["environment"] = _merge_env_vars(
             compose_spec_env_vars=environment_entries,
             settings_env_vars=service_settings_env_vars,
         )
-
         # LinuxServer.io base images use PUID/PGID to create a user with the host's UID/GID
         # SEE https://github.com/linuxserver/docker-baseimage-ubuntu/blob/noble/root/etc/s6-overlay/s6-rc.d/init-adduser/run
         service_content["environment"].append(f"PUID={os.getuid()}")
         service_content["environment"].append(f"PGID={os.getgid()}")
 
-        # inject paths to be mounted
-        service_volumes = service_content.get("volumes", [])
 
+async def _mount_shared_volumes(
+    settings: ApplicationSettings,
+    spec_services: dict[str, Any],
+    mounted_volumes: MountedVolumes,
+) -> None:
+    for service_content in spec_services.values():
+        service_volumes = service_content.get("volumes", [])
         service_volumes.append(await mounted_volumes.get_inputs_docker_volume(settings.DY_SIDECAR_RUN_ID))
         service_volumes.append(await mounted_volumes.get_outputs_docker_volume(settings.DY_SIDECAR_RUN_ID))
         async for state_paths_docker_volume in mounted_volumes.iter_state_paths_to_docker_volumes(
             settings.DY_SIDECAR_RUN_ID
         ):
             service_volumes.append(state_paths_docker_volume)
-
         if settings.DY_SIDECAR_USER_PREFERENCES_PATH is not None and (
             user_preferences_volume := await mounted_volumes.get_user_preferences_path_volume(
                 settings.DY_SIDECAR_RUN_ID
             )
         ):
             service_volumes.append(user_preferences_volume)
-
         service_content["volumes"] = service_volumes
-
-    return spec_services_to_container_name
 
 
 async def _inject_tracing(
@@ -447,31 +444,25 @@ async def get_and_validate_compose_spec(
 
     spec_services = parsed_compose_spec["services"]
 
-    # Phase 1: Process each service (container names, env vars, volumes)
-    spec_services_to_container_name = await _process_service_entries(settings, spec_services, mounted_volumes)
+    spec_services_to_container_name = _assign_container_names(settings, spec_services)
+    _inject_forwarded_env_vars(spec_services)
+    await _mount_shared_volumes(settings, spec_services, mounted_volumes)
 
-    # Phase 2: Inject OTEL collector if tracing enabled
     if is_user_services_tracing_enabled:
         await _inject_tracing(parsed_compose_spec, settings, mounted_volumes, spec_services_to_container_name)
 
-    # Phase 3: Connect all user services to the shared network
-    _connect_user_services(
+    _connect_user_services_to_shared_network(
         parsed_compose_spec,
         allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
     )
 
-    # Phase 4: Remap service keys → container names
     _remap_service_keys(spec_services, spec_services_to_container_name)
 
-    # Phase 5: Apply templating and validate with docker compose
-    validated_compose_file_content = yaml.safe_dump(parsed_compose_spec)
-
     compose_spec = _apply_templating_directives(
-        stringified_compose_spec=validated_compose_file_content,
+        stringified_compose_spec=yaml.safe_dump(parsed_compose_spec),
         services=spec_services,
         spec_services_to_container_name=spec_services_to_container_name,
     )
-
     result = await docker_compose_config(compose_spec)
 
     if not result.success:
