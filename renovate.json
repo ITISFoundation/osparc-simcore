@@ -44,6 +44,14 @@
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
       "automerge": false
+    },
+    {
+      "matchDatasources": ["pypi"],
+      "matchPackageNames": [
+        "simcore-sdk",
+        "simcore-service-library"
+      ],
+      "enabled": false
     }
   ]
 }
