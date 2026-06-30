@@ -103,7 +103,9 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __templateSelected: function(templateId) {
-      if (!templateId) return;
+      if (!templateId) {
+        return;
+      }
       osparc.message.Messages.fetchEmailPreview(templateId)
         .then(template => {
           const emailEditor = this.getChildControl("email-editor");
