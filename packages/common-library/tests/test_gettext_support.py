@@ -34,6 +34,24 @@ def test_compiled_mo_exists(locale: str) -> None:
     )
 
 
+def test_supported_locale_catalog_alignment() -> None:
+    """Every SupportedLocale except 'en' must have a compiled .mo catalog.
+
+    'en' uses prose-as-key: the msgid IS the English string, so NullTranslations
+    returns it verbatim — no .mo file is needed or expected.
+    See: https://docs.python.org/3/library/gettext.html#gettext.NullTranslations
+    """
+    all_locales = (DEFAULT_LOCALE, *_TRANSLATED_LOCALES)
+    for locale in all_locales:
+        mo_path = Path(_LOCALE_DIR) / locale / "LC_MESSAGES" / "messages.mo"
+        if locale == DEFAULT_LOCALE:
+            assert not mo_path.exists(), f"'en' must not have a .mo catalog: {mo_path}"
+        else:
+            assert mo_path.exists(), (
+                f"Missing .mo for SupportedLocale {locale!r}: {mo_path}. Run 'make install-dev' to compile catalogs."
+            )
+
+
 @pytest.mark.parametrize("locale", ["en", "es_ES", "zh_CN", "unknown"])
 def test_get_translator_returns_pass_through(locale: str) -> None:
     translator = get_translator(locale)

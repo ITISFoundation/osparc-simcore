@@ -1,18 +1,27 @@
-"""Server-side gettext support helpers (no global install).
+"""Server-side gettext support helpers — no process-wide install.
+
+Translations are resolved **per-request**: the caller extracts the locale from
+each HTTP request (e.g. the ``Accept-Language`` header) and passes it to
+:func:`get_translator`.  There is intentionally no app-level default locale;
+``gettext.install()`` — which injects ``_()`` into builtins and pins a single
+process-wide translator — is never called.
+
+See: https://docs.python.org/3/library/gettext.html
 
 Usage (per-request or per-render):
-    from common_library.gettext_support import get_translator
+    from common_library.gettext_support import normalize_locale, get_translator
 
-    translator = get_translator(locale)
+    translator = get_translator(normalize_locale(accept_language_header))
     translated = translator.gettext(msgid)
 
 Catalogue layout (built by the external extraction pipeline):
     <package_root>/locale/<lang>/LC_MESSAGES/messages.mo
 
 When no .mo file exists for a locale the call returns a NullTranslations object
-that passes the English msgid through unchanged - i.e. a safe no-op fallback.
+that passes the English msgid through unchanged — a safe no-op fallback.
 """
 
+import functools
 import gettext
 import importlib.resources
 import logging
@@ -22,24 +31,18 @@ from typing import Final, Literal
 
 _logger = logging.getLogger(__name__)
 
-# Locales with compiled .mo catalogs shipped in this package.
-# Extend this tuple as new languages are added to the extraction pipeline.
-# NOTE: "en" has no .mo catalog - prose-as-key means the msgid IS the English
-# string; NullTranslations returns it verbatim. It is kept here because it is
-# the DEFAULT_LOCALE and is used as a valid value in function signatures.
+# Extend as new language catalogs are added. See test_supported_locale_catalog_alignment.
 type SupportedLocale = Literal["en", "es_ES", "zh_CN"]
+DEFAULT_LOCALE: Final[SupportedLocale] = "en"
+
+
 _DOMAIN: Final[str] = "messages"
 _LOCALE_DIR: Final[str] = str(importlib.resources.files("common_library") / "locale")
 assert Path(_LOCALE_DIR).is_dir(), f"locale directory not found: {_LOCALE_DIR}"  # nosec
 
-DEFAULT_LOCALE: Final[SupportedLocale] = "en"
-
-# Module-level cache: locale string -> loaded translator.
-# Access is single-threaded (asyncio event loop), so a plain dict is safe.
-_cache: dict[str, gettext.NullTranslations] = {}
 
 # Accept-Language tag normalisation: "es-ES" -> "es_ES", "zh-hans" -> "zh_hans"
-_ACCEPT_LANG_RE: re.Pattern[str] = re.compile(r"^([a-zA-Z]{2,3})(?:[_-]([a-zA-Z]{2,8}))?")
+_ACCEPT_LANG_RE: re.Pattern[str] = re.compile(r"^(?P<lang>[a-zA-Z]{2,3})(?:[_-](?P<region>[a-zA-Z]{2,8}))?")
 
 
 def normalize_locale(raw: str) -> str:
@@ -56,8 +59,8 @@ def normalize_locale(raw: str) -> str:
     m = _ACCEPT_LANG_RE.match(first_tag)
     if not m:
         return DEFAULT_LOCALE
-    lang = m.group(1).lower()
-    region = m.group(2)
+    lang = m.group("lang").lower()
+    region = m.group("region")
     normalized = f"{lang}_{region.upper()}" if region else lang
 
     if normalized.startswith("en_"):
@@ -68,6 +71,7 @@ def normalize_locale(raw: str) -> str:
     return normalized
 
 
+@functools.cache
 def _load(locale: str) -> gettext.NullTranslations:
     """Load a GNUTranslations for *locale*, or NullTranslations if no .mo found."""
     try:
@@ -84,13 +88,9 @@ def _load(locale: str) -> gettext.NullTranslations:
 def get_translator(locale: str) -> gettext.NullTranslations:
     """Return a cached translator for *locale*.
 
-    Thread-safety: relies on the asyncio event loop's single-threaded execution.
-    The returned object exposes the standard ``gettext(msgid)`` and
-    ``ngettext(singular, plural, n)`` methods.
+    Exposes ``gettext(msgid)`` and ``ngettext(singular, plural, n)``.
     """
-    if locale not in _cache:
-        _cache[locale] = _load(locale)
-    return _cache[locale]
+    return _load(locale)
 
 
 def setup_translations(supported_locales: list[str]) -> None:
