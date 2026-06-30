@@ -16,7 +16,7 @@ concurrency:
 jobs:
   eslint:
     timeout-minutes: 10
-    name: "lint client js"
+    name: "[unit] client-eslint"
     runs-on: ubuntu-latest
     steps:
       - name: checkout
