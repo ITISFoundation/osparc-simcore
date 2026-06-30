@@ -29,12 +29,6 @@ _NODE_COLUMNS: Final = (
 
 
 class ProjectsNodesRepository(BaseRepository):
-    async def list_nodes_ids(self, project_id: ProjectID) -> list[NodeID]:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
-            stmt = sa.select(projects_nodes.c.node_id).where(projects_nodes.c.project_uuid == f"{project_id}")
-            result = await conn.execute(stmt)
-            return [NodeID(node_id) for node_id in result.scalars()]
-
     async def exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
         async with pass_or_acquire_connection(self.db_engine) as conn:
             stmt = sa.select(
@@ -57,3 +51,9 @@ class ProjectsNodesRepository(BaseRepository):
             if row is None:
                 raise ProjectNodeNotFoundError(project_id=project_id, node_id=node_id)
             return Node.model_validate(row)
+
+    async def list_nodes_ids(self, project_id: ProjectID) -> list[NodeID]:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            stmt = sa.select(projects_nodes.c.node_id).where(projects_nodes.c.project_uuid == f"{project_id}")
+            result = await conn.execute(stmt)
+            return [NodeID(node_id) for node_id in result.scalars()]
