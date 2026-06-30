@@ -16,7 +16,6 @@
     This theme is based in large parts on the the Simple
     theme included with Qooxdoo.
 ************************************************************************ */
-/* global osparc */
 /* eslint no-negated-condition: "off", no-nested-ternary: "off" */
 /* ************************************************************************
 
@@ -144,11 +143,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
 
         if (states.copy) {
           icon = "copy";
-        }
-        else if (states.move) {
+        } else if (states.move) {
           icon = "move";
-        }
-        else if (states.alias) {
+        } else if (states.alias) {
           icon = "alias";
         }
 
@@ -182,12 +179,10 @@ qx.Theme.define("osparc.theme.common.Appearance", {
         if (!states.disabled) {
           if (states.pressed || states.checked) {
             decorator += "-pressed";
-          }
-          else if (states.hovered || states.focused) {
+          } else if (states.hovered || states.focused) {
             decorator += "-hovered";
           }
-        }
-        else {
+        } else {
           decorator += "-disabled";
         }
 
@@ -224,19 +219,16 @@ qx.Theme.define("osparc.theme.common.Appearance", {
         if (!states.disabled) {
           if (states.hovered && !states.pressed && !states.checked) {
             decorator = "button-box-hovered";
-          }
-          else if (states.hovered && (states.pressed || states.checked)) {
+          } else if (states.hovered && (states.pressed || states.checked)) {
             decorator = "button-box-pressed-hovered";
-          }
-          else if (states.pressed || states.checked) {
+          } else if (states.pressed || states.checked) {
             decorator = "button-box-pressed";
           }
         }
 
         if (states.invalid && !states.disabled) {
           decorator += "-invalid";
-        }
-        else if (states.focused) {
+        } else if (states.focused) {
           decorator += "-focused";
         }
 
@@ -294,11 +286,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
 
         if (states.disabled) {
           textColor = "text-disabled";
-        }
-        else if (states.showingPlaceholder) {
+        } else if (states.showingPlaceholder) {
           textColor = "text-placeholder";
-        }
-        else {
+        } else {
           textColor = undefined;
         }
 
@@ -309,18 +299,15 @@ qx.Theme.define("osparc.theme.common.Appearance", {
         if (states.readonly) {
           decorator += "-readonly";
           padding = [3, 0, 5, 0];
-        }
-        else if (states.disabled) {
+        } else if (states.disabled) {
           decorator += "-disabled";
-        }
-        else if (states.focused) {
+        } else if (states.focused) {
           decorator += "-focused";
           if (states.invalid) {
             decorator += "-invalid";
           }
           padding = [3, 0, 3, 0];
-        }
-        else if (states.invalid) {
+        } else if (states.invalid) {
           decorator += "-invalid";
         }
 
@@ -342,11 +329,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
         var textColor;
         if (states.disabled) {
           textColor = "text-disabled";
-        }
-        else if (states.showingPlaceholder) {
+        } else if (states.showingPlaceholder) {
           textColor = "text-placeholder";
-        }
-        else {
+        } else {
           textColor = undefined;
         }
 
@@ -355,16 +340,13 @@ qx.Theme.define("osparc.theme.common.Appearance", {
         if (states.disabled) {
           decorator = "border-disabled";
           padding = [1, 2];
-        }
-        else if (states.invalid) {
+        } else if (states.invalid) {
           decorator = "border-invalid";
           padding = [1, 2];
-        }
-        else if (states.focused) {
+        } else if (states.focused) {
           decorator = "border-focused";
           padding = [1, 2];
-        }
-        else {
+        } else {
           padding = [1, 2];
           decorator = "border";
         }
@@ -395,15 +377,12 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           if (!states.disabled) {
             if (states.pressed || states.checked) {
               decorator += "-pressed";
-            }
-            else if (states.hovered) {
+            } else if (states.hovered) {
               decorator += "-hovered";
-            }
-            else if (states.focused) {
+            } else if (states.focused) {
               decorator += "-focused";
             }
-          }
-          else {
+          } else {
             decorator += "-disabled";
           }
 
@@ -425,15 +404,12 @@ qx.Theme.define("osparc.theme.common.Appearance", {
         if (!states.disabled) {
           if (states.pressed || states.checked) {
             decorator += "-pressed";
-          }
-          else if (states.focused) {
+          } else if (states.focused) {
             decorator += "-focused";
-          }
-          else if (states.hovered) {
+          } else if (states.hovered) {
             decorator += "-hovered";
           }
-        }
-        else {
+        } else {
           decorator += "-disabled";
         }
 
@@ -1036,8 +1012,7 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           if (!states.disabled) {
             if (states.pressed) {
               decorator = "menubar-button-pressed";
-            }
-            else if (states.hovered) {
+            } else if (states.hovered) {
               decorator = "menubar-button-hovered";
             }
           }
@@ -1144,11 +1119,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           if (!states.disabled) {
             if (states.hovered && !states.pressed && !states.checked) {
               decorator = "scroll-knob-hovered";
-            }
-            else if (states.hovered && (states.pressed || states.checked)) {
+            } else if (states.hovered && (states.pressed || states.checked)) {
               decorator = "scroll-knob-pressed-hovered";
-            }
-            else if (states.pressed || states.checked) {
+            } else if (states.pressed || states.checked) {
               decorator = "scroll-knob-pressed";
             }
           }
@@ -1216,8 +1189,7 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           if (states.checked) {
             icon = osparc.theme.common.Image.URLS["radiobutton-checked"];
             // Checked
-          }
-          else {
+          } else {
             icon = osparc.theme.common.Image.URLS["radiobutton-unchecked"];
             // Unchecked
           }
@@ -1225,8 +1197,7 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           var textColor = "text";
           if (states.disabled) {
             textColor = "text-disabled";
-          }
-          else if (states.invalid) {
+          } else if (states.invalid) {
             textColor = "invalid";
           }
           return {
@@ -1241,7 +1212,7 @@ qx.Theme.define("osparc.theme.common.Appearance", {
       style: function(states) {
         return {
           decorator: "radiobutton",
-          padding: [2,0,0,0]
+          padding: [2, 0, 0, 0]
         };
       }
     },
@@ -1279,12 +1250,10 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           if (states.checked) {
             icon = osparc.theme.common.Image.URLS["checkbox-checked"];
             // Undetermined
-          }
-          else if (states.undetermined) {
+          } else if (states.undetermined) {
             icon = osparc.theme.common.Image.URLS["checkbox-undetermined"];
             // Unchecked
-          }
-          else {
+          } else {
             // empty icon
             icon = osparc.theme.common.Image.URLS["checkbox-blank"];
           }
@@ -1292,8 +1261,7 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           var textColor = "text";
           if (states.disabled) {
             textColor = "text-disabled";
-          }
-          else if (states.invalid) {
+          } else if (states.invalid) {
             textColor = "invalid";
           }
           return {
@@ -1417,11 +1385,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
             if (states.invalid) {
               decorator += "-invalid";
             }
-          }
-          else if (states.invalid) {
+          } else if (states.invalid) {
             decorator += "-invalid";
-          }
-          else if (states.disabled) {
+          } else if (states.disabled) {
             decorator += "-disabled";
           }
 
@@ -1551,16 +1517,13 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           if (states.disabled) {
             decorator = "border-disabled";
             padding = [1, 2];
-          }
-          else if (states.invalid) {
+          } else if (states.invalid) {
             decorator = "border-invalid";
             padding = [1, 2];
-          }
-          else if (states.focused) {
+          } else if (states.focused) {
             decorator = "border-focused";
             padding = [1, 2];
-          }
-          else {
+          } else {
             padding = [1, 2];
             decorator = "border";
           }
@@ -1911,14 +1874,11 @@ qx.Theme.define("osparc.theme.common.Appearance", {
 
           if (states.lastYear) {
             result.icon = osparc.theme.common.Image.URLS["arrow-rewind"];
-          }
-          else if (states.lastMonth) {
+          } else if (states.lastMonth) {
             result.icon = osparc.theme.common.Image.URLS["arrow-left"];
-          }
-          else if (states.nextYear) {
+          } else if (states.nextYear) {
             result.icon = osparc.theme.common.Image.URLS["arrow-forward"];
-          }
-          else if (states.nextMonth) {
+          } else if (states.nextMonth) {
             result.icon = osparc.theme.common.Image.URLS["arrow-right"];
           }
 
@@ -2116,9 +2076,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
 
         style: function(states) {
           // set the margin
-          var margin = [7, 0,7,10];
+          var margin = [7, 0, 7, 10];
           if (states.left || states.middle || states.right) {
-            margin = [7, 0,7,3];
+            margin = [7, 0, 7, 3];
           }
           var decorator = "toolbar-button";
           if (states.hovered || states.pressed || states.focused ||states.checked) {
@@ -2141,9 +2101,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
 
         style: function(states) {
           // set the margin
-          var margin = [7, 10,7,0];
+          var margin = [7, 10, 7, 0];
           if (states.left || states.middle || states.right) {
-            margin = [7, 3,7,0];
+            margin = [7, 3, 7, 0];
           }
           var decorator = "toolbar-button";
           if (states.hovered || states.pressed || states.focused ||states.checked) {
@@ -2181,14 +2141,11 @@ qx.Theme.define("osparc.theme.common.Appearance", {
 
           if (states.barTop) {
             marginBottom -= 1;
-          }
-          else if (states.barBottom) {
+          } else if (states.barBottom) {
             marginTop -= 1;
-          }
-          else if (states.barRight) {
+          } else if (states.barRight) {
             marginLeft -= 1;
-          }
-          else {
+          } else {
             marginRight -= 1;
           }
 
@@ -2214,15 +2171,13 @@ qx.Theme.define("osparc.theme.common.Appearance", {
               marginBottom: 2,
               decorator: null
             };
-          }
-          else if (states.barBottom) {
+          } else if (states.barBottom) {
             return {
               marginTop: 2,
               marginBottom: 4,
               decorator: null
             };
-          }
-          else if (states.barLeft) {
+          } else if (states.barLeft) {
             return {
               marginLeft: 4,
               marginRight: 2,
@@ -2249,15 +2204,13 @@ qx.Theme.define("osparc.theme.common.Appearance", {
               marginBottom: 2,
               decorator: null
             };
-          }
-          else if (states.barBottom) {
+          } else if (states.barBottom) {
             return {
               marginTop: 2,
               marginBottom: 4,
               decorator: null
             };
-          }
-          else if (states.barLeft) {
+          } else if (states.barLeft) {
             return {
               marginLeft: 4,
               marginRight: 2,
@@ -2284,16 +2237,13 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           if (states.barTop) {
             marginTop = -1;
             decorator = "main-top";
-          }
-          else if (states.barBottom) {
+          } else if (states.barBottom) {
             marginBottom = -1;
             decorator = "main-bottom";
-          }
-          else if (states.barLeft) {
+          } else if (states.barLeft) {
             marginLeft = -1;
             decorator = "main-left";
-          }
-          else {
+          } else {
             marginRight = -1;
             decorator = "main-right";
           }
@@ -2319,11 +2269,9 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           // default padding
           if (states.barTop || states.barBottom) {
             padding = [8, 16, 8, 13];
-          }
-          else if (states.barRight) {
+          } else if (states.barRight) {
             padding = [8, 8, 8, 12];
-          }
-          else if (states.barLeft) {
+          } else if (states.barLeft) {
             padding = [8, 8, 8, 8];
           }
 
@@ -2332,16 +2280,13 @@ qx.Theme.define("osparc.theme.common.Appearance", {
             if (states.barTop) {
               decorator = "tabview-page-button-top";
               padding[2] -= 2;
-            }
-            else if (states.barBottom) {
+            } else if (states.barBottom) {
               decorator = "tabview-page-button-bottom";
               padding[0] -= 2;
-            }
-            else if (states.barRight) {
+            } else if (states.barRight) {
               decorator = "tabview-page-button-right";
               padding[3] -= 2;
-            }
-            else if (states.barLeft) {
+            } else if (states.barLeft) {
               decorator = "tabview-page-button-left";
               padding[1] -= 2;
             }
