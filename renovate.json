@@ -11,7 +11,7 @@
   "platformAutomerge": false,
   "automerge": false,
 
-  "commitMessagePrefix": "[Renovate] ",
+  "commitMessageSuffix": " [Renovate]",
 
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": true
