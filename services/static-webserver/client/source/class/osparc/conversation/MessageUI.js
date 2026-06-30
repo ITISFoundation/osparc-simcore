@@ -41,6 +41,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   events: {
     "messageUpdated": "qx.event.type.Data",
     "messageDeleted": "qx.event.type.Data",
+    "resized": "qx.event.type.Event",
   },
 
   properties: {
@@ -106,6 +107,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
         }
         case "message-content":
           control = new osparc.ui.markdown.MarkdownChat();
+          control.addListener("resized", () => this.fireEvent("resized"));
           this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {

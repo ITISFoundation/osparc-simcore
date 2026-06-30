@@ -60,6 +60,8 @@ qx.Class.define("osparc.conversation.MessageList", {
   },
 
   members: {
+    __atBottom: true,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -71,6 +73,7 @@ qx.Class.define("osparc.conversation.MessageList", {
           break;
         case "messages-container-scroll":
           control = new qx.ui.container.Scroll();
+          control.getChildControl("pane").addListener("scrollY", () => this.__updateAtBottom(), this);
           this._addAt(control, this.self().POS.MESSAGES_CONTAINER, {
             flex: 1
           });
@@ -178,6 +181,12 @@ qx.Class.define("osparc.conversation.MessageList", {
         case "MESSAGE":
           control = this._createMessageUI(message);
           control.addListener("messageDeleted", e => this.__messageDeleted(e.getData()));
+          // markdown content resizes asynchronously (images, reflow); keep pinned to bottom
+          control.addListener("resized", () => {
+            if (this.__atBottom) {
+              this.__scrollToBottom();
+            }
+          });
           break;
         case "NOTIFICATION":
           control = new osparc.conversation.NotificationUI(message);
@@ -192,12 +201,21 @@ qx.Class.define("osparc.conversation.MessageList", {
 
       // scroll to bottom
       // add timeout to ensure the scroll happens after the UI is updated
-      setTimeout(() => {
-        const messagesScroll = this.getChildControl("messages-container-scroll");
-        messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
-      }, 50);
+      this.__atBottom = true;
+      setTimeout(() => this.__scrollToBottom(), 50);
 
       this.fireEvent("messagesChanged");
+    },
+
+    __scrollToBottom: function() {
+      const messagesScroll = this.getChildControl("messages-container-scroll");
+      messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
+    },
+
+    __updateAtBottom: function() {
+      const pane = this.getChildControl("messages-container-scroll").getChildControl("pane");
+      // consider "at bottom" when within a small threshold to absorb sub-pixel rounding
+      this.__atBottom = pane.getScrollMaxY() - pane.getScrollY() <= 20;
     },
 
     __messageDeleted: function(message) {
