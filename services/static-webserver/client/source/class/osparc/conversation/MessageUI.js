@@ -119,6 +119,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowY: false,
             marginTop: 4,
             alignY: "top",
+            center: true,
             icon: "@FontAwesomeSolid/ellipsis-v/12",
             focusable: false
           });
