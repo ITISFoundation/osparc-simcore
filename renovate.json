@@ -4,55 +4,73 @@
     "config:recommended",
     ":dependencyDashboardApproval"
   ],
-
   "dependencyDashboard": true,
   "prCreation": "approval",
-
   "platformAutomerge": false,
   "automerge": false,
-
   "commitMessageSuffix": " [Renovate]",
-
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": true
   },
-
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
-
   "schedule": [
     "before 3am on monday"
   ],
   "timezone": "Europe/Zurich",
-
-  "additionalBranchPrefix": "{{parentDir}}-",
-
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/(^|/)requirements/_[^/]+\\.txt$/"
+    ]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 3am on the first day of the month"
+    ]
+  },
   "packageRules": [
     {
-      "paths": ["packages/**/requirements/**"],
-      "matchManagers": ["pip_requirements", "pip_compile"],
+      "description": "Shared packages: upgrade faster (smaller blast radius)",
+      "matchFileNames": [
+        "packages/**/requirements/**"
+      ],
       "groupName": "packages deps",
+      "schedule": [
+        "before 3am on monday"
+      ],
+      "minimumReleaseAge": "3 days",
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
       "automerge": false
     },
     {
-      "paths": ["services/**/requirements/**"],
-      "matchManagers": ["pip_requirements", "pip_compile"],
+      "description": "Services: upgrade slower / more conservative",
+      "matchFileNames": [
+        "services/**/requirements/**"
+      ],
       "groupName": "services deps",
+      "schedule": [
+        "before 3am on the first day of the month"
+      ],
+      "minimumReleaseAge": "14 days",
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
       "automerge": false
     },
     {
-      "matchDatasources": ["docker"],
+      "matchDatasources": [
+        "docker"
+      ],
       "groupName": "docker images",
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
       "automerge": false
     },
     {
-      "matchDatasources": ["pypi"],
+      "matchDatasources": [
+        "pypi"
+      ],
       "matchPackageNames": [
         "simcore-sdk",
         "simcore-service-library"
