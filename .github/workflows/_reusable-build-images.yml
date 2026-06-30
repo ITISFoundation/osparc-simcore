@@ -19,6 +19,33 @@ on:
         required: true
         type: string
         description: "Runner OS to use"
+      push-temp:
+        required: false
+        type: boolean
+        default: false
+        description: "Whether to push the built images to the registry under a temporary tag (in the same build)"
+      temp-tag:
+        required: false
+        type: string
+        default: ""
+        description: "Temporary registry tag to push the built images under (e.g. master-github-tmp-<sha>-amd64)"
+      build-artifacts:
+        required: false
+        type: boolean
+        default: true
+        description: "Whether to build the local .tar artifacts (consumed by the test jobs). When false the images are only pushed to the registry."
+      platforms:
+        required: false
+        type: string
+        default: ""
+        description: "Target build platform(s), e.g. linux/arm64. Empty defaults to the runner's native platform."
+    secrets:
+      DOCKER_REGISTRY:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
 
 jobs:
   build-test-images:
@@ -31,26 +58,56 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
           expose-github-runtime: 'true'
+      - name: login to Dockerhub
+        if: ${{ inputs.push-temp }}
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: build backend images
         if: ${{ inputs.build-backend }}
+        env:
+          DOCKER_TARGET_PLATFORMS: ${{ inputs.platforms }}
         run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner.temp }}/build
-          make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
+          if [ "${{ inputs.build-artifacts }}" = "true" ]; then
+            mkdir --parents /${{ runner.temp }}/build
+            if [ "${{ inputs.push-temp }}" = "true" ]; then
+              export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
+              make build local-dest=/${{ runner.temp }}/build exclude=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+            else
+              export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+              make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
+            fi
+          else
+            export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
+            make build exclude=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+          fi
       - name: build frontend images
         if: ${{ inputs.build-frontend }}
+        env:
+          DOCKER_TARGET_PLATFORMS: ${{ inputs.platforms }}
         run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          mkdir --parents /${{ runner.temp }}/build
-          make build local-dest=/${{ runner.temp }}/build target=static-webserver
+          if [ "${{ inputs.build-artifacts }}" = "true" ]; then
+            mkdir --parents /${{ runner.temp }}/build
+            if [ "${{ inputs.push-temp }}" = "true" ]; then
+              export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
+              make build local-dest=/${{ runner.temp }}/build target=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+            else
+              export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+              make build local-dest=/${{ runner.temp }}/build target=static-webserver
+            fi
+          else
+            export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
+            make build target=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+          fi
       - name: upload backend artifacts
-        if: ${{ inputs.build-backend }}
+        if: ${{ inputs.build-backend && inputs.build-artifacts }}
         uses: actions/upload-artifact@v7
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
           path: /${{ runner.temp }}/build
       - name: upload frontend artifacts
-        if: ${{ inputs.build-frontend }}
+        if: ${{ inputs.build-frontend && inputs.build-artifacts }}
         uses: actions/upload-artifact@v7
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
