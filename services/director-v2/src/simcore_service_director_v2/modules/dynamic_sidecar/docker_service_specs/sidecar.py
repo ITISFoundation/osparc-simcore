@@ -175,8 +175,6 @@ def _get_environment_variables(
         "S3_REGION": r_clone_settings.R_CLONE_S3.S3_REGION,
         "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY.get_secret_value(),
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
-        # For background info on this special env-var above, see
-        # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
         "DYNAMIC_SIDECAR_TRACING": (
             "null" if app_settings.DIRECTOR_V2_TRACING is None else app_settings.DIRECTOR_V2_TRACING.model_dump_json()
