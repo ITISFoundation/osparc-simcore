@@ -35,7 +35,7 @@ class JobEncryptionContextMetadata(BaseModel):
     def _validate_root_key_is_base64_of_expected_size(cls, value: SecretStr) -> SecretStr:
         try:
             raw = base64.b64decode(value.get_secret_value(), validate=True)
-        except (binascii.Error, ValueError) as err:
+        except binascii.Error as err:
             msg = "root_key must be valid base64"
             raise ValueError(msg) from err
         if len(raw) != AES_256_GCM_KEY_SIZE_BYTES:
