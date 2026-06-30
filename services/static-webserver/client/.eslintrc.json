@@ -60,6 +60,12 @@
         "named": "never",
         "asyncArrow": "always"
       }
+    ],
+    "no-constant-condition": [
+      "error",
+      {
+        "checkLoops": false
+      }
     ]
   },
   "env": {
