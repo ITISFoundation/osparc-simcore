@@ -51,9 +51,9 @@ def tracer_provider(in_memory_exporter: InMemorySpanExporter) -> TracerProvider:
 
 
 def test_parse_traced_function_targets_splits_and_strips():
-    assert parse_traced_function_targets("") == []
-    assert parse_traced_function_targets("  ") == []
-    assert parse_traced_function_targets("a.b:c, d.e:F.g ,") == ["a.b:c", "d.e:F.g"]
+    assert parse_traced_function_targets([]) == []
+    assert parse_traced_function_targets([""]) == []
+    assert parse_traced_function_targets(["a.b:c", "d.e:F.g"]) == ["a.b:c", "d.e:F.g"]
 
 
 def test_instrument_traced_functions_creates_spans_for_sync_and_async(

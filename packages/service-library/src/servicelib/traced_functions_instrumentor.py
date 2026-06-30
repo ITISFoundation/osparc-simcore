@@ -27,13 +27,13 @@ _logger = logging.getLogger(__name__)
 type TracedFunctionTarget = tuple[Any, str]
 
 
-def parse_traced_function_targets(value: str) -> list[str]:
-    """Splits a comma-separated string of fully-qualified function targets.
+def parse_traced_function_targets(value: list[str]) -> list[str]:
+    """Returns a filtered list of fully-qualified function targets.
 
     Each target has the form 'module.path:attr.path' (e.g. 'pkg.mod:func' or
     'pkg.mod:Class.method'). Blank entries are ignored.
     """
-    return [spec.strip() for spec in value.split(",") if spec.strip()]
+    return [spec for spec in value if spec.strip()]
 
 
 def _resolve_parent_and_attr(spec: str) -> TracedFunctionTarget:

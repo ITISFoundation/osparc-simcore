@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from pydantic import AnyUrl, Field, field_validator
+from common_library.basic_types import DEFAULT_FACTORY
+from pydantic import AnyUrl, Field, Json, field_validator
 
 from settings_library.basic_types import RegisteredPortInt
 
@@ -21,21 +22,21 @@ class TracingSettings(BaseCustomSettings):
         Field(description="Probability of sampling traces (0.0 - 1.0)", ge=0.0, le=1.0),
     ]
     TRACING_OPENTELEMETRY_TRACED_FUNCTIONS: Annotated[
-        str,
+        Json[list[str]],
         Field(
+            default_factory=list,
             description=(
-                "Comma-separated fully-qualified functions to wrap with a span at startup, "
-                "e.g. 'pkg.module:function,pkg.module:Class.method'"
+                "JSON-encoded array of fully-qualified functions to wrap with a span at startup, "
+                'e.g. \'["pkg.module:function", "pkg.module:Class.method"]\''
             ),
         ),
-    ] = ""
+    ] = DEFAULT_FACTORY
 
     @field_validator("TRACING_OPENTELEMETRY_TRACED_FUNCTIONS")
     @classmethod
-    def _validate_traced_function_targets(cls, value: str) -> str:
-        specs = [spec.strip() for spec in value.split(",") if spec.strip()]
+    def _validate_traced_function_targets(cls, value: list[str]) -> list[str]:
         invalid: list[str] = []
-        for spec in specs:
+        for spec in value:
             module_path, sep, attr_path = spec.partition(":")
             if (
                 sep != ":"
