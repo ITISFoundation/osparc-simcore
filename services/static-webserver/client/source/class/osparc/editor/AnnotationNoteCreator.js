@@ -145,12 +145,12 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
         const userGids = data["selectedGids"];
         if (userGids && userGids.length) {
           const userGid = parseInt(userGids[0]);
-          this.__recipientSelected(userGid);
+          this.__recipientSelected(userGid, usersManager);
         }
       }, this);
     },
 
-    __recipientSelected: function(userGid) {
+    __recipientSelected: function(userGid, collaboratorsManager) {
       const currentAccessRights = this.__study.getAccessRights();
       if (userGid in currentAccessRights) {
         this.__setRecipientGid(userGid);
