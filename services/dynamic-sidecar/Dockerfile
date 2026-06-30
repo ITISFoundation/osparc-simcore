@@ -17,7 +17,7 @@ FROM ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG} AS base
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
-LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
+LABEL maintainer=GitHK
 
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
 ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
