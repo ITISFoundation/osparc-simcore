@@ -26,6 +26,7 @@ from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery_library import CeleryTaskManager
 from celery_library.backends import RedisTaskStore
+from celery_library.basic_types import BootServerMode
 from celery_library.types import register_celery_types
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
@@ -979,7 +980,9 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 def worker_app_settings(
     app_settings: ApplicationSettings,
 ) -> ApplicationSettings:
-    worker_test_app_settings = app_settings.model_copy(update={"STORAGE_WORKER_MODE": True}, deep=True)
+    worker_test_app_settings = app_settings.model_copy(
+        update={"STORAGE_BOOT_SERVER_MODE": BootServerMode.AS_CELERY_WORKER}, deep=True
+    )
     print(f"{worker_test_app_settings.model_dump_json(indent=2)=}")
     return worker_test_app_settings
 
