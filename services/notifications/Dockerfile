@@ -16,7 +16,7 @@ FROM ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG} AS base
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
-LABEL maintainer=GitHK
+LABEL maintainer=giancarloromeo
 
 EXPOSE 8000
 
