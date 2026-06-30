@@ -16,7 +16,6 @@ from tenacity.wait import wait_fixed
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.errors import ProjectNodeNotFoundError, ProjectNotFoundError
 from .....models.dynamic_services_scheduler import SchedulerData
 from .....modules.catalog import CatalogClient
 from .....modules.instrumentation import get_instrumentation, get_metrics_labels
@@ -131,16 +130,10 @@ async def create_user_services(  # pylint: disable=too-many-statements
     # data from project
     projects_repository = get_repository(app, ProjectsRepository)
     project = await projects_repository.get(project_id=scheduler_data.project_id)
-    if project is None:
-        raise ProjectNotFoundError(project_id=scheduler_data.project_id)
-
     project_name = project.name
 
     projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
     node = await projects_nodes_repository.get(project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid)
-    if node is None:
-        raise ProjectNodeNotFoundError(project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid)
-
     node_name = node.label
 
     # data from user
