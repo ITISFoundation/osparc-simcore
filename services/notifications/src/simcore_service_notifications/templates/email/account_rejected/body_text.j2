@@ -1,8 +1,8 @@
-Dear {{ user.first_name or user.user_name }},
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
 
-Thank you for your interest in {{ product.display_name }}. Unfortunately, your registration is not eligible for participation in this program.
+{% trans product_name=product.display_name %}Thank you for your interest in {{ product_name }}. Unfortunately, your registration is not eligible for participation in this program.{% endtrans %}
 
-In case of further interest in this or other solutions we might offer, please check contact us at {{ product.support_email }}.
+{% trans support_email=product.support_email %}In case of further interest in this or other solutions we might offer, please check contact us at {{ support_email }}.{% endtrans %}
 
-Best regards,
-The {{ product.display_name }} Team
+{% trans %}Best regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

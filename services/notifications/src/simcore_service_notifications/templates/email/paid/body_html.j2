@@ -4,12 +4,16 @@
 
 {% block content %}
 
-<p>Dear {{ user.first_name or user.user_name }},</p>
-<p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
-  The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
-<p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a>.</p>
-<p>Please don't hesitate to contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a> if you need further help.</p>
-<p>Best Regards,</p>
-<p>The <i>{{ product.display_name }}</i> Team</p>
+<p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+{% set price %}<strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong>{% endset %}
+{% set credits %}<strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>{% endset %}
+<p>{% trans price=price, credits=credits, product_name=product.display_name %}We are delighted to confirm the successful processing of your payment of {{ price }} for the purchase of {{ credits }}. The credits have been added to your {{ product_name }} account, and you are all set to utilize them.{% endtrans %}</p>
+{% set receipt_link %}<a href="{{ payment.invoice_url }}">receipt</a>{% endset %}
+<p>{% trans receipt_link=receipt_link %}For more details you can view or download your {{ receipt_link }}.{% endtrans %}</p>
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+<p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
+<p>{% trans %}Best Regards,{% endtrans %}</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
 
 {% endblock %}
