@@ -557,7 +557,7 @@ async def delete_computation(
 ) -> None:
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get(project_id)
+        project = await project_repo.get(project_id)
         # check if current state allow to stop the computation
         pipeline_state = RunningState.UNKNOWN
         with contextlib.suppress(ComputationalRunNotFoundError):
