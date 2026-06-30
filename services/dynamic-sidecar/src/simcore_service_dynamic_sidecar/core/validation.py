@@ -171,7 +171,17 @@ def _connect_user_services(parsed_compose_spec: dict[str, Any], *, allow_interne
 
 def parse_compose_spec(compose_file_content: str) -> Any:
     try:
-        return yaml.safe_load(compose_file_content)
+        result = yaml.safe_load(compose_file_content)
+
+        if result is None or not isinstance(result, dict):
+            msg = f"{compose_file_content}\nProvided yaml is not valid!"
+            raise InvalidComposeSpecError(msg)
+
+        if "services" not in set(result.keys()):
+            msg = f"{compose_file_content}\nProvided yaml is not valid!"
+            raise InvalidComposeSpecError(msg)
+
+        return result
     except yaml.YAMLError as e:
         msg = f"{e}\n{compose_file_content}\nProvided yaml is not valid!"
         raise InvalidComposeSpecError(msg) from e
@@ -181,8 +191,6 @@ def _generate_otel_collector_config(
     user_services_tracing_settings: UserServicesTracingSettings,
     settings: ApplicationSettings,
 ) -> str:
-    """Generates the OTEL Collector YAML config for the injected collector container."""
-
     # NOTE: added to collector container so they are always present
     attributes = create_standard_attributes(
         user_id=settings.DY_SIDECAR_USER_ID,
@@ -231,9 +239,6 @@ def _generate_otel_collector_config(
 
 
 def _build_otel_resource_attributes(settings: ApplicationSettings) -> str:
-    """Builds the OTEL_RESOURCE_ATTRIBUTES value with simcore.* prefixed keys."""
-    # NOTE: added to each service via env var, user could in therory overwrite them,
-    # but to do so they need to put in extra effor
     attrs = create_standard_attributes(
         service_key=settings.DY_SIDECAR_SERVICE_KEY,
         service_version=settings.DY_SIDECAR_SERVICE_VERSION,
@@ -311,22 +316,6 @@ class ComposeSpecValidation(NamedTuple):
     compose_spec: str
     current_container_names: list[str]
     original_to_current_container_names: dict[str, str]
-
-
-def _validate_compose_structure(parsed_compose_spec: Any, compose_file_content: str) -> None:
-    """Validates basic structure of parsed compose spec."""
-    if parsed_compose_spec is None or not isinstance(parsed_compose_spec, dict):
-        msg = f"{compose_file_content}\nProvided yaml is not valid!"
-        raise InvalidComposeSpecError(msg)
-
-    if not {"version", "services"}.issubset(set(parsed_compose_spec.keys())):
-        msg = f"{compose_file_content}\nProvided yaml is not valid!"
-        raise InvalidComposeSpecError(msg)
-
-    version = parsed_compose_spec["version"]
-    if version.startswith("1"):
-        msg = f"Provided spec version '{version}' is not supported"
-        raise InvalidComposeSpecError(msg)
 
 
 async def _process_service_entries(
@@ -455,8 +444,6 @@ async def get_and_validate_compose_spec(
     """
     _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
     parsed_compose_spec = parse_compose_spec(compose_file_content)
-
-    _validate_compose_structure(parsed_compose_spec, compose_file_content)
 
     spec_services = parsed_compose_spec["services"]
 
