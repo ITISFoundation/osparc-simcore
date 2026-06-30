@@ -85,7 +85,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential
+  build-essential \
+  && apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/*
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
 COPY --from=uv_build /uv /uvx /bin/
