@@ -94,6 +94,7 @@ class ProtectedText(NamedTuple):
 class Translation(NamedTuple):
     interpretation: str  # one-sentence context note
     text: TranslationStr
+    text_plural: TranslationStr | None = None  # set only for plural (msgid_plural) entries
 
 
 class TranslatorContext(NamedTuple):
@@ -174,9 +175,12 @@ def _load_glossary(path: str) -> GlossaryData:
     return GlossaryData(glossaries, lang_names)
 
 
-# Placeholders like {min_size} or %s must survive translation unchanged
-PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%[sdif]|%\d+\$s)")
+# Placeholders like {min_size}, %s, or %(count)s must survive translation unchanged.
+# The %(name)s form (Python named percent formatting, used by gettext/Jinja plurals)
+# must come before %[sdif] so the named variant is matched as a whole.
+PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s)")
 TRAILING_WHITESPACE_RE: Final = re.compile(r"(\s+)$")
+NPLURALS_RE: Final = re.compile(r"nplurals\s*=\s*(\d+)")
 
 
 # Default base URLs per model prefix — prevents env-var bleed across providers.
@@ -333,6 +337,27 @@ def _parse_ctx_version(version: str) -> tuple[str, datetime | None]:
     return commit, timestamp
 
 
+def _get_nplurals(po: polib.POFile) -> int:
+    """Return the number of plural forms declared in the catalog's Plural-Forms header.
+
+    Falls back to 2 (the gettext default) when the header is missing or unparsable.
+    """
+    match = NPLURALS_RE.search(po.metadata.get("Plural-Forms", ""))
+    return max(1, int(match.group(1))) if match else 2
+
+
+def _is_untranslated(entry: polib.POEntry) -> bool:
+    """True when an entry has no complete translation (plural-aware).
+
+    Plural entries store translations in ``msgstr_plural`` (msgstr stays empty), so a
+    plain ``not entry.msgstr`` check would mark every plural entry as untranslated.
+    """
+    if entry.msgid_plural:
+        plural = entry.msgstr_plural or {}
+        return not plural or any(not (text or "").strip() for text in plural.values())
+    return not entry.msgstr or entry.msgstr.strip() == ""
+
+
 def _save_po_atomic(po: polib.POFile, out: Path) -> None:
     """Write a PO file via a temp file and atomic replace."""
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -414,10 +439,18 @@ def _translate_entry(
     existing_interp: str,
     lang_name: LangNameStr,
     glossary: TermGlossaryDict,
+    msgid_plural: str = "",
     logger: logging.Logger | None = None,
 ) -> Translation:
-    """Translate one msgid; reuses existing_interp when already computed (cached)."""
+    """Translate one msgid; reuses existing_interp when already computed (cached).
+
+    When ``msgid_plural`` is set the entry is pluralized: both the singular and the
+    plural English source forms are translated and returned (``Translation.text`` and
+    ``Translation.text_plural``).
+    """
     protected = _protect(msgid)
+    is_plural = bool(msgid_plural)
+    protected_plural = _protect(msgid_plural) if is_plural else None
 
     # If we already have a CTX-INTERPRETATION, skip re-interpreting (saves tokens)
     interp_instruction = (
@@ -443,20 +476,38 @@ def _translate_entry(
     if snippet.strip():
         sections.append(f"Source code context (the string appears at the line marked >>>):\n{snippet}")
 
-    sections.append(f'String to translate:\n"{protected.text}"')
+    if is_plural:
+        assert protected_plural is not None  # nosec
+        sections.append(
+            "This is a pluralized string. Translate BOTH grammatical forms:\n"
+            f'  singular (used when count == 1): "{protected.text}"\n'
+            f'  plural   (used when count != 1): "{protected_plural.text}"'
+        )
+    else:
+        sections.append(f'String to translate:\n"{protected.text}"')
 
-    if protected.mapping:
+    if protected.mapping or (protected_plural and protected_plural.mapping):
         sections.append("Placeholders like ⟨0⟩ ⟨1⟩ must appear unchanged in the translation.")
 
     sections.append(interp_instruction)
 
-    sections.append(
-        "Respond with JSON only, no markdown:\n"
-        "{\n"
-        '  "interpretation": "<one sentence>",\n'
-        '  "translation": "<translated string>"\n'
-        "}"
-    )
+    if is_plural:
+        sections.append(
+            "Respond with JSON only, no markdown:\n"
+            "{\n"
+            '  "interpretation": "<one sentence>",\n'
+            '  "translation": "<translated singular string>",\n'
+            '  "translation_plural": "<translated plural string>"\n'
+            "}"
+        )
+    else:
+        sections.append(
+            "Respond with JSON only, no markdown:\n"
+            "{\n"
+            '  "interpretation": "<one sentence>",\n'
+            '  "translation": "<translated string>"\n'
+            "}"
+        )
 
     prompt = "\n\n".join(sections)
 
@@ -469,7 +520,16 @@ def _translate_entry(
         logger.debug("--- RESPONSE ---\n%s", json.dumps(data, ensure_ascii=False, indent=2))
 
     translated = _restore(data["translation"], protected.mapping)
-    return Translation(data["interpretation"], _normalize_trailing_whitespace(msgid, translated))
+    text = _normalize_trailing_whitespace(msgid, translated)
+
+    text_plural: str | None = None
+    if is_plural:
+        assert protected_plural is not None  # nosec
+        raw_plural = data.get("translation_plural") or data["translation"]
+        restored_plural = _restore(raw_plural, protected_plural.mapping)
+        text_plural = _normalize_trailing_whitespace(msgid_plural, restored_plural)
+
+    return Translation(data["interpretation"], text, text_plural)
 
 
 def _build_translation_job(
@@ -501,6 +561,7 @@ def _build_translation_job(
             existing_interp=ctx.interp,
             lang_name=lang_name,
             glossary=glossary,
+            msgid_plural=entry.msgid_plural or "",
             logger=logger,
         )
     except Exception as e:
@@ -591,7 +652,7 @@ def _is_stale(  # noqa: PLR0911
     - CTX-VERSION is pending/unknown (not yet translated)
       - git blame commit differs from stored commit (code changed around string)
     """
-    if not entry.msgstr or entry.msgstr.strip() == "":
+    if _is_untranslated(entry):
         return True
     if "fuzzy" in entry.flags:
         return True
@@ -627,7 +688,7 @@ def _classify_entry_state(
     pot_creation_at: datetime | None,
 ) -> EntryState:
     """Return explicit new/updated/skipped entry state objects for translation routing."""
-    if not entry.msgstr or entry.msgstr.strip() == "":
+    if _is_untranslated(entry):
         return EntryNew(entry=entry)
     if "fuzzy" in entry.flags:
         return EntryUpdated(entry=entry)
@@ -753,6 +814,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     po.metadata["Content-Type"] = "text/plain; charset=UTF-8"
     po.metadata["Content-Transfer-Encoding"] = "8bit"
     pot_creation_at = _parse_catalog_timestamp(po.metadata.get("POT-Creation-Date", ""))
+    nplurals = _get_nplurals(po)
 
     total = translated = skipped = new_count = updated_count = errors = 0
 
@@ -775,7 +837,18 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
         state = job.state
 
         with _PO_SAVE_LOCK:
-            job.entry.msgstr = job.result.text
+            if job.entry.msgid_plural:
+                # Plural entries serialize from msgstr_plural; polib ignores msgstr.
+                # Map the two translated English forms onto the target locale's plural
+                # indices: index 0 is the singular form when the locale has >1 form,
+                # every other index uses the plural form (1-form locales use plural).
+                singular = job.result.text
+                plural = job.result.text_plural or job.result.text
+                job.entry.msgstr_plural = {
+                    i: (singular if nplurals > 1 and i == 0 else plural) for i in range(nplurals)
+                }
+            else:
+                job.entry.msgstr = job.result.text
             job.entry.tcomment = _update_comment(
                 job.entry.tcomment or job.entry.comment or "",
                 job.result.interpretation,
