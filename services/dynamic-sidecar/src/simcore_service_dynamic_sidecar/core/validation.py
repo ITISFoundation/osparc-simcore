@@ -429,16 +429,6 @@ async def get_and_validate_compose_spec(
     *,
     is_user_services_tracing_enabled: bool,
 ) -> ComposeSpecValidation:
-    """
-    Validates what looks like a docker compose spec and injects
-    additional data to mainly make sure:
-    - no collisions occur between container names
-    - containers are located on the same docker network
-    - properly target environment variables formwarded via
-        settings on the service
-
-    Finally runs docker compose config to properly validate the result
-    """
     _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
     parsed_compose_spec = parse_compose_spec(compose_file_content)
 
