@@ -215,7 +215,9 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
         confirmAction: "delete",
       });
       const supportCenter = osparc.ui.window.SingletonWindow.getWindowById("support-center");
-      win.setCenterOnElement(supportCenter);
+      if (supportCenter) {
+        win.setCenterOnElement(supportCenter);
+      }
       win.center();
       win.open();
       win.addListener("close", () => {

@@ -101,7 +101,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
             if (e.getKeyIdentifier() === "Enter" && !e.isShiftPressed() && !e.isCtrlPressed()) {
               e.preventDefault();
               e.stopPropagation();
-              this.__addCommentPressed();
+              if (this.getChildControl("add-comment-button").getEnabled()) {
+                this.__addCommentPressed();
+              }
             }
           }, this);
           textArea.addListener("appear", () => {
