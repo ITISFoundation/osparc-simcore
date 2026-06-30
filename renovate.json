@@ -20,7 +20,11 @@
   "timezone": "Europe/Zurich",
   "pip-compile": {
     "managerFilePatterns": [
-      "/(^|/)requirements/_[^/]+\\.txt$/"
+      "/(^|/)requirements/_[^/]+\\.txt$/",
+      "/(^|/)api/tests/requirements\\.txt$/",
+      "/(^|/)ci/helpers/requirements/requirements\\.txt$/",
+      "/(^|/)tests/e2e/requirements/requirements\\.txt$/",
+      "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
     ]
   },
   "lockFileMaintenance": {
@@ -57,6 +61,19 @@
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
       "automerge": false
+    },
+    {
+      "description": "These requirements.txt are pip-compile outputs; let pip-compile own them (avoid double updates)",
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "api/tests/requirements.txt",
+        "ci/helpers/requirements/requirements.txt",
+        "tests/e2e/requirements/requirements.txt",
+        "tests/environment-setup/requirements/requirements.txt"
+      ],
+      "enabled": false
     },
     {
       "matchDatasources": [

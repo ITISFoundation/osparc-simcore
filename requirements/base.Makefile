@@ -59,15 +59,15 @@ help: ## this colorful help
 		STARTSWITH_UPGRADE=$$(echo "$$MATCHING_PACKAGES" | xargs -n1 echo --upgrade-package); \
 		cd ..; \
 		uv pip compile $$STARTSWITH_UPGRADE \
-			--output-file requirements/$@ requirements/$<; \
+			--output-file=requirements/$@ requirements/$<; \
 	elif [ -n "$(upgrade)" ]; then \
 		cd ..; \
 		uv pip compile --upgrade-package "$(upgrade)" \
-			--output-file requirements/$@ requirements/$<; \
+			--output-file=requirements/$@ requirements/$<; \
 	else \
 		cd ..; \
 		uv pip compile $(DO_CLEAN_OR_UPGRADE) \
-			--output-file requirements/$@ requirements/$<; \
+			--output-file=requirements/$@ requirements/$<; \
 	fi
 
 _test.txt: _base.txt
