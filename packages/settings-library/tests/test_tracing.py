@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+from collections.abc import Callable
+
 import pytest
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
@@ -14,24 +16,27 @@ _REQUIRED_ENVS = {
 }
 
 
-def test_traced_functions_defaults_to_empty(monkeypatch: pytest.MonkeyPatch):
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(patch, _REQUIRED_ENVS)
-        settings = TracingSettings.create_from_envs()
-        assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == []
+@pytest.fixture
+def make_settings(monkeypatch: pytest.MonkeyPatch) -> Callable[..., TracingSettings]:
+    setenvs_from_dict(monkeypatch, _REQUIRED_ENVS)
+
+    def _make(**extra_envs: str) -> TracingSettings:
+        setenvs_from_dict(monkeypatch, extra_envs)
+        return TracingSettings.create_from_envs()
+
+    return _make
 
 
-def test_traced_functions_accepts_valid_targets(monkeypatch: pytest.MonkeyPatch):
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(
-            patch,
-            {
-                **_REQUIRED_ENVS,
-                "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS": '["pkg.module:function", "pkg.module:Class.method"]',
-            },
-        )
-        settings = TracingSettings.create_from_envs()
-        assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == ["pkg.module:function", "pkg.module:Class.method"]
+def test_traced_functions_defaults_to_empty(make_settings: Callable[..., TracingSettings]):
+    settings = make_settings()
+    assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == []
+
+
+def test_traced_functions_accepts_valid_targets(make_settings: Callable[..., TracingSettings]):
+    settings = make_settings(
+        TRACING_OPENTELEMETRY_TRACED_FUNCTIONS='["pkg.module:function", "pkg.module:Class.method"]'
+    )
+    assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == ["pkg.module:function", "pkg.module:Class.method"]
 
 
 @pytest.mark.parametrize(
@@ -45,21 +50,11 @@ def test_traced_functions_accepts_valid_targets(monkeypatch: pytest.MonkeyPatch)
         '["pkg..module:function"]',
     ],
 )
-def test_traced_functions_rejects_invalid_targets(monkeypatch: pytest.MonkeyPatch, invalid_value: str):
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(
-            patch,
-            {**_REQUIRED_ENVS, "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS": invalid_value},
-        )
-        with pytest.raises(ValidationError):
-            TracingSettings.create_from_envs()
+def test_traced_functions_rejects_invalid_targets(make_settings: Callable[..., TracingSettings], invalid_value: str):
+    with pytest.raises(ValidationError):
+        make_settings(TRACING_OPENTELEMETRY_TRACED_FUNCTIONS=invalid_value)
 
 
-def test_traced_functions_rejects_non_json(monkeypatch: pytest.MonkeyPatch):
-    with monkeypatch.context() as patch:
-        setenvs_from_dict(
-            patch,
-            {**_REQUIRED_ENVS, "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS": "not-json"},
-        )
-        with pytest.raises(SettingsError):
-            TracingSettings.create_from_envs()
+def test_traced_functions_rejects_non_json(make_settings: Callable[..., TracingSettings]):
+    with pytest.raises(SettingsError):
+        make_settings(TRACING_OPENTELEMETRY_TRACED_FUNCTIONS="not-json")
