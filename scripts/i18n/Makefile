@@ -40,6 +40,7 @@ PROGRESS         ?= true
 INCREMENTAL_SAVE ?= true
 USE_GIT          ?= true
 MAX_WORKERS      ?= 4
+TRANSLATE_TS     := $(shell date +%Y%m%dT%H%M%S)
 
 # --- Services/packages containing user_message() calls ---
 # To rediscover: grep -r 'user_message(' $(REPO_ROOT)/services $(REPO_ROOT)/packages \
@@ -187,9 +188,8 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT)
 	  $(PROGRESS_FLAG) \
 	  $(PARALLEL_FLAG) \
 	  --max-workers $(MAX_WORKERS) \
-	  --log-file $(@D)/translate.log \
+	  --log-file $(@D)/translate-$(TRANSLATE_TS).log \
 	  --out $@
-
 # ---------------------------------------------------------------------------
 # backend-compile — compile .po -> .mo (backend only; the frontend catalog is
 # consumed directly as .po by `qx compile` and has no .mo)
