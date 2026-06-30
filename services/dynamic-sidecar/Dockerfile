@@ -1,21 +1,17 @@
 # syntax=docker/dockerfile:1
 
 # Define arguments in the global scope
-ARG PYTHON_VERSION="3.13.9"
-ARG UV_VERSION="0.9"
-FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
+ARG DOCKER_REGISTRY="itisfoundation"
+ARG BASE_TAG="latest"
 
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
-# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
-# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
-ENV UV_CONCURRENT_INSTALLS=1
-
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base-amd64
-
-FROM base-${TARGETARCH} AS base
+# -------------------------- Base stage -------------------
+# Shared minimal runtime (see services/_base_images/Dockerfile)
+#   + docker-cli + docker-compose-plugin + libmagic1 + xz-utils + rclone + 7zip
+#
+FROM ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG} AS base
 #
 #  USAGE:
-#     cd sercices/dynamic-sidecar
+#     cd services/dynamic-sidecar
 #     docker build -f Dockerfile -t dynamic-sidecar:prod --target production ../../
 #     docker run dynamic-sidecar:prod
 #
@@ -27,15 +23,12 @@ LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
 ENV DOCKER_COMPOSE_APT_VERSION="2.27.1-1~debian.12~bookworm"
 
-# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
-RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
-  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN \
   --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux && \
   apt-get update && \
-  apt-get install -y --no-install-recommends\
+  apt-get install -y --no-install-recommends \
+  ca-certificates \
   curl \
   gnupg \
   lsb-release \
@@ -48,15 +41,13 @@ RUN \
   && apt-get install -y --no-install-recommends \
   docker-ce-cli=${DOCKER_APT_VERSION} \
   docker-compose-plugin=${DOCKER_COMPOSE_APT_VERSION} \
-  fd-find \
-  gosu \
-  ca-certificates \
   # required by python-magic
   libmagic1 \
-  && apt-get remove -y\
+  && apt-get remove -y \
   gnupg \
   lsb-release \
-  && apt-get clean -y\
+  && apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
 
@@ -67,35 +58,10 @@ RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
   ./install_rclone.bash
 # install 7zip
-ARG TARGETARCH
-ENV TARGETARCH=${TARGETARCH}
 RUN \
   --mount=type=bind,source=scripts/install_7zip.bash,target=install_7zip.bash \
   ./install_7zip.bash
 
-
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
-  SC_BOOT_MODE=default
-
-RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
-
-# Sets utf-8 encoding for Python et al
-ENV LANG=C.UTF-8
-# Turns off writing .pyc files; superfluous on an ephemeral container.
-ENV PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
-# Ensures that the python and pip executables used
-# in the image will be those from our virtualenv.
-ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # directory where dynamic-sidecar stores creates and shares
 # volumes between itself and the spawned containers
 ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
@@ -106,36 +72,21 @@ ENV DYNAMIC_SIDECAR_SHARED_STORE_DIR="${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}/sh
 RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
   chown -R scu:scu "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}"
 
+EXPOSE 8000
+
+
 # -------------------------- Build stage -------------------
-# Installs build/package management tools and third party dependencies
+# Shared build toolchain + empty virtualenv (see services/_base_images/Dockerfile)
 #
-# + /build             WORKDIR
-#
-FROM base AS build
+FROM ${DOCKER_REGISTRY}/simcore-build-base:${BASE_TAG} AS build
 
-ENV SC_BUILD_TARGET=build
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential
-
-# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
-COPY --from=uv_build /uv /uvx /bin/
-
-# NOTE: python virtualenv is used here such that installed
-# packages may be moved to production image easily by copying the venv
-RUN uv venv "${VIRTUAL_ENV}" \
-  && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
-
-
-WORKDIR /build
-
+ENV DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR="/dy-volumes"
+RUN mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 # copy utility devops scripts
 COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
 COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
+
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -159,6 +110,7 @@ RUN \
   uv pip sync \
   requirements/prod.txt \
   && uv pip list
+
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -199,8 +151,6 @@ HEALTHCHECK \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "-S", "docker/healthcheck.py", "http://localhost:8000/health"]
-
-EXPOSE 8000
 
 ENTRYPOINT [ "/bin/sh", "services/dynamic-sidecar/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
