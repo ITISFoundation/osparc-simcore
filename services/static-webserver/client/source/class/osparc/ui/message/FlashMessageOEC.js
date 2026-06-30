@@ -28,12 +28,9 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
   construct: function(message, duration, supportId) {
     this.base(arguments, message, "ERROR", duration ? duration*2 : null);
 
-    if (osparc.store.Groups.getInstance().isSupportEnabled() && false) {
-      this.getChildControl("contact-support");
-    } else {
-      const oecAtom = this.getChildControl("oec-atom");
-      this.bind("supportId", oecAtom, "label");
-    }
+    const oecAtom = this.getChildControl("oec-atom");
+    this.bind("supportId", oecAtom, "label");
+
     if (supportId) {
       this.setSupportId(supportId);
     }
