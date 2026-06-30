@@ -119,7 +119,7 @@ class TracedFunctionsInstrumentor(BaseInstrumentor):
 
     _wrapped_targets: ClassVar[list[TracedFunctionTarget]] = []
 
-    def instrumentation_dependencies(self) -> Collection[str]:
+    def instrumentation_dependencies(self) -> Collection[str]:  # pylint: disable=no-self-use
         return ()
 
     def _instrument(self, **kwargs: Any) -> None:
