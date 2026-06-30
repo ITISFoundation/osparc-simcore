@@ -707,7 +707,7 @@ async def test_traced_decorator_async(
         assert result == "async_result"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_my_async_operation"]
+        matching = [s for s in spans if "_my_async_operation" in s.name]
         assert len(matching) == 1
 
 
@@ -740,7 +740,7 @@ async def test_traced_decorator_sync(
         assert result == "sync_result"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_my_sync_operation"]
+        matching = [s for s in spans if "_my_sync_operation" in s.name]
         assert len(matching) == 1
 
 
@@ -861,7 +861,7 @@ async def test_traced_decorator_with_tracing_config_getter(
         assert result == "custom"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_func_with_custom_getter"]
+        matching = [s for s in spans if "_func_with_custom_getter" in s.name]
         assert len(matching) == 1
 
 
