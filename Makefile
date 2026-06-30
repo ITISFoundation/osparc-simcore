@@ -87,6 +87,9 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
+# content-hash tag of the shared simcore base images (see services/_base_images/Dockerfile)
+export BASE_TAG ?= $(shell ci/helpers/compute_base_image_tag.bash)
+
 MAKEFILES_WITH_OPENAPI_SPECS := $(shell find . -mindepth 2 -type f -name 'Makefile' -not -path '*/.*' -exec grep -l '^openapi-specs:' {} \; | xargs realpath)
 
 # WSL 2 tricks
@@ -189,6 +192,11 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 	,) \
 )\
 docker buildx bake --allow=fs.read=.. \
+	--set *.args.BASE_TAG=$(BASE_TAG) \
+	--set *.args.DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+	$(foreach service, $(if $(target),$(target),$(INCLUDED_SERVICES)),\
+		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-runtime-base:$(BASE_TAG)=target:simcore-runtime-base \
+		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-build-base:$(BASE_TAG)=target:simcore-build-base) \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
