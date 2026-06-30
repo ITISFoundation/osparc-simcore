@@ -1,0 +1,31 @@
+# Runs the full client linter so that no ESLint rule is broken.
+name: Client ESLint
+
+on:
+  pull_request:
+    paths:
+      - "services/static-webserver/client/source/class/**/*.js"
+      - "services/static-webserver/client/.eslintrc.json"
+      - "package.json"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eslint:
+    timeout-minutes: 10
+    name: "lint client js"
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.0
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: install eslint toolchain
+        run: npm install
+      - name: run linter
+        run: npm run linter
