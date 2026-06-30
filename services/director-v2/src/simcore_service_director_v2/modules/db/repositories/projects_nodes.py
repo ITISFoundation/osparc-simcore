@@ -50,7 +50,7 @@ class ProjectsNodesRepository(BaseRepository):
             row = result.mappings().one_or_none()
             if row is None:
                 raise ProjectNodeNotFoundError(project_id=project_id, node_id=node_id)
-            return Node.model_validate(row)
+            return Node.model_validate({k: v for k, v in row.items() if v is not None})
 
     async def get_all(self, project_id: ProjectID) -> NodesDict:
         async with pass_or_acquire_connection(self.db_engine) as conn:
@@ -58,8 +58,11 @@ class ProjectsNodesRepository(BaseRepository):
                 projects_nodes.c.project_uuid == f"{project_id}"
             )
             result = await conn.execute(stmt)
+            # NOTE: drop NULL columns so Pydantic applies model defaults (e.g. ``state``)
             return {
-                f"{row['node_id']}": Node.model_validate({k: v for k, v in row.items() if k != "node_id"})
+                f"{row['node_id']}": Node.model_validate(
+                    {k: v for k, v in row.items() if k != "node_id" and v is not None}
+                )
                 for row in result.mappings()
             }
 
