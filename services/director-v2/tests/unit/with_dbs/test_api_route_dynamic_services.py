@@ -633,7 +633,8 @@ def mock_internals_inactivity(
             return MockProjectsRepo()
         if repo_type is ProjectsNodesRepository:
             return MockProjectsNodesRepo()
-        pytest.fail(f"Unexpected repository type requested: {repo_type}")
+        msg = f"Unexpected repository type requested: {repo_type}"
+        raise AssertionError(msg)
 
     # patch repositories
     mocker.patch(
