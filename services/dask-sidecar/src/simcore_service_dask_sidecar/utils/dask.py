@@ -1,18 +1,25 @@
 import asyncio
 import contextlib
+import functools
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import Final
 
 import distributed
-from dask_task_models_library.container_tasks.errors import TaskCancelledError
+from dask_task_models_library.container_tasks.errors import (
+    ServiceEncryptionError,
+    TaskCancelledError,
+)
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
     TaskProgressEvent,
 )
-from dask_task_models_library.container_tasks.io import TaskCancelEventName
-from dask_task_models_library.container_tasks.protocol import TaskOwner
+from dask_task_models_library.container_tasks.io import TaskCancelEventName, TaskOutputData
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerTaskParameters,
+    TaskOwner,
+)
 from dask_task_models_library.models import TASK_RUNNING_PROGRESS_EVENT
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
@@ -20,9 +27,40 @@ from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 
+from ..errors import FileTransferEncryptionError
 from ..rabbitmq_worker_plugin import get_rabbitmq_client
 
 _logger = logging.getLogger(__name__)
+
+
+def sanitize_exceptions_across_dask_boundary[**P](
+    func: Callable[P, Awaitable[TaskOutputData]],
+) -> Callable[P, Awaitable[TaskOutputData]]:
+    """Ensures errors crossing the dask boundary carry no sidecar internals.
+
+    The dask client can only unpickle/import public worker errors. This decorator translates
+    sidecar-internal errors (e.g. ``FileTransferEncryptionError``, which wraps the low-level
+    crypto failure) into well-defined, client-importable errors and re-raises them WITHOUT
+    chaining the internal cause, so they survive pickling across the boundary.
+    """
+
+    @functools.wraps(func)
+    async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> TaskOutputData:
+        task_parameters = kwargs["task_parameters"]
+        assert isinstance(task_parameters, ContainerTaskParameters)  # nosec
+        try:
+            return await func(*args, **kwargs)
+        except FileTransferEncryptionError as exc:
+            raise ServiceEncryptionError(
+                service_key=task_parameters.image,
+                service_version=task_parameters.tag,
+                operation=exc.operation,
+                file_role=exc.file_role,
+                file_id=exc.file_id,
+                error_message=exc.error_message,
+            ) from None
+
+    return _wrapper
 
 
 def _get_current_task_state() -> TaskState | None:
