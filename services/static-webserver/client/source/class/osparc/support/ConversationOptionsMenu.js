@@ -27,6 +27,30 @@ qx.Class.define("osparc.support.ConversationOptionsMenu", {
     });
   },
 
+  statics: {
+    /**
+     * Factory for the "three dots" options button so all conversation entry points share the same look and alignment.
+     */
+    createMenuButton: function() {
+      const buttonSize = 22;
+      return new qx.ui.form.MenuButton().set({
+        appearance: "form-button-outlined",
+        backgroundColor: "background-main-3",
+        width: buttonSize,
+        height: buttonSize,
+        maxWidth: buttonSize,
+        maxHeight: buttonSize,
+        allowGrowX: false,
+        allowGrowY: false,
+        alignX: "center",
+        alignY: "middle",
+        center: true,
+        icon: "@FontAwesomeSolid/ellipsis-v/12",
+        focusable: false,
+      });
+    },
+  },
+
   properties: {
     conversation: {
       check: "osparc.data.model.Conversation",

@@ -104,19 +104,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
           this.getChildControl("badges-layout").add(control);
           break;
         case "menu-button": {
-          const buttonSize = 22;
-          control = new qx.ui.form.MenuButton().set({
-            appearance: "form-button-outlined",
-            width: buttonSize,
-            height: buttonSize,
-            padding: [0, 7],
-            allowGrowX: false,
-            allowGrowY: false,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@FontAwesomeSolid/ellipsis-v/12",
-            focusable: false,
-          });
+          control = osparc.support.ConversationOptionsMenu.createMenuButton();
           this.getChildControl("bottom-right-layout").add(control);
           break;
         }
