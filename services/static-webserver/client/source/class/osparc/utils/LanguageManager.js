@@ -27,7 +27,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
      * Returns the locales for which translations were compiled (see compile.json).
      * @return {String[]} e.g. ["en_US", "es_ES"]
      */
-    getAvailableLocales: function () {
+    getAvailableLocales: function() {
       return qx.locale.Manager.getInstance().getAvailableLocales();
     },
 
