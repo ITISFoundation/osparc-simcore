@@ -229,7 +229,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       request
         .then(workspaces => {
           if (filterEnabled) {
-            return Promise.resolve();
+            return;
           }
           this.__setWorkspacesToList(workspaces);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
@@ -255,7 +255,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         ].includes(this.getCurrentContext()) ||
         this.__loadingFolders
       ) {
-        return;
+        return Promise.resolve();
       }
 
       let filterEnabled = false;
@@ -284,7 +284,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return request
         .then(folders => {
           if (filterEnabled) {
-            return Promise.resolve();
+            return;
           }
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
@@ -309,7 +309,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES || // all but workspaces
         this._loadingResourcesBtn.isFetching()
       ) {
-        return;
+        return Promise.resolve();
       }
 
       this.__tasksToCards();
@@ -2494,9 +2494,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (deleteAccess) {
         if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && Boolean(studyData["trashedAt"])) {
           return "delete";
-        } else {
-          return "trash";
         }
+        return "trash";
       }
       // check if I'm collaborator
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
