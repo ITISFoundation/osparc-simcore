@@ -1,5 +1,10 @@
+import base64
 from typing import Annotated, Final
 
+from models_library.api_schemas_directorv2.encryption import (
+    JobEncryptionContextMetadata,
+)
+from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, ConfigDict, Field, SecretBytes
 from pydantic.config import JsonDict
 
@@ -29,6 +34,18 @@ class JobEncryptionContext(BaseModel):
             ),
         ),
     ]
+
+    @classmethod
+    def from_metadata(cls, metadata: JobEncryptionContextMetadata, node_id: NodeID) -> "JobEncryptionContext":
+        """Builds the per-task context for ``node_id`` from the REST/storage transport form.
+
+        The shared base64 ``root_key`` is decoded back into raw bytes and only the input mapping
+        of the given node is kept (empty when the node has no encrypted inputs).
+        """
+        return cls(
+            root_key=SecretBytes(base64.b64decode(metadata.root_key.get_secret_value())),
+            input_port_to_file_id=metadata.input_port_to_file_id.get(node_id, {}),
+        )
 
     def transfer_settings_for_input(self, input_key: str) -> "TransferEncryptionSettings | None":
         """Returns the per-file transfer settings for an input port, or None when that port is not encrypted."""

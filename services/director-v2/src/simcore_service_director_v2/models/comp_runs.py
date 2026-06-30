@@ -25,6 +25,12 @@ class ProjectMetadataDict(TypedDict, total=False):
     root_parent_node_name: str
 
 
+class JobEncryptionRunMetadataDict(TypedDict):
+    # storage form of models_library JobEncryptionContextMetadata
+    root_key: str  # base64-encoded 32-byte root key
+    input_port_to_file_id: dict[NodeID, dict[str, str]]
+
+
 class RunMetadataDict(TypedDict, total=False):
     node_id_names_map: dict[NodeID, str]
     project_name: str
@@ -35,6 +41,7 @@ class RunMetadataDict(TypedDict, total=False):
     wallet_id: int | None
     wallet_name: str | None
     project_metadata: ProjectMetadataDict
+    encryption: JobEncryptionRunMetadataDict
 
 
 type Iteration = PositiveInt

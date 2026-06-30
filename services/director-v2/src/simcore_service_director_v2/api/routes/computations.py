@@ -18,10 +18,11 @@ Therefore,
 import contextlib
 import logging
 from datetime import timedelta
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, cast
 
 import networkx as nx
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.serialization import model_dump_with_secrets
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
@@ -61,7 +62,12 @@ from ...core.errors import (
     ProjectNotFoundError,
     WalletNotEnoughCreditsError,
 )
-from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
+from ...models.comp_runs import (
+    CompRunsAtDB,
+    JobEncryptionRunMetadataDict,
+    ProjectMetadataDict,
+    RunMetadataDict,
+)
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
@@ -238,23 +244,31 @@ async def _try_start_pipeline(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Project {computation.project_id} has no collection run ID",
         )
+    run_metadata = RunMetadataDict(
+        node_id_names_map={NodeID(node_idstr): node_data.label for node_idstr, node_data in project_nodes.items()},
+        product_name=computation.product_name,
+        project_name=project.name,
+        simcore_user_agent=computation.simcore_user_agent,
+        user_email=await users_repo.get_user_email(computation.user_id),
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        project_metadata=await _get_project_metadata(
+            computation.project_id, projects_repo, projects_nodes_repo, projects_metadata_repo
+        ),
+    )
+    if computation.encryption:
+        # PoC: the base64 root_key is persisted in plaintext in the run metadata so the scheduler can
+        # re-read it at async submission time and derive per-task contexts. The vault phase replaces
+        # this plaintext-at-rest storage with a key reference.
+        run_metadata["encryption"] = cast(
+            JobEncryptionRunMetadataDict,
+            model_dump_with_secrets(computation.encryption, show_secrets=True),
+        )
     await run_new_pipeline(
         app,
         user_id=computation.user_id,
         project_id=computation.project_id,
-        run_metadata=RunMetadataDict(
-            node_id_names_map={NodeID(node_idstr): node_data.label for node_idstr, node_data in project_nodes.items()},
-            product_name=computation.product_name,
-            project_name=project.name,
-            simcore_user_agent=computation.simcore_user_agent,
-            user_email=await users_repo.get_user_email(computation.user_id),
-            wallet_id=wallet_id,
-            wallet_name=wallet_name,
-            project_metadata=await _get_project_metadata(
-                computation.project_id, projects_repo, projects_nodes_repo, projects_metadata_repo
-            ),
-        )
-        or {},
+        run_metadata=run_metadata or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
         collection_run_id=computation.collection_run_id,
     )

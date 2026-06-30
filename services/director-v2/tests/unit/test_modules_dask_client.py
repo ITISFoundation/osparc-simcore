@@ -5,6 +5,7 @@
 # pylint:disable=too-many-arguments
 # pylint: disable=reimported
 import asyncio
+import base64
 import functools
 import logging
 import traceback
@@ -17,8 +18,12 @@ from uuid import uuid4
 import distributed
 import pytest
 import respx
+from common_library.serialization import model_dump_with_secrets
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import (
+    JobEncryptionContext,
+)
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
@@ -39,6 +44,9 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
+from models_library.api_schemas_directorv2.encryption import (
+    JobEncryptionContextMetadata,
+)
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.clusters import ClusterTypeInModel, NoAuthentication
 from models_library.projects import ProjectID
@@ -61,7 +69,10 @@ from simcore_service_director_v2.core.errors import (
     InsufficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
-from simcore_service_director_v2.models.comp_runs import RunMetadataDict
+from simcore_service_director_v2.models.comp_runs import (
+    JobEncryptionRunMetadataDict,
+    RunMetadataDict,
+)
 from simcore_service_director_v2.models.comp_tasks import Image
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity.asyncio import AsyncRetrying
@@ -73,9 +84,9 @@ from yarl import URL
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
 
-async def _assert_wait_for_cb_call(mocked_fct, timeout: int | None = None):
+async def _assert_wait_for_cb_call(mocked_fct, max_delay: int | None = None):
     async for attempt in AsyncRetrying(
-        stop=stop_after_delay(timeout or 10),
+        stop=stop_after_delay(max_delay or 10),
         wait=wait_random(0, 1),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
@@ -90,11 +101,11 @@ async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
     expected_status: RunningState,
-    timeout: int | None = None,  # noqa: ASYNC109
+    max_delay: int | None = None,
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
-        stop=stop_after_delay(timeout or _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS),
+        stop=stop_after_delay(max_delay or _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS),
         wait=wait_fixed(2),
         retry=retry_if_exception_type(AssertionError),
     ):
@@ -331,7 +342,7 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     dask_client: DaskClient,
 ):
     def fct_that_raise_cancellation_error() -> NoReturn:
-        import asyncio
+        import asyncio  # noqa: PLC0415
 
         cancel_msg = "task was cancelled, but dask does not care..."
         raise asyncio.CancelledError(cancel_msg)
@@ -436,6 +447,7 @@ async def test_send_computation_task(
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
         expected_annotations: dict[str, Any],
         expected_envs: ContainerEnvsDict,
         expected_labels: ContainerLabelsDict,
@@ -481,7 +493,7 @@ async def test_send_computation_task(
                 f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{node_requirements.cpu}",
                 f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{node_requirements.ram}",
                 f"{to_simcore_runtime_docker_label_key('product-name')}": f"{comp_run_metadata['product_name']}",
-                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": f"{comp_run_metadata['simcore_user_agent']}",
+                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": f"{comp_run_metadata['simcore_user_agent']}",  # noqa: E501
                 f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "undefined-label",
             },  # type: ignore
         ),
@@ -504,7 +516,7 @@ async def test_send_computation_task(
     # using the event we let the remote fct continue
     event = distributed.Event(_DASK_EVENT_NAME, client=dask_client.backend.client)
     await event.set()  # type: ignore
-    await _assert_wait_for_cb_call(mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
+    await _assert_wait_for_cb_call(mocked_user_completed_cb, max_delay=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
 
     # check the task status
     await _assert_wait_for_task_status(
@@ -525,11 +537,86 @@ async def test_send_computation_task(
         published_computation_task.job_id,
         dask_client,
         expected_status=RunningState.UNKNOWN,
-        timeout=60,
+        max_delay=60,
     )
 
     with pytest.raises(ComputationalBackendTaskNotFoundError):
         await dask_client.get_task_result(published_computation_task.job_id)
+
+
+async def test_send_computation_task_propagates_encryption_context(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    image_params: ImageParams,
+    _mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+    mocked_storage_service_api: respx.MockRouter,
+    comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
+    faker: Faker,
+    resource_tracking_run_id: ServiceRunID,
+):
+    expected_root_key = b"0" * 32
+    expected_input_port_to_file_id = {"input_1": "input_1"}
+
+    # NOTE: this must be inlined so that the test works,
+    # the dask-worker must be able to import the function
+    def fake_sidecar_fct(
+        task_parameters: ContainerTaskParameters,
+        docker_auth: DockerBasicAuth,
+        log_file_url: LogFileUploadURL,
+        s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
+        expected_root_key: bytes,
+        expected_input_port_to_file_id: dict[str, str],
+    ) -> TaskOutputData:
+        assert encryption is not None
+        assert encryption.root_key.get_secret_value() == expected_root_key
+        assert encryption.input_port_to_file_id == expected_input_port_to_file_id
+        return TaskOutputData.model_validate({"some_output_key": 123})
+
+    # the encryption context travels (base64 root_key) inside the run metadata
+    metadata_with_encryption = RunMetadataDict(**comp_run_metadata)
+    metadata_with_encryption["encryption"] = cast(
+        JobEncryptionRunMetadataDict,
+        model_dump_with_secrets(
+            JobEncryptionContextMetadata(
+                root_key=base64.b64encode(expected_root_key).decode("ascii"),  # type: ignore[arg-type]
+                input_port_to_file_id={node_id: expected_input_port_to_file_id},
+            ),
+            show_secrets=True,
+        ),
+    )
+
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        tasks=image_params.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=functools.partial(
+            fake_sidecar_fct,
+            expected_root_key=expected_root_key,
+            expected_input_port_to_file_id=expected_input_port_to_file_id,
+        ),
+        metadata=metadata_with_encryption,
+        hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
+    )
+    assert len(node_id_to_job_ids) == 1
+    published_computation_task = node_id_to_job_ids[0]
+
+    await _assert_wait_for_cb_call(mocked_user_completed_cb, max_delay=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
+    await _assert_wait_for_task_status(
+        published_computation_task.job_id,
+        dask_client,
+        expected_status=RunningState.SUCCESS,
+    )
+    # the in-sidecar assertions passed -> result is available
+    task_result = await dask_client.get_task_result(published_computation_task.job_id)
+    assert isinstance(task_result, TaskOutputData)
+    assert task_result.get("some_output_key") == 123
 
 
 async def test_computation_task_is_persisted_on_dask_scheduler(
@@ -561,6 +648,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -582,7 +670,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
-    await _assert_wait_for_cb_call(mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
+    await _assert_wait_for_cb_call(mocked_user_completed_cb, max_delay=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
     # check the task status
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
@@ -639,6 +727,7 @@ async def test_abort_computation_tasks(
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
@@ -708,7 +797,7 @@ async def test_abort_computation_tasks(
         published_computation_task[0].job_id,
         dask_client,
         RunningState.UNKNOWN,
-        timeout=10,
+        max_delay=10,
     )
 
 
@@ -731,6 +820,7 @@ async def test_failed_task_returns_exceptions(
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
     ) -> TaskOutputData:
         err_msg = "sadly we are failing to execute anything cause we are dumb..."
         raise ValueError(err_msg)
@@ -751,7 +841,7 @@ async def test_failed_task_returns_exceptions(
     assert published_computation_task[0].node_id in gpu_image.fake_tasks
 
     # this waits for the computation to run
-    await _assert_wait_for_cb_call(mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
+    await _assert_wait_for_cb_call(mocked_user_completed_cb, max_delay=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
 
     # the computation status is FAILED
     await _assert_wait_for_task_status(
@@ -761,7 +851,7 @@ async def test_failed_task_returns_exceptions(
     )
     with pytest.raises(
         ValueError,
-        match="sadly we are failing to execute anything cause we are dumb...",
+        match="sadly we are failing to execute anything cause we are dumb...",  # noqa: RUF043
     ):
         await dask_client.get_task_result(published_computation_task[0].job_id)
     assert len(await dask_client.backend.client.list_datasets()) > 0  # type: ignore
@@ -981,6 +1071,7 @@ async def test_get_tasks_status(
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
     ) -> TaskOutputData:
         # wait here until the client allows us to continue
         start_event = Event(_DASK_EVENT_NAME)
@@ -1031,7 +1122,7 @@ async def test_get_tasks_status(
         published_computation_task[0].job_id,
         dask_client,
         RunningState.UNKNOWN,
-        timeout=60,
+        max_delay=60,
     )
 
 
@@ -1061,6 +1152,7 @@ async def test_dask_sub_handlers(
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
     ) -> TaskOutputData:
         get_worker().log_event(TaskProgressEvent.topic_name(), "my name is progress")
         # tell the client we are done
