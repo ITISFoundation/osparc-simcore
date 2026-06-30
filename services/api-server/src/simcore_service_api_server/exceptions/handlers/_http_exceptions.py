@@ -10,7 +10,8 @@ async def http_exception_handler(request: Request, exc: Exception) -> JSONRespon
     assert request  # nosec
     assert isinstance(exc, HTTPException)  # nosec
 
+    # NOTE: LocaleMiddleware only active with API_SERVER_LOCALIZED_MESSAGES_ENABLED=1
     locale = getattr(request.state, "locale", DEFAULT_LOCALE)
-    detail = get_translator(locale).gettext(exc.detail) if isinstance(exc.detail, str) else exc.detail
+    error_msg = get_translator(locale).gettext(exc.detail) if isinstance(exc.detail, str) else exc.detail
 
-    return create_error_json_response(detail, status_code=exc.status_code)
+    return create_error_json_response(error_msg, status_code=exc.status_code)
