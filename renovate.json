@@ -1,0 +1,57 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboardApproval"
+  ],
+
+  "dependencyDashboard": true,
+  "prCreation": "approval",
+
+  "platformAutomerge": false,
+  "automerge": false,
+
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+
+  "schedule": [
+    "before 3am on monday"
+  ],
+  "timezone": "Europe/Zurich",
+
+  "additionalBranchPrefix": "{{parentDir}}-",
+
+  "packageRules": [
+    {
+      "paths": ["packages/**/requirements/**"],
+      "matchManagers": ["pip_requirements", "pip_compile"],
+      "groupName": "packages deps",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "paths": ["services/**/requirements/**"],
+      "matchManagers": ["pip_requirements", "pip_compile"],
+      "groupName": "services deps",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "matchDatasources": ["docker"],
+      "groupName": "docker images",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "matchDatasources": ["pypi"],
+      "matchPackageNames": [
+        "simcore-sdk",
+        "simcore-service-library"
+      ],
+      "enabled": false
+    }
+  ]
+}
