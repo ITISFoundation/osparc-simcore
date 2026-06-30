@@ -107,7 +107,7 @@ class BaseProjectModel(BaseModel):
     last_change_date: datetime
 
     workbench: Annotated[
-        # NOTE: can be safely removed after https://github.com/ITISFoundation/osparc-simcore/pull/9303
+        # NOTE: will be definitely removed in https://github.com/ITISFoundation/osparc-simcore/pull/9303
         NodesDict,
         Field(deprecated=True),
     ] = Field(default_factory=dict)
