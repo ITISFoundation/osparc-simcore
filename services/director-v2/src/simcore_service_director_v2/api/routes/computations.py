@@ -21,6 +21,7 @@ from datetime import timedelta
 from typing import Annotated, Any, Final
 
 import networkx as nx
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
@@ -28,7 +29,7 @@ from models_library.api_schemas_directorv2.computations import (
     ComputationGet,
     ComputationStop,
 )
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
@@ -56,6 +57,7 @@ from ...core.errors import (
     EC2InstanceTypeNotFoundError,
     PipelineTaskMissingError,
     PricingPlanUnitNotFoundError,
+    ProjectNodeNotFoundError,
     ProjectNotFoundError,
     WalletNotEnoughCreditsError,
 )
@@ -67,6 +69,7 @@ from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_metadata import ProjectsMetadataRepository
+from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
@@ -131,6 +134,7 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 async def _get_project_metadata(
     project_id: ProjectID,
     project_repo: ProjectsRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> ProjectMetadataDict:
     try:
@@ -144,17 +148,31 @@ async def _get_project_metadata(
         assert project_ancestors.root_node_id is not None  # nosec
 
         async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
-            prj = await project_repo.get_project(project_uuid)
-            node_id_str = f"{node_id}"
-            if node_id_str not in prj.workbench:
-                _logger.error(
-                    "%s not found in %s. it is an ancestor of %s. Please check!",
-                    f"{node_id=}",
-                    f"{prj.uuid=}",
-                    f"{project_id=}",
+            project = await project_repo.get(project_uuid)
+
+            try:
+                node = await projects_nodes_repo.get(project_uuid, node_id)
+            except ProjectNodeNotFoundError as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        f"Node {node_id} not found in project {project.uuid}",
+                        error=exc,
+                        error_context={
+                            "node_id": node_id,
+                            "project_uuid": project.uuid,
+                            "ancestor_of_project_id": project_id,
+                        },
+                        tip=(
+                            "This node is registered as an ancestor of the project "
+                            "but is missing from its project's nodes. This likely "
+                            "indicates a data inconsistency, e.g. the node was removed "
+                            "from the project while still being referenced as a "
+                            "parent/root node."
+                        ),
+                    )
                 )
-                return prj.name, _UNKNOWN_NODE
-            return prj.name, prj.workbench[node_id_str].label
+                return project.name, _UNKNOWN_NODE
+            return project.name, node.label
 
         parent_project_name, parent_node_name = await _get_project_node_names(
             project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
@@ -195,10 +213,12 @@ def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
 async def _try_start_pipeline(
     app: FastAPI,
     *,
-    project_repo: ProjectsRepository,
+    projects_repo: ProjectsRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
     computation: ComputationCreate,
     minimal_dag: nx.DiGraph,
     project: ProjectAtDB,
+    project_nodes: NodesDict,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> bool:
@@ -223,16 +243,16 @@ async def _try_start_pipeline(
         user_id=computation.user_id,
         project_id=computation.project_id,
         run_metadata=RunMetadataDict(
-            node_id_names_map={
-                NodeID(node_idstr): node_data.label for node_idstr, node_data in project.workbench.items()
-            },
+            node_id_names_map={NodeID(node_idstr): node_data.label for node_idstr, node_data in project_nodes.items()},
             product_name=computation.product_name,
             project_name=project.name,
             simcore_user_agent=computation.simcore_user_agent,
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
             wallet_name=wallet_name,
-            project_metadata=await _get_project_metadata(computation.project_id, project_repo, projects_metadata_repo),
+            project_metadata=await _get_project_metadata(
+                computation.project_id, projects_repo, projects_nodes_repo, projects_metadata_repo
+            ),
         )
         or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
@@ -270,7 +290,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     computation: ComputationCreate,
     request: Request,
     response: Response,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_nodes_repo: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
@@ -287,13 +308,15 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     )
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get_project(computation.project_id)
+        project = await projects_repo.get(computation.project_id)
 
         # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
+        project_nodes = await projects_nodes_repo.get_all(computation.project_id)
+
         # create the complete DAG graph
-        complete_dag = create_complete_dag(project.workbench)
+        complete_dag = create_complete_dag(project_nodes)
 
         # reject cycles involving computational nodes early (before catalog checks)
         if computation.start_pipeline and (computational_cycles := find_computational_node_cycles(complete_dag)):
@@ -327,6 +350,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
         comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
+            project_nodes=project_nodes,
             catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
@@ -343,10 +367,12 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
 
             pipeline_started = await _try_start_pipeline(
                 request.app,
-                project_repo=project_repo,
+                projects_repo=projects_repo,
+                projects_nodes_repo=projects_nodes_repo,
                 computation=computation,
                 minimal_dag=minimal_computational_dag,
                 project=project,
+                project_nodes=project_nodes,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
             )
@@ -421,7 +447,7 @@ async def get_computation(
     )
 
     # check that project actually exists
-    await project_repo.get_project(project_id)
+    await project_repo.get(project_id)
 
     try:
         pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
@@ -492,7 +518,7 @@ async def stop_computation(
     )
     try:
         # check the project exists
-        await project_repo.get_project(project_id)
+        await project_repo.get(project_id)
         # get the project pipeline
         pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
         pipeline_dag = pipeline_at_db.get_graph()
@@ -545,7 +571,7 @@ async def delete_computation(
 ) -> None:
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get_project(project_id)
+        project = await project_repo.get(project_id)
         # check if current state allow to stop the computation
         pipeline_state = RunningState.UNKNOWN
         with contextlib.suppress(ComputationalRunNotFoundError):

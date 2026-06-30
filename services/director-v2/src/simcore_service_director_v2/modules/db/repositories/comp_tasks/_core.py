@@ -5,7 +5,7 @@ from typing import Any, cast
 import sqlalchemy as sa
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -135,6 +135,7 @@ class CompTasksRepository(BaseRepository):
         self,
         *,
         project: ProjectAtDB,
+        project_nodes: NodesDict,
         catalog_client: CatalogClient,
         published_nodes: list[NodeID],
         user_id: UserID,
@@ -154,6 +155,7 @@ class CompTasksRepository(BaseRepository):
                 # that calls backend services to generate the tasks list!! Refactoring needed!!
                 await _utils.generate_tasks_list_from_project(
                     project=project,
+                    project_nodes=project_nodes,
                     catalog_client=catalog_client,
                     published_nodes=published_nodes,
                     user_id=user_id,
@@ -170,7 +172,7 @@ class CompTasksRepository(BaseRepository):
             )
             # remove the tasks that were removed from project workbench
             if all_nodes := result.all():
-                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project.workbench]
+                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project_nodes]
                 for node_id in node_ids_to_delete:
                     await conn.execute(
                         sa.delete(comp_tasks).where(
