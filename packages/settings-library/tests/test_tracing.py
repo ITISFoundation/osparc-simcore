@@ -3,6 +3,7 @@
 
 import pytest
 from pydantic import ValidationError
+from pydantic_settings import SettingsError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from settings_library.tracing import TracingSettings
 
@@ -36,8 +37,6 @@ def test_traced_functions_accepts_valid_targets(monkeypatch: pytest.MonkeyPatch)
 @pytest.mark.parametrize(
     "invalid_value",
     [
-        # not valid JSON at all
-        "not-json",
         # valid JSON but invalid target format
         '["no_colon_here"]',
         '["pkg.module:"]',
@@ -53,4 +52,14 @@ def test_traced_functions_rejects_invalid_targets(monkeypatch: pytest.MonkeyPatc
             {**_REQUIRED_ENVS, "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS": invalid_value},
         )
         with pytest.raises(ValidationError):
+            TracingSettings.create_from_envs()
+
+
+def test_traced_functions_rejects_non_json(monkeypatch: pytest.MonkeyPatch):
+    with monkeypatch.context() as patch:
+        setenvs_from_dict(
+            patch,
+            {**_REQUIRED_ENVS, "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS": "not-json"},
+        )
+        with pytest.raises(SettingsError):
             TracingSettings.create_from_envs()
