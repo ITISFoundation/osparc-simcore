@@ -134,7 +134,7 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 async def _get_project_metadata(
     project_id: ProjectID,
     project_repo: ProjectsRepository,
-    project_nodes_repo: ProjectsNodesRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> ProjectMetadataDict:
     try:
@@ -151,7 +151,7 @@ async def _get_project_metadata(
             project = await project_repo.get(project_uuid)
 
             try:
-                node = await project_nodes_repo.get(project_uuid, node_id)
+                node = await projects_nodes_repo.get(project_uuid, node_id)
             except ProjectNodeNotFoundError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
@@ -207,7 +207,8 @@ def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
 async def _try_start_pipeline(
     app: FastAPI,
     *,
-    project_repo: ProjectsRepository,
+    projects_repo: ProjectsRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
     computation: ComputationCreate,
     minimal_dag: nx.DiGraph,
     project: ProjectAtDB,
@@ -244,7 +245,9 @@ async def _try_start_pipeline(
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
             wallet_name=wallet_name,
-            project_metadata=await _get_project_metadata(computation.project_id, project_repo, projects_metadata_repo),
+            project_metadata=await _get_project_metadata(
+                computation.project_id, projects_repo, projects_nodes_repo, projects_metadata_repo
+            ),
         )
         or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
@@ -282,7 +285,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     computation: ComputationCreate,
     request: Request,
     response: Response,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_nodes_repo: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
@@ -299,7 +303,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     )
     try:
         # get the project
-        project = await project_repo.get(computation.project_id)
+        project = await projects_repo.get(computation.project_id)
 
         # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
@@ -355,7 +359,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
 
             pipeline_started = await _try_start_pipeline(
                 request.app,
-                project_repo=project_repo,
+                projects_repo=projects_repo,
+                projects_nodes_repo=projects_nodes_repo,
                 computation=computation,
                 minimal_dag=minimal_computational_dag,
                 project=project,
