@@ -52,7 +52,8 @@ class PreRegistrationDetailsDict(TypedDict):
     account_request_reviewed_by: int | None
 
 
-type PreRegisteredUserData = tuple[str, PreRegistrationDetailsDict]
+type PreRegisteredEmail = str
+type PreRegisteredUserData = tuple[PreRegisteredEmail, PreRegistrationDetailsDict]
 
 
 class CreateProductCallable(Protocol):
