@@ -360,11 +360,24 @@ class UsersRepo:
         product_name: str,
         user_id: int,
     ) -> Any | None:
-        """Returns billing details for the specified user and product.
+        """Returns billing details for the specified user.
 
-        - If the user is registered without a product, returns details for that registration.
-        - Returns None if no billing details are found.
+        The billing address is a property of the person, not of the product: a
+        user pre-registered on one product must still be invoiceable on any other
+        product they have access to. Therefore any pre-registration row for the
+        user is eligible, ranked by specificity:
+          1. exact match on ``product_name``
+          2. product-agnostic row (``product_name IS NULL``)
+          3. any other product
+        and, within the same rank, the most recently created row.
+
+        - Returns None if the user has no pre-registration with billing details.
         """
+        product_match_rank = sa.case(
+            (users_pre_registration_details.c.product_name == product_name, 0),
+            (users_pre_registration_details.c.product_name.is_(None), 1),
+            else_=2,
+        )
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
                 sa.select(
@@ -384,14 +397,11 @@ class UsersRepo:
                         users.c.id == users_pre_registration_details.c.user_id,
                     )
                 )
-                .where(
-                    (users.c.id == user_id)
-                    & (
-                        (users_pre_registration_details.c.product_name == product_name)
-                        | (users_pre_registration_details.c.product_name.is_(None))
-                    )
+                .where(users.c.id == user_id)
+                .order_by(
+                    product_match_rank.asc(),
+                    users_pre_registration_details.c.created.desc(),
                 )
-                .order_by(users_pre_registration_details.c.created.desc())
                 .limit(1)
                 # NOTE: might want to copy billing details to users table??
             )

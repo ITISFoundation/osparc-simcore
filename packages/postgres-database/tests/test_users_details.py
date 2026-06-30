@@ -326,6 +326,52 @@ async def test_get_billing_details_from_pre_registration(
 
 
 @pytest.mark.acceptance_test(
+    "cannot buy credits on a product without pre-registration "
+    "in https://github.com/ITISFoundation/private-issues/issues/600"
+)
+async def test_get_billing_details_for_a_different_product(
+    asyncpg_engine: AsyncEngine,
+    pre_registered_user: tuple[str, dict[str, Any]],
+    product_factory: CreateProductCallable,
+):
+    """The billing address belongs to the person, not the product: a user
+    pre-registered on one product must remain invoiceable on another product
+    they have access to (e.g. buying credits on a second product).
+    """
+    pre_email, fake_pre_registration_data = pre_registered_user
+
+    # User has a single pre-registration (on the `product` fixture)
+    # but buys credits on a *different* product
+    other_product = await product_factory("other-product")
+
+    # Create and link the user to the existing pre-registration
+    async with transaction_context(asyncpg_engine) as connection:
+        repo = UsersRepo(asyncpg_engine)
+        new_user = await repo.new_user(
+            connection,
+            email=pre_email,
+            password_hash="123456",  # noqa: S106
+            status=UserStatus.ACTIVE,
+            expires_at=None,
+        )
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
+        )
+
+    # Billing details must still be found for the other product
+    invoice_data = await repo.get_billing_details(user_id=new_user.id, product_name=other_product["name"])
+    assert invoice_data is not None
+
+    user_address = UserAddress.create_from_db(invoice_data)
+    assert user_address.line1
+    assert user_address.state == fake_pre_registration_data["state"]
+    assert user_address.postal_code == fake_pre_registration_data["postal_code"]
+    assert user_address.country == fake_pre_registration_data["country"]
+
+
+@pytest.mark.acceptance_test(
     "pre-registration user update in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
 )
 async def test_update_user_from_pre_registration(
