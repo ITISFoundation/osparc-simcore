@@ -288,7 +288,7 @@ class DaskClient:
         """
 
         list_of_node_id_to_job_id: list[PublishedComputationTask] = []
-        encryption_metadata = dask_utils.get_job_encryption_context_metadata(metadata)
+
         for node_id, node_image in tasks.items():
             job_id = generate_dask_job_id(
                 service_key=node_image.name,
@@ -374,6 +374,7 @@ class DaskClient:
                 task_owner = dask_utils.compute_task_owner(
                     user_id, project_id, node_id, metadata.get("project_metadata", {})
                 )
+                encryption_metadata = dask_utils.get_job_encryption_context_metadata(metadata)
                 encryption = (
                     JobEncryptionContext.from_metadata(encryption_metadata, node_id) if encryption_metadata else None
                 )
