@@ -3,8 +3,7 @@
 Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
 
-import logging
-
+from celery_library.basic_types import BootServerMode
 from common_library.basic_types import BootModeEnum
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
@@ -30,9 +29,8 @@ from .._meta import (
     API_VTAG,
     APP_FINISHED_BANNER_MSG,
     APP_NAME,
-    APP_STARTED_BANNER_MSG,
     APP_STARTING_BANNER_MSG,
-    APP_WORKER_STARTED_BANNER_MSG,
+    get_started_banner,
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..dsm import configure_dsm_provider
@@ -45,16 +43,13 @@ from ..modules.redis import configure_redis_clients
 from ..modules.s3 import configure_s3_client
 from .settings import ApplicationSettings
 
-_logger = logging.getLogger(__name__)
 
-
-def _configure_plugins(
+def _configure_app(
     app: FastAPI,
     app_lifespan: LifespanManager,
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
-    """Configure all application plugins in the correct dependency order."""
     # Setup httpx client lifecycle
     configure_httpx_client(
         app_lifespan,
@@ -80,10 +75,6 @@ def _configure_plugins(
     # DSM provider (data storage manager)
     configure_dsm_provider(app_lifespan)
 
-    # DSM cleaner (depends on DSM provider and Celery)
-    if settings.STORAGE_CLEANER_INTERVAL_S and not settings.STORAGE_WORKER_MODE:
-        configure_dsm_cleaner(app_lifespan)
-
     # Monitoring and tracing
     if settings.STORAGE_MONITORING_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
@@ -91,14 +82,31 @@ def _configure_plugins(
     if tracing_config.tracing_enabled:
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
 
+    match settings.STORAGE_BOOT_SERVER_MODE:
+        case BootServerMode.AS_REST_API_SERVER:
+            if settings.STORAGE_CLEANER_INTERVAL_S:
+                configure_dsm_cleaner(app_lifespan)
+            # Setup routes and exception handlers (outside the lifespan context)
+
+            # Configure middleware (in reverse order due to how middleware is applied)
+            if settings.STORAGE_PROFILING:
+                app.add_middleware(ProfilerMiddleware)
+
+            if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
+                # middleware to time requests (ONLY for development)
+                app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
+
+            app.add_middleware(GZipMiddleware)
+            app.add_middleware(RequestCancellationMiddleware)
+
+            setup_rest_api_routes(app, API_VTAG)
+            set_exception_handlers(app)
+
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
-    # Determine the correct startup banner based on worker mode
-    started_banner = APP_WORKER_STARTED_BANNER_MSG if settings.STORAGE_WORKER_MODE else APP_STARTED_BANNER_MSG
-
     with configure_app_lifespan(
         starting_banner=APP_STARTING_BANNER_MSG,
-        started_banner=started_banner,
+        started_banner=get_started_banner(settings.STORAGE_BOOT_SERVER_MODE),
         shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
@@ -118,22 +126,6 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
         app.state.settings = settings
         app.state.tracing_config = tracing_config
 
-        # Configure all plugins in dependency order
-        _configure_plugins(app, app_lifespan, settings, tracing_config)
-
-        # Configure middleware (in reverse order due to how middleware is applied)
-        if settings.STORAGE_PROFILING:
-            app.add_middleware(ProfilerMiddleware)
-
-        if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
-            # middleware to time requests (ONLY for development)
-            app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
-
-        app.add_middleware(GZipMiddleware)
-        app.add_middleware(RequestCancellationMiddleware)
-
-    # Setup routes and exception handlers (outside the lifespan context)
-    setup_rest_api_routes(app, API_VTAG)
-    set_exception_handlers(app)
+        _configure_app(app, app_lifespan, settings, tracing_config)
 
     return app

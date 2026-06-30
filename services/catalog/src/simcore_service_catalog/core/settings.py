@@ -60,7 +60,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool,
         Field(
             validation_alias=AliasChoices("CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description="Enables local development log format. "
+            "WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ] = False
     CATALOG_LOG_FILTER_MAPPING: Annotated[
@@ -68,7 +69,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+            "to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
@@ -102,7 +104,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
-    CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
 
     CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = _DEFAULT_SERVICE_SPECIFICATIONS

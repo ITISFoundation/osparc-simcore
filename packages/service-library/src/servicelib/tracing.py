@@ -29,6 +29,8 @@ from opentelemetry.trace import Link
 from pydantic import BaseModel, ConfigDict, model_validator
 from settings_library.tracing import TracingSettings
 
+from .utils import get_callable_namespaced_name
+
 type TracingContext = otcontext.Context | None
 
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
@@ -372,7 +374,8 @@ def traced(  # noqa: C901
     args/kwargs as the decorated function). If not provided, the first positional
     argument must be type-annotated as `FastAPI` or `aiohttp.web.Application`.
 
-    Uses the function name as span name unless `operation_name` is provided.
+    Uses a namespaced name derived from the function (see
+    `get_callable_namespaced_name`) as span name unless `operation_name` is provided.
 
     Can be used with or without arguments:
         @traced
@@ -386,7 +389,7 @@ def traced(  # noqa: C901
     """
 
     def _decorator(func):
-        span_name = operation_name or func.__name__
+        span_name = operation_name or get_callable_namespaced_name(func)
         warned: list[bool] = [False]
 
         # Validate at decoration time: first arg must be FastAPI or web.Application,
