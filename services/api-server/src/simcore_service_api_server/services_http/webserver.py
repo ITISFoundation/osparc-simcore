@@ -73,6 +73,7 @@ from ..exceptions.backend_errors import (
     WalletNotFoundError,
 )
 from ..exceptions.service_errors_utils import (
+    ServiceHTTPStatus,
     service_exception_handler,
     service_exception_mapper,
 )
@@ -96,15 +97,15 @@ _exception_mapper = partial(service_exception_mapper, service_name="Webserver")
 _POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
 
 _JOB_STATUS_MAP = {
-    status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
-    status.HTTP_404_NOT_FOUND: JobNotFoundError,
+    ServiceHTTPStatus(status.HTTP_402_PAYMENT_REQUIRED): PaymentRequiredError,
+    ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): JobNotFoundError,
 }
 
-_PROFILE_STATUS_MAP = {status.HTTP_404_NOT_FOUND: ProfileNotFoundError}
+_PROFILE_STATUS_MAP = {ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProfileNotFoundError}
 
 _WALLET_STATUS_MAP = {
-    status.HTTP_404_NOT_FOUND: WalletNotFoundError,
-    status.HTTP_403_FORBIDDEN: ForbiddenWalletError,
+    ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): WalletNotFoundError,
+    ServiceHTTPStatus(status.HTTP_403_FORBIDDEN): ForbiddenWalletError,
 }
 
 
@@ -222,7 +223,7 @@ class AuthSession:
 
         with service_exception_handler(
             service_name="Webserver",
-            http_status_map={status.HTTP_404_NOT_FOUND: ListJobsError},
+            http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ListJobsError},
             rpc_exception_map={},
         ):
             resp = await self.client.get(
@@ -407,7 +408,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectPortsNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProjectPortsNotFoundError})
     async def get_project_metadata_ports(self, *, project_id: ProjectID) -> list[StudyPort]:
         """
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
@@ -424,7 +425,7 @@ class AuthSession:
         assert isinstance(data, list)  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProjectMetadataNotFoundError})
     async def get_project_metadata(self, *, project_id: ProjectID) -> ProjectMetadataGet:
         response = await self.client.get(
             f"/projects/{project_id}/metadata",
@@ -446,7 +447,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProjectMetadataNotFoundError})
     async def update_project_metadata(
         self, *, project_id: ProjectID, metadata: dict[str, MetaValueType]
     ) -> ProjectMetadataGet:
@@ -461,7 +462,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(self, *, project_id: UUID, node_id: UUID) -> PricingUnitGetLegacy:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
@@ -474,7 +475,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): PricingUnitNotFoundError})
     async def connect_pricing_unit_to_project_node(
         self,
         *,
@@ -493,8 +494,8 @@ class AuthSession:
     @_exception_mapper(
         http_status_map=_JOB_STATUS_MAP
         | {
-            status.HTTP_409_CONFLICT: ProjectAlreadyStartedError,
-            status.HTTP_503_SERVICE_UNAVAILABLE: ConfigurationError,
+            ServiceHTTPStatus(status.HTTP_409_CONFLICT): ProjectAlreadyStartedError,
+            ServiceHTTPStatus(status.HTTP_503_SERVICE_UNAVAILABLE): ConfigurationError,
         }
     )
     async def start_project(
@@ -549,7 +550,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: SolverOutputNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): SolverOutputNotFoundError})
     async def get_project_outputs(self, *, project_id: ProjectID) -> dict[NodeID, dict[str, Any]]:
         response = await self.client.get(
             f"/projects/{project_id}/outputs",
@@ -615,7 +616,7 @@ class AuthSession:
 
     # PRODUCTS -------------------------------------------------
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProductPriceNotFoundError})
     async def get_product_price(self) -> GetCreditPriceLegacy:
         response = await self.client.get(
             "/credits-price",
@@ -629,7 +630,7 @@ class AuthSession:
 
     # SERVICES -------------------------------------------------
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingPlanNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): PricingPlanNotFoundError})
     async def get_service_pricing_plan(
         self, *, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:

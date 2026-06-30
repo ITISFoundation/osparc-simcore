@@ -4,7 +4,7 @@ from collections.abc import Callable, Coroutine, Mapping
 from contextlib import contextmanager
 from functools import wraps
 from inspect import signature
-from typing import Any, Concatenate, NamedTuple
+from typing import Any, Concatenate, NamedTuple, NewType
 
 import httpx
 from common_library.user_messages import user_message
@@ -47,8 +47,10 @@ DEFAULT_BACKEND_SERVICE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 }
 
 
-type ServiceHTTPStatus = int
-type ApiHTTPStatus = int
+# NewType (not a `type` alias) so the checker treats them as distinct types
+# and prevents accidentally passing a service-side code where an API-side code is expected.
+ServiceHTTPStatus = NewType("ServiceHTTPStatus", int)
+ApiHTTPStatus = NewType("ApiHTTPStatus", int)
 
 
 class ToApiTuple(NamedTuple):
@@ -70,7 +72,7 @@ def _get_http_exception_kwargs(
     detail: str = ""
     headers: dict[str, str] = {}
 
-    if exception_type := http_status_map.get(service_error.response.status_code):
+    if exception_type := http_status_map.get(ServiceHTTPStatus(service_error.response.status_code)):
         raise exception_type(**exception_ctx)
 
     if service_error.response.status_code in {
