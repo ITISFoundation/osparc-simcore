@@ -21,6 +21,8 @@
  * @ignore(JSONFormatter)
  */
 
+/* global JSONFormatter */
+
 /**
  * A qooxdoo wrapper for
  * <a href='https://azimi.me/json-formatter-js/' target='_blank'>JSONFormatter</a>

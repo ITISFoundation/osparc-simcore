@@ -370,23 +370,18 @@ qx.Class.define("osparc.data.model.StudyUI", {
                 this.__updateAnnotationAttributesFromPatch(annotation, path, value);
               }
             }
-          } else {
-            // the first (add) or last (remove) annotation will fall here
-            if (value && Object.keys(value).length) {
-              // first added
-              annotationId = Object.keys(value)[0];
-              const annotationData = Object.values(value)[0];
-              const annotation = this.addAnnotation(annotationData, annotationId);
-              this.fireDataEvent("annotationAdded", annotation);
-            } else {
-              // last removed
-              const currentIds = Object.keys(this.getAnnotations());
-              if (currentIds.length === 1) {
-                annotationId = currentIds[0];
-                this.removeAnnotation(annotationId);
-                this.fireDataEvent("annotationRemoved", annotationId);
-              }
-            }
+          } else if (value && Object.keys(value).length) {
+            // the first (add) annotation will fall here
+            annotationId = Object.keys(value)[0];
+            const annotationData = Object.values(value)[0];
+            const annotation = this.addAnnotation(annotationData, annotationId);
+            this.fireDataEvent("annotationAdded", annotation);
+          } else if (Object.keys(this.getAnnotations()).length === 1) {
+            // the last (remove) annotation will fall here
+            const currentIds = Object.keys(this.getAnnotations());
+            annotationId = currentIds[0];
+            this.removeAnnotation(annotationId);
+            this.fireDataEvent("annotationRemoved", annotationId);
           }
           break;
       }

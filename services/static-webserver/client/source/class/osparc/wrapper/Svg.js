@@ -168,7 +168,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const padding = 5;
       const nLines = lines.length;
       const height = Math.max(minHeight, titleHeight + nLines*18);
-      const trianSize = 25;
+      const triangleSize = 25;
       const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to a "yellow" string
       const orange = "#FFA500";
       x = parseInt(x);
@@ -183,38 +183,38 @@ qx.Class.define("osparc.wrapper.Svg", {
       rect.back();
       gNote.add(rect);
 
-      const trianOrangeCtrls = [
-        [width-trianSize, height-trianSize],
-        [width-trianSize, height],
-        [width, height-trianSize]
+      const triangleOrangeCtrls = [
+        [width-triangleSize, height-triangleSize],
+        [width-triangleSize, height],
+        [width, height-triangleSize]
       ];
-      const trianOrange = gNote.polygon(trianOrangeCtrls.join())
+      const triangleOrange = gNote.polygon(triangleOrangeCtrls.join())
         .fill(orange)
         .style({
           cursor: "pointer"
         })
-        .move(width-trianSize, height-trianSize);
-      trianOrange.back();
-      gNote.add(trianOrange);
+        .move(width-triangleSize, height-triangleSize);
+      triangleOrange.back();
+      gNote.add(triangleOrange);
 
-      const trianTransparentCtrls = [
-        [width-trianSize, height],
+      const triangleTransparentCtrls = [
+        [width-triangleSize, height],
         [width, height],
-        [width, height-trianSize]
+        [width, height-triangleSize]
       ];
       const colorManager = qx.theme.manager.Color.getInstance();
-      const trianTransparent = gNote.polygon(trianTransparentCtrls.join())
+      const triangleTransparent = gNote.polygon(triangleTransparentCtrls.join())
         .fill(colorManager.resolve("background-main"))
         .style({
           cursor: "pointer"
         })
-        .move(width-trianSize, height-trianSize);
-      trianTransparent.back();
+        .move(width-triangleSize, height-triangleSize);
+      triangleTransparent.back();
       colorManager.addListener("changeTheme", () => {
         const bgColor = colorManager.resolve("background-main");
-        trianTransparent.fill(bgColor);
+        triangleTransparent.fill(bgColor);
       }, this);
-      gNote.add(trianTransparent);
+      gNote.add(triangleTransparent);
 
       const separator = gNote.line(0, 0, width-2*padding, 0)
         .stroke({
@@ -296,7 +296,7 @@ qx.Class.define("osparc.wrapper.Svg", {
 
       // Icon (simple speech bubble using path or text)
       const iconSize = 16;
-      const icon = draw.text('💬')
+      const icon = draw.text("💬")
         .font({
           size: iconSize
         })
@@ -314,7 +314,7 @@ qx.Class.define("osparc.wrapper.Svg", {
           fill: color,
           size: titleFontSize,
           family: defaultFont["family"],
-          anchor: 'start'
+          anchor: "start"
         })
         .attr({
           cursor: "pointer"
@@ -332,9 +332,9 @@ qx.Class.define("osparc.wrapper.Svg", {
         label.text(text);
         if (label.bbox().width <= maxWidth) {
           return text
-        };
+        }
 
-        const ellipsis = '…';
+        const ellipsis = "…";
         let low = 0;
         let high = text.length;
         // Binary search for the max fitting length

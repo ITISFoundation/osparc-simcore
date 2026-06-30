@@ -285,13 +285,13 @@ qx.Theme.define("osparc.theme.Appearance", {
     ---------------------------------------------------------------------------
     */
 
-   "table-header-cell": {
+    "table-header-cell": {
       style: function() {
         return {
           font: "text-13", // override the default theme's bold font
         }
       }
-   },
+    },
 
     /*
     ---------------------------------------------------------------------------

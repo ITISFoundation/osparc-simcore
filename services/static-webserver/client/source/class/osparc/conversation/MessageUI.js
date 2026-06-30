@@ -91,7 +91,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "message-bubble":
+        case "message-bubble": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
             alignX: isMyMessage ? "right" : "left"
           })).set({
@@ -103,6 +103,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           control.getContentElement().setStyles(bubbleStyle);
           this.getChildControl("main-layout").addAt(control, 1);
           break;
+        }
         case "message-content":
           control = new osparc.ui.markdown.MarkdownChat();
           this.getChildControl("message-bubble").add(control);

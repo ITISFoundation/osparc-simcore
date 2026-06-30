@@ -129,7 +129,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __rerouteNav: function (urlFragment) {
+    __rerouteNav: function(urlFragment) {
       const page = urlFragment.nav[0];
       switch (page) {
         case "study": {
@@ -478,7 +478,7 @@ qx.Class.define("osparc.Application", {
       view.addListener("done", () => this.__restart(), this);
     },
 
-    __loadMainPage: function (loadAfterLogin = null) {
+    __loadMainPage: function(loadAfterLogin = null) {
       // logged in
       osparc.WindowSizeTracker.getInstance().evaluateTooSmallDialog();
       osparc.data.Resources.getOne("profile")
@@ -558,7 +558,7 @@ qx.Class.define("osparc.Application", {
             if (wsInstance.isAppConnected()) {
               loadViewerPage();
             } else {
-              const listenerId = wsInstance.addListener("changeAppConnected", function (e) {
+              const listenerId = wsInstance.addListener("changeAppConnected", function(e) {
                 if (e.getData()) {
                   wsInstance.removeListenerById(listenerId);
                   loadViewerPage();
@@ -570,7 +570,7 @@ qx.Class.define("osparc.Application", {
         .catch(err => console.error(err));
     },
 
-    __loadNodeViewerPage: function (studyId, viewerNodeId) {
+    __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
 
       const loadNodeViewerPage = () => {
@@ -591,7 +591,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loadView: function (view, opts, clearUrl = true) {
+    __loadView: function(view, opts, clearUrl = true) {
       const options = {
         top: 0,
         bottom: 0,
@@ -619,7 +619,7 @@ qx.Class.define("osparc.Application", {
     /**
      * Resets session and restarts
     */
-    logout: function (forcedReason) {
+    logout: function(forcedReason) {
       const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
       if (isLoggedIn) {
         osparc.auth.Manager.getInstance().logout()
@@ -629,7 +629,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loggedOut: function (forcedReason) {
+    __loggedOut: function(forcedReason) {
       if (forcedReason) {
         osparc.FlashMessenger.logAs(forcedReason, "WARNING", 0);
       } else {
