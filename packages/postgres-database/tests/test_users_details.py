@@ -33,6 +33,7 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from simcore_postgres_database.utils_users import UsersRepo
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -139,7 +140,7 @@ class UserAddress:
     country: str
 
     @classmethod
-    def create_from_db(cls, row) -> Self:
+    def create_from_db(cls, row: Row) -> Self:
         parts = (getattr(row, col_name) for col_name in ("institution", "address") if getattr(row, col_name))
         return cls(
             line1=". ".join(parts),
@@ -180,6 +181,33 @@ async def pre_registered_user(
     typed_pre_email = cast(str, pre_email)
     assert typed_pre_email == fake_pre_registration_data["pre_email"]
     return typed_pre_email, fake_pre_registration_data
+
+
+@pytest.fixture
+async def registered_user(
+    asyncpg_engine: AsyncEngine,
+    pre_registered_user: PreRegisteredUserData,
+) -> Row:
+    """Creates the real user account and links it to the existing pre-registration.
+
+    Use this fixture when the create+link step is pure setup, not the subject under test.
+    """
+    pre_email, _ = pre_registered_user
+    async with transaction_context(asyncpg_engine) as connection:
+        repo = UsersRepo(asyncpg_engine)
+        new_user = await repo.new_user(
+            connection,
+            email=pre_email,
+            password_hash="123456",  # noqa: S106
+            status=UserStatus.ACTIVE,
+            expires_at=None,
+        )
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
+        )
+    return new_user
 
 
 async def test_user_requests_account_and_is_approved(
@@ -316,29 +344,14 @@ async def test_create_and_link_user_from_pre_registration(
 async def test_get_billing_details_from_pre_registration(
     asyncpg_engine: AsyncEngine,
     pre_registered_user: PreRegisteredUserData,
+    registered_user: Row,
     product: ProductRowDict,
 ):
     """Test that billing details can be retrieved from pre-registration data."""
-    pre_email, fake_pre_registration_data = pre_registered_user
+    _, fake_pre_registration_data = pre_registered_user
 
-    # Create the user
-    async with transaction_context(asyncpg_engine) as connection:
-        repo = UsersRepo(asyncpg_engine)
-        new_user = await repo.new_user(
-            connection,
-            email=pre_email,
-            password_hash="123456",  # noqa: S106
-            status=UserStatus.ACTIVE,
-            expires_at=None,
-        )
-        await repo.link_and_update_user_from_pre_registration(
-            connection,
-            new_user_id=new_user.id,
-            new_user_email=new_user.email,
-        )
-
-    # Get billing details
-    invoice_data = await repo.get_billing_details(user_id=new_user.id, product_name=product["name"])
+    repo = UsersRepo(asyncpg_engine)
+    invoice_data = await repo.get_billing_details(user_id=registered_user.id, product_name=product["name"])
     assert invoice_data is not None
 
     # Test UserAddress model conversion
@@ -358,36 +371,22 @@ async def test_get_billing_details_from_pre_registration(
 async def test_get_billing_details_for_a_different_product(
     asyncpg_engine: AsyncEngine,
     pre_registered_user: PreRegisteredUserData,
+    registered_user: Row,
     product_factory: CreateProductCallable,
 ):
     """The billing address belongs to the person, not the product: a user
     pre-registered on one product must remain invoiceable on another product
     they have access to (e.g. buying credits on a second product).
     """
-    pre_email, fake_pre_registration_data = pre_registered_user
+    _, fake_pre_registration_data = pre_registered_user
 
     # User has a single pre-registration (on the `product` fixture)
     # but buys credits on a *different* product
     other_product = await product_factory("other-product")
 
-    # Create and link the user to the existing pre-registration
-    async with transaction_context(asyncpg_engine) as connection:
-        repo = UsersRepo(asyncpg_engine)
-        new_user = await repo.new_user(
-            connection,
-            email=pre_email,
-            password_hash="123456",  # noqa: S106
-            status=UserStatus.ACTIVE,
-            expires_at=None,
-        )
-        await repo.link_and_update_user_from_pre_registration(
-            connection,
-            new_user_id=new_user.id,
-            new_user_email=new_user.email,
-        )
-
+    repo = UsersRepo(asyncpg_engine)
     # Billing details must still be found for the other product
-    invoice_data = await repo.get_billing_details(user_id=new_user.id, product_name=other_product["name"])
+    invoice_data = await repo.get_billing_details(user_id=registered_user.id, product_name=other_product["name"])
     assert invoice_data is not None
 
     user_address = UserAddress.create_from_db(invoice_data)
@@ -448,26 +447,10 @@ async def test_get_billing_details_skips_rows_without_country(
 )
 async def test_update_user_from_pre_registration(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: PreRegisteredUserData,
+    registered_user: Row,
 ):
     """Test that pre-registration details override manual updates when re-linking."""
-    pre_email, _ = pre_registered_user
-
-    # Create the user and link to pre-registration
-    async with transaction_context(asyncpg_engine) as connection:
-        repo = UsersRepo(asyncpg_engine)
-        new_user = await repo.new_user(
-            connection,
-            email=pre_email,
-            password_hash="123456",  # noqa: S106
-            status=UserStatus.ACTIVE,
-            expires_at=None,
-        )
-        await repo.link_and_update_user_from_pre_registration(
-            connection,
-            new_user_id=new_user.id,
-            new_user_email=new_user.email,
-        )
+    new_user = registered_user
 
     # Update the user manually
     async with transaction_context(asyncpg_engine) as connection:
