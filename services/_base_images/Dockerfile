@@ -25,18 +25,11 @@ ARG PYTHON_VERSION="3.13.9"
 ARG UV_VERSION="0.9"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
-# These environment variables are necessary because of https://github.com/astral-sh/uv/issues/6105
-# and until https://gitlab.com/qemu-project/qemu/-/issues/2846 gets fixed
-ENV UV_CONCURRENT_INSTALLS=1
-
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base-amd64
-
 
 # -------------------------- runtime-base -------------------
 # Minimal runtime shared by every service production stage
 #
-FROM base-${TARGETARCH} AS runtime-base
+FROM python:${PYTHON_VERSION}-slim-bookworm AS runtime-base
 
 LABEL maintainer="osparc-simcore"
 
