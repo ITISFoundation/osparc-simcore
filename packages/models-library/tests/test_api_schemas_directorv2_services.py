@@ -9,8 +9,8 @@ def test_node_requirements_accepts_fractional_byte_values():
     # regression: fractional bytes (e.g. 133.12 MiB) must not break ByteSize parsing
     requirements = NodeRequirements.model_validate({"CPU": 1.0, "RAM": 139586437.12, "VRAM": 139586437.12})
 
-    assert requirements.ram == 139586437
-    assert requirements.vram == 139586437
+    assert requirements.ram == ByteSize(139586437)
+    assert requirements.vram == ByteSize(139586437)
 
 
 def test_node_requirements_accepts_integer_byte_values():
