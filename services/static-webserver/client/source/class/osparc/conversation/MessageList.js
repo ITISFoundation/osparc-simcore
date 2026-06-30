@@ -141,7 +141,8 @@ qx.Class.define("osparc.conversation.MessageList", {
       loadMoreMessages.setFetching(true);
       this.getConversation().getNextMessages()
         .then(resp => {
-          if (resp["_links"]["next"] === null && loadMoreMessages) {
+          const next = resp && resp["_links"] ? resp["_links"]["next"] : null;
+          if (next === null && loadMoreMessages) {
             loadMoreMessages.exclude();
           }
         })
