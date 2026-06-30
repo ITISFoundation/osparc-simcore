@@ -4,7 +4,7 @@ Models a study's project document
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Final
 from uuid import UUID
 
 from common_library.basic_types import DEFAULT_FACTORY
@@ -36,15 +36,15 @@ from .utils.common_validators import (
 from .utils.enums import StrAutoEnum
 from .workspaces import WorkspaceID
 
-ProjectID: TypeAlias = UUID
-CommitID: TypeAlias = int
-ClassifierID: TypeAlias = str
+type ProjectID = UUID
+type CommitID = int
+type ClassifierID = str
 
-NodesDict: TypeAlias = dict[NodeIDStr, Node]
+type NodesDict = dict[NodeIDStr, Node]
 _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-ProjectIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE_BASE)]
+type ProjectIDStr = Annotated[str, StringConstraints(pattern=UUID_RE_BASE)]
 
 
 class DateTimeStr(ConstrainedStr):
@@ -106,8 +106,11 @@ class BaseProjectModel(BaseModel):
     creation_date: datetime
     last_change_date: datetime
 
-    # Pipeline of nodes (SEE projects_nodes.py)
-    workbench: Annotated[NodesDict, Field(description="Project's pipeline")]
+    workbench: Annotated[
+        # NOTE: can be safely removed after https://github.com/ITISFoundation/osparc-simcore/pull/9303
+        NodesDict,
+        Field(deprecated=True),
+    ] = Field(default_factory=dict)
 
 
 class ProjectAtDB(BaseProjectModel):

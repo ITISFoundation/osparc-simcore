@@ -6,6 +6,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
+from ....core.errors import ProjectNodeNotFoundError
 from ...db.repositories import BaseRepository
 from ..tables import projects_nodes
 
@@ -45,7 +46,7 @@ class ProjectsNodesRepository(BaseRepository):
             result = await conn.execute(stmt)
             return result.scalar_one()
 
-    async def get(self, project_id: ProjectID, node_id: NodeID) -> Node | None:
+    async def get(self, project_id: ProjectID, node_id: NodeID) -> Node:
         async with pass_or_acquire_connection(self.db_engine) as conn:
             stmt = sa.select(*_NODE_COLUMNS).where(
                 projects_nodes.c.project_uuid == f"{project_id}",
@@ -53,4 +54,6 @@ class ProjectsNodesRepository(BaseRepository):
             )
             result = await conn.execute(stmt)
             row = result.mappings().one_or_none()
-            return Node.model_validate(row) if row else None
+            if row is None:
+                raise ProjectNodeNotFoundError(project_id=project_id, node_id=node_id)
+            return Node.model_validate(row)

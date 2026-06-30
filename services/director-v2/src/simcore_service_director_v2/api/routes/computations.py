@@ -21,6 +21,7 @@ from datetime import timedelta
 from typing import Annotated, Any, Final
 
 import networkx as nx
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
@@ -56,6 +57,7 @@ from ...core.errors import (
     EC2InstanceTypeNotFoundError,
     PipelineTaskMissingError,
     PricingPlanUnitNotFoundError,
+    ProjectNodeNotFoundError,
     ProjectNotFoundError,
     WalletNotEnoughCreditsError,
 )
@@ -67,6 +69,7 @@ from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_metadata import ProjectsMetadataRepository
+from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
@@ -131,6 +134,7 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 async def _get_project_metadata(
     project_id: ProjectID,
     project_repo: ProjectsRepository,
+    project_nodes_repo: ProjectsNodesRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> ProjectMetadataDict:
     try:
@@ -144,17 +148,25 @@ async def _get_project_metadata(
         assert project_ancestors.root_node_id is not None  # nosec
 
         async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
-            prj = await project_repo.get(project_uuid)
-            node_id_str = f"{node_id}"
-            if node_id_str not in prj.workbench:
-                _logger.error(
-                    "%s not found in %s. it is an ancestor of %s. Please check!",
-                    f"{node_id=}",
-                    f"{prj.uuid=}",
-                    f"{project_id=}",
+            project = await project_repo.get(project_uuid)
+
+            try:
+                node = await project_nodes_repo.get(project_uuid, node_id)
+            except ProjectNodeNotFoundError as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        f"Node {node_id} not found in project {project.uuid}",
+                        error=exc,
+                        error_context={
+                            "node_id": node_id,
+                            "project_uuid": project.uuid,
+                            "ancestor_of_project_id": project_id,
+                        },
+                        tip="This node is an ancestor of the project. Please check why it is missing from its project.",
+                    )
                 )
-                return prj.name, _UNKNOWN_NODE
-            return prj.name, prj.workbench[node_id_str].label
+                return project.name, _UNKNOWN_NODE
+            return project.name, node.label
 
         parent_project_name, parent_node_name = await _get_project_node_names(
             project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
@@ -287,7 +299,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     )
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get(computation.project_id)
+        project = await project_repo.get(computation.project_id)
 
         # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
