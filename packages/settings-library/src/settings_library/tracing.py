@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
-from pydantic import AnyUrl, Field, Json, field_validator
+from pydantic import AnyUrl, Field, field_validator
 
 from settings_library.basic_types import RegisteredPortInt
 
@@ -22,7 +22,7 @@ class TracingSettings(BaseCustomSettings):
         Field(description="Probability of sampling traces (0.0 - 1.0)", ge=0.0, le=1.0),
     ]
     TRACING_OPENTELEMETRY_TRACED_FUNCTIONS: Annotated[
-        Json[list[str]],
+        list[str],
         Field(
             default_factory=list,
             description=(
