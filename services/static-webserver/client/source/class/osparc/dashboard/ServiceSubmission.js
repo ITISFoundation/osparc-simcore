@@ -80,41 +80,44 @@ qx.Class.define("osparc.dashboard.ServiceSubmission", {
         const deprecatedMsg = qx.locale.Manager.tr("Service submission is deprecated.");
         osparc.FlashMessenger.logAs(deprecatedMsg, "WARNING");
         return;
-
-        const data = e.getData();
-        const headers = new Headers();
-        headers.append("Accept", "application/json");
-        const body = new FormData();
-        body.append("metadata", new Blob([JSON.stringify(data.json)], {
-          type: "application/json"
-        }));
-        if (data.files && data.files.length) {
-          const size = data.files[0].size;
-          const maxSize = 10 * 1000 * 1000; // 10 MB
-          if (size > maxSize) {
-            osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
-            return;
-          }
-          body.append("attachment", data.files[0], data.files[0].name);
-        }
-        form.setFetching(true);
-        const deprecatedEndpoint = "/v0/publications/service-submission"; // Deprecated endpoint.
-        fetch(deprecatedEndpoint, {
-          method: "POST",
-          headers,
-          body
-        })
-          .then(resp => {
-            if (resp.ok) {
-              osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
-              addServiceWindow.close();
-            } else {
-              osparc.FlashMessenger.logAs(`A problem occurred while processing your data: ${resp.statusText}`, "ERROR");
-            }
-          })
-          .finally(() => form.setFetching(false));
+        // this.__submitServiceSubmissionForm(e, addServiceWindow, form);
       });
       scroll.add(form);
-    }
+    },
+
+    __submitServiceSubmissionForm: function(e, addServiceWindow, form) {
+      const data = e.getData();
+      const headers = new Headers();
+      headers.append("Accept", "application/json");
+      const body = new FormData();
+      body.append("metadata", new Blob([JSON.stringify(data.json)], {
+        type: "application/json"
+      }));
+      if (data.files && data.files.length) {
+        const size = data.files[0].size;
+        const maxSize = 10 * 1000 * 1000; // 10 MB
+        if (size > maxSize) {
+          osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+          return;
+        }
+        body.append("attachment", data.files[0], data.files[0].name);
+      }
+      form.setFetching(true);
+      const deprecatedEndpoint = "/v0/publications/service-submission"; // Deprecated endpoint.
+      fetch(deprecatedEndpoint, {
+        method: "POST",
+        headers,
+        body
+      })
+        .then(resp => {
+          if (resp.ok) {
+            osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+            addServiceWindow.close();
+          } else {
+            osparc.FlashMessenger.logAs(`A problem occurred while processing your data: ${resp.statusText}`, "ERROR");
+          }
+        })
+        .finally(() => form.setFetching(false));
+    },
   }
 });
