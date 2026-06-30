@@ -4,7 +4,7 @@ Models a study's project document
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
 from common_library.basic_types import DEFAULT_FACTORY
@@ -36,15 +36,15 @@ from .utils.common_validators import (
 from .utils.enums import StrAutoEnum
 from .workspaces import WorkspaceID
 
-type ProjectID = UUID
-type CommitID = int
-type ClassifierID = str
+ProjectID: TypeAlias = UUID
+CommitID: TypeAlias = int
+ClassifierID: TypeAlias = str
 
-type NodesDict = dict[NodeIDStr, Node]
+NodesDict: TypeAlias = dict[NodeIDStr, Node]
 _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-type ProjectIDStr = Annotated[str, StringConstraints(pattern=UUID_RE_BASE)]
+ProjectIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE_BASE)]
 
 
 class DateTimeStr(ConstrainedStr):
