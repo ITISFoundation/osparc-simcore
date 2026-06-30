@@ -114,7 +114,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           });
           break;
         }
-        case "add-comment-button":
+        case "add-comment-button": {
           control = new qx.ui.form.Button(null, "@FontAwesomeSolid/arrow-up/16").set({
             toolTipText: this.tr("Ctrl+Enter"),
             backgroundColor: "input-background",
@@ -142,6 +142,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control.addListener("execute", this.__addCommentPressed, this);
           this.getChildControl("add-comment-layout").add(control);
           break;
+        }
         case "footer-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"

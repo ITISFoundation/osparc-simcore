@@ -95,7 +95,7 @@ qx.Class.define("osparc.support.ConversationPage", {
             font: "text-14",
             alignY: "middle",
             allowGrowX: true,
-            });
+          });
           this.getChildControl("conversation-header-center-layout").addAt(control, 0);
           break;
         case "conversation-extra-layout":
@@ -163,7 +163,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
           title.setValue(this.tr("Ask a Question"));
           break;
-        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL: {
           title.setValue(this.tr("Book a Call"));
           const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
           bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Next"));
@@ -174,6 +174,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           });
           this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
           break;
+        }
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD: {
           title.setValue(this.tr("Book a Call 3rd"));
           const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
@@ -196,7 +197,10 @@ qx.Class.define("osparc.support.ConversationPage", {
       conversationContent.addSystemMessage(type);
 
       if (prefillText) {
-        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(prefillText);
+        this.getChildControl("conversation-content")
+          .getChildControl("add-message")
+          .getChildControl("comment-field")
+          .setText(prefillText);
       }
     },
 
