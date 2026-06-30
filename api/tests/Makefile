@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),$(if $(clean),,--upgrade))
 
 
 .PHONY: all
@@ -10,8 +10,7 @@ all: install test-dev
 requirements.txt: requirements.in
 	# pip compiling $<
 	uv pip compile $(UPGRADE_OPTION) \
-		--no-header \
-		--output-file $@ $<
+		--output-file=$@ $<
 reqs: requirements.txt ## alias to compile requirements.txt
 
 
