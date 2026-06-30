@@ -2,12 +2,12 @@ import base64
 
 import pytest
 from dask_task_models_library.container_tasks.encryption import (
-    KEY_SIZE_BYTES,
     JobEncryptionContext,
     TransferEncryptionSettings,
 )
 from faker import Faker
 from models_library.api_schemas_directorv2.encryption import (
+    AES_256_GCM_KEY_SIZE_BYTES,
     JobEncryptionContextMetadata,
 )
 from models_library.projects_nodes_io import NodeID
@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 
 @pytest.mark.parametrize("model_cls", [JobEncryptionContext, TransferEncryptionSettings])
-@pytest.mark.parametrize("invalid_length", [KEY_SIZE_BYTES - 1, KEY_SIZE_BYTES + 1])
+@pytest.mark.parametrize("invalid_length", [AES_256_GCM_KEY_SIZE_BYTES - 1, AES_256_GCM_KEY_SIZE_BYTES + 1])
 def test_root_key_must_have_exact_length(model_cls, invalid_length: int):
     example = model_cls.model_json_schema()["examples"][0]
     example["root_key"] = b"\x00" * invalid_length
@@ -25,7 +25,7 @@ def test_root_key_must_have_exact_length(model_cls, invalid_length: int):
 
 
 def test_from_metadata_extracts_node_input_mapping(faker: Faker):
-    raw_root_key = b"0" * KEY_SIZE_BYTES
+    raw_root_key = b"0" * AES_256_GCM_KEY_SIZE_BYTES
     encrypted_node_id = NodeID(faker.uuid4())
     other_node_id = NodeID(faker.uuid4())
     metadata = JobEncryptionContextMetadata(
@@ -42,7 +42,7 @@ def test_from_metadata_extracts_node_input_mapping(faker: Faker):
 
 
 def test_from_metadata_node_without_encrypted_inputs(faker: Faker):
-    raw_root_key = b"0" * KEY_SIZE_BYTES
+    raw_root_key = b"0" * AES_256_GCM_KEY_SIZE_BYTES
     metadata = JobEncryptionContextMetadata(
         root_key=base64.b64encode(raw_root_key).decode("ascii"),  # type: ignore[arg-type]
         input_port_to_file_id={},

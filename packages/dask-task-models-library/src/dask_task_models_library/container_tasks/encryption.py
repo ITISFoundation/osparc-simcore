@@ -2,13 +2,12 @@ import base64
 from typing import Annotated, Final
 
 from models_library.api_schemas_directorv2.encryption import (
+    AES_256_GCM_KEY_SIZE_BYTES,
     JobEncryptionContextMetadata,
 )
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, ConfigDict, Field, SecretBytes
 from pydantic.config import JsonDict
-
-KEY_SIZE_BYTES: Final[int] = 32  # AES-256 root key length (simcore-aesgcm-stream-v1)
 
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 
@@ -16,8 +15,8 @@ _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 _RootKeyType = Annotated[
     SecretBytes,
     Field(
-        min_length=KEY_SIZE_BYTES,
-        max_length=KEY_SIZE_BYTES,
+        min_length=AES_256_GCM_KEY_SIZE_BYTES,
+        max_length=AES_256_GCM_KEY_SIZE_BYTES,
         description="Secret root key used to derive every per-file key (HKDF over root_key/file_id)",
     ),
 ]

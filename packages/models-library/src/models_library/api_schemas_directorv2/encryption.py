@@ -8,7 +8,7 @@ from pydantic.config import JsonDict
 from ..projects_nodes_io import NodeID
 
 # Mirrors dask_task_models_library.container_tasks.encryption (simcore-aesgcm-stream-v1).
-_KEY_SIZE_BYTES: Final[int] = 32  # AES-256 root key length
+AES_256_GCM_KEY_SIZE_BYTES: Final[int] = 32  # AES-256 root key length
 
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 _NODE_ID_EXAMPLE: Final[str] = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
@@ -38,8 +38,8 @@ class JobEncryptionContextMetadata(BaseModel):
         except (binascii.Error, ValueError) as err:
             msg = "root_key must be valid base64"
             raise ValueError(msg) from err
-        if len(raw) != _KEY_SIZE_BYTES:
-            msg = f"root_key must decode to {_KEY_SIZE_BYTES} bytes, got {len(raw)}"
+        if len(raw) != AES_256_GCM_KEY_SIZE_BYTES:
+            msg = f"root_key must decode to {AES_256_GCM_KEY_SIZE_BYTES} bytes, got {len(raw)}"
             raise ValueError(msg)
         return value
 
