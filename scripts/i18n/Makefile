@@ -8,20 +8,19 @@
 #                     = qooxdoo this.tr() strings (consumed directly by `qx compile`)
 #
 # Backend catalog (full pipeline):
-#   make backend              # extract-backend -> translate-backend -> compile-backend
-#   make extract-backend      # xgettext user_message() + jinja {% trans %} -> messages.pot (+enrich)
-#   make translate-backend    # AI translate stale backend entries (one .po per LANG)
-#   make compile-backend      # msgfmt backend .po -> .mo
-#   make plan-backend         # dry-run: log the LLM prompts that WOULD be sent (no call, no save)
+#   make backend-all       # backend-extract -> backend-translate -> backend-compile
+#   make backend-extract   # xgettext user_message() + jinja {% trans %} -> messages.pot (+enrich)
+#   make backend-plan      # dry-run: log the LLM prompts that WOULD be sent (no call, no save)
+#   make backend-translate # AI translate stale backend entries (one .po per LANG)
+#   make backend-compile   # msgfmt backend .po -> .mo
 #
 # Frontend catalog (full pipeline):
-#   make frontend             # extract-frontend -> translate-frontend
-#   make extract-frontend     # xgettext this.tr() -> frontend.pot (+enrich)
-#   make translate-frontend   # msgmerge + AI translate frontend catalogs from frontend.pot
-#   make plan-frontend        # dry-run: log the LLM prompts that WOULD be sent (no call, no save)
+#   make frontend-all       # frontend-extract -> frontend-translate
+#   make frontend-extract   # xgettext this.tr() -> frontend.pot (+enrich)
+#   make frontend-plan      # dry-run: log the LLM prompts that WOULD be sent (no call, no save)
+#   make frontend-translate # msgmerge + AI translate frontend catalogs from frontend.pot
 #
-# Translation model is selected via MODEL (default openai/gpt-4o); shortcut:
-#   make translate-openai
+# Translation model is selected via MODEL (default openai/gpt-4o).
 
 REPO_ROOT      := $(shell git rev-parse --show-toplevel)
 I18N_TOOLS     := $(REPO_ROOT)/scripts/i18n/tools
@@ -114,24 +113,23 @@ TRANSLATOR := uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py
 # ---------------------------------------------------------------------------
 .DEFAULT_GOAL := help
 
-.PHONY: backend frontend \
-        extract-backend translate-backend compile-backend plan-backend \
-        extract-frontend translate-frontend plan-frontend \
-        check-i18n-style translate-openai clean
+.PHONY: backend-all backend-extract backend-plan backend-translate backend-compile \
+        frontend-all frontend-extract frontend-plan frontend-translate \
+        check-i18n-style clean
 
 # ===========================================================================
 # BACKEND catalog  (messages.pot / messages.po / messages.mo)
 # ===========================================================================
-backend: extract-backend translate-backend compile-backend  ## Backend catalog: extract -> translate -> compile
+backend-all: backend-extract backend-translate backend-compile  ## Backend catalog: extract -> translate -> compile
 
 # ---------------------------------------------------------------------------
-# extract-backend — gather user_message() (Python) + {% trans %} (Jinja) into
+# backend-extract — gather user_message() (Python) + {% trans %} (Jinja) into
 # per-source _partials/*.pot, msgcat them into messages.pot, then enrich w/ CTX.
-# frontend.pot is produced separately by `extract-frontend` and never mixed in:
+# frontend.pot is produced separately by `frontend-extract` and never mixed in:
 # mixing would leak qooxdoo strings into the backend `messages` .mo loaded by
 # services.
 # ---------------------------------------------------------------------------
-extract-backend:  ## Extract backend user_message() + {% trans %} -> messages.pot (+enrich)
+backend-extract:  ## Extract backend user_message() + {% trans %} -> messages.pot (+enrich)
 	@mkdir -p $(PARTIALS_DIR)
 	@for dir in $(I18N_DIRS); do \
 	  name=$$(basename $$dir); \
@@ -152,9 +150,24 @@ extract-backend:  ## Extract backend user_message() + {% trans %} -> messages.po
 	$(EXTRACTOR) enrich --pot $(POT) --repo-root $(REPO_ROOT)
 
 # ---------------------------------------------------------------------------
-# translate-backend — AI translate stale entries (one .po per LANG)
+# backend-plan — dry-run: compose + log the exact LLM prompts that
+# backend-translate WOULD send, without calling the LLM or saving. No API key
+# needed; prompts (and stub responses) are printed and appended to translate.log.
 # ---------------------------------------------------------------------------
-translate-backend: $(PO_FILES)  ## AI translate stale backend entries for all LANGS
+backend-plan:  ## Dry-run backend: log LLM prompts that WOULD be sent (no call, no save)
+	@for lang in $(LANGS); do \
+	  echo "  [plan] backend $$lang"; \
+	  po=$(LOCALE_OUT_DIR)/$$lang/LC_MESSAGES/messages.po; \
+	  in_po_flag=""; \
+	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
+	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
+	    --plan --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
+	done
+
+# ---------------------------------------------------------------------------
+# backend-translate — AI translate stale entries (one .po per LANG)
+# ---------------------------------------------------------------------------
+backend-translate: $(PO_FILES)  ## AI translate stale backend entries for all LANGS
 
 $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT)
 	@mkdir -p $(@D)
@@ -178,39 +191,24 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT)
 	  --out $@
 
 # ---------------------------------------------------------------------------
-# compile-backend — compile .po -> .mo (backend only; the frontend catalog is
+# backend-compile — compile .po -> .mo (backend only; the frontend catalog is
 # consumed directly as .po by `qx compile` and has no .mo)
 # ---------------------------------------------------------------------------
-compile-backend: $(MO_FILES)  ## Compile backend .po -> .mo
+backend-compile: $(MO_FILES)  ## Compile backend .po -> .mo
 
 $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.mo: $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po
 	msgfmt $< -o $@
 
-# ---------------------------------------------------------------------------
-# plan-backend — dry-run: compose + log the exact LLM prompts that
-# translate-backend WOULD send, without calling the LLM or saving. No API key
-# needed; prompts (and stub responses) are printed and appended to translate.log.
-# ---------------------------------------------------------------------------
-plan-backend:  ## Dry-run backend: log LLM prompts that WOULD be sent (no call, no save)
-	@for lang in $(LANGS); do \
-	  echo "  [plan] backend $$lang"; \
-	  po=$(LOCALE_OUT_DIR)/$$lang/LC_MESSAGES/messages.po; \
-	  in_po_flag=""; \
-	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
-	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --plan --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
-	done
-
 # ===========================================================================
 # FRONTEND catalog  (frontend.pot / *.po — no .mo; qooxdoo reads .po directly)
 # ===========================================================================
-frontend: extract-frontend translate-frontend  ## Frontend catalog: extract -> translate
+frontend-all: frontend-extract frontend-translate  ## Frontend catalog: extract -> translate
 
 # ---------------------------------------------------------------------------
-# extract-frontend — extract this.tr() strings from qooxdoo frontend into the
+# frontend-extract — extract this.tr() strings from qooxdoo frontend into the
 # frontend-owned frontend.pot, then enrich with source context.
 # ---------------------------------------------------------------------------
-extract-frontend:  ## Extract frontend this.tr() -> frontend.pot (+enrich)
+frontend-extract:  ## Extract frontend this.tr() -> frontend.pot (+enrich)
 	@echo "  [extract] frontend JS -> $(FRONTEND_POT)"
 	@mkdir -p $(CLIENT_TRANS_DIR)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
@@ -221,15 +219,33 @@ extract-frontend:  ## Extract frontend this.tr() -> frontend.pot (+enrich)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) enrich --pot $(FRONTEND_POT) --repo-root $(REPO_ROOT)
 
 # ---------------------------------------------------------------------------
-# Frontend — AI translation from the frontend-owned (enriched) frontend.pot
+# frontend-plan — dry-run: compose + log the exact LLM prompts that
+# frontend-translate WOULD send, without calling the LLM or saving.
 # ---------------------------------------------------------------------------
+frontend-plan:  ## Dry-run frontend: log LLM prompts that WOULD be sent (no call, no save)
+	@for lang in $(CLIENT_LANGS); do \
+	  case $$lang in \
+	    zh_CN) out_lang=zh ;; \
+	    *) out_lang=$$lang ;; \
+	  esac; \
+	  echo "  [plan] frontend $$lang"; \
+	  po=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
+	  in_po_flag=""; \
+	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
+	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
+	    --plan --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
+	done
+
+# ---------------------------------------------------------------------------
+# frontend-translate — AI translate from the frontend-owned (enriched) frontend.pot.
 # CLIENT_LANGS use translation-quality locale codes (e.g. zh_CN, which the
 # glossary keys on), but qooxdoo reads bare locale names (see compile.json:
 # en_US, es_ES, zh). We translate as zh_CN for richer AI context + glossary yet
 # write zh.po so `qx compile` picks it up. msgmerge first brings new msgids and
 # the enriched CTX-SNIPPET/CTX-SNIPPET-VERSION into the .po so the translator can
 # skip already-fresh entries (git-blame staleness) instead of re-spending tokens.
-translate-frontend:  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS) from frontend.pot
+# ---------------------------------------------------------------------------
+frontend-translate:  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS) from frontend.pot
 	@for lang in $(CLIENT_LANGS); do \
 	  case $$lang in \
 	    zh_CN) out_lang=zh ;; \
@@ -257,24 +273,6 @@ translate-frontend:  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS
 	    --out $$out; \
 	done
 
-# ---------------------------------------------------------------------------
-# plan-frontend — dry-run: compose + log the exact LLM prompts that
-# translate-frontend WOULD send, without calling the LLM or saving.
-# ---------------------------------------------------------------------------
-plan-frontend:  ## Dry-run frontend: log LLM prompts that WOULD be sent (no call, no save)
-	@for lang in $(CLIENT_LANGS); do \
-	  case $$lang in \
-	    zh_CN) out_lang=zh ;; \
-	    *) out_lang=$$lang ;; \
-	  esac; \
-	  echo "  [plan] frontend $$lang"; \
-	  po=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
-	  in_po_flag=""; \
-	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
-	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --plan --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
-	done
-
 # ===========================================================================
 # Common (catalog-agnostic)
 # ===========================================================================
@@ -287,12 +285,6 @@ check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DI
 	  echo "  [validate] $$dir"; \
 	  cd $(REPO_ROOT) && $(EXTRACTOR) validate --src $$dir/src --langs python; \
 	done
-
-# ---------------------------------------------------------------------------
-# Model shortcut (sets MODEL; openai is already the default)
-# ---------------------------------------------------------------------------
-translate-openai:     ## Translate backend with OpenAI gpt-4o
-	$(MAKE) translate-backend MODEL=openai/gpt-4o
 
 # ---------------------------------------------------------------------------
 # Cleanup — remove ONLY regenerable build artifacts. The .po files are
