@@ -392,13 +392,13 @@ async def disconnect_user_from_socketio(client: TestClient, sio_connection_data:
 
 async def assert_users_count(asyncpg_engine: AsyncEngine, expected_users: int) -> None:
     async with asyncpg_engine.connect() as conn:
-        users_count = await conn.scalar(select(func.count()).select_from(users))
+        users_count = await conn.scalar(select(func.count()).select_from(users))  # pylint: disable=not-callable
         assert users_count == expected_users
 
 
 async def assert_projects_count(asyncpg_engine: AsyncEngine, expected_projects: int) -> None:
     async with asyncpg_engine.connect() as conn:
-        projects_count = await conn.scalar(select(func.count()).select_from(projects))
+        projects_count = await conn.scalar(select(func.count()).select_from(projects))  # pylint: disable=not-callable
         assert projects_count == expected_projects
 
 

@@ -37,12 +37,6 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_headers_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -69,6 +63,12 @@ from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
+from ...web_requests_validation import (
+    parse_request_body_as,
+    parse_request_headers_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .. import _access_rights_service as access_rights_service
 from .. import _nodes_service, _projects_service, nodes_utils
 from .._nodes_service import NodeScreenshot, get_node_screenshots
@@ -308,8 +308,9 @@ async def _stop_dynamic_service_task(
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
         error_code = getattr(exc, "error_code", None) or create_error_code(exc)
-        user_error_msg = user_message(
-            f"Could not stop dynamic service {dynamic_service_stop.project_id}.{dynamic_service_stop.node_id}"
+        user_error_msg = user_message("Could not stop dynamic service {project_id}.{node_id}").format(
+            project_id=dynamic_service_stop.project_id,
+            node_id=dynamic_service_stop.node_id,
         )
         _logger.debug(
             **create_troubleshooting_log_kwargs(

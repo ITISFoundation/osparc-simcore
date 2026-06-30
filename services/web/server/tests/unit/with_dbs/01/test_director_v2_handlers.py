@@ -325,8 +325,8 @@ async def populated_comp_run_collection(
                 client_or_system_generated_id=collection_run_id,
                 client_or_system_generated_display_name="My Collection Run",
                 is_generated_by_system=False,
-                created=sa.func.now(),
-                modified=sa.func.now(),
+                created=sa.func.now(),  # pylint: disable=not-callable
+                modified=sa.func.now(),  # pylint: disable=not-callable
             )
             .returning(comp_runs_collections.c.collection_run_id)
         )
