@@ -108,14 +108,7 @@ def uninstrument_traced_functions(
 
 
 class TracedFunctionsInstrumentor(BaseInstrumentor):
-    """Wraps the user-defined functions listed in the tracing settings.
-
-    Mirrors the interface of the other opentelemetry instrumentors:
-        TracedFunctionsInstrumentor().instrument(
-            tracing_settings=..., tracer_provider=...
-        )
-        TracedFunctionsInstrumentor().uninstrument()
-    """
+    """Wraps the user-defined functions listed in the tracing settings."""
 
     _wrapped_targets: ClassVar[list[TracedFunctionTarget]] = []
 
