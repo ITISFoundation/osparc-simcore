@@ -49,6 +49,11 @@ I18N_DIRS := \
   packages/dask-task-models-library \
   packages/common-library
 
+# --- Jinja2 templates (extracted via Babel, not xgettext) ---
+# Email templates live entirely in the notifications service; their {% trans %}
+# strings are merged into the same central catalog as the rest of the backend.
+NOTIFICATIONS_TEMPLATES_DIR := services/notifications/src/simcore_service_notifications/templates
+
 # --- Frontend configuration (qooxdoo) ---
 CLIENT_DIR          := $(REPO_ROOT)/services/static-webserver/client
 CLIENT_SRC_DIR      := $(CLIENT_DIR)/source/class
@@ -113,6 +118,10 @@ extract-all:  ## Extract user_message() strings from all I18N_DIRS -> _partials/
 	    --out $$out \
 	    --langs python; \
 	done
+	@echo "  [extract] notifications Jinja2 templates -> $(PARTIALS_DIR)/notifications-templates.pot"
+	@cd $(REPO_ROOT) && $(EXTRACTOR) jinja \
+	  --src $(NOTIFICATIONS_TEMPLATES_DIR) \
+	  --out $(PARTIALS_DIR)/notifications-templates.pot
 	@echo "  [extract] frontend JS -> $(FRONTEND_POT)"
 	@mkdir -p $(CLIENT_TRANS_DIR)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
