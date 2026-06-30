@@ -88,9 +88,6 @@ target/
 # virtualenv
 .venv27
 .venv
-.uv-bin
-.uv-cache
-.uv-python
 venv/
 ENV/
 
