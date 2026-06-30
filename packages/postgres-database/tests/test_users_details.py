@@ -6,7 +6,7 @@
 from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
-from typing import Any, Protocol, Self
+from typing import Protocol, Self, TypedDict, cast
 
 import pytest
 import sqlalchemy as sa
@@ -36,10 +36,29 @@ from simcore_postgres_database.utils_users import UsersRepo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
+class ProductRowDict(TypedDict):
+    name: str
+
+
+class ProductOwnerUserRowDict(TypedDict):
+    id: int
+
+
+class PreRegistrationDetailsDict(TypedDict):
+    pre_email: str
+    state: str | None
+    postal_code: str | None
+    country: str
+    account_request_reviewed_by: int | None
+
+
+type PreRegisteredUserData = tuple[str, PreRegistrationDetailsDict]
+
+
 class CreateProductCallable(Protocol):
     """Callable that creates a product and returns its row."""
 
-    async def __call__(self, name: str) -> dict[str, Any]: ...
+    async def __call__(self, name: str) -> ProductRowDict: ...
 
 
 @pytest.fixture
@@ -53,7 +72,7 @@ async def product_factory(
     """
     async with AsyncExitStack() as exit_stack:
 
-        async def _create_product(name: str) -> dict[str, Any]:
+        async def _create_product(name: str) -> ProductRowDict:
             # 1. create a product group
             product_group_row = await exit_stack.enter_async_context(
                 insert_and_get_row_lifespan(
@@ -66,7 +85,7 @@ async def product_factory(
 
             # 2. create the product using that group
             product_name = name or faker.pystr(min_chars=3, max_chars=10)
-            return await exit_stack.enter_async_context(
+            product_row = await exit_stack.enter_async_context(
                 insert_and_get_row_lifespan(
                     asyncpg_engine,
                     table=products,
@@ -78,12 +97,13 @@ async def product_factory(
                     pk_col=products.c.name,
                 )
             )
+            return cast(ProductRowDict, product_row)
 
         yield _create_product
 
 
 @pytest.fixture
-async def product(product_factory: CreateProductCallable) -> dict[str, Any]:
+async def product(product_factory: CreateProductCallable) -> ProductRowDict:
     """Returns a single product for backward compatibility."""
     return await product_factory("s4l")
 
@@ -92,7 +112,7 @@ async def product(product_factory: CreateProductCallable) -> dict[str, Any]:
 async def product_owner_user(
     faker: Faker,
     asyncpg_engine: AsyncEngine,
-) -> AsyncIterable[dict[str, Any]]:
+) -> AsyncIterable[ProductOwnerUserRowDict]:
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         asyncpg_engine,
         table=users,
@@ -104,7 +124,7 @@ async def product_owner_user(
         ),
         pk_col=users.c.id,
     ) as row:
-        yield row
+        yield cast(ProductOwnerUserRowDict, row)
 
 
 @dataclass
@@ -133,16 +153,19 @@ class UserAddress:
 async def pre_registered_user(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
-    product: dict[str, Any],
-) -> tuple[str, dict[str, Any]]:
+    product_owner_user: ProductOwnerUserRowDict,
+    product: ProductRowDict,
+) -> PreRegisteredUserData:
     """Creates a pre-registered user and returns the email and registration data."""
     product_name = product["name"]
-    fake_pre_registration_data = random_pre_registration_details(
-        faker,
-        pre_email="pre-registered@user.com",
-        created_by=product_owner_user["id"],
-        product_name=product_name,
+    fake_pre_registration_data = cast(
+        PreRegistrationDetailsDict,
+        random_pre_registration_details(
+            faker,
+            pre_email="pre-registered@user.com",
+            created_by=product_owner_user["id"],
+            product_name=product_name,
+        ),
     )
 
     async with transaction_context(asyncpg_engine) as connection:
@@ -152,15 +175,17 @@ async def pre_registered_user(
             .returning(users_pre_registration_details.c.pre_email)
         )
 
-    assert pre_email == fake_pre_registration_data["pre_email"]
-    return pre_email, fake_pre_registration_data
+    assert pre_email is not None
+    typed_pre_email = cast(str, pre_email)
+    assert typed_pre_email == fake_pre_registration_data["pre_email"]
+    return typed_pre_email, fake_pre_registration_data
 
 
 async def test_user_requests_account_and_is_approved(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
-    product: dict[str, Any],
+    product_owner_user: ProductOwnerUserRowDict,
+    product: ProductRowDict,
 ):
     product_name = product["name"]
 
@@ -215,8 +240,8 @@ async def test_user_requests_account_and_is_approved(
 async def test_create_pre_registration_link(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
-    product: dict[str, Any],
+    product_owner_user: ProductOwnerUserRowDict,
+    product: ProductRowDict,
 ):
     """Test that a PO can create a pre-registration link for a user."""
     product_name = product["name"]
@@ -245,7 +270,7 @@ async def test_create_pre_registration_link(
 )
 async def test_create_and_link_user_from_pre_registration(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: tuple[str, dict[str, Any]],
+    pre_registered_user: PreRegisteredUserData,
 ):
     """Test that a user can be created from a pre-registration link and is linked properly."""
     pre_email, pre_registration_data = pre_registered_user
@@ -289,8 +314,8 @@ async def test_create_and_link_user_from_pre_registration(
 )
 async def test_get_billing_details_from_pre_registration(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: tuple[str, dict[str, Any]],
-    product: dict[str, Any],
+    pre_registered_user: PreRegisteredUserData,
+    product: ProductRowDict,
 ):
     """Test that billing details can be retrieved from pre-registration data."""
     pre_email, fake_pre_registration_data = pre_registered_user
@@ -331,7 +356,7 @@ async def test_get_billing_details_from_pre_registration(
 )
 async def test_get_billing_details_for_a_different_product(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: tuple[str, dict[str, Any]],
+    pre_registered_user: PreRegisteredUserData,
     product_factory: CreateProductCallable,
 ):
     """The billing address belongs to the person, not the product: a user
@@ -376,7 +401,7 @@ async def test_get_billing_details_for_a_different_product(
 )
 async def test_update_user_from_pre_registration(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: tuple[str, dict[str, Any]],
+    pre_registered_user: PreRegisteredUserData,
 ):
     """Test that pre-registration details override manual updates when re-linking."""
     pre_email, _ = pre_registered_user
@@ -428,7 +453,7 @@ async def test_update_user_from_pre_registration(
 async def test_user_preregisters_for_multiple_products_with_different_outcomes(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
+    product_owner_user: ProductOwnerUserRowDict,
     product_factory: CreateProductCallable,
 ):
     """Test scenario where a user pre-registers for multiple products and gets different approval outcomes."""
