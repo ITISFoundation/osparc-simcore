@@ -245,10 +245,10 @@ qx.Class.define("osparc.file.FilePicker", {
       downloadFileBtn.setMinWidth(btnWidth);
 
       const progressCb = ({loaded, total, progress}) => {
-        if (progress !== null) {
-          state.label = `${Math.round(progress * 100)}%`;
-        } else {
+        if (progress == null) {
           state.label = osparc.utils.Utils.bytesToSize(loaded);
+        } else {
+          state.label = `${Math.round(progress * 100)}%`;
         }
         state.progress = progress;
         if (state.btn) {
@@ -441,9 +441,11 @@ qx.Class.define("osparc.file.FilePicker", {
       });
       downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(node, downloadFileBtn));
       // If a download is already active for this node, attach the new button to it
+      // eslint-disable-next-line no-underscore-dangle
       const activeDownload = osparc.file.FilePicker.__activeDownloads[node.getNodeId()];
       if (activeDownload) {
         activeDownload.btn = downloadFileBtn;
+        // eslint-disable-next-line no-underscore-dangle
         osparc.file.FilePicker.__applyDownloadState(downloadFileBtn, activeDownload);
       }
       return downloadFileBtn;
