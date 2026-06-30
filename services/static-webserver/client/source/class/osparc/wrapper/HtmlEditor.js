@@ -45,20 +45,20 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
 
     getRichToolbarConfig: function() {
       return [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        ['link', 'blockquote', 'code-block'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        ['clean']
+        [{ "header": [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        ["link", "blockquote", "code-block"],
+        [{ "list": "ordered"}, { "list": "bullet" }],
+        ["clean"]
       ];
     },
 
     getBasicToolbarConfig: function() {
       return [
-        [{ 'header': [1, 2, false] }],
-        ['bold', 'italic', 'underline'],
-        ['link', 'blockquote', 'code-block'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }]
+        [{ "header": [1, 2, false] }],
+        ["bold", "italic", "underline"],
+        ["link", "blockquote", "code-block"],
+        [{ "list": "ordered"}, { "list": "bullet" }]
       ];
     },
 
@@ -67,15 +67,15 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
       const element = htmlContainer.getContentElement().getDomElement();
       if (element) {
         // Make the wrapper a flex column container
-        element.style.display = 'flex';
-        element.style.flexDirection = 'column';
-        element.style.overflow = 'hidden';
+        element.style.display = "flex";
+        element.style.flexDirection = "column";
+        element.style.overflow = "hidden";
 
         // Find the Quill container and make it flex to fill remaining space
-        const qlContainer = element.querySelector('.ql-container');
+        const qlContainer = element.querySelector(".ql-container");
         if (qlContainer) {
-          qlContainer.style.flex = '1';
-          qlContainer.style.overflow = 'auto';
+          qlContainer.style.flex = "1";
+          qlContainer.style.overflow = "auto";
         }
       }
     },
@@ -179,14 +179,14 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
 
       // Default options following Quill documentation
       const defaultOptions = {
-        theme: 'snow',
-        placeholder: 'Start typing...',
+        theme: "snow",
+        placeholder: "Start typing...",
         modules: {
           toolbar: [
-            [{ 'header': [1, 2, false] }],
-            ['bold', 'italic', 'underline'],
-            ['link', 'blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }]
+            [{ "header": [1, 2, false] }],
+            ["bold", "italic", "underline"],
+            ["link", "blockquote", "code-block"],
+            [{ "list": "ordered"}, { "list": "bullet" }]
           ]
         }
       };
@@ -212,8 +212,8 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
         }
       }
 
-      // Initialize Quill with the standard pattern: new Quill('#selector', options)
-      const quill = new Quill(`#${divId}`, options || { theme: 'snow' });
+      // Initialize Quill with the standard pattern: new Quill("#selector', options)
+      const quill = new Quill(`#${divId}`, options || { theme: "snow" });
       return quill;
     },
 
@@ -225,7 +225,7 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     setHTML: function(quill, html) {
       return;
       const delta = quill.clipboard.convert(html);
-      quill.setContents(delta, 'silent');
+      quill.setContents(delta, "silent");
     },
 
     getText: function(quill) {
