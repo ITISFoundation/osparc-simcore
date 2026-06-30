@@ -407,7 +407,7 @@ def _get_blame_commit(filepath: str, lineno: int) -> BlameCommitResult:
 
 
 def _translate_entry(
-    provider: LiteLLMProvider,
+    provider: LiteLLMProvider | DryRunProvider,
     msgid: str,
     snippet: str,
     translator_notes: str,
@@ -474,7 +474,7 @@ def _translate_entry(
 
 def _build_translation_job(
     entry: polib.POEntry,
-    provider: LiteLLMProvider,
+    provider: LiteLLMProvider | DryRunProvider,
     lang_name: LangNameStr,
     glossary: TermGlossaryDict,
     use_git: bool,
