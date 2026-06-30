@@ -162,7 +162,13 @@ async def _get_project_metadata(
                             "project_uuid": project.uuid,
                             "ancestor_of_project_id": project_id,
                         },
-                        tip="This node is an ancestor of the project. Please check why it is missing from its project.",
+                        tip=(
+                            "This node is registered as an ancestor of the project "
+                            "but is missing from its project's nodes. This likely "
+                            "indicates a data inconsistency, e.g. the node was removed "
+                            "from the project while still being referenced as a "
+                            "parent/root node."
+                        ),
                     )
                 )
                 return project.name, _UNKNOWN_NODE
