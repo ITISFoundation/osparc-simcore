@@ -1,17 +1,20 @@
 # Orchestrates i18n extraction and translation for the osparc-simcore backend and frontend.
-# Output catalogs:
-#   - Backend: packages/common-library/src/common_library/locale/
-#   - Frontend: services/static-webserver/client/source/translation/
+#
+# Two SEPARATELY-OWNED catalogs (never merged into each other):
+#   - Backend-owned:  packages/common-library/src/common_library/locale/messages.{pot,po,mo}
+#                     = backend services user_message() + notification {% trans %} templates
+#   - Frontend-owned: services/static-webserver/client/source/translation/{frontend.pot,*.po}
+#                     = qooxdoo this.tr() strings (consumed directly by `qx compile`)
 #
 # Usage (full pipeline):
 #   make all
 #
 # Step-by-step (backend + frontend):
-#   make extract-all          # gather per-service partial .pots and frontend.pot
-#   make merge                # msgcat backend partials + frontend -> messages.pot, then enrich with CTX
-#   make translate            # AI translate stale entries (one .po per LANG)
-#   make compile              # msgfmt .po -> .mo (backend only)
-#   make translate-frontend   # AI translate frontend catalogs
+#   make extract-all          # gather backend partial .pots AND frontend.pot (separate outputs)
+#   make merge                # msgcat backend partials only -> messages.pot, then enrich with CTX
+#   make translate            # AI translate stale backend entries (one .po per LANG)
+#   make compile              # msgfmt backend .po -> .mo
+#   make translate-frontend   # msgmerge + AI translate frontend catalogs from (enriched) frontend.pot
 #
 # Per-provider shortcuts (translate step only):
 #   make translate-ollama
@@ -50,13 +53,24 @@ I18N_DIRS := \
   packages/common-library
 
 # --- Jinja2 templates (extracted via Babel, not xgettext) ---
-# Email templates live entirely in the notifications service; their {% trans %}
-# strings are merged into the same central catalog as the rest of the backend.
+# Email templates live entirely in the notifications service. Their {% trans %}
+# strings are kept in the SAME backend `messages` catalog as user_message() rather
+# than in a separate gettext domain. Rationale: the .mo is loaded lazily per-locale
+# (functools.cache in common_library.gettext_support._load) and only by the few
+# services that call get_translator (web-server, api-server, notifications); a
+# few-hundred-string catalog is KB-scale, so a dedicated domain would add a second
+# .pot/.po/.mo + a domain-aware get_translator for negligible memory savings.
+# Follow-up trigger to revisit (split into a `notifications` domain): if the
+# template catalog grows large, or services that never render emails start loading
+# the catalog into memory.
 NOTIFICATIONS_TEMPLATES_DIR := services/notifications/src/simcore_service_notifications/templates
 
 # --- Frontend configuration (qooxdoo) ---
 CLIENT_DIR          := $(REPO_ROOT)/services/static-webserver/client
-CLIENT_SRC_DIR      := $(CLIENT_DIR)/source/class
+# Repo-relative source dir: extraction runs under `cd $(REPO_ROOT)` so that the
+# frontend.pot #: occurrences are repo-relative (portable + resolvable by enrich's
+# git-blame), matching the backend convention instead of embedding absolute paths.
+CLIENT_SRC_REL      := services/static-webserver/client/source/class
 CLIENT_TRANS_DIR    := $(CLIENT_DIR)/source/translation
 FRONTEND_POT        := $(CLIENT_TRANS_DIR)/frontend.pot
 CLIENT_LANGS        ?= es_ES zh_CN
@@ -99,7 +113,7 @@ TRANSLATOR := uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py
 .DEFAULT_GOAL := help
 
 .PHONY: all extract-all extract-frontend merge translate compile translate-frontend clean \
-        check-i18n-style \
+        check-i18n-style plan \
         translate-ollama translate-anthropic translate-openai translate-custom
 
 all: extract-all merge translate compile translate-frontend  ## Full pipeline (backend + frontend)
@@ -125,31 +139,34 @@ extract-all:  ## Extract user_message() strings from all I18N_DIRS -> _partials/
 	@echo "  [extract] frontend JS -> $(FRONTEND_POT)"
 	@mkdir -p $(CLIENT_TRANS_DIR)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
-	  --src $(CLIENT_SRC_DIR) \
+	  --src $(CLIENT_SRC_REL) \
 	  --out $(FRONTEND_POT) \
 	  --langs javascript
+	@echo "  [enrich] frontend source context -> $(FRONTEND_POT)"
+	@cd $(REPO_ROOT) && $(EXTRACTOR) enrich --pot $(FRONTEND_POT) --repo-root $(REPO_ROOT)
 
 # ---------------------------------------------------------------------------
 # Alternative: extract frontend only (for testing)
 # ---------------------------------------------------------------------------
-extract-frontend:  ## Extract this.tr() strings from qooxdoo frontend -> frontend.pot
+extract-frontend:  ## Extract this.tr() strings from qooxdoo frontend -> frontend.pot (+ enrich)
 	@echo "  [extract] frontend JS -> $(FRONTEND_POT)"
 	@mkdir -p $(CLIENT_TRANS_DIR)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
-	  --src $(CLIENT_SRC_DIR) \
+	  --src $(CLIENT_SRC_REL) \
 	  --out $(FRONTEND_POT) \
 	  --langs javascript
+	@echo "  [enrich] frontend source context -> $(FRONTEND_POT)"
+	@cd $(REPO_ROOT) && $(EXTRACTOR) enrich --pot $(FRONTEND_POT) --repo-root $(REPO_ROOT)
 
 # ---------------------------------------------------------------------------
-# Step 2 — merge partials + enrich with CTX snippets
+# Step 2 — merge BACKEND partials only + enrich with CTX snippets
 # ---------------------------------------------------------------------------
-merge:  ## Merge _partials/*.pot and frontend.pot -> messages.pot + enrich with CTX snippets
+# The frontend.pot is intentionally NOT merged here: the frontend owns its own
+# catalog (translated by `translate-frontend` from frontend.pot). Mixing them
+# would leak qooxdoo strings into the backend `messages` .mo loaded by services.
+merge:  ## Merge backend _partials/*.pot -> messages.pot + enrich with CTX snippets
 	@mkdir -p $(LOCALE_OUT_DIR)
-	@if [ -f "$(FRONTEND_POT)" ]; then \
-	  msgcat --use-first $(PARTIALS_DIR)/*.pot $(FRONTEND_POT) -o $(POT); \
-	else \
-	  msgcat --use-first $(PARTIALS_DIR)/*.pot -o $(POT); \
-	fi
+	msgcat --use-first $(PARTIALS_DIR)/*.pot -o $(POT)
 	$(EXTRACTOR) enrich --pot $(POT) --repo-root $(REPO_ROOT)
 
 # ---------------------------------------------------------------------------
@@ -187,17 +204,55 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.mo: $(LOCALE_OUT_DIR)/%/LC_MESSAGES/mes
 	msgfmt $< -o $@
 
 # ---------------------------------------------------------------------------
-# Frontend — AI translation (extraction now via xgettext in extract-all)
+# Dry-run — preview entries that WOULD be translated (no LLM, no tokens, no save)
 # ---------------------------------------------------------------------------
-translate-frontend:  ## AI translate frontend .po files (CLIENT_LANGS) from master template
-	@for lang in $(CLIENT_LANGS); do \
-	  out=$(CLIENT_TRANS_DIR)/$$lang.po; \
-	  echo "  [translate] frontend $$lang -> $$out"; \
+plan:  ## Preview NEW/UPDATED entries for backend + frontend without calling the LLM
+	@for lang in $(LANGS); do \
+	  echo "  [plan] backend $$lang"; \
+	  po=$(LOCALE_OUT_DIR)/$$lang/LC_MESSAGES/messages.po; \
 	  in_po_flag=""; \
-	  if [ -f "$$out" ]; then in_po_flag="--in-po $$out"; fi; \
+	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
+	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
+	    --plan --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
+	done
+	@for lang in $(CLIENT_LANGS); do \
+	  case $$lang in \
+	    zh_CN) out_lang=zh ;; \
+	    *) out_lang=$$lang ;; \
+	  esac; \
+	  echo "  [plan] frontend $$lang"; \
+	  po=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
+	  in_po_flag=""; \
+	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
+	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
+	    --plan --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
+	done
+
+# ---------------------------------------------------------------------------
+# Frontend — AI translation from the frontend-owned (enriched) frontend.pot
+# ---------------------------------------------------------------------------
+# CLIENT_LANGS use translation-quality locale codes (e.g. zh_CN, which the
+# glossary keys on), but qooxdoo reads bare locale names (see compile.json:
+# en_US, es_ES, zh). We translate as zh_CN for richer AI context + glossary yet
+# write zh.po so `qx compile` picks it up. msgmerge first brings new msgids and
+# the enriched CTX-SNIPPET/CTX-SNIPPET-VERSION into the .po so the translator can
+# skip already-fresh entries (git-blame staleness) instead of re-spending tokens.
+translate-frontend:  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS) from frontend.pot
+	@for lang in $(CLIENT_LANGS); do \
+	  case $$lang in \
+	    zh_CN) out_lang=zh ;; \
+	    *) out_lang=$$lang ;; \
+	  esac; \
+	  out=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
+	  echo "  [translate] frontend $$lang -> $$out"; \
+	  if [ -f "$$out" ]; then \
+	    msgmerge --update --backup=none "$$out" "$(FRONTEND_POT)"; \
+	  else \
+	    msginit --no-translator --input="$(FRONTEND_POT)" --locale="$$out_lang" --output-file="$$out"; \
+	  fi; \
 	  uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py translate \
-	    --pot $(POT) \
-	    $$in_po_flag \
+	    --pot $(FRONTEND_POT) \
+	    --in-po $$out \
 	    --lang $$lang \
 	    --model $(MODEL) \
 	    $(BASE_URL_FLAG) \
@@ -206,7 +261,7 @@ translate-frontend:  ## AI translate frontend .po files (CLIENT_LANGS) from mast
 	    $(PROGRESS_FLAG) \
 	    $(PARALLEL_FLAG) \
 	    --max-workers $(MAX_WORKERS) \
-	    --log-file $(CLIENT_TRANS_DIR)/translate-$$lang.log \
+	    --log-file $(CLIENT_TRANS_DIR)/translate-$$out_lang.log \
 	    --out $$out; \
 	done
 

@@ -642,6 +642,59 @@ def _build_logger(log_file: Path | None) -> logging.Logger | None:
     return logger
 
 
+def _run_plan(pot: Path, in_po: Path | None, lang: str, use_git: bool) -> None:
+    """Classify entries (NEW/UPDATED/SKIPPED) without calling the LLM or saving.
+
+    Reuses the exact staleness logic of a real run so the report matches what
+    `translate` would actually do, but spends no tokens and writes nothing.
+    """
+    msgid_max_len: Final = 80
+    source_path = in_po if in_po and in_po.exists() else pot
+    po = polib.pofile(str(source_path))
+    pot_creation_at = _parse_catalog_timestamp(po.metadata.get("POT-Creation-Date", ""))
+
+    table = Table(title=f"Translation plan ({lang}) — no LLM calls, nothing saved")
+    table.add_column("State", no_wrap=True)
+    table.add_column("msgid", ratio=2, overflow="fold")
+    table.add_column("Location", ratio=1, overflow="ellipsis", no_wrap=True, style="dim")
+
+    total = new_count = updated_count = skipped = 0
+    for entry in po:
+        total += 1
+        ctx = _parse_translator_comments(entry)
+        state = _classify_entry_state(
+            entry=entry,
+            ctx=ctx,
+            use_git=use_git,
+            pot_creation_at=pot_creation_at,
+        )
+        location = ""
+        if entry.occurrences:
+            filepath, lineno = entry.occurrences[0]
+            location = f"{filepath}:{lineno}" if lineno else filepath
+        msgid = entry.msgid if len(entry.msgid) <= msgid_max_len else f"{entry.msgid[: msgid_max_len - 3]}..."
+
+        if isinstance(state, EntryNew):
+            new_count += 1
+            table.add_row("[cyan]NEW[/cyan]", msgid, location)
+        elif isinstance(state, EntryUpdated):
+            updated_count += 1
+            table.add_row("[yellow]UPDATED[/yellow]", msgid, location)
+        else:
+            # SKIPPED entries are already fresh; omitted from the table to keep
+            # the focus on what would change.
+            skipped += 1
+
+    console.print(table)
+    console.print(
+        f"[bold]\\[plan][/bold] {total} entries: "
+        f"[cyan]{new_count} NEW[/cyan], "
+        f"[yellow]{updated_count} UPDATED[/yellow], "
+        f"[dim]{skipped} SKIPPED[/dim] "
+        f"→ would translate {new_count + updated_count} (0 tokens spent)"
+    )
+
+
 @app.command()
 def translate(  # noqa: C901, PLR0913, PLR0915
     out: Path = typer.Option(..., help="Output .po file path"),
@@ -692,8 +745,20 @@ def translate(  # noqa: C901, PLR0913, PLR0915
         help="Maximum number of concurrent translation workers when parallel mode is enabled.",
     ),
     dry_run: bool = typer.Option(False, help="Print without saving"),
+    plan: bool = typer.Option(
+        False,
+        "--plan",
+        help=(
+            "Show which entries would be translated (NEW/UPDATED/SKIPPED) without "
+            "calling the LLM or saving. Spends no tokens and needs no API key."
+        ),
+    ),
 ) -> None:
     """Translate a .pot/.po catalog into a language-specific .po."""
+    if plan:
+        _run_plan(pot=pot, in_po=in_po, lang=lang, use_git=use_git)
+        return
+
     _validate_model(model)
 
     data = _load_glossary(str(glossary_file))
