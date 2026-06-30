@@ -1,7 +1,7 @@
 from typing import Final
 
 import sqlalchemy as sa
-from models_library.projects import ProjectID
+from models_library.projects import NodesDict, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
@@ -51,6 +51,17 @@ class ProjectsNodesRepository(BaseRepository):
             if row is None:
                 raise ProjectNodeNotFoundError(project_id=project_id, node_id=node_id)
             return Node.model_validate(row)
+
+    async def get_all(self, project_id: ProjectID) -> NodesDict:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            stmt = sa.select(projects_nodes.c.node_id, *_NODE_COLUMNS).where(
+                projects_nodes.c.project_uuid == f"{project_id}"
+            )
+            result = await conn.execute(stmt)
+            return {
+                f"{row['node_id']}": Node.model_validate({k: v for k, v in row.items() if k != "node_id"})
+                for row in result.mappings()
+            }
 
     async def list_nodes_ids(self, project_id: ProjectID) -> list[NodeID]:
         async with pass_or_acquire_connection(self.db_engine) as conn:

@@ -29,7 +29,7 @@ from models_library.api_schemas_directorv2.computations import (
     ComputationGet,
     ComputationStop,
 )
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
@@ -212,6 +212,7 @@ async def _try_start_pipeline(
     computation: ComputationCreate,
     minimal_dag: nx.DiGraph,
     project: ProjectAtDB,
+    project_nodes: NodesDict,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> bool:
@@ -236,9 +237,7 @@ async def _try_start_pipeline(
         user_id=computation.user_id,
         project_id=computation.project_id,
         run_metadata=RunMetadataDict(
-            node_id_names_map={
-                NodeID(node_idstr): node_data.label for node_idstr, node_data in project.workbench.items()
-            },
+            node_id_names_map={NodeID(node_idstr): node_data.label for node_idstr, node_data in project_nodes.items()},
             product_name=computation.product_name,
             project_name=project.name,
             simcore_user_agent=computation.simcore_user_agent,
@@ -308,8 +307,10 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
+        project_nodes = await projects_nodes_repo.get_all(computation.project_id)
+
         # create the complete DAG graph
-        complete_dag = create_complete_dag(project.workbench)
+        complete_dag = create_complete_dag(project_nodes)
 
         # reject cycles involving computational nodes early (before catalog checks)
         if computation.start_pipeline and (computational_cycles := find_computational_node_cycles(complete_dag)):
@@ -343,6 +344,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
         comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
+            project_nodes=project_nodes,
             catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
@@ -364,6 +366,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
                 computation=computation,
                 minimal_dag=minimal_computational_dag,
                 project=project,
+                project_nodes=project_nodes,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
             )
