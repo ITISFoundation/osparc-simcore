@@ -537,19 +537,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "tutorial":
         case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
-          title = resourceData.name,
+          title = resourceData.name;
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "function":
           uuid = resourceData.uuid ? resourceData.uuid : null;
-          title = resourceData.title,
+          title = resourceData.title;
           owner = "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
-          title = resourceData.name,
+          title = resourceData.name;
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           icon = resourceData["icon"] || osparc.dashboard.CardBase.PRODUCT_ICON;
           defaultHits = 0;

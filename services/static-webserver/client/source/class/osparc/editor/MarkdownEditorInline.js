@@ -29,7 +29,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
   },
 
   statics: {
-    __createToolbarBtn(label, tooltip, fn) {
+    createToolbarBtn(label, tooltip, fn) {
       const b = new qx.ui.toolbar.Button(label).set({
         toolTipText: tooltip,
       });
@@ -78,11 +78,11 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
         paddingTop: 4,
         backgroundColor: "input-background",
       });
-      tb.add(this.self().__createToolbarBtn("B", "Bold", () => this.__wrapSelection("**", "**", "bold text")));
-      tb.add(this.self().__createToolbarBtn("I", "Italic", () => this.__wrapSelection("*", "*", "italic text")));
-      tb.add(this.self().__createToolbarBtn("Link", "Insert link", () => this.__insertLink()));
-      tb.add(this.self().__createToolbarBtn("• List", "Bulleted list", () => this.__prefixLines("- ")));
-      tb.add(this.self().__createToolbarBtn("1. List", "Numbered list", () => this.__numberLines()));
+      tb.add(this.self().createToolbarBtn("B", "Bold", () => this.__wrapSelection("**", "**", "bold text")));
+      tb.add(this.self().createToolbarBtn("I", "Italic", () => this.__wrapSelection("*", "*", "italic text")));
+      tb.add(this.self().createToolbarBtn("Link", "Insert link", () => this.__insertLink()));
+      tb.add(this.self().createToolbarBtn("• List", "Bulleted list", () => this.__prefixLines("- ")));
+      tb.add(this.self().createToolbarBtn("1. List", "Numbered list", () => this.__numberLines()));
       return tb;
     },
 
@@ -93,12 +93,14 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
     __getSelection: function() {
       const dom = this.__getDomTextArea();
-      if (!dom) return null;
+      if (!dom) {
+        return null;
+      }
 
       const textArea = this.getChildControl("text-area");
       const value = textArea.getValue() || "";
-      const start = dom.selectionStart != null ? dom.selectionStart : value.length;
-      const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
+      const start = dom.selectionStart == null ? value.length : dom.selectionStart;
+      const end = dom.selectionEnd == null ? value.length : dom.selectionEnd;
 
       return { textArea, value, start, end };
     },
@@ -111,7 +113,9 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
       if (newStart != null && newEnd != null) {
         qx.event.Timer.once(() => {
           const dom = this.__getDomTextArea();
-          if (!dom) return;
+          if (!dom) {
+            return;
+          }
           dom.selectionStart = newStart;
           dom.selectionEnd = newEnd;
         }, this, 0);
@@ -120,7 +124,9 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
     __wrapSelection: function(prefix, suffix, placeholder) {
       const sel = this.__getSelection();
-      if (!sel) return;
+      if (!sel) {
+        return;
+      }
 
       const { value, start, end } = sel;
       const selected = value.substring(start, end) || placeholder;
@@ -138,7 +144,9 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
     __insertLink: function() {
       const sel = this.__getSelection();
-      if (!sel) return;
+      if (!sel) {
+        return;
+      }
 
       const { value, start, end } = sel;
       const selected = value.substring(start, end) || "link text";
@@ -157,7 +165,9 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
     __prefixLines: function(prefix) {
       const sel = this.__getSelection();
-      if (!sel) return;
+      if (!sel) {
+        return;
+      }
 
       const { value, start, end } = sel;
 
@@ -182,7 +192,9 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
     __numberLines: function() {
       const sel = this.__getSelection();
-      if (!sel) return;
+      if (!sel) {
+        return;
+      }
 
       const { value, start, end } = sel;
 
@@ -194,7 +206,9 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
       let n = 1;
 
       const updated = lines.map(line => {
-        if (!line.trim().length) return line;
+        if (!line.trim().length) {
+          return line;
+        }
         return `${n++}. ${line}`;
       }).join("\n");
 
@@ -211,6 +225,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
+        // eslint-disable-next-line quotes
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     },
@@ -223,11 +238,17 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
       let inOl = false;
 
       const closeLists = () => {
-        if (inUl) { out.push("</ul>"); inUl = false; }
-        if (inOl) { out.push("</ol>"); inOl = false; }
+        if (inUl) {
+          out.push("</ul>");
+          inUl = false;
+        }
+        if (inOl) {
+          out.push("</ol>");
+          inOl = false;
+        }
       };
 
-      const inline = (s) => {
+      const inline = s => {
         s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
           `<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>`);
         s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -245,15 +266,27 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
         }
 
         if (/^\s*-\s+/.test(line)) {
-          if (inOl) { out.push("</ol>"); inOl = false; }
-          if (!inUl) { out.push("<ul>"); inUl = true; }
+          if (inOl) {
+            out.push("</ol>");
+            inOl = false;
+          }
+          if (!inUl) {
+            out.push("<ul>");
+            inUl = true;
+          }
           out.push("<li>" + inline(line.replace(/^\s*-\s+/, "")) + "</li>");
           continue;
         }
 
         if (/^\s*\d+\.\s+/.test(line)) {
-          if (inUl) { out.push("</ul>"); inUl = false; }
-          if (!inOl) { out.push("<ol>"); inOl = true; }
+          if (inUl) {
+            out.push("</ul>");
+            inUl = false;
+          }
+          if (!inOl) {
+            out.push("<ol>");
+            inOl = true;
+          }
           out.push("<li>" + inline(line.replace(/^\s*\d+\.\s+/, "")) + "</li>");
           continue;
         }
