@@ -290,6 +290,7 @@ jobs:
   deploy-vars:
     name: compute deploy variables
     needs: changes
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       is-deploy: ${{ steps.vars.outputs.is-deploy }}
