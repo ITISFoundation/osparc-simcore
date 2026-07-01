@@ -9,6 +9,7 @@ from typing import Any, Final
 import pytest
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, ValidationError
+from pytest_mock import MockerFixture
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -313,3 +314,14 @@ async def test_rpc_client_recovers_after_broker_disruption(
         with attempt:
             assert rpc_client.healthy is True
             assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5) == 9
+
+
+async def test_rpc_client_stays_unhealthy_when_rebuild_fails(rpc_client: RabbitMQRPCClient, mocker: MockerFixture):
+    mocker.patch.object(rpc_client, "_rebuild_rpc_surface", side_effect=RuntimeError("boom"))
+    assert rpc_client.healthy is True
+
+    with pytest.raises(RuntimeError):
+        await rpc_client._on_reconnect()  # noqa: SLF001
+
+    # the client stays unhealthy so the liveness probe restarts the service as a fallback
+    assert rpc_client.healthy is False
