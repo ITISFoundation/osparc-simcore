@@ -16,7 +16,7 @@ from ....groups.groups_service import (
     auto_add_user_to_product_group,
 )
 from ....invitations.api import is_service_invitation_code
-from ....locale import translate_message
+from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact
 from ....products import products_web
@@ -239,6 +239,7 @@ async def register(request: web.Request):
                         "user_name": user.get("name"),
                     },
                 },
+                locale=get_locale_or_none(request),
             )
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)

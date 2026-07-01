@@ -268,6 +268,7 @@ async def initiate_change_email(request: web.Request):
                 },
                 "link": link,
             },
+            locale=get_locale_or_none(request),
         )
     except Exception as err:  # pylint: disable=broad-except
         _logger.exception(
