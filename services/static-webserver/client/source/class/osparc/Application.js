@@ -517,12 +517,11 @@ qx.Class.define("osparc.Application", {
                     }
                     break;
                   case "userLocale":
-                    if (osparc.product.isLocaleEnabled()) {
+                    if (osparc.product.Utils.isLocaleEnabled()) {
                       if (value) {
                         preferencesSettings.setUserLocale(value);
                       } else {
-                        // if the user has not set a locale yet, default to the browser language
-                        osparc.utils.LanguageManager.applyLocale(osparc.utils.LanguageManager.getBrowserLocale());
+                        osparc.utils.LanguageManager.setDefaultLocale();
                       }
                     }
                     break;
