@@ -2,7 +2,7 @@ from typing import Annotated, Any, Final
 
 from aiohttp import web
 from annotated_types import doc
-from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
+from common_library.gettext_support import SupportedLocale
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
@@ -31,7 +31,7 @@ from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message_from_template as remote_send_message_from_template,
 )
 
-from ..locale import get_user_locale
+from ..locale import resolve_effective_locale
 from ..models import WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
@@ -202,27 +202,6 @@ async def send_message(
     return response.task_or_group_uuid, response.task_name
 
 
-async def _resolve_locale(
-    app: web.Application,
-    *,
-    user_id: UserID | None,
-    product_name: ProductName,
-    group_ids: list[GroupID] | None,
-    locale: SupportedLocale | None,
-) -> SupportedLocale:
-    """Resolves the locale to render the notification content in.
-
-    Precedence: explicit ``locale`` argument > DB-stored user preference > ``DEFAULT_LOCALE``.
-    For multi-recipient sends (``group_ids``) always falls back to ``DEFAULT_LOCALE`` since each
-    recipient may have a different preference; per-recipient rendering is a future enhancement.
-    """
-    if locale is not None:
-        return locale
-    if user_id is not None and not group_ids:
-        return await get_user_locale(app, user_id=user_id, product_name=product_name)
-    return DEFAULT_LOCALE
-
-
 async def send_message_from_template(
     app: web.Application,
     *,
@@ -244,14 +223,14 @@ async def send_message_from_template(
 ]:
     """Sends a notification rendered from a template to a single user, external contacts, or group recipients.
 
-    See ``_resolve_locale`` for how the recipient's locale is determined.
+    See ``resolve_effective_locale`` for how the recipient's locale is determined.
 
     Raises:
         NotificationsUnsupportedChannelError: If `channel` is not supported.
         NotificationsNoActiveRecipientsError: If no active recipients are found.
     """
 
-    resolved_locale = await _resolve_locale(
+    resolved_locale = await resolve_effective_locale(
         app,
         user_id=user_id,
         product_name=product_name,
