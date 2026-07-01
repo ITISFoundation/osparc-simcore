@@ -20,6 +20,7 @@ from pydantic.fields import Field
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
+from settings_library.dynamic_services_resources import DynamicServicesResourceOverheadSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
 from settings_library.rabbit import RabbitSettings
@@ -249,6 +250,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]
+
+    WEBSERVER_DYNAMIC_SERVICES_RESOURCE_OVERHEAD: Annotated[
+        DynamicServicesResourceOverheadSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="Shared dynamic services overhead settings used for resource prefit",
+        ),
+    ] = DEFAULT_FACTORY
 
     WEBSERVER_EXPORTER: Annotated[
         ExporterSettings | None,
