@@ -51,4 +51,4 @@ class TracingSettings(BaseCustomSettings):
         if invalid:
             msg = f"Invalid traced function targets (must be 'module.path:attr.path'): {invalid}"
             raise ValueError(msg)
-        return value
+        return list(set(value))
