@@ -582,7 +582,13 @@ push-latest: tag-latest
 
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@docker compose --file services/docker-compose-deploy.yml push
+	# below BUILD_TARGET gets overwritten but is required when merging yaml files
+	# NOTE: services/docker-compose-build.yml is merged in only so each service carries
+	# a 'build:' section (docker compose push skips any service without one). The push
+	# is scoped to SERVICES_NAMES_TO_BUILD so the shared base images (simcore-runtime-base,
+	# simcore-build-base) defined there are never pushed by this target.
+	@export BUILD_TARGET=undefined; \
+	docker compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push $(SERVICES_NAMES_TO_BUILD)
 
 pull-externals: ## pulls non-simcore external images defined in docker-compose.yml
 	# Pulling external images
