@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-30 16:12+0200\n"
+"POT-Creation-Date: 2026-07-01 17:22+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -862,10 +862,11 @@ msgstr ""
 #       )
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string is an error message displayed to users when
+# something unexpected occurs in the application.
 # something goes wrong with the application.
 # an internal issue occurs in the application, indicating that the developers
 # have been notified and are working on a resolution.
-# CTX-VERSION: f912b86 2026-06-30T16:41:14Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:23:00Z
 #: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:21
 msgid ""
 "Something went wrong on our end. We've been notified and will resolve this "
@@ -887,9 +888,10 @@ msgstr ""
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string is an error message indicating that a
 # service was not available.
+# service was not available.
 # specific service, identified by a placeholder, was not available when the
 # application attempted to access it.
-# CTX-VERSION: f912b86 2026-06-30T16:41:14Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:23:01Z
 #: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:84
 #, python-brace-format
 msgid "The {service_name} service was unavailable."
@@ -907,9 +909,10 @@ msgstr "El servicio {service_name} no estaba disponible."
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string is an error message indicating that an
 # unexpected response was received from a specified service.
+# unexpected response was received from a specified service.
 # unexpected response was received from a specified service, likely used in
 # logging or user notifications.
-# CTX-VERSION: f912b86 2026-06-30T16:41:16Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:23:02Z
 #: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:89
 #, python-brace-format
 msgid "Received unexpected response from {service_name}"
@@ -929,9 +932,10 @@ msgstr "Se recibió una respuesta inesperada de {service_name}"
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string is an error message indicating that a
 # service returned an invalid response.
+# service returned an invalid response.
 # service returned an invalid response, and it is used in the context of
 # handling exceptions in the application.
-# CTX-VERSION: f912b86 2026-06-30T16:41:16Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:23:04Z
 #: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:116
 #, python-brace-format
 msgid "{service_name} service returned invalid response"
@@ -1083,9 +1087,10 @@ msgstr "La tarea '{job_id}' encontró un error."
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This message is shown when the application cannot
 # forward a log due to a missing logstreamer registration for a specific job.
+# forward a log due to a missing logstreamer registration for a specific job.
 # when an attempt to forward a log fails due to a missing logstreamer
 # registration for a specific job ID.
-# CTX-VERSION: f912b86 2026-06-30T16:41:24Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:23:06Z
 #: services/api-server/src/simcore_service_api_server/services_http/log_streaming.py:67
 #, python-brace-format
 msgid ""
@@ -1285,7 +1290,9 @@ msgstr ""
 # iteration.
 # the completion status of a project pipeline execution for a specific
 # iteration.
-# CTX-VERSION: f912b86 2026-06-30T16:41:36Z
+# the completion status of a project pipeline execution for a specific
+# iteration.
+# CTX-VERSION: 275c6ed 2026-07-01T15:23:07Z
 #: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:239
 #, python-brace-format
 msgid ""
@@ -1380,9 +1387,9 @@ msgstr ""
 # interest in {{ product_name }}. We are pleased to provide you with a one-
 # time invitation link to register on the platform.{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in an email template as a greeting
+# CTX-INTERPRETATION: This string appears in an email template as a greeting.
 # to the user, where the user's first name is dynamically inserted.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:40Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:09Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:4
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:4
@@ -1420,10 +1427,10 @@ msgstr "Estimado/a %(first_name)s,"
 # 
 #       {% if trial_account_days is defined and trial_account_days %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in an email or notification message
+# CTX-INTERPRETATION: This string appears in an email or notification message.
 # sent to a user expressing gratitude for their interest in a product and
 # providing them with a registration link.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:41Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:10Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:3
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:5
@@ -1448,10 +1455,11 @@ msgstr ""
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string is part of a web application interface that
 # informs users about the duration of their trial period.
+# informs users about the duration of their trial period.
 # informs the user about the duration of their trial period in days.
 # informing users about the duration of their trial period based on the number
 # of days remaining.
-# CTX-VERSION: 69900cf 2026-06-30T16:59:57Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:12Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:11
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:6
 msgid "Your account includes %(count)s day trial period."
@@ -1469,10 +1477,11 @@ msgstr[1] "Su cuenta incluye un período de prueba de %(count)s días."
 # 
 #       {% set register_link %}<a href="{{ link }}">here</a>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in a web application context where
+# CTX-INTERPRETATION: This string is used to inform the user about receiving
+# additional free credits in a web application.
 # users are informed about receiving additional free credits, possibly as a
 # bonus or promotion.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:44Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:13Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:15
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:10
 msgid "You also receive %(extra_credits)s free credits."
@@ -1489,12 +1498,13 @@ msgstr "También recibes %(extra_credits)s créditos gratis."
 #       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{
 # product.support_email }}</a>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears as a hyperlink prompt in a web page
+# CTX-INTERPRETATION: This string is a prompt for users to click a hyperlink
+# to access a registration page.
 # or application interface, directing users to the registration page.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:45Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:17Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:20
 msgid "Click %(register_link)s to access the registration page."
-msgstr "Haga clic %(register_link)s para acceder a la página de registro."
+msgstr "Haga clic en %(register_link)s para acceder a la página de registro."
 
 # CTX-SNIPPET:
 # 
@@ -1510,9 +1520,10 @@ msgstr "Haga clic %(register_link)s para acceder a la página de registro."
 # }}!{% endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a paragraph providing
+# instructions for registration and contact information for support.
 # instructions for user registration and offering support contact information
 # if issues arise.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:47Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:20Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:25
 msgid ""
 "Please follow the on-screen information and proceed with your registration. "
@@ -1534,10 +1545,11 @@ msgstr ""
 #       <p>{% trans %}Best regards,{% endtrans %}</p>
 # 
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears as a part of a user interface
+# CTX-INTERPRETATION: This string is a friendly message encouraging the user
+# to enjoy the product.
 # message that is displayed to users after they have completed their
 # registration for the scientific simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:47Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:21Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
@@ -1556,10 +1568,11 @@ msgstr "¡Disfruta %(product_name)s!"
 #       <p>{% trans product_name=product_name %}The {{ product_name }} Team{%
 # endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears as a closing salutation in a message
+# CTX-INTERPRETATION: This string appears as a closing salutation in a
+# message.
 # or email, likely from the team responsible for the scientific simulation
 # application.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:48Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:23Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
@@ -1575,10 +1588,11 @@ msgstr "Saludos cordiales,"
 # endtrans %}</p>
 #       {% endblock %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in the closing section of a message
+# CTX-INTERPRETATION: This string is used to refer to the team associated with
+# the product in a closing message.
 # or email, indicating it is sent by the team responsible for the specified
 # product.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:49Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:24Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
@@ -1620,9 +1634,10 @@ msgstr "El equipo de %(product_name)s"
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a clickable link prompt on a
+# registration page.
 # webpage, directing users to the registration page for the scientific
 # simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:50Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:35Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:13
 msgid "Click %(link)s to access the registration page."
 msgstr "Haga clic en %(link)s para acceder a la página de registro."
@@ -1640,9 +1655,10 @@ msgstr "Haga clic en %(link)s para acceder a la página de registro."
 # }}!{% endtrans %}
 # 
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears as part of the registration process
+# CTX-INTERPRETATION: This string appears as part of the registration process,
+# providing instructions and contact information for support.
 # instructions on the user interface of the scientific simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:51Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:36Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:15
 msgid ""
 "Please follow the on-screen information and proceed with your registration. "
@@ -1657,8 +1673,9 @@ msgstr ""
 # for {{ product_name }} Has Been Accepted{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message confirming
+# the acceptance of a registration request for a product.
 # that a user's registration request for a specific product has been approved.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:52Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:39Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/subject.j2:1
 msgid "Your Registration Request for %(product_name)s Has Been Accepted"
 msgstr "Su solicitud de registro para %(product_name)s ha sido aceptada"
@@ -1677,9 +1694,10 @@ msgstr "Su solicitud de registro para %(product_name)s ha sido aceptada"
 # product.support_email }}</a>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email or notification message
+# informing the user about their ineligibility for a program.
 # informing the user that their registration does not qualify for a specific
 # program related to the product.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:53Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:42Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:3
 msgid ""
@@ -1702,9 +1720,10 @@ msgstr ""
 #       <p>{% trans %}Best regards,{% endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email or webpage footer,
+# providing contact information for further inquiries.
 # inviting users to contact support for more information about the software
 # solutions offered.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:54Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:43Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:12
 msgid ""
 "In case of further interest in this or other solutions we might offer, "
@@ -1728,9 +1747,11 @@ msgstr ""
 # Team{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email or message informing the
+# recipient about how to contact support for further interest in the product
+# or other solutions.
 # user about how to contact support for further inquiries about the product or
 # other solutions.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:56Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:44Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:5
 msgid ""
 "In case of further interest in this or other solutions we might offer, "
@@ -1744,9 +1765,11 @@ msgstr ""
 # for {{ product_name }} Has Been Denied{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that their registration request for a specific product has been
+# denied.
 # the user that their request to register for the specified product has been
 # denied.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:57Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:45Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/subject.j2:1
 msgid "Your Registration Request for %(product_name)s Has Been Denied"
 msgstr "Su solicitud de registro para %(product_name)s ha sido denegada"
@@ -1762,9 +1785,10 @@ msgstr "Su solicitud de registro para %(product_name)s ha sido denegada"
 #         {% trans %}We have received the following request form for an
 # account:{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears at the beginning of an email
+# CTX-INTERPRETATION: This string is a greeting at the beginning of an email
+# addressed to the support team.
 # template addressed to the support team, likely as a greeting.
-# CTX-VERSION: 69900cf 2026-06-30T16:41:59Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:46Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:4
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:1
 msgid "Dear Support team,"
@@ -1781,9 +1805,11 @@ msgstr "Estimado equipo de soporte,"
 #         <li>Product: <b>{{ product.display_name }}</b></li>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an HTML paragraph tag as part of
+# a notification to the support team about receiving a request form for an
+# account.
 # a notification message to the support team about receiving a request form
 # for an account.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:00Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:47Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:3
 msgid "We have received the following request form for an account:"
@@ -1800,9 +1826,10 @@ msgstr "Hemos recibido el siguiente formulario de solicitud para una cuenta:"
 #       <pre>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a web application as an
+# introductory sentence for product details.
 # introductory sentence before listing specific details about a product that
 # has been requested by the user.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:01Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:49Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:19
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:10
 msgid "Some details about the requested product follow:"
@@ -1820,9 +1847,10 @@ msgstr ""
 #       <pre>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears on a webpage or user interface where
+# users can find additional information to validate a request form.
 # users can access additional information to ensure their request form is
 # correctly filled out.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:02Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:50Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:27
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:14
 msgid ""
@@ -1841,27 +1869,31 @@ msgstr ""
 #       {% endblock %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a tip or suggestion in the user
+# interface to guide users on how to obtain more information about an IP
+# address.
 # interface of a scientific simulation application, advising users to visit a
 # specific website for additional information about an IP address.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:03Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:51Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:34
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:18
 msgid "TIP: Use https://ipinfo.io/ to find out more information on the IP."
 msgstr ""
-"CONSEJO: Usa https://ipinfo.io/ para obtener más información sobre la IP."
+"CONSEJO: Utiliza https://ipinfo.io/ para obtener más información sobre la "
+"IP."
 
 # CTX-SNIPPET:
 #   >>> {% trans product_name=product.display_name %}Request for an Account in
 # {{ product_name }}{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a prompt or button label in the
+# application interface.
 # user interface of the application, allowing users to request an account for
 # accessing the specified product.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:04Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:53Z
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/subject.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/subject.j2:1
 msgid "Request for an Account in %(product_name)s"
-msgstr "Solicitud de una cuenta en %(product_name)s"
+msgstr "Solicitud de una Cuenta en %(product_name)s"
 
 # CTX-SNIPPET:
 #       {% block content %}
@@ -1877,9 +1909,10 @@ msgstr "Solicitud de una cuenta en %(product_name)s"
 # compatibility -->
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user who has requested to change their email address for their account.
 # user who has requested to change the email address associated with their
 # account for a specific product.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:05Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:54Z
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:3
 msgid ""
@@ -1887,9 +1920,9 @@ msgid ""
 "%(product_name)s account. Please follow the on-screen information in the "
 "link below:"
 msgstr ""
-"Has solicitado cambiar la dirección de correo electrónico vinculada a tu "
-"cuenta de %(product_name)s. Por favor, sigue la información en pantalla en "
-"el enlace a continuación:"
+"Ha solicitado cambiar la dirección de correo electrónico vinculada a su "
+"cuenta %(product_name)s. Por favor, siga la información en pantalla en el "
+"enlace a continuación:"
 
 # CTX-SNIPPET:
 #         <tr>
@@ -1902,9 +1935,10 @@ msgstr ""
 #         </tr>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a clickable button or link in the
+# user interface for changing the user's email address.
 # user interface of the application, allowing users to change their registered
 # email address.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:07Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:55Z
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
 msgid "Change email"
 msgstr "Cambiar correo electrónico"
@@ -1920,10 +1954,11 @@ msgstr "Cambiar correo electrónico"
 #       <p>{% trans %}Best Regards,{% endtrans %}</p>
 #       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in the footer of an email or
+# CTX-INTERPRETATION: This string appears in the footer of an email or support
+# message, encouraging users to reach out for assistance.
 # webpage, offering support contact information for users needing assistance
 # with the scientific simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:08Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:56Z
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:13
@@ -1947,9 +1982,9 @@ msgstr "No dude en contactarnos en %(support_link)s si necesita más ayuda."
 # endtrans %}</p>
 #       {% endblock %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears as a closing salutation in an email
+# CTX-INTERPRETATION: This string is used as a polite closing in an email.
 # or message from the support team of a scientific simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:09Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:57Z
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:23
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
@@ -1984,10 +2019,11 @@ msgstr "Saludos cordiales,"
 #       {% trans product_name=product.display_name %}The {{ product_name }}
 # Team{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in a customer support section of the
+# CTX-INTERPRETATION: This string is a customer support message encouraging
+# users to reach out for further assistance.
 # application, providing users with contact information for further
 # assistance.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:10Z
+# CTX-VERSION: e14910c 2026-07-01T15:23:59Z
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
@@ -2004,9 +2040,11 @@ msgstr "No dude en contactarnos en %(support_email)s si necesita más ayuda."
 # Email Address on {{ product_name }}{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification or message
+# informing the user about a change in their sign-in email address for a
+# specific product.
 # informing the user about a change to their sign-in email address for the
 # specified product.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:11Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:01Z
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/subject.j2:1
 msgid "Change of Your Sign-In Email Address on %(product_name)s"
 msgstr ""
@@ -2023,9 +2061,10 @@ msgstr ""
 #       <p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears at the beginning of a message or
+# notification to address the user.
 # notification addressed to the user within the scientific simulation
 # application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:12Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:02Z
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:1
 msgid "Dear User,"
@@ -2045,9 +2084,11 @@ msgstr "Estimado usuario,"
 # }}</em></strong>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that their service run was affected by a platform issue and was not
+# billed.
 # the user that their recent service run on a specific product was affected by
 # a platform issue and they were not charged for it.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:14Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:04Z
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:11
 msgid ""
 "We want to inform you that your service run (%(service_run)s) on "
@@ -2069,12 +2110,14 @@ msgstr ""
 #       <p>{% trans %}No action is needed on your part.{% endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message informing
+# the user about the reimbursement of credits to their account.
 # the user that a certain amount of credits has been reimbursed to their
 # account within the application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:15Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:05Z
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:16
 msgid "%(credit_amount)s credits have been reimbursed to your Credit Account."
-msgstr "Se han reembolsado %(credit_amount)s créditos a su Cuenta de Crédito."
+msgstr ""
+"%(credit_amount)s créditos han sido reembolsados a su Cuenta de Créditos."
 
 # CTX-SNIPPET:
 #         {% trans credit_amount=credit_amount %}{{ credit_amount }} credits
@@ -2089,9 +2132,10 @@ msgstr "Se han reembolsado %(credit_amount)s créditos a su Cuenta de Crédito."
 # contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that they do not need to take any further steps.
 # the user that they do not need to take any further steps after a credit
 # reimbursement.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:17Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:07Z
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:19
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:7
 msgid "No action is needed on your part."
@@ -2110,8 +2154,9 @@ msgstr "No se necesita ninguna acción de su parte."
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message to inform
+# the user about an issue with their service run that was not billed.
 # the user about an issue with their service run that resulted in no billing.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:18Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:08Z
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:3
 msgid ""
 "We want to inform you that your service run (%(service_run_id)s) on "
@@ -2135,9 +2180,10 @@ msgstr ""
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message informing
+# the user about the reimbursement of credits to their account.
 # the user about the reimbursement of credits to their account due to a
 # platform issue.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:19Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:09Z
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:5
 msgid ""
 "%(reimbursed_credits)s credits have been reimbursed to your Credit Account."
@@ -2149,12 +2195,13 @@ msgstr ""
 # reimbursed on {{ product_name }}{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that their credits have been reimbursed on a specific product.
 # the user that their credits have been reimbursed for a specific product
 # within the application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:20Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:10Z
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/subject.j2:1
 msgid "Your credits have been reimbursed on %(product_name)s"
-msgstr "Se han reembolsado sus créditos en %(product_name)s"
+msgstr "Tus créditos han sido reembolsados en %(product_name)s"
 
 # CTX-SNIPPET:
 #       {% block title %} {% include 'email/new_2fa_code/subject.j2' %} {%
@@ -2168,18 +2215,19 @@ msgstr "Se han reembolsado sus créditos en %(product_name)s"
 #       {% set code_display %}<b> {{ code }} </b>{% endset %}
 #       <p>
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in an email template sent to users
+# CTX-INTERPRETATION: This string is part of an email template informing users
+# about their Two-factor Authentication code.
 # to provide them with a two-factor authentication code for accessing their
 # account on a specified host platform.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:22Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:11Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:5
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:3
 msgid ""
 "Please find below the Two-factor Authentication sign-in code for your "
 "%(host)s account."
 msgstr ""
-"A continuación, encontrará el código de inicio de sesión de autenticación de"
-" dos factores para su cuenta en %(host)s."
+"A continuación, encontrará el código de inicio de sesión de Autenticación de"
+" Dos Factores para su cuenta %(host)s."
 
 # CTX-SNIPPET:
 # 
@@ -2193,8 +2241,9 @@ msgstr ""
 # product.support_email }}</a>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a web application template where
+# a code is displayed to the user.
 # a user's code is dynamically inserted and displayed to them.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:23Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:12Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
 msgid "Your code is: %(code_display)s"
 msgstr "Su código es: %(code_display)s"
@@ -2211,9 +2260,10 @@ msgstr "Su código es: %(code_display)s"
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification or message sent to
+# provide a two-factor authentication code.
 # users to provide them with a two-factor authentication code for accessing
 # their account.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:24Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:13Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
 msgid "Your code is: %(code)s"
 msgstr "Su código es: %(code)s"
@@ -2222,13 +2272,14 @@ msgstr "Su código es: %(code)s"
 #   >>> {% trans code=code, host=host %}{{ code }} is Your 2FA Sign-In Code
 # for {{ host }}{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in a user interface or email
+# CTX-INTERPRETATION: This string is used to inform the user of their two-
+# factor authentication code for a specific host.
 # notification to inform the user of their two-factor authentication code for
 # accessing a specific host or service.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:25Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:15Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/subject.j2:1
 msgid "%(code)s is Your 2FA Sign-In Code for %(host)s"
-msgstr "%(code)s es su código de verificación en dos pasos para %(host)s"
+msgstr "%(code)s es su código de acceso 2FA para %(host)s"
 
 # CTX-SNIPPET:
 #         <tr>
@@ -2241,9 +2292,10 @@ msgstr "%(code)s es su código de verificación en dos pasos para %(host)s"
 #         </tr>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: The string 'Register' appears as a clickable button or
+# link for user registration.
 # link on a webpage, likely prompting the user to sign up or create an account
 # for the scientific simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:26Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:17Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:11
 msgid "Register"
 msgstr "Registrarse"
@@ -2262,9 +2314,11 @@ msgstr "Registrarse"
 # }}!{% endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as an instruction for users to
+# complete their registration by following the information displayed on the
+# screen.
 # follow the displayed information on the screen to complete their
 # registration process.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:28Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:19Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:16
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:7
 msgid ""
@@ -2285,9 +2339,11 @@ msgstr "Por favor, siga la información en pantalla y proceda con su registro."
 #       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in the user interface of a
+# scientific simulation application, providing contact information for
+# support.
 # scientific simulation application, providing users with contact information
 # for support in case they encounter any issues.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:29Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:20Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
 msgid ""
 "If any problem should occur, please feel free to contact us at "
@@ -2309,9 +2365,10 @@ msgstr ""
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a hyperlink text in an email or
+# notification inviting the user to register on the platform.
 # webpage, directing the user to the registration page for the scientific
 # simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:30Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:22Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
 msgid "Click here to access the registration page: %(link)s"
 msgstr "Haga clic aquí para acceder a la página de registro: %(link)s"
@@ -2328,10 +2385,11 @@ msgstr "Haga clic aquí para acceder a la página de registro: %(link)s"
 # }}!{% endtrans %}
 # 
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears as part of an error message or help
+# CTX-INTERPRETATION: This string appears as part of an error message or help,
+# providing contact information for support.
 # section in the application, providing users with contact information for
 # support.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:31Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:24Z
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
 msgid ""
 "If any problem should occur, please feel free to contact us at "
@@ -2359,17 +2417,18 @@ msgstr ""
 # product.support_email }}</a>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email notification confirming
+# a successful payment and credit addition to a user's account.
 # the successful processing of a user's payment and the addition of credits to
 # their account.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:31Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:25Z
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:10
 msgid ""
 "We are delighted to confirm the successful processing of your payment of "
 "%(price)s for the purchase of %(credits)s. The credits have been added to "
 "your %(product_name)s account, and you are all set to utilize them."
 msgstr ""
-"Nos complace confirmar el procesamiento exitoso de su pago de %(price)s por "
-"la compra de %(credits)s. Los créditos se han añadido a su cuenta de "
+"Nos complace confirmar el procesamiento exitoso de su pago de %(price)s para"
+" la compra de %(credits)s. Los créditos se han añadido a su cuenta de "
 "%(product_name)s, y ya está listo para utilizarlos."
 
 # CTX-SNIPPET:
@@ -2390,10 +2449,11 @@ msgstr ""
 # contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
 #       <p>{% trans %}Best Regards,{% endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in a confirmation message sent to
+# CTX-INTERPRETATION: This string appears in a confirmation message sent to a
+# user after a payment has been processed.
 # users after a successful payment, providing them with a link to view or
 # download their payment receipt.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:32Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:26Z
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
 msgid "For more details you can view or download your %(receipt_link)s."
 msgstr "Para más detalles, puede ver o descargar su %(receipt_link)s."
@@ -2414,9 +2474,10 @@ msgstr "Para más detalles, puede ver o descargar su %(receipt_link)s."
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a confirmation email sent to a
+# user after a successful payment.
 # user after they have successfully made a payment for credits in a scientific
 # simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:34Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:28Z
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:3
 msgid ""
 "We are delighted to confirm the successful processing of your payment of "
@@ -2426,7 +2487,7 @@ msgid ""
 msgstr ""
 "Nos complace confirmar el procesamiento exitoso de su pago de "
 "%(price_dollars)s USD por la compra de %(osparc_credits)s créditos. Los "
-"créditos se han añadido a su cuenta de %(product_name)s, y ya está listo "
+"créditos han sido añadidos a su cuenta de %(product_name)s, y ya está listo "
 "para utilizarlos."
 
 # CTX-SNIPPET:
@@ -2445,10 +2506,11 @@ msgstr ""
 # to contact us at {{ support_email }} if you need further help.{% endtrans %}
 # 
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in a confirmation message sent to
+# CTX-INTERPRETATION: This string appears in a confirmation message sent to a
+# user after a successful payment.
 # users after a successful payment, providing a link to view or download their
 # receipt.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:35Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:29Z
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:5
 msgid ""
 "For more details you can view or download your receipt: %(invoice_url)s."
@@ -2460,8 +2522,9 @@ msgstr "Para más detalles, puede ver o descargar su recibo: %(invoice_url)s."
 # for {{ osparc_credits }} Credits Was Successful{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message confirming
+# a successful payment transaction.
 # a successful payment transaction for purchasing credits in the application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:36Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:36Z
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/subject.j2:1
 msgid ""
 "Your Payment %(price_dollars)s USD for %(osparc_credits)s Credits Was "
@@ -2485,18 +2548,19 @@ msgstr ""
 #       <table border="0" cellpadding="0" cellspacing="0" role="presentation"
 # style="margin-top: 10px; margin-bottom: 10px;">
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in an email template sent to users
+# CTX-INTERPRETATION: This string is part of an email template confirming user
+# registration for a product or service.
 # after they have registered for a scientific simulation application,
 # confirming their registration and thanking them for their interest.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:38Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:37Z
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:5
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:3
 msgid ""
 "Thank you for your interest in %(product_name)s. You have successfully "
 "registered for %(host)s."
 msgstr ""
-"Gracias por su interés en %(product_name)s. Se ha registrado con éxito en "
-"%(host)s."
+"Gracias por su interés en %(product_name)s. Se ha registrado exitosamente "
+"para %(host)s."
 
 # CTX-SNIPPET:
 #       )
@@ -2511,8 +2575,9 @@ msgstr ""
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string appears as a notification message prompting
 # the user to activate their account using a provided link.
+# the user to activate their account using a provided link.
 # users to activate their account via an email link before they can log in.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:38Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:40Z
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:5
 msgid "Please activate your account via the link below:"
@@ -2529,9 +2594,10 @@ msgstr "Por favor, active su cuenta mediante el enlace a continuación:"
 #         </tr>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: The string 'Activate' appears as a label for a button or
+# link that initiates an action.
 # link that, when clicked, will perform an action such as enabling a feature
 # or starting a process in the scientific simulation application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:40Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:40Z
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
 msgid "Activate"
 msgstr "Activar"
@@ -2541,9 +2607,10 @@ msgstr "Activar"
 # product_name }}{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a welcome message to users when
+# they open the application.
 # they open the scientific simulation application, displaying the product name
 # dynamically.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:41Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:42Z
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
 msgid "Welcome to %(product_name)s"
 msgstr "Bienvenido a %(product_name)s"
@@ -2561,14 +2628,15 @@ msgstr "Bienvenido a %(product_name)s"
 # endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user regarding a password reset request.
 # user when a password reset request is made for their account on a specific
 # host platform.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:43Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:44Z
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:3
 msgid "A request to reset your %(host)s password has been made."
 msgstr ""
-"Se ha realizado una solicitud para restablecer la contraseña de su %(host)s."
+"Se ha realizado una solicitud para restablecer su contraseña de %(host)s."
 
 # CTX-SNIPPET:
 #       <p>{% trans host=host %}A request to reset your {{ host }} password
@@ -2585,11 +2653,13 @@ msgstr ""
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email template prompting the
 # user to click a link to complete a password reset process.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:44Z
+# user to click a link to complete a password reset process.
+# CTX-VERSION: e14910c 2026-07-01T15:24:45Z
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:5
 msgid "To complete the process, please click the link below:"
-msgstr "Para completar el proceso, haga clic en el enlace a continuación:"
+msgstr ""
+"Para completar el proceso, por favor haga clic en el enlace a continuación:"
 
 # CTX-SNIPPET:
 #         <tr>
@@ -2602,9 +2672,10 @@ msgstr "Para completar el proceso, haga clic en el enlace a continuación:"
 #         </tr>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a clickable button or link in the
+# user interface for resetting a user's password.
 # user interface of the scientific simulation application, allowing users to
 # reset their password.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:46Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:47Z
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:15
 msgid "Reset Password"
 msgstr "Restablecer Contraseña"
@@ -2620,8 +2691,9 @@ msgstr "Restablecer Contraseña"
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an error message displayed to the
+# user when a task cannot be completed.
 # user when a task in the scientific simulation application fails to complete.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:46Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:48Z
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:21
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:8
 msgid "It could not be completed due to the following reason:"
@@ -2639,16 +2711,17 @@ msgstr "No se pudo completar debido a la siguiente razón:"
 #       <p>{% trans %}Best Regards,{% endtrans %}</p>
 #       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in an email or notification message
+# CTX-INTERPRETATION: This string is a security warning in an email or
+# notification message.
 # to alert users about an unrequested action and provide a contact link for
 # security concerns.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:48Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:49Z
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:26
 msgid ""
 "If you did not request this, please contact us immediately at "
 "%(support_link)s for security reasons."
 msgstr ""
-"Si no solicitó esto, comuníquese con nosotros de inmediato en "
+"Si no solicitó esto, por favor contáctenos inmediatamente en "
 "%(support_link)s por razones de seguridad."
 
 # CTX-SNIPPET:
@@ -2665,23 +2738,25 @@ msgstr ""
 # Team{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in an email or notification sent to
+# users for security verification.
 # users for security verification purposes.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:49Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:51Z
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:11
 msgid ""
 "If you did not request this, please contact us immediately at "
 "%(support_email)s for security reasons."
 msgstr ""
-"Si no solicitó esto, comuníquese con nosotros de inmediato en "
+"Si no solicitó esto, por favor contáctenos inmediatamente en "
 "%(support_email)s por razones de seguridad."
 
 # CTX-SNIPPET:
 #   >>> {% trans host=host %}Reset Password on {{ host }}{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in a user interface or email
+# CTX-INTERPRETATION: This string is used to prompt the user to reset their
+# password on a specific host or platform.
 # template where users are prompted to reset their password on a specific host
 # or server.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:50Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:52Z
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/subject.j2:1
 msgid "Reset Password on %(host)s"
 msgstr "Restablecer contraseña en %(host)s"
@@ -2700,8 +2775,10 @@ msgstr "Restablecer contraseña en %(host)s"
 # 
 # CTX-SNIPPET-VERSION: 26f6d28
 # CTX-INTERPRETATION: This string appears in an email notification informing
+# the recipient that someone has shared a project with them on a specific
+# platform.
 # the user that someone has shared a project with them on a specific platform.
-# CTX-VERSION: 210bc5f 2026-06-30T16:42:52Z
+# CTX-VERSION: 79ecd35 2026-07-01T15:24:53Z
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:3
 msgid ""
@@ -2724,13 +2801,13 @@ msgstr ""
 #       <div style="border: 1px solid #ccc; padding: 16px; border-radius: 8px;
 # background-color: #f9f9f9; margin-top: 20px; margin-bottom: 20px;">
 # CTX-SNIPPET-VERSION: 26f6d28
-# CTX-INTERPRETATION: This string appears in an email or notification message
+# CTX-INTERPRETATION: This string appears in an email or notification message.
 # prompting the recipient to view and accept a shared project.
-# CTX-VERSION: 210bc5f 2026-06-30T16:42:53Z
+# CTX-VERSION: 79ecd35 2026-07-01T15:24:54Z
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:8
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:5
 msgid "To view the project and accept the sharing, follow below:"
-msgstr "Para ver el proyecto y aceptar la compartición, siga a continuación:"
+msgstr "Para ver el proyecto y aceptar el compartir, siga a continuación:"
 
 # CTX-SNIPPET:
 #           <tr>
@@ -2743,9 +2820,10 @@ msgstr "Para ver el proyecto y aceptar la compartición, siga a continuación:"
 #           </tr>
 # CTX-SNIPPET-VERSION: 26f6d28
 # CTX-INTERPRETATION: The string 'Open' appears as a label for a hyperlink
+# that likely opens a new page or document.
 # button that users can click to open a new page or document within the
 # scientific simulation application.
-# CTX-VERSION: 210bc5f 2026-06-30T16:42:54Z
+# CTX-VERSION: 79ecd35 2026-07-01T15:24:56Z
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:18
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:30
 msgid "Open"
@@ -2757,8 +2835,10 @@ msgstr "Abrir"
 # CTX-SNIPPET-VERSION: 26f6d28
 # CTX-INTERPRETATION: This string appears in a notification message informing
 # the user that a project has been shared with them on a specific platform or
+# host.
+# the user that a project has been shared with them on a specific platform or
 # service, indicated by the variable 'host'.
-# CTX-VERSION: 210bc5f 2026-06-30T16:42:55Z
+# CTX-VERSION: 79ecd35 2026-07-01T15:24:56Z
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/subject.j2:1
 msgid "A project was shared with you on %(host)s"
 msgstr "Un proyecto fue compartido contigo en %(host)s"
@@ -2776,9 +2856,10 @@ msgstr "Un proyecto fue compartido contigo en %(host)s"
 #       {% endif %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message informing
+# the user about a new reply in a support conversation.
 # the user about a new reply in a specific support conversation, with the
 # conversation name being dynamically inserted.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:56Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:58Z
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:8
 msgid "There is a new reply in the Support conversation %(convo_name)s."
 msgstr "Hay una nueva respuesta en la conversación de Soporte %(convo_name)s."
@@ -2796,9 +2877,10 @@ msgstr "Hay una nueva respuesta en la conversación de Soporte %(convo_name)s."
 #       <!-- Quoted message block with left border -->
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a notification message indicating
+# a new response in a support conversation.
 # that a new response has been added to a support conversation within the
 # application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:57Z
+# CTX-VERSION: e14910c 2026-07-01T15:24:59Z
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:10
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
 msgid "There is a new reply in the Support conversation."
@@ -2815,8 +2897,9 @@ msgstr "Hay una nueva respuesta en la conversación de Soporte."
 #         </tr>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a clickable button or link that
+# directs the user to a conversation page.
 # directs the user to a conversation page within the application.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:58Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:00Z
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:28
 msgid "Go to the Conversation"
 msgstr "Ir a la Conversación"
@@ -2834,8 +2917,9 @@ msgstr "Ir a la Conversación"
 #       {{ message_content }}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification email to inform
+# the user about a new reply in a specific support conversation.
 # the user about a new reply in a specific support conversation thread.
-# CTX-VERSION: 69900cf 2026-06-30T16:42:59Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:00Z
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
 msgid ""
 "There is a new reply in the Support conversation \"%(conversation_name)s\"."
@@ -2853,10 +2937,11 @@ msgstr ""
 # 
 #       {% trans %}Best Regards,{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears as a hyperlink prompt in a user
+# CTX-INTERPRETATION: This string is a prompt for users to view a conversation
+# by clicking a hyperlink.
 # interface, allowing users to view the full conversation or discussion thread
 # related to a specific topic or task.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:00Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:02Z
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:8
 msgid "View the conversation: %(conversation_url)s"
 msgstr "Ver la conversación: %(conversation_url)s"
@@ -2868,14 +2953,16 @@ msgstr "Ver la conversación: %(conversation_url)s"
 # conversation{% endtrans %}{% endif %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a notification message to inform
+# the user about a new reply in a specific conversation in their Support
+# Center.
 # the user about a new reply in a specific conversation within the Support
 # Center.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:01Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:03Z
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
 msgid "New reply in your Support Center \"%(conversation_name)s\" conversation"
 msgstr ""
-"Nueva respuesta en la conversación de su Centro de Soporte "
-"\"%(conversation_name)s\""
+"Nueva respuesta en la conversación \"%(conversation_name)s\" de su Centro de"
+" Soporte"
 
 # CTX-SNIPPET:
 #   >>> {% if conversation_name %}{% trans conversation_name=conversation_name
@@ -2884,9 +2971,10 @@ msgstr ""
 # conversation{% endtrans %}{% endif %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a notification message to inform
+# the user about a new reply in their support center conversation.
 # users about a new reply in their ongoing conversation within the Support
 # Center of the application.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:02Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:05Z
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
 msgid "New reply in your Support Center conversation"
 msgstr "Nueva respuesta en la conversación de su Centro de Soporte"
@@ -2904,9 +2992,10 @@ msgstr "Nueva respuesta en la conversación de su Centro de Soporte"
 # product.support_email }}</a>{% endset %}
 #       <p>
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears in an email notification sent to
+# CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user who has requested to close their account.
 # users who have requested to close their account on the platform.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:03Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:06Z
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:3
 msgid ""
@@ -2933,9 +3022,10 @@ msgstr ""
 #       <p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a paragraph informing users about
+# the retention and deletion policy of their projects and data.
 # the retention period of their projects and data, and the process to
 # reactivate their account via email before permanent deletion.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:04Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:08Z
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:10
 msgid ""
 "Your projects and data will be securely retained for %(retention_days)s "
@@ -2960,17 +3050,18 @@ msgstr ""
 # 
 #       <p>
 # CTX-SNIPPET-VERSION: 0000000
-# CTX-INTERPRETATION: This string appears on a webpage or application
+# CTX-INTERPRETATION: This string appears on a webpage or application offering
+# support contact information.
 # interface where users can find contact information for customer support.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:05Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:09Z
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:14
 msgid ""
 "Our support team is here to help with anything you need. Please feel free to"
 " contact us to %(support_link)s in case of questions or any required "
 "assistance."
 msgstr ""
-"Nuestro equipo de soporte está aquí para ayudar con todo lo que necesite. No"
-" dude en contactarnos a %(support_link)s en caso de preguntas o cualquier "
+"Nuestro equipo de soporte está aquí para ayudar con lo que necesite. No dude"
+" en contactarnos a %(support_link)s en caso de preguntas o cualquier "
 "asistencia requerida."
 
 # CTX-SNIPPET:
@@ -2984,9 +3075,10 @@ msgstr ""
 #       <p>{% trans %}Best Regards,{% endtrans %}</p>
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a farewell message at the end of
+# a communication.
 # a document or email, wishing the recipient success in their future projects
 # or career.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:06Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:11Z
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:18
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:9
 msgid "We wish you all the best in your future endeavors."
@@ -3012,10 +3104,12 @@ msgstr "Le deseamos todo lo mejor en sus futuros proyectos."
 # 
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in a notification message sent to
+# users regarding the retention and deletion of their projects and data after
+# account closure.
 # users who have requested to close their account, informing them about the
 # retention period of their data and the possibility of reactivating their
 # account within that time frame.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:08Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:13Z
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:5
 msgid ""
 "Your projects and data will be securely retained for %(retention_days)s "
@@ -3023,10 +3117,10 @@ msgid ""
 "your account by sending us an email to %(support_email)s. Afterwards, it "
 "will be completely deleted from our system."
 msgstr ""
-"Sus proyectos y datos se conservarán de manera segura durante "
-"%(retention_days)s días. Dentro de ese período, si decide regresar, puede "
-"reactivar su cuenta enviándonos un correo electrónico a %(support_email)s. "
-"Después, se eliminará completamente de nuestro sistema."
+"Sus proyectos y datos se conservarán de forma segura durante "
+"%(retention_days)s días. Dentro de ese período, si alguna vez decide "
+"regresar, puede reactivar su cuenta enviándonos un correo electrónico a "
+"%(support_email)s. Después, se eliminará completamente de nuestro sistema."
 
 # CTX-SNIPPET:
 # 
@@ -3049,7 +3143,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string appears in a user interface or email
 # communication, offering users assistance and providing contact information
 # for support.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:09Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:15Z
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:7
 msgid ""
 "Our support team is here to help with anything you need. Please feel free to"
@@ -3064,10 +3158,11 @@ msgstr ""
 #   >>> {% trans host=host %}Closing Your Account in {{ host }}{% endtrans %}
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears in the user interface of the
+# application when a user is closing their account.
 # application, likely as a message or notification informing the user about
 # the process of closing their account on a specific platform or service
 # identified by the variable 'host'.
-# CTX-VERSION: 69900cf 2026-06-30T16:43:11Z
+# CTX-VERSION: e14910c 2026-07-01T15:25:17Z
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/subject.j2:1
 msgid "Closing Your Account in %(host)s"
 msgstr "Cerrando su cuenta en %(host)s"
@@ -3920,8 +4015,8 @@ msgstr ""
 # when the two-factor authentication login feature is not available in the
 # application.
 # CTX-VERSION: 68679ab 2026-06-30T16:43:56Z
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:206
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:48
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:210
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
 msgid "2FA login is not available"
 msgstr "El inicio de sesión con 2FA no está disponible"
 
@@ -3940,9 +4035,28 @@ msgstr "El inicio de sesión con 2FA no está disponible"
 # attempts to receive a two-factor authentication code via SMS but does not
 # have a phone number registered in their account.
 # CTX-VERSION: 64d55b4 2026-06-30T16:43:57Z
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:71
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
 msgid "User does not have a phone number registered"
 msgstr "El usuario no tiene un número de teléfono registrado"
+
+# CTX-SNIPPET:
+#                   "messaging_service_sid": twilio_messaging_sid,
+#                   "to": phone_number,
+#                   "body": translator.gettext(
+#   >>>                 user_message("Dear {first_name}, your verification
+# code is {code}")
+#                   ).format(first_name=first_name, code=code),
+#               }
+#               if twilio_auth.is_alphanumeric_supported(phone_number):
+# CTX-SNIPPET-VERSION: 0000000
+# CTX-INTERPRETATION: This string is used in a messaging service to send a
+# verification code to a user's phone number, with placeholders for the user's
+# first name and the code.
+# CTX-VERSION: 20c2298 2026-07-01T15:25:20Z
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#, python-brace-format
+msgid "Dear {first_name}, your verification code is {code}"
+msgstr "Estimado {first_name}, su código de verificación es {code}"
 
 # CTX-SNIPPET:
 # 
@@ -4043,9 +4157,10 @@ msgstr ""
 #       )
 # CTX-SNIPPET-VERSION: b9f3ec6
 # CTX-INTERPRETATION: This string appears as a confirmation message to users
+# after they have registered successfully.
 # after they have successfully registered for the scientific simulation
 # application, instructing them to verify their account via an email link.
-# CTX-VERSION: b9f3ec6 2026-06-30T16:44:03Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:21Z
 #: services/web/server/src/simcore_service_webserver/login/constants.py:16
 #, python-brace-format
 msgid ""
@@ -5696,10 +5811,11 @@ msgstr "Ninguno de estos elementos '{name}' pudo ser encontrado."
 #               )
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a dynamic service cannot be stopped.
 # indicating that a dynamic service could not be stopped.
 # when the application fails to stop a dynamic service identified by project
 # and node IDs.
-# CTX-VERSION: f912b86 2026-06-30T16:45:32Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:24Z
 #: services/web/server/src/simcore_service_webserver/projects/_controller/nodes_rest.py:311
 #, python-brace-format
 msgid "Could not stop dynamic service {project_id}.{node_id}"
@@ -5744,9 +5860,10 @@ msgstr ""
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This error message appears when a user attempts to
 # delete a study that is currently active.
+# delete a study that is currently active.
 # delete a study that is currently active in the scientific simulation
 # application.
-# CTX-VERSION: 246927d 2026-06-30T16:45:35Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:25Z
 #: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:30
 #, python-brace-format
 msgid ""
@@ -5755,7 +5872,7 @@ msgid ""
 msgstr ""
 "El estudio actual está en uso y no se puede eliminar "
 "[project_id={project_uuid}]. Por favor, detenga todos los servicios primero "
-"e intente de nuevo."
+"y vuelva a intentarlo."
 
 # CTX-SNIPPET:
 #           ),
@@ -6010,9 +6127,10 @@ msgstr ""
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string appears as an error message displayed to the
 # user when their project cannot be opened.
+# user when their project cannot be opened.
 # user when the application fails to open a project, with the specific error
 # detail provided in the placeholder ⟨0⟩.
-# CTX-VERSION: f912b86 2026-06-30T16:45:49Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:27Z
 #: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:81
 #, python-brace-format
 msgid "Unable to open your project: {public_error}"
@@ -7002,13 +7120,14 @@ msgstr ""
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string appears in an error message template used to
 # indicate invalid parameters in a request path.
+# indicate invalid parameters in a request path.
 # inform users about invalid parameters in the request path of an HTTP
 # request.
-# CTX-VERSION: 246927d 2026-06-30T16:46:40Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:29Z
 #: services/web/server/src/simcore_service_webserver/web_requests_validation.py:24
 #, python-brace-format
 msgid "Invalid parameter/s '{failed}' in request path"
-msgstr "Parámetro/s no válido/s '{failed}' en la ruta de solicitud"
+msgstr "Parámetro/s inválido/s '{failed}' en la ruta de solicitud"
 
 # CTX-SNIPPET:
 #           """
@@ -7023,12 +7142,13 @@ msgstr "Parámetro/s no válido/s '{failed}' en la ruta de solicitud"
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string appears in an error message template used to
 # indicate invalid parameters in a request query.
+# indicate invalid parameters in a request query.
 # inform users about invalid parameters in their request query.
-# CTX-VERSION: 246927d 2026-06-30T16:46:42Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:30Z
 #: services/web/server/src/simcore_service_webserver/web_requests_validation.py:25
 #, python-brace-format
 msgid "Invalid parameter/s '{failed}' in request query"
-msgstr "Parámetro/s no válido/s '{failed}' en la consulta de solicitud"
+msgstr "Parámetro/s inválido/s '{failed}' en la consulta de solicitud"
 
 # CTX-SNIPPET:
 #           request: web.Request,
@@ -7041,10 +7161,11 @@ msgstr "Parámetro/s no válido/s '{failed}' en la consulta de solicitud"
 #               data = dict(request.headers)
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string is used to indicate that there are invalid
+# parameters in the request headers.
 # parameters in the HTTP request headers.
 # errors, specifically when there are invalid parameters in the request
 # headers of a web request.
-# CTX-VERSION: 246927d 2026-06-30T16:46:42Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:32Z
 #: services/web/server/src/simcore_service_webserver/web_requests_validation.py:26
 #, python-brace-format
 msgid "Invalid parameter/s '{failed}' in request headers"
@@ -7062,8 +7183,9 @@ msgstr "Parámetro/s inválido/s '{failed}' en los encabezados de la solicitud"
 # CTX-SNIPPET-VERSION: unknown
 # CTX-INTERPRETATION: This string appears in an error message template used to
 # indicate invalid fields in a request body.
+# indicate invalid fields in a request body.
 # inform the user about invalid fields in the request body of an HTTP request.
-# CTX-VERSION: 246927d 2026-06-30T16:46:43Z
+# CTX-VERSION: 275c6ed 2026-07-01T15:25:33Z
 #: services/web/server/src/simcore_service_webserver/web_requests_validation.py:27
 #, python-brace-format
 msgid "Invalid field/s '{failed}' in request body"
