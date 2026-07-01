@@ -11,9 +11,9 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from servicelib.traced_functions_instrumentor import (
+    _instrument_traced_functions,
     _parse_traced_function_targets,
-    instrument_traced_functions,
-    uninstrument_traced_functions,
+    _uninstrument_traced_functions,
 )
 
 _SAMPLE_MODULE_NAME = "_servicelib_traced_functions_sample"
@@ -56,7 +56,7 @@ def test__parse_traced_function_targets_splits_and_strips():
     assert _parse_traced_function_targets(["a.b:c", "d.e:F.g"]) == ["a.b:c", "d.e:F.g"]
 
 
-def test_instrument_traced_functions_creates_spans_for_sync_and_async(
+def test__instrument_traced_functions_creates_spans_for_sync_and_async(
     sample_module: types.ModuleType,
     tracer_provider: TracerProvider,
     in_memory_exporter: InMemorySpanExporter,
@@ -65,7 +65,7 @@ def test_instrument_traced_functions_creates_spans_for_sync_and_async(
         f"{_SAMPLE_MODULE_NAME}:async_double",
         f"{_SAMPLE_MODULE_NAME}:sync_increment",
     ]
-    wrapped = instrument_traced_functions(specs, tracer_provider=tracer_provider)
+    wrapped = _instrument_traced_functions(specs, tracer_provider=tracer_provider)
     try:
         assert asyncio.run(sample_module.async_double(3)) == 6
         assert sample_module.sync_increment(3) == 4
@@ -74,14 +74,14 @@ def test_instrument_traced_functions_creates_spans_for_sync_and_async(
         assert f"{_SAMPLE_MODULE_NAME}:async_double" in span_names
         assert f"{_SAMPLE_MODULE_NAME}:sync_increment" in span_names
     finally:
-        uninstrument_traced_functions(wrapped)
+        _uninstrument_traced_functions(wrapped)
 
 
-def test_instrument_traced_functions_skips_invalid_targets(
+def test__instrument_traced_functions_skips_invalid_targets(
     tracer_provider: TracerProvider,
     in_memory_exporter: InMemorySpanExporter,
 ):
-    wrapped = instrument_traced_functions(
+    wrapped = _instrument_traced_functions(
         ["nonexistent.module:func", f"{_SAMPLE_MODULE_NAME}:not_defined"],
         tracer_provider=tracer_provider,
     )
@@ -89,16 +89,16 @@ def test_instrument_traced_functions_skips_invalid_targets(
     assert in_memory_exporter.get_finished_spans() == ()
 
 
-def test_uninstrument_traced_functions_restores_original(
+def test__uninstrument_traced_functions_restores_original(
     sample_module: types.ModuleType,
     tracer_provider: TracerProvider,
     in_memory_exporter: InMemorySpanExporter,
 ):
     spec = f"{_SAMPLE_MODULE_NAME}:sync_increment"
-    wrapped = instrument_traced_functions([spec], tracer_provider=tracer_provider)
+    wrapped = _instrument_traced_functions([spec], tracer_provider=tracer_provider)
     assert sample_module.sync_increment(1) == 2
 
-    uninstrument_traced_functions(wrapped)
+    _uninstrument_traced_functions(wrapped)
     in_memory_exporter.clear()
 
     assert sample_module.sync_increment(1) == 2

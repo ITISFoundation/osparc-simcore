@@ -28,11 +28,6 @@ type TracedFunctionTarget = tuple[Any, str]
 
 
 def _parse_traced_function_targets(value: list[str]) -> list[str]:
-    """Returns a filtered list of fully-qualified function targets.
-
-    Each target has the form 'module.path:attr.path' (e.g. 'pkg.mod:func' or
-    'pkg.mod:Class.method'). Blank entries are ignored.
-    """
     return [spec for spec in value if spec.strip()]
 
 
@@ -62,7 +57,7 @@ def _make_traced_wrapper(*, tracer_provider: TracerProvider, span_name: str) -> 
     return _wrapper
 
 
-def instrument_traced_functions(
+def _instrument_traced_functions(
     target_specs: Iterable[str], *, tracer_provider: TracerProvider
 ) -> list[TracedFunctionTarget]:
     """Wraps each fully-qualified function target with an OpenTelemetry span.
@@ -98,7 +93,7 @@ def instrument_traced_functions(
     return wrapped_targets
 
 
-def uninstrument_traced_functions(
+def _uninstrument_traced_functions(
     wrapped_targets: Iterable[TracedFunctionTarget],
 ) -> None:
     """Restores functions previously wrapped by `instrument_traced_functions`."""
@@ -127,9 +122,9 @@ class TracedFunctionsInstrumentor(BaseInstrumentor):
             logging.INFO,
             msg="Attempting to add user-defined traced functions...",
         ):
-            self._wrapped_targets.extend(instrument_traced_functions(target_specs, tracer_provider=tracer_provider))
+            self._wrapped_targets.extend(_instrument_traced_functions(target_specs, tracer_provider=tracer_provider))
 
     def _uninstrument(self, **kwargs: Any) -> None:
         assert kwargs is not None  # nosec
-        uninstrument_traced_functions(self._wrapped_targets)
+        _uninstrument_traced_functions(self._wrapped_targets)
         self._wrapped_targets.clear()
