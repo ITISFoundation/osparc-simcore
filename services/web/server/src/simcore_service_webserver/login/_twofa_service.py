@@ -9,6 +9,7 @@ Currently includes two parts:
 
 import asyncio
 import logging
+from typing import Final
 
 import twilio.rest  # type: ignore[import-untyped]
 from aiohttp import web
@@ -93,6 +94,13 @@ class SMSError(RuntimeError):
     pass
 
 
+_SMS_CODE_MESSAGE_FORMAT: Final = user_message(
+    # @TRANSLATOR Must be VERY SHORT to fit in an SMS
+    "Dear {first_name}, your verification code is {code}",
+    _version=1,
+)
+
+
 @log_decorator(log, level=logging.DEBUG)
 async def send_sms_code(
     app: web.Application,
@@ -118,9 +126,7 @@ async def send_sms_code(
         create_kwargs = {
             "messaging_service_sid": twilio_messaging_sid,
             "to": phone_number,
-            "body": translator.gettext(user_message("Dear {first_name}, your verification code is {code}")).format(
-                first_name=first_name, code=code
-            ),
+            "body": translator.gettext(_SMS_CODE_MESSAGE_FORMAT).format(first_name=first_name, code=code),
         }
         if twilio_auth.is_alphanumeric_supported(phone_number):
             create_kwargs["from_"] = twilio_alpha_numeric_sender
