@@ -145,13 +145,18 @@ def update_tag_stmt(*, user_id: int, tag_id: int, **updates):
 
 
 def delete_tag_stmt(*, user_id: int, tag_id: int):
-    return (
-        tags.delete()
-        .where(tags.c.id == tag_id)
+    user_can_delete_tag = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(
+            tags_access_rights.join(
+                user_to_groups,
+                (tags_access_rights.c.group_id == user_to_groups.c.gid) & (user_to_groups.c.uid == user_id),
+            )
+        )
         .where((tags_access_rights.c.tag_id == tag_id) & (tags_access_rights.c.delete.is_(True)))
-        .where((tags_access_rights.c.group_id == user_to_groups.c.gid) & (user_to_groups.c.uid == user_id))
-        .returning(tags_access_rights.c.delete)
     )
+
+    return tags.delete().where(tags.c.id == tag_id).where(user_can_delete_tag).returning(tags.c.id)
 
 
 #

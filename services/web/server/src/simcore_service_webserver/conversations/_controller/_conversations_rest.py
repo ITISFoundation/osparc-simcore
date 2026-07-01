@@ -21,11 +21,6 @@ from models_library.rest_pagination import (
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import ConfigDict, field_validator
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -34,6 +29,11 @@ from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
+from ...web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .. import _conversation_service, conversations_service
 from ._common import ConversationPathParams, raise_unsupported_type
 from ._rest_exceptions import _handle_exceptions

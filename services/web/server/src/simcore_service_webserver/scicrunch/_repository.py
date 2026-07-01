@@ -32,7 +32,7 @@ class ScicrunchResourcesRepository(BaseRepository):
                 scicrunch_resources.c.description,
             )
             result = await conn.execute(stmt)
-            return result.fetchall()
+            return list(result.fetchall())
 
     async def get_resource_by_rrid(self, rrid: str, connection: AsyncConnection | None = None) -> Row | None:
         """Get a research resource by RRID."""

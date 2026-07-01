@@ -239,9 +239,9 @@ qx.Class.define("osparc.data.model.Node", {
       // "inputConnected", // frontend only
       // "outputConnected", // frontend only
       // "logger", // frontend only
-     "inputNodes", // !! not a property but goes into the model
-     "inputsRequired", // !! not a property but goes into the model
-     "progress", // !! not a property but goes into the model
+      "inputNodes", // !! not a property but goes into the model
+      "inputsRequired", // !! not a property but goes into the model
+      "progress", // !! not a property but goes into the model
     ],
 
     getProperties: function() {
@@ -792,9 +792,13 @@ qx.Class.define("osparc.data.model.Node", {
         const inputLinks = {};
         const inputData = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
+        const metadataInputs = this.getMetadata() ? this.getMetadata()["inputs"] : null;
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
+          } else if (osparc.utils.Ports.isDataMustached(inputsCopy[key]) && metadataInputs && metadataInputs[key] && metadataInputs[key].defaultValue !== undefined) {
+            // resolve template placeholder (e.g. "{{stimulation_mode}}") to the service metadata's default value
+            inputData[key] = metadataInputs[key].defaultValue;
           } else {
             inputData[key] = inputsCopy[key];
           }
@@ -1624,7 +1628,7 @@ qx.Class.define("osparc.data.model.Node", {
           }
           case "progress":
             if (this.isFilePicker()) {
-              if (value ===  undefined) {
+              if (value === undefined) {
                 console.debug("Ignoring undefined value for progress");
                 return;
               }

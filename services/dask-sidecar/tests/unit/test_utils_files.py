@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import hashlib
 import mimetypes
 import zipfile
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -14,11 +15,19 @@ from unittest import mock
 
 import fsspec
 import pytest
+from dask_task_models_library.container_tasks.encryption import (
+    TransferEncryptionSettings,
+)
 from faker import Faker
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, SecretBytes, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
+from simcore_service_dask_sidecar.errors import (
+    FileTransferEncryptionError,
+    HTTPDestinationEncryptionNotSupportedError,
+)
+from simcore_service_dask_sidecar.utils.aes_gcm import FORMAT_MAGIC, generate_key
 from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,
@@ -90,6 +99,40 @@ def remote_parameters(
     ]
 
 
+@pytest.fixture
+def upload_file_to_remote(
+    remote_parameters: StorageParameters,
+) -> Iterator[Callable[[Path, AnyUrl], None]]:
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
+
+    uploaded_files: list[fsspec.core.OpenFile] = []
+
+    def _upload(local_path: Path, remote_url: AnyUrl) -> None:
+        open_file = cast(
+            fsspec.core.OpenFile,
+            fsspec.open(f"{remote_url}", mode="wb", **storage_kwargs),
+        )
+        with open_file as dest_fp, local_path.open("rb") as src_fp:
+            dest_fp.write(src_fp.read())
+        uploaded_files.append(open_file)
+
+    yield _upload
+
+    for open_file in uploaded_files:
+        with contextlib.suppress(Exception):
+            open_file.fs.rm(open_file.path)
+
+
+@pytest.fixture
+def encryption_settings() -> TransferEncryptionSettings:
+    return TransferEncryptionSettings(
+        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
+        file_id="file-1",
+    )
+
+
 async def test_push_file_to_remote(
     remote_parameters: StorageParameters,
     tmp_path: Path,
@@ -105,14 +148,52 @@ async def test_push_file_to_remote(
     await push_file_to_remote(
         src_path,
         remote_parameters.remote_file_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
 
     # check the remote is actually having the file in
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
+
+    with cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            f"{remote_parameters.remote_file_url}",
+            mode="rt",
+            **storage_kwargs,
+        ),
+    ) as fp:
+        assert fp.read() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_push_file_with_spaces_in_name_to_remote(
+    remote_parameters: StorageParameters,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    # let's create some file with spaces/parentheses in its local name
+    src_path = tmp_path / "some file with spaces (1) (2).txt"
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+    # push it to the remote
+    await push_file_to_remote(
+        src_path,
+        remote_parameters.remote_file_url,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
+    )
+
+    # check the remote is actually having the file in
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
 
     with cast(
         fsspec.core.OpenFile,
@@ -143,8 +224,9 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     await push_file_to_remote(
         src_path,
         s3_presigned_link_remote_file_url,
-        mocked_log_publishing_cb,
+        log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
+        encryption=None,
     )
 
     # check the remote is actually having the file in, but we need s3 access now
@@ -176,13 +258,14 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
     await push_file_to_remote(
         src_path,
         destination_url,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
 
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
     open_files = fsspec.open_files(
         f"zip://*::{destination_url}",
         mode="rt",
@@ -202,7 +285,7 @@ async def test_pull_file_from_remote(
 ):
     storage_kwargs = {}
     if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
     # put some file on the remote
     TEXT_IN_FILE = faker.text()
     with cast(
@@ -223,9 +306,206 @@ async def test_pull_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_push_file_to_remote_logs_progress_when_elapsed_time_is_zero(
+    mocker: MockerFixture,
+    tmp_path: Path,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    src_path = tmp_path / "payload.txt"
+    src_path.write_bytes(b"payload")
+    dst_path = tmp_path / "uploaded.txt"
+    mocker.patch(
+        "simcore_service_dask_sidecar.utils.files._copy.time.perf_counter",
+        return_value=10.0,
+    )
+
+    await push_file_to_remote(
+        src_path,
+        TypeAdapter(AnyUrl).validate_python(dst_path.as_uri()),
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=None,
+        encryption=None,
+    )
+
+    assert dst_path.read_bytes() == b"payload"
+    progress_messages = [
+        call.args[0] for call in mocked_log_publishing_cb.await_args_list if "MBytes/s (avg)" in call.args[0]
+    ]
+    assert progress_messages
+    assert any("100.0%" in message for message in progress_messages)
+    assert all("[0.00 MBytes/s (avg)]" in message for message in progress_messages)
+
+
+async def test_push_file_to_remote_encrypts_with_crypto_context(
+    tmp_path: Path,
+    mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
+):
+    src_path = tmp_path / "plain.txt"
+    src_bytes = b"top-secret payload"
+    src_path.write_bytes(src_bytes)
+    encrypted_path = tmp_path / "encrypted.bin"
+
+    await push_file_to_remote(
+        src_path,
+        TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=None,
+        encryption=encryption_settings,
+    )
+
+    assert encrypted_path.exists()
+    encrypted_bytes = encrypted_path.read_bytes()
+    assert encrypted_bytes != src_bytes
+    assert encrypted_bytes.startswith(FORMAT_MAGIC)
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_push_then_pull_file_decrypts_with_crypto_context(
+    tmp_path: Path,
+    mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
+):
+    src_path = tmp_path / "plain.txt"
+    src_bytes = b"top-secret payload"
+    src_path.write_bytes(src_bytes)
+    encrypted_path = tmp_path / "encrypted.bin"
+    decrypted_path = tmp_path / "decrypted.txt"
+
+    await push_file_to_remote(
+        src_path,
+        TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=None,
+        encryption=encryption_settings,
+    )
+    await pull_file_from_remote(
+        src_url=TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
+        target_mime_type=None,
+        dst_path=decrypted_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=None,
+        encryption=encryption_settings,
+    )
+
+    assert decrypted_path.exists()
+    assert decrypted_path.read_bytes() == src_bytes
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_pull_file_from_remote_decrypt_with_wrong_key_raises_auth_error(
+    tmp_path: Path,
+    mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
+):
+    src_path = tmp_path / "plain.txt"
+    src_bytes = b"top-secret payload"
+    src_path.write_bytes(src_bytes)
+    encrypted_path = tmp_path / "encrypted.bin"
+    decrypted_path = tmp_path / "decrypted.txt"
+
+    await push_file_to_remote(
+        src_path,
+        TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=None,
+        encryption=encryption_settings,
+    )
+
+    wrong_key_settings = TransferEncryptionSettings(
+        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
+        file_id=encryption_settings.file_id,
+    )
+    with pytest.raises(FileTransferEncryptionError, match="authentication failed") as exc_info:
+        await pull_file_from_remote(
+            src_url=TypeAdapter(AnyUrl).validate_python(encrypted_path.as_uri()),
+            target_mime_type=None,
+            dst_path=decrypted_path,
+            log_publishing_cb=mocked_log_publishing_cb,
+            s3_settings=None,
+            encryption=wrong_key_settings,
+        )
+    assert exc_info.value.operation == "decrypt"
+    assert exc_info.value.file_role == "input"
+    assert exc_info.value.file_id == wrong_key_settings.file_id
+
+
+@pytest.mark.parametrize("scheme", ["http", "https"])
+async def test_push_file_to_remote_with_encryption_to_http_raises(
+    scheme: str,
+    tmp_path: Path,
+    mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
+):
+    src_path = tmp_path / "plain.txt"
+    src_path.write_bytes(b"top-secret payload")
+
+    with pytest.raises(
+        HTTPDestinationEncryptionNotSupportedError,
+        match=f"Encryption is not supported for {scheme} upload destinations",
+    ):
+        await push_file_to_remote(
+            src_path,
+            TypeAdapter(AnyUrl).validate_python(f"{scheme}://example.com/upload"),
+            log_publishing_cb=mocked_log_publishing_cb,
+            s3_settings=None,
+            encryption=encryption_settings,
+        )
+
+
+async def test_push_then_pull_file_with_encryption_roundtrip(
+    remote_parameters: StorageParameters,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+    encryption_settings: TransferEncryptionSettings,
+):
+    src_path = tmp_path / faker.file_name()
+    plain_text = faker.text()
+    src_path.write_text(plain_text)
+
+    await push_file_to_remote(
+        src_path,
+        remote_parameters.remote_file_url,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=encryption_settings,
+    )
+
+    storage_kwargs = {}
+    if remote_parameters.s3_settings:
+        storage_kwargs = cast(dict, _s3fs_settings_from_s3_settings(remote_parameters.s3_settings))
+    with cast(
+        fsspec.core.OpenFile,
+        fsspec.open(
+            f"{remote_parameters.remote_file_url}",
+            mode="rb",
+            **storage_kwargs,
+        ),
+    ) as fp:
+        remote_data = fp.read()
+    assert remote_data != plain_text.encode()
+    assert remote_data.startswith(FORMAT_MAGIC)
+
+    dst_path = tmp_path / faker.file_name()
+    await pull_file_from_remote(
+        src_url=remote_parameters.remote_file_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=encryption_settings,
+    )
+
+    assert dst_path.exists()
+    assert dst_path.read_text() == plain_text
     mocked_log_publishing_cb.assert_called()
 
 
@@ -272,6 +552,7 @@ async def test_pull_file_from_remote_s3_presigned_link(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=None,
+        encryption=None,
     )
     assert dst_path.exists()
     assert dst_path.read_text() == TEXT_IN_FILE
@@ -325,6 +606,7 @@ async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
             dst_path=dst_path,
             log_publishing_cb=mocked_log_publishing_cb,
             s3_settings=None,
+            encryption=None,
         )
 
     assert not dst_path.exists()
@@ -333,6 +615,7 @@ async def test_pull_file_from_remote_s3_presigned_link_invalid_file(
 
 async def test_pull_compressed_zip_file_from_remote(
     remote_parameters: StorageParameters,
+    upload_file_to_remote: Callable[[Path, AnyUrl], None],
     tmp_path: Path,
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
@@ -349,22 +632,7 @@ async def test_pull_compressed_zip_file_from_remote(
             file_names_within_zip_file.add(local_test_file.name)
 
     destination_url = TypeAdapter(AnyUrl).validate_python(f"{remote_parameters.remote_file_url}.zip")
-    storage_kwargs = {}
-    if remote_parameters.s3_settings:
-        storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
-
-    with (
-        cast(
-            fsspec.core.OpenFile,
-            fsspec.open(
-                f"{destination_url}",
-                mode="wb",
-                **storage_kwargs,
-            ),
-        ) as dest_fp,
-        local_zip_file_path.open("rb") as src_fp,
-    ):
-        dest_fp.write(src_fp.read())
+    upload_file_to_remote(local_zip_file_path, destination_url)
 
     # now we want to download that file so it becomes the source
     src_url = destination_url
@@ -381,6 +649,7 @@ async def test_pull_compressed_zip_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path.exists()
     dst_path.unlink()
@@ -396,6 +665,7 @@ async def test_pull_compressed_zip_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert not dst_path.exists()
     for file in download_folder.glob("*"):
@@ -416,11 +686,61 @@ async def test_pull_compressed_zip_file_from_remote(
         dst_path=dst_path,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert not dst_path.exists()
     for file in download_folder.glob("*"):
         assert file.exists()
         assert file.name in file_names_within_zip_file
+    mocked_log_publishing_cb.assert_called()
+
+
+async def test_pull_compressed_zip_file_with_spaces_in_name_from_remote(
+    remote_parameters: StorageParameters,
+    upload_file_to_remote: Callable[[Path, AnyUrl], None],
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    local_zip_file_path = tmp_path / "archive with spaces (1) (2).zip"
+    file_names_within_zip_file = set()
+    with zipfile.ZipFile(local_zip_file_path, compression=zipfile.ZIP_DEFLATED, mode="w") as zfp:
+        for file_number in range(5):
+            local_test_file = tmp_path / f"{file_number}_{faker.file_name()}"
+            local_test_file.write_text(faker.text())
+            assert local_test_file.exists()
+            zfp.write(local_test_file, local_test_file.name)
+            file_names_within_zip_file.add(local_test_file.name)
+
+    # NOTE: the remote file name contains spaces, which get percent-encoded in the URL
+    destination_url = TypeAdapter(AnyUrl).validate_python(
+        f"{remote_parameters.remote_file_url} with spaces (1) (2).zip"
+    )
+
+    assert "%20" in f"{destination_url}"
+    assert " " not in f"{destination_url}"
+
+    upload_file_to_remote(local_zip_file_path, destination_url)
+
+    # now we want to download that file so it becomes the source
+    src_url = destination_url
+
+    # if destination is not a zip, then we decompress
+    download_folder = tmp_path / "download"
+    download_folder.mkdir(parents=True, exist_ok=True)
+    assert download_folder.exists()
+    dst_path = download_folder / faker.file_name()
+    await pull_file_from_remote(
+        src_url=src_url,
+        target_mime_type=None,
+        dst_path=dst_path,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
+    )
+    assert not dst_path.exists()
+    extracted_file_names = {file.name for file in download_folder.glob("*")}
+    assert extracted_file_names == file_names_within_zip_file
     mocked_log_publishing_cb.assert_called()
 
 
@@ -452,8 +772,9 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
     await push_file_to_remote(
         src_path,
         destination_url1,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     await asyncio.sleep(
         5
@@ -461,8 +782,9 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
     await push_file_to_remote(
         src_path,
         destination_url2,
-        mocked_log_publishing_cb,
-        remote_parameters.s3_settings,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
 
     # now we pull both file and compare their hash
@@ -480,6 +802,7 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
         dst_path=dst_path1,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path1.exists()
 
@@ -489,6 +812,7 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
         dst_path=dst_path2,
         log_publishing_cb=mocked_log_publishing_cb,
         s3_settings=remote_parameters.s3_settings,
+        encryption=None,
     )
     assert dst_path2.exists()
 

@@ -387,6 +387,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     is_collaborative: bool = False
 
+    tracing: bool = False
+
     user_preferences_path: Path | None = None
     callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
 
@@ -443,13 +445,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         )
         return url
 
-    product_name: Annotated[
-        str | None,
-        Field(
-            description="Current product upon which this service is scheduled"
-            "If set to None, the current product is undefined. Mostly for backwards compatibility",
-        ),
-    ] = None
+    product_name: Annotated[str, Field(description="Current product upon which this service is scheduled")]
 
     product_api_base_url: Annotated[
         str | None,
@@ -491,6 +487,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "product_api_base_url": service.product_api_base_url,
             "paths_mapping": simcore_service_labels.paths_mapping,
             "is_collaborative": simcore_service_labels.is_collaborative,
+            "tracing": simcore_service_labels.tracing,
             "callbacks_mapping": simcore_service_labels.callbacks_mapping,
             "compose_spec": json_dumps(simcore_service_labels.compose_spec),
             "container_http_entry": simcore_service_labels.container_http_entry,

@@ -471,9 +471,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
               const myGroupId = osparc.auth.Data.getInstance().getGroupId();
               const currentUserGroupIds = lockState.getCurrentUserGroupIds();
               return currentUserGroupIds.includes(myGroupId) ? "excluded" : "visible";
-            } else {
-              return "visible";
             }
+            return "visible";
           }
           return "excluded";
         }

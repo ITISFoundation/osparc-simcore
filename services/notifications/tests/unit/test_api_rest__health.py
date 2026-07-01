@@ -51,7 +51,7 @@ def app_environment(
             **mock_env_devel_environment,
             **external_envfile_dict,
             "NOTIFICATIONS_TRACING": "null",
-            "NOTIFICATIONS_WORKER_MODE": "false",
+            "NOTIFICATIONS_BOOT_SERVER_MODE": "AS_REST_API_SERVER",
         },
     )
 

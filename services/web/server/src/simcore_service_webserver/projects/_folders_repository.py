@@ -42,18 +42,23 @@ async def insert_project_to_folder(
     private_workspace_user_id_or_none: UserID | None,
 ) -> ProjectToFolderDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
-        result = await conn.execute(
-            projects_to_folders.insert()
-            .values(
-                project_uuid=f"{project_id}",
-                folder_id=folder_id,
-                user_id=private_workspace_user_id_or_none,
-                created=func.now(),
-                modified=func.now(),
+        row = (
+            (
+                await conn.execute(
+                    projects_to_folders.insert()
+                    .values(
+                        project_uuid=f"{project_id}",
+                        folder_id=folder_id,
+                        user_id=private_workspace_user_id_or_none,
+                        created=func.now(),
+                        modified=func.now(),
+                    )
+                    .returning(literal_column("*"))
+                )
             )
-            .returning(literal_column("*"))
+            .mappings()
+            .one()
         )
-        row = result.mappings().one()
         return ProjectToFolderDB.model_validate(row)
 
 

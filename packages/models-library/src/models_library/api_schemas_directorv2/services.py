@@ -40,9 +40,16 @@ class NodeRequirements(BaseModel):
 
     @field_validator("vram", "gpu", mode="before")
     @classmethod
-    def check_0_is_none(cls, v):
+    def _check_0_is_none(cls, v):
         if v == 0:
             v = None
+        return v
+
+    @field_validator("ram", "vram", mode="before")
+    @classmethod
+    def _ensure_integer_bytes(cls, v):
+        if isinstance(v, float):
+            v = int(v)
         return v
 
     model_config = ConfigDict(

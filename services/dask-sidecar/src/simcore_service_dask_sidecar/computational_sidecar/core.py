@@ -7,12 +7,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Final, cast
+from typing import Final, Self, cast
 from uuid import uuid4
 
 from aiodocker import Docker
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import (
+    JobEncryptionContext,
+)
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
     ServiceOutOfMemoryError,
@@ -62,6 +65,40 @@ class ComputationalSidecar:
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
+    encryption: JobEncryptionContext | None
+
+    def _create_file_download_task(
+        self,
+        input_key: str,
+        input_params: FileUrl,
+        task_volumes: TaskSharedVolumes,
+    ) -> Coroutine:
+        file_name = input_params.file_mapping or Path(URL(f"{input_params.url}").path.strip("/")).name
+        destination_path = task_volumes.inputs_folder / file_name
+
+        need_unzipping = check_need_unzipping(input_params.url, input_params.file_mime_type, destination_path)
+        if input_params.file_mapping and need_unzipping:
+            raise ServiceInputsUseFileToKeyMapButReceivesZipDataError(
+                service_key=self.task_parameters.image,
+                service_version=self.task_parameters.tag,
+                input_key=input_key,
+                file_to_key_map=input_params.file_mapping,
+            )
+
+        if destination_path.parent != task_volumes.inputs_folder:
+            # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,
+            # if extra subfolders via file-mapping,
+            # then we make them first
+            destination_path.parent.mkdir(parents=True)
+
+        return pull_file_from_remote(
+            input_params.url,
+            input_params.file_mime_type,
+            destination_path,
+            log_publishing_cb=self._publish_sidecar_log,
+            s3_settings=self.s3_settings,
+            encryption=(self.encryption.transfer_settings_for_input(input_key) if self.encryption else None),
+        )
 
     async def _write_input_data(
         self,
@@ -73,43 +110,20 @@ class ComputationalSidecar:
             / f"{'inputs' if integration_version > LEGACY_INTEGRATION_VERSION else 'input'}.json"
         )
         local_input_data_file = {}
-        download_tasks = []
+        download_tasks: list[tuple[str, Coroutine]] = []
 
         for input_key, input_params in self.task_parameters.input_data.items():
             if isinstance(input_params, FileUrl):
-                file_name = input_params.file_mapping or Path(URL(f"{input_params.url}").path.strip("/")).name
-
-                destination_path = task_volumes.inputs_folder / file_name
-
-                need_unzipping = check_need_unzipping(input_params.url, input_params.file_mime_type, destination_path)
-                if input_params.file_mapping and need_unzipping:
-                    raise ServiceInputsUseFileToKeyMapButReceivesZipDataError(
-                        service_key=self.task_parameters.image,
-                        service_version=self.task_parameters.tag,
-                        input_key=input_key,
-                        file_to_key_map=input_params.file_mapping,
-                    )
-
-                if destination_path.parent != task_volumes.inputs_folder:
-                    # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,
-                    # if extra subfolders via file-mapping,
-                    # then we make them first
-                    destination_path.parent.mkdir(parents=True)
-
                 download_tasks.append(
-                    pull_file_from_remote(
-                        input_params.url,
-                        input_params.file_mime_type,
-                        destination_path,
-                        self._publish_sidecar_log,
-                        self.s3_settings,
-                    )
+                    (input_key, self._create_file_download_task(input_key, input_params, task_volumes))
                 )
             else:
                 local_input_data_file[input_key] = input_params
-        # NOTE: temporary solution until new version is created
-        for task in download_tasks:
+
+        # NOTE: concurrent download cannot be done as download is done in a flat folder and might override files with same name
+        for _, task in download_tasks:
             await task
+
         input_data_file.write_text(json_dumps(local_input_data_file))
 
         await self._publish_sidecar_log("All the input data were downloaded.")
@@ -138,7 +152,7 @@ class ComputationalSidecar:
             )
 
             upload_tasks = []
-            for output_params in output_data.values():
+            for output_key, output_params in output_data.items():
                 if isinstance(output_params, FileUrl):
                     assert (  # nosec
                         output_params.file_mapping
@@ -149,8 +163,11 @@ class ComputationalSidecar:
                         push_file_to_remote(
                             src_path,
                             output_params.url,
-                            self._publish_sidecar_log,
-                            self.s3_settings,
+                            log_publishing_cb=self._publish_sidecar_log,
+                            s3_settings=self.s3_settings,
+                            encryption=(
+                                self.encryption.transfer_settings_for_output(output_key) if self.encryption else None
+                            ),
                         )
                     )
             await asyncio.gather(*upload_tasks)
@@ -242,10 +259,11 @@ class ComputationalSidecar:
             ):
                 await container.start()
                 await self._publish_sidecar_log(
-                    f"Service {self.task_parameters.image}:{self.task_parameters.tag} started as '{container.id}' on {socket.gethostname()}..."
+                    f"Service {self.task_parameters.image}:{self.task_parameters.tag} "
+                    f"started as '{container.id}' on {socket.gethostname()}..."
                 )
                 # wait until the container finished, either success or fail or timeout
-                while (container_data := await container.show())["State"]["Running"]:
+                while (container_data := await container.show())["State"]["Running"]:  # noqa: ASYNC110
                     await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
 
                 async def _safe_get_last_logs() -> list[str]:
@@ -289,7 +307,7 @@ class ComputationalSidecar:
             )
             return results
 
-    async def __aenter__(self) -> "ComputationalSidecar":
+    async def __aenter__(self) -> Self:
         # ensure we start publishing progress
         self.task_publishers.publish_progress(ProgressReport(actual_value=0))
         return self

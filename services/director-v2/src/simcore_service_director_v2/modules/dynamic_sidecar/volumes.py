@@ -26,6 +26,7 @@ _BASE_PATH: Path = Path("/dy-volumes")
 # below are subfolders in `_BASE_PATH`
 _DY_SIDECAR_SUBFOLDER_SHARED_STORE: Final[Path] = Path("/shared-store")
 _DY_SIDECAR_SUBFOLDER_VFS_CACHE: Final[Path] = DEFAULT_VFS_CACHE_PATH
+_DY_SIDECAR_SUBFOLDER_TRACES: Final[Path] = Path("/traces")
 
 
 # DEFAULT LIMITS
@@ -189,6 +190,25 @@ class DynamicSidecarVolumesPathsResolver:
             # be at most `_MAX_PREFERENCES_TOTAL_SIZE`, this 10M accounts
             # for files and data that can be compressed a lot
             volume_size_limit=_LIMIT_USER_PREFERENCES if has_quota_support else None,
+        )
+
+    @classmethod
+    def mount_traces(
+        cls,
+        service_run_id: ServiceRunID,
+        node_uuid: NodeID,
+        project_id: ProjectID,
+        user_id: UserID,
+        swarm_stack_name: str,
+    ) -> dict[str, Any]:
+        return cls.mount_entry(
+            swarm_stack_name=swarm_stack_name,
+            path=_DY_SIDECAR_SUBFOLDER_TRACES,
+            node_uuid=node_uuid,
+            service_run_id=service_run_id,
+            project_id=project_id,
+            user_id=user_id,
+            volume_size_limit=None,
         )
 
     @classmethod

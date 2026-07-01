@@ -1,10 +1,10 @@
-import enum
 import functools
 import inspect
 import logging
 from collections.abc import Callable, Coroutine
 from contextlib import contextmanager, suppress
 from contextvars import Token
+from enum import auto
 from typing import Any, Final, Self, overload
 
 import pyinstrument
@@ -13,7 +13,9 @@ from httpx import AsyncClient, Client
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import DynamicServiceKey, ServiceRunID, ServiceVersion
 from models_library.users import UserID
+from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
 from opentelemetry import trace
@@ -27,11 +29,19 @@ from opentelemetry.trace import Link
 from pydantic import BaseModel, ConfigDict, model_validator
 from settings_library.tracing import TracingSettings
 
+from .utils import get_callable_namespaced_name
+
 type TracingContext = otcontext.Context | None
 
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
+_OTEL_NAMESPACE: Final[str] = "simcore"
+
+
+class SourceOrigin(StrAutoEnum):
+    PLATFORM = auto()
+    USER_SERVICE = auto()
 
 
 _logger = logging.getLogger(__name__)
@@ -236,9 +246,9 @@ def traced_operation(
 AIOHTTP_TRACING_CONFIG_KEY: Final[str] = "tracing_config"
 
 
-class _AppType(enum.Enum):
-    FASTAPI = "fastapi"
-    AIOHTTP = "aiohttp"
+class _AppType(StrAutoEnum):
+    FASTAPI = auto()
+    AIOHTTP = auto()
 
 
 def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR0911 # pylint: disable=too-many-return-statements
@@ -364,7 +374,8 @@ def traced(  # noqa: C901
     args/kwargs as the decorated function). If not provided, the first positional
     argument must be type-annotated as `FastAPI` or `aiohttp.web.Application`.
 
-    Uses the function name as span name unless `operation_name` is provided.
+    Uses a namespaced name derived from the function (see
+    `get_callable_namespaced_name`) as span name unless `operation_name` is provided.
 
     Can be used with or without arguments:
         @traced
@@ -378,7 +389,7 @@ def traced(  # noqa: C901
     """
 
     def _decorator(func):
-        span_name = operation_name or func.__name__
+        span_name = operation_name or get_callable_namespaced_name(func)
         warned: list[bool] = [False]
 
         # Validate at decoration time: first arg must be FastAPI or web.Application,
@@ -479,6 +490,10 @@ def create_standard_attributes(
     node_id: NodeID | str | None = None,
     product_name: ProductName | None = None,
     wallet_id: WalletID | str | None = None,
+    service_key: DynamicServiceKey | None = None,
+    service_version: ServiceVersion | None = None,
+    run_id: ServiceRunID | None = None,
+    source_origin: SourceOrigin | None = SourceOrigin.PLATFORM,
 ) -> dict[str, str]:
     """Helper function to create standard span attributes like user ID..."""
     attributes = {}
@@ -492,4 +507,12 @@ def create_standard_attributes(
         attributes["product_name"] = f"{product_name}"
     if wallet_id:
         attributes["wallet_id"] = f"{wallet_id}"
-    return attributes
+    if service_key:
+        attributes["service_key"] = f"{service_key}"
+    if service_version:
+        attributes["service_version"] = f"{service_version}"
+    if run_id:
+        attributes["run_id"] = f"{run_id}"
+    if source_origin:
+        attributes["source_origin"] = source_origin.value.lower()
+    return {f"{_OTEL_NAMESPACE}.{k}": v for k, v in attributes.items()}

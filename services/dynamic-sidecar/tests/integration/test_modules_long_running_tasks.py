@@ -75,7 +75,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
         result = conn.execute(stmt)
         row = result.first()
         assert row
-        prj_uuid = row[projects.c.uuid]
+        prj_uuid = row.uuid
 
     yield prj_uuid
 

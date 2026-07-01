@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import NoReturn
+from typing import Final, NoReturn
 
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -8,6 +8,8 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from ..logging_utils import log_context
 
 _logger = logging.getLogger(__name__)
+
+_HTTP_499_CLIENT_CLOSED_REQUEST: Final[int] = 499
 
 
 class _ClientDisconnectedError(Exception):
@@ -55,10 +57,18 @@ class RequestCancellationMiddleware:
         queue: asyncio.Queue[Message] = asyncio.Queue()
         request = Request(scope)
 
+        response_started = False
+
+        async def _tracking_send(message: Message) -> None:
+            nonlocal response_started
+            await send(message)
+            if message["type"] == "http.response.start":
+                response_started = True
+
         with log_context(_logger, logging.DEBUG, f"cancellable request {request.url}"):
             try:
                 async with asyncio.TaskGroup() as tg:
-                    handler_task = tg.create_task(_handler(self.app, scope, queue, send))
+                    handler_task = tg.create_task(_handler(self.app, scope, queue, _tracking_send))
                     poller_task = tg.create_task(_message_poller(request, queue, receive))
                     await handler_task
                     poller_task.cancel("handler completed, cancelling poller")
@@ -68,3 +78,15 @@ class RequestCancellationMiddleware:
                         "The client disconnected. The request to %s was cancelled.",
                         request.url,
                     )
+                if not response_started:
+                    # Emit a synthetic 499 (Client Closed Request) response so that
+                    # outer middlewares (e.g. Prometheus, tracing) observe a real
+                    # response instead of raising RuntimeError("No response returned").
+                    await send(
+                        {
+                            "type": "http.response.start",
+                            "status": _HTTP_499_CLIENT_CLOSED_REQUEST,
+                            "headers": [],
+                        }
+                    )
+                    await send({"type": "http.response.body", "body": b""})

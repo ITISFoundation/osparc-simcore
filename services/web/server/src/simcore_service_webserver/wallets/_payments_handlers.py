@@ -16,11 +16,6 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task
 
@@ -31,6 +26,11 @@ from ..payments import payments_service
 from ..products import products_service
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from ._handlers import (
     WalletsRequestContext,
     handle_wallets_exceptions,

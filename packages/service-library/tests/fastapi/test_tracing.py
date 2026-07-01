@@ -56,6 +56,7 @@ def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_set
         monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{port}")
     if sampling_probability:
         monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{sampling_probability}")
+    monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION", "0.144.0")
 
 
 @pytest.mark.parametrize(
@@ -670,11 +671,12 @@ def test_create_standard_attributes():
         wallet_id="wallet321",
     )
     assert attributes == {
-        "user_id": "13",
-        "project_id": "project456",
-        "node_id": "node789",
-        "product_name": "product123",
-        "wallet_id": "wallet321",
+        "simcore.user_id": "13",
+        "simcore.project_id": "project456",
+        "simcore.node_id": "node789",
+        "simcore.product_name": "product123",
+        "simcore.wallet_id": "wallet321",
+        "simcore.source_origin": "platform",
     }
 
 
@@ -707,7 +709,7 @@ async def test_traced_decorator_async(
         assert result == "async_result"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_my_async_operation"]
+        matching = [s for s in spans if "_my_async_operation" in s.name]
         assert len(matching) == 1
 
 
@@ -740,7 +742,7 @@ async def test_traced_decorator_sync(
         assert result == "sync_result"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_my_sync_operation"]
+        matching = [s for s in spans if "_my_sync_operation" in s.name]
         assert len(matching) == 1
 
 
@@ -861,7 +863,7 @@ async def test_traced_decorator_with_tracing_config_getter(
         assert result == "custom"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_func_with_custom_getter"]
+        matching = [s for s in spans if "_func_with_custom_getter" in s.name]
         assert len(matching) == 1
 
 

@@ -714,6 +714,7 @@ async def test_upload_real_file_with_s3_client(
                     raise ValueError(msg)
                 assert future.state == FileUploadCompleteState.OK
                 assert future.e_tag is not None
+                assert future.last_modified is not None
                 completion_etag = future.e_tag
                 ctx.logger.info(
                     "%s",
