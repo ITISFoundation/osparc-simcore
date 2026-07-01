@@ -20,7 +20,7 @@ aiohttp==3.14.1
     #   aioresponses
 aioitertools==0.13.0
     # via aiobotocore
-aioresponses==0.7.8
+aioresponses==0.7.9
     # via -r requirements/_test.in
 aiosignal==1.4.0
     # via
