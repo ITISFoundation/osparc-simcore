@@ -299,17 +299,17 @@ async def test_rpc_client_recovers_after_broker_disruption(
     # low heartbeat so the frozen broker is detected quickly and the robust
     # connection triggers a reconnection once the container is resumed
     rpc_client = await rabbitmq_rpc_client("pytest_rpc_reconnect_client", heartbeat=1)
-    await rpc_client.register_handler(namespace, add_me.__name__, add_me)
-    assert await rpc_client.request(namespace, add_me.__name__, x=1, y=3) == 4
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
 
     async with paused_container("rabbit"):
         # while the broker is frozen requests cannot be served
         with pytest.raises(asyncio.TimeoutError):
-            await rpc_client.request(namespace, add_me.__name__, x=1, y=3, timeout_s=5)
+            await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3, timeout_s=5)
 
     # once the broker is back the client rebuilds its RPC surface (fresh channel
     # + re-registered handlers) and keeps serving requests without a restart
     async for attempt in AsyncRetrying(stop=stop_after_delay(60), wait=wait_fixed(1), reraise=True):
         with attempt:
             assert rpc_client.healthy is True
-            assert await rpc_client.request(namespace, add_me.__name__, x=4, y=5) == 9
+            assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5) == 9
