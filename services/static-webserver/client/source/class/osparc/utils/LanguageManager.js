@@ -40,6 +40,33 @@ qx.Class.define("osparc.utils.LanguageManager", {
       return osparc.Preferences.getInstance().getUserLocale();
     },
 
+    /**
+     * Resolves the best available locale for the user's browser language,
+     * falling back to English ("en_US") when there is no match.
+     * @return {String} e.g. "es_ES"
+     */
+    getBrowserLocale: function() {
+      const available = this.getAvailableLocales();
+      const fallback = available.includes("en_US") ? "en_US" : available[0];
+
+      const language = qx.bom.client.Locale.getLocale(); // e.g. "es"
+      if (!language) {
+        return fallback;
+      }
+      const variant = qx.bom.client.Locale.getVariant(); // e.g. "ES"
+      const full = variant ? `${language}_${variant}` : language; // e.g. "es_ES"
+      // exact match (e.g. "es_ES") or language-only match (e.g. "zh")
+      if (available.includes(full)) {
+        return full;
+      }
+      if (available.includes(language)) {
+        return language;
+      }
+      // match by language prefix (e.g. "es" -> "es_ES")
+      const byPrefix = available.find(localeCode => localeCode.split("_")[0] === language);
+      return byPrefix || fallback;
+    },
+
     applyLocale: function(localeCode) {
       if (localeCode && this.getAvailableLocales().includes(localeCode)) {
         qx.locale.Manager.getInstance().setLocale(localeCode);

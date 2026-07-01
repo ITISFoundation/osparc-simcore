@@ -516,6 +516,16 @@ qx.Class.define("osparc.Application", {
                       preferencesSettings.setPreferredWalletId(parseInt(value));
                     }
                     break;
+                  case "userLocale":
+                    if (osparc.product.isLocaleEnabled()) {
+                      if (value) {
+                        preferencesSettings.setUserLocale(value);
+                      } else {
+                        // if the user has not set a locale yet, default to the browser language
+                        osparc.utils.LanguageManager.applyLocale(osparc.utils.LanguageManager.getBrowserLocale());
+                      }
+                    }
+                    break;
                   default:
                     if (fePreferences.includes(key)) {
                       preferencesSettings.set(key, value);
