@@ -98,12 +98,6 @@ define qx_translate_extract =
 			qx compile --update-po-files
 endef
 
-.PHONY: translate-extract
-translate-extract: translate-extract ## the generated .po files goes to source/translation https://qooxdoo.org/documentation/v7.8/#/development/howto/internationalization?id=translation
-	# qx compile --update-po-files
-	$(docker_compose) run $(if $(detached),--detach --name=$(detached),--rm) qooxdoo-kit $(qx_translate_extract)
-	# remove entries no longer present in the source code
-	python ./scripts/post-translate.py
 
 
 # misc --------------------------

@@ -14,6 +14,8 @@ PG_DIR := $(abspath $(PACKAGES_DIR)/postgres-database)
 # tools
 MAKE_C := $(MAKE) --directory
 
+REPO_BASE_DIR := $(REPODIR)
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 IMAGE_NAME:=local/postgres-database-scripts-erd:${PYTHON_VERSION}
 
@@ -51,13 +53,3 @@ run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULLY]
 		--entrypoint=/bin/bash \
 		${IMAGE_NAME} \
 		-c "pip install -e .; python scripts/erd/cli.py"
-
-
-
-.PHONY: help
-# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## this colorful help
-	@echo "Recipes for '$(notdir $(CURDIR))':"
-	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""

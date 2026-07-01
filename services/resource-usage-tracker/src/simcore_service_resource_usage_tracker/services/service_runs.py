@@ -110,33 +110,31 @@ async def list_service_runs(  # noqa: PLR0913
         msg = "wallet_id and access_all_wallet_usage parameters must be specified together"
         raise ValueError(msg)
 
-    service_runs_api_model: list[ServiceRunGet] = []
-    for service in service_runs_db_model:
-        service_runs_api_model.append(
-            ServiceRunGet.model_construct(
-                service_run_id=service.service_run_id,
-                wallet_id=service.wallet_id,
-                wallet_name=service.wallet_name,
-                user_id=service.user_id,
-                user_email=service.user_email,
-                project_id=service.project_id,
-                project_name=service.project_name,
-                project_tags=service.project_tags,
-                root_parent_project_id=service.root_parent_project_id,
-                root_parent_project_name=service.root_parent_project_name,
-                node_id=service.node_id,
-                node_name=service.node_name,
-                service_key=service.service_key,
-                service_version=service.service_version,
-                service_type=service.service_type,
-                started_at=service.started_at,
-                stopped_at=service.stopped_at,
-                service_run_status=service.service_run_status,
-                credit_cost=service.osparc_credits,
-                transaction_status=service.transaction_status,
-            )
+    service_runs_api_model: list[ServiceRunGet] = [
+        ServiceRunGet.model_construct(
+            service_run_id=service.service_run_id,
+            wallet_id=service.wallet_id,
+            wallet_name=service.wallet_name,
+            user_id=service.user_id,
+            user_email=service.user_email,
+            project_id=service.project_id,
+            project_name=service.project_name,
+            project_tags=service.project_tags,
+            root_parent_project_id=service.root_parent_project_id,
+            root_parent_project_name=service.root_parent_project_name,
+            node_id=service.node_id,
+            node_name=service.node_name,
+            service_key=service.service_key,
+            service_version=service.service_version,
+            service_type=service.service_type,
+            started_at=service.started_at,
+            stopped_at=service.stopped_at,
+            service_run_status=service.service_run_status,
+            credit_cost=service.osparc_credits,
+            transaction_status=service.transaction_status,
         )
-
+        for service in service_runs_db_model
+    ]
     return ServiceRunPage(service_runs_api_model, total_service_runs)
 
 
@@ -157,7 +155,7 @@ async def export_service_runs(
     started_until = filters.started_at.until if filters else None
 
     # Create S3 key name
-    s3_bucket_name = TypeAdapter(S3BucketName).validate_python(bucket_name)
+    s3_bucket_name: S3BucketName = TypeAdapter(S3BucketName).validate_python(bucket_name)
     # NOTE: su stands for "service usage"
     file_name = f"su_{shortuuid.uuid()}.csv"
     s3_object_key = f"resource-usage-tracker-service-runs/{datetime.now(tz=UTC).date()}/{file_name}"
@@ -208,6 +206,7 @@ async def get_osparc_credits_aggregated_usages_page(
     aggregated_by: ServicesAggregatedUsagesType,
     time_period: ServicesAggregatedUsagesTimePeriod,
     wallet_id: WalletID,
+    *,
     access_all_wallet_usage: bool = False,
     limit: int = 20,
     offset: int = 0,
@@ -230,14 +229,12 @@ async def get_osparc_credits_aggregated_usages_page(
         started_from=started_from,
         started_until=None,
     )
-    output_api_model: list[OsparcCreditsAggregatedByServiceGet] = []
-    for item in output_list_db:
-        output_api_model.append(
-            OsparcCreditsAggregatedByServiceGet.model_construct(
-                osparc_credits=item.osparc_credits,
-                service_key=item.service_key,
-                running_time_in_hours=item.running_time_in_hours,
-            )
+    output_api_model: list[OsparcCreditsAggregatedByServiceGet] = [
+        OsparcCreditsAggregatedByServiceGet.model_construct(
+            osparc_credits=item.osparc_credits,
+            service_key=item.service_key,
+            running_time_in_hours=item.running_time_in_hours,
         )
-
+        for item in output_list_db
+    ]
     return OsparcCreditsAggregatedUsagesPage(output_api_model, count_output_list_db)

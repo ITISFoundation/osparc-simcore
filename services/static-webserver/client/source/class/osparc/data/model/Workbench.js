@@ -909,13 +909,13 @@ qx.Class.define("osparc.data.model.Workbench", {
           // When nodes are removed, __nodeRemoved already removes the connected edges and updates
           // inputNodes of the remaining nodes. Applying the inputNodes patches again would operate
           // on stale indices and incorrectly remove additional connections.
-          const filteredPatches = nodesRemovedSet.size > 0
-            ? workbenchPatchesByNode[nodeId].filter(patch => {
+          const filteredPatches = nodesRemovedSet.size > 0 ?
+            workbenchPatchesByNode[nodeId].filter(patch => {
               const pathParts = patch.path.split("/");
               const nodeProperty = pathParts[3];
               return nodeProperty !== "inputNodes";
-            })
-            : workbenchPatchesByNode[nodeId];
+            }) :
+            workbenchPatchesByNode[nodeId];
           if (filteredPatches.length > 0) {
             updatePatchesByNode[nodeId] = filteredPatches;
           }

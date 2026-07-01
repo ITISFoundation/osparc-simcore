@@ -484,7 +484,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.getSelectedNodeUIs().forEach(selectedNodeUI => delete selectedNodeUI["initPos"]);
       this.getSelectedAnnotations().forEach(selectedAnnotation => delete selectedAnnotation["initPos"]);
 
-        // the moving item could be an annotation, so we need to check if it is a nodeUI
+      // the moving item could be an annotation, so we need to check if it is a nodeUI
       if (nodeUI) {
         this.getSelectedNodeUIs().forEach(selectedNodeUI => {
           if (nodeUI !== selectedNodeUI) {
@@ -839,6 +839,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       if (!nodeUI1 || !nodeUI2) {
         // NodeUI not yet created (e.g. RTC: node added in same patch batch).
         // Retry after the missing node's UI is added to the workbench.
+        // eslint-disable-next-line no-negated-condition
         const missingNodeId = !nodeUI1 ? node1Id : node2Id;
         const workbench = this.__getWorkbench();
         const missingNode = workbench.getNode(missingNodeId);
@@ -914,9 +915,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const edgeObj = edgeUi.getEdge();
         const inputNode = edgeObj.getInputNode();
         const outputNode = edgeObj.getOutputNode();
-        if (inputNode.getNodeId() === node1Id && outputNode.getNodeId() === node2Id) {
-          return true;
-        }
+        return inputNode.getNodeId() === node1Id && outputNode.getNodeId() === node2Id;
       });
       return foundEdgeUI;
     },
@@ -1978,13 +1977,13 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __consolidateAnnotation: function(initPos) {
+      const type = this.__annotating;
       const annotationTypes = osparc.workbench.Annotation.TYPES;
       if (type === annotationTypes.RECT && !this.__rectAnnotationRepr) {
         osparc.FlashMessenger.logAs(this.tr("Draw a rectangle first"), "WARNING");
         return;
       }
 
-      const type = this.__annotating;
       const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
       const serializeData = {
         type,

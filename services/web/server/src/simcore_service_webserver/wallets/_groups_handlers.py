@@ -5,10 +5,6 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import API_VTAG
@@ -16,6 +12,7 @@ from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from . import _groups_api
 from ._schemas import (
     WalletsPathParams,

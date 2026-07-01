@@ -239,9 +239,9 @@ qx.Class.define("osparc.data.model.Node", {
       // "inputConnected", // frontend only
       // "outputConnected", // frontend only
       // "logger", // frontend only
-     "inputNodes", // !! not a property but goes into the model
-     "inputsRequired", // !! not a property but goes into the model
-     "progress", // !! not a property but goes into the model
+      "inputNodes", // !! not a property but goes into the model
+      "inputsRequired", // !! not a property but goes into the model
+      "progress", // !! not a property but goes into the model
     ],
 
     getProperties: function() {
@@ -1628,7 +1628,7 @@ qx.Class.define("osparc.data.model.Node", {
           }
           case "progress":
             if (this.isFilePicker()) {
-              if (value ===  undefined) {
+              if (value === undefined) {
                 console.debug("Ignoring undefined value for progress");
                 return;
               }

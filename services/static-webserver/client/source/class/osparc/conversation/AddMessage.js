@@ -96,6 +96,16 @@ qx.Class.define("osparc.conversation.AddMessage", {
           textArea.set({
             maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
           });
+          // Enter posts the message, Shift+Enter inserts a new line
+          textArea.addListener("keydown", e => {
+            if (e.getKeyIdentifier() === "Enter" && !e.isShiftPressed() && !e.isCtrlPressed()) {
+              e.preventDefault();
+              e.stopPropagation();
+              if (this.getChildControl("add-comment-button").getEnabled()) {
+                this.__addCommentPressed();
+              }
+            }
+          }, this);
           textArea.addListener("appear", () => {
             textArea.focus();
             textArea.activate();
@@ -114,9 +124,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
           });
           break;
         }
-        case "add-comment-button":
+        case "add-comment-button": {
           control = new qx.ui.form.Button(null, "@FontAwesomeSolid/arrow-up/16").set({
-            toolTipText: this.tr("Ctrl+Enter"),
+            toolTipText: this.tr("Enter"),
             backgroundColor: "input-background",
             allowGrowX: false,
             alignX: "right",
@@ -142,6 +152,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control.addListener("execute", this.__addCommentPressed, this);
           this.getChildControl("add-comment-layout").add(control);
           break;
+        }
         case "footer-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"

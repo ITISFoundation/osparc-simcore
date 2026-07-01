@@ -17,6 +17,7 @@ def test_instrument_async_engine_happy_path(mocker: MockerFixture):
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://localhost",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": 4317,
             "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": 1.0,
+            "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION": "0.144.0",
         }
     )
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="test-service")

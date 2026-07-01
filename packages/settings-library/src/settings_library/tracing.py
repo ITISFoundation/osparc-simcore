@@ -11,6 +11,8 @@ UNDEFINED_CLIENT_NAME = "undefined-tracing-client-name"
 
 
 class TracingSettings(BaseCustomSettings):
+    TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION: Annotated[str, Field(description="version of OTEL image to be used")]
+
     TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: Annotated[
         AnyUrl, Field(description="Opentelemetry compatible collector endpoint")
     ]

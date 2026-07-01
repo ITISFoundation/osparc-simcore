@@ -15,6 +15,7 @@
 
 ************************************************************************ */
 
+/* global JSONFormatter */
 
 qx.Class.define("osparc.widget.JsonFormatterWidget", {
   extend: qx.ui.core.Widget,
@@ -63,10 +64,10 @@ qx.Class.define("osparc.widget.JsonFormatterWidget", {
     },
 
     setJson: function(json) {
-      if (!this.getContentElement().getDomElement()) {
-        this.addListenerOnce("appear", () => this._mountJson(json), this);
-      } else {
+      if (this.getContentElement().getDomElement()) {
         this._mountJson(json);
+      } else {
+        this.addListenerOnce("appear", () => this._mountJson(json), this);
       }
     },
 

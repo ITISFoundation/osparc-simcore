@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.84.0"
+    "version": "0.84.1"
   },
   "servers": [
     {
@@ -12023,8 +12023,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12101,8 +12100,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12144,8 +12142,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -12193,8 +12190,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -12226,8 +12222,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12281,8 +12276,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12335,8 +12329,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12384,8 +12377,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12432,8 +12424,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12519,8 +12510,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12553,8 +12543,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12587,8 +12576,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12638,8 +12626,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12688,8 +12675,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -12771,8 +12757,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -16862,25 +16847,18 @@
         ],
         "title": "CursorPage[TypeVar]Customized[PathMetaDataGet]"
       },
-      "DatCoreFileLink": {
+      "DatCoreFileID": {
+        "type": "string",
+        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+      },
+      "DatCoreFileLink-Input": {
         "properties": {
           "store": {
-            "type": "integer",
-            "title": "Store",
+            "$ref": "#/components/schemas/LocationID",
             "description": "The store identifier: 0 for simcore S3, 1 for datcore"
           },
           "path": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-              },
-              {
-                "type": "string",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-              }
-            ],
-            "title": "Path",
+            "$ref": "#/components/schemas/StorageFileID",
             "description": "The path to the file in the storage provider domain"
           },
           "label": {
@@ -16899,6 +16877,76 @@
             ],
             "title": "Etag",
             "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
+          },
+          "dataset": {
+            "type": "string",
+            "title": "Dataset",
+            "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "store",
+          "path",
+          "label",
+          "dataset"
+        ],
+        "title": "DatCoreFileLink",
+        "description": "I/O port type to hold a link to a file in DATCORE storage"
+      },
+      "DatCoreFileLink-Output": {
+        "properties": {
+          "store": {
+            "$ref": "#/components/schemas/LocationID",
+            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
+          },
+          "path": {
+            "$ref": "#/components/schemas/StorageFileID",
+            "description": "The path to the file in the storage provider domain"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "The real file name"
+          },
+          "eTag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etag",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
           },
           "dataset": {
             "type": "string",
@@ -16992,6 +17040,9 @@
         ],
         "title": "DownloadLink",
         "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
+      },
+      "ETag": {
+        "type": "string"
       },
       "EmptyModel": {
         "properties": {},
@@ -20256,12 +20307,10 @@
       "FileLocation": {
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Name"
+            "$ref": "#/components/schemas/LocationName"
           },
           "id": {
-            "type": "integer",
-            "title": "Id"
+            "$ref": "#/components/schemas/LocationID"
           }
         },
         "additionalProperties": false,
@@ -20420,8 +20469,7 @@
             "description": "NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure"
           },
           "location_id": {
-            "type": "integer",
-            "title": "Location Id",
+            "$ref": "#/components/schemas/LocationID",
             "description": "Storage location"
           },
           "project_name": {
@@ -20454,17 +20502,7 @@
             "description": "Display name for a file"
           },
           "file_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-              },
-              {
-                "type": "string",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-              }
-            ],
-            "title": "File Id",
+            "$ref": "#/components/schemas/StorageFileID",
             "description": "THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore"
           },
           "created_at": {
@@ -20480,8 +20518,7 @@
           "file_size": {
             "anyOf": [
               {
-                "type": "integer",
-                "const": -1
+                "$ref": "#/components/schemas/UNDEFINED_SIZE_TYPE"
               },
               {
                 "type": "integer",
@@ -20495,13 +20532,12 @@
           "entity_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Entity Tag",
             "description": "Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore"
           },
           "is_soft_link": {
@@ -20549,13 +20585,25 @@
           "e_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_modified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "E Tag"
+            "title": "Last Modified",
+            "description": "Last modification timestamp reported by S3, set together with e_tag"
           }
         },
         "type": "object",
@@ -21442,10 +21490,10 @@
               "$ref": "#/components/schemas/PortLink"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Input"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Input"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -21485,10 +21533,10 @@
               "$ref": "#/components/schemas/PortLink"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Output"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Output"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -21915,6 +21963,12 @@
           "S3"
         ],
         "title": "LinkType"
+      },
+      "LocationID": {
+        "type": "integer"
+      },
+      "LocationName": {
+        "type": "string"
       },
       "Log": {
         "properties": {
@@ -23860,10 +23914,10 @@
               "type": "string"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Input"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Input"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -23900,10 +23954,10 @@
               "type": "string"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Output"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Output"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -28119,25 +28173,14 @@
         ],
         "title": "ServicesAggregatedUsagesType"
       },
-      "SimCoreFileLink": {
+      "SimCoreFileLink-Input": {
         "properties": {
           "store": {
-            "type": "integer",
-            "title": "Store",
+            "$ref": "#/components/schemas/LocationID",
             "description": "The store identifier: 0 for simcore S3, 1 for datcore"
           },
           "path": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-              },
-              {
-                "type": "string",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-              }
-            ],
-            "title": "Path",
+            "$ref": "#/components/schemas/StorageFileID",
             "description": "The path to the file in the storage provider domain"
           },
           "label": {
@@ -28163,6 +28206,88 @@
             ],
             "title": "Etag",
             "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset",
+            "deprecated": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "store",
+          "path"
+        ],
+        "title": "SimCoreFileLink",
+        "description": "I/O port type to hold a link to a file in simcore S3 storage"
+      },
+      "SimCoreFileLink-Output": {
+        "properties": {
+          "store": {
+            "$ref": "#/components/schemas/LocationID",
+            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
+          },
+          "path": {
+            "$ref": "#/components/schemas/StorageFileID",
+            "description": "The path to the file in the storage provider domain"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "The real file name"
+          },
+          "eTag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etag",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
           },
           "dataset": {
             "anyOf": [
@@ -28400,6 +28525,17 @@
           "top_tracemalloc"
         ],
         "title": "StatusDiagnosticsGet"
+      },
+      "StorageFileID": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+          },
+          {
+            "$ref": "#/components/schemas/DatCoreFileID"
+          }
+        ]
       },
       "StorageFileIDStr": {
         "type": "string"
@@ -29163,6 +29299,10 @@
         ],
         "description": "Expiration time in days for trial accounts; `null` means not a trial account"
       },
+      "UNDEFINED_SIZE_TYPE": {
+        "type": "integer",
+        "const": -1
+      },
       "UnitExtraInfoLicense": {
         "properties": {
           "num_of_seats": {
@@ -29348,8 +29488,7 @@
             "title": "Number"
           },
           "e_tag": {
-            "type": "string",
-            "title": "E Tag"
+            "$ref": "#/components/schemas/ETag"
           }
         },
         "type": "object",
