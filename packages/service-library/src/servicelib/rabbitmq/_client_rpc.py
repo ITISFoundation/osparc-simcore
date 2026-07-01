@@ -83,8 +83,14 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         await self._close_rpc_and_channel()
         await self._create_channel_and_rpc()
         assert self._rpc is not None  # nosec
-        for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
+        handlers = tuple(self._registered_handlers.items())
+        for namespaced_method_name, handler in handlers:
             await self._rpc.register(namespaced_method_name, handler, auto_delete=True)
+        _logger.info(
+            "Re-registered %d handler(s) on the rebuilt RPC surface (%s)",
+            len(handlers),
+            self.client_name,
+        )
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
         with log_context(
