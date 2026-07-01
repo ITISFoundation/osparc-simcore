@@ -11,7 +11,7 @@ import urllib.parse
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from typing import Any, NamedTuple
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 from uuid import UUID
 
 import pytest
@@ -30,7 +30,7 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,
 )
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
@@ -43,9 +43,16 @@ from servicelib.common_headers import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_service_director_v2.api.dependencies import database as database_module
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
     UserExtraProperties,
+)
+from simcore_service_director_v2.modules.db.repositories.projects import (
+    ProjectsRepository,
+)
+from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
+    ProjectsNodesRepository,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
@@ -613,17 +620,26 @@ def mock_internals_inactivity(
 
     service_inactivity_map: dict[str, ActivityInfoOrNone] = {faker.uuid4(): s for s in services_activity}
 
-    mock_project = Mock()
-    mock_project.workbench = list(service_inactivity_map.keys())
+    class MockProjectsRepo:
+        async def exists(self, _: ProjectID) -> bool:
+            return True
 
-    class MockProjectRepo:
-        async def get_project(self, _: ProjectID) -> ProjectAtDB:
-            return mock_project
+    class MockProjectsNodesRepo:
+        async def list_nodes_ids(self, _: ProjectID) -> list[NodeID]:
+            return [NodeID(node_id) for node_id in service_inactivity_map]
 
-    # patch get_project
+    def _get_base_repository(engine, repo_type):
+        if repo_type is ProjectsRepository:
+            return MockProjectsRepo()
+        if repo_type is ProjectsNodesRepository:
+            return MockProjectsNodesRepo()
+        msg = f"Unexpected repository type requested: {repo_type}"
+        raise AssertionError(msg)
+
+    # patch repositories
     mocker.patch(
-        "simcore_service_director_v2.api.dependencies.database.get_base_repository",
-        return_value=MockProjectRepo(),
+        f"{database_module.__name__}.get_base_repository",
+        side_effect=_get_base_repository,
     )
 
     async def get_service_activity(node_uuid: NodeID) -> ActivityInfoOrNone:

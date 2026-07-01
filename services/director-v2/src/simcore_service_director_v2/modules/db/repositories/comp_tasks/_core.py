@@ -5,7 +5,7 @@ from typing import Any, cast
 import sqlalchemy as sa
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -15,7 +15,7 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
-from sqlalchemy import literal_column
+from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from .....core.errors import ComputationalTaskNotFoundError
@@ -135,6 +135,7 @@ class CompTasksRepository(BaseRepository):
         self,
         *,
         project: ProjectAtDB,
+        project_nodes: NodesDict,
         catalog_client: CatalogClient,
         published_nodes: list[NodeID],
         user_id: UserID,
@@ -154,6 +155,7 @@ class CompTasksRepository(BaseRepository):
                 # that calls backend services to generate the tasks list!! Refactoring needed!!
                 await _utils.generate_tasks_list_from_project(
                     project=project,
+                    project_nodes=project_nodes,
                     catalog_client=catalog_client,
                     published_nodes=published_nodes,
                     user_id=user_id,
@@ -170,7 +172,7 @@ class CompTasksRepository(BaseRepository):
             )
             # remove the tasks that were removed from project workbench
             if all_nodes := result.all():
-                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project.workbench]
+                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project_nodes]
                 for node_id in node_ids_to_delete:
                     await conn.execute(
                         sa.delete(comp_tasks).where(
@@ -197,11 +199,12 @@ class CompTasksRepository(BaseRepository):
                     exclusion_rule.add("outputs")
                 else:
                     update_values = {}
-                on_update_stmt = insert_stmt.on_conflict_do_update(
-                    index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                    set_=comp_task_db.to_db_model(exclude=exclusion_rule) | update_values,
-                ).returning(literal_column("*"))
-                result = await conn.execute(on_update_stmt)
+                result = await conn.execute(
+                    insert_stmt.on_conflict_do_update(
+                        index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
+                        set_=comp_task_db.to_db_model(exclude=exclusion_rule) | update_values,
+                    ).returning(literal_column("*"))
+                )
                 row = result.one()
                 inserted_comp_tasks_db.append(CompTaskAtDB.model_validate(row))
                 _logger.debug(
@@ -219,7 +222,7 @@ class CompTasksRepository(BaseRepository):
             msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
         ):
             async with self.db_engine.begin() as conn:
-                result = await conn.execute(
+                result: CursorResult = await conn.execute(
                     sa.update(comp_tasks)
                     .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}"))
                     .values(**task_kwargs)

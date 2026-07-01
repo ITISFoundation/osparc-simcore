@@ -66,7 +66,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
   members: {
     __getRoleInfo: function(id) {
-      let roleInfo = undefined;
+      let roleInfo = null;
       const resource = this.getResourceType();
       switch (resource) {
         case "study":

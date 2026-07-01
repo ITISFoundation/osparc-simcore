@@ -239,7 +239,13 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
         finally:
             # copy the log file to the log_file_url
             if log_file.exists():
-                await push_file_to_remote(log_file, log_file_url, log_publishing_cb, s3_settings)
+                await push_file_to_remote(
+                    log_file,
+                    log_file_url,
+                    log_publishing_cb=log_publishing_cb,
+                    s3_settings=s3_settings,
+                    encryption=None,
+                )
 
 
 async def _parse_container_docker_logs(
@@ -329,7 +335,13 @@ async def _parse_container_docker_logs(
             finally:
                 with log_context(_logger, logging.INFO, "uploading docker logs file"):
                     # copy the log file to the log_file_url
-                    await push_file_to_remote(log_file_path, log_file_url, log_publishing_cb, s3_settings)
+                    await push_file_to_remote(
+                        log_file_path,
+                        log_file_url,
+                        log_publishing_cb=log_publishing_cb,
+                        s3_settings=s3_settings,
+                        encryption=None,
+                    )
 
 
 async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments

@@ -16,7 +16,7 @@ from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..exceptions.backend_errors import JobNotFoundError, LogFileNotFoundError
-from ..exceptions.service_errors_utils import service_exception_mapper
+from ..exceptions.service_errors_utils import ServiceHTTPStatus, service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
 from ..models.schemas.studies import JobLogsMap, LogLink
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
@@ -65,7 +65,7 @@ _client_status_code_to_exception = partial(service_exception_mapper, service_nam
 
 
 class DirectorV2Api(BaseServiceClientApi):
-    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_client_status_code_to_exception(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): JobNotFoundError})
     async def get_computation(self, *, project_id: UUID, user_id: PositiveInt) -> ComputationTaskGet:
         response = await self.client.get(
             f"/v2/computations/{project_id}",
@@ -79,7 +79,7 @@ class DirectorV2Api(BaseServiceClientApi):
             from_attributes=True,
         )
 
-    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_client_status_code_to_exception(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): JobNotFoundError})
     async def stop_computation(self, *, project_id: UUID, user_id: PositiveInt) -> None:
         response = await self.client.post(
             f"/v2/computations/{project_id}:stop",
@@ -89,7 +89,7 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_client_status_code_to_exception(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): JobNotFoundError})
     async def delete_computation(self, *, project_id: UUID, user_id: PositiveInt) -> None:
         response = await self.client.request(
             "DELETE",
@@ -101,7 +101,9 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
+    @_client_status_code_to_exception(
+        http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): LogFileNotFoundError}
+    )
     async def get_computation_logs(self, *, user_id: PositiveInt, project_id: UUID) -> JobLogsMap:
         response = await self.client.get(
             f"/v2/computations/{project_id}/tasks/-/logfile",

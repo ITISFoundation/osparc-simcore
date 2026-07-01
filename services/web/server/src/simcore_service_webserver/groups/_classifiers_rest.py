@@ -1,10 +1,6 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -12,6 +8,7 @@ from ..scicrunch import scicrunch_service
 from ..scicrunch.models import ResourceHit
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from ._classifiers_service import GroupClassifiersService
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.schemas import GroupsClassifiersQuery, GroupsPathParams

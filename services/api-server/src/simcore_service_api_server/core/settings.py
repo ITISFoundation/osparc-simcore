@@ -1,6 +1,7 @@
 from functools import cached_property
 from typing import Annotated
 
+from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
@@ -63,6 +64,13 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         bool,
         Field(
             validation_alias=AliasChoices("API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"),
+        ),
+    ] = False
+
+    API_SERVER_LOCALIZED_MESSAGES_ENABLED: Annotated[
+        bool,
+        Field(
+            description=("Enable server-side translation of user-facing messages."),
         ),
     ] = False
 
@@ -151,7 +159,10 @@ class ApplicationSettings(BasicSettings):
         ),
     ]
 
-    API_SERVER_WORKER_MODE: Annotated[bool, Field(description="If True, the API server runs in worker mode")] = False
+    API_SERVER_BOOT_SERVER_MODE: Annotated[
+        BootServerMode,
+        Field(description="Boot mode: REST API server or Celery worker"),
+    ] = BootServerMode.AS_REST_API_SERVER
 
     @cached_property
     def debug(self) -> bool:
@@ -164,6 +175,5 @@ __all__: tuple[str, ...] = (
     "BasicSettings",
     "DirectorV2Settings",
     "StorageSettings",
-    "WebServerSettings",
     "WebServerSettings",
 )

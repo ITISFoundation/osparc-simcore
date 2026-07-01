@@ -19,9 +19,16 @@ def get_jinja_env(**kwargs: Any) -> Environment:
     env = Environment(
         loader=PackageLoader("simcore_service_notifications", "templates"),
         autoescape=select_autoescape(["html", "xml", "j2"]),
+        extensions=["jinja2.ext.i18n"],
         **kwargs,
     )
     env.globals["dumps"] = _json_dumps_indented
+    # Install no-op translations as a safe default so templates that use
+    # {{ _('text') }} or {% trans %} work even before locale-specific
+    # .mo files are deployed.
+    import gettext as _gettext  # noqa: PLC0415
+
+    env.install_gettext_translations(_gettext.NullTranslations(), newstyle=True)  # type: ignore[attr-defined]
     return env
 
 

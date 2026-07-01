@@ -41,6 +41,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   events: {
     "messageUpdated": "qx.event.type.Data",
     "messageDeleted": "qx.event.type.Data",
+    "resized": "qx.event.type.Event",
   },
 
   properties: {
@@ -91,7 +92,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "message-bubble":
+        case "message-bubble": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
             alignX: isMyMessage ? "right" : "left"
           })).set({
@@ -103,8 +104,10 @@ qx.Class.define("osparc.conversation.MessageUI", {
           control.getContentElement().setStyles(bubbleStyle);
           this.getChildControl("main-layout").addAt(control, 1);
           break;
+        }
         case "message-content":
           control = new osparc.ui.markdown.MarkdownChat();
+          control.addListener("resized", () => this.fireEvent("resized"));
           this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {
@@ -116,6 +119,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowY: false,
             marginTop: 4,
             alignY: "top",
+            center: true,
             icon: "@FontAwesomeSolid/ellipsis-v/12",
             focusable: false
           });

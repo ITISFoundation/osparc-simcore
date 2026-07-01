@@ -149,8 +149,8 @@ qx.Class.define("osparc.po.EmailEditor", {
       const collaboratorsManager = new osparc.share.NewCollaboratorsManager(data, true, false);
       collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
       collaboratorsManager.addListener("addCollaborators", e => {
-        const data = e.getData();
-        const selectedGids = data.selectedGids;
+        const data2 = e.getData();
+        const selectedGids = data2.selectedGids;
         selectedGids.forEach(gid => {
           if (!this.__selectedGroupIds.includes(gid)) {
             this.__selectedGroupIds.push(gid);

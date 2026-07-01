@@ -9,12 +9,13 @@ import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFoundError
-from simcore_service_director_v2.modules.db.repositories.projects import (
-    ProjectsRepository,
+from simcore_service_director_v2.core.errors import ProjectNodeNotFoundError
+from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
+    ProjectsNodesRepository,
 )
 from simcore_service_director_v2.utils.db import get_repository
 
@@ -62,13 +63,20 @@ def workbench() -> dict[str, Any]:
             "label": "sleeper",
             "inputsUnits": {},
             "inputNodes": ["38a0d401-af4b-4ea7-ab4c-5005c712a546"],
-            "parent": None,
             "thumbnail": "",
-        }
+        },
+        "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0",
+            "label": "another-one",
+            "inputsUnits": {},
+            "inputNodes": [],
+            "thumbnail": "",
+        },
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 async def with_project(
     mock_env: EnvVarsDict,
     create_registered_user: Callable[..., dict],
@@ -79,39 +87,50 @@ async def with_project(
     return await create_project(create_registered_user(), workbench=workbench)
 
 
-async def test_is_node_present_in_workbench(initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker):
-    project_repository = get_repository(initialized_app, ProjectsRepository)
+async def test_exists(initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker):
+    repository = get_repository(initialized_app, ProjectsNodesRepository)
 
     for node_uuid in with_project.workbench:
-        assert (
-            await project_repository.is_node_present_in_workbench(
-                project_id=with_project.uuid, node_uuid=NodeID(node_uuid)
-            )
-            is True
-        )
+        assert await repository.exists(with_project.uuid, NodeID(node_uuid)) is True
 
     not_existing_node = faker.uuid4(cast_to=None)
     assert not_existing_node not in with_project.workbench
-    assert (
-        await project_repository.is_node_present_in_workbench(project_id=with_project.uuid, node_uuid=not_existing_node)
-        is False
-    )
+    assert await repository.exists(with_project.uuid, not_existing_node) is False
 
     not_existing_project = faker.uuid4(cast_to=None)
     assert not_existing_project != with_project.uuid
-    assert (
-        await project_repository.is_node_present_in_workbench(
-            project_id=not_existing_project, node_uuid=not_existing_node
-        )
-        is False
-    )
+    assert await repository.exists(not_existing_project, not_existing_node) is False
 
 
-async def test_get_project_id_from_node(initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker):
-    project_repository = get_repository(initialized_app, ProjectsRepository)
-    for node_uuid in with_project.workbench:
-        assert await project_repository.get_project_id_from_node(NodeID(node_uuid)) == with_project.uuid
+async def test_get(initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker):
+    repository = get_repository(initialized_app, ProjectsNodesRepository)
 
-    not_existing_node_id = faker.uuid4(cast_to=None)
-    with pytest.raises(ProjectNodesNodeNotFoundError):
-        await project_repository.get_project_id_from_node(not_existing_node_id)
+    for node_uuid, node_data in with_project.workbench.items():
+        node = await repository.get(with_project.uuid, NodeID(node_uuid))
+        assert isinstance(node, Node)
+        assert node.key == node_data.key
+        assert node.version == node_data.version
+
+    not_existing_node = faker.uuid4(cast_to=None)
+    with pytest.raises(ProjectNodeNotFoundError):
+        await repository.get(with_project.uuid, not_existing_node)
+
+
+async def test_list_nodes_ids(initialized_app: FastAPI, with_project: ProjectAtDB):
+    repository = get_repository(initialized_app, ProjectsNodesRepository)
+
+    node_ids = await repository.list_nodes_ids(with_project.uuid)
+
+    assert sorted(node_ids) == sorted(NodeID(node_uuid) for node_uuid in with_project.workbench)
+
+
+async def test_get_all(initialized_app: FastAPI, with_project: ProjectAtDB):
+    repository = get_repository(initialized_app, ProjectsNodesRepository)
+
+    nodes = await repository.get_all(with_project.uuid)
+
+    assert set(nodes) == set(with_project.workbench)
+    for node_uuid, node in nodes.items():
+        assert isinstance(node, Node)
+        assert node.key == with_project.workbench[node_uuid].key
+        assert node.version == with_project.workbench[node_uuid].version

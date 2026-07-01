@@ -21,10 +21,6 @@ from models_library.api_schemas_webserver.users import (
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -38,6 +34,7 @@ from ....security.decorators import (
     permission_required,
 )
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
+from ....web_requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from ... import _accounts_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import UserAccountRestPreRegister, UsersRequestContext
