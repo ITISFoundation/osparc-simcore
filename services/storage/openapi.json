@@ -104,8 +104,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -166,8 +165,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -247,8 +245,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -346,8 +343,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -355,17 +351,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -443,8 +429,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -452,17 +437,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -521,8 +496,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -530,17 +504,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -654,8 +618,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -663,17 +626,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -717,8 +670,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -726,17 +678,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -780,8 +722,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -789,17 +730,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -860,8 +791,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -869,17 +799,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -939,17 +859,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-                }
-              ],
-              "title": "File Id"
+              "$ref": "#/components/schemas/StorageFileID"
             }
           },
           {
@@ -1011,8 +921,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -1127,8 +1036,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -1537,6 +1445,14 @@
         ],
         "title": "CursorPage[TypeVar]Customized[PathMetaDataGet]"
       },
+      "DatCoreDatasetName": {
+        "type": "string",
+        "pattern": "^N:dataset:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+      },
+      "DatCoreFileID": {
+        "type": "string",
+        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+      },
       "DatasetMetaDataGet": {
         "properties": {
           "dataset_id": {
@@ -1546,8 +1462,7 @@
                 "format": "uuid"
               },
               {
-                "type": "string",
-                "pattern": "^N:dataset:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+                "$ref": "#/components/schemas/DatCoreDatasetName"
               }
             ],
             "title": "Dataset Id"
@@ -1564,6 +1479,9 @@
           "display_name"
         ],
         "title": "DatasetMetaDataGet"
+      },
+      "ETag": {
+        "type": "string"
       },
       "Envelope_AppStatusCheck_": {
         "properties": {
@@ -1972,12 +1890,10 @@
       "FileLocation": {
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Name"
+            "$ref": "#/components/schemas/LocationName"
           },
           "id": {
-            "type": "integer",
-            "title": "Id"
+            "$ref": "#/components/schemas/LocationID"
           }
         },
         "additionalProperties": false,
@@ -1996,8 +1912,7 @@
             "description": "NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure"
           },
           "location_id": {
-            "type": "integer",
-            "title": "Location Id",
+            "$ref": "#/components/schemas/LocationID",
             "description": "Storage location"
           },
           "project_name": {
@@ -2030,17 +1945,7 @@
             "description": "Display name for a file"
           },
           "file_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-              },
-              {
-                "type": "string",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-              }
-            ],
-            "title": "File Id",
+            "$ref": "#/components/schemas/StorageFileID",
             "description": "THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore"
           },
           "created_at": {
@@ -2056,8 +1961,7 @@
           "file_size": {
             "anyOf": [
               {
-                "type": "integer",
-                "const": -1
+                "$ref": "#/components/schemas/UNDEFINED_SIZE_TYPE"
               },
               {
                 "type": "integer",
@@ -2071,13 +1975,12 @@
           "entity_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Entity Tag",
             "description": "Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore"
           },
           "is_soft_link": {
@@ -2124,12 +2027,10 @@
             "title": "File Uuid"
           },
           "location_id": {
-            "type": "integer",
-            "title": "Location Id"
+            "$ref": "#/components/schemas/LocationID"
           },
           "location": {
-            "type": "string",
-            "title": "Location"
+            "$ref": "#/components/schemas/LocationName"
           },
           "bucket_name": {
             "type": "string",
@@ -2239,13 +2140,25 @@
           "e_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_modified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "E Tag"
+            "title": "Last Modified",
+            "description": "Last modification timestamp reported by S3, set together with e_tag"
           }
         },
         "type": "object",
@@ -2448,6 +2361,12 @@
         ],
         "title": "LinkType"
       },
+      "LocationID": {
+        "type": "integer"
+      },
+      "LocationName": {
+        "type": "string"
+      },
       "PathMetaDataGet": {
         "properties": {
           "path": {
@@ -2563,6 +2482,21 @@
         ],
         "title": "SoftCopyBody"
       },
+      "StorageFileID": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+          },
+          {
+            "$ref": "#/components/schemas/DatCoreFileID"
+          }
+        ]
+      },
+      "UNDEFINED_SIZE_TYPE": {
+        "type": "integer",
+        "const": -1
+      },
       "UploadedPart": {
         "properties": {
           "number": {
@@ -2571,8 +2505,7 @@
             "title": "Number"
           },
           "e_tag": {
-            "type": "string",
-            "title": "E Tag"
+            "$ref": "#/components/schemas/ETag"
           }
         },
         "type": "object",
