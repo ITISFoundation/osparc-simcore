@@ -1,6 +1,7 @@
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 from aiohttp import web
+from annotated_types import doc
 from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
@@ -201,6 +202,27 @@ async def send_message(
     return response.task_or_group_uuid, response.task_name
 
 
+async def _resolve_locale(
+    app: web.Application,
+    *,
+    user_id: UserID | None,
+    product_name: ProductName,
+    group_ids: list[GroupID] | None,
+    locale: SupportedLocale | None,
+) -> SupportedLocale:
+    """Resolves the locale to render the notification content in.
+
+    Precedence: explicit ``locale`` argument > DB-stored user preference > ``DEFAULT_LOCALE``.
+    For multi-recipient sends (``group_ids``) always falls back to ``DEFAULT_LOCALE`` since each
+    recipient may have a different preference; per-recipient rendering is a future enhancement.
+    """
+    if locale is not None:
+        return locale
+    if user_id is not None and not group_ids:
+        return await get_user_locale(app, user_id=user_id, product_name=product_name)
+    return DEFAULT_LOCALE
+
+
 async def send_message_from_template(
     app: web.Application,
     *,
@@ -212,18 +234,30 @@ async def send_message_from_template(
     reply_to: Contact | None = None,
     template_name: str,
     context: dict[str, Any],
-    locale: SupportedLocale | None = None,
-) -> tuple[TaskUUID | GroupUUID, TaskName]:
-    # Resolve recipient locale: explicit argument > DB-stored user preference > EN.
-    # For multi-recipient (group_ids) we fall back to EN because each recipient
-    # may have a different preference; per-recipient rendering is a future enhancement.
-    resolved_locale: SupportedLocale
-    if locale is not None:
-        resolved_locale = locale
-    elif user_id is not None and not group_ids:
-        resolved_locale = await get_user_locale(app, user_id=user_id, product_name=product_name)
-    else:
-        resolved_locale = DEFAULT_LOCALE
+    locale: Annotated[
+        SupportedLocale | None,
+        doc("Enforces this locale; otherwise resolved from the recipient's DB-stored preference, falling back to EN"),
+    ] = None,
+) -> Annotated[
+    tuple[TaskUUID | GroupUUID, TaskName],
+    doc("(task or group uuid, task name) of the dispatched notification"),
+]:
+    """Sends a notification rendered from a template to a single user, external contacts, or group recipients.
+
+    See ``_resolve_locale`` for how the recipient's locale is determined.
+
+    Raises:
+        NotificationsUnsupportedChannelError: If `channel` is not supported.
+        NotificationsNoActiveRecipientsError: If no active recipients are found.
+    """
+
+    resolved_locale = await _resolve_locale(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        group_ids=group_ids,
+        locale=locale,
+    )
 
     match channel:
         case Channel.email:

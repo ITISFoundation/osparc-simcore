@@ -35,6 +35,17 @@ def translate_message(message: str, request: web.Request) -> str:
     return get_translator(request.get(RQ_LOCALE_KEY, DEFAULT_LOCALE)).gettext(message)
 
 
+def get_locale_or_none(request: web.Request) -> SupportedLocale | None:
+    """Returns the locale resolved by ``locale_middleware`` for this request, or ``None``
+    if the middleware did not run (e.g. the request key is missing).
+
+    Useful for passing an optional override (e.g. to
+    ``notifications_service.send_message_from_template``) that should defer to the recipient's
+    DB-stored preference (see ``get_user_locale``) when no request-resolved locale is available.
+    """
+    return request.get(RQ_LOCALE_KEY)
+
+
 @web.middleware
 async def locale_middleware(request: web.Request, handler: Handler) -> web.StreamResponse:
     """Resolves locale from request headers and stores it in ``request[RQ_LOCALE_KEY]``."""

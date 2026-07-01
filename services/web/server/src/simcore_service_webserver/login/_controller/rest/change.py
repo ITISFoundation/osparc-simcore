@@ -10,7 +10,7 @@ from simcore_postgres_database.utils_users import UsersRepo
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
 from ....exception_handling import create_error_context_from_request
-from ....locale import translate_message
+from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact
 from ....products import products_web
@@ -210,6 +210,7 @@ async def initiate_reset_password(request: web.Request):
                 "link": link,
                 "reason": failure_reason,
             },
+            locale=get_locale_or_none(request),
         )
 
     # NOTE: Always same response: guideline #1
