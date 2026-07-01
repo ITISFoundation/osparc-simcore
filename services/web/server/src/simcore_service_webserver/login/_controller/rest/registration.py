@@ -340,12 +340,15 @@ async def register_phone(request: web.Request):
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
         await _twofa_service.send_sms_code(
+            request.app,
             phone_number=registration.phone,
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=_registration_service.get_user_name_from_email(registration.email),
+            product_name=product.name,
+            locale=get_locale_or_none(request),
         )
 
         return envelope_response(
