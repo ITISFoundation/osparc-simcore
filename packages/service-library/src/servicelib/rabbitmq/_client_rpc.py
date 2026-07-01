@@ -105,7 +105,6 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             logging.INFO,
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
-            # rpc/channel are not always initialized
             await self._close_rpc_and_channel()
             if self._connection is not None:
                 await self._connection.close()
