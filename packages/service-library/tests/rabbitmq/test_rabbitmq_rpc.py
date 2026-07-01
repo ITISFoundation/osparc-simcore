@@ -265,12 +265,22 @@ async def test_get_namespaced_method_name_max_length(
         await rpc_client.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
 
 
-async def test_rpc_marked_unhealthy_after_reconnection(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+async def test_rpc_rebuilds_surface_after_reconnection(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
     assert rpc_client.healthy is True
 
     # Simulate a RabbitMQ reconnection by invoking the callback directly
     await rpc_client._on_reconnect()  # noqa: SLF001
 
-    # the client must report itself unhealthy so the liveness probe restarts the service
-    assert rpc_client.healthy is False
+    # the client reconnects (no service restart) and keeps serving requests
+    assert rpc_client.healthy is True
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
+
+
+async def test_rpc_reconnection_without_registered_handlers(rpc_client: RabbitMQRPCClient):
+    assert rpc_client.healthy is True
+
+    await rpc_client._on_reconnect()  # noqa: SLF001
+
+    assert rpc_client.healthy is True

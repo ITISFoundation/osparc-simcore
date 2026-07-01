@@ -10,6 +10,7 @@ import aio_pika
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import PositiveInt
 from settings_library.rabbit import RabbitSettings
+from tenacity import retry
 
 from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
@@ -17,7 +18,10 @@ from ._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from ._models import RPCNamespacedMethodName
 from ._rpc_router import RPCRouter
-from ._utils import get_rabbitmq_client_unique_name
+from ._utils import (
+    RabbitMQRetryPolicyUponInitialization,
+    get_rabbitmq_client_unique_name,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -35,6 +39,28 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         await client._rpc_initialize()
         return client
 
+    async def _create_channel_and_rpc(self) -> None:
+        assert self._connection is not None  # nosec
+
+        self._channel = await self._connection.channel()
+        self._channel.close_callbacks.add(self._channel_close_callback)
+
+        self._rpc = aio_pika.patterns.RPC(self._channel)
+        # rely on default queue configuration that should be reasonable
+        # if overriding parameters, make sure their combination makes sense
+        # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
+        await self._rpc.initialize()
+
+    async def _close_rpc_and_channel(self) -> None:
+        # NOTE: detach references first so a partial/failed close leaves the
+        # client in a consistent state (no double-close, no stale objects)
+        rpc, self._rpc = self._rpc, None
+        channel, self._channel = self._channel, None
+        if rpc is not None:
+            await rpc.close()
+        if channel is not None:
+            await channel.close()
+
     async def _rpc_initialize(self) -> None:
         # NOTE: to show the connection name in the rabbitMQ UI see there
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
@@ -47,21 +73,31 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         )
         self._connection.close_callbacks.add(self._connection_close_callback)
         self._connection.reconnect_callbacks.add(self._on_reconnect)
-        self._channel = await self._connection.channel()
-        self._channel.close_callbacks.add(self._channel_close_callback)
 
-        self._rpc = aio_pika.patterns.RPC(self._channel)
-        # rely on default queue configuration that should be reasonable
-        # if overriding parameters, make sure their combination makes sense
-        # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
-        await self._rpc.initialize()
+        await self._create_channel_and_rpc()
+
+    @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
+    async def _rebuild_rpc_surface(self) -> None:
+        # A reconnection drops the auto_delete queues backing the RPC result
+        # mailbox and the registered handlers. Rebuild the RPC on a fresh
+        # channel and re-register the handlers so requests keep flowing.
+        await self._close_rpc_and_channel()
+        await self._create_channel_and_rpc()
+        assert self._rpc is not None  # nosec
+        for namespaced_method_name, handler in self._registered_handlers.items():
+            await self._rpc.register(namespaced_method_name, handler, auto_delete=True)
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
+        # Rebuild the RPC surface instead of restarting the whole service:
+        # reconnecting is cheaper, less disruptive and preserves in-flight work.
         self._healthy_state = False
-        _logger.warning(
-            "RabbitMQ reconnection detected (%s): marking RPC client unhealthy to trigger a service restart",
-            self.client_name,
-        )
+        with log_context(
+            _logger,
+            logging.WARNING,
+            msg=f"RabbitMQ reconnection detected ({self.client_name}): rebuilding RPC surface",
+        ):
+            await self._rebuild_rpc_surface()
+        self._healthy_state = True
 
     async def close(self) -> None:
         with log_context(
@@ -69,11 +105,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             logging.INFO,
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
-            # rpc is not always initialized
-            if self._rpc is not None:
-                await self._rpc.close()
-            if self._channel is not None:
-                await self._channel.close()
+            # rpc/channel are not always initialized
+            await self._close_rpc_and_channel()
             if self._connection is not None:
                 await self._connection.close()
 
