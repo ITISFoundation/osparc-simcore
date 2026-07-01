@@ -1,6 +1,7 @@
 import contextlib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Final
 
 import arrow
 from fastapi import FastAPI
@@ -36,6 +37,8 @@ from .modules.datcore_adapter.datcore_adapter_exceptions import (
 )
 from .modules.db import get_db_engine
 from .modules.db.tokens import TokenRepository
+
+_EXPECTED_FILE_FILTER_PARTS: Final[int] = 2
 
 
 def _check_api_credentials(api_token: str | None, api_secret: str | None) -> tuple[str, str]:
@@ -74,7 +77,7 @@ class DatCoreDataManager(BaseDataManager):
             return await datcore_adapter.check_user_can_connect(self.app, api_token, api_secret)
         return False
 
-    async def list_datasets(self, user_id: UserID, product_name: ProductName) -> list[DatasetMetaData]:
+    async def list_datasets(self, user_id: UserID, product_name: ProductName) -> list[DatasetMetaData]:  # noqa: ARG002
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         return await datcore_adapter.list_all_datasets(self.app, api_token, api_secret)
@@ -82,10 +85,10 @@ class DatCoreDataManager(BaseDataManager):
     async def list_files_in_dataset(
         self,
         user_id: UserID,
-        product_name: ProductName,
+        product_name: ProductName,  # noqa: ARG002
         dataset_id: str,
         *,
-        expand_dirs: bool,
+        expand_dirs: bool,  # noqa: ARG002
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
@@ -96,7 +99,7 @@ class DatCoreDataManager(BaseDataManager):
     async def list_paths(
         self,
         user_id: UserID,
-        product_name: ProductName,
+        product_name: ProductName,  # noqa: ARG002
         *,
         file_filter: Path | None,
         cursor: GenericCursor | None,
@@ -146,7 +149,7 @@ class DatCoreDataManager(BaseDataManager):
                 cursor=cursor,
                 limit=limit,
             )
-        assert len(file_filter.parts) == 2
+        assert len(file_filter.parts) == _EXPECTED_FILE_FILTER_PARTS
 
         if _is_collection(file_filter):
             # this is a collection
@@ -185,7 +188,7 @@ class DatCoreDataManager(BaseDataManager):
 
         # if this is a dataset we might have the size directly
         with contextlib.suppress(ValidationError):
-            dataset_id = TypeAdapter(DatCoreDatasetName).validate_python(f"{path}")
+            dataset_id: DatCoreDatasetName = TypeAdapter(DatCoreDatasetName).validate_python(f"{path}")
             _, dataset_size = await datcore_adapter.get_dataset(
                 self.app,
                 api_key=api_token,
@@ -240,11 +243,11 @@ class DatCoreDataManager(BaseDataManager):
     async def list_files(
         self,
         user_id: UserID,
-        product_name: ProductName,
+        product_name: ProductName,  # noqa: ARG002
         *,
-        expand_dirs: bool,
-        uuid_filter: str,
-        project_id: ProjectID | None,
+        expand_dirs: bool,  # noqa: ARG002
+        uuid_filter: str,  # noqa: ARG002
+        project_id: ProjectID | None,  # noqa: ARG002
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
@@ -306,7 +309,7 @@ class DatCoreDataManager(BaseDataManager):
     async def abort_file_upload(self, user_id: UserID, file_id: StorageFileID) -> None:
         raise NotImplementedError
 
-    async def create_file_download_link(self, user_id: UserID, file_id: StorageFileID, link_type: LinkType) -> AnyUrl:
+    async def create_file_download_link(self, user_id: UserID, file_id: StorageFileID, link_type: LinkType) -> AnyUrl:  # noqa: ARG002
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         return await datcore_adapter.get_file_download_presigned_link(self.app, api_token, api_secret, file_id)
