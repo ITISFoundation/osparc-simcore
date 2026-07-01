@@ -78,9 +78,6 @@ class RabbitMQRPCClient(RabbitMQClientBase):
 
     @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
     async def _rebuild_rpc_surface(self) -> None:
-        # A reconnection drops the auto_delete queues backing the RPC result
-        # mailbox and the registered handlers. Rebuild the RPC on a fresh
-        # channel and re-register the handlers so requests keep flowing.
         await self._close_rpc_and_channel()
         await self._create_channel_and_rpc()
         assert self._rpc is not None  # nosec
