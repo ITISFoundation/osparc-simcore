@@ -85,8 +85,6 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             await self._rpc.register(namespaced_method_name, handler, auto_delete=True)
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
-        # Rebuild the RPC surface instead of restarting the whole service:
-        # reconnecting is cheaper, less disruptive and preserves in-flight work.
         self._healthy_state = False
         with log_context(
             _logger,
