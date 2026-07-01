@@ -3033,6 +3033,11 @@
           "callbacks_mapping": {
             "$ref": "#/components/schemas/CallbacksMapping"
           },
+          "tracing": {
+            "type": "boolean",
+            "title": "Tracing",
+            "default": false
+          },
           "service_key": {
             "type": "string",
             "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
