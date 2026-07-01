@@ -13,6 +13,7 @@ from servicelib.fastapi.tracing import (
 from servicelib.tracing import TracingConfig
 
 from .. import exceptions
+from .._locale_middleware import LocaleMiddleware
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
@@ -138,6 +139,9 @@ def create_app(  # noqa: C901
 
     if settings.API_SERVER_PROFILING:
         configure_profiler(app)
+
+    if settings.API_SERVER_LOCALIZED_MESSAGES_ENABLED:
+        app.add_middleware(LocaleMiddleware)
 
     exceptions.setup_exception_handlers(app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG)
 

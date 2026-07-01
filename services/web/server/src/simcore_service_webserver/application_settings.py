@@ -123,6 +123,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = False
 
+    WEBSERVER_LOCALIZED_MESSAGES_ENABLED: Annotated[
+        bool,
+        Field(
+            description="Enable server-side translation for user-facing messages.",
+        ),
+    ] = False
+
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
         Field(

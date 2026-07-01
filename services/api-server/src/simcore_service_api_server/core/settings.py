@@ -67,6 +67,13 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ] = False
 
+    API_SERVER_LOCALIZED_MESSAGES_ENABLED: Annotated[
+        bool,
+        Field(
+            description=("Enable server-side translation of user-facing messages."),
+        ),
+    ] = False
+
     # LOGGING
     LOG_LEVEL: Annotated[
         LogLevel,

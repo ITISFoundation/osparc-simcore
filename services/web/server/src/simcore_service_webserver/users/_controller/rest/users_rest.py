@@ -9,9 +9,6 @@ from models_library.api_schemas_webserver.users import (
     UsersSearch,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-)
 
 from simcore_service_webserver.application_settings_utils import (
     requires_dev_feature_enabled,
@@ -26,6 +23,7 @@ from ....products.models import Product
 from ....security.decorators import permission_required
 from ....session.api import get_session
 from ....utils_aiohttp import envelope_json_response
+from ....web_requests_validation import parse_request_body_as
 from ... import _users_service
 from ..._users_web import RegistrationSessionManager
 from ._rest_exceptions import handle_rest_requests_exceptions

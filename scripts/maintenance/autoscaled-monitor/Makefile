@@ -8,16 +8,8 @@ PYTHON_VERSION := $(or $(PYTHON), 3.13)
 # This client MUST talk to the cluster with the very same dask version.
 DASK_SIDECAR_REQUIREMENTS := ../../../services/dask-sidecar/requirements/_dask-distributed.txt
 
-
-.PHONY: hel%
-# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-hel%:
-	@echo "usage: make [target] ..."
-	@echo ""
-	@echo "Targets for '$(notdir $(CURDIR))':"
-	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
+REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 .venv:
 	# creating python virtual environment

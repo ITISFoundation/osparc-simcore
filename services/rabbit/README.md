@@ -8,4 +8,4 @@ Enabled plugins: Prometheus
 
 ## source
 
-[README](https://github.com/ITISFoundation/dockerfiles/rabbitmq/blob/master/README.md)
+[README](https://github.com/ITISFoundation/dockerfiles/blob/master/rabbitmq/README.md)

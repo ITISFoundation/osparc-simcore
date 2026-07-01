@@ -3,11 +3,7 @@
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 API_SERVER_DIR := $(abspath $(REPO_BASE_DIR)/services/api-server)
 
-
-.PHONY: help
-help: ## help on rule's targets
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 .env: .env-devel ## creates .env file from defaults in .env-devel
 	$(if $(wildcard $@), \
@@ -16,7 +12,7 @@ help: ## help on rule's targets
 
 
 .PHONY: install-dev
-install-dev: ## installs osparc client from folder for developent
+install-dev: ## installs osparc client from folder for development
 	uv pip install --editable $(API_SERVER_DIR)/client
 	uv pip install python-dotenv
 
@@ -34,7 +30,7 @@ outputs := $(objects:.py=.ipynb)
 	jupytext --to notebook $<
 
 .PHONY: notebooks
-notebooks: $(outputs) ## convert all py scripts inot notebook
+notebooks: $(outputs) ## convert all py scripts into notebook
 
 
 .PHONY: clean

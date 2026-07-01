@@ -8,9 +8,8 @@ VCS_URL          := $(shell git config --get remote.origin.url)
 VCS_REF          := $(shell git rev-parse --short HEAD)
 BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-.PHONY: help
-help: ## help on rule's targets
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 .PHONY: build
 build: ## builds a node image able to run puppeteer
