@@ -56,10 +56,12 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         # client in a consistent state (no double-close, no stale objects)
         rpc, self._rpc = self._rpc, None
         channel, self._channel = self._channel, None
-        if rpc is not None:
-            await rpc.close()
-        if channel is not None:
-            await channel.close()
+        try:
+            if rpc is not None:
+                await rpc.close()
+        finally:
+            if channel is not None:
+                await channel.close()
 
     async def _rpc_initialize(self) -> None:
         # NOTE: to show the connection name in the rabbitMQ UI see there
