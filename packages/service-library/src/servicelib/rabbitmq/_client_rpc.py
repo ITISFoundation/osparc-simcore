@@ -94,7 +94,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         with log_context(
             _logger,
             logging.WARNING,
-            msg=f"RabbitMQ reconnection detected ({self.client_name}): rebuilding RPC surface",
+            "RabbitMQ reconnection detected (%s): rebuilding RPC surface",
+            self.client_name,
         ):
             await self._rebuild_rpc_surface()
         self._healthy_state = True
