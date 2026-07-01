@@ -49,7 +49,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         # rely on default queue configuration that should be reasonable
         # if overriding parameters, make sure their combination makes sense
         # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
-        await self._rpc.initialize()
+        #
+        await self._rpc.initialize(robust=False)
 
     async def _close_rpc_and_channel(self) -> None:
         # NOTE: detach references first so a partial/failed close leaves the
