@@ -87,15 +87,17 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             await self._rpc.register(namespaced_method_name, handler, auto_delete=True)
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
-        self._healthy_state = False
         with log_context(
             _logger,
             logging.WARNING,
             "RabbitMQ reconnection detected (%s): rebuilding RPC surface",
             self.client_name,
         ):
-            await self._rebuild_rpc_surface()
-        self._healthy_state = True
+            try:
+                await self._rebuild_rpc_surface()
+            except Exception:
+                self._healthy_state = False
+                raise
 
     async def close(self) -> None:
         with log_context(
