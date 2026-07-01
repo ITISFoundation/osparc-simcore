@@ -189,3 +189,41 @@ def test_end_to_end_order_by_dict_to_sa_empty():
     """Empty list produces no clauses."""
     clauses = create_ordering_clauses([], _column_map())
     assert clauses == []
+
+
+def test_create_ordering_clauses_nulls_last_on_asc():
+    """Ascending order should place NULL values last."""
+    order_by: list[OrderByDict] = [{"field": "created_at", "direction": OrderDirection.ASC}]
+    clauses = create_ordering_clauses(order_by, _column_map())
+
+    query = sa.select(_test_table).order_by(*clauses)
+    compiled = str(query.compile(compile_kwargs={"literal_binds": True}))
+    assert "created_at ASC" in compiled
+    assert "NULLS LAST" in compiled
+
+
+def test_create_ordering_clauses_nulls_last_on_desc():
+    """Descending order should place NULL values last."""
+    order_by: list[OrderByDict] = [{"field": "modified", "direction": OrderDirection.DESC}]
+    clauses = create_ordering_clauses(order_by, _column_map())
+
+    query = sa.select(_test_table).order_by(*clauses)
+    compiled = str(query.compile(compile_kwargs={"literal_binds": True}))
+    assert "modified DESC" in compiled
+    assert "NULLS LAST" in compiled
+
+
+def test_create_ordering_clauses_nulls_last_multi_field():
+    """All fields should have NULLS LAST regardless of direction."""
+    order_by: list[OrderByDict] = [
+        {"field": "created_at", "direction": OrderDirection.DESC},
+        {"field": "name", "direction": OrderDirection.ASC},
+        {"field": "modified", "direction": OrderDirection.DESC},
+    ]
+    clauses = create_ordering_clauses(order_by, _column_map())
+
+    query = sa.select(_test_table).order_by(*clauses)
+    compiled = str(query.compile(compile_kwargs={"literal_binds": True}))
+
+    # Each field should have NULLS LAST
+    assert compiled.count("NULLS LAST") == 3
