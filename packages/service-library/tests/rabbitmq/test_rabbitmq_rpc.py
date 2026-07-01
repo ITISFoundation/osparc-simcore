@@ -2,7 +2,8 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from typing import Any, Final
 
 import pytest
@@ -15,6 +16,9 @@ from servicelib.rabbitmq import (
     RPCNotInitializedError,
 )
 from settings_library.rabbit import RabbitSettings
+from tenacity.asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -284,3 +288,28 @@ async def test_rpc_reconnection_without_registered_handlers(rpc_client: RabbitMQ
     await rpc_client._on_reconnect()  # noqa: SLF001
 
     assert rpc_client.healthy is True
+
+
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
+async def test_rpc_client_recovers_after_broker_disruption(
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
+    rabbitmq_rpc_client: Callable[..., Awaitable[RabbitMQRPCClient]],
+    namespace: RPCNamespace,
+):
+    # low heartbeat so the frozen broker is detected quickly and the robust
+    # connection triggers a reconnection once the container is resumed
+    rpc_client = await rabbitmq_rpc_client("pytest_rpc_reconnect_client", heartbeat=1)
+    await rpc_client.register_handler(namespace, add_me.__name__, add_me)
+    assert await rpc_client.request(namespace, add_me.__name__, x=1, y=3) == 4
+
+    async with paused_container("rabbit"):
+        # while the broker is frozen requests cannot be served
+        with pytest.raises(asyncio.TimeoutError):
+            await rpc_client.request(namespace, add_me.__name__, x=1, y=3, timeout_s=5)
+
+    # once the broker is back the client rebuilds its RPC surface (fresh channel
+    # + re-registered handlers) and keeps serving requests without a restart
+    async for attempt in AsyncRetrying(stop=stop_after_delay(60), wait=wait_fixed(1), reraise=True):
+        with attempt:
+            assert rpc_client.healthy is True
+            assert await rpc_client.request(namespace, add_me.__name__, x=4, y=5) == 9
