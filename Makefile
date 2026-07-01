@@ -580,11 +580,9 @@ push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) push-version
 
-# below BUILD_TARGET gets overwritten but is required when merging yaml files
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@export BUILD_TARGET=undefined; \
-	docker compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
+	@docker compose --file services/docker-compose-deploy.yml push
 
 pull-externals: ## pulls non-simcore external images defined in docker-compose.yml
 	# Pulling external images
