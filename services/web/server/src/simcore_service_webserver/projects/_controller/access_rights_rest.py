@@ -11,18 +11,15 @@ from models_library.api_schemas_webserver.projects_access_rights import (
 from models_library.basic_types import IDStr
 from models_library.generics import Envelope
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 from servicelib.logging_utils import log_context
 
-from ..._meta import api_version_prefix as VTAG
+from ..._meta import api_version_prefix as VTAG  # noqa: N812
 from ...application_settings_utils import requires_dev_feature_enabled
 from ...login import login_web
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
+from ...web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from .. import _groups_service
 from .._groups_service import ProjectGroupGet
 from ._rest_exceptions import handle_plugin_requests_exceptions

@@ -56,8 +56,8 @@ def _create_insert_query(
             version=version,
             pricing_plan_id=pricing_plan_id,
             product_name=product_name,
-            created=func.now(),
-            modified=func.now(),
+            created=func.now(),  # pylint: disable=not-callable
+            modified=func.now(),  # pylint: disable=not-callable
         )
         .returning(*_SELECTION_ARGS)
     )
@@ -111,7 +111,7 @@ async def list_(
 
     # Select total count from base_query
     subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
+    count_query = select(func.count()).select_from(subquery)  # pylint: disable=not-callable
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
@@ -163,7 +163,7 @@ async def update(
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
         **updates.model_dump(exclude_unset=True),
-        licensed_items.c.modified.name: func.now(),
+        licensed_items.c.modified.name: func.now(),  # pylint: disable=not-callable
     }
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -318,7 +318,7 @@ async def list_licensed_items(
 
     # Select total count from base_query
     subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
+    count_query = select(func.count()).select_from(subquery)  # pylint: disable=not-callable
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:

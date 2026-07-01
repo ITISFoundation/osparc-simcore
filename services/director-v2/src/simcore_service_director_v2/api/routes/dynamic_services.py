@@ -13,7 +13,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.users import UserID
@@ -30,10 +30,12 @@ from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
+from ...core.errors import ProjectNotFoundError
 from ...modules import projects_networks
 from ...modules.catalog import CatalogClient
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
+from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.docker_api import is_sidecar_running
@@ -268,6 +270,7 @@ async def update_projects_networks(
         ProjectsNetworksRepository, Depends(get_repository(ProjectsNetworksRepository))
     ],
     projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_nodes_repository: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
@@ -276,6 +279,7 @@ async def update_projects_networks(
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,
+        projects_nodes_repository=projects_nodes_repository,
         scheduler=scheduler,
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
@@ -299,21 +303,23 @@ async def get_project_inactivity(
     max_inactivity_seconds: NonNegativeFloat,
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_nodes_repository: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
 ) -> GetProjectInactivityResponse:
     # A project is considered inactive when all it's services are inactive for
     # more than `max_inactivity_seconds`.
     # A `service` which does not support the inactivity callback is considered
     # inactive.
 
-    project: ProjectAtDB = await projects_repository.get_project(project_id)
+    if not await projects_repository.exists(project_id):
+        raise ProjectNotFoundError(project_id=project_id)
 
     inactivity_responses: list[ActivityInfoOrNone] = await logged_gather(
         *[
-            scheduler.get_service_activity(NodeID(node_id))
-            for node_id in project.workbench
+            scheduler.get_service_activity(node_id)
+            for node_id in await projects_nodes_repository.list_nodes_ids(project_id)
             # NOTE: only new style services expose service inactivity information
             # director-v2 only tracks internally new style services
-            if scheduler.is_service_tracked(NodeID(node_id))
+            if scheduler.is_service_tracked(node_id)
         ],
         max_concurrency=_MAX_PARALLELISM,
     )
