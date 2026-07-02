@@ -126,8 +126,10 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
             async with self._surface_lock:
-                await self._close_channel_and_rpc()
-                await self._close_connection()
+                try:
+                    await self._close_channel_and_rpc()
+                finally:
+                    await self._close_connection()
 
     async def request(
         self,
@@ -148,12 +150,14 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             `namespaced_method_name`
         """
 
-        if not self._rpc:
+        # snapshot the RPC reference first: a concurrent reconnection rebuild may
+        # swap self._rpc to None, so we validate the local reference (not
+        # self._rpc) to raise a clean RPCNotInitializedError instead of an
+        # AttributeError, and bind the same RPC for the whole call
+        rpc = self._rpc
+        if rpc is None:
             raise RPCNotInitializedError
 
-        # snapshot the RPC reference: a concurrent reconnection rebuild may swap
-        # self._rpc, so we bind the current one for the whole call
-        rpc = self._rpc
         namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
         try:
             queue_expiration_timeout = timeout_s
