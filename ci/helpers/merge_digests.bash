@@ -23,24 +23,29 @@ readonly amd64_dir="$1"
 readonly arm64_dir="$2"
 readonly output_file="$3"
 
+tmp_dir="$(mktemp -d)"
+readonly tmp_dir
+trap 'rm -rf "${tmp_dir}"' EXIT
+
 merge_metadata_files() {
     local dir="$1"
+    local out="$2"
     # shellcheck disable=SC2206
     local files=($dir/digests-*.json)
-    jq -s 'reduce .[] as $item ({}; . * $item)' "${files[@]}"
+    jq -s 'reduce .[] as $item ({}; . * $item)' "${files[@]}" > "${out}"
 }
 
-amd64_json="$(merge_metadata_files "${amd64_dir}")"
-readonly amd64_json
-arm64_json="$(merge_metadata_files "${arm64_dir}")"
-readonly arm64_json
+merge_metadata_files "${amd64_dir}" "${tmp_dir}/amd64.json"
+merge_metadata_files "${arm64_dir}" "${tmp_dir}/arm64.json"
 
+# use --slurpfile (reads file contents internally) instead of --argjson (passes content
+# via argv) since the merged bake metadata can be large enough to exceed ARG_MAX
 jq -n \
-    --argjson amd64 "${amd64_json}" \
-    --argjson arm64 "${arm64_json}" \
-    '($amd64 | keys) as $services
+    --slurpfile amd64 "${tmp_dir}/amd64.json" \
+    --slurpfile arm64 "${tmp_dir}/arm64.json" \
+    '($amd64[0] | keys) as $services
      | reduce $services[] as $s
-         ({}; . + {($s): {amd64: $amd64[$s]."containerimage.digest", arm64: $arm64[$s]."containerimage.digest"}})' \
+         ({}; . + {($s): {amd64: $amd64[0][$s]."containerimage.digest", arm64: $arm64[0][$s]."containerimage.digest"}})' \
     > "${output_file}"
 
 log_info "merged digests written to ${output_file}:"
