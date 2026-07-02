@@ -7,7 +7,7 @@ from common_library.logging.logging_utils_filtering import LoggerName, MessageSu
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.basic_types import LogLevel
+from models_library.basic_types import LogLevel, VersionTag
 from models_library.services_resources import ResourcesDict, ResourceValue
 from pydantic import (
     AliasChoices,
@@ -24,6 +24,8 @@ from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+
+from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 _logger = logging.getLogger(__name__)
 
@@ -50,6 +52,10 @@ _DEFAULT_SERVICE_SPECIFICATIONS: Final[ServiceSpecifications] = ServiceSpecifica
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
+    API_VERSION: str = API_VERSION
+    APP_NAME: str = APP_NAME
+    API_VTAG: VersionTag = API_VTAG
+
     LOG_LEVEL: Annotated[
         LogLevel,
         Field(
@@ -60,8 +66,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool,
         Field(
             validation_alias=AliasChoices("CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
-            description="Enables local development log format. "
-            "WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development log format. "
+                "WARNING: make sure it is disabled if you want to have structured logs!"
+            ),
         ),
     ] = False
     CATALOG_LOG_FILTER_MAPPING: Annotated[
@@ -69,8 +77,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
-            "to a list of log message patterns that should be filtered out.",
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
+            ),
         ),
     ] = DEFAULT_FACTORY
 
