@@ -220,7 +220,6 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         access_layer_repo = AccessLayerRepository.instance(get_db_engine(self.app))
         if project_id is not None:
-            # explicit read-access check for the targeted project (raises 403)
             project_access_rights = await access_layer_repo.get_project_access_rights(
                 user_id=user_id, project_id=project_id
             )
