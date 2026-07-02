@@ -54,7 +54,6 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
       this.__updateTabName();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        osparc.utils.LanguageManager.applyStoredLocale();
         this.__updateMetaTags();
         this.__setDeviceSpecificIcons();
       }
@@ -515,6 +514,15 @@ qx.Class.define("osparc.Application", {
                   case "preferredWalletId":
                     if (value) {
                       preferencesSettings.setPreferredWalletId(parseInt(value));
+                    }
+                    break;
+                  case "userLocale":
+                    if (osparc.product.Utils.isLocaleEnabled()) {
+                      if (value) {
+                        preferencesSettings.setUserLocale(value);
+                      } else {
+                        osparc.utils.LanguageManager.setDefaultLocale();
+                      }
                     }
                     break;
                   default:

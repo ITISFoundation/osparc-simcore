@@ -145,6 +145,14 @@ qx.Class.define("osparc.Preferences", {
       check: "Array",
       event: "changeBillingCenterUsageColumnOrder",
       apply: "__patchPreference"
+    },
+
+    userLocale: {
+      nullable: true,
+      init: null,
+      check: "String",
+      event: "changeUserLocale",
+      apply: "__applyUserLocale"
     }
   },
 
@@ -216,6 +224,16 @@ qx.Class.define("osparc.Preferences", {
         return;
       }
       this.self().patchPreference(propName, value);
+    },
+
+    __applyUserLocale: function(value, old, propName) {
+      if (value === old) {
+        return;
+      }
+      osparc.utils.LanguageManager.applyLocale(value);
+      if (osparc.auth.Manager.getInstance().isLoggedIn()) {
+        this.self().patchPreference(propName, value);
+      }
     }
   }
 });

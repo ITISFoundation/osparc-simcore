@@ -13,15 +13,12 @@ qx.Class.define("osparc.utils.LanguageManager", {
   type: "static",
 
   statics: {
-    LOCALE_KEY: "osparc.locale",
-
     // Display names for the locales we want to expose
     __localeLabels: {
       "en_US": "English",
       "es_ES": "Español [Spanish]",
       "zh": "中文 [Chinese]",
     },
-
 
     /**
      * Returns the locales for which translations were compiled (see compile.json).
@@ -40,26 +37,52 @@ qx.Class.define("osparc.utils.LanguageManager", {
     },
 
     getStoredLocale: function() {
-      return osparc.utils.Utils.localCache.getLocalStorageItem(this.LOCALE_KEY);
+      return osparc.Preferences.getInstance().getUserLocale();
     },
 
     setLocale: function(localeCode) {
       if (!this.getAvailableLocales().includes(localeCode)) {
         return;
       }
-      osparc.utils.Utils.localCache.setLocalStorageItem(this.LOCALE_KEY, localeCode);
-      qx.locale.Manager.getInstance().setLocale(localeCode);
+      osparc.Preferences.getInstance().setUserLocale(localeCode);
+    },
+
+    setDefaultLocale: function() {
+      const browserLocale = this.__getBrowserLocale();
+      this.setLocale(browserLocale);
     },
 
     /**
-     * Applies the locale stored in localStorage (if any and still available).
-     * Meant to be called early during application startup.
+     * Resolves the best available locale for the user's browser language,
+     * falling back to English ("en_US") when there is no match.
+     * @return {String} e.g. "es_ES"
      */
-    applyStoredLocale: function() {
-      const storedLocale = this.getStoredLocale();
-      if (storedLocale && this.getAvailableLocales().includes(storedLocale)) {
-        qx.locale.Manager.getInstance().setLocale(storedLocale);
+    __getBrowserLocale: function() {
+      const available = this.getAvailableLocales();
+      const fallback = available.includes("en_US") ? "en_US" : available[0];
+
+      const language = qx.bom.client.Locale.getLocale(); // e.g. "es"
+      if (!language) {
+        return fallback;
       }
-    }
+      const variant = qx.bom.client.Locale.getVariant(); // e.g. "ES"
+      const full = variant ? `${language}_${variant}` : language; // e.g. "es_ES"
+      // exact match (e.g. "es_ES") or language-only match (e.g. "zh")
+      if (available.includes(full)) {
+        return full;
+      }
+      if (available.includes(language)) {
+        return language;
+      }
+      // match by language prefix (e.g. "es" -> "es_ES")
+      const byPrefix = available.find(localeCode => localeCode.split("_")[0] === language);
+      return byPrefix || fallback;
+    },
+
+    applyLocale: function(localeCode) {
+      if (localeCode && this.getAvailableLocales().includes(localeCode)) {
+        qx.locale.Manager.getInstance().setLocale(localeCode);
+      }
+    },
   }
 });
