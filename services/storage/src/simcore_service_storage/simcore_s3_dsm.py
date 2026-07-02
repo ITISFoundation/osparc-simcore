@@ -247,8 +247,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 cursor=cursor,
             )
         else:
-            # NOTE: files are DB-based. The accessible-project set is filtered in the
-            # DB via a subquery instead of being materialised into a Python list.
+            # NOTE: files are DB-based.
             (
                 paths_metadata,
                 next_cursor,
