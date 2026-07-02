@@ -136,10 +136,6 @@ def my_shared_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
 
 
 def readable_project_ids_stmt(user_id: UserID, product_name: ProductName) -> sa.sql.CompoundSelect:
-    """SELECT of the uuids of all projects the user can read (OWNED or SHARED).
-
-    Meant to be embedded as a subquery (e.g. in an ``IN`` clause)
-    """
     user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
 
     private_access_exists = sa.exists(
