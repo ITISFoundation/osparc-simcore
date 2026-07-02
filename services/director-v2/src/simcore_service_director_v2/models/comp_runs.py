@@ -4,6 +4,7 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
     TypedDict,
 )
 
+from models_library.api_schemas_directorv2.encryption import FileIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -24,9 +25,6 @@ class ProjectMetadataDict(TypedDict, total=False):
     root_parent_project_name: str
     root_parent_node_id: NodeID
     root_parent_node_name: str
-
-
-type FileIDStr = str  # client-chosen file identifier used for HKDF key derivation
 
 
 class JobEncryptionRunMetadataDict(TypedDict):

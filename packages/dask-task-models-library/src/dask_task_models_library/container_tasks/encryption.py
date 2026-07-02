@@ -3,6 +3,7 @@ from typing import Annotated, Final
 
 from models_library.api_schemas_directorv2.encryption import (
     AES_256_GCM_KEY_SIZE_BYTES,
+    FileIDStr,
     JobEncryptionContextMetadata,
 )
 from models_library.projects_nodes_io import NodeID
@@ -25,7 +26,7 @@ _RootKeyType = Annotated[
 class JobEncryptionContext(BaseModel):
     root_key: _RootKeyType
     input_port_to_file_id: Annotated[
-        dict[str, str],
+        dict[str, FileIDStr],
         Field(
             description=(
                 "Maps each encrypted input port key to the file_id the client used to derive its key "
@@ -79,7 +80,7 @@ class JobEncryptionContext(BaseModel):
 class TransferEncryptionSettings(BaseModel):
     root_key: _RootKeyType
     file_id: Annotated[
-        str,
+        FileIDStr,
         Field(description="Per-file identifier mixed into key derivation"),
     ]
 

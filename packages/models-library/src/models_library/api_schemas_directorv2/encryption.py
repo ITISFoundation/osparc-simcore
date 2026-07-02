@@ -10,6 +10,8 @@ from ..projects_nodes_io import NodeID
 # Mirrors dask_task_models_library.container_tasks.encryption (simcore-aesgcm-stream-v1).
 AES_256_GCM_KEY_SIZE_BYTES: Final[int] = 32  # AES-256 root key length
 
+type FileIDStr = str  # client-chosen file identifier mixed into HKDF key derivation
+
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 _NODE_ID_EXAMPLE: Final[str] = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
@@ -20,7 +22,7 @@ class JobEncryptionContextMetadata(BaseModel):
         Field(description="base64-encoded 32-byte root key shared by all tasks of the job"),
     ]
     input_port_to_file_id: Annotated[
-        dict[NodeID, dict[str, str]],
+        dict[NodeID, dict[str, FileIDStr]],
         Field(
             default_factory=dict,
             description=(
