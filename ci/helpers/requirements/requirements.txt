@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/requirements.txt requirements/requirements.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in

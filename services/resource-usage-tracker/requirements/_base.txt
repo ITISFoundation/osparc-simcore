@@ -21,7 +21,7 @@ aiofiles==23.2.1
     #   aioboto3
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
