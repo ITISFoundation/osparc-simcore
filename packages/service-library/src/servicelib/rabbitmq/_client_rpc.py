@@ -107,6 +107,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             except Exception:
                 self._healthy_state = False
                 raise
+            self._healthy_state = True
 
     async def close(self) -> None:
         with log_context(
