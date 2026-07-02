@@ -150,14 +150,11 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             `namespaced_method_name`
         """
 
-        # snapshot the RPC reference first: a concurrent reconnection rebuild may
-        # swap self._rpc to None, so we validate the local reference (not
-        # self._rpc) to raise a clean RPCNotInitializedError instead of an
-        # AttributeError, and bind the same RPC for the whole call
+        # snapshot the RPC reference: a concurrent reconnection rebuild may swap
+        # self._rpc, so we bind the current one for the whole call
         rpc = self._rpc
         if rpc is None:
             raise RPCNotInitializedError
-
         namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
         try:
             queue_expiration_timeout = timeout_s
