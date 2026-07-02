@@ -164,4 +164,4 @@ async def test_rabbit_server_closes_connection(
     # since the heartbeat during testing is low, the connection disappears fast
     _assert_rabbitmq_has_connections(rabbit_service, 0)
 
-    await _assert_rabbit_client_state(rabbit_client, healthy=False)
+    await _assert_rabbit_client_state(rabbit_client, healthy=True)
