@@ -36,15 +36,14 @@ from settings_library.resource_usage_tracker import (
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+from ..modules.user_services_tracing import UserServicesTracingSettings
+
 
 class ResourceTrackingSettings(BaseApplicationSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: Annotated[
         timedelta,
-        Field(
-            default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
-            description="each time the status of the service is propagated",
-        ),
-    ]
+        Field(description="each time the status of the service is propagated"),
+    ] = DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL
 
     _validate_resource_tracking_heartbeat_interval = validate_numeric_string_as_timedelta(
         "RESOURCE_TRACKING_HEARTBEAT_INTERVAL"
@@ -204,6 +203,22 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="settings for opentelemetry tracing",
         ),
     ]
+
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG: Annotated[
+        UserServicesTracingSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+
+    DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN: Annotated[
+        bool,
+        Field(
+            description=(
+                "per-service opt-in flag for OTEL trace collection "
+                "(set by director-v2 from simcore.service.tracing label) "
+                "used together with DYNAMIC_SIDECAR_TRACING to determine if the OTEL Collector should "
+                "be injected and run for user services"
+            )
+        ),
+    ] = False
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
