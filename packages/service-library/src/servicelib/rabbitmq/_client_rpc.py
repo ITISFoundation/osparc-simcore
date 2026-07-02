@@ -46,7 +46,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
         #
         connection_name = f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
-        url = f"{self.settings.dsn}?name={connection_name}"
+        url = f"{self.settings.dsn}?name={connection_name}&heartbeat={self.heartbeat}"
         self._connection = await aio_pika.connect_robust(
             url,
             client_properties={"connection_name": connection_name},
