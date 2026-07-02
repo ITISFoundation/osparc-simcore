@@ -142,7 +142,6 @@ def readable_project_ids_stmt(user_id: UserID, product_name: ProductName) -> sa.
     potentially huge accessible-project set is filtered in the DB instead of
     being materialised into a Python list.
     """
-    # NOTE: resolved as a scalar subquery so no extra round-trip / Python list is needed
     user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
 
     # Use EXISTS instead of JOIN with GROUP BY + jsonb_object_agg subquery.
