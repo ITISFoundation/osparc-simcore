@@ -20,6 +20,8 @@ def create_ordering_clauses(
 ) -> list[Any]:
     """Converts a list of ordering dicts into SQLAlchemy ordering clauses.
 
+    NULL values are always placed last, regardless of sort direction.
+
     Raises:
         ValueError: If a field in order_by is not found in column_map
     """
@@ -34,9 +36,9 @@ def create_ordering_clauses(
             raise ValueError(msg)
 
         if direction == OrderDirection.DESC:
-            clauses.append(sa.desc(column))
+            clauses.append(sa.desc(column).nullslast())
         else:
-            clauses.append(sa.asc(column))
+            clauses.append(sa.asc(column).nullslast())
     return clauses
 
 
