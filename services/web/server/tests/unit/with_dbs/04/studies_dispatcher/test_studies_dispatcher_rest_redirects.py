@@ -211,7 +211,7 @@ async def test_dispatch_study_anonymously(
 
     assert client.app
     mock_client_director_v2_func = mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
+        "simcore_service_webserver.studies_dispatcher._projects.create_or_update_pipeline",
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
@@ -276,7 +276,7 @@ async def test_dispatch_logged_in_user(
 ):
     assert client.app
     mock_client_director_v2_pipeline_update = mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
+        "simcore_service_webserver.studies_dispatcher._projects.create_or_update_pipeline",
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
