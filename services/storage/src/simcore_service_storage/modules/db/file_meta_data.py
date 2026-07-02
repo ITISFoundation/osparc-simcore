@@ -215,7 +215,6 @@ class FileMetaDataRepository(BaseRepository):
         limit: int,
         is_partial_prefix: bool,
     ) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
-        # only list files belonging to projects the user can read
         readable_projects_filter = file_meta_data.c.project_id.in_(
             readable_project_ids_stmt(user_id=user_id, product_name=product_name)
         )
