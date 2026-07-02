@@ -342,8 +342,6 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     dask_client: DaskClient,
 ):
     def fct_that_raise_cancellation_error() -> NoReturn:
-        import asyncio  # noqa: PLC0415
-
         cancel_msg = "task was cancelled, but dask does not care..."
         raise asyncio.CancelledError(cancel_msg)
 
