@@ -67,14 +67,14 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 _logger = logging.getLogger(__name__)
 
 
-async def _best_effort_cleanup(
+async def _cleanup_failed_project(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent: str,
     product_name: ProductName,
 ) -> None:
-    with suppress(Exception), log_context(_logger, logging.INFO, f"best-effort cleanup {project_uuid=}"):
+    with suppress(Exception), log_context(_logger, logging.INFO, f"cleanup failed project {project_uuid=}"):
         await _projects_service.submit_delete_project_task(
             app=app,
             project_uuid=project_uuid,
@@ -100,7 +100,7 @@ async def _cleanup_project_on_error(
     simcore_user_agent: str,
     product_name: ProductName,
 ) -> AsyncIterator[_ProjectCleanupContext]:
-    """Runs a best-effort cleanup if the wrapped block raises *after* the project
+    """Cleans up the project if the wrapped block raises *after* the project
     row has been inserted (signalled via ``ctx.mark_inserted(...)``).
 
     NOTE: ``asyncio.CancelledError`` is a ``BaseException`` (not ``Exception``) and
@@ -115,11 +115,11 @@ async def _cleanup_project_on_error(
             user_id,
         )
         if ctx.project_uuid is not None:
-            await _best_effort_cleanup(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
+            await _cleanup_failed_project(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
         raise
     except Exception:
         if ctx.project_uuid is not None:
-            await _best_effort_cleanup(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
+            await _cleanup_failed_project(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
         raise
 
 
@@ -385,7 +385,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     copy_file_coro = None
     project_nodes = None
     # Any failure raised after the project row has been inserted (signalled via
-    # ``cleanup_ctx.mark_inserted(...)``) triggers a centralized best-effort cleanup,
+    # ``cleanup_ctx.mark_inserted(...)``) triggers a centralized cleanup,
     # so we never leave a half-created project behind.
     async with _cleanup_project_on_error(
         app,
