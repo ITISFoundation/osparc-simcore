@@ -1,6 +1,8 @@
-"""Tests for simcore_service_webserver.login._twofa_service.send_sms_code translation"""
-
-# pylint:disable=redefined-outer-name
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -65,7 +67,7 @@ async def test_send_sms_code_translates_body_using_resolved_locale(mock_twilio_c
     assert body == translated_msgid.format(first_name=_FIRST_NAME, code=_CODE)
 
 
-async def test_send_sms_code_forwards_locale_and_user_id_to_resolver():
+async def test_send_sms_code_forwards_locale_and_user_id_to_resolver(mock_twilio_client: MagicMock):
     """send_sms_code delegates locale resolution, passing through the caller's locale/user_id."""
     mock_resolve = await _send_sms_code(locale=None, user_id=42)
 
@@ -74,6 +76,7 @@ async def test_send_sms_code_forwards_locale_and_user_id_to_resolver():
     assert kwargs["user_id"] == 42
     assert kwargs["locale"] is None
     assert kwargs["product_name"] == "osparc"
+    mock_twilio_client.messages.create.assert_called_once()
 
 
 async def test_send_sms_code_falls_back_to_english_by_default(mock_twilio_client: MagicMock):
