@@ -3,10 +3,6 @@ import logging
 from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 
 from ..._meta import API_VTAG as VTAG
 from ...exception_handling import (
@@ -18,6 +14,7 @@ from ...exception_handling import (
 from ...login.decorators import get_user_id, login_required
 from ...products import products_web
 from ...security.decorators import permission_required
+from ...web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from .. import _trash_service
 from ..exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ._rest_exceptions import handle_plugin_requests_exceptions
@@ -30,7 +27,7 @@ _TRASH_ERRORS: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again"
+            "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again"  # noqa: E501
         ),
     ),
     ProjectStoppingError: HttpErrorInfo(

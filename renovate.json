@@ -1,0 +1,98 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboardApproval"
+  ],
+  "dependencyDashboard": true,
+  "prCreation": "approval",
+  "platformAutomerge": false,
+  "automerge": false,
+  "commitMessageSuffix": " [Renovate]",
+  "vulnerabilityAlerts": {
+    "dependencyDashboardApproval": true
+  },
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "schedule": [
+    "before 3am on monday"
+  ],
+  "timezone": "Europe/Zurich",
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/(^|/)requirements/_[^/]+\\.txt$/",
+      "/(^|/)api/tests/requirements\\.txt$/",
+      "/(^|/)ci/helpers/requirements/requirements\\.txt$/",
+      "/(^|/)tests/e2e/requirements/requirements\\.txt$/",
+      "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
+    ]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 3am on the first day of the month"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Shared packages: upgrade faster (smaller blast radius)",
+      "matchFileNames": [
+        "packages/**/requirements/**"
+      ],
+      "groupName": "packages deps",
+      "schedule": [
+        "before 3am on monday"
+      ],
+      "minimumReleaseAge": "3 days",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "description": "Services: upgrade slower / more conservative",
+      "matchFileNames": [
+        "services/**/requirements/**"
+      ],
+      "groupName": "services deps",
+      "schedule": [
+        "before 3am on the first day of the month"
+      ],
+      "minimumReleaseAge": "14 days",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "description": "These requirements.txt are pip-compile outputs; let pip-compile own them (avoid double updates)",
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "api/tests/requirements.txt",
+        "ci/helpers/requirements/requirements.txt",
+        "tests/e2e/requirements/requirements.txt",
+        "tests/environment-setup/requirements/requirements.txt"
+      ],
+      "enabled": false
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "groupName": "docker images",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "matchDatasources": [
+        "pypi"
+      ],
+      "matchPackageNames": [
+        "simcore-sdk",
+        "simcore-service-library"
+      ],
+      "enabled": false
+    }
+  ]
+}

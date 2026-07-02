@@ -8,10 +8,6 @@ from models_library.api_schemas_webserver.licensed_items_purchases import (
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -20,6 +16,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.models import WalletsPathParams
+from ..web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from . import _licensed_items_purchases_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (

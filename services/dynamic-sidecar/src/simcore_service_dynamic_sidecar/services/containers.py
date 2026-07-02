@@ -28,6 +28,7 @@ from ..core.validation import (
 )
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.user_services_tracing import is_user_services_tracing_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ async def create_compose_spec(
             settings=settings,
             compose_file_content=containers_compose_spec.docker_compose_yaml,
             mounted_volumes=mounted_volumes,
+            is_user_services_tracing_enabled=is_user_services_tracing_enabled(app),
         )
         shared_store.compose_spec = compose_spec_validation.compose_spec
         shared_store.container_names = compose_spec_validation.current_container_names

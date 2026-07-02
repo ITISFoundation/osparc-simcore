@@ -78,6 +78,12 @@ test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests 
 test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 
 
+# ---------------------------------------------------------------------------
+# i18n — extract translatable strings for this service
+# ---------------------------------------------------------------------------
+include $(REPO_BASE_DIR)/scripts/makefiles/i18n.mk
+
+
 #
 # DOCKER CONTAINERS TASKS
 #

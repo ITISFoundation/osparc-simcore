@@ -16,4 +16,5 @@ VOLUMES_TO_CREATE: Final[list[str]] = [
     "workspace",
     "work",
     "shared-store",
+    "traces",
 ]

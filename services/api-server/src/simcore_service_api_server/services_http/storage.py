@@ -51,7 +51,7 @@ from ..models.domain.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
-
+_EXPECTED_S3_PATH_PARTS: Final[int] = 3
 
 _logger = logging.getLogger(__name__)
 
@@ -214,7 +214,7 @@ class StorageApi(BaseServiceClientApi):
                     future_enveloped = Envelope[FileUploadCompleteFutureResponse].model_validate_json(resp.text)
                     assert future_enveloped.data  # nosec
                     if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                        raise TryAgain()
+                        raise TryAgain  # noqa: TRY301
 
                     assert future_enveloped.data.e_tag  # nosec
                     _logger.debug(
@@ -224,8 +224,8 @@ class StorageApi(BaseServiceClientApi):
                     )
                     return future_enveloped.data.e_tag
         except TryAgain as exc:
-            raise BackendTimeoutError() from exc
-        raise BackendTimeoutError()
+            raise BackendTimeoutError from exc
+        raise BackendTimeoutError
 
     @_exception_mapper(http_status_map={})
     async def abort_file_upload(self, *, user_id: int, file: File) -> None:
@@ -237,7 +237,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper(http_status_map={})
     async def create_soft_link(self, *, user_id: int, target_s3_path: str, as_file_id: UUID) -> File:
-        assert len(target_s3_path.split("/")) == 3  # nosec
+        assert len(target_s3_path.split("/")) == _EXPECTED_S3_PATH_PARTS  # nosec
 
         # define api-prefixed object-path for link
         file_id: str = f"{as_file_id}"
