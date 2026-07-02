@@ -9,9 +9,12 @@ Currently includes two parts:
 
 import asyncio
 import logging
+from typing import Final
 
 import twilio.rest  # type: ignore[import-untyped]
 from aiohttp import web
+from common_library.gettext_support import SupportedLocale, get_translator
+from common_library.user_messages import user_message
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -21,6 +24,7 @@ from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
 
+from ..locale import resolve_effective_locale
 from ..notifications import notifications_service
 from ..notifications.models import EmailContact
 from ..redis import get_redis_validation_code_client
@@ -90,8 +94,16 @@ class SMSError(RuntimeError):
     pass
 
 
+_SMS_CODE_MESSAGE_FORMAT: Final = user_message(
+    # @TRANSLATOR Must be VERY SHORT to fit in an SMS
+    "Dear {first_name}, your verification code is {code}",
+    _version=1,
+)
+
+
 @log_decorator(log, level=logging.DEBUG)
 async def send_sms_code(
+    app: web.Application,
     *,
     phone_number: str,
     code: str,
@@ -99,13 +111,22 @@ async def send_sms_code(
     twilio_messaging_sid: str,
     twilio_alpha_numeric_sender: str,
     first_name: str,
+    product_name: ProductName,
     user_id: UserID | None = None,
+    locale: SupportedLocale | None = None,
 ):
     try:
+        resolved_locale = await resolve_effective_locale(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            locale=locale,
+        )
+        translator = get_translator(resolved_locale)
         create_kwargs = {
             "messaging_service_sid": twilio_messaging_sid,
             "to": phone_number,
-            "body": f"Dear {first_name}, your verification code is {code}",
+            "body": translator.gettext(_SMS_CODE_MESSAGE_FORMAT).format(first_name=first_name, code=code),
         }
         if twilio_auth.is_alphanumeric_supported(phone_number):
             create_kwargs["from_"] = twilio_alpha_numeric_sender
@@ -158,6 +179,7 @@ async def send_email_code(
     product_name: ProductName,
     host: str,
     user_id: UserID | None = None,
+    locale: SupportedLocale | None = None,
 ):
     try:
         await notifications_service.send_message_from_template(
@@ -181,6 +203,7 @@ async def send_email_code(
                 "host": host,
                 "code": code,
             },
+            locale=locale,
         )
     except Exception as exc:
         raise SendingVerificationEmailError(

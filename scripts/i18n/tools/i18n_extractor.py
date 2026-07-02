@@ -1,6 +1,8 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
+#   "Babel>=2.12.0",
+#   "Jinja2>=3.0.0",
 #   "polib>=1.2.0",
 #   "rich>=13.0.0",
 #   "typer>=0.12.0",
@@ -15,6 +17,11 @@ Two-step .pot extractor:
                      Handles Python, C++, and MFC .rc files. Produces a
                      standard .pot with #: filepath:lineno references.
 
+    Step 1b — jinja: run Babel over Jinja2 templates ({% trans %} blocks and
+                     {{ gettext(...) }} calls). xgettext cannot parse Jinja2,
+                     so Babel's jinja2.ext.babel_extract is used. Produces a
+                     .pot with the same #: filepath:lineno references.
+
     Step 2 — enrich: for each entry, read #: references to load
                      surrounding source lines (CTX-SNIPPET) and write a
              extractor-owned snippet freshness marker (CTX-SNIPPET-VERSION).
@@ -22,6 +29,7 @@ Two-step .pot extractor:
 Usage:
     uv run tools/i18n_extractor.py extract --src src/ --out messages.pot
     uv run tools/i18n_extractor.py xgettext --src src/ --langs python,cpp --out messages.pot
+    uv run tools/i18n_extractor.py jinja --src src/templates --out templates.pot
     uv run tools/i18n_extractor.py enrich --pot messages.pot
     uv run tools/i18n_extractor.py validate --src src/
 """
@@ -117,6 +125,87 @@ def run_xgettext(src_files: list[Path], out_pot: Path) -> bool:
             return False
         console.print(f"  [xgettext] {lang}: {len(files)} file(s)")
 
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Step 1b: Babel extraction for Jinja2 templates
+# ---------------------------------------------------------------------------
+#
+# xgettext cannot parse Jinja2 ({% trans %} blocks, {{ gettext(...) }} calls),
+# so Babel's jinja2.ext.babel_extract is used for *.j2 templates. The output is
+# a polib .pot with the same #: filepath:lineno references that `enrich` and
+# `msgcat` (in the Makefile `merge` step) consume, so it slots into the existing
+# pipeline unchanged.
+
+_JINJA_METHOD_MAP = [("**.j2", "jinja2.ext.babel_extract")]
+# i18n extension is auto-loaded by babel_extract; encoding pinned to UTF-8.
+_JINJA_OPTIONS_MAP = {"**.j2": {"encoding": "utf-8", "silent": "false"}}
+
+
+def run_babel_jinja(src_dir: Path, out_pot: Path) -> bool:
+    """Extract translatable strings from Jinja2 templates under *src_dir*.
+
+    Returns True on success. Occurrence paths are recorded relative to the
+    given *src_dir* prefix so they resolve from the repo root (matching the
+    xgettext step), which lets `enrich` locate the source snippets.
+    """
+    from babel.messages.extract import extract_from_dir  # noqa: PLC0415
+
+    # (msgid, msgid_plural, context) -> POEntry, so repeated strings merge
+    # into one entry carrying multiple #: occurrences.
+    entries: dict[tuple[str, str | None, str | None], polib.POEntry] = {}
+
+    for filename, lineno, message, _comments, context in extract_from_dir(
+        dirname=src_dir,
+        method_map=_JINJA_METHOD_MAP,
+        options_map=_JINJA_OPTIONS_MAP,
+    ):
+        if isinstance(message, tuple | list):
+            msgid, msgid_plural = message[0], message[1]
+        else:
+            msgid, msgid_plural = message, None
+
+        if not msgid:
+            continue
+
+        msgctxt = context or None
+        key = (msgid, msgid_plural, msgctxt)
+        occurrence = (f"{src_dir}/{filename}", str(lineno))
+
+        if key in entries:
+            entries[key].occurrences.append(occurrence)
+            continue
+
+        if msgid_plural:
+            entry = polib.POEntry(
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                msgstr_plural={0: "", 1: ""},
+                msgctxt=msgctxt,
+                occurrences=[occurrence],
+            )
+        else:
+            entry = polib.POEntry(
+                msgid=msgid,
+                msgstr="",
+                msgctxt=msgctxt,
+                occurrences=[occurrence],
+            )
+        entries[key] = entry
+
+    pot = polib.POFile(wrapwidth=0)
+    pot.metadata = {
+        "Project-Id-Version": "osparc-simcore",
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Transfer-Encoding": "8bit",
+    }
+    for entry in entries.values():
+        pot.append(entry)
+
+    out_pot.parent.mkdir(parents=True, exist_ok=True)
+    pot.save(str(out_pot))
+    console.print(f"  [jinja] {len(pot)} entry/ies -> {out_pot}")
     return True
 
 
@@ -411,6 +500,20 @@ def xgettext_cmd(
 ) -> None:
     """Run only xgettext extraction."""
     run_xgettext_cmd(src=src, out=out, langs=langs)
+
+
+@app.command("jinja")
+def jinja_cmd(
+    src: Path = typer.Option(Path("src"), help="Directory to scan for *.j2 templates"),
+    out: Path = typer.Option(Path("templates.pot"), help="Output .pot file"),
+) -> None:
+    """Extract translatable strings from Jinja2 templates via Babel."""
+    if not src.is_dir():
+        console.print(f"[error] source directory not found: {src}")
+        raise typer.Exit(code=1)
+    if not run_babel_jinja(src, out):
+        raise typer.Exit(code=1)
+    console.print(f"[done] jinja -> {out}")
 
 
 @app.command("enrich")

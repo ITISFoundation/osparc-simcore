@@ -20,54 +20,91 @@ Example: the extraction, translation, and compilation workflow orchestrated by t
 
 ## Quick Start
 
+The two catalogs are **separately owned** and each has its own symmetric pipeline.
+There is no combined `all` target — run the catalog you need:
+
 ```bash
 # Run from repo root or any directory
-make -C scripts/i18n all
+make -C scripts/i18n backend-all     # backend-extract -> backend-translate -> backend-compile
+make -C scripts/i18n frontend-all    # frontend-extract -> frontend-translate
 ```
 
-## Step-by-Step
+## Backend catalog
 
-| Step | Target               | Description                                                                 |
-| ---- | -------------------- | --------------------------------------------------------------------------- |
-| 1    | `extract-all`        | Scan `I18N_DIRS` for `user_message()` + frontend for `this.tr()` → `.pot`s  |
-| 2    | `merge`              | `msgcat` backend partials + frontend → `messages.pot`, then enrich with CTX |
-| 3    | `translate`          | AI translate stale backend entries (one `.po` per `LANG`)                   |
-| 4    | `compile`            | `msgfmt` backend `.po` → `.mo`                                              |
-| 5    | `frontend-translate` | AI translate frontend entries from master template                          |
+`packages/common-library/src/common_library/locale/messages.{pot,po,mo}`
+
+| Step | Target              | Description                                                                          |
+| ---- | ------------------- | ------------------------------------------------------------------------------------ |
+| 1    | `backend-extract`   | Extract `user_message()` (Python) + `{% trans %}` (Jinja) → `messages.pot` (+enrich) |
+| —    | `backend-plan`      | Dry-run: log the LLM prompts that step 2 WOULD send (no call, no save)               |
+| 2    | `backend-translate` | AI translate stale entries (one `.po` per `LANG`)                                    |
+| 3    | `backend-compile`   | `msgfmt` backend `.po` → `.mo`                                                       |
 
 ```bash
-make -C scripts/i18n extract-all
-make -C scripts/i18n merge
-make -C scripts/i18n translate
-make -C scripts/i18n compile
+make -C scripts/i18n backend-extract
+make -C scripts/i18n backend-translate
+make -C scripts/i18n backend-compile
+```
+
+## Frontend catalog
+
+`services/static-webserver/client/source/translation/{frontend.pot,*.po}`
+(no `.mo` — qooxdoo's `qx compile` reads `.po` directly)
+
+| Step | Target               | Description                                                            |
+| ---- | -------------------- | ---------------------------------------------------------------------- |
+| 1    | `frontend-extract`   | Extract `this.tr()` strings → `frontend.pot` (+enrich)                 |
+| —    | `frontend-plan`      | Dry-run: log the LLM prompts that step 2 WOULD send (no call, no save) |
+| 2    | `frontend-translate` | `msgmerge` + AI translate entries (one `.po` per `CLIENT_LANGS`)       |
+
+```bash
+make -C scripts/i18n frontend-extract
 make -C scripts/i18n frontend-translate
+make -C scripts/i18n frontend-translate CLIENT_LANGS="de_DE"   # specific language
+```
+
+Frontend `.po` files are output to `services/static-webserver/client/source/translation/{lang}.po`.
+
+## Dry-run (plan)
+
+`backend-plan` / `frontend-plan` run the real translation pipeline but swap the LLM
+client for a dry-run stand-in: each entry that WOULD be translated has its **composed
+prompt printed and appended to the log file**, and a stub `(dry-run)` response is
+returned instead of calling the model. No tokens are spent, no API key is needed, and
+nothing is written to the `.po`. Use it to review which entries are stale and to
+inspect the exact prompts (glossary, translator notes, source snippet) sent to the LLM.
+
+```bash
+make -C scripts/i18n backend-plan
+make -C scripts/i18n frontend-plan
 ```
 
 ## Key Variables
 
-| Variable      | Default         | Description                               |
-| ------------- | --------------- | ----------------------------------------- |
-| `LANGS`       | `zh_CN es_ES`   | Space-separated locale codes to translate |
-| `MODEL`       | `openai/gpt-4o` | LiteLLM model string                      |
-| `BASE_URL`    | _(empty)_       | Custom LLM endpoint (e.g. local Ollama)   |
-| `PARALLEL`    | `false`         | Enable parallel translation workers       |
-| `MAX_WORKERS` | `4`             | Worker count when `PARALLEL=true`         |
-| `USE_GIT`     | `true`          | Skip already-committed translations       |
+| Variable       | Default         | Description                             |
+| -------------- | --------------- | --------------------------------------- |
+| `LANGS`        | `zh_CN es_ES`   | Backend locale codes to translate       |
+| `CLIENT_LANGS` | `es_ES zh_CN`   | Frontend locale codes to translate      |
+| `MODEL`        | `openai/gpt-4o` | LiteLLM model string                    |
+| `BASE_URL`     | _(empty)_       | Custom LLM endpoint (e.g. local Ollama) |
+| `PARALLEL`     | `false`         | Enable parallel translation workers     |
+| `MAX_WORKERS`  | `4`             | Worker count when `PARALLEL=true`       |
+| `USE_GIT`      | `true`          | Skip already-committed translations     |
 
-## Provider Shortcuts
+## Model
+
+The default model is `openai/gpt-4o`. Override inline via `MODEL` (and `BASE_URL` for
+self-hosted OpenAI-compatible endpoints, e.g. local Ollama):
 
 ```bash
-make -C scripts/i18n translate-openai      # OpenAI gpt-4o
-make -C scripts/i18n translate-anthropic   # Anthropic claude-sonnet-4-6
-make -C scripts/i18n translate-ollama      # local Ollama llama3.1 (no API key)
-make -C scripts/i18n translate-custom MODEL=mistral/mistral-large BASE_URL=http://localhost:4000
+make -C scripts/i18n backend-translate MODEL=anthropic/claude-sonnet-4-6
+make -C scripts/i18n backend-translate MODEL=ollama/llama3.1 BASE_URL=http://localhost:11434
 ```
 
-## Override Language or Model Inline
+## Override Language Inline
 
 ```bash
-make -C scripts/i18n all LANGS="de_DE fr_FR"
-make -C scripts/i18n translate MODEL=anthropic/claude-sonnet-4-6
+make -C scripts/i18n backend-translate LANGS="de_DE fr_FR"
 ```
 
 ## Per Service / Package
@@ -76,13 +113,12 @@ There is no dedicated per-service target. Override `I18N_DIRS` to scope extracti
 
 ```bash
 # Extract only one service
-make -C scripts/i18n extract-all I18N_DIRS=services/api-server
+make -C scripts/i18n backend-extract I18N_DIRS=services/api-server
 
 # Validate style for one package
 make -C scripts/i18n check-i18n-style I18N_DIRS=packages/service-library
 ```
 
-After scoped extraction, run `merge` to rebuild `messages.pot` from all partials.
 
 ## Rediscover I18N_DIRS
 
@@ -92,19 +128,6 @@ Run this from the repo root to see which dirs currently contain `user_message()`
 grep -r 'user_message(' services packages --include='*.py' -l \
   | xargs -I{} dirname {} | sort -u
 ```
-
-## Frontend
-
-Frontend extraction is now handled by xgettext (same as backend). Extraction happens as part of `make extract-all`:
-
-```bash
-make -C scripts/i18n extract-all                        # extracts backend + frontend
-make -C scripts/i18n extract-frontend                   # frontend only (for testing)
-make -C scripts/i18n translate-frontend                 # translate from master template
-make -C scripts/i18n translate-frontend CLIENT_LANGS="de_DE"   # specific language
-```
-
-Frontend `.po` files are output to: `services/static-webserver/client/source/translation/{lang}.po`
 
 **Note:** The old qooxdoo extraction method is still available via `make -C services/static-webserver/client qx-extract` (DEPRECATED, for fallback only).
 
@@ -119,8 +142,10 @@ Checks that no `user_message()` calls use f-strings (f-strings break xgettext ex
 ## Cleanup
 
 ```bash
-make -C scripts/i18n clean   # removes _partials/, messages.pot, frontend.pot, all .po and .mo
+make -C scripts/i18n clean   # removes regenerable artifacts only: _partials/, *.pot, *.mo
 ```
+
+The versioned `.po` files (reviewed translations) are **never** deleted by `clean`.
 
 
 ## Open in a PO editor

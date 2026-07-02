@@ -18,6 +18,9 @@ from typing import Final, cast
 
 from aiohttp import web
 from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale, get_translator, normalize_locale
+from models_library.groups import GroupID
+from models_library.products import ProductName
+from models_library.users import UserID
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import X_SIMCORE_LANGUAGE
 
@@ -33,6 +36,17 @@ _ACCEPT_LANGUAGE_HEADER: Final[str] = "Accept-Language"
 def translate_message(message: str, request: web.Request) -> str:
     """Translate a user_message()-marked string to the request locale."""
     return get_translator(request.get(RQ_LOCALE_KEY, DEFAULT_LOCALE)).gettext(message)
+
+
+def get_locale_or_none(request: web.Request) -> SupportedLocale | None:
+    """Returns the locale resolved by ``locale_middleware`` for this request, or ``None``
+    if the middleware did not run (e.g. the request key is missing).
+
+    Useful for passing an optional override (e.g. to
+    ``notifications_service.send_message_from_template``) that should defer to the recipient's
+    DB-stored preference (see ``get_user_locale``) when no request-resolved locale is available.
+    """
+    return request.get(RQ_LOCALE_KEY)
 
 
 @web.middleware
@@ -78,4 +92,25 @@ async def get_user_locale(
     )
     if pref is not None and pref.value:
         return pref.value
+    return DEFAULT_LOCALE
+
+
+async def resolve_effective_locale(
+    app: web.Application,
+    *,
+    user_id: UserID | None,
+    product_name: ProductName,
+    locale: SupportedLocale | None,
+    group_ids: list[GroupID] | None = None,
+) -> SupportedLocale:
+    """Resolves the effective locale to render user-facing content in.
+
+    Precedence: explicit ``locale`` argument > DB-stored user preference > ``DEFAULT_LOCALE``.
+    For multi-recipient sends (``group_ids``) always falls back to ``DEFAULT_LOCALE`` since each
+    recipient may have a different preference; per-recipient rendering is a future enhancement.
+    """
+    if locale is not None:
+        return locale
+    if user_id is not None and not group_ids:
+        return await get_user_locale(app, user_id=user_id, product_name=product_name)
     return DEFAULT_LOCALE
