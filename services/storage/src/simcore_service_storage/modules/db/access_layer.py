@@ -135,19 +135,19 @@ def my_shared_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
     ).subquery("my_workspace_access_rights_subquery")
 
 
-async def _list_user_projects_access_rights_with_read_access(
-    connection: AsyncConnection, user_id: UserID, product_name: ProductName
-) -> list[ProjectID]:
-    """
-    Returns access-rights of user (user_id) over all OWNED or SHARED projects
-    """
+def readable_project_ids_stmt(user_id: UserID, product_name: ProductName) -> sa.sql.CompoundSelect:
+    """SELECT of the uuids of all projects the user can read (OWNED or SHARED).
 
-    user_group_ids: list[GroupID] = await _get_user_groups_ids(connection, user_id)
+    Meant to be embedded as a subquery (e.g. in an ``IN`` clause) so that the
+    potentially huge accessible-project set is filtered in the DB instead of
+    being materialised into a Python list.
+    """
+    # NOTE: resolved as a scalar subquery so no extra round-trip / Python list is needed
+    user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
 
     # Use EXISTS instead of JOIN with GROUP BY + jsonb_object_agg subquery.
-    # This function only needs to filter projects by read access, it never
-    # reads the aggregated access_rights JSON. EXISTS lets the planner stop
-    # at the first matching row and avoids materialising grouped results.
+    # We only need to filter projects by read access, never the aggregated
+    # access_rights JSON. EXISTS lets the planner stop at the first matching row.
     private_access_exists = sa.exists(
         sa.select(sa.literal(1)).where(
             (project_to_groups.c.project_uuid == projects.c.uuid)
@@ -178,7 +178,16 @@ async def _list_user_projects_access_rights_with_read_access(
         )
     )
 
-    combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
+    return sa.union_all(private_workspace_query, shared_workspace_query)
+
+
+async def _list_user_projects_access_rights_with_read_access(
+    connection: AsyncConnection, user_id: UserID, product_name: ProductName
+) -> list[ProjectID]:
+    """
+    Returns access-rights of user (user_id) over all OWNED or SHARED projects
+    """
+    combined_query = readable_project_ids_stmt(user_id, product_name)
 
     projects_access_rights = []
 
@@ -368,3 +377,11 @@ class AccessLayerRepository(BaseRepository):
                 user_id,
                 product_name,
             )
+
+    def get_readable_project_ids_stmt(self, *, user_id: UserID, product_name: ProductName) -> sa.sql.CompoundSelect:
+        """Returns a SELECT of the project uuids the user can read.
+
+        Meant to be used as a subquery so the accessible-project set is filtered
+        in the DB instead of being materialised into a Python list.
+        """
+        return readable_project_ids_stmt(user_id, product_name)
