@@ -746,7 +746,40 @@ qx.Class.define("osparc.data.model.Study", {
         promises.push(this.getWorkbench().patchWorkbenchDiffs(studyDiffs["workbench"], studySource["workbench"]));
         delete studyDiffs["workbench"];
       }
+      // Per-node UI (position, marker) lives in projects_nodes.ui on the backend.
+      // Route ui.workbench changes through the granular patchNode endpoint instead of
+      // patching the whole study ui object.
+      if (studyDiffs["ui"] && typeof studyDiffs["ui"] === "object" && studyDiffs["ui"]["workbench"]) {
+        const uiWorkbenchDiffs = studyDiffs["ui"]["workbench"];
+        const uiWorkbenchSource = (studySource["ui"] && studySource["ui"]["workbench"]) || {};
+        Object.keys(uiWorkbenchDiffs).forEach(nodeId => {
+          if (this.getWorkbench().getNode(nodeId) === null) {
+            // the node was removed
+            return;
+          }
+          const nodeUIData = uiWorkbenchSource[nodeId];
+          if (!nodeUIData) {
+            return;
+          }
+          const params = {
+            url: {
+              "studyId": this.getUuid(),
+              "nodeId": nodeId,
+            },
+            data: {
+              "ui": nodeUIData,
+            },
+          };
+          promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
+        });
+        // already handled above, drop it so it's not resent as a whole-ui patch
+        delete studyDiffs["ui"]["workbench"];
+        if (Object.keys(studyDiffs["ui"]).length === 0) {
+          delete studyDiffs["ui"];
+        }
+      }
       const changedFields = Object.keys(studyDiffs);
+
       if (changedFields.length) {
         changedFields.forEach(changedField => {
           // OM: can this be called all together?

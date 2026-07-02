@@ -138,13 +138,21 @@ async def get_project_with_workbench(
 
         # Build workbench from projects_nodes table
         repo = ProjectNodesRepo(project_uuid=project_uuid)
-        exclude_fields = {"node_id", "required_resources", "created", "modified"}
+        exclude_fields = {"node_id", "required_resources", "created", "modified", "ui"}
         workbench: dict[str, Any] = {}
+        workbench_ui: dict[str, Any] = {}
         for node in await repo.list(conn):
             node_data = node.model_dump(exclude=exclude_fields, exclude_none=True, exclude_unset=True)
             node_data = {snake_to_camel(k): v for k, v in node_data.items()}
             workbench[f"{node.node_id}"] = node_data
+            if node.ui:
+                workbench_ui[f"{node.node_id}"] = node.ui
         project_data["workbench"] = workbench
+
+        # Reconstruct ui.workbench from the per-node `ui` column (source of truth)
+        project_ui = dict(project_data["ui"]) if project_data.get("ui") else {}
+        project_ui["workbench"] = workbench_ui or None
+        project_data["ui"] = project_ui
 
         return ProjectWithWorkbenchDBGet.model_validate(project_data)
 

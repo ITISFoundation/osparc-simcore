@@ -245,6 +245,38 @@ async def test_update_project_node(
     assert updated_node.required_resources == required_resources
 
 
+async def test_create_and_update_project_node_ui(
+    asyncpg_connection: AsyncConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    faker: Faker,
+):
+    node_ui = {"position": {"x": 12, "y": 34}, "marker": {"color": "#FF0000"}}
+    new_nodes = await projects_nodes_repo.add(
+        asyncpg_connection,
+        nodes=[
+            ProjectNodeCreate(
+                node_id=uuid.uuid4(),
+                required_resources={},
+                key=faker.pystr(),
+                version=faker.pystr(),
+                label=faker.pystr(),
+                ui=node_ui,
+            )
+        ],
+    )
+    assert len(new_nodes) == 1
+    assert new_nodes[0].ui == node_ui
+
+    updated_ui = {"position": {"x": 99, "y": 1}}
+    updated_node = await projects_nodes_repo.update(
+        asyncpg_connection,
+        node_id=new_nodes[0].node_id,
+        ui=updated_ui,
+    )
+    assert updated_node
+    assert updated_node.ui == updated_ui
+
+
 async def test_delete_invalid_node_does_nothing(
     asyncpg_connection: AsyncConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,

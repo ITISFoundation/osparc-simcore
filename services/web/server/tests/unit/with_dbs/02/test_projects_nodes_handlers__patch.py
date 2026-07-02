@@ -173,6 +173,19 @@ async def test_patch_project_node(
     )
     await assert_status(resp, expected)
 
+    # ui (per-node position & marker now stored in projects_nodes.ui)
+    _patch_ui = {
+        "ui": {
+            "position": {"x": 12, "y": 34},
+            "marker": {"color": "#FF0000"},
+        }
+    }
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_ui),
+    )
+    await assert_status(resp, expected)
+
     # Get project
     get_url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{get_url}")
@@ -187,6 +200,9 @@ async def test_patch_project_node(
     assert _tested_node["inputNodes"] == _patch_input_nodes["inputNodes"]
     assert _tested_node["bootOptions"] == _patch_boot_options["bootOptions"]
     assert _tested_node["outputs"] == _patch_outputs["outputs"]
+    # per-node ui is reconstructed under ui.workbench, not inside the workbench node-data
+    assert "ui" not in _tested_node
+    assert data["ui"]["workbench"][node_id] == _patch_ui["ui"]
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])

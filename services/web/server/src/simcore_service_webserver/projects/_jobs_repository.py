@@ -250,5 +250,5 @@ class ProjectJobsRepository(BaseRepository):
             if row is None:
                 return None
 
-            workbench = await get_project_workbench(conn, row.uuid)
+            workbench, _ = await get_project_workbench(conn, row.uuid)
             return ProjectJobDBGet.model_validate({**row._asdict(), "workbench": workbench})
