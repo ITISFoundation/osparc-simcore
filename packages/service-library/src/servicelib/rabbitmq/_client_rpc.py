@@ -39,6 +39,24 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         await client._rpc_initialize()
         return client
 
+    async def _create_connection(self) -> None:
+        # NOTE: to show the connection name in the rabbitMQ UI see there
+        # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
+        #
+        connection_name = f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
+        url = f"{self.settings.dsn}?name={connection_name}"
+        self._connection = await aio_pika.connect_robust(
+            url,
+            client_properties={"connection_name": connection_name},
+        )
+        self._connection.close_callbacks.add(self._connection_close_callback)
+        self._connection.reconnect_callbacks.add(self._on_reconnect)
+
+    async def _close_connection(self) -> None:
+        connection, self._connection = self._connection, None
+        if connection is not None:
+            await connection.close()
+
     async def _create_channel_and_rpc(self) -> None:
         assert self._connection is not None  # nosec
 
@@ -52,7 +70,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         #
         await self._rpc.initialize(robust=False)
 
-    async def _close_rpc_and_channel(self) -> None:
+    async def _close_channel_and_rpc(self) -> None:
         # NOTE: detach references first so a partial/failed close leaves the
         # client in a consistent state (no double-close, no stale objects)
         rpc, self._rpc = self._rpc, None
@@ -65,23 +83,12 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 await channel.close()
 
     async def _rpc_initialize(self) -> None:
-        # NOTE: to show the connection name in the rabbitMQ UI see there
-        # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
-        #
-        connection_name = f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
-        url = f"{self.settings.dsn}?name={connection_name}"
-        self._connection = await aio_pika.connect_robust(
-            url,
-            client_properties={"connection_name": connection_name},
-        )
-        self._connection.close_callbacks.add(self._connection_close_callback)
-        self._connection.reconnect_callbacks.add(self._on_reconnect)
-
+        await self._create_connection()
         await self._create_channel_and_rpc()
 
     @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
     async def _rebuild_rpc_surface(self) -> None:
-        await self._close_rpc_and_channel()
+        await self._close_channel_and_rpc()
         await self._create_channel_and_rpc()
         assert self._rpc is not None  # nosec
         handlers = tuple(self._registered_handlers.items())
@@ -115,9 +122,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             logging.INFO,
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
-            await self._close_rpc_and_channel()
-            if self._connection is not None:
-                await self._connection.close()
+            await self._close_channel_and_rpc()
+            await self._close_connection()
 
     async def request(
         self,
