@@ -357,6 +357,21 @@ async def test_rpc_reconnection_creates_a_fresh_result_queue(rpc_client: RabbitM
     assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
 
 
+async def test_rpc_concurrent_reconnections_are_serialized(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+
+    # a flapping connection can fire the reconnect callback multiple times at once;
+    # the surface lock must serialize the rebuilds so they cannot interleave and
+    # leak a channel or leave the client in an inconsistent state
+    await asyncio.gather(*(rpc_client._on_reconnect() for _ in range(5)))  # noqa: SLF001
+
+    # a single consistent surface remains and keeps serving requests
+    assert rpc_client.healthy is True
+    assert rpc_client._channel is not None  # noqa: SLF001
+    assert rpc_client._rpc is not None  # noqa: SLF001
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
+
+
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rpc_client_recovers_when_broker_closes_all_connections(
     rpc_client: RabbitMQRPCClient, namespace: RPCNamespace

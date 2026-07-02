@@ -33,6 +33,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     _rpc: aio_pika.patterns.RPC | None = None
     _registered_handlers: dict[RPCNamespacedMethodName, Callable[..., Any]] = field(default_factory=dict)
 
+    _surface_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
     @classmethod
     async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
         client = cls(client_name=client_name, settings=settings, **kwargs)
@@ -71,8 +73,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         await self._rpc.initialize(robust=False)
 
     async def _close_channel_and_rpc(self) -> None:
-        # NOTE: detach references first so a partial/failed close leaves the
-        # client in a consistent state (no double-close, no stale objects)
+        # detach references first so a partial/failed close cannot leave stale objects behind
         rpc, self._rpc = self._rpc, None
         channel, self._channel = self._channel, None
         try:
@@ -83,8 +84,9 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 await channel.close()
 
     async def _rpc_initialize(self) -> None:
-        await self._create_connection()
-        await self._create_channel_and_rpc()
+        async with self._surface_lock:
+            await self._create_connection()
+            await self._create_channel_and_rpc()
 
     @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
     async def _rebuild_rpc_surface(self) -> None:
@@ -110,7 +112,8 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             self.client_name,
         ):
             try:
-                await self._rebuild_rpc_surface()
+                async with self._surface_lock:
+                    await self._rebuild_rpc_surface()
             except Exception:
                 self._healthy_state = False
                 raise
@@ -122,8 +125,9 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             logging.INFO,
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
-            await self._close_channel_and_rpc()
-            await self._close_connection()
+            async with self._surface_lock:
+                await self._close_channel_and_rpc()
+                await self._close_connection()
 
     async def request(
         self,
@@ -147,10 +151,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         if not self._rpc:
             raise RPCNotInitializedError
 
+        # snapshot the RPC reference: a concurrent reconnection rebuild may swap
+        # self._rpc, so we bind the current one for the whole call
+        rpc = self._rpc
         namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
         try:
             queue_expiration_timeout = timeout_s
-            awaitable = self._rpc.call(
+            awaitable = rpc.call(
                 namespaced_method_name,
                 expiration=queue_expiration_timeout,
                 kwargs=kwargs,
