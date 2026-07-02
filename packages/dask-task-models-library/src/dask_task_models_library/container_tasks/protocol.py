@@ -1,4 +1,4 @@
-from typing import Any, Protocol, TypeAlias
+from typing import Any, Protocol
 
 from models_library.basic_types import EnvVarKey
 from models_library.docker import DockerLabelKey
@@ -11,14 +11,15 @@ from pydantic.config import JsonDict
 from settings_library.s3 import S3Settings
 
 from .docker import DockerBasicAuth
+from .encryption import JobEncryptionContext
 from .io import TaskInputData, TaskOutputData, TaskOutputDataSchema
 
-ContainerImage: TypeAlias = str
-ContainerTag: TypeAlias = str
-LogFileUploadURL: TypeAlias = AnyUrl
-ContainerCommands: TypeAlias = list[str]
-ContainerEnvsDict: TypeAlias = dict[EnvVarKey, str]
-ContainerLabelsDict: TypeAlias = dict[DockerLabelKey, str]
+type ContainerImage = str
+type ContainerTag = str
+type LogFileUploadURL = AnyUrl
+type ContainerCommands = list[str]
+type ContainerEnvsDict = dict[EnvVarKey, str]
+type ContainerLabelsDict = dict[DockerLabelKey, str]
 
 
 class TaskOwner(BaseModel):
@@ -111,4 +112,5 @@ class ContainerRemoteFct(Protocol):
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
     ) -> TaskOutputData: ...
