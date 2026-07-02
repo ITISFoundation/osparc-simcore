@@ -83,7 +83,7 @@ certifi==2023.7.22
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.1
+cffi==2.0.0
     # via cryptography
 charset-normalizer==2.0.12
     # via requests
@@ -100,7 +100,7 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
-cryptography==41.0.7
+cryptography==46.0.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_base.in
