@@ -2143,7 +2143,9 @@
         "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
       },
       "FileIDStr": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 65535,
+        "minLength": 1
       },
       "GetProjectInactivityResponse": {
         "properties": {

@@ -8,6 +8,7 @@ from dask_task_models_library.container_tasks.encryption import (
 from faker import Faker
 from models_library.api_schemas_directorv2.encryption import (
     AES_256_GCM_KEY_SIZE_BYTES,
+    MAX_FILE_ID_LENGTH,
     JobEncryptionContextMetadata,
 )
 from models_library.projects_nodes_io import NodeID
@@ -22,6 +23,25 @@ def test_root_key_must_have_exact_length(model_cls, invalid_length: int):
 
     with pytest.raises(ValidationError):
         model_cls(**example)
+
+
+def test_file_id_must_not_be_empty():
+    example = TransferEncryptionSettings.model_json_schema()["examples"][0]
+    example["file_id"] = ""
+
+    with pytest.raises(ValidationError):
+        TransferEncryptionSettings(**example)
+
+
+def test_file_id_must_not_exceed_max_length():
+    example = TransferEncryptionSettings.model_json_schema()["examples"][0]
+
+    example["file_id"] = "a" * MAX_FILE_ID_LENGTH
+    TransferEncryptionSettings(**example)  # max length is still valid
+
+    example["file_id"] = "a" * (MAX_FILE_ID_LENGTH + 1)
+    with pytest.raises(ValidationError):
+        TransferEncryptionSettings(**example)
 
 
 def test_from_metadata_extracts_node_input_mapping(faker: Faker):
