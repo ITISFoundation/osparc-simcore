@@ -223,9 +223,6 @@ class FileMetaDataRepository(BaseRepository):
     ) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
         """returns a list of FileMetaDataAtDB that are one level deep.
         e.g. when no filter is used, these are top level objects
-
-        NOTE: filter_by_project_ids is a subquery so the accessible-project set is
-        filtered in the DB and never materialised into a Python list.
         """
 
         cursor_params = _init_pagination(
