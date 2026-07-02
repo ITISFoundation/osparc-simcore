@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Final
 from uuid import uuid4
 
-import sqlalchemy as sa
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from aws_library.s3._constants import S3_OBJECT_DELIMITER, STREAM_READER_CHUNK_SIZE
 from aws_library.s3._models import S3ObjectKey
@@ -313,14 +312,16 @@ async def list_child_paths_from_s3(
 async def list_child_paths_from_repository(
     db_engine: AsyncEngine,
     *,
-    filter_by_project_ids: sa.sql.CompoundSelect | None,
+    user_id: UserID,
+    product_name: ProductName,
     filter_by_file_prefix: Path | None,
     cursor: GenericCursor | None,
     limit: int,
 ) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
     file_meta_data_repo = FileMetaDataRepository.instance(db_engine)
     paths_metadata, next_cursor, total = await file_meta_data_repo.list_child_paths(
-        filter_by_project_ids=filter_by_project_ids,
+        user_id=user_id,
+        product_name=product_name,
         filter_by_file_prefix=filter_by_file_prefix,
         limit=limit,
         cursor=cursor,
@@ -328,7 +329,8 @@ async def list_child_paths_from_repository(
     )
     if not paths_metadata:
         paths_metadata, next_cursor, total = await file_meta_data_repo.list_child_paths(
-            filter_by_project_ids=filter_by_project_ids,
+            user_id=user_id,
+            product_name=product_name,
             filter_by_file_prefix=filter_by_file_prefix,
             limit=limit,
             cursor=cursor,

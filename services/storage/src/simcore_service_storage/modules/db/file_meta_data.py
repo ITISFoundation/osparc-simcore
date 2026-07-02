@@ -5,11 +5,12 @@ from pathlib import Path
 
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, validate_call
+from pydantic import BaseModel
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -29,16 +30,9 @@ from ...models import (
     UserOrProjectFilter,
 )
 from ._base import BaseRepository
+from .access_layer import readable_project_ids_stmt
 
 type TotalChildren = int
-
-
-def _build_project_ids_filter(
-    filter_by_project_ids: sa.sql.CompoundSelect | None,
-) -> sa.sql.ColumnElement[bool]:
-    if filter_by_project_ids is not None:
-        return file_meta_data.c.project_id.in_(filter_by_project_ids)
-    return sa.true()
 
 
 class _PathsCursorParameters(BaseModel):
@@ -210,20 +204,21 @@ class FileMetaDataRepository(BaseRepository):
                         return None
         return None
 
-    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_child_paths(
         self,
         *,
         connection: AsyncConnection | None = None,
-        filter_by_project_ids: sa.sql.CompoundSelect | None,
+        user_id: UserID,
+        product_name: ProductName,
         filter_by_file_prefix: Path | None,
         cursor: GenericCursor | None,
         limit: int,
         is_partial_prefix: bool,
     ) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
-        """returns a list of FileMetaDataAtDB that are one level deep.
-        e.g. when no filter is used, these are top level objects
-        """
+        # only list files belonging to projects the user can read
+        readable_projects_filter = file_meta_data.c.project_id.in_(
+            readable_project_ids_stmt(user_id=user_id, product_name=product_name)
+        )
 
         cursor_params = _init_pagination(
             cursor,
@@ -251,7 +246,7 @@ class FileMetaDataRepository(BaseRepository):
                 .where(
                     and_(
                         file_meta_data.c.file_id.like(search_prefix),
-                        _build_project_ids_filter(filter_by_project_ids),
+                        readable_projects_filter,
                     )
                 )
                 .cte("ranked_files")
@@ -268,7 +263,7 @@ class FileMetaDataRepository(BaseRepository):
                     )
                     .label("row_num"),
                 )
-                .where(_build_project_ids_filter(filter_by_project_ids))
+                .where(readable_projects_filter)
                 .cte("ranked_files")
             )
 
