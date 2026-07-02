@@ -47,6 +47,7 @@ from .models.schemas.files import File as SchemaFile
 from .models.schemas.jobs import (
     ArgumentTypes,
     Job,
+    JobEncryptionInputs,
     JobID,
     JobInputs,
     JobOutputs,
@@ -440,6 +441,7 @@ class JobService:
         version: VersionStr,
         job_id: JobID,
         pricing_spec: JobPricingSpecification | None,
+        encryption: JobEncryptionInputs | None,
     ) -> JobStatus:
         """
         Raises ProjectAlreadyStartedError if the project is already started
@@ -454,6 +456,7 @@ class JobService:
             pricing_spec=pricing_spec,
             job_id=job_id,
             expected_job_name=job_name,
+            encryption=encryption,
             webserver_api=self._web_rest_client,
         )
         return await self.inspect_solver_job(
@@ -541,6 +544,7 @@ class JobService:
             expected_job_name=job_name,
             webserver_api=self._web_rest_client,
             pricing_spec=pricing_spec,
+            encryption=None,  # NOTE: study jobs (multi-node) do not support encryption yet
         )
         return await self.inspect_study_job(
             job_id=job_id,
