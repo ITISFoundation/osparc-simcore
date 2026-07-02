@@ -23,12 +23,12 @@ on:
         required: false
         type: boolean
         default: false
-        description: "Whether to push the built images to the registry under a temporary tag (in the same build)"
-      temp-tag:
+        description: "Whether to push the built images to the registry by digest (no tag, in the same build)"
+      arch:
         required: false
         type: string
         default: ""
-        description: "Temporary registry tag to push the built images under (e.g. master-github-tmp-<sha>-amd64)"
+        description: "Architecture being built (e.g. amd64, arm64). Used to name the uploaded digest artifacts."
       build-artifacts:
         required: false
         type: boolean
@@ -73,14 +73,14 @@ jobs:
             mkdir --parents /${{ runner.temp }}/build
             if [ "${{ inputs.push-temp }}" = "true" ]; then
               export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
-              make build local-dest=/${{ runner.temp }}/build exclude=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+              make build local-dest=/${{ runner.temp }}/build exclude=static-webserver push=true push-by-digest=true metadata-file=/${{ runner.temp }}/digests-backend.json
             else
               export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
               make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
             fi
           else
             export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
-            make build exclude=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+            make build exclude=static-webserver push=true push-by-digest=true metadata-file=/${{ runner.temp }}/digests-backend.json
           fi
       - name: build frontend images
         if: ${{ inputs.build-frontend }}
@@ -91,14 +91,14 @@ jobs:
             mkdir --parents /${{ runner.temp }}/build
             if [ "${{ inputs.push-temp }}" = "true" ]; then
               export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
-              make build local-dest=/${{ runner.temp }}/build target=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+              make build local-dest=/${{ runner.temp }}/build target=static-webserver push=true push-by-digest=true metadata-file=/${{ runner.temp }}/digests-frontend.json
             else
               export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
               make build local-dest=/${{ runner.temp }}/build target=static-webserver
             fi
           else
             export DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
-            make build target=static-webserver push=true DOCKER_IMAGE_TAG=${{ inputs.temp-tag }}
+            make build target=static-webserver push=true push-by-digest=true metadata-file=/${{ runner.temp }}/digests-frontend.json
           fi
       - name: upload backend artifacts
         if: ${{ inputs.build-backend && inputs.build-artifacts }}
@@ -112,3 +112,15 @@ jobs:
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
           path: /${{ runner.temp }}/build
+      - name: upload backend digest metadata
+        if: ${{ inputs.build-backend && inputs.push-temp }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-backend-${{ inputs.arch }}
+          path: /${{ runner.temp }}/digests-backend.json
+      - name: upload frontend digest metadata
+        if: ${{ inputs.build-frontend && inputs.push-temp }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-frontend-${{ inputs.arch }}
+          path: /${{ runner.temp }}/digests-frontend.json

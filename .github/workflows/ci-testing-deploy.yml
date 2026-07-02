@@ -295,7 +295,6 @@ jobs:
     outputs:
       is-deploy: ${{ steps.vars.outputs.is-deploy }}
       tag-prefix: ${{ steps.vars.outputs.tag-prefix }}
-      temp-tag-base: ${{ steps.vars.outputs.temp-tag-base }}
       build-matrix: ${{ steps.vars.outputs.build-matrix }}
     steps:
       - name: compute tag prefix and temporary tag
@@ -322,7 +321,6 @@ jobs:
           {
             echo "is-deploy=$is_deploy"
             echo "tag-prefix=$tag_prefix"
-            echo "temp-tag-base=${tag_prefix}-tmp-${GITHUB_SHA}"
             echo "build-matrix={\"include\":$include}"
           } >> "$GITHUB_OUTPUT"
 
@@ -340,30 +338,9 @@ jobs:
       os: ${{ matrix.os }}
       python-version: "3.13"
       push-temp: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
-      temp-tag: ${{ needs.deploy-vars.outputs.temp-tag-base }}-${{ matrix.arch }}
+      arch: ${{ matrix.arch }}
       build-artifacts: ${{ matrix.arch == 'amd64' }}
       platforms: ${{ matrix.arch == 'arm64' && 'linux/arm64' || '' }}
-
-  fuse-temp:
-    name: fuse multi-arch temporary images
-    needs: [deploy-vars, build-test-images]
-    if: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
-    runs-on: ubuntu-24.04
-    env:
-      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-    steps:
-      - uses: actions/checkout@v7.0.0
-      - name: Setup docker buildx
-        uses: docker/setup-buildx-action@v4
-      - name: login to Dockerhub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: fuse amd64 + arm64 into a single multi-arch manifest
-        run: |
-          export DOCKER_IMAGE_TAG="${{ needs.deploy-vars.outputs.temp-tag-base }}"
-          ./ci/deploy/dockerhub-fuse.bash
 
   unit-test-webserver-01:
     needs: changes
@@ -1885,7 +1862,7 @@ jobs:
 
   deploy:
     name: deploy to dockerhub
-    needs: [deploy-vars, unit-tests, integration-tests, system-tests, fuse-temp]
+    needs: [deploy-vars, unit-tests, integration-tests, system-tests, build-test-images]
     if: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1904,18 +1881,35 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
+      - name: download amd64 digests
+        uses: actions/download-artifact@v8
+        with:
+          pattern: digests-*-amd64
+          path: /tmp/digests/amd64
+          merge-multiple: true
+      - name: download arm64 digests
+        uses: actions/download-artifact@v8
+        with:
+          pattern: digests-*-arm64
+          path: /tmp/digests/arm64
+          merge-multiple: true
+      - name: merge per-arch digests into a single service->arch->digest map
+        run: ./ci/helpers/merge_digests.bash /tmp/digests/amd64 /tmp/digests/arm64 /tmp/digests/digests.json
       - if: github.ref == 'refs/heads/master'
         name: deploy master image
         env:
           TAG_PREFIX: master-github
+          DIGESTS_FILE: /tmp/digests/digests.json
         run: ./ci/deploy/dockerhub-deploy.bash
       - if: contains(github.ref, 'refs/heads/hotfix_v')
         name: deploy release hotfix image
         env:
           TAG_PREFIX: hotfix-github
+          DIGESTS_FILE: /tmp/digests/digests.json
         run: ./ci/deploy/dockerhub-deploy.bash
       - if: contains(github.ref, 'refs/heads/hotfix_staging_')
         name: deploy staging hotfix image
         env:
           TAG_PREFIX: hotfix-staging-github
+          DIGESTS_FILE: /tmp/digests/digests.json
         run: ./ci/deploy/dockerhub-deploy.bash
