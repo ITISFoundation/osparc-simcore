@@ -86,13 +86,13 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
       this.__submitBtn.setFetching(true);
 
       const successFun = log => {
-      this.__submitBtn.setFetching(false);
+        this.__submitBtn.setFetching(false);
         this.fireDataEvent("done", log.message);
         osparc.FlashMessenger.getInstance().log(log);
       };
 
       const failFun = err => {
-      this.__submitBtn.setFetching(false);
+        this.__submitBtn.setFetching(false);
         osparc.FlashMessenger.logError(err, this.tr("Could not request password reset"));
       };
 

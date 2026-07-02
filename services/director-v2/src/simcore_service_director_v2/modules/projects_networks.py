@@ -25,6 +25,7 @@ from ..core.errors import ProjectNetworkNotFoundError
 from ..modules.catalog import CatalogClient
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
+from ..modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 logger = logging.getLogger(__name__)
@@ -227,6 +228,7 @@ async def _get_networks_with_aliases_for_default_network(
 async def update_from_workbench(
     projects_networks_repository: ProjectsNetworksRepository,
     projects_repository: ProjectsRepository,
+    projects_nodes_repository: ProjectsNodesRepository,
     scheduler: DynamicSidecarsScheduler,
     catalog_client: CatalogClient,
     rabbitmq_client: RabbitMQClient,
@@ -247,12 +249,12 @@ async def update_from_workbench(
 
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
-    project: ProjectAtDB = await projects_repository.get_project(project_id)
+    project: ProjectAtDB = await projects_repository.get(project_id)
     assert project.prj_owner  # nosec
     new_networks_with_aliases = await _get_networks_with_aliases_for_default_network(
         project_id=project_id,
         user_id=project.prj_owner,
-        new_workbench=project.workbench,
+        new_workbench=await projects_nodes_repository.get_all(project_id),
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
     )

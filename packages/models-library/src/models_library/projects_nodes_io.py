@@ -6,6 +6,7 @@ Link models used at i/o port nodes:
     - Link to another port: PortLink
 """
 
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
@@ -31,16 +32,16 @@ from .basic_regex import (
     UUID_RE,
 )
 
-UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
+UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]  # noqa: UP040
 
-NodeID: TypeAlias = UUID
-NodeIDStr: TypeAlias = UUIDStr
+NodeID: TypeAlias = UUID  # noqa: UP040
+NodeIDStr: TypeAlias = UUIDStr  # noqa: UP040
 
-LocationID: TypeAlias = int
-LocationName: TypeAlias = str
+type LocationID = int
+type LocationName = str
 
 
-SimcoreS3FileID: TypeAlias = Annotated[str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)]
+SimcoreS3FileID: TypeAlias = Annotated[str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)]  # noqa: UP040
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -66,7 +67,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
             raise ValueError(msg) from err
 
     @classmethod
-    def _validate(cls, __input_value: str) -> str:
+    def _validate(cls, __input_value: str) -> str:  # noqa: PYI063
         value = super()._validate(__input_value)
         value = value.rstrip("/")
         parent = cls._get_parent(value, parent_index=3)
@@ -83,9 +84,9 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         return TypeAdapter(cls).validate_python(f"{parent_path}/")
 
 
-DatCoreFileID: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]
+type DatCoreFileID = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]
 
-StorageFileID: TypeAlias = SimcoreS3FileID | DatCoreFileID
+type StorageFileID = SimcoreS3FileID | DatCoreFileID
 
 
 class PortLink(BaseModel):
@@ -154,8 +155,15 @@ class BaseFileLink(BaseModel):
 
     e_tag: str | None = Field(
         default=None,
-        description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+        description=(
+            "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+        ),
         alias="eTag",
+    )
+    last_modified: datetime | None = Field(
+        default=None,
+        description="Timestamp of the last modification of the file, set together with e_tag",
+        alias="lastModified",
     )
 
     @field_validator("store", mode="before")

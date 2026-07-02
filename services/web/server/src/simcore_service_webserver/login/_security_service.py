@@ -6,6 +6,7 @@ from aiohttp import web
 from common_library.logging.logging_base import get_log_record_extra
 from servicelib.logging_utils import log_context
 
+from ..locale import translate_message
 from ..security import security_web
 from ..web_utils import flash_response
 from ._auth_service import UserInfoDict
@@ -34,7 +35,7 @@ async def login_granted_response(request: web.Request, *, user: UserInfoDict) ->
         f"{email=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
-        response = flash_response(MSG_LOGGED_IN, "INFO")
+        response = flash_response(translate_message(MSG_LOGGED_IN, request), "INFO")
         return await security_web.remember_identity(
             request=request,
             response=response,

@@ -126,7 +126,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
 
     __fetchFirstAndLastMessages: function() {
       if (this.__fetchingFirstAndLastMessage) {
-        return this.__fetchingFirstAndLastMessage;
+        return;
       }
 
       this.__fetchingFirstAndLastMessage = true;

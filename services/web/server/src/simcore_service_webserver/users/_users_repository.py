@@ -323,7 +323,7 @@ async def do_update_expired_users(
             .where(
                 (users.c.expires_at.is_not(None))
                 & (users.c.status == UserStatus.ACTIVE)
-                & (users.c.expires_at < sa.sql.func.now())
+                & (users.c.expires_at < sa.sql.func.now())  # pylint: disable=not-callable
             )
             .returning(users.c.id)
         )

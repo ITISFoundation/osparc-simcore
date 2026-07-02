@@ -68,6 +68,8 @@ qx.Class.define("osparc.support.Conversation", {
                   return this.tr("thinking...");
                 case "idle":
                   return "";
+                default:
+                  return "";
               }
             }
           });
@@ -122,7 +124,7 @@ qx.Class.define("osparc.support.Conversation", {
             .then(data => {
               const newConversation = new osparc.data.model.ConversationSupport(data);
               this.setConversation(newConversation);
-              let prePostMessagePromise = new Promise((resolve) => resolve());
+              let prePostMessagePromise = new Promise(resolve => resolve());
               if (bookACallInfo) {
                 // add a first message
                 let msg = "Book a Call";
