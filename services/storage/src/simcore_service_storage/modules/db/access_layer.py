@@ -142,9 +142,6 @@ def readable_project_ids_stmt(user_id: UserID, product_name: ProductName) -> sa.
     """
     user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
 
-    # Use EXISTS instead of JOIN with GROUP BY + jsonb_object_agg subquery.
-    # We only need to filter projects by read access, never the aggregated
-    # access_rights JSON. EXISTS lets the planner stop at the first matching row.
     private_access_exists = sa.exists(
         sa.select(sa.literal(1)).where(
             (project_to_groups.c.project_uuid == projects.c.uuid)
