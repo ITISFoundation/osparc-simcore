@@ -13,7 +13,7 @@
 [![doc_badge]](https://itisfoundation.github.io/)
 [![dockerhub_badge]](https://hub.docker.com/u/itisfoundation)
 [![license_badge]](./LICENSE)
-[![renovate_badge]](https://developer.mend.io/github/ITISFoundation/osparc-simcore)
+[![renovate_badge]](https://github.com/ITISFoundation/osparc-simcore/issues/9336)
 [![sonarcloud_badge]](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
 [![osparc_status]](https://status.osparc.io)
 [![s4l_status]](https://s4llite.statuspage.io)
