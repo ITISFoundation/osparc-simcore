@@ -377,11 +377,3 @@ class AccessLayerRepository(BaseRepository):
                 user_id,
                 product_name,
             )
-
-    def get_readable_project_ids_stmt(self, *, user_id: UserID, product_name: ProductName) -> sa.sql.CompoundSelect:
-        """Returns a SELECT of the project uuids the user can read.
-
-        Meant to be used as a subquery so the accessible-project set is filtered
-        in the DB instead of being materialised into a Python list.
-        """
-        return readable_project_ids_stmt(user_id, product_name)

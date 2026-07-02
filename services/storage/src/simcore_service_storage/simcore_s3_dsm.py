@@ -77,7 +77,10 @@ from .models import (
 )
 from .modules.datcore_adapter import datcore_adapter
 from .modules.db import get_db_engine
-from .modules.db.access_layer import AccessLayerRepository
+from .modules.db.access_layer import (
+    AccessLayerRepository,
+    readable_project_ids_stmt,
+)
 from .modules.db.file_meta_data import FileMetaDataRepository
 from .modules.db.projects import ProjectRepository
 from .modules.db.tokens import TokenRepository
@@ -252,9 +255,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 total,
             ) = await list_child_paths_from_repository(
                 get_db_engine(self.app),
-                filter_by_project_ids=access_layer_repo.get_readable_project_ids_stmt(
-                    user_id=user_id, product_name=product_name
-                ),
+                filter_by_project_ids=readable_project_ids_stmt(user_id=user_id, product_name=product_name),
                 filter_by_file_prefix=file_filter,
                 limit=limit,
                 cursor=cursor,
