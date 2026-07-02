@@ -64,18 +64,24 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
-export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
+export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/agent/VERSION)
 export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export AUTOSCALING_API_VERSION := $(shell cat $(CURDIR)/services/autoscaling/VERSION)
 export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
+export CLUSTERS_KEEPER_API_VERSION := $(shell cat $(CURDIR)/services/clusters-keeper/VERSION)
+export DASK_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dask-sidecar/VERSION)
 export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
+export DYNAMIC_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dynamic-sidecar/VERSION)
+export EFS_GUARDIAN_API_VERSION := $(shell cat $(CURDIR)/services/efs-guardian/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
 export DYNAMIC_SCHEDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
 export NOTIFICATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/notifications/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
+export RESOURCE_USAGE_TRACKER_API_VERSION := $(shell cat $(CURDIR)/services/resource-usage-tracker/VERSION)
+export SERVICE_INTEGRATION_API_VERSION := $(shell cat $(CURDIR)/packages/service-integration/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
@@ -194,6 +200,11 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 docker buildx bake --allow=fs.read=.. \
 	--set *.args.BASE_TAG=$(BASE_TAG) \
 	--set *.args.DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+	--set *.annotations="org.opencontainers.image.created=$(BUILD_DATE)" \
+	--set *.annotations="org.opencontainers.image.source=$(VCS_URL)" \
+	--set *.annotations="org.opencontainers.image.revision=$(VCS_REF)" \
+	--set *.annotations="org.opencontainers.image.vendor=IT'IS Foundation" \
+	--set *.annotations="org.opencontainers.image.licenses=MIT" \
 	$(foreach service, $(if $(target),$(target),$(INCLUDED_SERVICES)),\
 		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-runtime-base:$(BASE_TAG)=target:simcore-runtime-base \
 		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-build-base:$(BASE_TAG)=target:simcore-build-base) \

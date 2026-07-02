@@ -45,9 +45,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/service-integration:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "service-integration"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${SERVICE_INTEGRATION_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   # Services below are part of the osparc-simcore stack ---------------------------
 
@@ -63,10 +67,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/api-server:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "api-server"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${API_SERVER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${API_SERVER_API_VERSION}"
 
   autoscaling:
@@ -81,10 +88,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "autoscaling"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${AUTOSCALING_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${AUTOSCALING_API_VERSION}"
 
   catalog:
@@ -99,10 +109,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/catalog:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "catalog"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${CATALOG_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${CATALOG_API_VERSION}"
 
   clusters-keeper:
@@ -117,9 +130,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "clusters-keeper"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${CLUSTERS_KEEPER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   director:
     image: local/director:${BUILD_TARGET:?build_target_required}
@@ -133,14 +150,16 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/director:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "director"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${DIRECTOR_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${DIRECTOR_API_VERSION}"
 
-  dask-sidecar:
-    &build-dask-sidecar
+  dask-sidecar: &build-dask-sidecar
     image: local/dask-sidecar:${BUILD_TARGET:?build_target_required}
     build:
       context: ../
@@ -152,10 +171,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "dask-sidecar"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${DASK_SIDECAR_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   director-v2:
     image: local/director-v2:${BUILD_TARGET:?build_target_required}
@@ -169,10 +191,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/director-v2:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "director-v2"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${DIRECTOR_V2_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${DIRECTOR_V2_API_VERSION}"
 
   migration:
@@ -187,10 +212,12 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/migration:release-github-latest
       target: production
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "migration"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   notifications:
     image: local/notifications:${BUILD_TARGET:?build_target_required}
@@ -204,10 +231,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/notifications:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "notifications"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${NOTIFICATIONS_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${NOTIFICATIONS_API_VERSION}"
 
   resource-usage-tracker:
@@ -222,9 +252,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "resource-usage-tracker"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${RESOURCE_USAGE_TRACKER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   static-webserver:
     image: local/static-webserver:${BUILD_TARGET:?build_target_required}
@@ -244,10 +278,12 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "static-webserver"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   webserver:
     image: local/webserver:${BUILD_TARGET:?build_target_required}
@@ -265,10 +301,13 @@ services:
         - VCS_URL=${VCS_URL}
         - VCS_REF=${VCS_REF}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "webserver"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${WEBSERVER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${WEBSERVER_API_VERSION}"
 
   dynamic-sidecar:
@@ -283,10 +322,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "dynamic-sidecar"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${DYNAMIC_SIDECAR_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   efs-guardian:
     image: local/efs-guardian:${BUILD_TARGET:?build_target_required}
@@ -300,9 +342,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "efs-guardian"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${EFS_GUARDIAN_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   invitations:
     image: local/invitations:${BUILD_TARGET:?build_target_required}
@@ -316,12 +362,14 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/invitations:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "invitations"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${INVITATIONS_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${INVITATIONS_API_VERSION}"
-
 
   payments:
     image: local/payments:${BUILD_TARGET:?build_target_required}
@@ -335,9 +383,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/payments:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "payments"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${PAYMENTS_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${PAYMENTS_API_VERSION}"
 
   dynamic-scheduler:
@@ -352,9 +404,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "dynamic-scheduler"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${DYNAMIC_SCHEDULER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${DYNAMIC_SCHEDULER_API_VERSION}"
 
   docker-api-proxy:
@@ -369,9 +425,12 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "docker-api-proxy"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   datcore-adapter:
     image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}
@@ -385,10 +444,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "datcore-adapter"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${DATCORE_ADAPTER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${DATCORE_ADAPTER_API_VERSION}"
 
   storage:
@@ -403,10 +465,13 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/storage:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "storage"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${STORAGE_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${STORAGE_API_VERSION}"
 
   agent:
@@ -427,8 +492,11 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/agent:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "agent"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.version: "${AGENT_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
         io.osparc.api-version: "${AGENT_API_VERSION}"
