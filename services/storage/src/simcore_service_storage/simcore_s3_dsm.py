@@ -215,12 +215,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             # NOTE: we currently do not support anything else than project_id/node_id/file_path here, sorry chap
             project_id = ProjectID(file_filter.parts[0]) if file_filter else None
 
-        accessible_projects_ids = await get_accessible_project_ids(
-            get_db_engine(self.app),
-            user_id=user_id,
-            product_name=product_name,
-            project_id=project_id,
-        )
+        access_layer_repo = AccessLayerRepository.instance(get_db_engine(self.app))
+        if project_id is not None:
+            project_access_rights = await access_layer_repo.get_project_access_rights(
+                user_id=user_id, project_id=project_id
+            )
+            if not project_access_rights.read:
+                raise ProjectAccessRightError(access_right="read", project_id=project_id)
 
         # check if the file_filter is a directory or inside one
         dir_fmd = None
@@ -242,14 +243,15 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 cursor=cursor,
             )
         else:
-            # NOTE: files are DB-based
+            # NOTE: files are DB-based.
             (
                 paths_metadata,
                 next_cursor,
                 total,
             ) = await list_child_paths_from_repository(
                 get_db_engine(self.app),
-                filter_by_project_ids=accessible_projects_ids,
+                user_id=user_id,
+                product_name=product_name,
                 filter_by_file_prefix=file_filter,
                 limit=limit,
                 cursor=cursor,
