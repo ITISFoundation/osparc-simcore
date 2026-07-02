@@ -150,7 +150,7 @@ pathspec==1.0.4
     # via mypy
 pillow==12.1.1
     # via -r requirements/_test.in
-pip==26.0.1
+pip==26.1
     # via -r requirements/_test.in
 pluggy==1.6.0
     # via
