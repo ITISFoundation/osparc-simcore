@@ -3258,6 +3258,23 @@
             "deprecated": true
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/JobEncryptionInputs"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encryption"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -9628,6 +9645,11 @@
         "title": "File",
         "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud."
       },
+      "FileIDStr": {
+        "type": "string",
+        "maxLength": 65535,
+        "minLength": 1
+      },
       "FileUploadCompletionBody": {
         "properties": {
           "parts": {
@@ -9974,6 +9996,33 @@
           "runner_name": "solvers/isolve/releases/1.3.4",
           "runner_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4",
           "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c"
+        }
+      },
+      "JobEncryptionInputs": {
+        "properties": {
+          "root_key": {
+            "$ref": "#/components/schemas/RootKeyStr"
+          },
+          "input_port_to_file_id": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FileIDStr"
+            },
+            "type": "object",
+            "title": "Input Port To File Id",
+            "description": "Maps each encrypted input port key to the file_id used to derive its key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "root_key"
+        ],
+        "title": "JobEncryptionInputs",
+        "description": "Optional encryption context supplied at job-start time.\n\n``input_port_to_file_id`` maps each encrypted input port key (from the job's\n``JobInputs.values``) to the ``file_id`` the client used to derive/encrypt that\nfile. The single computational node is resolved internally by api-server.",
+        "example": {
+          "input_port_to_file_id": {
+            "input_file": "input_file"
+          },
+          "root_key": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
         }
       },
       "JobID": {

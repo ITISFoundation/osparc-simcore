@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID, uuid4
 
+from models_library.api_schemas_directorv2.encryption import FileIDStr, RootKeyStr
 from models_library.basic_types import SHA256Str
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -124,6 +125,34 @@ class JobInputs(BaseModel):
 
     def compute_checksum(self):
         return _compute_keyword_arguments_checksum(self.values)
+
+
+class JobEncryptionInputs(ApiServerInputSchema):
+    """Optional encryption context supplied at job-start time.
+
+    ``input_port_to_file_id`` maps each encrypted input port key (from the job's
+    ``JobInputs.values``) to the ``file_id`` the client used to derive/encrypt that
+    file. The single computational node is resolved internally by api-server.
+    """
+
+    root_key: RootKeyStr
+    input_port_to_file_id: Annotated[
+        dict[str, FileIDStr],
+        Field(
+            default_factory=dict,
+            description="Maps each encrypted input port key to the file_id used to derive its key",
+        ),
+    ]
+
+    model_config = ConfigDict(
+        frozen=True,
+        json_schema_extra={
+            "example": {
+                "root_key": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+                "input_port_to_file_id": {"input_file": "input_file"},
+            }
+        },
+    )
 
 
 class JobOutputs(BaseModel):

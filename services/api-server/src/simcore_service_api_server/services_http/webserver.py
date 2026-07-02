@@ -13,6 +13,7 @@ from common_library.json_serialization import json_dumps
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.projects import (
@@ -502,8 +503,11 @@ class AuthSession:
         self,
         *,
         project_id: UUID,
+        encryption: JobEncryptionContextMetadata | None = None,
     ) -> None:
         body_input: dict[str, Any] = {}
+        if encryption is not None:
+            body_input["encryption"] = encryption
 
         body: ComputationStart = ComputationStart(**body_input)
         response = await self.client.post(
