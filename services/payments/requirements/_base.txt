@@ -55,7 +55,7 @@ certifi==2024.8.30
     #   httpx
     #   requests
     #   sentry-sdk
-cffi==1.17.1
+cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.0
     # via requests
@@ -64,7 +64,7 @@ click==8.2.1
     #   rich-toolkit
     #   typer
     #   uvicorn
-cryptography==44.0.0
+cryptography==46.0.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -100,7 +100,7 @@ googleapis-common-protos==1.70.0
     #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.2.4
     # via sqlalchemy
-grpcio==1.68.0
+grpcio==1.81.1
     # via opentelemetry-exporter-otlp-proto-grpc
 h11==0.16.0
     # via
@@ -405,6 +405,7 @@ typing-extensions==4.14.1
     #   fast-depends
     #   fastapi
     #   faststream
+    #   grpcio
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
