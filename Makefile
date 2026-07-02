@@ -213,9 +213,10 @@ docker buildx bake --allow=fs.read=.. \
 				--set $(service).tags= \
 		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).output="type=image$(comma)name=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG)$(comma)push=true$(comma)compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
+			--set $(service).output="type=image$(comma)name=$(DOCKER_REGISTRY)/$(service)$(if $(push-by-digest),,:$(DOCKER_IMAGE_TAG))$(comma)push=true$(if $(push-by-digest),$(comma)push-by-digest=true,)$(comma)compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
 		)\
 	,) \
+	$(if $(metadata-file),--metadata-file $(metadata-file),) \
 	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
@@ -226,7 +227,7 @@ popd;
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`. To push: `make push=true DOCKER_REGISTRY=... DOCKER_IMAGE_TAG=...`. To push untagged by digest instead (capturing the digest via a metadata file): `make push=true push-by-digest=true metadata-file=/tmp/metadata.json DOCKER_REGISTRY=...`
 	# Building service$(if $(target),,s) $(target) $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 	# List production images
