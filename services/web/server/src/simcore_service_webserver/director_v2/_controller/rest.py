@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
     ComputationPathParams,
@@ -53,10 +54,14 @@ async def start_computation(request: web.Request) -> web.Response:
 
     subgraph: set[str] = set()
     force_restart: bool = False  # NOTE: deprecate this entry
+    encryption: JobEncryptionContextMetadata | None = None
     if request.can_read_body:
         body_params = await parse_request_body_as(ComputationStart, request)
-        subgraph = body_params.subgraph
-        force_restart = body_params.force_restart
+        subgraph, force_restart, encryption = (
+            body_params.subgraph,
+            body_params.force_restart,
+            body_params.encryption,
+        )
 
     # Group properties
     group_properties = await _director_v2_service.get_group_properties(
@@ -119,6 +124,7 @@ async def start_computation(request: web.Request) -> web.Response:
         "use_on_demand_clusters": group_properties.use_on_demand_clusters,
         "wallet_info": wallet_info,
         "collection_run_id": collection_run_id,
+        **({"encryption": encryption} if encryption is not None else {}),
     }
 
     run_policy = get_project_run_policy(request.app)

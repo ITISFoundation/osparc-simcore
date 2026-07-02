@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.84.1"
+    "version": "0.85.0"
   },
   "servers": [
     {
@@ -16153,6 +16153,16 @@
             "uniqueItems": true,
             "title": "Subgraph",
             "default": []
+          },
+          "encryption": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobEncryptionContextMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -20304,6 +20314,11 @@
         ],
         "title": "FeaturesDict"
       },
+      "FileIDStr": {
+        "type": "string",
+        "maxLength": 65535,
+        "minLength": 1
+      },
       "FileLocation": {
         "properties": {
           "name": {
@@ -21704,6 +21719,32 @@
         },
         "type": "object",
         "title": "JSONFunctionOutputSchema"
+      },
+      "JobEncryptionContextMetadata": {
+        "properties": {
+          "root_key": {
+            "$ref": "#/components/schemas/RootKeyStr"
+          },
+          "input_port_to_file_id": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/FileIDStr"
+              },
+              "type": "object"
+            },
+            "propertyNames": {
+              "format": "uuid"
+            },
+            "type": "object",
+            "title": "Input Port To File Id",
+            "description": "Per computational node, maps each encrypted input port key to the file_id the client used to derive its key (may differ from the port key). Only listed inputs are decrypted."
+          }
+        },
+        "type": "object",
+        "required": [
+          "root_key"
+        ],
+        "title": "JobEncryptionContextMetadata"
       },
       "LicensedItemPurchaseGet": {
         "properties": {
@@ -27209,6 +27250,12 @@
           "reservation"
         ],
         "title": "ResourceValue"
+      },
+      "RootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded 32-byte root key shared by all tasks of the job",
+        "writeOnly": true
       },
       "RunningDynamicServiceDetails": {
         "properties": {
