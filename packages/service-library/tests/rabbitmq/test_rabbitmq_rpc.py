@@ -1,3 +1,5 @@
+# ruff: noqa: SLF001
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
@@ -277,7 +279,7 @@ async def test_rpc_rebuilds_surface_after_reconnection(rpc_client: RabbitMQRPCCl
     assert rpc_client.healthy is True
 
     # Simulate a RabbitMQ reconnection by invoking the callback directly
-    await rpc_client._on_reconnect()  # noqa: SLF001
+    await rpc_client._on_reconnect()
 
     # the client reconnects (no service restart) and keeps serving requests
     assert rpc_client.healthy is True
@@ -287,7 +289,7 @@ async def test_rpc_rebuilds_surface_after_reconnection(rpc_client: RabbitMQRPCCl
 async def test_rpc_reconnection_without_registered_handlers(rpc_client: RabbitMQRPCClient):
     assert rpc_client.healthy is True
 
-    await rpc_client._on_reconnect()  # noqa: SLF001
+    await rpc_client._on_reconnect()
 
     assert rpc_client.healthy is True
 
@@ -322,15 +324,15 @@ async def test_rpc_client_stays_unhealthy_when_rebuild_fails(rpc_client: RabbitM
     assert rpc_client.healthy is True
 
     with pytest.raises(RuntimeError):
-        await rpc_client._on_reconnect()  # noqa: SLF001
+        await rpc_client._on_reconnect()
 
     # the client stays unhealthy so the liveness probe restarts the service as a fallback
     assert rpc_client.healthy is False
 
 
 def _get_rpc_result_queue_name(rpc_client: RabbitMQRPCClient) -> str:
-    assert rpc_client._rpc is not None  # noqa: SLF001
-    return rpc_client._rpc.result_queue.name  # noqa: SLF001
+    assert rpc_client._rpc is not None
+    return rpc_client._rpc.result_queue.name
 
 
 async def test_rpc_result_queue_is_not_auto_restored_by_robust_channel(rpc_client: RabbitMQRPCClient):
@@ -338,8 +340,8 @@ async def test_rpc_result_queue_is_not_auto_restored_by_robust_channel(rpc_clien
     # robust channel's restore set. Otherwise aio-pika would try to re-declare it
     # (with the same name) on reconnect while the previous connection still holds
     # it, failing with ACCESS_REFUSED and preventing `_on_reconnect` from running.
-    assert rpc_client._channel is not None  # noqa: SLF001
-    restored_queue_names = set(rpc_client._channel._queues.keys())  # noqa: SLF001
+    assert rpc_client._channel is not None
+    restored_queue_names = set(rpc_client._channel._queues.keys())
     assert _get_rpc_result_queue_name(rpc_client) not in restored_queue_names
 
 
@@ -347,7 +349,7 @@ async def test_rpc_reconnection_creates_a_fresh_result_queue(rpc_client: RabbitM
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
     queue_before = _get_rpc_result_queue_name(rpc_client)
 
-    await rpc_client._on_reconnect()  # noqa: SLF001
+    await rpc_client._on_reconnect()
 
     # the rebuild allocates a brand-new mailbox (fresh exclusive queue) so it can
     # never collide with the stale queue still held by the previous connection
@@ -363,12 +365,12 @@ async def test_rpc_concurrent_reconnections_are_serialized(rpc_client: RabbitMQR
     # a flapping connection can fire the reconnect callback multiple times at once;
     # the surface lock must serialize the rebuilds so they cannot interleave and
     # leak a channel or leave the client in an inconsistent state
-    await asyncio.gather(*(rpc_client._on_reconnect() for _ in range(5)))  # noqa: SLF001
+    await asyncio.gather(*(rpc_client._on_reconnect() for _ in range(5)))
 
     # a single consistent surface remains and keeps serving requests
     assert rpc_client.healthy is True
-    assert rpc_client._channel is not None  # noqa: SLF001
-    assert rpc_client._rpc is not None  # noqa: SLF001
+    assert rpc_client._channel is not None
+    assert rpc_client._rpc is not None
     assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
 
 
