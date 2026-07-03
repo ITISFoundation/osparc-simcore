@@ -1,4 +1,4 @@
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 
 from pydantic import (
     AnyHttpUrl,
@@ -18,6 +18,7 @@ from ..projects_nodes_io import NodeID, SimcoreS3FileID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
 from ..wallets import WalletInfo
+from .encryption import JobEncryptionContextMetadata
 
 
 class ComputationGet(ComputationTask):
@@ -70,6 +71,11 @@ class ComputationCreate(BaseModel):
         ),
     ] = None
 
+    encryption: Annotated[
+        JobEncryptionContextMetadata | None,
+        Field(description="Optional job encryption context to decrypt input files and encrypt output files"),
+    ] = None
+
     @field_validator("product_name")
     @classmethod
     def _ensure_product_name_defined_if_computation_starts(cls, v, info: ValidationInfo):
@@ -119,11 +125,11 @@ class TaskLogFileIdGet(BaseModel):
             "examples": [
                 {
                     "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/3fa85f64-5717-4562-b3fc-2c963f66afa6/logs/task_logs.txt",
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/3fa85f64-5717-4562-b3fc-2c963f66afa6/logs/task_logs.txt",  # noqa: E501
                 },
                 {
                     "task_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/6ba7b810-9dad-11d1-80b4-00c04fd430c8/logs/debug.log",
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/6ba7b810-9dad-11d1-80b4-00c04fd430c8/logs/debug.log",  # noqa: E501
                 },
                 {
                     "task_id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
@@ -138,7 +144,7 @@ class TasksSelection(BaseModel):
     nodes_ids: list[NodeID]
 
 
-OutputName: TypeAlias = IDStr
+type OutputName = IDStr
 
 
 class TasksOutputs(BaseModel):
