@@ -268,9 +268,6 @@ class FileMetaDataRepository(BaseRepository):
 
         files_query = (
             (
-                # NOTE: count(*) OVER () returns the total number of matching rows
-                # (computed before LIMIT/OFFSET) on every row, so the ranked_files CTE
-                # is evaluated once instead of twice (separate COUNT + fetch queries).
                 sa.select(ranked_files, file_meta_data, sa.func.count().over().label("total_count"))
                 .where(
                     and_(
@@ -309,9 +306,6 @@ class FileMetaDataRepository(BaseRepository):
                 )
 
             if not items:
-                # NOTE: an empty page (e.g. offset beyond the last item) carries no row
-                # to read total_count from, so we fall back to an explicit count to keep
-                # the returned total correct for callers/paginators.
                 total_count = (
                     await conn.scalar(
                         sa.select(sa.func.count()).select_from(ranked_files).where(ranked_files.c.row_num == 1)
