@@ -203,11 +203,11 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 docker buildx bake --allow=fs.read=.. \
 	--set *.args.BASE_TAG=$(BASE_TAG) \
 	--set *.args.DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
-	--set *.annotations="org.opencontainers.image.created=$(BUILD_DATE)" \
-	--set *.annotations="org.opencontainers.image.source=$(VCS_URL)" \
-	--set *.annotations="org.opencontainers.image.revision=$(VCS_REF)" \
-	--set *.annotations="org.opencontainers.image.vendor=IT'IS Foundation" \
-	--set *.annotations="org.opencontainers.image.licenses=MIT" \
+	--set *.annotations+="org.opencontainers.image.created=$(BUILD_DATE)" \
+	--set *.annotations+="org.opencontainers.image.source=$(VCS_URL)" \
+	--set *.annotations+="org.opencontainers.image.revision=$(VCS_REF)" \
+	--set *.annotations+="org.opencontainers.image.vendor=IT'IS Foundation" \
+	--set *.annotations+="org.opencontainers.image.licenses=MIT" \
 	$(foreach service, $(if $(target),$(target),$(INCLUDED_SERVICES)),\
 		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-runtime-base:$(BASE_TAG)=target:simcore-runtime-base \
 		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-build-base:$(BASE_TAG)=target:simcore-build-base) \
