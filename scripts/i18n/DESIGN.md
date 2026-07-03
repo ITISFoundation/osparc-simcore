@@ -194,7 +194,7 @@ flowchart TD
     FD("D: add new language  CLIENT_LANGS=xx_XX"):::trig
 
     QX -->|"qx translate\nexternal — frontend team"| EN
-    EN -->|"make translate-frontend"| LANG
+    EN -->|"make frontend-translate"| LANG
     LANG --> BUILD
 
     FA -.->|"qx translate first"| QX
