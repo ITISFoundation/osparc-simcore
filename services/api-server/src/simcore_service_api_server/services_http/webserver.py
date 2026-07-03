@@ -10,6 +10,7 @@ from uuid import UUID
 
 import httpx
 from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
@@ -510,11 +511,18 @@ class AuthSession:
             body_input["encryption"] = encryption
 
         body: ComputationStart = ComputationStart(**body_input)
+        body_data = model_dump_with_secrets(
+            body,
+            show_secrets=True,
+            mode="json",
+            exclude_unset=True,
+            exclude_defaults=True,
+        )
         response = await self.client.post(
             f"/computations/{project_id}:start",
             cookies=self.session_cookies,
             headers=self._get_session_headers(),
-            json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
+            json=body_data,
         )
         response.raise_for_status()
 

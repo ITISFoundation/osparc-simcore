@@ -9,6 +9,7 @@ from typing import Final
 
 import aiohttp
 from aiohttp import ClientTimeout, web
+from common_library.serialization import model_dump_with_secrets
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate as DirectorV2ComputationCreate,
 )
@@ -67,18 +68,20 @@ class DirectorV2RestClient:
         product_api_base_url: str,
         **options,
     ) -> tuple[str, int]:
+        computation_create = DirectorV2ComputationCreate(
+            user_id=user_id,
+            project_id=project_id,
+            product_name=product_name,
+            product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(product_api_base_url),
+            **options,
+        )
+        data = model_dump_with_secrets(computation_create, show_secrets=True, mode="json", exclude_unset=True)
         computation_task_out, response_status = await request_director_v2(
             self._app,
             "POST",
             self._settings.base_url / "computations",
             expected_status={web.HTTPOk, web.HTTPCreated},
-            data=DirectorV2ComputationCreate(
-                user_id=user_id,
-                project_id=project_id,
-                product_name=product_name,
-                product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(product_api_base_url),
-                **options,
-            ).model_dump(mode="json", exclude_unset=True),
+            data=data,
         )
         assert isinstance(computation_task_out, dict)  # nosec
         computation_task_out_id: str = computation_task_out["id"]

@@ -3,17 +3,31 @@
 # pylint: disable=unused-variable
 
 
+import base64
+import json
+
 import pytest
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata, RootKeyStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
+from models_library.projects_nodes_io import NodeID
 from pydantic import RootModel, TypeAdapter, create_model
+from simcore_service_api_server.exceptions.backend_errors import InvalidInputError
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.files import File
-from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobStatus
+from simcore_service_api_server.models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobEncryptionInputs,
+    JobInputs,
+    JobStatus,
+)
 from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 from simcore_service_api_server.services_http.solver_job_models_converters import (
+    build_job_encryption_context,
     create_job_from_project,
     create_job_inputs_from_node_inputs,
     create_jobstatus_from_task,
@@ -250,3 +264,54 @@ def test_create_jobstatus_from_task():
     job_status: JobStatus = create_jobstatus_from_task(task)
 
     assert job_status.job_id == task.id
+
+
+_VALID_ROOT_KEY_BASE64 = base64.b64encode(b"0" * 32).decode("ascii")
+_NODE_ID = NodeID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+
+
+def test_build_job_encryption_context_returns_none_when_no_encryption():
+    assert build_job_encryption_context(None, node_id=_NODE_ID, node_input_keys=["input_1"]) is None
+
+
+def test_build_job_encryption_context_wraps_flat_inputs_per_node():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"input_1": "input_1"},
+    )
+
+    metadata = build_job_encryption_context(encryption, node_id=_NODE_ID, node_input_keys=["input_1", "input_2"])
+
+    assert metadata is not None
+    # the flat client-supplied map is nested under the resolved node id
+    assert metadata.input_port_to_file_id == {_NODE_ID: {"input_1": "input_1"}}
+    # the secret root_key is preserved (not masked)
+    assert metadata.root_key.get_secret_value() == _VALID_ROOT_KEY_BASE64
+
+
+def test_build_job_encryption_context_raises_on_unknown_port_key():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"not_a_node_input": "some_file_id"},
+    )
+
+    with pytest.raises(InvalidInputError):
+        build_job_encryption_context(encryption, node_id=_NODE_ID, node_input_keys=["input_1", "input_2"])
+
+
+def test_job_encryption_metadata_serialization_preserves_root_key():
+    # regression: the SecretStr root_key must survive serialization to the outgoing HTTP
+    # body. Plain jsonable_encoder / model_dump(mode="json") masks it to "**********",
+    # which would break decryption end-to-end (both api-server->webserver and
+    # webserver->director-v2 hops rely on this exact serialization pattern).
+    metadata = JobEncryptionContextMetadata(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={_NODE_ID: {"input_1": "input_1"}},
+    )
+
+    body = model_dump_with_secrets(metadata, show_secrets=True, mode="json")
+
+    assert body["root_key"] == _VALID_ROOT_KEY_BASE64
+    assert "**********" not in json.dumps(body)
+    # dict keyed by NodeID becomes a JSON-native string key
+    assert body["input_port_to_file_id"] == {f"{_NODE_ID}": {"input_1": "input_1"}}
