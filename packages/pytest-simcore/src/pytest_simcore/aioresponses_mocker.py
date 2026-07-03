@@ -46,7 +46,7 @@ def _patched_client_response_init(self, *args, **kwargs):
 
 @pytest.fixture
 def aioresponses_mocker(mocker: MockerFixture) -> Iterator[AioResponsesMock]:
-    """Generick aioresponses mock
+    """Generic aioresponses mock
 
     SEE https://github.com/pnuckowski/aioresponses
 
