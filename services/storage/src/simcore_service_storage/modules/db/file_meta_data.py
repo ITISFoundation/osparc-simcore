@@ -2,15 +2,15 @@ import contextlib
 import datetime
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Annotated
 
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field, validate_call
+from pydantic import BaseModel
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -30,6 +30,7 @@ from ...models import (
     UserOrProjectFilter,
 )
 from ._base import BaseRepository
+from .access_layer import readable_project_ids_stmt
 
 type TotalChildren = int
 
@@ -203,23 +204,20 @@ class FileMetaDataRepository(BaseRepository):
                         return None
         return None
 
-    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_child_paths(
         self,
         *,
         connection: AsyncConnection | None = None,
-        filter_by_project_ids: Annotated[list[ProjectID] | None, Field(max_length=10000)],
+        user_id: UserID,
+        product_name: ProductName,
         filter_by_file_prefix: Path | None,
         cursor: GenericCursor | None,
         limit: int,
         is_partial_prefix: bool,
     ) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
-        """returns a list of FileMetaDataAtDB that are one level deep.
-        e.g. when no filter is used, these are top level objects
-
-        NOTE: if filter_by_project_ids is huge, this will raise ValidationError and someone needs to fix it!
-        Maybe using a DB join
-        """
+        readable_projects_filter = file_meta_data.c.project_id.in_(
+            readable_project_ids_stmt(user_id=user_id, product_name=product_name)
+        )
 
         cursor_params = _init_pagination(
             cursor,
@@ -247,11 +245,7 @@ class FileMetaDataRepository(BaseRepository):
                 .where(
                     and_(
                         file_meta_data.c.file_id.like(search_prefix),
-                        (
-                            file_meta_data.c.project_id.in_([f"{_}" for _ in filter_by_project_ids])
-                            if filter_by_project_ids
-                            else sa.true()
-                        ),
+                        readable_projects_filter,
                     )
                 )
                 .cte("ranked_files")
@@ -268,11 +262,7 @@ class FileMetaDataRepository(BaseRepository):
                     )
                     .label("row_num"),
                 )
-                .where(
-                    file_meta_data.c.project_id.in_([f"{_}" for _ in filter_by_project_ids])
-                    if filter_by_project_ids
-                    else sa.true()
-                )
+                .where(readable_projects_filter)
                 .cte("ranked_files")
             )
 
