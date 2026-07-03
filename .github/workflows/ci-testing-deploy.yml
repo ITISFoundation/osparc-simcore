@@ -31,6 +31,11 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
 env:
   # NOTE: 'COLUMNS' is a shell env var that represents the width (number of columns)
   #       of the terminal or command-line interface in characters.
@@ -331,7 +336,10 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.deploy-vars.outputs.build-matrix) }}
     uses: ./.github/workflows/_reusable-build-images.yml
-    secrets: inherit
+    secrets:
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
     with:
       build-backend: ${{ matrix.type == 'backend' }}
       build-frontend: ${{ matrix.type == 'frontend' }}
