@@ -1,5 +1,4 @@
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
 
 from aiohttp import ClientSession, ClientTimeout, web
 from common_library.json_serialization import json_dumps
@@ -12,7 +11,6 @@ from ..utils import (
 from .application_keys import APP_CLIENT_SESSION_KEY
 
 
-@asynccontextmanager
 async def persistent_client_session(app: web.Application) -> AsyncGenerator[None]:
     """Ensures a single client session per application
 
