@@ -53,13 +53,11 @@ class OutputMessage(BaseModel):
 class ResponseObject(BaseModel):
     """Response object returned by both POST and GET endpoints."""
 
-    id: str | None = None
+    id: str
     object: Literal["response"] = "response"
     background: bool | None = None
     created_at: float | None = None
     error: dict[str, Any] | None = None
-    incomplete_details: dict[str, Any] | None = None
-    instructions: str | list[Any] | None = None
     metadata: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
