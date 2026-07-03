@@ -51,6 +51,13 @@ qx.Class.define("osparc.conversation.MessageUI", {
       nullable: false,
       apply: "_applyMessage",
     },
+
+    groupedWithPrevious: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "__applyGroupedWithPrevious",
+    },
   },
 
   members: {
@@ -182,6 +189,21 @@ qx.Class.define("osparc.conversation.MessageUI", {
         deleteButton.addListener("execute", () => this.__deleteMessage(), this);
         menu.add(deleteButton);
       }
+    },
+
+    __applyGroupedWithPrevious: function(grouped) {
+      // consecutive messages from the same sender are visually grouped:
+      // hide the repeated avatar/name/timestamp and tighten the spacing
+      const isMyMessage = osparc.data.model.Message.isMyMessage(this.getMessage());
+      this.getChildControl("avatar").setVisibility(grouped ? "hidden" : "visible");
+      this.getChildControl("header-layout").setVisibility(grouped ? "excluded" : "visible");
+      this.setPaddingTop(grouped ? 0 : 5);
+      // only the first bubble in a group keeps the "tail" corner
+      const bubble = this.getChildControl("message-bubble");
+      const corner = isMyMessage ? "border-top-right-radius" : "border-top-left-radius";
+      const styles = {};
+      styles[corner] = grouped ? "" : "0px";
+      bubble.getContentElement().setStyles(styles);
     },
 
     __updateMessageMaxWidth: function() {
