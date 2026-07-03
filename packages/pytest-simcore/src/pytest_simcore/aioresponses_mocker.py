@@ -33,16 +33,18 @@ def _patched_client_response_init(self, *args, **kwargs):
     # This raises `TypeError: ClientResponse.__init__() missing 1 required
     # keyword-only argument: 'stream_writer'` when mocking requests, therefore we
     # inject a default `stream_writer` when the caller (aioresponses) does not provide one.
-    warnings.warn(
-        "aioresponses is missing the `stream_writer` keyword-only argument"
-        " required by aiohttp>=3.14, therefore `ClientResponse.__init__` is manually patched."
-        " TIP: periodically check if it gets updated https://github.com/pnuckowski/aioresponses/issues/289",
-        UserWarning,
-        stacklevel=1,
-    )
+    if not getattr(_patched_client_response_init, "_warned", False):
+        warnings.warn(
+            "aioresponses is missing the `stream_writer` keyword-only argument"
+            " required by aiohttp>=3.14, therefore `ClientResponse.__init__` is manually patched."
+            " TIP: periodically check if it gets updated https://github.com/pnuckowski/aioresponses/issues/289",
+            UserWarning,
+            stacklevel=2,
+        )
+        setattr(_patched_client_response_init, "_warned", True)
+
     kwargs.setdefault("stream_writer", Mock(output_size=0))
     _orig_client_response_init(self, *args, **kwargs)
-
 
 @pytest.fixture
 def aioresponses_mocker(mocker: MockerFixture) -> Iterator[AioResponsesMock]:
