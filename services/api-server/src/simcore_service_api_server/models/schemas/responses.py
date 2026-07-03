@@ -10,6 +10,12 @@ from pydantic import BaseModel, Field, field_validator
 
 Temperature = Annotated[float, Field(ge=0, le=2)]
 
+
+def _const_to_enum(schema: dict) -> None:
+    if "const" in schema:
+        schema["enum"] = [schema.pop("const")]
+
+
 ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
 
 
@@ -54,14 +60,14 @@ class ResponseObject(BaseModel):
     """Response object returned by both POST and GET endpoints."""
 
     id: str
-    object: Literal["response"] = "response"
+    object: Literal["response"] = Field(default="response", json_schema_extra=_const_to_enum)
     background: bool | None = None
     created_at: float | None = None
     error: dict[str, Any] | None = None
     metadata: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
-    status: Literal["completed", "failed", "in_progress", "incomplete", "queued"] | None = None
+    status: Literal["cancelled", "completed", "failed", "in_progress", "incomplete", "queued"] = "in_progress"
     temperature: Temperature | None = None
     text: dict[str, Any] = Field(default_factory=dict)
     usage: dict[str, Any] = Field(default_factory=dict)
