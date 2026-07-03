@@ -67,7 +67,7 @@ jobs:
       - name: build backend images
         if: ${{ inputs.build-backend }}
         env:
-          DOCKER_TARGET_PLATFORMS: ${{ inputs.platforms }}
+          DOCKER_TARGET_PLATFORMS: ${{ inputs.platforms || (runner.arch == 'X64' && 'linux/amd64' || 'linux/arm64') }}
         run: |
           if [ "${{ inputs.build-artifacts }}" = "true" ]; then
             mkdir --parents /${{ runner.temp }}/build
@@ -85,7 +85,7 @@ jobs:
       - name: build frontend images
         if: ${{ inputs.build-frontend }}
         env:
-          DOCKER_TARGET_PLATFORMS: ${{ inputs.platforms }}
+          DOCKER_TARGET_PLATFORMS: ${{ inputs.platforms || (runner.arch == 'X64' && 'linux/amd64' || 'linux/arm64') }}
         run: |
           if [ "${{ inputs.build-artifacts }}" = "true" ]; then
             mkdir --parents /${{ runner.temp }}/build
