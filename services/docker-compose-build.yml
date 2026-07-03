@@ -74,7 +74,6 @@ services:
         org.opencontainers.image.version: "${API_SERVER_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${API_SERVER_API_VERSION}"
 
   autoscaling:
     image: local/autoscaling:${BUILD_TARGET:?build_target_required}
@@ -95,7 +94,6 @@ services:
         org.opencontainers.image.version: "${AUTOSCALING_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${AUTOSCALING_API_VERSION}"
 
   catalog:
     image: local/catalog:${BUILD_TARGET:?build_target_required}
@@ -116,7 +114,6 @@ services:
         org.opencontainers.image.version: "${CATALOG_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${CATALOG_API_VERSION}"
 
   clusters-keeper:
     image: local/clusters-keeper:${BUILD_TARGET:?build_target_required}
@@ -157,7 +154,6 @@ services:
         org.opencontainers.image.version: "${DIRECTOR_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${DIRECTOR_API_VERSION}"
 
   dask-sidecar: &build-dask-sidecar
     image: local/dask-sidecar:${BUILD_TARGET:?build_target_required}
@@ -198,7 +194,6 @@ services:
         org.opencontainers.image.version: "${DIRECTOR_V2_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${DIRECTOR_V2_API_VERSION}"
 
   migration:
     image: local/migration:${BUILD_TARGET:?build_target_required}
@@ -238,7 +233,6 @@ services:
         org.opencontainers.image.version: "${NOTIFICATIONS_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${NOTIFICATIONS_API_VERSION}"
 
   resource-usage-tracker:
     image: local/resource-usage-tracker:${BUILD_TARGET:?build_target_required}
@@ -308,7 +302,6 @@ services:
         org.opencontainers.image.version: "${WEBSERVER_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${WEBSERVER_API_VERSION}"
 
   dynamic-sidecar:
     image: local/dynamic-sidecar:${BUILD_TARGET:?build_target_required}
@@ -369,7 +362,6 @@ services:
         org.opencontainers.image.version: "${INVITATIONS_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${INVITATIONS_API_VERSION}"
 
   payments:
     image: local/payments:${BUILD_TARGET:?build_target_required}
@@ -390,7 +382,6 @@ services:
         org.opencontainers.image.version: "${PAYMENTS_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${PAYMENTS_API_VERSION}"
 
   dynamic-scheduler:
     image: local/dynamic-scheduler:${BUILD_TARGET:?build_target_required}
@@ -411,7 +402,6 @@ services:
         org.opencontainers.image.version: "${DYNAMIC_SCHEDULER_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${DYNAMIC_SCHEDULER_API_VERSION}"
 
   docker-api-proxy:
     image: local/docker-api-proxy:${BUILD_TARGET:?build_target_required}
@@ -451,7 +441,6 @@ services:
         org.opencontainers.image.version: "${DATCORE_ADAPTER_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${DATCORE_ADAPTER_API_VERSION}"
 
   storage:
     image: local/storage:${BUILD_TARGET:?build_target_required}
@@ -472,7 +461,6 @@ services:
         org.opencontainers.image.version: "${STORAGE_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${STORAGE_API_VERSION}"
 
   agent:
     image: local/agent:${BUILD_TARGET:?build_target_required}
@@ -499,4 +487,3 @@ services:
         org.opencontainers.image.version: "${AGENT_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
-        io.osparc.api-version: "${AGENT_API_VERSION}"
