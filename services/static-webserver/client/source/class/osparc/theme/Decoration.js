@@ -41,6 +41,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "chat-bubble-mine": {
+      include: "chat-bubble",
+      style: {
+        backgroundColor: "strong-main",
+      }
+    },
+
     "separator-strong": {
       style: {
         widthTop: 1,
