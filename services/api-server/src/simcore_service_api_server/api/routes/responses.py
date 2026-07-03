@@ -31,7 +31,7 @@ _CANCEL_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     description=create_route_description(
         base="Creates a model response (OpenAI Responses API compatible)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.13.2"),
         ],
     ),
     response_model=ResponseObject,
@@ -54,7 +54,7 @@ async def create_response(
             "Use to poll status of background responses (OpenAI Responses API compatible)"
         ),
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.13.2"),
         ],
     ),
     response_model=ResponseObject,
@@ -73,7 +73,7 @@ async def get_response(
     description=create_route_description(
         base="Cancels an in-progress background response (OpenAI Responses API compatible)",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.13.2"),
         ],
     ),
     response_model=ResponseObject,
