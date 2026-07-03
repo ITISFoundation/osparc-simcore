@@ -21,6 +21,10 @@ _RESPONSES_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 }
 
+_CANCEL_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+}
+
 
 @router.post(
     "",
@@ -45,7 +49,10 @@ async def create_response(
 @router.get(
     "/{response_id}",
     description=create_route_description(
-        base="Retrieves a model response by ID (OpenAI Responses API compatible)",
+        base=(
+            "Retrieves a model response by ID. "
+            "Use to poll status of background responses (OpenAI Responses API compatible)"
+        ),
         changelog=[
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
         ],
@@ -54,6 +61,25 @@ async def create_response(
     responses=_RESPONSES_STATUS_CODES,
 )
 async def get_response(
+    response_id: str,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+) -> ResponseObject:
+    msg = "Not implemented"
+    raise NotImplementedError(msg)
+
+
+@router.post(
+    "/{response_id}/cancel",
+    description=create_route_description(
+        base="Cancels an in-progress background response (OpenAI Responses API compatible)",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8"),
+        ],
+    ),
+    response_model=ResponseObject,
+    responses=_CANCEL_STATUS_CODES,
+)
+async def cancel_response(
     response_id: str,
     user_id: Annotated[int, Depends(get_current_user_id)],
 ) -> ResponseObject:

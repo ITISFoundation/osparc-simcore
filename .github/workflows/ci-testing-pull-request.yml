@@ -95,7 +95,7 @@ jobs:
         if: steps.changes.outputs.api-server == 'true'
         run: |
           ./scripts/openapi-diff.bash breaking \
-            --strip-prefix-base="/v1" \
+            --strip-prefix-base="/v0" \
             --fail-on ERR \
             --flatten-allof \
             "/specs/services/api-server/openapi-openai-compatible.json" \
