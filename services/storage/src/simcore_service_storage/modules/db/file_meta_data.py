@@ -268,7 +268,10 @@ class FileMetaDataRepository(BaseRepository):
 
         files_query = (
             (
-                sa.select(ranked_files, file_meta_data)
+                # NOTE: count(*) OVER () returns the total number of matching rows
+                # (computed before LIMIT/OFFSET) on every row, so the ranked_files CTE
+                # is evaluated once instead of twice (separate COUNT + fetch queries).
+                sa.select(ranked_files, file_meta_data, sa.func.count().over().label("total_count"))
                 .where(
                     and_(
                         ranked_files.c.row_num == 1,
@@ -281,32 +284,39 @@ class FileMetaDataRepository(BaseRepository):
             .offset(cursor_params.offset)
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            total_count = (
-                await conn.scalar(
-                    sa.select(sa.func.count()).select_from(ranked_files).where(ranked_files.c.row_num == 1)
+            total_count = 0
+            items = []
+            async for row in await conn.stream(files_query):
+                total_count = row.total_count
+                items.append(
+                    PathMetaData(
+                        path=row.path or row.file_id,  # NOTE: if path_prefix is partial then path is None
+                        display_path=row.path or row.file_id,
+                        location_id=row.location_id,
+                        location=row.location,
+                        bucket_name=row.bucket_name,
+                        project_id=row.project_id,
+                        node_id=row.node_id,
+                        user_id=row.user_id,
+                        created_at=row.created_at,
+                        last_modified=row.last_modified,
+                        file_meta_data=(
+                            FileMetaData.from_db_model(FileMetaDataAtDB.model_validate(row))
+                            if row.file_id == row.path and not row.is_directory
+                            else None
+                        ),
+                    )
                 )
-            ) or 0
 
-            items = [
-                PathMetaData(
-                    path=row.path or row.file_id,  # NOTE: if path_prefix is partial then path is None
-                    display_path=row.path or row.file_id,
-                    location_id=row.location_id,
-                    location=row.location,
-                    bucket_name=row.bucket_name,
-                    project_id=row.project_id,
-                    node_id=row.node_id,
-                    user_id=row.user_id,
-                    created_at=row.created_at,
-                    last_modified=row.last_modified,
-                    file_meta_data=(
-                        FileMetaData.from_db_model(FileMetaDataAtDB.model_validate(row))
-                        if row.file_id == row.path and not row.is_directory
-                        else None
-                    ),
-                )
-                async for row in await conn.stream(files_query)
-            ]
+            if not items:
+                # NOTE: an empty page (e.g. offset beyond the last item) carries no row
+                # to read total_count from, so we fall back to an explicit count to keep
+                # the returned total correct for callers/paginators.
+                total_count = (
+                    await conn.scalar(
+                        sa.select(sa.func.count()).select_from(ranked_files).where(ranked_files.c.row_num == 1)
+                    )
+                ) or 0
 
         return (
             items,

@@ -33,6 +33,10 @@ from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesPar
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_nodes import projects_nodes
+from simcore_service_storage.modules.db.file_meta_data import (
+    FileMetaDataRepository,
+    _PathsCursorParameters,
+)
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -216,6 +220,66 @@ async def test_list_paths_pagination(
             expected_paths=expected_paths,
             check_total=False,
         )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=5,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=10,
+        )
+    ],
+    ids=str,
+)
+async def test_list_child_paths_empty_page_still_reports_total(
+    initialized_app: FastAPI,
+    user_id: UserID,
+    product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    with_random_project_with_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+):
+    project, _ = with_random_project_with_files
+    file_filter = Path(project["uuid"])
+    repo = FileMetaDataRepository.instance(sqlalchemy_async_engine)
+
+    # a normal first page reports the real total
+    items, _, total = await repo.list_child_paths(
+        user_id=user_id,
+        product_name=product_name,
+        filter_by_file_prefix=file_filter,
+        cursor=None,
+        limit=100,
+        is_partial_prefix=False,
+    )
+    assert items
+    assert total == len(project["workbench"])
+
+    # a page whose offset overshoots the last item is empty but must still report the real total
+    overshoot_cursor = _PathsCursorParameters(
+        offset=total + 10, file_prefix=file_filter, partial=False
+    ).model_dump_json()
+    empty_items, next_cursor, total_on_empty_page = await repo.list_child_paths(
+        user_id=user_id,
+        product_name=product_name,
+        filter_by_file_prefix=file_filter,
+        cursor=overshoot_cursor,
+        limit=100,
+        is_partial_prefix=False,
+    )
+    assert empty_items == []
+    assert next_cursor is None
+    assert total_on_empty_page == total
 
 
 @pytest.mark.parametrize(
