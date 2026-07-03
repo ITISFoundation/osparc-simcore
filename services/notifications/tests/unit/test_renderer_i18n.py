@@ -87,7 +87,7 @@ def test_share_project_renders_spanish_from_real_catalog(
     preview = renderer.preview_template(share_project_template, context, locale="es_ES")
     content = preview.message_content
 
-    assert "Se ha compartido un proyecto contigo en example.com" in content.subject
+    assert "Un proyecto fue compartido contigo en example.com" in content.subject
     assert "Estimado/a Ada," in content.body_text
     assert "El equipo de oSPARC" in content.body_text
     # untranslated msgid falls back to English
