@@ -30,7 +30,7 @@ class CreateResponseRequest(BaseModel):
     background: Literal[True]
     input: list[InputMessage]
     metadata: dict[str, str] | None = None
-    model: Any  # validation is done in validator because of OpenAI's tricky OAS spec
+    model: Any  # validation is done in validator because of OpenAI's tricky OAS
     temperature: Temperature
 
     @field_validator("model")
