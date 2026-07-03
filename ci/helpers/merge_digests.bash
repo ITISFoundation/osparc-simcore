@@ -30,8 +30,15 @@ trap 'rm -rf "${tmp_dir}"' EXIT
 merge_metadata_files() {
     local dir="$1"
     local out="$2"
-    # shellcheck disable=SC2206
-    local files=($dir/digests-*.json)
+
+    shopt -s nullglob  # Unmatched globs expand to empty, not literal
+    local files=("${dir}"/digests-*.json)
+    shopt -u nullglob
+
+    if [ "${#files[@]}" -eq 0 ]; then
+        error_exit "$LINENO" "no digest metadata files found in ${dir} (expected digests-*.json)"
+    fi
+
     jq -s 'reduce .[] as $item ({}; . * $item)' "${files[@]}" > "${out}"
 }
 
