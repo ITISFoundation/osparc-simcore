@@ -783,8 +783,6 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
 ) -> None:
     """Translate a .pot/.po catalog into a language-specific .po."""
     if plan:
-        # Dry-run: run the real pipeline but with a provider that logs the composed
-        # prompt instead of calling the LLM, and never persist the output.
         dry_run = True
         parallel = False
         progress = False

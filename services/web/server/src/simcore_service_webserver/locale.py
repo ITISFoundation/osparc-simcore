@@ -39,7 +39,9 @@ def translate_message(message: str, request: web.Request) -> str:
 
 
 def get_locale_or_none(request: web.Request) -> SupportedLocale | None:
-    """Returns the locale resolved by ``locale_middleware`` for this request, or ``None``
+    """Equivalent to "Does the requests ask for a specific locale or not?"
+
+    Returns the locale resolved by ``locale_middleware`` for this request, or ``None``
     if the middleware did not run (e.g. the request key is missing).
 
     Useful for passing an optional override (e.g. to

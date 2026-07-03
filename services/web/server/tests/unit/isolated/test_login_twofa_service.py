@@ -56,7 +56,7 @@ async def _send_sms_code(
 
 async def test_send_sms_code_translates_body_using_resolved_locale(mock_twilio_client: MagicMock):
     """The SMS body is translated via the locale resolved by resolve_effective_locale."""
-    translated_msgid = "Estimado/a {first_name}, su codigo de verification es {code}"
+    translated_msgid = "Estimado/a {first_name}, su código de verificación es {code}"
 
     with patch("simcore_service_webserver.login._twofa_service.get_translator") as mock_get_translator:
         mock_get_translator.return_value.gettext.return_value = translated_msgid

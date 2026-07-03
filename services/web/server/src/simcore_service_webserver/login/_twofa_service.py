@@ -95,8 +95,8 @@ class SMSError(RuntimeError):
 
 
 _SMS_CODE_MESSAGE_FORMAT: Final = user_message(
-    # @TRANSLATOR Must be VERY SHORT to fit in an SMS
     "Dear {first_name}, your verification code is {code}",
+    _hint="Must be VERY SHORT to fit in an SMS",
     _version=1,
 )
 
