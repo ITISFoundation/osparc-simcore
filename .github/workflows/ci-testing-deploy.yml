@@ -1903,21 +1903,9 @@ jobs:
           merge-multiple: true
       - name: merge per-arch digests into a single service->arch->digest map
         run: ./ci/helpers/merge_digests.bash /tmp/digests/amd64 /tmp/digests/arm64 /tmp/digests/digests.json
-      - if: github.ref == 'refs/heads/master'
-        name: deploy master image
+      - name: "deploy multiarch image (tag-prefix: ${{ needs.deploy-vars.outputs.tag-prefix }})"
+        if: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
         env:
-          TAG_PREFIX: master-github
-          DIGESTS_FILE: /tmp/digests/digests.json
-        run: ./ci/deploy/dockerhub-deploy.bash
-      - if: contains(github.ref, 'refs/heads/hotfix_v')
-        name: deploy release hotfix image
-        env:
-          TAG_PREFIX: hotfix-github
-          DIGESTS_FILE: /tmp/digests/digests.json
-        run: ./ci/deploy/dockerhub-deploy.bash
-      - if: contains(github.ref, 'refs/heads/hotfix_staging_')
-        name: deploy staging hotfix image
-        env:
-          TAG_PREFIX: hotfix-staging-github
+          TAG_PREFIX: ${{ needs.deploy-vars.outputs.tag-prefix }}
           DIGESTS_FILE: /tmp/digests/digests.json
         run: ./ci/deploy/dockerhub-deploy.bash
