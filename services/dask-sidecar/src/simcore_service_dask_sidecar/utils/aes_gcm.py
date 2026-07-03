@@ -154,7 +154,9 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from dask_task_models_library.container_tasks.encryption import KEY_SIZE_BYTES
+from models_library.api_schemas_directorv2.encryption import (
+    AES_256_GCM_KEY_SIZE_BYTES,
+)
 from pydantic import Field
 
 NONCE_SIZE_BYTES: Final[int] = 12
@@ -193,12 +195,12 @@ class AesGcmStreamAuthError(AesGcmStreamError):
 
 def generate_key() -> bytes:
     """Return a fresh random 32-byte root key suitable for AES-256-GCM derivation."""
-    return os.urandom(KEY_SIZE_BYTES)
+    return os.urandom(AES_256_GCM_KEY_SIZE_BYTES)
 
 
 def _validate_key(root_key: bytes) -> None:
-    if len(root_key) != KEY_SIZE_BYTES:
-        msg = f"Invalid root key: expected {KEY_SIZE_BYTES} bytes, got {len(root_key)}"
+    if len(root_key) != AES_256_GCM_KEY_SIZE_BYTES:
+        msg = f"Invalid root key: expected {AES_256_GCM_KEY_SIZE_BYTES} bytes, got {len(root_key)}"
         raise AesGcmStreamError(msg)
 
 
@@ -222,7 +224,7 @@ def _derive_file_key(
     file_id: str,
 ) -> bytes:
     info = PROTOCOL_LABEL + _U16_STRUCT.pack(FORMAT_VERSION) + _length_prefixed(file_id)
-    hkdf = HKDF(algorithm=SHA256(), length=KEY_SIZE_BYTES, salt=None, info=info)
+    hkdf = HKDF(algorithm=SHA256(), length=AES_256_GCM_KEY_SIZE_BYTES, salt=None, info=info)
     return hkdf.derive(root_key)
 
 
