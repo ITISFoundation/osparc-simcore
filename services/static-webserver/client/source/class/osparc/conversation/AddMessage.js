@@ -95,6 +95,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           const textArea = control.getChildControl("text-area");
           textArea.set({
             maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
+            placeholder: this.tr("Write a message..."),
           });
           // Enter posts the message, Shift+Enter inserts a new line
           textArea.addListener("keydown", e => {
@@ -153,6 +154,15 @@ qx.Class.define("osparc.conversation.AddMessage", {
           this.getChildControl("add-comment-layout").add(control);
           break;
         }
+        case "keyboard-hint":
+          control = new qx.ui.basic.Label(this.tr("Enter to send \u00B7 Shift+Enter for new line")).set({
+            font: "text-12",
+            textColor: "text-disabled",
+            marginLeft: 40, // align with the text field, past the avatar
+            marginTop: 2,
+          });
+          this._add(control);
+          break;
         case "footer-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
@@ -185,6 +195,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       this.getChildControl("avatar");
       this.getChildControl("comment-field");
       this.getChildControl("add-comment-button");
+      this.getChildControl("keyboard-hint");
     },
 
     __applyStudyData: function(studyData) {
