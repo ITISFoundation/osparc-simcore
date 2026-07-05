@@ -73,8 +73,6 @@ class ResponseObject(BaseModel):
     background: bool | None = None
     created_at: float | None = None
     error: dict[str, str] | None = None
-    metadata: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
     status: ResponseStatus = ResponseStatus.IN_PROGRESS
-    temperature: Temperature | None = None
