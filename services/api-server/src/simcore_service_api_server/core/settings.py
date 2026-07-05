@@ -9,6 +9,7 @@ from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     Field,
+    HttpUrl,
     NonNegativeInt,
     PositiveInt,
     SecretStr,
@@ -118,6 +119,13 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
 class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None = None
+
+    API_SERVER_CHATBOT: Annotated[
+        HttpUrl | None,
+        Field(
+            description="URL of the chatbot service",
+        ),
+    ] = None
 
     API_SERVER_CELERY: Annotated[CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})] = None
 

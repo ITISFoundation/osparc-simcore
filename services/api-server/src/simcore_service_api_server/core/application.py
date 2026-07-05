@@ -20,6 +20,7 @@ from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import setup_task_manager
 from ..clients.postgres import setup_postgres
 from ..services_http import director_v2, storage, webserver
+from ..services_http.chatbot import setup as setup_chatbot
 from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import on_shutdown, on_startup
@@ -110,6 +111,13 @@ def create_app(  # noqa: C901
             app,
             tracing_config=tracing_config,
             add_response_trace_id_header=True,
+        )
+
+    if settings.API_SERVER_CHATBOT:
+        setup_chatbot(
+            app,
+            base_url=str(settings.API_SERVER_CHATBOT),
+            tracing_settings=settings.API_SERVER_TRACING,
         )
 
     if settings.API_SERVER_WEBSERVER:
