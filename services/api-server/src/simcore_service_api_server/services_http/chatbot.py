@@ -27,14 +27,14 @@ class ChatbotApi(BaseServiceClientApi):
         *,
         messages: list[ChatCompletionRequestMessage],
         model: str,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, Any],
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> CreateChatCompletionResponse:
         request = ChatRequest(
             messages=messages,
             model=model,
-            metadata=metadata or {},
+            metadata=metadata,
             temperature=temperature,
             top_p=top_p,
         )
