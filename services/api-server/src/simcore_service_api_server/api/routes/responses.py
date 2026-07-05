@@ -5,6 +5,7 @@ from uuid import UUID
 
 from celery_library.async_jobs import submit_job
 from fastapi import APIRouter, Depends, status
+from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
 from servicelib.celery.task_manager import TaskManager
@@ -66,7 +67,10 @@ async def create_response(
 ) -> ResponseObject:
     job = await submit_job(
         task_manager,
-        execution_metadata=TaskExecutionMetadata(name=_TASK_NAME),
+        execution_metadata=TaskExecutionMetadata(
+            name=_TASK_NAME,
+            queue=API_SERVER_CELERY_QUEUE_DEFAULT,
+        ),
         owner_metadata=ApiServerOwnerMetadata(user_id=user_id, product_name=product_name),
         request=body,
     )
