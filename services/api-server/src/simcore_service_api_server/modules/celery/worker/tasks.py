@@ -9,6 +9,7 @@ from servicelib.logging_utils import log_context
 
 from ....models.domain.celery_models import pydantic_types_to_register
 from ._functions_tasks import run_function
+from ._responses_tasks import run_chat_completion
 
 _logger = logging.getLogger(__name__)
 
@@ -19,3 +20,4 @@ def register_worker_tasks(app: Celery) -> None:
 
     with log_context(_logger, logging.INFO, msg="worker task registration"):
         register_task(app, run_function)
+        register_task(app, run_chat_completion)
