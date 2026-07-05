@@ -72,11 +72,9 @@ class ResponseObject(BaseModel):
     object: ResponseObjectType = ResponseObjectType.RESPONSE
     background: bool | None = None
     created_at: float | None = None
-    error: dict[str, Any] | None = None
+    error: dict[str, str] | None = None
     metadata: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
     status: ResponseStatus = ResponseStatus.IN_PROGRESS
     temperature: Temperature | None = None
-    text: dict[str, Any] = Field(default_factory=dict)
-    usage: dict[str, Any] = Field(default_factory=dict)
