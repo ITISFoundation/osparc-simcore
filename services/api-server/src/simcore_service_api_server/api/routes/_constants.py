@@ -32,9 +32,9 @@ FMSG_DEPRECATED_ROUTE_NOTICE: Final[str] = (
 
 DEFAULT_MAX_STRING_LENGTH: Final[int] = 500
 
-# Tag to mark routes as OpenAI API compatible.
+# Extension key to mark routes as OpenAI API compatible.
 # Used to filter the OpenAPI spec for openai-compatible-openapi.json.
-OPENAI_COMPATIBLE_TAG: Final[str] = "openai-compatible"
+OPENAI_COMPATIBLE_OPENAPI_EXTRA: Final[dict] = {"x-openai-compatible": True}
 
 
 def create_route_description(

@@ -4,9 +4,16 @@ import json
 
 from fastapi import APIRouter, FastAPI
 from fastapi.openapi.utils import get_openapi
+from fastapi.routing import APIRoute
 from simcore_service_api_server._meta import API_VERSION, API_VTAG, APP_NAME
 from simcore_service_api_server.api.routes import responses as _responses
-from simcore_service_api_server.api.routes._constants import OPENAI_COMPATIBLE_TAG
+
+
+def _is_openai_compatible(route) -> bool:
+    if isinstance(route, APIRoute):
+        extra = route.openapi_extra or {}
+        return extra.get("x-openai-compatible", False)
+    return False
 
 
 def main() -> None:
@@ -19,8 +26,14 @@ def main() -> None:
         title=app.title,
         version=app.version,
         openapi_version=app.openapi_version,
-        routes=[route for route in app.routes if OPENAI_COMPATIBLE_TAG in getattr(route, "tags", [])],
+        routes=[route for route in app.routes if _is_openai_compatible(route)],
     )
+
+    # Remove the x-openai-compatible extension from the generated spec
+    for methods in openapi_schema.get("paths", {}).values():
+        for operation in methods.values():
+            if isinstance(operation, dict):
+                operation.pop("x-openai-compatible", None)
 
     print(json.dumps(openapi_schema, indent=2))  # noqa: T201
 

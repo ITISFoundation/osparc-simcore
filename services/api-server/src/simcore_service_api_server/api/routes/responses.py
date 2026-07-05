@@ -7,11 +7,11 @@ from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CO
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.responses import CreateResponseRequest, ResponseObject
 from ..dependencies.authentication import get_current_user_id
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, OPENAI_COMPATIBLE_TAG, create_route_description
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, OPENAI_COMPATIBLE_OPENAPI_EXTRA, create_route_description
 
 _logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=[OPENAI_COMPATIBLE_TAG])
+router = APIRouter()
 
 _RESPONSES_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
@@ -37,6 +37,7 @@ _CANCEL_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     response_model=ResponseObject,
     responses=_RESPONSES_STATUS_CODES,
     status_code=status.HTTP_200_OK,
+    openapi_extra=OPENAI_COMPATIBLE_OPENAPI_EXTRA,
 )
 async def create_response(
     body: CreateResponseRequest,
@@ -59,6 +60,7 @@ async def create_response(
     ),
     response_model=ResponseObject,
     responses=_RESPONSES_STATUS_CODES,
+    openapi_extra=OPENAI_COMPATIBLE_OPENAPI_EXTRA,
 )
 async def get_response(
     response_id: str,
@@ -78,6 +80,7 @@ async def get_response(
     ),
     response_model=ResponseObject,
     responses=_CANCEL_STATUS_CODES,
+    openapi_extra=OPENAI_COMPATIBLE_OPENAPI_EXTRA,
 )
 async def cancel_response(
     response_id: str,
