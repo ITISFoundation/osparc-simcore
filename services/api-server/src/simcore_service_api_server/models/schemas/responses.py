@@ -30,7 +30,7 @@ ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
 
 class InputMessage(BaseModel):
     role: Literal["user", "assistant", "system", "developer"]
-    content: str | list[dict[str, Any]]
+    content: str
 
 
 class CreateResponseRequest(BaseModel):
@@ -54,7 +54,6 @@ class CreateResponseRequest(BaseModel):
 class OutputTextContent(BaseModel):
     type: Literal["output_text"] = "output_text"
     text: str
-    annotations: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class OutputMessage(BaseModel):
