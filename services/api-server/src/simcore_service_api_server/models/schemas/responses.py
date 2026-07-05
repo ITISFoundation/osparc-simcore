@@ -4,6 +4,7 @@ Minimal subset of the OpenAI Responses API schema. Fields can be added
 as needed — the breaking-change check ensures we stay compatible.
 """
 
+from enum import StrEnum
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -11,9 +12,17 @@ from pydantic import BaseModel, Field, field_validator
 Temperature = Annotated[float, Field(ge=0, le=2)]
 
 
-def _const_to_enum(schema: dict) -> None:
-    if "const" in schema:
-        schema["enum"] = [schema.pop("const")]
+class ResponseStatus(StrEnum):
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    IN_PROGRESS = "in_progress"
+    INCOMPLETE = "incomplete"
+    QUEUED = "queued"
+
+
+class ResponseObjectType(StrEnum):
+    RESPONSE = "response"
 
 
 ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
@@ -60,14 +69,14 @@ class ResponseObject(BaseModel):
     """Response object returned by both POST and GET endpoints."""
 
     id: str
-    object: Literal["response"] = Field(default="response", json_schema_extra=_const_to_enum)
+    object: ResponseObjectType = ResponseObjectType.RESPONSE
     background: bool | None = None
     created_at: float | None = None
     error: dict[str, Any] | None = None
     metadata: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
-    status: Literal["cancelled", "completed", "failed", "in_progress", "incomplete", "queued"] = "in_progress"
+    status: ResponseStatus = ResponseStatus.IN_PROGRESS
     temperature: Temperature | None = None
     text: dict[str, Any] = Field(default_factory=dict)
     usage: dict[str, Any] = Field(default_factory=dict)
