@@ -173,9 +173,9 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
 async def storage_subsystem_mock_override(
     storage_subsystem_mock: MockedStorageSubsystem, mocker: MockerFixture, faker: Faker
 ) -> None:
-    """Mocks copy_data_folders_from_project used by the dispatch task."""
+    """Mocks copy_data_folders_from_project used by the shared clone_project_data primitive."""
     mock_fn = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._dispatch_task.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._projects_service.storage_service.copy_data_folders_from_project",
         autospec=True,
     )
 

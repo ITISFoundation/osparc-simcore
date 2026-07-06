@@ -31,6 +31,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectPatch,
@@ -90,6 +91,7 @@ from servicelib.docker_utils import (
     DYNAMIC_SIDECAR_MIN_CPUS,
     estimate_dynamic_sidecar_resources_from_ec2_instance,
 )
+from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
@@ -109,6 +111,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
@@ -188,7 +191,12 @@ from .models import (
     ProjectWithWorkbenchDBGet,
 )
 from .settings import ProjectsSettings, get_plugin_settings
-from .utils import extract_dns_without_default_port
+from .utils import (
+    NodesMap,
+    clone_project_document,
+    extract_dns_without_default_port,
+    substitute_parameterized_inputs,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -413,6 +421,151 @@ async def get_project_dict_legacy(app: web.Application, project_uuid: ProjectID)
         f"{project_uuid}",
     )
     return project
+
+
+async def get_project_dict_and_type(
+    app: web.Application,
+    project_uuid: str,
+    *,
+    only_templates: bool = False,
+) -> tuple[ProjectDict, ProjectType]:
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
+    assert db_legacy  # nosec
+    return await db_legacy.get_project_dict_and_type(
+        project_uuid,
+        only_templates=only_templates,
+    )
+
+
+_CLONE_NODE_FIELDS_TO_CLEAN: Final[set[str]] = {"outputs", "progress", "run_hash"}
+
+
+def _remap_port_links_in_inputs(inputs: dict | None, nodes_map: NodesMap) -> dict | None:
+    """Remap PortLink node_uuid references in inputs using nodes_map (old UUID -> new UUID)."""
+    if not inputs:
+        return inputs
+    remapped: dict[str, Any] = {}
+    for port_key, port_value in inputs.items():
+        if isinstance(port_value, dict) and "nodeUuid" in port_value:
+            old_uuid = f"{port_value['nodeUuid']}"
+            remapped[port_key] = {
+                **port_value,
+                "nodeUuid": nodes_map.get(old_uuid, old_uuid),
+            }
+        elif isinstance(port_value, PortLink):
+            old_uuid = f"{port_value.node_uuid}"
+            remapped[port_key] = port_value.model_copy(update={"node_uuid": NodeID(nodes_map.get(old_uuid, old_uuid))})
+        else:
+            remapped[port_key] = port_value
+    return remapped
+
+
+async def _clone_project_nodes(
+    app: web.Application,
+    source_project: ProjectDict,
+    nodes_map: NodesMap,
+) -> dict[NodeID, ProjectNodeCreate]:
+    db = ProjectDBAPI.get_from_app_context(app)
+    valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+    result: dict[NodeID, ProjectNodeCreate] = {}
+    for node in await db.list_project_nodes(ProjectID(source_project["uuid"])):
+        node_data = {k: v for k, v in node.model_dump().items() if k in valid_fields}
+        if "inputs" in node_data:
+            node_data["inputs"] = _remap_port_links_in_inputs(node_data["inputs"], nodes_map)
+        if node_data.get("input_nodes"):
+            node_data["input_nodes"] = [nodes_map.get(f"{nid}", f"{nid}") for nid in node_data["input_nodes"]]
+        new_node_id = NodeID(nodes_map[f"{node.node_id}"])
+        result[new_node_id] = ProjectNodeCreate(node_id=new_node_id, **node_data)
+    return result
+
+
+async def clone_project_data(
+    app: web.Application,
+    *,
+    source_project: ProjectDict,
+    forced_copy_project_id: ProjectID | None,
+    user_id: UserID,
+    product_name: ProductName,
+    product_api_base_url: str,
+    task_progress: TaskProgress,
+    template_parameters: dict[str, str] | None = None,
+) -> ProjectDict:
+    """Clones `source_project` into a new project owned by `user_id`.
+
+    Shared clone primitive: clones the project document, copies the project nodes,
+    inserts the new project, copies its storage data (reporting progress) and
+    (re)creates its pipeline/networks.
+
+    NOTE: this does not handle predefined-project overrides, workspace/folder linking,
+    parent-node ancestry or response building — those remain the caller's responsibility.
+    """
+    new_project, nodes_map = clone_project_document(
+        source_project,
+        forced_copy_project_id=forced_copy_project_id,
+        clean_output_data=False,
+    )
+    new_project["accessRights"] = {}
+
+    if template_parameters:
+        new_project = substitute_parameterized_inputs(new_project, template_parameters) or new_project
+
+    project_nodes = await _clone_project_nodes(app, source_project, nodes_map)
+
+    db = ProjectDBAPI.get_from_app_context(app)
+    await db.insert_project(
+        new_project,
+        user_id,
+        product_name=product_name,
+        force_project_uuid=forced_copy_project_id is not None,
+        project_nodes=project_nodes,
+    )
+
+    needs_lock_source_project = (
+        await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))
+        != ProjectType.TEMPLATE
+    )
+
+    async def _copy_data() -> None:
+        starting_value = task_progress.percent
+        async for async_job_composed_result in storage_service.copy_data_folders_from_project(
+            app,
+            source_project=source_project,
+            destination_project=new_project,
+            nodes_map=nodes_map,
+            user_id=user_id,
+            product_name=product_name,
+        ):
+            await task_progress.update(
+                message=(
+                    async_job_composed_result.status.progress.message.description
+                    if async_job_composed_result.status.progress.message
+                    else None
+                ),
+                percent=TypeAdapter(ProgressPercent).validate_python(
+                    starting_value + async_job_composed_result.status.progress.percent_value * (1.0 - starting_value),
+                ),
+            )
+            if async_job_composed_result.done:
+                await async_job_composed_result.result()
+
+    if needs_lock_source_project:
+        await with_project_locked(
+            get_redis_lock_manager_client_sdk(app),
+            project_uuid=source_project["uuid"],
+            status=ProjectStatus.CLONING,
+            owner=Owner(user_id=user_id),
+            notification_cb=create_user_notification_cb(user_id, ProjectID(f"{source_project['uuid']}"), app),
+        )(_copy_data)()
+    else:
+        await _copy_data()
+
+    await director_v2_service.create_or_update_pipeline(
+        app, user_id, new_project["uuid"], product_name, product_api_base_url
+    )
+    await dynamic_scheduler_service.update_projects_networks(app, project_id=ProjectID(new_project["uuid"]))
+
+    return new_project
 
 
 async def batch_get_project_name(app: web.Application, projects_uuids: list[ProjectID]) -> list[str]:

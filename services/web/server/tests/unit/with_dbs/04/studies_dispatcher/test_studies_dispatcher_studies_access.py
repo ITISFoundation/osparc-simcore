@@ -173,9 +173,9 @@ async def storage_subsystem_mock_override(
     # Overrides + extends fixture in services/web/server/tests/unit/with_dbs/conftest.py
     # SEE https://docs.pytest.org/en/stable/fixture.html#override-a-fixture-on-a-folder-conftest-level
 
-    # Mocks copy_data_folders_from_project in the dispatch task (new split-flow location)
+    # Mocks copy_data_folders_from_project used by the shared clone_project_data primitive
     mock = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._dispatch_task.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._projects_service.storage_service.copy_data_folders_from_project",
         autospec=True,
     )
 
