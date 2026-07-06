@@ -75,7 +75,7 @@ class DirectorV2RestClient:
             product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(product_api_base_url),
             **options,
         )
-        # NOTE: encryption keys are secrets and myst be transmitted plaintext to director-v2, so we use model_dump_with_secrets with show_secrets=True
+        # NOTE: encryption keys are secrets and must be transmitted as plaintext to director-v2
         data = model_dump_with_secrets(computation_create, show_secrets=True, mode="json", exclude_unset=True)
         computation_task_out, response_status = await request_director_v2(
             self._app,
