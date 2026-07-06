@@ -3,13 +3,14 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 )
 from celery_library.worker.app_server import get_app_server
 from models_library.celery import TaskKey
+from pydantic import TypeAdapter
 
 from ....models.domain.chatbot import (
     ChatCompletionRequestMessage,
     CreateChatCompletionResponse,
     RoleEnum,
 )
-from ....models.schemas.responses import CreateResponseRequest
+from ....models.schemas.responses import ChatModel, CreateResponseRequest
 from ....services_http.chatbot import ChatbotApi, ChatbotSession
 
 
@@ -37,10 +38,10 @@ async def run_chat_completion(
         )
         for msg in request.input
     ]
-
+    model = TypeAdapter(ChatModel).validate_python(request.model)
     return await chatbot_session.create_chat_completion(
         messages=messages,
-        model=request.model,
+        model=model,
         metadata=request.metadata or {},
         temperature=request.temperature,
     )

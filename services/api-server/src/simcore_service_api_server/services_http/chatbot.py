@@ -12,6 +12,7 @@ from ..models.domain.chatbot import (
     ChatRequest,
     CreateChatCompletionResponse,
 )
+from ..models.schemas.responses import ChatModel
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class ChatbotSession:
         self,
         *,
         messages: list[ChatCompletionRequestMessage],
-        model: str,
+        model: ChatModel,
         metadata: dict[str, Any],
         temperature: float = 1.0,
         top_p: float = 1.0,
