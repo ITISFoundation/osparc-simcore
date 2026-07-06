@@ -231,13 +231,14 @@ class FileMetaDataRepository(BaseRepository):
                 f"{cursor_params.file_prefix}%" if cursor_params.partial else f"{cursor_params.file_prefix / '%'}"
             )
             search_regex = rf"^[^/]+(?:/[^/]+){{{prefix_levels}}}{'' if cursor_params.partial else '/[^/]+'}"
+            path_expression = sa.func.substring(file_meta_data.c.file_id, search_regex)
             ranked_files = (
                 sa.select(
-                    file_meta_data.c.file_id,
-                    sa.func.substring(file_meta_data.c.file_id, search_regex).label("path"),
+                    file_meta_data,
+                    path_expression.label("path"),
                     sa.func.row_number()
                     .over(
-                        partition_by=sa.func.substring(file_meta_data.c.file_id, search_regex),
+                        partition_by=path_expression,
                         order_by=(file_meta_data.c.file_id.asc(),),
                     )
                     .label("row_num"),
@@ -251,13 +252,14 @@ class FileMetaDataRepository(BaseRepository):
                 .cte("ranked_files")
             )
         else:
+            path_expression = sa.func.split_part(file_meta_data.c.file_id, "/", 1)
             ranked_files = (
                 sa.select(
-                    file_meta_data.c.file_id,
-                    sa.func.split_part(file_meta_data.c.file_id, "/", 1).label("path"),
+                    file_meta_data,
+                    path_expression.label("path"),
                     sa.func.row_number()
                     .over(
-                        partition_by=sa.func.split_part(file_meta_data.c.file_id, "/", 1),
+                        partition_by=path_expression,
                         order_by=(file_meta_data.c.file_id.asc(),),
                     )
                     .label("row_num"),
@@ -267,16 +269,9 @@ class FileMetaDataRepository(BaseRepository):
             )
 
         files_query = (
-            (
-                sa.select(ranked_files, file_meta_data, sa.func.count().over().label("total_count"))
-                .where(
-                    and_(
-                        ranked_files.c.row_num == 1,
-                        ranked_files.c.file_id == file_meta_data.c.file_id,
-                    )
-                )
-                .order_by(file_meta_data.c.file_id.asc())
-            )
+            sa.select(ranked_files, sa.func.count().over().label("total_count"))
+            .where(ranked_files.c.row_num == 1)
+            .order_by(ranked_files.c.file_id.asc())
             .limit(limit)
             .offset(cursor_params.offset)
         )
