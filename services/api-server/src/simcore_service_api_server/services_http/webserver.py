@@ -504,7 +504,7 @@ class AuthSession:
         self,
         *,
         project_id: UUID,
-        encryption: JobEncryptionContextMetadata | None = None,
+        encryption: JobEncryptionContextMetadata | None,
     ) -> None:
         body_input: dict[str, Any] = {}
         if encryption is not None:
