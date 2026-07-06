@@ -135,19 +135,9 @@ def my_shared_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
     ).subquery("my_workspace_access_rights_subquery")
 
 
-async def _list_user_projects_access_rights_with_read_access(
-    connection: AsyncConnection, user_id: UserID, product_name: ProductName
-) -> list[ProjectID]:
-    """
-    Returns access-rights of user (user_id) over all OWNED or SHARED projects
-    """
+def readable_project_ids_stmt(user_id: UserID, product_name: ProductName) -> sa.sql.CompoundSelect:
+    user_group_ids = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).scalar_subquery()
 
-    user_group_ids: list[GroupID] = await _get_user_groups_ids(connection, user_id)
-
-    # Use EXISTS instead of JOIN with GROUP BY + jsonb_object_agg subquery.
-    # This function only needs to filter projects by read access, it never
-    # reads the aggregated access_rights JSON. EXISTS lets the planner stop
-    # at the first matching row and avoids materialising grouped results.
     private_access_exists = sa.exists(
         sa.select(sa.literal(1)).where(
             (project_to_groups.c.project_uuid == projects.c.uuid)
@@ -178,7 +168,16 @@ async def _list_user_projects_access_rights_with_read_access(
         )
     )
 
-    combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
+    return sa.union_all(private_workspace_query, shared_workspace_query)
+
+
+async def _list_user_projects_access_rights_with_read_access(
+    connection: AsyncConnection, user_id: UserID, product_name: ProductName
+) -> list[ProjectID]:
+    """
+    Returns access-rights of user (user_id) over all OWNED or SHARED projects
+    """
+    combined_query = readable_project_ids_stmt(user_id, product_name)
 
     projects_access_rights = []
 

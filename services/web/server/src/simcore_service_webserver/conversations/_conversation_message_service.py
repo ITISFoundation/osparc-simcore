@@ -26,6 +26,7 @@ from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
 from ..application_keys import APP_SETTINGS_APPKEY
+from ..locale import get_user_locale
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from ..products import products_service
@@ -125,6 +126,11 @@ async def _notify_support_reply(
                 f"{recipient_user.get('first_name') or ''} {recipient_user.get('last_name') or ''}".strip()
                 or recipient_user["email"]
             )
+            # NOTE: user_id below is the sender (for task/owner attribution), not the recipient,
+            # so the recipient's locale must be resolved explicitly rather than deduced from user_id.
+            recipient_locale = await get_user_locale(
+                app, user_id=conversation_creator_user_id, product_name=product_name
+            )
 
             await notifications_service.send_message_from_template(
                 app,
@@ -144,6 +150,7 @@ async def _notify_support_reply(
                     "message_content": message_content,
                     "message_created_at": message_created_at,
                 },
+                locale=recipient_locale,
             )
 
 
