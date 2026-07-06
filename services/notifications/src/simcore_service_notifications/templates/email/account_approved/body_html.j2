@@ -1,31 +1,34 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/account_approved/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name or 'User' }},</p>
+<p>{% trans first_name=user.first_name or 'User' %}Dear {{ first_name }},{% endtrans %}</p>
 
 <p>
-  Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.
+  {% trans product_name=product.display_name %}Thank you for your interest in {{ product_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.{% endtrans %}
 </p>
 
 {% if trial_account_days is defined and trial_account_days %}
-<p>Your account includes {{ trial_account_days }} day{{ "s" if trial_account_days > 1 }} trial period.</p>
+<p>{% trans count=trial_account_days %}Your account includes {{ count }} day trial period.{% pluralize %}Your account includes {{ count }} days trial period.{% endtrans %}</p>
 {% endif %}
 
 {% if extra_credits is defined and extra_credits %}
-<p>You also receive {{ extra_credits }} free credits.</p>
+<p>{% trans extra_credits=extra_credits %}You also receive {{ extra_credits }} free credits.{% endtrans %}</p>
 {% endif %}
 
+{% set register_link %}<a href="{{ link }}">here</a>{% endset %}
 <p>
-  Click <a href="{{ link }}">here</a> to access the registration page.
+  {% trans register_link=register_link %}Click {{ register_link }} to access the registration page.{% endtrans %}
 </p>
 
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
 <p>
-  Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>.
+  {% trans support_link=support_link %}Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ support_link }}.{% endtrans %}
 </p>
 
-<p>Enjoy {{ product.display_name }}!</p>
+<p>{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}</p>
 
-<p>Best regards,</p>
+<p>{% trans %}Best regards,{% endtrans %}</p>
 
-<p>The {{ product.display_name }} Team</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
 {% endblock %}

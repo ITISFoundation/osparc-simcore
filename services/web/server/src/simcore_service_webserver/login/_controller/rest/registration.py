@@ -16,7 +16,7 @@ from ....groups.groups_service import (
     auto_add_user_to_product_group,
 )
 from ....invitations.api import is_service_invitation_code
-from ....locale import translate_message
+from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact
 from ....products import products_web
@@ -239,6 +239,7 @@ async def register(request: web.Request):
                         "user_name": user.get("name"),
                     },
                 },
+                locale=get_locale_or_none(request),
             )
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
@@ -339,12 +340,15 @@ async def register_phone(request: web.Request):
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
         await _twofa_service.send_sms_code(
+            request.app,
             phone_number=registration.phone,
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=_registration_service.get_user_name_from_email(registration.email),
+            product_name=product.name,
+            locale=get_locale_or_none(request),
         )
 
         return envelope_response(
