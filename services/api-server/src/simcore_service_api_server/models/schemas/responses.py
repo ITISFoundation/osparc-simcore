@@ -5,7 +5,7 @@ as needed — the breaking-change check ensures we stay compatible.
 """
 
 from enum import StrEnum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, get_args
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -45,8 +45,9 @@ class CreateResponseRequest(BaseModel):
     @field_validator("model")
     @classmethod
     def _check_supported_model(cls, v: Any) -> str:
-        if not isinstance(v, str) or v not in set(ChatModel.__args__):
-            msg = f"Model '{v}' is not supported. Supported models: {sorted(ChatModel.__args__)}"
+        supported = get_args(ChatModel)
+        if not isinstance(v, str) or v not in supported:
+            msg = f"Model '{v}' is not supported. Supported models: {sorted(supported)}"
             raise ValueError(msg)
         return v
 
