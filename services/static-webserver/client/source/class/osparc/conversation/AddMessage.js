@@ -306,15 +306,5 @@ qx.Class.define("osparc.conversation.AddMessage", {
       this.fireDataEvent("notifyUser", userGid);
     },
     /* NOTIFY USERS */
-  },
-
-  defer: function() {
-    // one-time global stylesheet: thin, rounded scrollbar for the composer text area
-    qx.bom.Stylesheet.createElement([
-      ".osparc-chat-composer::-webkit-scrollbar{width:8px;height:8px;}",
-      ".osparc-chat-composer::-webkit-scrollbar-track{background:transparent;}",
-      ".osparc-chat-composer::-webkit-scrollbar-thumb{background:rgba(128,128,128,0.45);border-radius:4px;}",
-      ".osparc-chat-composer::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,0.7);}",
-    ].join(""));
   }
 });
