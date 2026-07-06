@@ -37,7 +37,17 @@ def test_traced_functions_accepts_valid_targets(make_settings: Callable[..., Tra
     settings = make_settings(
         TRACING_OPENTELEMETRY_TRACED_FUNCTIONS='["pkg.module:function", "pkg.module:Class.method"]'
     )
-    assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == ["pkg.module:function", "pkg.module:Class.method"]
+    assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == ["pkg.module:Class.method", "pkg.module:function"]
+
+
+def test_traced_functions_strips_and_filters_blank_entries(make_settings: Callable[..., TracingSettings]):
+    settings = make_settings(TRACING_OPENTELEMETRY_TRACED_FUNCTIONS='["", "  ", "  pkg.module:function  "]')
+    assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == ["pkg.module:function"]
+
+
+def test_traced_functions_deduplicates_targets(make_settings: Callable[..., TracingSettings]):
+    settings = make_settings(TRACING_OPENTELEMETRY_TRACED_FUNCTIONS='["pkg.module:function", "pkg.module:function"]')
+    assert settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS == ["pkg.module:function"]
 
 
 @pytest.mark.parametrize(

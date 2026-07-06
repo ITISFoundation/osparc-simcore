@@ -37,8 +37,9 @@ class TracingSettings(BaseCustomSettings):
     @field_validator("TRACING_OPENTELEMETRY_TRACED_FUNCTIONS")
     @classmethod
     def _validate_traced_function_targets(cls, value: list[str]) -> list[str]:
+        specs = [spec.strip() for spec in value if spec.strip()]
         invalid: list[str] = []
-        for spec in value:
+        for spec in specs:
             module_path, sep, attr_path = spec.partition(":")
             if (
                 sep != ":"
@@ -51,4 +52,4 @@ class TracingSettings(BaseCustomSettings):
         if invalid:
             msg = f"Invalid traced function targets (must be 'module.path:attr.path'): {invalid}"
             raise ValueError(msg)
-        return list(set(value))
+        return sorted(set(specs))

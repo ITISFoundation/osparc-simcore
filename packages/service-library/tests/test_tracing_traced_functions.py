@@ -12,7 +12,6 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from servicelib.traced_functions_instrumentor import (
     _instrument_traced_functions,
-    _parse_traced_function_targets,
     _uninstrument_traced_functions,
 )
 
@@ -48,12 +47,6 @@ def tracer_provider(in_memory_exporter: InMemorySpanExporter) -> TracerProvider:
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(in_memory_exporter))
     return provider
-
-
-def test__parse_traced_function_targets_splits_and_strips():
-    assert _parse_traced_function_targets([]) == []
-    assert _parse_traced_function_targets([""]) == []
-    assert _parse_traced_function_targets(["a.b:c", "d.e:F.g"]) == ["a.b:c", "d.e:F.g"]
 
 
 def test__instrument_traced_functions_creates_spans_for_sync_and_async(

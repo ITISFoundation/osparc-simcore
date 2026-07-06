@@ -27,10 +27,6 @@ _logger = logging.getLogger(__name__)
 type TracedFunctionTarget = tuple[Any, str]
 
 
-def _parse_traced_function_targets(value: list[str]) -> list[str]:
-    return [spec for spec in value if spec.strip()]
-
-
 def _resolve_parent_and_attr(spec: str) -> TracedFunctionTarget:
     module_path, _, attr_path = spec.partition(":")
     obj: Any = importlib.import_module(module_path)
@@ -114,7 +110,7 @@ class TracedFunctionsInstrumentor(BaseInstrumentor):
         tracing_settings: TracingSettings = kwargs["tracing_settings"]
         tracer_provider: TracerProvider = kwargs["tracer_provider"]
 
-        target_specs = _parse_traced_function_targets(tracing_settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS)
+        target_specs = tracing_settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS
         if not target_specs:
             return
         with log_context(
