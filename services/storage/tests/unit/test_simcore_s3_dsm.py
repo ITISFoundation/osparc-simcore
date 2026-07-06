@@ -368,12 +368,12 @@ async def test_search_files_case_insensitive(
 
 @pytest.fixture
 async def paths_for_export(
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
 ) -> set[SimcoreS3FileID]:
-    _, file_mapping = await random_project_with_files(
+    _, file_mapping = await project_with_seeded_files_factory(
         ProjectWithFilesParams(
             num_nodes=2,
             allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1KiB"),),
@@ -619,7 +619,7 @@ async def test_search_files_scoped_by_product(
     user_id: UserID,
     faker: Faker,
     create_product: Callable[..., Awaitable[dict[str, Any]]],
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams, dict[str, Any]],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
@@ -630,10 +630,10 @@ async def test_search_files_scoped_by_product(
     product_2 = await create_product(name=faker.word())
 
     # Create project 1 with files in product 1
-    await random_project_with_files(project_params, product_1["name"])
+    await project_with_seeded_files_factory(project_params, product_1["name"])
 
     # Create project 2 with files in product 2
-    await random_project_with_files(project_params, product_2["name"])
+    await project_with_seeded_files_factory(project_params, product_2["name"])
 
     # Search for all files in product 1
     results_product_1 = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_1["name"], "*")

@@ -146,7 +146,7 @@ async def test_path_compute_size(
     task_manager: TaskManager,
     user_id: UserID,
     location_id: LocationID,
-    with_seeded_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
@@ -156,7 +156,7 @@ async def test_path_compute_size(
     assert len(project_params.allowed_file_sizes) == 1, (
         "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
     )
-    project, list_of_files = with_seeded_project_with_files
+    project, list_of_files = project_with_seeded_files
 
     total_num_files = sum(len(files_in_node) for files_in_node in list_of_files.values())
 
@@ -306,7 +306,7 @@ async def test_delete_paths(
     with_storage_celery_worker: WorkController,
     user_id: UserID,
     location_id: LocationID,
-    with_seeded_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
@@ -316,7 +316,7 @@ async def test_delete_paths(
     assert len(project_params.allowed_file_sizes) == 1, (
         "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
     )
-    project, list_of_files = with_seeded_project_with_files
+    project, list_of_files = project_with_seeded_files
 
     total_num_files = sum(len(files_in_node) for files_in_node in list_of_files.values())
 
