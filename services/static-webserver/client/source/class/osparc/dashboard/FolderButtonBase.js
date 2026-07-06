@@ -18,7 +18,7 @@
 qx.Class.define("osparc.dashboard.FolderButtonBase", {
   extend: qx.ui.core.Widget,
   implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
+  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable, osparc.dashboard.MShowMenuOnHover],
   type: "abstract",
 
   construct: function() {
@@ -97,10 +97,12 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
 
     __onPointerOver: function() {
       this.addState("hovered");
+      this._evalHoverReveal();
     },
 
     __onPointerOut : function() {
       this.removeState("hovered");
+      this._evalHoverReveal();
     },
 
     _filter: function() {
