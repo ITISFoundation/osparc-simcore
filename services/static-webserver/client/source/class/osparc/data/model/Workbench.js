@@ -366,11 +366,12 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeId = resp["node_id"];
 
         const node = this.__createNode(key, version, nodeId);
-        node.fetchMetadataAndPopulate()
-          .then(() => {
-            this.__giveUniqueNameToNode(node, node.getLabel());
-            node.checkState();
-          });
+        // wait until the metadata is fetched and the node is fully populated
+        // (output ports created and change listeners attached) so that callers
+        // can safely set the output value and have it patched to the backend
+        await node.fetchMetadataAndPopulate();
+        this.__giveUniqueNameToNode(node, node.getLabel());
+        node.checkState();
         return node;
       } catch (err) {
         let errorMsg = "";
