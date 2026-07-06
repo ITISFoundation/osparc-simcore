@@ -80,6 +80,16 @@ class RabbitMQClientBase:
                 )
                 self._healthy_state = False
 
+    def _connection_reconnect_callback(
+        self,
+        _connection: Any = None,
+    ) -> None:
+        _logger.info(
+            "RabbitMQ (re)connected (%s): restoring healthy state",
+            self.client_name,
+        )
+        self._healthy_state = True
+
     @property
     def healthy(self) -> bool:
         return self._healthy_state

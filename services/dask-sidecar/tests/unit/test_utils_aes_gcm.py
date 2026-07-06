@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import Final
 
 import pytest
+from models_library.api_schemas_directorv2.encryption import (
+    AES_256_GCM_KEY_SIZE_BYTES,
+)
 from simcore_service_dask_sidecar.utils import aes_gcm
 from simcore_service_dask_sidecar.utils.aes_gcm import (
     _CHUNK_PREFIX_STRUCT,
@@ -17,7 +20,6 @@ from simcore_service_dask_sidecar.utils.aes_gcm import (
     DEFAULT_CHUNK_SIZE_BYTES,
     FORMAT_MAGIC,
     FORMAT_VERSION,
-    KEY_SIZE_BYTES,
     NONCE_SIZE_BYTES,
     PROTOCOL_LABEL,
     TAG_SIZE_BYTES,
@@ -83,7 +85,7 @@ def _find_last_chunk_offset(encrypted: bytes) -> int:
 
 
 def test_generate_key_size():
-    assert len(generate_key()) == KEY_SIZE_BYTES
+    assert len(generate_key()) == AES_256_GCM_KEY_SIZE_BYTES
 
 
 def test_roundtrip_small_content(root_key: bytes, context: dict[str, str]):
@@ -411,12 +413,12 @@ def test_chunk_aad_matches_specification():
 
 
 def test_hkdf_derivation_is_deterministic_and_domain_separated():
-    base_key = b"\x00" * KEY_SIZE_BYTES
+    base_key = b"\x00" * AES_256_GCM_KEY_SIZE_BYTES
     key_a = _derive_file_key(base_key, file_id="file-abc")
     key_b = _derive_file_key(base_key, file_id="file-abc")
     # deterministic for identical context
     assert key_a == key_b
-    assert len(key_a) == KEY_SIZE_BYTES
+    assert len(key_a) == AES_256_GCM_KEY_SIZE_BYTES
     # different file -> different key (domain separation)
     key_other_file = _derive_file_key(base_key, file_id="file-xyz")
     assert key_other_file != key_a
