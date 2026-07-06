@@ -64,18 +64,27 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
-export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
+export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/agent/VERSION)
 export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export AUTOSCALING_API_VERSION := $(shell cat $(CURDIR)/services/autoscaling/VERSION)
 export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
+export CLUSTERS_KEEPER_API_VERSION := $(shell cat $(CURDIR)/services/clusters-keeper/VERSION)
+export DASK_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dask-sidecar/VERSION)
 export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
+export DOCKER_API_PROXY_API_VERSION := $(shell cat $(CURDIR)/services/docker-api-proxy/VERSION)
+export DYNAMIC_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dynamic-sidecar/VERSION)
+export EFS_GUARDIAN_API_VERSION := $(shell cat $(CURDIR)/services/efs-guardian/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
+export MIGRATION_API_VERSION := $(shell cat $(CURDIR)/services/migration/VERSION)
 export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
 export DYNAMIC_SCHEDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
 export NOTIFICATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/notifications/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
+export RESOURCE_USAGE_TRACKER_API_VERSION := $(shell cat $(CURDIR)/services/resource-usage-tracker/VERSION)
+export SERVICE_INTEGRATION_API_VERSION := $(shell cat $(CURDIR)/packages/service-integration/VERSION)
+export STATIC_WEBSERVER_API_VERSION := $(shell cat $(CURDIR)/services/static-webserver/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
@@ -194,6 +203,11 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 docker buildx bake --allow=fs.read=.. \
 	--set *.args.BASE_TAG=$(BASE_TAG) \
 	--set *.args.DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+	--set *.annotations+="org.opencontainers.image.created=$(BUILD_DATE)" \
+	--set *.annotations+="org.opencontainers.image.source=$(VCS_URL)" \
+	--set *.annotations+="org.opencontainers.image.revision=$(VCS_REF)" \
+	--set *.annotations+="org.opencontainers.image.vendor=IT'IS Foundation" \
+	--set *.annotations+="org.opencontainers.image.licenses=MIT" \
 	$(foreach service, $(if $(target),$(target),$(INCLUDED_SERVICES)),\
 		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-runtime-base:$(BASE_TAG)=target:simcore-runtime-base \
 		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-build-base:$(BASE_TAG)=target:simcore-build-base) \
@@ -204,19 +218,19 @@ docker buildx bake --allow=fs.read=.. \
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
       --allow=fs.write=$(local-dest) \
-			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
-			,--load\
+			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar$(comma)name=local/$(service):production") \
+			,$(if $(push),,--load)\
 		)\
 	)\
 	$(if $(push),\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-				--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
+				--set $(service).tags= \
 		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).output="type=registry$(comma)\
-			compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
+			--set $(service).output="type=image$(comma)name=$(DOCKER_REGISTRY)/$(service)$(if $(push-by-digest),,:$(DOCKER_IMAGE_TAG))$(comma)push=true$(if $(push-by-digest),$(comma)push-by-digest=true,)$(comma)compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
 		)\
 	,) \
+	$(if $(metadata-file),--metadata-file $(metadata-file),) \
 	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
@@ -227,7 +241,7 @@ popd;
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`. To push: `make push=true DOCKER_REGISTRY=... DOCKER_IMAGE_TAG=...`. To push untagged by digest instead (capturing the digest via a metadata file): `make push=true push-by-digest=true metadata-file=/tmp/metadata.json DOCKER_REGISTRY=...`
 	# Building service$(if $(target),,s) $(target) $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 	# List production images
@@ -602,10 +616,6 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 		xargs -r -n 1 docker pull
 
 
-.PHONY: promote-version
-promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-GIT_TAG guard-DOCKER_USERNAME guard-DOCKER_PASSWORD guard-DOCKER_REGISTRY guard-OWNER ## Promotes registry images from one docker tag family to another without loading images locally
-	# Delegates implementation to ci/deploy/dockerhub-tag-version.bash
-	@bash ci/deploy/dockerhub-tag-version.bash
 
 
 ## ENVIRONMENT -------------------------------
@@ -1008,8 +1018,3 @@ release-staging release-prod: .check-on-master-branch  ## Helper to create a sta
 .PHONY: release-hotfix release-staging-hotfix
 release-hotfix release-staging-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional or make release-staging-hotfix name=Sprint version=2)
 	$(create_github_release_url)
-
-.PHONY: docker-image-fuse
-docker-image-fuse:
-	$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-		docker buildx imagetools create --tag $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG)-$(SUFFIX) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG);)
