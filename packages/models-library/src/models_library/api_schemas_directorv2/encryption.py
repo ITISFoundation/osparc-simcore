@@ -7,17 +7,17 @@ from pydantic.config import JsonDict
 
 from ..projects_nodes_io import NodeID
 
-# Mirrors dask_task_models_library.container_tasks.encryption (simcore-aesgcm-stream-v1).
 AES_256_GCM_KEY_SIZE_BYTES: Final[int] = 32  # AES-256 root key length
+MAX_LP_STRING_BYTES: Final[int] = (
+    0xFFFF  # AES-GCM supports 2^16-1 bytes of additional authenticated data (AAD),
+    # which is the maximum length of the file_id string we can use in HKDF key derivation.
+)
 
-# Matches the uint16 length-prefix (lp()) limit enforced on file_id by the aesgcm-stream-v1
-# protocol (services/dask-sidecar utils/aes_gcm.py _MAX_LP_STRING_BYTES); that limit is on the
-# UTF-8 encoded byte length, which equals the character count for the plain ASCII identifiers
-# used in practice (port keys / client file ids).
-MAX_FILE_ID_LENGTH: Final[int] = 0xFFFF
-
-# client-chosen file identifier mixed into HKDF key derivation
-type FileIDStr = Annotated[str, StringConstraints(min_length=1, max_length=MAX_FILE_ID_LENGTH)]
+type FileIDStr = Annotated[
+    str,
+    StringConstraints(min_length=1, max_length=MAX_LP_STRING_BYTES),
+    Field(description="client-chosen file identifier mixed into HKDF key derivation"),
+]
 
 
 def _validate_root_key_is_base64_of_expected_size(value: SecretStr) -> SecretStr:
@@ -32,8 +32,6 @@ def _validate_root_key_is_base64_of_expected_size(value: SecretStr) -> SecretStr
     return value
 
 
-# base64-encoded 32-byte root key shared by all tasks of the job (single source of truth for
-# the constraint, reused wherever a client supplies a root_key, e.g. api-server's JobEncryptionInputs)
 type RootKeyStr = Annotated[
     SecretStr,
     AfterValidator(_validate_root_key_is_base64_of_expected_size),
