@@ -109,8 +109,8 @@ class BaseProjectModel(BaseModel):
     workbench: Annotated[
         # NOTE: will be definitely removed in https://github.com/ITISFoundation/osparc-simcore/pull/9303
         NodesDict,
-        Field(deprecated=True),
-    ] = Field(default_factory=dict)
+        Field(deprecated=True, default_factory=dict),
+    ] = DEFAULT_FACTORY
 
 
 class ProjectAtDB(BaseProjectModel):

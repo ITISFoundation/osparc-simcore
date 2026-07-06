@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 from datetime import UTC, datetime
+from typing import Final
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
@@ -24,7 +25,7 @@ from simcore_service_webserver.conversations._conversation_message_service impor
     users_service,
 )
 
-MODULE_UNDER_TEST = "simcore_service_webserver.conversations._conversation_message_service"
+_MODULE_UNDER_TEST: Final[str] = "simcore_service_webserver.conversations._conversation_message_service"
 
 
 @pytest.fixture
@@ -87,9 +88,14 @@ async def test_notify_support_reply_via_email_to_user(
             return_value=200,
         ),
         patch(
-            f"{MODULE_UNDER_TEST}.is_user_connected",
+            f"{_MODULE_UNDER_TEST}.is_user_connected",
             new_callable=AsyncMock,
             return_value=False,
+        ),
+        patch(
+            f"{_MODULE_UNDER_TEST}.get_user_locale",
+            new_callable=AsyncMock,
+            return_value="en",
         ),
         patch(
             f"{notifications_service.__name__}.send_message_from_template",
@@ -117,6 +123,7 @@ async def test_notify_support_reply_via_email_to_user(
         assert call_kwargs["context"]["user"]["user_name"] == "johndoe"
         assert call_kwargs["context"]["message_content"] == "Hello, here is the answer to your question."
         assert call_kwargs["context"]["message_created_at"] == message_created_at
+        assert call_kwargs["locale"] == "en"
 
 
 async def test_notify_support_reply_no_email_for_regular_user(

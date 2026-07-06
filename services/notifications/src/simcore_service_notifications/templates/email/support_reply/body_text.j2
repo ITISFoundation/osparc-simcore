@@ -1,12 +1,12 @@
-Dear {{ user.first_name or user.user_name }},
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
 
-There is a new reply in the Support conversation{% if conversation_name %} "{{ conversation_name }}"{% endif %}.
+{% if conversation_name %}{% trans conversation_name=conversation_name %}There is a new reply in the Support conversation "{{ conversation_name }}".{% endtrans %}{% else %}{% trans %}There is a new reply in the Support conversation.{% endtrans %}{% endif %}
 
 [{{ message_created_at.strftime('%Y-%m-%d %H:%M UTC') }}]
 {{ message_content }}
 
-View the conversation: {{ conversation_url }}
+{% trans conversation_url=conversation_url %}View the conversation: {{ conversation_url }}{% endtrans %}
 
 
-Best Regards,
-The {{ product.display_name }} Team
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

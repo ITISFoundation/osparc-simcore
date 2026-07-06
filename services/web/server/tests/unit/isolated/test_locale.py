@@ -7,11 +7,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, make_mocked_request
 from common_library.gettext_support import DEFAULT_LOCALE
 from servicelib.common_headers import X_SIMCORE_LANGUAGE
 from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
-from simcore_service_webserver.locale import RQ_LOCALE_KEY, get_user_locale, locale_middleware
+from simcore_service_webserver.locale import (
+    RQ_LOCALE_KEY,
+    get_locale_or_none,
+    get_user_locale,
+    locale_middleware,
+    resolve_effective_locale,
+    translate_message,
+)
 from simcore_service_webserver.user_preferences._models import LocaleUserPreference
 
 # ---------------------------------------------------------------------------
@@ -129,3 +136,83 @@ async def test_get_user_locale_fallback_when_preference_value_is_none():
     ):
         locale = await get_user_locale(mock_app, user_id=1, product_name="osparc")
         assert locale == DEFAULT_LOCALE
+
+
+# ---------------------------------------------------------------------------
+# resolve_effective_locale tests
+# ---------------------------------------------------------------------------
+
+
+async def test_resolve_effective_locale_uses_explicit_locale():
+    """Explicit locale takes precedence over everything else."""
+    mock_app = MagicMock()
+    locale = await resolve_effective_locale(mock_app, user_id=1, product_name="osparc", locale="es_ES")
+    assert locale == "es_ES"
+
+
+async def test_resolve_effective_locale_falls_back_to_user_preference():
+    """Falls back to the DB-stored user preference when no explicit locale is given."""
+    mock_app = MagicMock()
+    with patch(
+        "simcore_service_webserver.locale.get_frontend_user_preference",
+        new_callable=AsyncMock,
+        return_value=LocaleUserPreference(value="zh_CN"),
+    ):
+        locale = await resolve_effective_locale(mock_app, user_id=1, product_name="osparc", locale=None)
+        assert locale == "zh_CN"
+
+
+async def test_resolve_effective_locale_default_when_no_user_id():
+    """Falls back to DEFAULT_LOCALE when there's no user_id to look up."""
+    mock_app = MagicMock()
+    locale = await resolve_effective_locale(mock_app, user_id=None, product_name="osparc", locale=None)
+    assert locale == DEFAULT_LOCALE
+
+
+async def test_resolve_effective_locale_default_for_multi_recipient_sends():
+    """Falls back to DEFAULT_LOCALE for group sends even when user_id is given."""
+    mock_app = MagicMock()
+    locale = await resolve_effective_locale(mock_app, user_id=1, product_name="osparc", locale=None, group_ids=[10])
+    assert locale == DEFAULT_LOCALE
+
+
+# ---------------------------------------------------------------------------
+# get_locale_or_none / translate_message tests
+# ---------------------------------------------------------------------------
+
+
+def test_get_locale_or_none_returns_resolved_locale():
+    """Returns the locale that locale_middleware stored on the request."""
+    request = make_mocked_request("GET", "/")
+    request[RQ_LOCALE_KEY] = "es_ES"
+    assert get_locale_or_none(request) == "es_ES"
+
+
+def test_get_locale_or_none_returns_none_when_middleware_did_not_run():
+    """Returns None when the request key was never set (e.g. middleware not installed)."""
+    request = make_mocked_request("GET", "/")
+    assert get_locale_or_none(request) is None
+
+
+def test_translate_message_uses_request_locale():
+    """Translates the msgid using the locale stored on the request."""
+    request = make_mocked_request("GET", "/")
+    request[RQ_LOCALE_KEY] = "es_ES"
+
+    with patch("simcore_service_webserver.locale.get_translator") as mock_get_translator:
+        mock_get_translator.return_value.gettext.return_value = "translated"
+        result = translate_message("Hello", request)
+
+    mock_get_translator.assert_called_once_with("es_ES")
+    assert result == "translated"
+
+
+def test_translate_message_defaults_to_default_locale_when_unset():
+    """Falls back to DEFAULT_LOCALE when the request has no resolved locale."""
+    request = make_mocked_request("GET", "/")
+
+    with patch("simcore_service_webserver.locale.get_translator") as mock_get_translator:
+        mock_get_translator.return_value.gettext.return_value = "Hello"
+        translate_message("Hello", request)
+
+    mock_get_translator.assert_called_once_with(DEFAULT_LOCALE)
