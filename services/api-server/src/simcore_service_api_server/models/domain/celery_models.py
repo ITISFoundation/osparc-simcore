@@ -15,13 +15,11 @@ from pydantic import Field, StringConstraints
 from ..._meta import APP_NAME
 from ...api.dependencies.authentication import Identity
 from ...models.api_resources import JobLinks
-from ...models.domain.chatbot import CreateChatCompletionResponse
 from ...models.domain.functions import PreRegisteredFunctionJobData
 from ...models.schemas.jobs import JobInputs, JobPricingSpecification
 from ...models.schemas.responses import CreateResponseRequest
 
 pydantic_types_to_register = (
-    CreateChatCompletionResponse,
     CreateResponseRequest,
     Identity,
     JobInputs,
