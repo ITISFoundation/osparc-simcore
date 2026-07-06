@@ -4,6 +4,7 @@
 # pylint: disable=unsupported-assignment-operation
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
 import asyncio
@@ -237,6 +238,8 @@ def app_settings(
 
 
 _LIFESPAN_TIMEOUT: Final[int] = 10
+_UPLOAD_COMPLETION_POLL_INTERVAL_S: Final[float] = 1
+_TEST_CELERY_WORKER_CONCURRENCY: Final[int] = 10
 
 
 @pytest.fixture
@@ -421,7 +424,7 @@ def upload_file(
             completion_etag = None
             async for attempt in AsyncRetrying(
                 reraise=True,
-                wait=wait_fixed(1),
+                wait=wait_fixed(_UPLOAD_COMPLETION_POLL_INTERVAL_S),
                 stop=stop_after_delay(60),
                 retry=retry_if_exception_type(ValueError),
             ):
@@ -519,7 +522,7 @@ async def create_empty_directory(
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
-            wait=wait_fixed(1),
+            wait=wait_fixed(_UPLOAD_COMPLETION_POLL_INTERVAL_S),
             stop=stop_after_delay(60),
             retry=retry_if_exception_type(AssertionError),
         ):
@@ -1012,7 +1015,7 @@ async def with_storage_celery_worker(
     with start_worker(
         celery_app,
         pool="threads",
-        concurrency=1,
+        concurrency=_TEST_CELERY_WORKER_CONCURRENCY,
         loglevel="info",
         perform_ping_check=False,
         queues="default,cpu_bound",
