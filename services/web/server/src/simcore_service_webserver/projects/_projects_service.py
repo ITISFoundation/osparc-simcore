@@ -531,6 +531,11 @@ async def clone_project_data(
         forced_copy_project_id=forced_copy_project_id,
         clean_output_data=False,
     )
+    # NOTE: `clone_project_document` deep-copies the source project's accessRights (owner +
+    # collaborators). Reset it here so `insert_project` grants ONLY the new owner (`user_id`)
+    # access, instead of merging it into the source project's stale collaborators list.
+    # The actual/authoritative access control is driven by the `project_to_groups` table
+    # (populated automatically via a DB trigger on insert), not by this legacy JSON field.
     new_project["accessRights"] = {}
 
     if template_parameters:
