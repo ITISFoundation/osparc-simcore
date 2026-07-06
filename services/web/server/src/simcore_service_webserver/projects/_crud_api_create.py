@@ -102,18 +102,11 @@ async def _cleanup_project_on_error(
 ) -> AsyncIterator[_ProjectCleanupContext]:
     """Cleans up the project if the wrapped block raises *after* the project
     row has been inserted (signalled via ``ctx.mark_inserted(...)``).
-
-    NOTE: ``asyncio.CancelledError`` is a ``BaseException`` (not ``Exception``) and
-    must be caught explicitly to preserve cleanup-on-cancellation behaviour.
     """
     ctx = _ProjectCleanupContext()
     try:
         yield ctx
     except asyncio.CancelledError:
-        _logger.warning(
-            "cancelled create_project for user_id='%s'. Cleaning up",
-            user_id,
-        )
         if ctx.project_uuid is not None:
             await _cleanup_failed_project(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
         raise
