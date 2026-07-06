@@ -873,6 +873,151 @@ async def with_random_project_with_files(
     return await random_project_with_files(project_params)
 
 
+@pytest.fixture
+async def seeded_project_with_files(
+    sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
+    create_project: Callable[..., Awaitable[dict[str, Any]]],
+    create_project_node: Callable[..., Awaitable[tuple[NodeID, Any]]],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str, Path | None], SimcoreS3FileID],
+    faker: Faker,
+    with_storage_celery_worker: TestWorkController,
+) -> Callable[
+    [ProjectWithFilesParams],
+    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+]:
+    async def _creator(
+        project_params: ProjectWithFilesParams,
+        product_name: ProductName | None = None,
+    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
+        assert project_params.allowed_file_sizes
+
+        def _select_checksum() -> SHA256Str:
+            if project_params.allowed_file_checksums:
+                return random.choice(project_params.allowed_file_checksums)  # noqa: S311
+            return TypeAdapter(SHA256Str).validate_python(faker.sha256(raw_output=False))
+
+        project_kwargs: dict[str, Any] = {"name": "seeded-random-project"}
+        if product_name is not None:
+            project_kwargs["product_name"] = product_name
+        project = await create_project(**project_kwargs)
+
+        project_id = ProjectID(project["uuid"])
+        location_id = SimcoreS3DataManager.get_location_id()
+        location_name = SimcoreS3DataManager.get_location_name()
+
+        files_by_node: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
+        db_entries: list[dict[str, Any]] = []
+        local_files_by_size: dict[ByteSize, Path] = {}
+
+        for _ in range(project_params.num_nodes):
+            node_id = cast(NodeID, faker.uuid4(cast_to=None))
+            files_by_node[node_id] = {}
+
+            output_file_name = faker.file_name()
+            output_file_id = create_simcore_file_id(project_id, node_id, output_file_name, Path("outputs/output_3"))
+            created_node_id, _ = await create_project_node(
+                project_id,
+                node_id,
+                outputs={
+                    "output_1": faker.pyint(),
+                    "output_2": faker.pystr(),
+                    "output_3": f"{output_file_id}",
+                },
+            )
+            assert created_node_id == node_id
+
+            file_specs: list[tuple[SimcoreS3FileID, ByteSize, SHA256Str]] = [
+                (
+                    output_file_id,
+                    random.choice(project_params.allowed_file_sizes),  # noqa: S311
+                    _select_checksum(),
+                )
+            ]
+
+            # Add a small set of root files to keep delete-path coverage.
+            for _ in range(2):
+                root_name = faker.file_name()
+                root_file_id = create_simcore_file_id(project_id, node_id, root_name, None)
+                file_specs.append(
+                    (
+                        root_file_id,
+                        random.choice(project_params.allowed_file_sizes),  # noqa: S311
+                        _select_checksum(),
+                    )
+                )
+
+            # Keep workspace hierarchy checks by spreading files across fixed subdirs.
+            workspace_subdirs = [Path("workspace") / f"sub-dir_etc ory-{index}" for index in range(3)]
+            for index in range(project_params.workspace_files_count):
+                workspace_name = faker.file_name()
+                file_specs.append(
+                    (
+                        create_simcore_file_id(
+                            project_id,
+                            node_id,
+                            workspace_name,
+                            workspace_subdirs[index % len(workspace_subdirs)],
+                        ),
+                        random.choice(project_params.allowed_file_sizes),  # noqa: S311
+                        _select_checksum(),
+                    )
+                )
+
+            for file_id, file_size, file_checksum in file_specs:
+                if file_size not in local_files_by_size:
+                    local_files_by_size[file_size] = create_file_of_size(file_size, None)
+
+                local_file = local_files_by_size[file_size]
+                await storage_s3_client.upload_file(
+                    bucket=storage_s3_bucket,
+                    file=local_file,
+                    object_key=file_id,
+                    bytes_transferred_cb=None,
+                )
+
+                files_by_node[node_id][file_id] = FileIDDict(path=local_file, sha256_checksum=file_checksum)
+
+                db_fmd = FileMetaData.from_simcore_node(
+                    user_id=TypeAdapter(UserID).validate_python(project["prj_owner"]),
+                    file_id=file_id,
+                    bucket=storage_s3_bucket,
+                    location_id=location_id,
+                    location_name=location_name,
+                    sha256_checksum=file_checksum,
+                    file_size=file_size,
+                    entity_tag=f"seeded-{faker.md5(raw_output=False)}",
+                    upload_id=None,
+                    upload_expires_at=None,
+                    is_directory=False,
+                )
+                db_entries.append(jsonable_encoder(FileMetaDataAtDB.model_validate(db_fmd)))
+
+        async with sqlalchemy_async_engine.begin() as connection:
+            await connection.execute(file_meta_data.insert(), db_entries)
+
+        project = await get_updated_project(sqlalchemy_async_engine, project["uuid"])
+        return project, files_by_node
+
+    return _creator
+
+
+@pytest.fixture
+async def with_seeded_project_with_files(
+    seeded_project_with_files: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    project_params: ProjectWithFilesParams,
+) -> tuple[
+    dict[str, Any],
+    dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+]:
+    return await seeded_project_with_files(project_params)
+
+
 @pytest.fixture()
 async def output_file(
     user_id: UserID, project_id: str, sqlalchemy_async_engine: AsyncEngine, faker: Faker

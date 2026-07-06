@@ -9,12 +9,10 @@
 
 import datetime
 import random
-from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pytest
-from aws_library.s3 import SimcoreS3API
 from celery.worker.worker import WorkController
 from celery_library.async_jobs import (
     submit_job,
@@ -25,20 +23,14 @@ from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
-from models_library.basic_types import SHA256Str
 from models_library.celery import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from models_library.products import ProductName
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
-from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams, get_updated_project
+from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from servicelib.celery.task_manager import TaskManager
-from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -130,130 +122,6 @@ async def _assert_delete_paths(
             return
 
     pytest.fail("Job did not finish")
-
-
-@pytest.fixture
-async def with_seeded_project_with_files(
-    sqlalchemy_async_engine: AsyncEngine,
-    storage_s3_bucket: S3BucketName,
-    storage_s3_client: SimcoreS3API,
-    create_file_of_size: Callable[[ByteSize, str | None], Path],
-    create_project: Callable[..., Awaitable[dict[str, Any]]],
-    create_project_node: Callable[..., Awaitable[tuple[NodeID, Any]]],
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str, Path | None], SimcoreS3FileID],
-    faker: Faker,
-    project_params: ProjectWithFilesParams,
-    user_id: UserID,
-    with_storage_celery_worker: WorkController,
-) -> tuple[
-    dict[str, Any],
-    dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
-]:
-    assert project_params.allowed_file_sizes
-
-    def _select_checksum() -> SHA256Str:
-        if project_params.allowed_file_checksums:
-            return random.choice(project_params.allowed_file_checksums)  # noqa: S311
-        return TypeAdapter(SHA256Str).validate_python(faker.sha256(raw_output=False))
-
-    project = await create_project(name="seeded-random-project")
-    project_id = ProjectID(project["uuid"])
-    location_id = SimcoreS3DataManager.get_location_id()
-    location_name = SimcoreS3DataManager.get_location_name()
-
-    files_by_node: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
-    db_entries: list[dict[str, Any]] = []
-    local_files_by_size: dict[ByteSize, Path] = {}
-
-    for _ in range(project_params.num_nodes):
-        node_id = cast(NodeID, faker.uuid4(cast_to=None))
-        files_by_node[node_id] = {}
-
-        output_file_name = faker.file_name()
-        output_file_id = create_simcore_file_id(project_id, node_id, output_file_name, Path("outputs/output_3"))
-        created_node_id, _ = await create_project_node(
-            project_id,
-            node_id,
-            outputs={
-                "output_1": faker.pyint(),
-                "output_2": faker.pystr(),
-                "output_3": f"{output_file_id}",
-            },
-        )
-        assert created_node_id == node_id
-
-        file_specs: list[tuple[SimcoreS3FileID, ByteSize, SHA256Str]] = []
-        # One tracked output file per node
-        file_specs.append(
-            (
-                output_file_id,
-                random.choice(project_params.allowed_file_sizes),  # noqa: S311
-                _select_checksum(),
-            )
-        )
-
-        # Root-level files keep deletion-path coverage without full upload completion setup.
-        for _ in range(2):
-            root_name = faker.file_name()
-            root_file_id = create_simcore_file_id(project_id, node_id, root_name, None)
-            file_specs.append(
-                (
-                    root_file_id,
-                    random.choice(project_params.allowed_file_sizes),  # noqa: S311
-                    _select_checksum(),
-                )
-            )
-
-        # Workspace files distributed across subfolders preserve path grouping checks.
-        workspace_subdirs = [Path("workspace") / f"sub-dir_etc ory-{index}" for index in range(3)]
-        for index in range(project_params.workspace_files_count):
-            workspace_name = faker.file_name()
-            file_specs.append(
-                (
-                    create_simcore_file_id(
-                        project_id,
-                        node_id,
-                        workspace_name,
-                        workspace_subdirs[index % len(workspace_subdirs)],
-                    ),
-                    random.choice(project_params.allowed_file_sizes),  # noqa: S311
-                    _select_checksum(),
-                )
-            )
-
-        for file_id, file_size, file_checksum in file_specs:
-            if file_size not in local_files_by_size:
-                local_files_by_size[file_size] = create_file_of_size(file_size, None)
-
-            local_file = local_files_by_size[file_size]
-            await storage_s3_client.upload_file(
-                bucket=storage_s3_bucket,
-                file=local_file,
-                object_key=file_id,
-                bytes_transferred_cb=None,
-            )
-
-            files_by_node[node_id][file_id] = FileIDDict(path=local_file, sha256_checksum=file_checksum)
-            db_fmd = FileMetaData.from_simcore_node(
-                user_id=user_id,
-                file_id=file_id,
-                bucket=storage_s3_bucket,
-                location_id=location_id,
-                location_name=location_name,
-                sha256_checksum=file_checksum,
-                file_size=file_size,
-                entity_tag=f"seeded-{faker.md5(raw_output=False)}",
-                upload_id=None,
-                upload_expires_at=None,
-                is_directory=False,
-            )
-            db_entries.append(jsonable_encoder(FileMetaDataAtDB.model_validate(db_fmd)))
-
-    async with sqlalchemy_async_engine.begin() as connection:
-        await connection.execute(file_meta_data.insert(), db_entries)
-
-    project = await get_updated_project(sqlalchemy_async_engine, project["uuid"])
-    return project, files_by_node
 
 
 @pytest.mark.parametrize(
