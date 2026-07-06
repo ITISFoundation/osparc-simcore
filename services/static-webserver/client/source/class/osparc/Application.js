@@ -42,6 +42,9 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
+      // remove the up/down caps and track border from every scrollbar (see the mixin)
+      qx.Class.patch(qx.ui.core.scroll.ScrollBar, osparc.wrapper.MScrollBar);
+
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox
