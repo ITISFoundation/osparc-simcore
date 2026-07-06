@@ -294,14 +294,14 @@ def test_classic_ti_plan(
     )
 
     with log_context(logging.INFO, "Classic TI step (1/%s)", expected_number_of_steps) as log_ctx:
-        classic_ti_node_id = get_node_id_from_service_key(workbench, "ti-postpro")
+        classic_ti_node_id = get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-postpro")
         restartable_jlab_websocket = _run_classic_ti_step(params, classic_ti_node_id, log_ctx)
 
     if is_product_lite:
         assert expected_number_of_steps == 1
     else:
         with log_context(logging.INFO, "Exposure Analysis step (2/%s)", expected_number_of_steps) as log_ctx:
-            exposure_analysis_node_id = get_node_id_from_service_key(workbench, "s4l-ui")
+            exposure_analysis_node_id = get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui")
             _run_exposure_analysis_step(params, exposure_analysis_node_id, log_ctx)
 
     restartable_jlab_websocket.auto_reconnect = False

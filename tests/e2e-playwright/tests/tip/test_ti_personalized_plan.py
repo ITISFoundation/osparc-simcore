@@ -442,16 +442,18 @@ def test_personalized_classic_ti_plan(
         expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
 
     with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
-        _run_personalizer_step(params, get_node_id_from_service_key(workbench, "ti-pers"))
+        _run_personalizer_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-pers"))
 
     with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
-        _run_model_inspector_step(params, get_node_id_from_service_key(workbench, "s4l-ui-modeling"))
+        _run_model_inspector_step(
+            params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui-modeling")
+        )
 
     with log_context(logging.INFO, "Simulator step (4/%s)", expected_number_of_steps):
-        _run_simulator_step(params, get_node_id_from_service_key(workbench, "ti-simu"))
+        _run_simulator_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-simu"))
 
     with log_context(logging.INFO, "Classic TI step (5/%s)", expected_number_of_steps):
-        _run_classic_ti_step(params, get_node_id_from_service_key(workbench, "ti-postpro"))
+        _run_classic_ti_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-postpro"))
 
     with log_context(logging.INFO, "Exposure Analysis step (6/%s)", expected_number_of_steps):
-        _run_exposure_analysis_step(params, get_node_id_from_service_key(workbench, "s4l-ui"))
+        _run_exposure_analysis_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui"))
