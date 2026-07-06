@@ -2,14 +2,12 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
-import importlib
 import logging
 import secrets
 import string
 from collections.abc import Callable
 from functools import partial
 
-import pip
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -116,58 +114,6 @@ async def test_invalid_tracing_settings(
         async for _ in get_tracing_instrumentation_lifespan(
             tracing_config=tracing_config,
         )(app=app):
-            pass
-
-
-def install_package(package):
-    pip.main(["install", package])
-
-
-def uninstall_package(package):
-    pip.main(["uninstall", "-y", package])
-
-
-@pytest.fixture()
-def manage_package(request):
-    package, importname = request.param
-    install_package(package)
-    yield importname
-    uninstall_package(package)
-
-
-@pytest.mark.skip(reason="this test installs always the latest version of the package which creates conflicts.")
-@pytest.mark.parametrize(
-    "tracing_settings_in, manage_package",
-    [
-        (
-            ("http://opentelemetry-collector", 4318, 1.0),
-            (
-                "opentelemetry-instrumentation-botocore",
-                "opentelemetry.instrumentation.botocore",
-            ),
-        ),
-    ],
-    indirect=True,
-)
-async def test_tracing_setup_package_detection(
-    faker: Faker,
-    mocked_app: FastAPI,
-    mock_otel_collector: InMemorySpanExporter,
-    set_and_clean_settings_env_vars: None,
-    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
-    manage_package,
-):
-    package_name = manage_package
-    importlib.import_module(package_name)
-    tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
-    async for _ in get_tracing_instrumentation_lifespan(
-        tracing_config=tracing_config,
-    )(app=mocked_app):
-        # idempotency check
-        async for _ in get_tracing_instrumentation_lifespan(
-            tracing_config=tracing_config,
-        )(app=mocked_app):
             pass
 
 
