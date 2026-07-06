@@ -65,6 +65,26 @@ qx.Class.define("osparc.conversation.AddMessage", {
     "notifyUser": "qx.event.type.Data",
   },
 
+  statics: {
+    __scrollbarStyleInjected: false,
+
+    // thin, rounded, theme-neutral scrollbar for the composer text area
+    injectScrollbarStyle: function() {
+      // eslint-disable-next-line no-underscore-dangle
+      if (osparc.conversation.AddMessage.__scrollbarStyleInjected) {
+        return;
+      }
+      // eslint-disable-next-line no-underscore-dangle
+      osparc.conversation.AddMessage.__scrollbarStyleInjected = true;
+      qx.bom.Stylesheet.createElement([
+        ".osparc-chat-composer::-webkit-scrollbar{width:8px;height:8px;}",
+        ".osparc-chat-composer::-webkit-scrollbar-track{background:transparent;}",
+        ".osparc-chat-composer::-webkit-scrollbar-thumb{background:rgba(128,128,128,0.45);border-radius:4px;}",
+        ".osparc-chat-composer::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,0.7);}",
+      ].join(""));
+    },
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -119,6 +139,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
           textArea.getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
           });
+          // thinner, rounded scrollbar
+          osparc.conversation.AddMessage.injectScrollbarStyle();
+          textArea.getContentElement().addClass("osparc-chat-composer");
           // make it more compact
           this.getChildControl("add-comment-layout").add(control, {
             flex: 1
@@ -126,30 +149,18 @@ qx.Class.define("osparc.conversation.AddMessage", {
           break;
         }
         case "add-comment-button": {
-          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/arrow-up/16").set({
-            toolTipText: this.tr("Enter"),
-            backgroundColor: "input-background",
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/paper-plane/14").set({
+            toolTipText: this.tr("Send"),
+            backgroundColor: "product-color",
+            textColor: "white",
             allowGrowX: false,
             alignX: "right",
             alignY: "middle",
           });
           control.getContentElement().setStyles({
-            "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
             "border-top-left-radius": "0px", // no roundness there to match the message field
             "border-bottom-left-radius": "0px", // no roundness there to match the message field
-            "border-bottom-right-radius": "0px", // no roundness there to match the message field
           });
-          const commentField = this.getChildControl("comment-field").getChildControl("text-area");
-          commentField.addListener("focus", () => {
-            control.getContentElement().setStyles({
-              "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("product-color"),
-            });
-          }, this);
-          commentField.addListener("focusout", () => {
-            control.getContentElement().setStyles({
-              "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
-            });
-          }, this);
           control.addListener("execute", this.__addCommentPressed, this);
           this.getChildControl("add-comment-layout").add(control);
           break;
