@@ -52,6 +52,7 @@ qx.Class.define("osparc.Application", {
 
       this.__preventAutofillBrowserStyles();
       this.__loadCommonCss();
+      this.__setupScrollbarColors();
       this.__updateTabName();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
         osparc.utils.LanguageManager.applyStoredLocale();
@@ -707,6 +708,19 @@ qx.Class.define("osparc.Application", {
     __loadCommonCss: function() {
       const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
       qx.module.Css.includeStylesheet(commonCssUri);
+    },
+
+    // feed the native (webkit) scrollbar CSS with the theme scrollbar colors,
+    // kept in sync when the theme changes
+    __setupScrollbarColors: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const update = () => {
+        const root = document.documentElement;
+        root.style.setProperty("--osparc-scrollbar-thumb", colorManager.resolve("scrollbar-passive"));
+        root.style.setProperty("--osparc-scrollbar-thumb-hover", colorManager.resolve("scrollbar-active"));
+      };
+      update();
+      colorManager.addListener("changeTheme", update);
     }
   }
 });
