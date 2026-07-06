@@ -60,7 +60,9 @@ def _instrument_traced_functions(
 
     Targets are given as 'module.path:attr.path'. Each call to a wrapped function
     (sync or async) records a span named after its target spec. Targets that cannot
-    be imported/resolved are logged and skipped (startup is never aborted).
+    be found (module or attribute does not exist) are logged at INFO level and
+    skipped. Any other error raised while instrumenting a target propagates and
+    aborts the whole setup (i.e. the application fails to boot).
 
     Limitations:
     - Targets must be fully-qualified; bare names are not supported.
@@ -69,23 +71,25 @@ def _instrument_traced_functions(
     - Closures, lambdas, locals and C-level functions cannot be targeted.
 
     Returns the list of wrapped targets, to be passed to `uninstrument_traced_functions`.
+
+    Raises:
+        Exception: if a target exists but cannot be instrumented for any reason
+            other than not being found.
     """
     wrapped_targets: list[TracedFunctionTarget] = []
     for spec in target_specs:
         try:
             parent, attr_name = _resolve_parent_and_attr(spec)
-            wrapt.wrap_function_wrapper(
-                parent,
-                attr_name,
-                _make_traced_wrapper(tracer_provider=tracer_provider, span_name=spec),
-            )
-            wrapped_targets.append((parent, attr_name))
-        except Exception:  # pylint: disable=broad-except
-            _logger.warning(
-                "Could not instrument traced function target '%s'; skipping.",
-                spec,
-                exc_info=True,
-            )
+        except (ImportError, AttributeError):
+            _logger.info("Traced function target '%s' could not be found; skipping.", spec)
+            continue
+
+        wrapt.wrap_function_wrapper(
+            parent,
+            attr_name,
+            _make_traced_wrapper(tracer_provider=tracer_provider, span_name=spec),
+        )
+        wrapped_targets.append((parent, attr_name))
     return wrapped_targets
 
 
@@ -113,6 +117,7 @@ class TracedFunctionsInstrumentor(BaseInstrumentor):
         target_specs = tracing_settings.TRACING_OPENTELEMETRY_TRACED_FUNCTIONS
         if not target_specs:
             return
+
         with log_context(
             _logger,
             logging.INFO,

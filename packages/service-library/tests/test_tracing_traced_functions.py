@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import logging
 import sys
 import types
 from collections.abc import Iterator
@@ -80,6 +81,37 @@ def test__instrument_traced_functions_skips_invalid_targets(
     )
     assert wrapped == []
     assert in_memory_exporter.get_finished_spans() == ()
+
+
+def test__instrument_traced_functions_logs_info_and_skips_on_wrong_import(
+    caplog: pytest.LogCaptureFixture,
+    tracer_provider: TracerProvider,
+    in_memory_exporter: InMemorySpanExporter,
+):
+    spec = "no.such.module:func"
+    with caplog.at_level(logging.DEBUG):
+        wrapped = _instrument_traced_functions([spec], tracer_provider=tracer_provider)
+
+    assert wrapped == []
+    assert in_memory_exporter.get_finished_spans() == ()
+    assert "INFO" in caplog.text
+    assert "could not be found" in caplog.text
+    assert spec in caplog.text
+
+
+def test__instrument_traced_functions_raises_for_errors_other_than_not_found(
+    monkeypatch: pytest.MonkeyPatch,
+    sample_module: types.ModuleType,
+    tracer_provider: TracerProvider,
+):
+    def _boom(*args, **kwargs):
+        msg = "boom"
+        raise TypeError(msg)
+
+    monkeypatch.setattr("servicelib.traced_functions_instrumentor.wrapt.wrap_function_wrapper", _boom)
+
+    with pytest.raises(TypeError, match="boom"):
+        _instrument_traced_functions([f"{_SAMPLE_MODULE_NAME}:sync_increment"], tracer_provider=tracer_provider)
 
 
 def test__uninstrument_traced_functions_restores_original(
