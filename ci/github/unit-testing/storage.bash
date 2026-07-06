@@ -50,14 +50,13 @@ _test_remaining_shard() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/storage
-  local all_tests test_01_args pytest_args
+  local all_tests pytest_args test_file
   mapfile -t all_tests < <(find tests/unit -type f -name 'test*.py' | sort)
-  test_01_args=()
   pytest_args=""
-  for test_file in "${TEST_01_FILES[@]}"; do
-    test_01_args+=("--ignore=${test_file}")
-  done
-  for test_file in "${test_01_args[@]}" "${all_tests[@]}"; do
+  for test_file in "${all_tests[@]}"; do
+    if [[ " ${TEST_01_FILES[*]} " == *" ${test_file} "* ]]; then
+      continue
+    fi
     pytest_args+="${test_file} "
   done
   make test-ci-unit pytest-parameters="--disk-usage ${pytest_args}"
