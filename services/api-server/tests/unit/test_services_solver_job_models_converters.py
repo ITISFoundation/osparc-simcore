@@ -14,7 +14,7 @@ from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
 from models_library.projects_nodes_io import NodeID
 from pydantic import RootModel, TypeAdapter, create_model
-from simcore_service_api_server.exceptions.backend_errors import InvalidInputError
+from simcore_service_api_server.exceptions.backend_errors import InvalidEncryptionInputsError
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import (
@@ -295,7 +295,7 @@ def test_build_job_encryption_context_raises_on_unknown_port_key():
         input_port_to_file_id={"not_a_node_input": "some_file_id"},
     )
 
-    with pytest.raises(InvalidInputError):
+    with pytest.raises(InvalidEncryptionInputsError, match="not_a_node_input"):
         build_job_encryption_context(encryption, node_id=_NODE_ID, node_input_keys=["input_1", "input_2"])
 
 

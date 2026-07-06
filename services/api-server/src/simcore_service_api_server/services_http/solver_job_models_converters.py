@@ -20,7 +20,7 @@ from pydantic import TypeAdapter
 
 from simcore_service_api_server.models.api_resources import JobLinks
 
-from ..exceptions.backend_errors import InvalidInputError
+from ..exceptions.backend_errors import InvalidEncryptionInputsError
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
@@ -118,14 +118,16 @@ def build_job_encryption_context(
     """Validates the client-supplied flat encryption inputs and wraps them into
     director-v2's per-node ``JobEncryptionContextMetadata`` shape.
 
-    raises InvalidInputError: if a port key is not an actual input of the node
+    raises InvalidEncryptionInputsError: if a port key is not an actual input of the node
     """
     if encryption is None:
         return None
 
     valid_keys = set(node_input_keys)
     if set(encryption.input_port_to_file_id) - valid_keys:
-        raise InvalidInputError
+        raise InvalidEncryptionInputsError(
+            inputs=set(encryption.input_port_to_file_id) - valid_keys, node_inputs=valid_keys
+        )
 
     return JobEncryptionContextMetadata(
         root_key=encryption.root_key,

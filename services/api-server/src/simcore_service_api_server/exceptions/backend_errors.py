@@ -29,6 +29,13 @@ class InvalidInputError(BaseBackEndError):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+class InvalidEncryptionInputsError(BaseBackEndError):
+    msg_template = user_message(
+        "The provided encryption inputs {inputs} are not valid. Available `{node_inputs}`", _version=1
+    )
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
 class ListSolversOrStudiesError(BaseBackEndError):
     msg_template = user_message("Unable to retrieve the list of solvers and projects.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
