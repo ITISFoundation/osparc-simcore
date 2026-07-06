@@ -44,6 +44,8 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_task_manager
 
+_SYNC_COMPLETE_UPLOAD_FUTURE_ID = "sync-complete"
+
 
 def _get_owner_metadata(*, user_id: UserID) -> OwnerMetadata:
     _data = {
@@ -54,6 +56,34 @@ def _get_owner_metadata(*, user_id: UserID) -> OwnerMetadata:
 
 
 _logger = logging.getLogger(__name__)
+
+
+def _complete_upload_state_url(
+    request: Request,
+    *,
+    location_id: LocationID,
+    file_id: StorageFileID,
+    future_id: str,
+    user_id: UserID,
+) -> str:
+    route = (
+        URL(f"{request.url}")
+        .with_path(
+            quote(
+                request.app.url_path_for(
+                    "is_completed_upload_file",
+                    location_id=f"{location_id}",
+                    file_id=file_id,
+                    future_id=future_id,
+                ),
+                safe=":/",
+            ),
+            encoded=True,
+        )
+        .with_query(user_id=user_id)
+    )
+    return f"{route}"
+
 
 router = APIRouter(
     tags=[
@@ -290,6 +320,34 @@ async def complete_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
 
+    dsm = get_dsm_provider(request.app).get(location_id)
+
+    if location_id == SimcoreS3DataManager.get_location_id():
+        simcore_s3_dsm = cast(SimcoreS3DataManager, dsm)
+        if not await simcore_s3_dsm.requires_background_complete_upload(
+            file_id=file_id,
+            user_id=query_params.user_id,
+        ):
+            await simcore_s3_dsm.complete_file_upload(
+                file_id=file_id,
+                user_id=query_params.user_id,
+                uploaded_parts=body.parts,
+            )
+            response = FileUploadCompleteResponse(
+                links=FileUploadCompleteLinks(
+                    state=TypeAdapter(AnyUrl).validate_python(
+                        _complete_upload_state_url(
+                            request,
+                            location_id=location_id,
+                            file_id=file_id,
+                            future_id=_SYNC_COMPLETE_UPLOAD_FUTURE_ID,
+                            user_id=query_params.user_id,
+                        )
+                    )
+                )
+            )
+            return Envelope[FileUploadCompleteResponse](data=response)
+
     owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
     task_uuid = await task_manager.submit_task(
         TaskExecutionMetadata(
@@ -302,26 +360,18 @@ async def complete_upload_file(
         body=body,
     )
 
-    route = (
-        URL(f"{request.url}")
-        .with_path(
-            quote(
-                request.app.url_path_for(
-                    "is_completed_upload_file",
-                    location_id=f"{location_id}",
+    response = FileUploadCompleteResponse(
+        links=FileUploadCompleteLinks(
+            state=TypeAdapter(AnyUrl).validate_python(
+                _complete_upload_state_url(
+                    request,
+                    location_id=location_id,
                     file_id=file_id,
                     future_id=f"{task_uuid}",
-                ),
-                safe=":/",
-            ),
-            encoded=True,
+                    user_id=query_params.user_id,
+                )
+            )
         )
-        .with_query(user_id=query_params.user_id)
-    )
-    complete_task_state_url = f"{route}"
-
-    response = FileUploadCompleteResponse(
-        links=FileUploadCompleteLinks(state=TypeAdapter(AnyUrl).validate_python(complete_task_state_url))
     )
     return Envelope[FileUploadCompleteResponse](data=response)
 
@@ -342,6 +392,26 @@ async def is_completed_upload_file(
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
+
+    if future_id == _SYNC_COMPLETE_UPLOAD_FUTURE_ID:
+        dsm = get_dsm_provider(request.app).get(location_id)
+        new_fmd = await dsm.get_file(
+            user_id=query_params.user_id,
+            file_id=file_id,
+        )
+        await post_file_notification(
+            request.app,
+            event_type=FileNotificationEventType.FILE_UPLOADED,
+            user_id=query_params.user_id,
+            file_id=file_id,
+        )
+        response = FileUploadCompleteFutureResponse(
+            state=FileUploadCompleteState.OK,
+            e_tag=new_fmd.entity_tag,
+            last_modified=new_fmd.last_modified,
+        )
+        return Envelope[FileUploadCompleteFutureResponse](data=response)
+
     owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
     task_status = await task_manager.get_status(
         owner_metadata=owner_metadata,

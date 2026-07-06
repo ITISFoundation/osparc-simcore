@@ -31,6 +31,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
+    FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
     PresignedLink,
@@ -47,7 +48,7 @@ from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import byte_size_ids
-from pytest_simcore.helpers.s3 import upload_file_part
+from pytest_simcore.helpers.s3 import upload_file_part, upload_file_to_presigned_link
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
@@ -55,6 +56,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from servicelib.aiohttp import status
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import FileDownloadResponse, S3BucketName, UploadID
+from simcore_service_storage.modules.celery import get_task_manager_from_app
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
@@ -64,7 +66,7 @@ from tenacity.wait import wait_fixed
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -639,6 +641,77 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     # check getting the file actually lazily updates the table and returns the expected values
     received_fmd: FileMetaDataGet = await get_file_meta_data(simcore_file_id)
     assert received_fmd.entity_tag == upload_e_tag
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_complete_upload_of_single_presigned_link_skips_background_task(
+    initialized_app: FastAPI,
+    sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_client: SimcoreS3API,
+    client: httpx.AsyncClient,
+    create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    project_id: ProjectID,
+    node_id: NodeID,
+    faker: Faker,
+    mocker: MockerFixture,
+    with_storage_celery_worker: TestWorkController,
+):
+    file_size = TypeAdapter(ByteSize).validate_python("1Mib")
+    file_name = faker.file_name()
+    file = create_file_of_size(file_size, file_name)
+    simcore_file_id = create_simcore_file_id(project_id, node_id, file_name)
+
+    file_upload_link = await create_upload_file_link_v2(
+        simcore_file_id,
+        link_type=LinkType.PRESIGNED.value,
+        file_size=file_size,
+    )
+    assert len(file_upload_link.urls) == 1
+
+    task_manager = get_task_manager_from_app(initialized_app)
+    mocker.patch.object(
+        type(task_manager),
+        "submit_task",
+        side_effect=AssertionError("submit_task must not be called for single-link completion"),
+    )
+    uploaded_parts = await upload_file_to_presigned_link(file, file_upload_link)
+
+    complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
+    response = await client.post(
+        f"{complete_url}",
+        json=jsonable_encoder(FileUploadCompletionBody(parts=uploaded_parts)),
+    )
+    response.raise_for_status()
+    file_upload_complete_response, error = assert_status(response, status.HTTP_202_ACCEPTED, FileUploadCompleteResponse)
+    assert not error
+    assert file_upload_complete_response
+
+    state_url = URL(f"{file_upload_complete_response.links.state}").relative()
+    response = await client.post(f"{state_url}")
+    response.raise_for_status()
+    future, error = assert_status(response, status.HTTP_200_OK, FileUploadCompleteFutureResponse)
+    assert not error
+    assert future
+    assert future.state == FileUploadCompleteState.OK
+    assert future.e_tag is not None
+    assert future.last_modified is not None
+
+    await assert_file_meta_data_in_db(
+        sqlalchemy_async_engine,
+        file_id=simcore_file_id,
+        expected_entry_exists=True,
+        expected_file_size=file_size,
+        expected_upload_id=False,
+        expected_upload_expiration_date=False,
+        expected_sha256_checksum=None,
+    )
 
 
 @pytest.mark.parametrize(
