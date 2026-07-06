@@ -10,10 +10,10 @@ from ._groups_service import (
     create_project_group_without_checking_permissions,
     delete_project_group_without_checking_permissions,
 )
-from ._projects_repository import copy_allow_guests_to_push_states_and_output_ports
 from ._projects_service import (
     batch_get_project_name,
     clone_project_data,
+    copy_allow_guests_to_push_states_and_output_ports,
     delete_project_by_user,
     get_project_dict_and_type,
     get_project_dict_legacy,

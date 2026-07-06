@@ -599,6 +599,19 @@ async def batch_get_projects(
     )
 
 
+async def copy_allow_guests_to_push_states_and_output_ports(
+    app: web.Application,
+    *,
+    from_project_uuid: str,
+    to_project_uuid: str,
+) -> None:
+    await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
+        app,
+        from_project_uuid=from_project_uuid,
+        to_project_uuid=to_project_uuid,
+    )
+
+
 #
 # UPDATE project -----------------------------------------------------
 #
