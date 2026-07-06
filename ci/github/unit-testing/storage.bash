@@ -15,12 +15,58 @@ install() {
   uv pip list
 }
 
-test() {
+_test_shard() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/storage
-  make test-ci-unit pytest-parameters="--disk-usage"
+  make test-ci-unit pytest-parameters="--disk-usage $*"
   popd
+}
+
+TEST_01_FILES=(
+  tests/unit/test__legacy_storage_sdk_compatibility.py
+  tests/unit/test_async_jobs_handlers_paths.py
+  tests/unit/test_cli.py
+  tests/unit/test_core_settings.py
+  tests/unit/test_handlers_datcore.py
+  tests/unit/test_handlers_datasets.py
+  tests/unit/test_handlers_health.py
+  tests/unit/test_handlers_locations.py
+  tests/unit/test_handlers_paths.py
+  tests/unit/test_models.py
+  tests/unit/test_modules_rabbitmq.py
+  tests/unit/test_resources.py
+  tests/unit/test_simcore_s3_dsm_utils.py
+  tests/unit/test_utils.py
+  tests/unit/test_utils_handlers.py
+)
+
+_test_remaining_shard() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/storage
+  local all_tests test_01_args
+  mapfile -t all_tests < <(find tests/unit -type f -name 'test*.py' | sort)
+  test_01_args=()
+  for test_file in "${TEST_01_FILES[@]}"; do
+    test_01_args+=("--ignore=${test_file}")
+  done
+  make test-ci-unit pytest-parameters="--disk-usage ${test_01_args[*]} ${all_tests[*]}"
+  popd
+}
+
+test_01() {
+  _test_shard \
+    "${TEST_01_FILES[@]}"
+}
+
+test_02() {
+  _test_remaining_shard
+}
+
+test() {
+  test_01
+  test_02
 }
 
 typecheck() {
