@@ -19,7 +19,12 @@ _test_shard() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/storage
-  make test-ci-unit pytest-parameters="--disk-usage $*"
+  local shard_args=""
+  local test_file
+  for test_file in "$@"; do
+    shard_args+="${test_file} "
+  done
+  make test-ci-unit pytest-parameters="--disk-usage ${shard_args}"
   popd
 }
 
@@ -45,13 +50,17 @@ _test_remaining_shard() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/storage
-  local all_tests test_01_args
+  local all_tests test_01_args pytest_args
   mapfile -t all_tests < <(find tests/unit -type f -name 'test*.py' | sort)
   test_01_args=()
+  pytest_args=""
   for test_file in "${TEST_01_FILES[@]}"; do
     test_01_args+=("--ignore=${test_file}")
   done
-  make test-ci-unit pytest-parameters="--disk-usage ${test_01_args[*]} ${all_tests[*]}"
+  for test_file in "${test_01_args[@]}" "${all_tests[@]}"; do
+    pytest_args+="${test_file} "
+  done
+  make test-ci-unit pytest-parameters="--disk-usage ${pytest_args}"
   popd
 }
 
