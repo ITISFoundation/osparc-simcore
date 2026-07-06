@@ -27,6 +27,7 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "pb-computational": "rgba(255, 165, 0, 0.4)",
     "pb-dynamic": "rgba(248, 219, 31, 0.4)",
     "pb-locked": "rgba(113, 157, 181, 0.4)",
+    "pb-hovered": "rgba(255, 255, 255, 0.12)",
 
     // button
     "default-button-text-outline": "contrasted-text-light",

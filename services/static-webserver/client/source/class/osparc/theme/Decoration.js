@@ -370,7 +370,22 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "pb-listitem": {
       style: {
-        radius: 4
+        radius: 4,
+        inset: true,
+        shadowLength: 0,
+        shadowBlurRadius: 0,
+        shadowSpreadRadius: 300,
+        shadowColor: "transparent",
+        transitionProperty: ["box-shadow"],
+        transitionDuration: "0.15s",
+        transitionTimingFunction: "ease-in-out"
+      }
+    },
+
+    "pb-listitem-hovered": {
+      include: "pb-listitem",
+      style: {
+        shadowColor: "pb-hovered"
       }
     },
 
