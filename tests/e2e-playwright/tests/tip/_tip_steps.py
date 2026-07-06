@@ -27,6 +27,19 @@ POST_PRO_LOAD_RESULT_MAX_TIME: Final[int] = 30 * SECOND
 POST_PRO_REPORTING_MAX_TIME: Final[int] = 30 * SECOND
 
 
+def get_node_id_from_service_key(workbench: dict, service_key_fragment: str) -> str:
+    """Returns the node id of the first node whose service key contains ``service_key_fragment``.
+
+    The nodes' position in the workbench is not guaranteed, so steps must be
+    resolved by their service key instead of by their index.
+    """
+    for node_id, node_data in workbench.items():
+        if service_key_fragment in node_data["key"]:
+            return node_id
+    msg = f"Could not find a node with service key containing {service_key_fragment!r} in the workbench"
+    raise ValueError(msg)
+
+
 def raise_if_button_spinner_running(button: Locator, *, description: str) -> None:
     """Raises ``ValueError`` while the button still shows a ``fa-spinner`` icon
     (i.e. the operation is in progress), and returns quietly once the icon is gone.

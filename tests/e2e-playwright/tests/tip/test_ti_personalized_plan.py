@@ -22,6 +22,7 @@ from _tip_steps import (
     POST_PRO_REPORTING_MAX_TIME,
     POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
     POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+    get_node_id_from_service_key,
     raise_if_button_spinner_running,
     run_optimization_and_load_analysis,
     set_fast_optimization_settings,
@@ -408,7 +409,7 @@ def test_personalized_classic_ti_plan(
     assert project_data
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
-    node_ids: list[str] = list(project_data["workbench"])
+    workbench: dict = project_data["workbench"]
 
     # count the number of elements with test id matching the pattern
     # 0. File Picker with the test_data already uploaded (file-picker) - it is not exposed
@@ -423,7 +424,7 @@ def test_personalized_classic_ti_plan(
     assert step_buttons.count() == expected_number_of_steps, (
         f"Expected {expected_number_of_steps} step buttons, found {step_buttons.count()}"
     )
-    assert len(node_ids) >= expected_number_of_steps, (
+    assert len(workbench) >= expected_number_of_steps, (
         f"Expected at least {expected_number_of_steps} nodes in the workbench"
     )
 
@@ -441,16 +442,16 @@ def test_personalized_classic_ti_plan(
         expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
 
     with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
-        _run_personalizer_step(params, node_ids[2])
+        _run_personalizer_step(params, get_node_id_from_service_key(workbench, "ti-pers"))
 
     with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
-        _run_model_inspector_step(params, node_ids[3])
+        _run_model_inspector_step(params, get_node_id_from_service_key(workbench, "sim4life-modeling"))
 
     with log_context(logging.INFO, "Simulator step (4/%s)", expected_number_of_steps):
-        _run_simulator_step(params, node_ids[4])
+        _run_simulator_step(params, get_node_id_from_service_key(workbench, "ti-simu"))
 
     with log_context(logging.INFO, "Classic TI step (5/%s)", expected_number_of_steps):
-        _run_classic_ti_step(params, node_ids[5])
+        _run_classic_ti_step(params, get_node_id_from_service_key(workbench, "ti-postpro"))
 
     with log_context(logging.INFO, "Exposure Analysis step (6/%s)", expected_number_of_steps):
-        _run_exposure_analysis_step(params, node_ids[6])
+        _run_exposure_analysis_step(params, get_node_id_from_service_key(workbench, "sim4life-postpro"))
