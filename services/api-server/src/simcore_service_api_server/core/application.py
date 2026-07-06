@@ -116,7 +116,7 @@ def create_app(  # noqa: C901
     if settings.API_SERVER_CHATBOT:
         setup_chatbot(
             app,
-            base_url=str(settings.API_SERVER_CHATBOT),
+            base_url=str(settings.API_SERVER_CHATBOT.CHATBOT_URL),
             tracing_settings=settings.API_SERVER_TRACING,
         )
 

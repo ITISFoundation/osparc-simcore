@@ -1,10 +1,12 @@
 import logging
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
 from fastapi import FastAPI
 from settings_library.tracing import TracingSettings
 
+from ..core.settings import ChatbotSettings
 from ..models.domain.chatbot import (
     ChatCompletionRequestMessage,
     ChatRequest,
@@ -18,9 +20,15 @@ _logger = logging.getLogger(__name__)
 # Client
 
 
-@dataclass
-class ChatbotApi(BaseServiceClientApi):
+class ChatbotApi(BaseServiceClientApi): ...
+
+
+@dataclass(frozen=True)
+class ChatbotSession:
     """Client for the chatbot backend service."""
+
+    _chatbot_settings: ChatbotSettings
+    _api: ChatbotApi
 
     async def create_chat_completion(
         self,
@@ -31,14 +39,18 @@ class ChatbotApi(BaseServiceClientApi):
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> CreateChatCompletionResponse:
+        # ensure the graph specified in settings are used
+        _metadata = deepcopy(metadata)
+        _metadata["graph_name"] = self._chatbot_settings.GRAPH_NAME
+
         request = ChatRequest(
             messages=messages,
             model=model,
-            metadata=metadata,
+            metadata=_metadata,
             temperature=temperature,
             top_p=top_p,
         )
-        response = await self.client.post(
+        response = await self._api.client.post(
             "/v1/chat/completions",
             json=request.model_dump(),
         )

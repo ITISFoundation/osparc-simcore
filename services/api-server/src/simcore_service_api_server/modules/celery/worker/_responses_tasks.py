@@ -10,7 +10,7 @@ from ....models.domain.chatbot import (
     RoleEnum,
 )
 from ....models.schemas.responses import CreateResponseRequest
-from ....services_http.chatbot import ChatbotApi
+from ....services_http.chatbot import ChatbotApi, ChatbotSession
 
 
 async def run_chat_completion(
@@ -21,9 +21,14 @@ async def run_chat_completion(
 ) -> CreateChatCompletionResponse:
     assert task_key  # nosec
     app = get_app_server(task.app).app
+    chatbot_settings = app.state.settings.API_SERVER_CHATBOT
 
     chatbot_api = ChatbotApi.get_instance(app)
     assert isinstance(chatbot_api, ChatbotApi)  # nosec
+    chatbot_session = ChatbotSession(
+        _chatbot_settings=chatbot_settings,
+        _api=chatbot_api,
+    )
 
     messages = [
         ChatCompletionRequestMessage(
@@ -33,7 +38,7 @@ async def run_chat_completion(
         for msg in request.input
     ]
 
-    return await chatbot_api.create_chat_completion(
+    return await chatbot_session.create_chat_completion(
         messages=messages,
         model=request.model,
         metadata=request.metadata or {},
