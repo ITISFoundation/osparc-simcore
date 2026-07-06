@@ -604,23 +604,6 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         assert fmd  # nosec
         return convert_db_to_model(fmd)
 
-    async def requires_background_complete_upload(
-        self,
-        *,
-        file_id: StorageFileID,
-        user_id: UserID,
-    ) -> bool:
-        can = await AccessLayerRepository.instance(get_db_engine(self.app)).get_file_access_rights(
-            user_id=user_id, file_id=file_id
-        )
-        if not can.write:
-            raise FileAccessRightError(access_right="write", file_id=file_id)
-
-        fmd = await FileMetaDataRepository.instance(get_db_engine(self.app)).get(
-            file_id=TypeAdapter(SimcoreS3FileID).validate_python(file_id)
-        )
-        return is_valid_managed_multipart_upload(fmd.upload_id)
-
     async def create_file_download_link(self, user_id: UserID, file_id: StorageFileID, link_type: LinkType) -> AnyUrl:
         """
         Cases:
