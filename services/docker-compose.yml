@@ -160,6 +160,10 @@ services:
         "max_connections=413",
         "-c",
         "shared_buffers=256MB",
+        # pg_stat_statements tracks execution statistics of all SQL statements.
+        # Execute `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;` to expose the view.
+        "-c",
+        "shared_preload_libraries=pg_stat_statements",
         # statement_timeout is set to 120 seconds (120_000 in ms), so that long running queries
         # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
         # queries will not be used. Setting >1 minutes to be safe
