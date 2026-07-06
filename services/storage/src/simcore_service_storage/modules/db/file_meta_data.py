@@ -231,13 +231,14 @@ class FileMetaDataRepository(BaseRepository):
                 f"{cursor_params.file_prefix}%" if cursor_params.partial else f"{cursor_params.file_prefix / '%'}"
             )
             search_regex = rf"^[^/]+(?:/[^/]+){{{prefix_levels}}}{'' if cursor_params.partial else '/[^/]+'}"
+            path_expression = sa.func.substring(file_meta_data.c.file_id, search_regex)
             ranked_files = (
                 sa.select(
-                    file_meta_data.c.file_id,
-                    sa.func.substring(file_meta_data.c.file_id, search_regex).label("path"),
+                    file_meta_data,
+                    path_expression.label("path"),
                     sa.func.row_number()
                     .over(
-                        partition_by=sa.func.substring(file_meta_data.c.file_id, search_regex),
+                        partition_by=path_expression,
                         order_by=(file_meta_data.c.file_id.asc(),),
                     )
                     .label("row_num"),
@@ -251,13 +252,14 @@ class FileMetaDataRepository(BaseRepository):
                 .cte("ranked_files")
             )
         else:
+            path_expression = sa.func.split_part(file_meta_data.c.file_id, "/", 1)
             ranked_files = (
                 sa.select(
-                    file_meta_data.c.file_id,
-                    sa.func.split_part(file_meta_data.c.file_id, "/", 1).label("path"),
+                    file_meta_data,
+                    path_expression.label("path"),
                     sa.func.row_number()
                     .over(
-                        partition_by=sa.func.split_part(file_meta_data.c.file_id, "/", 1),
+                        partition_by=path_expression,
                         order_by=(file_meta_data.c.file_id.asc(),),
                     )
                     .label("row_num"),
@@ -267,46 +269,43 @@ class FileMetaDataRepository(BaseRepository):
             )
 
         files_query = (
-            (
-                sa.select(ranked_files, file_meta_data)
-                .where(
-                    and_(
-                        ranked_files.c.row_num == 1,
-                        ranked_files.c.file_id == file_meta_data.c.file_id,
-                    )
-                )
-                .order_by(file_meta_data.c.file_id.asc())
-            )
+            sa.select(ranked_files, sa.func.count().over().label("total_count"))
+            .where(ranked_files.c.row_num == 1)
+            .order_by(ranked_files.c.file_id.asc())
             .limit(limit)
             .offset(cursor_params.offset)
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            total_count = (
-                await conn.scalar(
-                    sa.select(sa.func.count()).select_from(ranked_files).where(ranked_files.c.row_num == 1)
+            total_count = 0
+            items = []
+            async for row in await conn.stream(files_query):
+                total_count = row.total_count
+                items.append(
+                    PathMetaData(
+                        path=row.path or row.file_id,  # NOTE: if path_prefix is partial then path is None
+                        display_path=row.path or row.file_id,
+                        location_id=row.location_id,
+                        location=row.location,
+                        bucket_name=row.bucket_name,
+                        project_id=row.project_id,
+                        node_id=row.node_id,
+                        user_id=row.user_id,
+                        created_at=row.created_at,
+                        last_modified=row.last_modified,
+                        file_meta_data=(
+                            FileMetaData.from_db_model(FileMetaDataAtDB.model_validate(row))
+                            if row.file_id == row.path and not row.is_directory
+                            else None
+                        ),
+                    )
                 )
-            ) or 0
 
-            items = [
-                PathMetaData(
-                    path=row.path or row.file_id,  # NOTE: if path_prefix is partial then path is None
-                    display_path=row.path or row.file_id,
-                    location_id=row.location_id,
-                    location=row.location,
-                    bucket_name=row.bucket_name,
-                    project_id=row.project_id,
-                    node_id=row.node_id,
-                    user_id=row.user_id,
-                    created_at=row.created_at,
-                    last_modified=row.last_modified,
-                    file_meta_data=(
-                        FileMetaData.from_db_model(FileMetaDataAtDB.model_validate(row))
-                        if row.file_id == row.path and not row.is_directory
-                        else None
-                    ),
-                )
-                async for row in await conn.stream(files_query)
-            ]
+            if not items:
+                total_count = (
+                    await conn.scalar(
+                        sa.select(sa.func.count()).select_from(ranked_files).where(ranked_files.c.row_num == 1)
+                    )
+                ) or 0
 
         return (
             items,
