@@ -71,7 +71,6 @@ class ResponseObject(BaseModel):
     id: str
     object: ResponseObjectType = ResponseObjectType.RESPONSE
     background: bool | None = None
-    created_at: float | None = None
     error: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
