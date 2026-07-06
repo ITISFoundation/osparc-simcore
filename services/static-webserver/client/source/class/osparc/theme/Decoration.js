@@ -372,13 +372,10 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 4,
         inset: true,
-        shadowLength: 0,
-        shadowBlurRadius: 0,
         shadowSpreadRadius: 300,
         shadowColor: "transparent",
         transitionProperty: ["box-shadow"],
-        transitionDuration: "0.15s",
-        transitionTimingFunction: "ease-in-out"
+        transitionDuration: "0.15s"
       }
     },
 
