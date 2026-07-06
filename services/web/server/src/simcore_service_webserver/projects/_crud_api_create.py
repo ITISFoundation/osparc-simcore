@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Coroutine
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -19,7 +19,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_context, log_catch
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -74,7 +74,7 @@ async def _cleanup_failed_project(
     simcore_user_agent: str,
     product_name: ProductName,
 ) -> None:
-    with suppress(Exception), log_context(_logger, logging.INFO, f"cleanup failed project {project_uuid=}"):
+    with log_catch(_logger), log_context(_logger, logging.INFO, f"cleaning up failed project {project_uuid=}"):
         await _projects_service.submit_delete_project_task(
             app=app,
             project_uuid=project_uuid,

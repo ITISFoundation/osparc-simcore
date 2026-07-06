@@ -13,7 +13,6 @@ from typing import NamedTuple
 from aiohttp import web
 from common_library.json_serialization import json_loads
 from models_library.api_schemas_webserver.projects_ui import StudyUI
-from models_library.products import ProductName
 from models_library.projects import DateTimeStr, Project, ProjectID, ProjectType
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
@@ -22,8 +21,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
-from ..director_v2.director_v2_service import create_or_update_pipeline
-from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects._projects_service import get_project_for_user
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..utils import now_str
@@ -35,8 +33,12 @@ from ._users import UserInfo
 _logger = logging.getLogger(__name__)
 
 
-_FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python("simcore/services/frontend/file-picker")
-_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python("1.0.0")
+_FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python(
+    "simcore/services/frontend/file-picker"
+)
+_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python(
+    "1.0.0"
+)
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
@@ -84,7 +86,6 @@ def _create_project(
     owner: UserInfo,
     workbench: dict[str, Node],
     workbench_ui: dict[str, dict],
-    product_name: ProductName,
 ) -> Project:
     # Access rights policy
     access_rights = AccessRights(read=True, write=True, delete=True)  # will keep a copy
@@ -109,13 +110,11 @@ def _create_project(
                 "workbench": workbench_ui,
             }
         ).model_dump(mode="json", exclude_unset=True),
-        product_name=product_name,
     )
 
 
 def _create_project_with_service(
     project_id: ProjectID,
-    product_name: ProductName,
     service_id: NodeID,
     owner: UserInfo,
     service_info: ServiceInfo,
@@ -139,20 +138,20 @@ def _create_project_with_service(
         workbench_ui={
             f"{service_id}": {"position": {"x": 633, "y": 229}},
         },
-        product_name=product_name,
     )
 
 
 def _create_project_with_filepicker_and_service(
     project_id: ProjectID,
-    product_name: ProductName,
     file_picker_id: NodeID,
     viewer_id: NodeID,
     owner: UserInfo,
     download_link: HttpUrl,
     viewer_info: ViewerInfo,
 ) -> Project:
-    file_picker, file_picker_output_id = _create_file_picker(f"{download_link}", output_label=None)
+    file_picker, file_picker_output_id = _create_file_picker(
+        f"{download_link}", output_label=None
+    )
 
     viewer_service = Node(
         key=viewer_info.key,
@@ -183,7 +182,6 @@ def _create_project_with_filepicker_and_service(
             f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
             f"{viewer_id}": {"position": {"x": 633, "y": 229}},
         },
-        product_name=product_name,
     )
 
 
@@ -194,14 +192,19 @@ async def _add_new_project(
     *,
     product_name: str,
     product_api_base_url: str,
-) -> None:
-    # TODO: move this to projects_api  # noqa: FIX002
-    # TODO: this piece was taken from the end of projects.projects_handlers.create_projects  # noqa: FIX002
+):
+    # TODO: move this to projects_api
+    # TODO: this piece was taken from the end of projects.projects_handlers.create_projects
+
+    from ..director_v2.director_v2_service import create_or_update_pipeline
+    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY
 
     db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json_loads(project.model_dump_json(exclude_none=True, by_alias=True))
+    project_in: dict = json_loads(
+        project.model_dump_json(exclude_none=True, by_alias=True)
+    )
     # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
     #       so I need to set the templateType here if it was removed.
     project_in["templateType"] = project_in.get("templateType")
@@ -214,8 +217,15 @@ async def _add_new_project(
         force_as_template=False,
         project_nodes=None,
     )
-    assert _project_db["uuid"] == f"{project.uuid}"  # nosec
-    await create_or_update_pipeline(app, user.id, project.uuid, product_name, product_api_base_url)
+    assert _project_db["uuid"] == str(project.uuid)  # nosec
+
+    # This is a new project and every new graph needs to be reflected in the pipeline db
+    #
+    # TODO: Ensure this user has access to these services!
+    #
+    await create_or_update_pipeline(
+        app, user.id, project.uuid, product_name, product_api_base_url
+    )
 
 
 async def _project_exists(
@@ -255,16 +265,22 @@ async def get_or_create_project_with_file_and_service(
     #   - if user requests several times, the same project is reused
     #   - if user is not a guest, the project will be saved in it's account (desired?)
     #
-    project_uid: ProjectID = _service.compose_uuid_from(user.id, viewer.footprint, download_link)
+    project_uid: ProjectID = _service.compose_uuid_from(
+        user.id, viewer.footprint, download_link
+    )
 
     # Ids are linked to produce a footprint (see viewer_project_exists)
     file_picker_id, service_id = _generate_nodeids(project_uid)
 
     try:
-        project_db: dict = await get_project_for_user(app, f"{project_uid}", user.id, include_state=False)
+        project_db: dict = await get_project_for_user(
+            app, f"{project_uid}", user.id, include_state=False
+        )
 
         # check if viewer already created by this app module
-        is_valid = {file_picker_id, service_id} == set(project_db.get("workbench", {}).keys())
+        is_valid = {file_picker_id, service_id} == set(
+            project_db.get("workbench", {}).keys()
+        )
         if is_valid:
             exists = True
         else:
@@ -283,7 +299,6 @@ async def get_or_create_project_with_file_and_service(
     if not exists:
         project = _create_project_with_filepicker_and_service(
             project_uid,
-            product_name,
             file_picker_id,
             service_id,
             user,
@@ -324,7 +339,6 @@ async def get_or_create_project_with_service(
     except (ProjectNotFoundError, ProjectInvalidRightsError):
         project = _create_project_with_service(
             project_id=project_uid,
-            product_name=product_name,
             service_id=service_id,
             owner=user,
             service_info=service_info,
@@ -359,15 +373,15 @@ async def get_or_create_project_with_file(
         project_uuid=project_uid,
     ):
         # nodes
-        file_picker, _ = _create_file_picker(f"{file_params.download_link}", output_label=file_params.file_name)
+        file_picker, _ = _create_file_picker(
+            f"{file_params.download_link}", output_label=file_params.file_name
+        )
 
         # project
         project = _create_project(
             project_id=project_uid,
             name=f"File {file_params.file_name[-20:]}",
-            description=(
-                f"Autogenerated study with a file-picker for {file_params.file_name} [{file_params.file_type} file]"
-            ),
+            description=f"Autogenerated study with a file-picker for {file_params.file_name} [{file_params.file_type} file]",
             thumbnail=project_thumbnail,
             owner=user,
             workbench={
@@ -376,7 +390,6 @@ async def get_or_create_project_with_file(
             workbench_ui={
                 f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
             },
-            product_name=product_name,
         )
 
         await _add_new_project(
