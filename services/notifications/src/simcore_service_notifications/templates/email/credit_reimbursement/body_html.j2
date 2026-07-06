@@ -4,22 +4,25 @@
 
 {% block content %}
 
-<p>Dear User,</p>
+<p>{% trans %}Dear User,{% endtrans %}</p>
 
+{% set service_run %}<strong>{{ service_run_id }}</strong>{% endset %}
 <p>
-  We want to inform you that your service run (<strong>{{ service_run_id }}</strong>) on {{ product.display_name }}
-  was affected by a platform issue and was not billed.
+  {% trans service_run=service_run, product_name=product.display_name %}We want to inform you that your service run ({{ service_run }}) on {{ product_name }} was affected by a platform issue and was not billed.{% endtrans %}
 </p>
 
+{% set credit_amount %}<strong><em>{{ reimbursed_credits }}</em></strong>{% endset %}
 <p>
-  <strong>{{ reimbursed_credits }}</strong> <strong><em>credits</em></strong> have been reimbursed to your Credit Account.
+  {% trans credit_amount=credit_amount %}{{ credit_amount }} credits have been reimbursed to your Credit Account.{% endtrans %}
 </p>
 
-<p>No action is needed on your part.</p>
+<p>{% trans %}No action is needed on your part.{% endtrans %}</p>
 
-<p>Please don't hesitate to contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a> if you need further help.</p>
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+<p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
 
-<p>Best Regards,</p>
-<p>The <i>{{ product.display_name }}</i> Team</p>
+<p>{% trans %}Best Regards,{% endtrans %}</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
 
 {% endblock %}
