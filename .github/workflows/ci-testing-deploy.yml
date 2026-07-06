@@ -1711,6 +1711,7 @@ jobs:
     if: ${{ always() }}
     needs:
       [
+        build-test-images,
         integration-test-director-v2-01,
         integration-test-director-v2-02,
         integration-test-dynamic-sidecar,
@@ -1853,6 +1854,7 @@ jobs:
     if: ${{ always() }}
     needs:
       [
+        build-test-images,
         system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,
