@@ -422,12 +422,6 @@ async def _assert_meta_data_entries_count(connection: AsyncEngine, *, count: int
     assert (await _get_fmds_count(connection)) == count
 
 
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
 async def test_create_s3_export(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
@@ -607,12 +601,6 @@ async def test_search_directories(
         )
     ],
     ids=str,
-)
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
 )
 async def test_search_files_scoped_by_product(
     simcore_s3_dsm: SimcoreS3DataManager,
