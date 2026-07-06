@@ -41,13 +41,16 @@ _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
 @lru_cache
-def _compose_uuid(template_uuid, user_id, query="") -> str:
-    """Creates a new uuid composing a project's and user ids such that
-    any template pre-assigned to a user
+def _compose_uuid(
+    template_uuid: ProjectID | str,
+    user_id: int,
+    query: str | tuple[tuple[str, str], ...] = "",
+) -> str:
+    """Creates a deterministic UUID for a (template, user, query) tuple.
 
-    Enforces a constraint: a user CANNOT have multiple copies of the same template
+    Enforces a constraint: a user cannot have multiple copies of the same template.
     """
-    return str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
+    return str(uuid5(_BASE_UUID, f"{template_uuid}{user_id}{query}"))
 
 
 def _lock_redis_client(app: web.Application, *_args, **_kwargs) -> RedisClientSDK:
