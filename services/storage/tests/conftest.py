@@ -72,7 +72,6 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.redis._client import RedisClientSDK
 from servicelib.tracing import TracingConfig
-from servicelib.utils import limited_gather
 from settings_library.celery import CelerySettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -760,117 +759,6 @@ async def _upload_folder_task(
     )
     assert dir_file_id
     return node_files_map
-
-
-@pytest.fixture
-async def project_with_uploaded_files_factory(
-    sqlalchemy_async_engine: AsyncEngine,
-    create_project: Callable[..., Awaitable[dict[str, Any]]],
-    create_project_node: Callable[..., Awaitable[NodeID]],
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str, Path | None], SimcoreS3FileID],
-    faker: Faker,
-    create_directory_with_files: Callable[
-        ...,
-        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
-    ],
-    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
-) -> Callable[
-    [ProjectWithFilesParams],
-    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
-]:
-    async def _creator(
-        project_params: ProjectWithFilesParams,
-        product_name: ProductName | None = None,
-    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
-        assert len(project_params.allowed_file_sizes) == len(project_params.allowed_file_checksums)
-        project_kwargs = {"name": "random-project"}
-        if product_name is not None:
-            project_kwargs["product_name"] = product_name
-        project = await create_project(**project_kwargs)
-        node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
-        upload_tasks = []
-        for _ in range(project_params.num_nodes):
-            # Create a node with outputs (files and others)
-            project_id = ProjectID(project["uuid"])
-            node_id = cast(NodeID, faker.uuid4(cast_to=None))
-            node_to_files_mapping[node_id] = {}
-            output3_file_name = faker.file_name()
-            output3_file_id = create_simcore_file_id(project_id, node_id, output3_file_name, Path("outputs/output_3"))
-            created_node_id, _node_row = await create_project_node(
-                ProjectID(project["uuid"]),
-                node_id,
-                outputs={
-                    "output_1": faker.pyint(),
-                    "output_2": faker.pystr(),
-                    "output_3": f"{output3_file_id}",
-                },
-            )
-            assert created_node_id == node_id
-
-            upload_tasks.append(
-                _upload_one_file_task(
-                    upload_file,
-                    project_params.allowed_file_sizes,
-                    project_params.allowed_file_checksums,
-                    file_name=output3_file_name,
-                    file_id=output3_file_id,
-                    node_id=node_id,
-                )
-            )
-
-            # some workspace files (these are not referenced in the file_meta_data, only as a folder)
-            if project_params.workspace_files_count > 0:
-                upload_tasks.append(
-                    _upload_folder_task(
-                        create_directory_with_files,
-                        project_params.allowed_file_sizes,
-                        dir_name="workspace",
-                        project_id=project_id,
-                        node_id=node_id,
-                        workspace_file_count=project_params.workspace_files_count,
-                    )
-                )
-
-            # add a few random files in the node root space for good measure
-            for _ in range(random.randint(1, 3)):  # noqa: S311
-                root_file_name = faker.file_name()
-                root_file_id = create_simcore_file_id(project_id, node_id, root_file_name, None)
-                upload_tasks.append(
-                    _upload_one_file_task(
-                        upload_file,
-                        project_params.allowed_file_sizes,
-                        project_params.allowed_file_checksums,
-                        file_name=root_file_name,
-                        file_id=root_file_id,
-                        node_id=node_id,
-                    ),
-                )
-
-        # upload everything of the node
-        results = await limited_gather(*upload_tasks, limit=10)
-
-        for node_id, file_id_to_dict_mapping in results:
-            for file_id, file_dict in file_id_to_dict_mapping.items():
-                node_to_files_mapping[node_id][file_id] = file_dict
-
-        project = await get_updated_project(sqlalchemy_async_engine, project["uuid"])
-        return project, node_to_files_mapping
-
-    return _creator
-
-
-@pytest.fixture
-async def project_with_uploaded_files(
-    project_with_uploaded_files_factory: Callable[
-        [ProjectWithFilesParams],
-        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
-    ],
-    project_params: ProjectWithFilesParams,
-) -> tuple[
-    dict[str, Any],
-    dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
-]:
-    return await project_with_uploaded_files_factory(project_params)
 
 
 @pytest.fixture
