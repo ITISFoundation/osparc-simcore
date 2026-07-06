@@ -46,6 +46,17 @@ TEST_01_FILES=(
   tests/unit/test_utils_handlers.py
 )
 
+_is_test_01_file() {
+  local candidate=$1
+  local shard_file
+  for shard_file in "${TEST_01_FILES[@]}"; do
+    if [[ "${shard_file}" == "${candidate}" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 _test_remaining_shard() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
@@ -54,7 +65,7 @@ _test_remaining_shard() {
   mapfile -t all_tests < <(find tests/unit -type f -name 'test*.py' | sort)
   pytest_args=""
   for test_file in "${all_tests[@]}"; do
-    if [[ " ${TEST_01_FILES[*]} " == *" ${test_file} "* ]]; then
+    if _is_test_01_file "${test_file}"; then
       continue
     fi
     pytest_args+="${test_file} "
