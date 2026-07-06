@@ -301,7 +301,7 @@ def test_classic_ti_plan(
         assert expected_number_of_steps == 1
     else:
         with log_context(logging.INFO, "Exposure Analysis step (2/%s)", expected_number_of_steps) as log_ctx:
-            exposure_analysis_node_id = get_node_id_from_service_key(workbench, "sim4life-postpro")
+            exposure_analysis_node_id = get_node_id_from_service_key(workbench, "s4l-ui")
             _run_exposure_analysis_step(params, exposure_analysis_node_id, log_ctx)
 
     restartable_jlab_websocket.auto_reconnect = False

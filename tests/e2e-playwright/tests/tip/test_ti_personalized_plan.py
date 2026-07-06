@@ -445,7 +445,7 @@ def test_personalized_classic_ti_plan(
         _run_personalizer_step(params, get_node_id_from_service_key(workbench, "ti-pers"))
 
     with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
-        _run_model_inspector_step(params, get_node_id_from_service_key(workbench, "sim4life-modeling"))
+        _run_model_inspector_step(params, get_node_id_from_service_key(workbench, "s4l-ui-modeling"))
 
     with log_context(logging.INFO, "Simulator step (4/%s)", expected_number_of_steps):
         _run_simulator_step(params, get_node_id_from_service_key(workbench, "ti-simu"))
@@ -454,4 +454,4 @@ def test_personalized_classic_ti_plan(
         _run_classic_ti_step(params, get_node_id_from_service_key(workbench, "ti-postpro"))
 
     with log_context(logging.INFO, "Exposure Analysis step (6/%s)", expected_number_of_steps):
-        _run_exposure_analysis_step(params, get_node_id_from_service_key(workbench, "sim4life-postpro"))
+        _run_exposure_analysis_step(params, get_node_id_from_service_key(workbench, "s4l-ui"))
