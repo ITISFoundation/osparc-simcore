@@ -53,6 +53,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     "projectDocumentChanged": "qx.event.type.Data",
     "pipelineChanged": "qx.event.type.Event",
     "nodeAdded": "qx.event.type.Data",
+    "nodeAddedToBackend": "qx.event.type.Data",
     "nodeRemoved": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -366,10 +367,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeId = resp["node_id"];
 
         const node = this.__createNode(key, version, nodeId);
-        // wait until the metadata is fetched and the node is fully populated
-        // (output ports created and change listeners attached) so that callers
-        // can safely set the output value and have it patched to the backend
         await node.fetchMetadataAndPopulate();
+        this.fireDataEvent("nodeAddedToBackend", node);
         this.__giveUniqueNameToNode(node, node.getLabel());
         node.checkState();
         return node;
