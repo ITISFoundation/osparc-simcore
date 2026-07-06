@@ -437,9 +437,6 @@ async def get_project_dict_and_type(
     )
 
 
-_CLONE_NODE_FIELDS_TO_CLEAN: Final[set[str]] = {"outputs", "progress", "run_hash"}
-
-
 def _remap_port_links_in_inputs(inputs: dict | None, nodes_map: NodesMap) -> dict | None:
     """Remap PortLink node_uuid references in inputs using nodes_map (old UUID -> new UUID)."""
     if not inputs:
@@ -511,6 +508,21 @@ async def clone_project_data(
         new_project = substitute_parameterized_inputs(new_project, template_parameters) or new_project
 
     project_nodes = await _clone_project_nodes(app, source_project, nodes_map)
+
+    if template_parameters:
+        # `insert_project` lets caller-provided `project_nodes` override the workbench-derived
+        # nodes. Since `_clone_project_nodes` reads the *un-substituted* inputs from the source
+        # DB rows, overlay the substituted inputs from the workbench so parameter substitution
+        # is not lost (both share the same port->value format).
+        workbench = new_project.get("workbench", {})
+        project_nodes = {
+            node_id: (
+                node_create.model_copy(update={"inputs": workbench[f"{node_id}"]["inputs"]})
+                if "inputs" in workbench.get(f"{node_id}", {})
+                else node_create
+            )
+            for node_id, node_create in project_nodes.items()
+        }
 
     db = ProjectDBAPI.get_from_app_context(app)
     await db.insert_project(
