@@ -341,6 +341,11 @@ async def patch_project_and_notify_users(
         )
 
 
+#
+# GET project --------------------------------------------------------
+#
+
+
 def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
@@ -435,6 +440,30 @@ async def get_project_dict_and_type(
         project_uuid,
         only_templates=only_templates,
     )
+
+
+async def batch_get_project_name(app: web.Application, projects_uuids: list[ProjectID]) -> list[str]:
+    get_project_names = await _projects_repository.batch_get_project_name(
+        app=app,
+        projects_uuids=projects_uuids,
+    )
+    return [name if name else "Unknown" for name in get_project_names]
+
+
+async def batch_get_projects(
+    app: web.Application,
+    *,
+    project_uuids: Iterable[ProjectID],
+) -> dict[ProjectID, ProjectDBGet]:
+    return await _projects_repository.batch_get_projects(
+        app=app,
+        project_uuids=project_uuids,
+    )
+
+
+#
+# COPY project --------------------------------------------------------
+#
 
 
 def _remap_port_links_in_inputs(inputs: dict | None, nodes_map: NodesMap) -> dict | None:
@@ -578,25 +607,6 @@ async def clone_project_data(
     await dynamic_scheduler_service.update_projects_networks(app, project_id=ProjectID(new_project["uuid"]))
 
     return new_project
-
-
-async def batch_get_project_name(app: web.Application, projects_uuids: list[ProjectID]) -> list[str]:
-    get_project_names = await _projects_repository.batch_get_project_name(
-        app=app,
-        projects_uuids=projects_uuids,
-    )
-    return [name if name else "Unknown" for name in get_project_names]
-
-
-async def batch_get_projects(
-    app: web.Application,
-    *,
-    project_uuids: Iterable[ProjectID],
-) -> dict[ProjectID, ProjectDBGet]:
-    return await _projects_repository.batch_get_projects(
-        app=app,
-        project_uuids=project_uuids,
-    )
 
 
 async def copy_allow_guests_to_push_states_and_output_ports(
