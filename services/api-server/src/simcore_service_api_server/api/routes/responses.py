@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 from celery_library.async_jobs import submit_job
@@ -12,7 +12,6 @@ from servicelib.celery.task_manager import TaskManager
 
 from simcore_service_api_server.models.domain.chatbot import CreateChatCompletionResponse
 
-from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.domain.celery_models import ApiServerOwnerMetadata
 from ...models.schemas.errors import ErrorGet
@@ -33,18 +32,6 @@ _logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-_RESPONSES_STATUS_CODES: dict[int | str, dict[str, Any]] = {
-    status.HTTP_404_NOT_FOUND: {
-        "description": "Response not found",
-        "model": ErrorGet,
-    },
-    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-}
-
-_CANCEL_STATUS_CODES: dict[int | str, dict[str, Any]] = {
-    **DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-}
-
 _TASK_NAME = "run_chat_completion"
 
 
@@ -57,7 +44,6 @@ _TASK_NAME = "run_chat_completion"
         ],
     ),
     response_model=ResponseObject,
-    responses=_RESPONSES_STATUS_CODES,
     status_code=status.HTTP_200_OK,
     openapi_extra=OPENAI_COMPATIBLE_OPENAPI_EXTRA,
 )
@@ -97,7 +83,12 @@ async def create_response(
         ],
     ),
     response_model=ResponseObject,
-    responses=_RESPONSES_STATUS_CODES,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Response not found",
+            "model": ErrorGet,
+        },
+    },
     openapi_extra=OPENAI_COMPATIBLE_OPENAPI_EXTRA,
 )
 async def get_response(

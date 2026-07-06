@@ -212,3 +212,20 @@ async def test_create_response_task_failure_is_reported(
     # ASSERT - task failure is reported
     assert response_obj.status == ResponseStatus.FAILED
     assert response_obj.error is not None
+
+
+async def test_get_nonexistent_response_returns_404(
+    app: FastAPI,
+    client: AsyncClient,
+    auth: BasicAuth,
+    with_api_server_celery_worker: TestWorkController,
+):
+    # ACT - request a response that was never created
+    fake_id = "00000000-0000-0000-0000-000000000000"
+    response = await client.get(
+        f"/{API_VTAG}/responses/{fake_id}",
+        auth=auth,
+    )
+
+    # ASSERT
+    assert response.status_code == status.HTTP_404_NOT_FOUND
