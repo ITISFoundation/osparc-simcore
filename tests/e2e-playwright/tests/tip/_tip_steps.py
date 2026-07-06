@@ -27,17 +27,21 @@ POST_PRO_LOAD_RESULT_MAX_TIME: Final[int] = 30 * SECOND
 POST_PRO_REPORTING_MAX_TIME: Final[int] = 30 * SECOND
 
 
-def get_node_id_from_service_key(workbench: dict, service_key_fragment: str) -> str:
-    """Returns the node id of the first node whose service key contains ``service_key_fragment``.
+def get_node_id_from_service_key(workbench: dict, service_name: str) -> str:
+    """Returns the node id of the node whose service key's last segment equals ``service_name``.
 
     The nodes' position in the workbench is not guaranteed, so steps must be
     resolved by their service key instead of by their index.
     """
-    for node_id, node_data in workbench.items():
-        if service_key_fragment in node_data["key"]:
-            return node_id
-    msg = f"Could not find a node with service key containing {service_key_fragment!r} in the workbench"
-    raise ValueError(msg)
+    matches = [
+        node_id
+        for node_id, node_data in workbench.items()
+        if node_data.get("key", "").rsplit("/", maxsplit=1)[-1] == service_name
+    ]
+    if len(matches) != 1:
+        msg = f"Expected exactly 1 node with service name {service_name!r} in the workbench, found {len(matches)}"
+        raise ValueError(msg)
+    return matches[0]
 
 
 def raise_if_button_spinner_running(button: Locator, *, description: str) -> None:
