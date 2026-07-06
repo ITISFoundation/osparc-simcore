@@ -613,6 +613,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.setSelected(false);
       }
       this.__evalSelectedButton();
+      this.__evalMenuSelectionStackVisibility();
     },
 
     __evalSelectedButton: function() {
@@ -633,6 +634,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
           menuButtonStack.setSelection([menuButton]);
         }
       }
+    },
+
+    // Only reveal the menu/selection button when the card is hovered or in multi-selection mode.
+    // The widget is kept in the layout (opacity toggled instead of visibility) so it doesn't reflow
+    // and remains reachable by e2e tests and product tours that rely on the "studyItemMenuButton" id.
+    __evalMenuSelectionStackVisibility: function() {
+      if (!this.hasChildControl("menu-selection-stack")) {
+        return;
+      }
+      const menuSelectionStack = this.getChildControl("menu-selection-stack");
+      let show = this.isMultiSelectionMode() || this.hasState("hovered");
+      // keep it visible while its menu is open, so it doesn't disappear as the pointer moves onto the menu
+      if (!show && this.hasChildControl("menu-button")) {
+        const menu = this.getChildControl("menu-button").getMenu();
+        if (menu && menu.isVisible()) {
+          show = true;
+        }
+      }
+      menuSelectionStack.setOpacity(show ? 1 : 0);
     },
 
     __applyUuid: function(value, old) {
@@ -1072,8 +1092,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
         });
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
         menu.addListener("appear", () => this.evaluateMenuButtons());
+        menu.addListener("appear", () => this.__evalMenuSelectionStackVisibility());
+        menu.addListener("disappear", () => this.__evalMenuSelectionStackVisibility());
       }
       menuButton.setVisibility(menu ? "visible" : "excluded");
+      this.__evalMenuSelectionStackVisibility();
     },
 
     _setStudyPermissions: function(accessRights) {
@@ -1177,6 +1200,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
      */
     _onPointerOver: function() {
       this.addState("hovered");
+      this.__evalMenuSelectionStackVisibility();
     },
 
     /**
@@ -1184,6 +1208,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
      */
     _onPointerOut : function() {
       this.removeState("hovered");
+      this.__evalMenuSelectionStackVisibility();
     },
 
     /**
