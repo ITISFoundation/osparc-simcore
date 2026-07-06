@@ -37,4 +37,5 @@ stream-zip
 tenacity
 toolz
 tqdm
+wrapt
 yarl
