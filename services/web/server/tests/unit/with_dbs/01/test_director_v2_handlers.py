@@ -155,6 +155,59 @@ async def test_start_computation_with_encryption(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
+@pytest.mark.parametrize(
+    "invalid_encryption_body, expected_error_fragment",
+    [
+        pytest.param(
+            {"root_key": "not-valid-base64!!!", "input_port_to_file_id": {}},
+            "root_key must be valid base64",
+            id="non_base64_root_key",
+        ),
+        pytest.param(
+            {
+                "root_key": base64.b64encode(b"tooshort").decode("ascii"),
+                "input_port_to_file_id": {},
+            },
+            "root_key must decode to 32 bytes",
+            id="root_key_wrong_size",
+        ),
+        pytest.param(
+            {"input_port_to_file_id": {}},
+            "root_key",
+            id="missing_root_key",
+        ),
+        pytest.param(
+            {
+                "root_key": base64.b64encode(b"0123456789abcdef0123456789abcdef").decode("ascii"),
+                "input_port_to_file_id": {"not-a-uuid": {"input_1": "input_1"}},
+            },
+            "input_port_to_file_id",
+            id="invalid_node_id_in_input_port_map",
+        ),
+    ],
+)
+async def test_start_computation_with_invalid_encryption(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
+    project_id: ProjectID,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    invalid_encryption_body: dict,
+    expected_error_fragment: str,
+):
+    assert client.app
+
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
+    rsp = await client.post(f"{url}", json={"encryption": invalid_encryption_body})
+    _, error = await assert_status(
+        rsp, status.HTTP_422_UNPROCESSABLE_ENTITY if user_role == UserRole.GUEST else expected.unprocessable
+    )
+    if user_role not in {UserRole.ANONYMOUS}:
+        assert expected_error_fragment in str(error)
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_get_computation(
     director_v2_service_mock: AioResponsesMock,
     client: TestClient,
