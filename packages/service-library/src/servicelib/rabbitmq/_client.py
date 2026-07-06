@@ -164,6 +164,7 @@ class RabbitMQClient(RabbitMQClientBase):
             timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
         )
         connection.close_callbacks.add(self._connection_close_callback)
+        connection.reconnect_callbacks.add(self._connection_reconnect_callback)
         return connection
 
     async def close(self) -> None:
