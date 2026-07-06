@@ -372,6 +372,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 4,
         inset: true,
+        shadowLength: 0,
         shadowSpreadRadius: 300,
         shadowColor: "transparent",
         transitionProperty: ["box-shadow"],
