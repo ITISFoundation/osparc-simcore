@@ -10,6 +10,8 @@ from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
 from servicelib.celery.task_manager import TaskManager
 
+from simcore_service_api_server.models.domain.chatbot import CreateChatCompletionResponse
+
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.domain.celery_models import ApiServerOwnerMetadata
@@ -129,7 +131,7 @@ async def get_response(
             error={"message": f"{err}"},
         )
 
-    completion = result.result
+    completion = CreateChatCompletionResponse.model_validate(result.result)
     output_text = ""
     if completion and completion.choices:
         output_text = completion.choices[0].message.content or ""
@@ -144,33 +146,4 @@ async def get_response(
                 content=[OutputTextContent(text=output_text)],
             )
         ],
-    )
-
-
-@router.post(
-    "/{response_id}/cancel",
-    description=create_route_description(
-        base="Cancels an in-progress background response (OpenAI Responses API compatible)",
-        changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.13.2"),
-        ],
-    ),
-    response_model=ResponseObject,
-    responses=_CANCEL_STATUS_CODES,
-    openapi_extra=OPENAI_COMPATIBLE_OPENAPI_EXTRA,
-)
-async def cancel_response(
-    response_id: str,
-    user_id: Annotated[int, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
-    async_jobs_client: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
-) -> ResponseObject:
-    owner = ApiServerOwnerMetadata(user_id=user_id, product_name=product_name)
-    job_id = UUID(response_id)
-
-    await async_jobs_client.cancel(job_id=job_id, owner_metadata=owner)
-
-    return ResponseObject(
-        id=response_id,
-        status=ResponseStatus.CANCELLED,
     )
