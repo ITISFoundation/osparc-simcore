@@ -3,11 +3,9 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import importlib
 from collections.abc import Callable
 from functools import partial
 
-import pip
 import pytest
 from aiohttp import web
 from opentelemetry import trace
@@ -72,55 +70,6 @@ async def test_invalid_tracing_settings(
 ):
     with pytest.raises(ValidationError):
         TracingSettings.create_from_envs()
-
-
-def install_package(package):
-    pip.main(["install", package])
-
-
-def uninstall_package(package):
-    pip.main(["uninstall", "-y", package])
-
-
-@pytest.fixture
-def manage_package(request):
-    package, importname = request.param
-    install_package(package)
-    yield importname
-    uninstall_package(package)
-
-
-@pytest.mark.skip(reason="this test installs always the latest version of the package which creates conflicts.")
-@pytest.mark.parametrize(
-    "tracing_settings_in, manage_package",
-    [
-        (
-            ("http://opentelemetry-collector", 4318, 1.0),
-            (
-                "opentelemetry-instrumentation-botocore",
-                "opentelemetry.instrumentation.botocore",
-            ),
-        ),
-    ],
-    indirect=True,
-)
-async def test_tracing_setup_package_detection(
-    mock_otel_collector: InMemorySpanExporter,
-    aiohttp_client: Callable,
-    tracing_env_vars: None,
-    tracing_settings_in: tuple[str, int, float],
-    manage_package,
-):
-    package_name = manage_package
-    importlib.import_module(package_name)
-    app = web.Application()
-    service_name = "simcore_service_webserver"
-    tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=service_name)
-    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
-        # idempotency
-        async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
-            pass
 
 
 @pytest.mark.parametrize(
