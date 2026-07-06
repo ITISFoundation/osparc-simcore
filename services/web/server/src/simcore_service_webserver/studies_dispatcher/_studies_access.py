@@ -11,8 +11,6 @@ Handles a request to share a given sharable study via '/study/{id}'
 
 import functools
 import logging
-from functools import lru_cache
-from uuid import UUID, uuid5
 
 from aiohttp import web
 from aiohttp_session import get_session
@@ -49,18 +47,6 @@ from ._users import create_temporary_guest_user, get_authorized_user
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-
-_BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
-
-
-@lru_cache
-def _compose_uuid(template_uuid, user_id, query="") -> str:
-    """Creates a new uuid composing a project's and user ids such that
-    any template pre-assigned to a user
-
-    Enforces a constraint: a user CANNOT have multiple copies of the same template
-    """
-    return str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
 
 
 async def _get_published_template_project(

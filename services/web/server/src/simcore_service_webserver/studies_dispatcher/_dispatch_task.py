@@ -14,6 +14,8 @@ Flow:
 """
 
 import logging
+from functools import lru_cache
+from uuid import UUID, uuid5
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
@@ -32,9 +34,20 @@ from ..projects.exceptions import ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import copy_data_folders_from_project
 from ..users.users_service import get_user
-from ._studies_access import _compose_uuid
 
 _logger = logging.getLogger(__name__)
+
+_BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
+
+
+@lru_cache
+def _compose_uuid(template_uuid, user_id, query="") -> str:
+    """Creates a new uuid composing a project's and user ids such that
+    any template pre-assigned to a user
+
+    Enforces a constraint: a user CANNOT have multiple copies of the same template
+    """
+    return str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
 
 
 def _lock_redis_client(app: web.Application, *_args, **_kwargs) -> RedisClientSDK:
