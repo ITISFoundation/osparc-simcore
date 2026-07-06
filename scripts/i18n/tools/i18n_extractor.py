@@ -1,6 +1,8 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
+#   "Babel>=2.12.0",
+#   "Jinja2>=3.0.0",
 #   "polib>=1.2.0",
 #   "rich>=13.0.0",
 #   "typer>=0.12.0",
@@ -15,6 +17,11 @@ Two-step .pot extractor:
                      Handles Python, C++, and MFC .rc files. Produces a
                      standard .pot with #: filepath:lineno references.
 
+    Step 1b — jinja: run Babel over Jinja2 templates ({% trans %} blocks and
+                     {{ gettext(...) }} calls). xgettext cannot parse Jinja2,
+                     so Babel's jinja2.ext.babel_extract is used. Produces a
+                     .pot with the same #: filepath:lineno references.
+
     Step 2 — enrich: for each entry, read #: references to load
                      surrounding source lines (CTX-SNIPPET) and write a
              extractor-owned snippet freshness marker (CTX-SNIPPET-VERSION).
@@ -22,6 +29,7 @@ Two-step .pot extractor:
 Usage:
     uv run tools/i18n_extractor.py extract --src src/ --out messages.pot
     uv run tools/i18n_extractor.py xgettext --src src/ --langs python,cpp --out messages.pot
+    uv run tools/i18n_extractor.py jinja --src src/templates --out templates.pot
     uv run tools/i18n_extractor.py enrich --pot messages.pot
     uv run tools/i18n_extractor.py validate --src src/
 """
@@ -120,6 +128,87 @@ def run_xgettext(src_files: list[Path], out_pot: Path) -> bool:
     return True
 
 
+# ---------------------------------------------------------------------------
+# Step 1b: Babel extraction for Jinja2 templates
+# ---------------------------------------------------------------------------
+#
+# xgettext cannot parse Jinja2 ({% trans %} blocks, {{ gettext(...) }} calls),
+# so Babel's jinja2.ext.babel_extract is used for *.j2 templates. The output is
+# a polib .pot with the same #: filepath:lineno references that `enrich` and
+# `msgcat` (in the Makefile `merge` step) consume, so it slots into the existing
+# pipeline unchanged.
+
+_JINJA_METHOD_MAP = [("**.j2", "jinja2.ext.babel_extract")]
+# i18n extension is auto-loaded by babel_extract; encoding pinned to UTF-8.
+_JINJA_OPTIONS_MAP = {"**.j2": {"encoding": "utf-8", "silent": "false"}}
+
+
+def run_babel_jinja(src_dir: Path, out_pot: Path) -> bool:
+    """Extract translatable strings from Jinja2 templates under *src_dir*.
+
+    Returns True on success. Occurrence paths are recorded relative to the
+    given *src_dir* prefix so they resolve from the repo root (matching the
+    xgettext step), which lets `enrich` locate the source snippets.
+    """
+    from babel.messages.extract import extract_from_dir  # noqa: PLC0415
+
+    # (msgid, msgid_plural, context) -> POEntry, so repeated strings merge
+    # into one entry carrying multiple #: occurrences.
+    entries: dict[tuple[str, str | None, str | None], polib.POEntry] = {}
+
+    for filename, lineno, message, _comments, context in extract_from_dir(
+        dirname=src_dir,
+        method_map=_JINJA_METHOD_MAP,
+        options_map=_JINJA_OPTIONS_MAP,
+    ):
+        if isinstance(message, tuple | list):
+            msgid, msgid_plural = message[0], message[1]
+        else:
+            msgid, msgid_plural = message, None
+
+        if not msgid:
+            continue
+
+        msgctxt = context or None
+        key = (msgid, msgid_plural, msgctxt)
+        occurrence = (f"{src_dir}/{filename}", str(lineno))
+
+        if key in entries:
+            entries[key].occurrences.append(occurrence)
+            continue
+
+        if msgid_plural:
+            entry = polib.POEntry(
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                msgstr_plural={0: "", 1: ""},
+                msgctxt=msgctxt,
+                occurrences=[occurrence],
+            )
+        else:
+            entry = polib.POEntry(
+                msgid=msgid,
+                msgstr="",
+                msgctxt=msgctxt,
+                occurrences=[occurrence],
+            )
+        entries[key] = entry
+
+    pot = polib.POFile(wrapwidth=0)
+    pot.metadata = {
+        "Project-Id-Version": "osparc-simcore",
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Transfer-Encoding": "8bit",
+    }
+    for entry in entries.values():
+        pot.append(entry)
+
+    out_pot.parent.mkdir(parents=True, exist_ok=True)
+    pot.save(str(out_pot))
+    console.print(f"  [jinja] {len(pot)} entry/ies -> {out_pot}")
+    return True
+
+
 def _call_name(node: ast.AST) -> str | None:
     if isinstance(node, ast.Name):
         return node.id
@@ -173,6 +262,58 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
     return False
 
 
+def _extract_hints_from_file(path: Path) -> dict[str, str]:
+    """Return {msgid: hint} from ``user_message(_hint=...)`` calls in a single Python file."""
+    try:
+        source = path.read_text(encoding="utf-8", errors="replace")
+        tree = ast.parse(source, filename=str(path))
+    except SyntaxError as err:
+        console.print(f"  [warn] skipping syntax-invalid file {path}: {err}")
+        return {}
+
+    hints: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if _call_name(node.func) != "user_message":
+            continue
+        if not node.args or not isinstance(node.args[0], ast.Constant):
+            continue
+        msgid = node.args[0].value
+        if not isinstance(msgid, str):
+            continue
+
+        for kw in node.keywords:
+            if kw.arg == "_hint" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                hints[msgid] = kw.value.value
+                break
+
+    return hints
+
+
+def collect_py_hints(src_files: list[Path]) -> dict[str, str]:
+    """Scan Python source files and return {msgid: hint} from ``user_message(_hint=...)`` calls.
+
+    Only plain string literals are accepted for both ``msg`` and ``_hint``
+    (f-strings are already rejected by ``validate_no_fstring_translations``).
+    When the same msgid appears with different hints, the first one wins and a
+    warning is emitted.
+    """
+    hints: dict[str, str] = {}
+
+    for path in src_files:
+        if path.suffix.lower() != ".py":
+            continue
+
+        for msgid, hint in _extract_hints_from_file(path).items():
+            if msgid in hints and hints[msgid] != hint:
+                console.print(f"  [warn] {path}: duplicate _hint for msgid {msgid!r} (keeping first occurrence)")
+            else:
+                hints[msgid] = hint
+
+    return hints
+
+
 # ---------------------------------------------------------------------------
 # Step 2: enrich with extractor-owned context metadata
 # ---------------------------------------------------------------------------
@@ -181,7 +322,7 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
 # They use the CTX- prefix to stay distinct from the @TRANSLATOR prefix that
 # xgettext captures via --add-comments=@TRANSLATOR (xgettext command).
 #
-#   @TRANSLATOR ...  →  human note in source code → extracted by xgettext → #. line
+#   @TRANSLATOR ...      →  human note in source code → extracted by xgettext → #. line
 #   CTX-SNIPPET:         → machine-generated by enrich
 #   CTX-SNIPPET-VERSION: → git-blame hash for the referenced line
 #   CTX-INTERPRETATION:  → written by i18n_translator.py
@@ -254,7 +395,7 @@ def key_not_seen(key: str, seen: set[str]) -> bool:
     return key.startswith("CTX-") and key not in seen and key != "CTX-SNIPPET"
 
 
-def enrich(pot_path: Path, repo_root: Path) -> None:
+def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = None) -> None:
     """
     Step 2: read the .pot produced by xgettext, add extractor-owned CTX metadata
     to each entry from source locations in #: filepath:lineno.
@@ -264,10 +405,26 @@ def enrich(pot_path: Path, repo_root: Path) -> None:
         - translator writes CTX-INTERPRETATION and CTX-VERSION
 
     CTX-* fields are stored in tcomment (# lines), not comment (#. lines).
+
+    ``py_hints`` maps msgid → translator hint string collected from
+    ``user_message(_hint=...)`` calls.  When a hint is present and not already
+    in the entry's ``#.`` comment block, ``@TRANSLATOR <hint>`` is prepended.
     """
     po = polib.pofile(str(pot_path), wrapwidth=0)  # wrapwidth=0: no line-wrapping
     # wrapping breaks multi-word
     # snippet lines across #. lines
+
+    # Collect _hint values from Python source files referenced in the pot.
+    # Files are resolved relative to repo_root, matching how #: references are recorded.
+    if py_hints is None:
+        py_files = sorted(
+            {repo_root / filepath for entry in po for filepath, _ in entry.occurrences if filepath.endswith(".py")}
+        )
+        py_hints = collect_py_hints([f for f in py_files if f.exists()])
+        if py_hints:
+            console.print(f"  [hints] {len(py_hints)} _hint value(s) collected from Python sources")
+
+    hints = py_hints
 
     for entry in po:
         if not entry.occurrences:
@@ -291,6 +448,14 @@ def enrich(pot_path: Path, repo_root: Path) -> None:
         snippet_lines = [f"  {'>>>' if i + 1 == lineno else '   '} {lines[i]}" for i in range(start, end)]
 
         snippet_version = get_blame_commit(filepath, lineno, cwd=repo_root)
+
+        # Inject @TRANSLATOR hint from _hint kwarg if not already present.
+        hint = hints.get(entry.msgid)
+        if hint:
+            at_translator_line = f"@TRANSLATOR {hint}"
+            existing = entry.comment or ""
+            if at_translator_line not in existing:
+                entry.comment = (at_translator_line + "\n" + existing).strip()
 
         # entry.comment (#. lines) is left untouched -- it holds @TRANSLATOR notes.
         passthrough, ctx_fields, _ = parse_ctx_comment(entry.tcomment or "")
@@ -411,6 +576,20 @@ def xgettext_cmd(
 ) -> None:
     """Run only xgettext extraction."""
     run_xgettext_cmd(src=src, out=out, langs=langs)
+
+
+@app.command("jinja")
+def jinja_cmd(
+    src: Path = typer.Option(Path("src"), help="Directory to scan for *.j2 templates"),
+    out: Path = typer.Option(Path("templates.pot"), help="Output .pot file"),
+) -> None:
+    """Extract translatable strings from Jinja2 templates via Babel."""
+    if not src.is_dir():
+        console.print(f"[error] source directory not found: {src}")
+        raise typer.Exit(code=1)
+    if not run_babel_jinja(src, out):
+        raise typer.Exit(code=1)
+    console.print(f"[done] jinja -> {out}")
 
 
 @app.command("enrich")
