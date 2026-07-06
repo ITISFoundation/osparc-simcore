@@ -90,6 +90,7 @@ jobs:
           make devenv
           source .venv/bin/activate
           cd services/api-server
+          make install-dev
           make openapi-openai-compatible.json
       - name: check api-server openai compatibility
         if: steps.changes.outputs.api-server == 'true'
