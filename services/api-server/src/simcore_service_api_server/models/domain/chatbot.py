@@ -1,7 +1,10 @@
 from enum import StrEnum
-from typing import Annotated, Any
+from typing import Annotated, Any, Final
 
 from pydantic import BaseModel, Field
+
+_MIN_INPUT_MESSAGES: Final[int] = 1
+_MAX_INPUT_MESSAGES: Final[int] = 20
 
 
 class RoleEnum(StrEnum):
@@ -19,7 +22,9 @@ class ChatCompletionRequestMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: Annotated[
         list[ChatCompletionRequestMessage],
-        Field(min_length=1, max_length=20, description="List of messages in the chat"),
+        Field(
+            min_length=_MIN_INPUT_MESSAGES, max_length=_MAX_INPUT_MESSAGES, description="List of messages in the chat"
+        ),
     ]
     model: str
     metadata: dict[str, Any] = {}
