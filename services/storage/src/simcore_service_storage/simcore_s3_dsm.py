@@ -49,6 +49,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from .constants import (
     DATCORE_ID,
     EXPAND_DIR_MAX_ITEM_COUNT,
+    EXPORTS_S3_PREFIX,
     MAX_CONCURRENT_S3_TASKS,
     MAX_LINK_CHUNK_BYTE_SIZE,
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
@@ -1223,6 +1224,38 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
     async def clean_expired_uploads(self) -> None:
         await self._clean_expired_uploads()
+
+    async def clean_expired_exports(self) -> None:
+        """this method will check for all exported archives (files stored under the
+        `exports/` S3 prefix) and remove those whose `created_at` is older than
+        `STORAGE_EXPORTER_RETENTION`. This fixes divergences where the
+        `file_meta_data` entry remains in the database while the S3 file is gone
+        (or vice-versa), by deleting the S3 object first and then the DB entry.
+        """
+        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        retention = get_application_settings(self.app).STORAGE_EXPORTER_RETENTION
+        threshold = now - retention
+
+        list_of_expired_exports = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
+            file_id_prefix=f"{EXPORTS_S3_PREFIX}/",
+            created_before=threshold,
+        )
+
+        if not list_of_expired_exports:
+            return
+        _logger.debug(
+            "found following expired exports: [%s]",
+            [fmd.file_id for fmd in list_of_expired_exports],
+        )
+
+        for fmd in list_of_expired_exports:
+            if fmd.user_id is not None:
+                await self.delete_file(fmd.user_id, fmd.file_id)
+
+        _logger.warning(
+            "expired exports of [%s] removed",
+            [fmd.file_id for fmd in list_of_expired_exports],
+        )
 
     async def _update_fmd_from_other(
         self,

@@ -1,4 +1,4 @@
-"""background task that cleans the DSM pending/expired uploads
+"""background task that cleans the DSM pending/expired uploads and expired exporter archives
 
 # Rationale:
  - for each upload an entry is created in the file_meta_data table in the database
@@ -16,6 +16,9 @@
    - removes the entries in the database that are expired:
       - removes the entry
       - aborts the multipart upload if any
+ - also lists exported archives (`exports/` S3 prefix) whose `created_at` is older than
+   `STORAGE_EXPORTER_RETENTION` and removes them (S3 object then database entry), fixing
+   divergences where the file_meta_data entry outlives the corresponding S3 object
 """
 
 import asyncio
@@ -51,6 +54,7 @@ async def dsm_cleaner_task(app: FastAPI) -> None:
             SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
         )
         await simcore_s3_dsm.clean_expired_uploads()
+        await simcore_s3_dsm.clean_expired_exports()
 
 
 @asynccontextmanager

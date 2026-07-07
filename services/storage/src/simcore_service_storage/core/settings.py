@@ -1,9 +1,16 @@
+from datetime import timedelta
 from typing import Annotated, Self
 
 from celery_library.basic_types import BootServerMode
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
-from pydantic import AliasChoices, Field, PositiveInt, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    PositiveInt,
+    field_validator,
+    model_validator,
+)
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.celery import CelerySettings
@@ -14,6 +21,7 @@ from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+from ..constants import EXPORTS_DEFAULT_RETENTION
 from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 
@@ -66,6 +74,16 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ),
         ),
     ]
+
+    STORAGE_EXPORTER_RETENTION: Annotated[
+        timedelta,
+        Field(
+            description=(
+                "Amount of time an exported archive (exports/ S3 prefix) is kept before being "
+                "permanently removed from S3 and file_meta_data"
+            ),
+        ),
+    ] = EXPORTS_DEFAULT_RETENTION
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
         int,
