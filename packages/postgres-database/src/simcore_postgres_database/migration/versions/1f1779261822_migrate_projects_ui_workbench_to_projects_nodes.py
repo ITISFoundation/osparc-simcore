@@ -1,4 +1,4 @@
-"""Migrate projects UI workbench to projects_nodes table
+"""Migrate projects UI workbench to projects_nodes
 
 Revision ID: 1f1779261822
 Revises: c9c165644731
