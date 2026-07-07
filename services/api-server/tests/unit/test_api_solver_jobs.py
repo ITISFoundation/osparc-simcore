@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 
 import httpx
 import pytest
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -626,7 +627,7 @@ async def test_start_solver_job_with_encryption(
     response = await client.post(
         f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
         auth=auth,
-        json=encryption.model_dump(),
+        json=model_dump_with_secrets(encryption, show_secrets=True),
     )
 
     assert response.status_code == status.HTTP_202_ACCEPTED
@@ -668,7 +669,7 @@ async def test_start_solver_job_with_invalid_encryption(
     response = await client.post(
         f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
         auth=auth,
-        json=encryption.model_dump(),
+        json=model_dump_with_secrets(encryption, show_secrets=True),
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
