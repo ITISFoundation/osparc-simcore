@@ -53,6 +53,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     "projectDocumentChanged": "qx.event.type.Data",
     "pipelineChanged": "qx.event.type.Event",
     "nodeAdded": "qx.event.type.Data",
+    "nodeAddedToBackend": "qx.event.type.Data",
     "nodeRemoved": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -366,11 +367,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeId = resp["node_id"];
 
         const node = this.__createNode(key, version, nodeId);
-        node.fetchMetadataAndPopulate()
-          .then(() => {
-            this.__giveUniqueNameToNode(node, node.getLabel());
-            node.checkState();
-          });
+        await node.fetchMetadataAndPopulate();
+        this.fireDataEvent("nodeAddedToBackend", node);
+        this.__giveUniqueNameToNode(node, node.getLabel());
+        node.checkState();
         return node;
       } catch (err) {
         let errorMsg = "";

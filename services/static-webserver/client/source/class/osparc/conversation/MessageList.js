@@ -49,6 +49,10 @@ qx.Class.define("osparc.conversation.MessageList", {
   },
 
   statics: {
+    // consecutive messages from the same sender are only grouped when
+    // they are less than this many milliseconds apart
+    GROUPING_MAX_GAP_MS: 5 * 60 * 1000,
+
     POS: {
       SPACER_TOP: 0,
       MESSAGES_CONTAINER: 1,
@@ -200,6 +204,8 @@ qx.Class.define("osparc.conversation.MessageList", {
         messagesContainer.addAt(control, insertAt);
       }
 
+      this.__recomputeGrouping();
+
       // scroll to bottom
       // add timeout to ensure the scroll happens after the UI is updated
       this.__atBottom = true;
@@ -229,7 +235,34 @@ qx.Class.define("osparc.conversation.MessageList", {
         messagesContainer.remove(existingMessageUI);
       }
 
+      this.__recomputeGrouping();
+
       this.fireEvent("messagesChanged");
+    },
+
+    // group consecutive messages coming from the same sender so the
+    // avatar/name/timestamp header is only shown once per run
+    __recomputeGrouping: function() {
+      const messagesContainer = this.getChildControl("messages-container");
+      let previousUserGroupId = null;
+      let previousCreated = null;
+      messagesContainer.getChildren().forEach(ctrl => {
+        if (ctrl instanceof osparc.conversation.MessageUI) {
+          const message = ctrl.getMessage();
+          const userGroupId = message.getUserGroupId();
+          const created = message.getCreated();
+          const sameSender = userGroupId === previousUserGroupId;
+          const closeInTime = previousCreated !== null &&
+            (created.getTime() - previousCreated.getTime()) <= this.self().GROUPING_MAX_GAP_MS;
+          ctrl.setGroupedWithPrevious(sameSender && closeInTime);
+          previousUserGroupId = userGroupId;
+          previousCreated = created;
+        } else {
+          // a non-message row (e.g. notification) breaks the group
+          previousUserGroupId = null;
+          previousCreated = null;
+        }
+      });
     },
   }
 });

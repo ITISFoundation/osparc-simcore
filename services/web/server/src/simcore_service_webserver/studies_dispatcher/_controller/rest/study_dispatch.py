@@ -17,9 +17,11 @@ from ....login.decorators import login_required
 from ....models import AuthenticatedRequestContext
 from ....security.decorators import permission_required
 from ....utils_aiohttp import get_api_base_url
+from ....web_requests_validation import parse_request_path_parameters_as
 from ..._dispatch_task import dispatch_study
 from ..._guards import check_studies_dispatcher_enabled
 from ..._studies_access import RedirectToFrontEndPageError, _get_published_template_project
+from .study_dispatch_schemas import StudyDispatchPathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -36,7 +38,8 @@ async def dispatch_study_handler(request: web.Request) -> web.StreamResponse:
     """
     check_studies_dispatcher_enabled(request)
 
-    study_id: str = request.match_info["study_id"]
+    path_params = parse_request_path_parameters_as(StudyDispatchPathParams, request)
+    study_id = f"{path_params.study_id}"
     req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     # Pre-flight: validate accessibility synchronously so the SPA gets an immediate 4xx

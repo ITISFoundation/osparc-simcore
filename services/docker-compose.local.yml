@@ -262,6 +262,8 @@ services:
         "max_connections=413",
         "-c",
         "shared_buffers=256MB",
+        "-c",
+        "shared_preload_libraries=pg_stat_statements",
       ]
 
   rabbit:

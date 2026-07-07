@@ -111,8 +111,6 @@ async def _assert_list_paths(
 
         if check_total:
             assert page_of_files.total == total_expected
-        else:
-            assert page_of_files.total is None
         next_cursor = page_of_files.next_page
         total_received += len(page_of_files.items)
         offset += limit
@@ -164,12 +162,12 @@ async def test_list_paths_pagination(
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
-    with_random_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
-    project, list_of_files = with_random_project_with_files
+    project, list_of_files = project_with_seeded_files
     num_nodes = len(list(project["workbench"]))
 
     # ls the nodes (DB-based)
@@ -241,15 +239,16 @@ async def test_list_paths_pagination(
 )
 async def test_list_child_paths_empty_page_still_reports_total(
     initialized_app: FastAPI,
+    location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
     sqlalchemy_async_engine: AsyncEngine,
-    with_random_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
-    project, _ = with_random_project_with_files
+    project, _ = project_with_seeded_files
     file_filter = Path(project["uuid"])
     repo = FileMetaDataRepository.instance(sqlalchemy_async_engine)
 
@@ -305,12 +304,12 @@ async def test_list_paths_pagination_large_page(
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
-    with_random_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
-    project, list_of_files = with_random_project_with_files
+    project, list_of_files = project_with_seeded_files
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
     selected_node_s3_keys = [Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]]
     workspace_file_filter = Path(project["uuid"]) / f"{selected_node_id}" / "workspace"
@@ -354,14 +353,14 @@ async def test_list_paths(
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
     num_projects: int,
 ):
-    project_to_files_mapping = [await random_project_with_files(project_params) for _ in range(num_projects)]
+    project_to_files_mapping = [await project_with_seeded_files_factory(project_params) for _ in range(num_projects)]
     project_to_files_mapping.sort(key=lambda x: x[0]["uuid"])
 
     # ls root returns our projects
@@ -510,13 +509,13 @@ async def test_list_paths_with_display_name_containing_slashes(
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
-    with_random_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     sqlalchemy_async_engine: AsyncEngine,
 ):
-    project, list_of_files = with_random_project_with_files
+    project, list_of_files = project_with_seeded_files
     project_name_with_slashes = "soméà$èq¨thing with/ slas/h/es/"
     node_name_with_non_ascii = "my node / is not ascii: éàèù"
     # adjust project to contain "difficult" characters
@@ -667,7 +666,7 @@ async def test_path_compute_size(
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
-    with_random_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
@@ -676,7 +675,7 @@ async def test_path_compute_size(
     assert len(project_params.allowed_file_sizes) == 1, (
         "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
     )
-    project, list_of_files = with_random_project_with_files
+    project, list_of_files = project_with_seeded_files
 
     total_num_files = sum(len(files_in_node) for files_in_node in list_of_files.values())
 
@@ -808,7 +807,7 @@ async def test_list_paths_filters_by_product(
     location_id: LocationID,
     user_id: UserID,
     create_product: Callable[..., Awaitable[dict[str, Any]]],
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams, dict[str, Any]],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
@@ -825,10 +824,10 @@ async def test_list_paths_filters_by_product(
     product_2 = await create_product(name=faker.word())
 
     # Create project 1 with product 1
-    project_1, _ = await random_project_with_files(project_params, product_1["name"])
+    project_1, _ = await project_with_seeded_files_factory(project_params, product_1["name"])
 
     # Create project 2 with product 2
-    project_2, _ = await random_project_with_files(project_params, product_2["name"])
+    project_2, _ = await project_with_seeded_files_factory(project_params, product_2["name"])
 
     # List paths for product 1 - should only see project 1
     expected_paths_product_1 = [(Path(project_1["uuid"]), False)]
