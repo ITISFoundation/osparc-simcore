@@ -112,6 +112,7 @@ def find_selected_instance_type_for_task(
 type DrainedNodes = list[AssociatedInstance]
 type HotBufferDrainedNodes = list[AssociatedInstance]
 type TerminatingNodes = list[AssociatedInstance]
+type _InstanceTypeKey = str
 
 
 def sort_drained_nodes(
@@ -119,8 +120,8 @@ def sort_drained_nodes(
     all_drained_nodes: list[AssociatedInstance],
 ) -> tuple[DrainedNodes, HotBufferDrainedNodes, TerminatingNodes]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    hot_buffer_requirements: dict[InstanceTypeType, tuple[int, datetime.timedelta | None]] = {
-        typing.cast(InstanceTypeType, type_name): (config.hot_buffer_count, config.hot_buffer_max_inactivity_time)
+    hot_buffer_requirements: dict[_InstanceTypeKey, tuple[int, datetime.timedelta | None]] = {
+        type_name: (config.hot_buffer_count, config.hot_buffer_max_inactivity_time)
         for type_name, config in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
         if config.hot_buffer_count > 0
     }
@@ -130,10 +131,11 @@ def sort_drained_nodes(
     ]
 
     remaining_drained_nodes = [n for n in all_drained_nodes if n not in terminating_nodes]
-    candidates_by_type: dict[InstanceTypeType, list[AssociatedInstance]] = {}
+    candidates_by_type: dict[_InstanceTypeKey, list[AssociatedInstance]] = {}
     now = datetime.datetime.now(datetime.UTC)
     for node in remaining_drained_nodes:
-        requirement = hot_buffer_requirements.get(node.ec2_instance.type)
+        instance_type_key = str(node.ec2_instance.type)
+        requirement = hot_buffer_requirements.get(instance_type_key)
         if not requirement:
             continue
         _, inactivity_limit = requirement
@@ -141,19 +143,17 @@ def sort_drained_nodes(
         if inactivity_limit is not None and (now - last_ready_update) >= inactivity_limit:
             # Too old to keep in buffer, let normal termination flow handle it
             continue
-        candidates_by_type.setdefault(node.ec2_instance.type, []).append(node)
+        candidates_by_type.setdefault(instance_type_key, []).append(node)
 
     hot_buffer_drained_nodes: list[AssociatedInstance] = []
     for ec2_type in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES:
-        requirement = hot_buffer_requirements.get(typing.cast(InstanceTypeType, ec2_type))
+        requirement = hot_buffer_requirements.get(ec2_type)
         if not requirement:
             continue
         desired_count, _ = requirement
         if desired_count <= 0:
             continue
-        hot_buffer_drained_nodes.extend(
-            candidates_by_type.get(typing.cast(InstanceTypeType, ec2_type), [])[:desired_count]
-        )
+        hot_buffer_drained_nodes.extend(candidates_by_type.get(ec2_type, [])[:desired_count])
 
     hot_buffer_ids = {node.ec2_instance.id for node in hot_buffer_drained_nodes}
     other_drained_nodes = [node for node in remaining_drained_nodes if node.ec2_instance.id not in hot_buffer_ids]
