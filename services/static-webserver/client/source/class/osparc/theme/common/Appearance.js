@@ -1109,7 +1109,13 @@ qx.Theme.define("osparc.theme.common.Appearance", {
     */
 
     "scrollbar": {},
-    "scrollbar/slider": {},
+    "scrollbar/slider": {
+      style: function(states) {
+        return {
+          padding: [2, 4]
+        };
+      }
+    },
 
     "scrollbar/slider/knob":
       {
@@ -1146,7 +1152,10 @@ qx.Theme.define("osparc.theme.common.Appearance", {
           return {
             height: 0,
             width: 0,
-            margin: [2, 2]
+            minHeight: 0,
+            minWidth: 0,
+            padding: 0,
+            margin: 0
           };
         }
       },
