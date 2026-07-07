@@ -1230,7 +1230,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         `exports/` S3 prefix) and remove those whose `created_at` is older than
         `STORAGE_EXPORT_RETENTION`. This fixes divergences where the
         `file_meta_data` entry remains in the database while the S3 file is gone
-        (or vice-versa), by deleting the S3 object first and then the DB entry.
+        (or vice-versa).
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
         retention = get_application_settings(self.app).STORAGE_EXPORT_RETENTION
@@ -1243,13 +1243,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         if not list_of_expired_exports:
             return
-        _logger.debug("found following expired exports: [%s]", [fmd.file_id for fmd in list_of_expired_exports])
 
         for fmd in list_of_expired_exports:
-            if fmd.user_id is not None:
-                await self.delete_file(fmd.user_id, fmd.file_id)
-
-        _logger.warning("expired exports of [%s] removed", [fmd.file_id for fmd in list_of_expired_exports])
+            with log_context(_logger, logging.INFO, f"removing {fmd.file_id}"):
+                await self.delete_file(fmd.user_id, fmd.file_id, enforce_access_rights=False)
 
     async def _update_fmd_from_other(
         self,
