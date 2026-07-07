@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Generate an OpenAPI spec containing only endpoints tagged as openai-compatible."""
 
 import json
