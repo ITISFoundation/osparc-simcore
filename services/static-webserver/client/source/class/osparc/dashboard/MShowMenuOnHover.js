@@ -58,12 +58,14 @@ qx.Mixin.define("osparc.dashboard.MShowMenuOnHover", {
         return;
       }
       // `_isHoverRevealForced` is an optional hook defined by the consuming class
-      const forced = ("_isHoverRevealForced" in this) && this._isHoverRevealForced();
+      const forced = typeof this._isHoverRevealForced === "function" && this._isHoverRevealForced();
       const show = this.hasState("hovered") || this.__hoverMenuOpen || forced;
-      // tune the opacity instead of visibility to let playwright and product tours reach the widget
+      // tune the opacity instead of visibility to let playwright and product tours reach the widget,
+      // and disable it while hidden so it can't be clicked/focused
       this.__hoverRevealWidget.setOpacity(show ? 1 : 0);
+      this.__hoverRevealWidget.setEnabled(show);
       // `_onHoverRevealChanged` is an optional hook defined by the consuming class
-      if ("_onHoverRevealChanged" in this) {
+      if (typeof this._onHoverRevealChanged === "function") {
         this._onHoverRevealChanged(show);
       }
     },
