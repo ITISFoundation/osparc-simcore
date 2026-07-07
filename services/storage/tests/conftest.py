@@ -11,7 +11,6 @@ import asyncio
 import datetime
 import logging
 import random
-import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import Any, Final, cast
@@ -120,18 +119,9 @@ pytest_plugins = [
     "pytest_simcore.tracing",
 ]
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-sys.path.append(str(CURRENT_DIR / "helpers"))
-
 
 @pytest.fixture(scope="session")
-def here() -> Path:
-    return CURRENT_DIR
-
-
-@pytest.fixture(scope="session")
-def package_dir(here: Path) -> Path:
+def package_dir() -> Path:
     dirpath = Path(simcore_service_storage.__file__).parent
     assert dirpath.exists()
     return dirpath
