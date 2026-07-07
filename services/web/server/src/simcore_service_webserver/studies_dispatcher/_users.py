@@ -121,6 +121,7 @@ async def create_temporary_guest_user(request: web.Request):
             user_row = await repo.new_user(
                 email=email,
                 password_hash=security_service.encrypt_password(password),
+                product_name=product_name,
                 status=UserStatus.ACTIVE,
                 role=UserRole.GUEST,
                 expires_at=expires_at,

@@ -473,6 +473,7 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
     new_user = await repo.new_user(
         email=test_email,
         password_hash=security_service.encrypt_password(DEFAULT_TEST_PASSWORD),
+        product_name=product_name,
         status=UserStatus.ACTIVE,
         expires_at=None,
     )
