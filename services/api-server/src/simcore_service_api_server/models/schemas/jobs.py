@@ -128,12 +128,7 @@ class JobInputs(BaseModel):
 
 
 class JobEncryptionInputs(ApiServerInputSchema):
-    """Optional encryption context supplied at job-start time.
-
-    ``input_port_to_file_id`` maps each encrypted input port key (from the job's
-    ``JobInputs.values``) to the ``file_id`` the client used to derive/encrypt that
-    file. The single computational node is resolved internally by api-server.
-    """
+    """Optional encryption context supplied at job-start time."""
 
     root_key: RootKeyStr
     input_port_to_file_id: Annotated[
