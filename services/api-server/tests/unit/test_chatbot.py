@@ -7,24 +7,31 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
+from simcore_service_api_server.core.settings import ChatbotSettings
 from simcore_service_api_server.models.domain.chatbot import (
     ChatCompletionRequestMessage,
     CreateChatCompletionResponse,
     RoleEnum,
 )
-from simcore_service_api_server.services_http.chatbot import ChatbotApi
+from simcore_service_api_server.services_http.chatbot import ChatbotApi, ChatbotSession
 
 _CHATBOT_BASE_URL = "http://chatbot:8000"
+_GRAPH_NAME = "simple_rag"
 
 
 @pytest.fixture
-def chatbot_api() -> ChatbotApi:
+def chatbot_session() -> ChatbotSession:
     app = FastAPI()
-    return ChatbotApi.create_once(
+    api = ChatbotApi.create_once(
         app=app,
         client=AsyncClient(base_url=_CHATBOT_BASE_URL),
         service_name="chatbot",
     )
+    settings = ChatbotSettings(
+        CHATBOT_URL=_CHATBOT_BASE_URL,
+        GRAPH_NAME=_GRAPH_NAME,
+    )
+    return ChatbotSession(_chatbot_settings=settings, _api=api)
 
 
 @pytest.fixture
@@ -36,7 +43,7 @@ def mocked_chatbot_backend():
 async def test_create_chat_completion(
     faker: Faker,
     mocked_chatbot_backend: respx.MockRouter,
-    chatbot_api: ChatbotApi,
+    chatbot_session: ChatbotSession,
 ):
     expected_id = faker.uuid4()
     expected_answer = faker.sentence()
@@ -59,7 +66,7 @@ async def test_create_chat_completion(
         },
     )
 
-    result = await chatbot_api.create_chat_completion(
+    result = await chatbot_session.create_chat_completion(
         messages=[
             ChatCompletionRequestMessage(role=RoleEnum.USER, content=user_message),
         ],
@@ -77,7 +84,7 @@ async def test_create_chat_completion(
 async def test_create_chat_completion_with_multiple_messages(
     faker: Faker,
     mocked_chatbot_backend: respx.MockRouter,
-    chatbot_api: ChatbotApi,
+    chatbot_session: ChatbotSession,
 ):
     expected_id = faker.uuid4()
     expected_answer = faker.sentence()
@@ -98,7 +105,7 @@ async def test_create_chat_completion_with_multiple_messages(
         },
     )
 
-    result = await chatbot_api.create_chat_completion(
+    result = await chatbot_session.create_chat_completion(
         messages=[
             ChatCompletionRequestMessage(role=RoleEnum.DEVELOPER, content=developer_message),
             ChatCompletionRequestMessage(role=RoleEnum.USER, content=user_message),
@@ -119,12 +126,12 @@ async def test_create_chat_completion_with_multiple_messages(
 async def test_create_chat_completion_raises_on_error(
     faker: Faker,
     mocked_chatbot_backend: respx.MockRouter,
-    chatbot_api: ChatbotApi,
+    chatbot_session: ChatbotSession,
 ):
     mocked_chatbot_backend.post("/v1/chat/completions").respond(500)
 
     with pytest.raises(Exception):  # noqa: B017, PT011
-        await chatbot_api.create_chat_completion(
+        await chatbot_session.create_chat_completion(
             messages=[
                 ChatCompletionRequestMessage(role=RoleEnum.USER, content=faker.sentence()),
             ],
