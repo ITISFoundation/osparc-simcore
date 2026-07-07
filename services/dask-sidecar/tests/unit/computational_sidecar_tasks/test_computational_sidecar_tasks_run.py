@@ -5,6 +5,7 @@
 # pylint: disable=too-many-arguments
 
 import re
+from collections.abc import Callable
 from pprint import pformat
 from unittest import mock
 
@@ -39,7 +40,9 @@ def _assert_log_file_exists_and_contains_expected_logs(
         saved_logs = fp.read()  # type: ignore
     assert saved_logs
     for log in expected_logs:
-        assert log in saved_logs
+        assert log in saved_logs, (
+            f"Could not find '{log}' in log file {log_file_url}:\n {pformat(saved_logs, width=240)}"
+        )
 
 
 @pytest.mark.parametrize("boot_mode, task_owner", [(BootMode.CPU, "no_parent")], indirect=True)
@@ -163,26 +166,35 @@ def test_run_multiple_computational_sidecar_dask(
     dask_client: distributed.Client,
     sleeper_task: ServiceExampleParam,
     mocked_get_image_labels: mock.Mock,
+    s3_remote_file_url: Callable[..., AnyUrl],
+    s3_settings: S3Settings,
 ):
     NUMBER_OF_TASKS = 50
+
+    log_file_urls = [s3_remote_file_url(file_path=f"log_{i}.dat") for i in range(NUMBER_OF_TASKS)]
 
     futures = [
         dask_client.submit(
             run_computational_sidecar,
-            **sleeper_task.sidecar_params(),
+            **{**sleeper_task.sidecar_params(), "log_file_url": log_file_url},
             resources={},
         )
-        for _ in range(NUMBER_OF_TASKS)
+        for log_file_url in log_file_urls
     ]
 
     results = dask_client.gather(futures)
     assert results
     assert isinstance(results, list)
-    # for result in results:
-    # check that the task produce the expected data, not less not more
     for output_data in results:
         for k, v in sleeper_task.expected_output_data.items():
             assert k in output_data
             assert output_data[k] == v
+
+    for log_file_url in log_file_urls:
+        _assert_log_file_exists_and_contains_expected_logs(
+            log_file_url=log_file_url,
+            expected_logs=sleeper_task.expected_logs,
+            s3_settings=s3_settings,
+        )
 
     mocked_get_image_labels.assert_called()
