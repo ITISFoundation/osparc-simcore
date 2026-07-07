@@ -11,6 +11,8 @@ from servicelib.celery.task_manager import TaskManager
 
 from simcore_service_api_server.models.domain.chatbot import CreateChatCompletionResponse
 
+from ...core.settings import ApplicationSettings
+from ...exceptions.backend_errors import ChatbotNotAvailableError
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.domain.celery_models import ApiServerOwnerMetadata
 from ...models.schemas.errors import ErrorGet
@@ -22,6 +24,7 @@ from ...models.schemas.responses import (
     ResponseStatus,
 )
 from ...services_rpc.async_jobs import AsyncJobClient
+from ..dependencies.application import get_settings
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.celery import get_task_manager
 from ..dependencies.tasks import get_async_jobs_client
@@ -50,8 +53,12 @@ async def create_response(
     body: CreateResponseRequest,
     user_id: Annotated[int, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
     task_manager: Annotated[TaskManager, Depends(get_task_manager)],
 ) -> ResponseObject:
+    if settings.API_SERVER_CHATBOT is None:
+        raise ChatbotNotAvailableError
+
     job = await submit_job(
         task_manager,
         execution_metadata=TaskExecutionMetadata(
