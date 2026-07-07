@@ -1,22 +1,16 @@
 """handles access to *public* studies
 
-    Handles a request to share a given sharable study via '/study/{id}'
+Handles a request to share a given sharable study via '/study/{id}'
 
-    - defines '/study/{id}' routes (this route does NOT belong to restAPI)
-    - access to projects management subsystem
-    - access to statics
-    - access to security
-    - access to login
-
-
-NOTE: Some of the code below is duplicated in the studies_dispatcher!
-SEE refactoring plan in https://github.com/ITISFoundation/osparc-simcore/issues/3977
+- defines '/study/{id}' routes (this route does NOT belong to restAPI)
+- access to projects management subsystem
+- access to statics
+- access to security
+- access to login
 """
 
 import functools
 import logging
-from functools import lru_cache
-from uuid import UUID, uuid5
 
 from aiohttp import web
 from aiohttp_session import get_session
@@ -25,28 +19,20 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.redis import RedisClientSDK, exclusive
 
 from ..constants import INDEX_RESOURCE_NAME
-from ..director_v2 import director_v2_service
-from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
 from ..products import products_web
-from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
 from ..projects._projects_repository_legacy import ProjectDBAPI
-from ..projects.api import check_user_project_permission
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
 from ..projects.models import ProjectDict
-from ..redis import get_redis_lock_manager_client_sdk
 from ..security import security_web
-from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
+from ..utils_aiohttp import create_redirect_to_page_response
 from ._constants import (
     MSG_LOGIN_REQUIRED,
     MSG_PROJECT_NOT_FOUND,
@@ -61,18 +47,6 @@ from ._users import create_temporary_guest_user, get_authorized_user
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-
-_BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
-
-
-@lru_cache
-def _compose_uuid(template_uuid, user_id, query="") -> str:
-    """Creates a new uuid composing a project's and user ids such that
-    any template pre-assigned to a user
-
-    Enforces a constraint: a user CANNOT have multiple copies of the same template
-    """
-    return str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
 
 
 async def _get_published_template_project(
@@ -151,112 +125,6 @@ async def _get_published_template_project(
     # No group has read access
     reason = f"Project not shared with required groups {groups_to_check}"
     raise _create_access_denied_error(reason)
-
-
-def _get_guest_user_gc_lock_key(_request: web.Request, _template_project: dict, user: dict) -> str:
-    return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["name"])
-
-
-def _get_guest_user_gc_lock_redis_client(request: web.Request, *_args, **_kwargs) -> RedisClientSDK:
-    return get_redis_lock_manager_client_sdk(request.app)
-
-
-@exclusive(
-    _get_guest_user_gc_lock_redis_client,
-    lock_key=_get_guest_user_gc_lock_key,
-)
-async def copy_study_to_account(request: web.Request, template_project: dict, user: dict) -> str:
-    """
-    Creates a copy of the study to a given project in user's account
-
-    - Replaces template parameters by values passed in query
-    - Avoids multiple copies of the same template on each account
-
-    NOTE: This is wrapped by the guest-user GC lock for *every* user, but it only has an
-    effect on GUEST users: they are the only ones the garbage-collector can remove while
-    idle, and the GC checks this exact key (see GUEST_USER_RC_LOCK_FORMAT) before pruning
-    them. Copying a (potentially large) study can take longer than the guest's GC grace
-    period, so holding the lock for the whole copy guarantees the GC will not delete the
-    user nor its destination project mid-copy. For non-GUEST users the lock is inert (the
-    GC never inspects it).
-    """
-    # NOTE: Avoids circular dependencies
-    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY  # noqa: PLC0415
-    from ..projects.utils import clone_project_document, substitute_parameterized_inputs  # noqa: PLC0415
-
-    db: ProjectDBAPI = request.config_dict[PROJECT_DBAPI_APPKEY]
-    template_parameters = dict(request.query)
-
-    # assign new uuid to copy
-    project_uuid = _compose_uuid(template_project["uuid"], user["id"], str(template_parameters))
-
-    try:
-        product_name = await db.get_project_product(template_project["uuid"])
-        await check_user_project_permission(
-            request.app,
-            project_id=template_project["uuid"],
-            user_id=user["id"],
-            product_name=product_name,
-            permission="read",
-        )
-
-        # Avoids multiple copies of the same template on each account
-        await db.get_project_dict_and_type(project_uuid)
-
-    except ProjectNotFoundError:
-        # New project cloned from template
-        project, nodes_map = clone_project_document(template_project, forced_copy_project_id=UUID(project_uuid))
-
-        # remove template access rights
-        # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/8887
-        project["accessRights"] = {}
-
-        # check project inputs and substitute template_parameters
-        if template_parameters:
-            _logger.info("Substituting parameters '%s' in template", template_parameters)
-            project = substitute_parameterized_inputs(project, template_parameters) or project
-        # add project model + copy data TODO: guarantee order and atomicity
-        product_name = products_web.get_product_name(request)
-        await db.insert_project(
-            project,
-            user["id"],
-            product_name=product_name,
-            force_project_uuid=True,
-            project_nodes=None,
-        )
-        async for lr_task in copy_data_folders_from_project(
-            request.app,
-            source_project=template_project,
-            destination_project=project,
-            nodes_map=nodes_map,
-            user_id=user["id"],
-            product_name=product_name,
-        ):
-            _logger.info(
-                "copying %s into %s for %s: %s",
-                f"{template_project['uuid']=}",
-                f"{project['uuid']}",
-                f"{user['id']}",
-                f"{lr_task.status.progress=}",
-            )
-            if lr_task.done:
-                await lr_task.result()
-        await director_v2_service.create_or_update_pipeline(
-            request.app,
-            user["id"],
-            project["uuid"],
-            product_name,
-            get_api_base_url(request),
-        )
-        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
-
-        await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
-            request.app,
-            from_project_uuid=template_project["uuid"],
-            to_project_uuid=project["uuid"],
-        )
-
-    return project_uuid
 
 
 # HANDLERS --------------------------------------------------------

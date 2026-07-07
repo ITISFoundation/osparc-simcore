@@ -90,7 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
       # For pull requests it's not necessary to checkout the code
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@v4.0.1
         id: filter
         with:
           filters: |
@@ -466,11 +466,11 @@ jobs:
           flags: unittests #optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  unit-test-storage:
+  unit-test-storage-01:
     needs: changes
     if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[unit] storage"
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    name: "[unit] storage 01"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -490,7 +490,37 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
-        run: ./ci/github/unit-testing/storage.bash test
+        run: ./ci/github/unit-testing/storage.bash test_01
+      - uses: codecov/codecov-action@v7
+        with:
+          flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-storage-02:
+    needs: changes
+    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    name: "[unit] storage 02"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.13"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.0
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/storage/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/storage.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/storage.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/storage.bash test_02
       - uses: codecov/codecov-action@v7
         with:
           flags: unittests #optional
@@ -1451,7 +1481,8 @@ jobs:
         unit-test-service-library,
         unit-test-settings-library,
         unit-test-simcore-sdk,
-        unit-test-storage,
+        unit-test-storage-01,
+        unit-test-storage-02,
         unit-test-webserver-01,
         unit-test-webserver-02,
         unit-test-webserver-03,
@@ -1872,7 +1903,14 @@ jobs:
 
   deploy:
     name: deploy to dockerhub
-    needs: [deploy-vars, unit-tests, integration-tests, system-tests, build-test-images]
+    needs:
+      [
+        deploy-vars,
+        unit-tests,
+        integration-tests,
+        system-tests,
+        build-test-images,
+      ]
     if: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1888,7 +1926,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
       - name: Setup docker buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v4.1.0
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: download amd64 digests

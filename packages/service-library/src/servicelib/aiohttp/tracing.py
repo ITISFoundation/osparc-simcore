@@ -19,7 +19,13 @@ from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import AIOHTTP_TRACING_CONFIG_KEY, TracingConfig, create_standard_attributes, get_trace_info_headers
+from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
+from ..tracing import (
+    AIOHTTP_TRACING_CONFIG_KEY,
+    TracingConfig,
+    create_standard_attributes,
+    get_trace_info_headers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -183,6 +189,8 @@ def _startup(
         ):
             AioPikaInstrumentor().instrument(tracer_provider=tracer_provider)
 
+    TracedFunctionsInstrumentor().instrument(tracing_settings=tracing_settings, tracer_provider=tracer_provider)
+
 
 @web.middleware
 async def response_trace_id_header_middleware(request: web.Request, handler):
@@ -229,6 +237,8 @@ def _shutdown() -> None:
     if HAS_AIO_PIKA:
         with log_catch(_logger, reraise=False):
             AioPikaInstrumentor().uninstrument()
+    with log_catch(_logger, reraise=False):
+        TracedFunctionsInstrumentor().uninstrument()
 
 
 def setup_tracing(

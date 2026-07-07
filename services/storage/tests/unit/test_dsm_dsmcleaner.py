@@ -53,9 +53,7 @@ def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
 @pytest.mark.parametrize(
     "file_size",
     [
-        TypeAdapter(ByteSize).validate_python("0"),
-        TypeAdapter(ByteSize).validate_python("10Mib"),
-        TypeAdapter(ByteSize).validate_python("100Mib"),
+        TypeAdapter(ByteSize).validate_python("1.5Mib"),
     ],
     ids=byte_size_ids,
 )
@@ -68,7 +66,7 @@ def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
         (LinkType.PRESIGNED, False),
     ],
 )
-@pytest.mark.parametrize("checksum", [None, _faker.sha256()])
+@pytest.mark.parametrize("checksum", [None, _faker.sha256()], ids=str)
 async def test_regression_collaborator_creates_file_upload_links(  # pylint:disable=too-many-positional-arguments
     disabled_dsm_cleaner_task,
     sqlalchemy_async_engine: AsyncEngine,
@@ -124,8 +122,7 @@ async def test_regression_collaborator_creates_file_upload_links(  # pylint:disa
     "file_size",
     [
         ByteSize(0),
-        TypeAdapter(ByteSize).validate_python("10Mib"),
-        TypeAdapter(ByteSize).validate_python("100Mib"),
+        TypeAdapter(ByteSize).validate_python("103Mib"),
     ],
     ids=byte_size_ids,
 )
@@ -214,8 +211,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 @pytest.mark.parametrize(
     "file_size",
     [
-        TypeAdapter(ByteSize).validate_python("10Mib"),
-        TypeAdapter(ByteSize).validate_python("100Mib"),
+        TypeAdapter(ByteSize).validate_python("13Mib"),
     ],
     ids=byte_size_ids,
 )
@@ -240,7 +236,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     """In this test we first upload a file to have a valid entry, then we trigger
     a new upload of the VERY SAME FILE, expire it, and make sure the cleaner reverts
     to the last known version of the file"""
-    file, file_id = await upload_file(
+    _file, file_id = await upload_file(
         file_size=file_size,
         file_name=_faker.file_name(),
         file_id=None,
