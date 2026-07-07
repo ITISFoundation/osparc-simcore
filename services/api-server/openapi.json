@@ -9648,7 +9648,8 @@
       "FileIDStr": {
         "type": "string",
         "maxLength": 65535,
-        "minLength": 1
+        "minLength": 1,
+        "description": "client-chosen file identifier mixed into HKDF key derivation"
       },
       "FileUploadCompletionBody": {
         "properties": {
@@ -10017,7 +10018,7 @@
           "root_key"
         ],
         "title": "JobEncryptionInputs",
-        "description": "Optional encryption context supplied at job-start time.\n\n``input_port_to_file_id`` maps each encrypted input port key (from the job's\n``JobInputs.values``) to the ``file_id`` the client used to derive/encrypt that\nfile. The single computational node is resolved internally by api-server.",
+        "description": "Optional encryption context supplied at job-start time.",
         "example": {
           "input_port_to_file_id": {
             "input_file": "input_file"
