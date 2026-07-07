@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import Annotated
 from uuid import UUID
 
@@ -65,7 +64,6 @@ async def create_response(
     return ResponseObject(
         id=f"{job.job_id}",
         background=True,
-        created_at=time.time(),
         model=body.model,
         status=ResponseStatus.QUEUED,
     )
