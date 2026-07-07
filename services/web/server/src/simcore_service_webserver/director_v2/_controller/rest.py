@@ -57,11 +57,9 @@ async def start_computation(request: web.Request) -> web.Response:
     encryption: JobEncryptionContextMetadata | None = None
     if request.can_read_body:
         body_params = await parse_request_body_as(ComputationStart, request)
-        subgraph, force_restart, encryption = (
-            body_params.subgraph,
-            body_params.force_restart,
-            body_params.encryption,
-        )
+        subgraph = body_params.subgraph
+        force_restart = body_params.force_restart
+        encryption = body_params.encryption
 
     # Group properties
     group_properties = await _director_v2_service.get_group_properties(
