@@ -17,8 +17,15 @@
 
 qx.Class.define("osparc.dashboard.FolderButtonBase", {
   extend: qx.ui.core.Widget,
-  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable, osparc.dashboard.MShowMenuOnHover],
+  implement: [
+    qx.ui.form.IModel,
+    osparc.filter.IFilterable
+  ],
+  include: [
+    qx.ui.form.MModelProperty,
+    osparc.filter.MFilterable,
+    osparc.dashboard.MShowMenuOnHover
+  ],
   type: "abstract",
 
   construct: function() {

@@ -648,7 +648,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-
     __applyUuid: function(value, old) {
       const resourceType = this.getResourceType() || "study";
       osparc.utils.Utils.setIdToWidget(this, resourceType + "BrowserListItem_" + value);
