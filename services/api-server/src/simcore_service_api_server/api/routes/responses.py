@@ -47,6 +47,12 @@ _TASK_NAME = "run_chat_completion"
     ),
     response_model=ResponseObject,
     status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "description": "Chatbot service is not enabled",
+            "model": ErrorGet,
+        },
+    },
     openapi_extra=OPENAI_COMPATIBLE_OPENAPI_EXTRA,
 )
 async def create_response(
