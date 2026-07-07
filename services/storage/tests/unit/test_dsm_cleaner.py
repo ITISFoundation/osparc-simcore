@@ -89,7 +89,7 @@ async def test_dsm_export_cleaner_interval_is_a_timedelta(initialized_app: FastA
     settings = get_application_settings(initialized_app)
     interval = settings.STORAGE_EXPORT_CLEANER_INTERVAL
     assert isinstance(interval, timedelta)
-    assert interval == timedelta(days=1)
+    assert interval == timedelta(hours=6)
 
 
 async def test_disable_dsm_export_cleaner(disable_dsm_export_cleaner, initialized_app: FastAPI):
