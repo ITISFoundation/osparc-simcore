@@ -8913,6 +8913,16 @@
               }
             }
           },
+          "503": {
+            "description": "Chatbot service is not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
