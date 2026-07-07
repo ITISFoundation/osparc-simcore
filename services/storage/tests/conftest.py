@@ -4,13 +4,13 @@
 # pylint: disable=unsupported-assignment-operation
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 
 import asyncio
 import datetime
 import logging
 import random
-import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import Any, Final, cast
@@ -71,7 +71,6 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.redis._client import RedisClientSDK
 from servicelib.tracing import TracingConfig
-from servicelib.utils import limited_gather
 from settings_library.celery import CelerySettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -120,18 +119,9 @@ pytest_plugins = [
     "pytest_simcore.tracing",
 ]
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-sys.path.append(str(CURRENT_DIR / "helpers"))
-
 
 @pytest.fixture(scope="session")
-def here() -> Path:
-    return CURRENT_DIR
-
-
-@pytest.fixture(scope="session")
-def package_dir(here: Path) -> Path:
+def package_dir() -> Path:
     dirpath = Path(simcore_service_storage.__file__).parent
     assert dirpath.exists()
     return dirpath
@@ -237,6 +227,8 @@ def app_settings(
 
 
 _LIFESPAN_TIMEOUT: Final[int] = 10
+_UPLOAD_COMPLETION_POLL_INTERVAL_S: Final[float] = 1
+_TEST_CELERY_WORKER_CONCURRENCY: Final[int] = 10
 
 
 @pytest.fixture
@@ -421,7 +413,7 @@ def upload_file(
             completion_etag = None
             async for attempt in AsyncRetrying(
                 reraise=True,
-                wait=wait_fixed(1),
+                wait=wait_fixed(_UPLOAD_COMPLETION_POLL_INTERVAL_S),
                 stop=stop_after_delay(60),
                 retry=retry_if_exception_type(ValueError),
             ):
@@ -519,7 +511,7 @@ async def create_empty_directory(
         # now check for the completion
         async for attempt in AsyncRetrying(
             reraise=True,
-            wait=wait_fixed(1),
+            wait=wait_fixed(_UPLOAD_COMPLETION_POLL_INTERVAL_S),
             stop=stop_after_delay(60),
             retry=retry_if_exception_type(AssertionError),
         ):
@@ -760,17 +752,16 @@ async def _upload_folder_task(
 
 
 @pytest.fixture
-async def random_project_with_files(
+async def project_with_seeded_files_factory(  # noqa: C901
     sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
-    create_project_node: Callable[..., Awaitable[NodeID]],
+    create_project_node: Callable[..., Awaitable[tuple[NodeID, Any]]],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str, Path | None], SimcoreS3FileID],
     faker: Faker,
-    create_directory_with_files: Callable[
-        ...,
-        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
-    ],
-    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    with_storage_celery_worker: TestWorkController,
 ) -> Callable[
     [ProjectWithFilesParams],
     Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
@@ -779,86 +770,124 @@ async def random_project_with_files(
         project_params: ProjectWithFilesParams,
         product_name: ProductName | None = None,
     ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
-        assert len(project_params.allowed_file_sizes) == len(project_params.allowed_file_checksums)
-        project_kwargs = {"name": "random-project"}
+        assert project_params.allowed_file_sizes
+
+        def _new_file_name() -> str:
+            return f"{faker.uuid4(cast_to=None)}-{faker.file_name()}"
+
+        def _select_checksum() -> SHA256Str:
+            if project_params.allowed_file_checksums:
+                return random.choice(project_params.allowed_file_checksums)  # noqa: S311
+            return TypeAdapter(SHA256Str).validate_python(faker.sha256(raw_output=False))
+
+        project_kwargs: dict[str, Any] = {"name": "seeded-random-project"}
         if product_name is not None:
             project_kwargs["product_name"] = product_name
         project = await create_project(**project_kwargs)
-        node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
-        upload_tasks = []
+
+        project_id = ProjectID(project["uuid"])
+        location_id = SimcoreS3DataManager.get_location_id()
+        location_name = SimcoreS3DataManager.get_location_name()
+
+        files_by_node: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
+        db_entries: list[dict[str, Any]] = []
+        local_files_by_size: dict[ByteSize, Path] = {}
+
         for _ in range(project_params.num_nodes):
-            # Create a node with outputs (files and others)
-            project_id = ProjectID(project["uuid"])
             node_id = cast(NodeID, faker.uuid4(cast_to=None))
-            node_to_files_mapping[node_id] = {}
-            output3_file_name = faker.file_name()
-            output3_file_id = create_simcore_file_id(project_id, node_id, output3_file_name, Path("outputs/output_3"))
-            created_node_id, _node_row = await create_project_node(
-                ProjectID(project["uuid"]),
+            files_by_node[node_id] = {}
+
+            output_file_name = _new_file_name()
+            output_file_id = create_simcore_file_id(project_id, node_id, output_file_name, Path("outputs/output_3"))
+            created_node_id, _ = await create_project_node(
+                project_id,
                 node_id,
                 outputs={
                     "output_1": faker.pyint(),
                     "output_2": faker.pystr(),
-                    "output_3": f"{output3_file_id}",
+                    "output_3": f"{output_file_id}",
                 },
             )
             assert created_node_id == node_id
 
-            upload_tasks.append(
-                _upload_one_file_task(
-                    upload_file,
-                    project_params.allowed_file_sizes,
-                    project_params.allowed_file_checksums,
-                    file_name=output3_file_name,
-                    file_id=output3_file_id,
-                    node_id=node_id,
+            file_specs: list[tuple[SimcoreS3FileID, ByteSize, SHA256Str]] = [
+                (
+                    output_file_id,
+                    random.choice(project_params.allowed_file_sizes),  # noqa: S311
+                    _select_checksum(),
                 )
-            )
+            ]
 
-            # some workspace files (these are not referenced in the file_meta_data, only as a folder)
-            if project_params.workspace_files_count > 0:
-                upload_tasks.append(
-                    _upload_folder_task(
-                        create_directory_with_files,
-                        project_params.allowed_file_sizes,
-                        dir_name="workspace",
-                        project_id=project_id,
-                        node_id=node_id,
-                        workspace_file_count=project_params.workspace_files_count,
+            # Add a small set of root files to keep delete-path coverage.
+            for _ in range(2):
+                root_name = _new_file_name()
+                root_file_id = create_simcore_file_id(project_id, node_id, root_name, None)
+                file_specs.append(
+                    (
+                        root_file_id,
+                        random.choice(project_params.allowed_file_sizes),  # noqa: S311
+                        _select_checksum(),
                     )
                 )
 
-            # add a few random files in the node root space for good measure
-            for _ in range(random.randint(1, 3)):  # noqa: S311
-                root_file_name = faker.file_name()
-                root_file_id = create_simcore_file_id(project_id, node_id, root_file_name, None)
-                upload_tasks.append(
-                    _upload_one_file_task(
-                        upload_file,
-                        project_params.allowed_file_sizes,
-                        project_params.allowed_file_checksums,
-                        file_name=root_file_name,
-                        file_id=root_file_id,
-                        node_id=node_id,
-                    ),
+            # Keep workspace hierarchy checks by spreading files across fixed subdirs.
+            workspace_subdirs = [Path("workspace") / f"sub-dir_etc ory-{index}" for index in range(3)]
+            for index in range(project_params.workspace_files_count):
+                workspace_name = _new_file_name()
+                file_specs.append(
+                    (
+                        create_simcore_file_id(
+                            project_id,
+                            node_id,
+                            workspace_name,
+                            workspace_subdirs[index % len(workspace_subdirs)],
+                        ),
+                        random.choice(project_params.allowed_file_sizes),  # noqa: S311
+                        _select_checksum(),
+                    )
                 )
 
-        # upload everything of the node
-        results = await limited_gather(*upload_tasks, limit=10)
+            for file_id, file_size, file_checksum in file_specs:
+                if file_size not in local_files_by_size:
+                    local_files_by_size[file_size] = create_file_of_size(file_size, None)
 
-        for node_id, file_id_to_dict_mapping in results:
-            for file_id, file_dict in file_id_to_dict_mapping.items():
-                node_to_files_mapping[node_id][file_id] = file_dict
+                local_file = local_files_by_size[file_size]
+                await storage_s3_client.upload_file(
+                    bucket=storage_s3_bucket,
+                    file=local_file,
+                    object_key=file_id,
+                    bytes_transferred_cb=None,
+                )
+
+                files_by_node[node_id][file_id] = FileIDDict(path=local_file, sha256_checksum=file_checksum)
+
+                db_fmd = FileMetaData.from_simcore_node(
+                    user_id=TypeAdapter(UserID).validate_python(project["prj_owner"]),
+                    file_id=file_id,
+                    bucket=storage_s3_bucket,
+                    location_id=location_id,
+                    location_name=location_name,
+                    sha256_checksum=file_checksum,
+                    file_size=file_size,
+                    entity_tag=f"seeded-{faker.md5(raw_output=False)}",
+                    upload_id=None,
+                    upload_expires_at=None,
+                    is_directory=False,
+                )
+                db_entries.append(jsonable_encoder(FileMetaDataAtDB.model_validate(db_fmd)))
+
+        async with sqlalchemy_async_engine.begin() as connection:
+            await connection.execute(file_meta_data.insert(), db_entries)
 
         project = await get_updated_project(sqlalchemy_async_engine, project["uuid"])
-        return project, node_to_files_mapping
+        return project, files_by_node
 
     return _creator
 
 
 @pytest.fixture
-async def with_random_project_with_files(
-    random_project_with_files: Callable[
+async def project_with_seeded_files(
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
@@ -867,7 +896,7 @@ async def with_random_project_with_files(
     dict[str, Any],
     dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
 ]:
-    return await random_project_with_files(project_params)
+    return await project_with_seeded_files_factory(project_params)
 
 
 @pytest.fixture()
@@ -1012,7 +1041,7 @@ async def with_storage_celery_worker(
     with start_worker(
         celery_app,
         pool="threads",
-        concurrency=1,
+        concurrency=_TEST_CELERY_WORKER_CONCURRENCY,
         loglevel="info",
         perform_ping_check=False,
         queues="default,cpu_bound",
