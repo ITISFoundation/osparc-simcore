@@ -10,7 +10,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, ConfigDict, Field, SecretBytes
 from pydantic.config import JsonDict
 
-_SIDECAR_LOGS_FILE_ID: Final[str] = "logs"
+_SIDECAR_LOGS_FILE_ID: Final[str] = "service-logs"
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 
 
