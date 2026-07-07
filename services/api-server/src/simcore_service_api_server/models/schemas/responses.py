@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field, field_validator
 
 Temperature = Annotated[float, Field(ge=0, le=2)]
 
+type MetadataKey = Annotated[str, Field(max_length=64)]
+type MetadataValue = Annotated[str, Field(max_length=512)]
+
 
 class ResponseStatus(StrEnum):
     CANCELLED = "cancelled"
@@ -30,15 +33,15 @@ ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
 
 class InputMessage(BaseModel):
     role: Literal["user", "assistant", "system", "developer"]
-    content: str
+    content: Annotated[str, Field(min_length=1, max_length=100_000)]
 
 
 class CreateResponseRequest(BaseModel):
     """Request body for POST /responses."""
 
     background: Literal[True]
-    input: list[InputMessage]
-    metadata: dict[str, str] | None = None
+    input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]
+    metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = None
     model: Any  # validation is done in validator because of OpenAI's tricky OAS
     temperature: Temperature
 
@@ -71,7 +74,6 @@ class ResponseObject(BaseModel):
     id: str
     object: ResponseObjectType = ResponseObjectType.RESPONSE
     background: bool | None = None
-    created_at: float | None = None
     error: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
