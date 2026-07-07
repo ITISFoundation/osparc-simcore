@@ -10,13 +10,13 @@ from typing import Final
 import pytest
 from models_library.api_schemas_directorv2.encryption import (
     AES_256_GCM_KEY_SIZE_BYTES,
+    MAX_LP_STRING_BYTES,
 )
 from simcore_service_dask_sidecar.utils import aes_gcm
 from simcore_service_dask_sidecar.utils.aes_gcm import (
     _CHUNK_PREFIX_STRUCT,
     _HEADER_STRUCT,
     _MAX_CHUNK_INDEX_EXCLUSIVE,
-    _MAX_LP_STRING_BYTES,
     DEFAULT_CHUNK_SIZE_BYTES,
     FORMAT_MAGIC,
     FORMAT_VERSION,
@@ -336,7 +336,7 @@ def test_decrypt_rejects_incomplete_chunk_ciphertext(root_key: bytes, context: d
 
 
 def test_length_prefixed_rejects_oversized_string():
-    too_long = "x" * (_MAX_LP_STRING_BYTES + 1)
+    too_long = "x" * (MAX_LP_STRING_BYTES + 1)
     with pytest.raises(AesGcmStreamError, match="String field too long"):
         _length_prefixed(too_long)
 
