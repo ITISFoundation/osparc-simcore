@@ -544,7 +544,7 @@ class JobService:
             expected_job_name=job_name,
             webserver_api=self._web_rest_client,
             pricing_spec=pricing_spec,
-            encryption=None,  # NOTE: study jobs (multi-node) do not support encryption yet
+            encryption=None,  # NOTE: study jobs (multi-node) do not support encryption
         )
         return await self.inspect_study_job(
             job_id=job_id,
