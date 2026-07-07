@@ -9444,15 +9444,21 @@
               "$ref": "#/components/schemas/InputMessage"
             },
             "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
             "title": "Input"
           },
           "metadata": {
             "anyOf": [
               {
                 "additionalProperties": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/MetadataValue"
                 },
-                "type": "object"
+                "propertyNames": {
+                  "$ref": "#/components/schemas/MetadataKey"
+                },
+                "type": "object",
+                "maxProperties": 16
               },
               {
                 "type": "null"
@@ -9814,6 +9820,8 @@
           },
           "content": {
             "type": "string",
+            "maxLength": 100000,
+            "minLength": 1,
             "title": "Content"
           }
         },
@@ -10735,6 +10743,14 @@
             "type": "string"
           }
         ]
+      },
+      "MetadataKey": {
+        "type": "string",
+        "maxLength": 64
+      },
+      "MetadataValue": {
+        "type": "string",
+        "maxLength": 512
       },
       "OnePage_SolverPort_": {
         "properties": {
@@ -12908,17 +12924,6 @@
               }
             ],
             "title": "Background"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
           },
           "error": {
             "anyOf": [
