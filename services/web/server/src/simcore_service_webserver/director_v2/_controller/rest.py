@@ -174,8 +174,9 @@ async def start_computation(request: web.Request) -> web.Response:
 
     # Return 200 only when ALL pipelines are up-to-date (nothing to run)
     all_ok = bool(_response_statuses) and all(s == status.HTTP_200_OK for s in _response_statuses)
-    response_cls = web.HTTPOk if all_ok else web.HTTPCreated
-    return envelope_json_response(ComputationStarted.model_validate(data), status_cls=response_cls)
+    return envelope_json_response(
+        ComputationStarted.model_validate(data), status_cls=web.HTTPOk if all_ok else web.HTTPCreated
+    )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")
