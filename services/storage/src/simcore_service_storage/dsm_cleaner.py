@@ -1,6 +1,8 @@
 """background task that periodically cleans up the DSM of expired uploads and exporter archives.
 
-See `SimcoreS3DataManager._clean_expired_uploads()` and `.clean_expired_exports()` for details.
+For details see `SimcoreS3DataManager`:
+    - `.clean_expired_uploads()`
+    - `.clean_expired_exports()`
 """
 
 import asyncio
