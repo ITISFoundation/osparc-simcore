@@ -1147,11 +1147,20 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     upload_id=fmd.upload_id,
                 )
 
-    async def _clean_expired_uploads(self) -> None:
-        """this method will check for all incomplete updates by checking
-        the upload_expires_at entry in file_meta_data table.
-        1. will try to update the entry from S3 backend if exists
-        2. will delete the entry if nothing exists in S3 backend.
+    async def clean_expired_uploads(self) -> None:
+        """Removes uploads that never completed.
+
+        Rationale: an upload starts by creating a file_meta_data entry with an
+        `upload_expires_at` timestamp and handing the client an S3/HTTP upload link. Once the
+        client notifies completion, that entry is updated: `file_size` is set and both
+        `upload_expires_at` and `upload_id` (for multipart uploads) are cleared to null.
+
+        So any entry whose `upload_expires_at` is still set and in the past means the client
+        never completed (or notified) the upload. For each such entry, this method:
+        1. tries to recover it by refreshing its metadata from S3 (the upload might have
+           actually finished and the client just forgot to notify us);
+        2. if nothing exists in S3, deletes the file_meta_data entry and aborts the multipart
+           upload, if any.
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
 
@@ -1222,15 +1231,14 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
 
-    async def clean_expired_uploads(self) -> None:
-        await self._clean_expired_uploads()
-
     async def clean_expired_exports(self) -> None:
-        """this method will check for all exported archives (files stored under the
-        `exports/` S3 prefix) and remove those whose `created_at` is older than
-        `STORAGE_EXPORT_RETENTION`. This fixes divergences where the
-        `file_meta_data` entry remains in the database while the S3 file is gone
-        (or vice-versa).
+        """Removes exported archives that have outlived their retention.
+
+        Rationale: exported archives are regular, already-completed files (no `upload_expires_at`
+        tracking applies once uploaded), so left alone they would live in S3/file_meta_data
+        forever. This method looks up files under the `exports/` S3 prefix whose `created_at` is
+        older than `STORAGE_EXPORT_RETENTION` and removes them, S3 object first then the
+        file_meta_data entry, fixing divergences where the DB entry outlives the S3 file.
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
         retention = get_application_settings(self.app).STORAGE_EXPORT_RETENTION

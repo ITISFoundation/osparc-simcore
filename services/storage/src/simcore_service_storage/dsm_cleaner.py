@@ -1,24 +1,6 @@
-"""background task that cleans the DSM pending/expired uploads and expired exporter archives
+"""background task that periodically cleans up the DSM of expired uploads and exporter archives.
 
-# Rationale:
- - for each upload an entry is created in the file_meta_data table in the database
- - then an upload link (S3/HTTP URL) is created through S3 backend and sent back to the client
- - the client shall upload the file and then notify DSM of completion
- - upon completion the corresponding entry in file_meta_data is updated:
-   - the file_size of the uploaded file is set
-   - the upload_expiration_date is set to null
-   - if the uploadId exists (for multipart uploads) it is set to null
-
-# DSM cleaner:
- - runs at an interval
- - list the entries that are expired in the database by checking "upload_expires_at" column
- - tries to update from S3 the database first, if that fails:
-   - removes the entries in the database that are expired:
-      - removes the entry
-      - aborts the multipart upload if any
- - also lists exported archives (`exports/` S3 prefix) whose `created_at` is older than
-   `STORAGE_EXPORT_RETENTION` and removes them (S3 object then database entry), fixing
-   divergences where the file_meta_data entry outlives the corresponding S3 object
+See `SimcoreS3DataManager._clean_expired_uploads()` and `.clean_expired_exports()` for details.
 """
 
 import asyncio
