@@ -30,6 +30,7 @@ TEST_01_FILES=(
   tests/unit/test_models.py
   tests/unit/test_modules_rabbitmq.py
   tests/unit/test_resources.py
+  tests/unit/test_simcore_s3_dsm.py
   tests/unit/test_simcore_s3_dsm_utils.py
   tests/unit/test_utils.py
   tests/unit/test_utils_handlers.py
