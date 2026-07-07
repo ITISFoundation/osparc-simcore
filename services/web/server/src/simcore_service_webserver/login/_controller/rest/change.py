@@ -296,6 +296,7 @@ async def change_password(request: web.Request):
     passwords = await parse_request_body_as(ChangePasswordBody, request)
     user_id = request[RQT_USERID_KEY]
     user = await _auth_service.get_user_or_none(request.app, user_id=user_id)
+    product_name = products_web.get_product_name(request)
 
     try:
         await _auth_service.check_authorized_user_credentials(
@@ -312,6 +313,7 @@ async def change_password(request: web.Request):
         user_id=user_id,
         current_password=passwords.current.get_secret_value(),
         new_password=passwords.new.get_secret_value(),
+        product_name=product_name,
         verify_current_password=False,
     )
 

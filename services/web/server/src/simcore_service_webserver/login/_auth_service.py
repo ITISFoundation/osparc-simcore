@@ -65,6 +65,7 @@ async def create_user(
     password: str,
     status_upon_creation: UserStatus,
     expires_at: datetime | None,
+    product_name: str,
 ) -> UserInfoDict:
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
@@ -73,6 +74,7 @@ async def create_user(
             conn,
             email=email,
             password_hash=security_service.encrypt_password(password),
+            product_name=product_name,
             status=status_upon_creation,
             expires_at=expires_at,
         )
@@ -126,7 +128,8 @@ async def check_authorized_user_credentials(
 
     repo = UsersRepo(get_asyncpg_engine(app))
 
-    if not security_service.check_password(password, password_hash=await repo.get_password_hash(user_id=user["id"])):
+    password_hash = await repo.get_password_hash(user_id=user["id"], product_name=product.name)
+    if not security_service.check_password(password, password_hash=password_hash):
         raise WrongPasswordError(user_id=user["id"], product_name=product.name)
     return user
 
@@ -159,6 +162,7 @@ async def update_user_password(
     user_id: int,
     current_password: str,
     new_password: str,
+    product_name: str,
     verify_current_password: bool = True,
 ) -> None:
     """Updates user password after verifying current password
@@ -173,13 +177,13 @@ async def update_user_password(
     repo = UsersRepo(get_asyncpg_engine(app))
 
     if verify_current_password:
-        # Get current password hash
-        current_password_hash = await repo.get_password_hash(user_id=user_id)
+        # Get current password hash (lazily copied over from the fallback product if missing)
+        current_password_hash = await repo.get_password_hash(user_id=user_id, product_name=product_name)
 
         # Verify current password
         if not security_service.check_password(current_password, current_password_hash):
             raise WrongPasswordError(user_id=user_id)
 
-    # Encrypt new password and update
+    # Encrypt new password and update (only for this product)
     new_password_hash = security_service.encrypt_password(new_password)
-    await repo.update_user_password_hash(user_id=user_id, password_hash=new_password_hash)
+    await repo.update_user_password_hash(user_id=user_id, product_name=product_name, password_hash=new_password_hash)

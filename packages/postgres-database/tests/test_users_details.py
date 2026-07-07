@@ -192,13 +192,14 @@ async def registered_user(
 
     Use this fixture when the create+link step is pure setup, not the subject under test.
     """
-    pre_email, _ = pre_registered_user
+    pre_email, pre_registration_data = pre_registered_user
     async with transaction_context(asyncpg_engine) as connection:
         repo = UsersRepo(asyncpg_engine)
         new_user = await repo.new_user(
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
+            product_name=pre_registration_data["product_name"],
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
@@ -312,6 +313,7 @@ async def test_create_and_link_user_from_pre_registration(
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
+            product_name=pre_registration_data["product_name"],
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
@@ -426,6 +428,7 @@ async def test_get_billing_details_skips_rows_without_country(
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
+            product_name=other_product["name"],
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
@@ -599,6 +602,7 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
             connection,
             email=user_email,
             password_hash="123456",  # noqa: S106
+            product_name=product1["name"],
             status=UserStatus.ACTIVE,
             expires_at=None,
         )

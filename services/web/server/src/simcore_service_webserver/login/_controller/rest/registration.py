@@ -190,6 +190,7 @@ async def register(request: web.Request):
                 else UserStatus.ACTIVE
             ),
             expires_at=expires_at,
+            product_name=product.name,
         )
 
     assert user is not None  # nosec

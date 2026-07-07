@@ -130,10 +130,14 @@ async def test_unique_username(asyncpg_engine: AsyncEngine, faker: Faker, clean_
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
 
-async def test_new_user(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None):
+async def test_new_user(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None, create_fake_product):
+    product_name = faker.unique.slug()
+    await create_fake_product(product_name)
+
     data = {
         "email": faker.email(),
         "password_hash": "foo",
+        "product_name": product_name,
         "status": UserStatus.ACTIVE,
         "expires_at": datetime.utcnow(),  # noqa: DTZ003
     }
@@ -643,3 +647,109 @@ def test_pre_registration_reconciliation_migration_upgrade_downgrade(  # noqa: P
 
     # --- DOWNGRADE ---
     simcore_postgres_database.cli.downgrade.callback("4c8dcaac4285")
+
+
+def test_users_secrets_product_name_migration_upgrade_downgrade(
+    sync_engine_with_migration: sqlalchemy.engine.Engine, faker: Faker
+):
+    """Tests the migration that scopes users_secrets passwords per-product.
+
+    testing
+        packages/postgres-database/src/simcore_postgres_database/migration/versions/33160ced2116_added_product_to_user_secrets.py
+
+    revision = "33160ced2116"
+    down_revision = "c9c165644731"
+    """
+    assert simcore_postgres_database.cli.upgrade.callback
+    assert simcore_postgres_database.cli.downgrade.callback
+
+    # UPGRADE just before this migration (users_secrets has a single-column PK, no product_name)
+    simcore_postgres_database.cli.upgrade.callback("c9c165644731")
+
+    with sync_engine_with_migration.connect() as conn:
+        with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
+            conn.execute(sa.text("SELECT product_name FROM users_secrets"))
+        assert "psycopg2.errors.UndefinedColumn" in f"{exc_info.value}"
+        conn.rollback()
+
+        # INSERT legacy users_secrets rows (emulates data in-place before migration)
+        user_ids = []
+        for i in range(2):
+            user_id = conn.execute(
+                sa.text(
+                    "INSERT INTO users (name, email, role, status)"
+                    " VALUES (:name, :email, 'USER'::userrole, 'ACTIVE'::userstatus)"
+                    " RETURNING id"
+                ),
+                {"name": f"legacy_user_{i}", "email": f"legacy_user_{i}@example.com"},
+            ).scalar_one()
+            conn.execute(
+                sa.text("INSERT INTO users_secrets (user_id, password_hash) VALUES (:user_id, :password_hash)"),
+                {"user_id": user_id, "password_hash": f"hashed_password_{i}"},
+            )
+            user_ids.append(user_id)
+        conn.commit()
+
+    # MIGRATE UPGRADE
+    simcore_postgres_database.cli.upgrade.callback("33160ced2116")
+
+    with sync_engine_with_migration.connect() as conn:
+        # existing rows are backfilled with product_name='osparc'
+        result = conn.execute(
+            sa.text("SELECT user_id, product_name, password_hash FROM users_secrets ORDER BY user_id"),
+        ).fetchall()
+        assert len(result) == 2
+        for row in result:
+            assert row.product_name == "osparc"
+
+        # another product must exist before it can be referenced (FK)
+        conn.execute(
+            sa.text("INSERT INTO products (name, host_regex, base_url) VALUES ('s4l', '.*', 'https://s4l.io')"),
+        )
+        conn.commit()
+
+        # composite PK allows a second row for the same user, different product
+        conn.execute(
+            sa.text(
+                "INSERT INTO users_secrets (user_id, product_name, password_hash) "
+                "VALUES (:user_id, 's4l', :password_hash)"
+            ),
+            {"user_id": user_ids[0], "password_hash": "other_product_hash"},
+        )
+        conn.commit()
+
+        count = conn.execute(
+            sa.text("SELECT COUNT(*) FROM users_secrets WHERE user_id = :user_id"),
+            {"user_id": user_ids[0]},
+        ).scalar_one()
+        assert count == 2
+
+        # FK is enforced: a non-existing product is rejected
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            conn.execute(
+                sa.text(
+                    "INSERT INTO users_secrets (user_id, product_name, password_hash) "
+                    "VALUES (:user_id, 'does-not-exist', :password_hash)"
+                ),
+                {"user_id": user_ids[1], "password_hash": "x"},
+            )
+        conn.rollback()
+
+    # MIGRATE DOWNGRADE: collapses back to a single 'osparc'-preferring row per user
+    simcore_postgres_database.cli.downgrade.callback("c9c165644731")
+
+    with sync_engine_with_migration.connect() as conn:
+        with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
+            conn.execute(sa.text("SELECT product_name FROM users_secrets"))
+        assert "psycopg2.errors.UndefinedColumn" in f"{exc_info.value}"
+        conn.rollback()
+
+        result = conn.execute(
+            sa.text("SELECT user_id, password_hash FROM users_secrets ORDER BY user_id"),
+        ).fetchall()
+        # only one row per user remains
+        assert len(result) == 2
+        password_hashes = {row.user_id: row.password_hash for row in result}
+        # user_ids[0] had both 'osparc' and 's4l' rows -> 'osparc' one is kept
+        assert password_hashes[user_ids[0]] == "hashed_password_0"
+        assert password_hashes[user_ids[1]] == "hashed_password_1"

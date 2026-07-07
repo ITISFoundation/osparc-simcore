@@ -24,6 +24,7 @@ from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 from .models.users_secrets import users_secrets
 from .utils_repos import pass_or_acquire_connection, transaction_context
+from .utils_users_secrets import FALLBACK_PRODUCT_NAME
 
 
 class BaseUserRepoError(Exception):
@@ -109,6 +110,7 @@ class UsersRepo:
         *,
         email: str,
         password_hash: str,
+        product_name: str,
         status: UserStatus,
         expires_at: datetime | None,
         role: UserRole = UserRole.USER,
@@ -128,10 +130,11 @@ class UsersRepo:
                     # Insert user record
                     user_id = await conn.scalar(users.insert().values(**user_data).returning(users.c.id))
 
-                    # Insert password hash into users_secrets table
+                    # Insert password hash into users_secrets table, scoped to the product being registered
                     await conn.execute(
                         users_secrets.insert().values(
                             user_id=user_id,
+                            product_name=product_name,
                             password_hash=password_hash,
                         )
                     )
@@ -296,11 +299,38 @@ class UsersRepo:
         assert isinstance(value, str)  # nosec
         return value
 
-    async def get_password_hash(self, connection: AsyncConnection | None = None, *, user_id: int) -> str:
-        value = await self._get_scalar_or_raise(
-            sa.select(users_secrets.c.password_hash).where(users_secrets.c.user_id == user_id),
-            connection=connection,
-        )
+    async def get_password_hash(
+        self, connection: AsyncConnection | None = None, *, user_id: int, product_name: str
+    ) -> str:
+        """
+        If the user has no password for this product yet, it is lazily copied over from
+        the osparc product and persisted for future lookups.
+
+        Raises:
+            UserNotFoundInRepoError: if the user has no password at all, i.e. neither for
+                this product nor for the fallback product
+        """
+        async with transaction_context(self._engine, connection) as conn:
+            value = await conn.scalar(
+                sa.select(users_secrets.c.password_hash).where(
+                    (users_secrets.c.user_id == user_id) & (users_secrets.c.product_name == product_name)
+                )
+            )
+            if value is None:
+                fallback_value = await conn.scalar(
+                    sa.select(users_secrets.c.password_hash).where(
+                        (users_secrets.c.user_id == user_id) & (users_secrets.c.product_name == FALLBACK_PRODUCT_NAME)
+                    )
+                )
+                if fallback_value is None:
+                    raise UserNotFoundInRepoError
+                await conn.execute(
+                    postgresql.insert(users_secrets)
+                    .values(user_id=user_id, product_name=product_name, password_hash=fallback_value)
+                    .on_conflict_do_nothing(index_elements=["user_id", "product_name"])
+                )
+                value = fallback_value
+
         assert isinstance(value, str)  # nosec
         return value
 
@@ -329,12 +359,29 @@ class UsersRepo:
         connection: AsyncConnection | None = None,
         *,
         user_id: int,
+        product_name: str,
         password_hash: str,
     ) -> None:
+        """Upserts the password hash scoped to (user_id, product_name) only.
+
+        NOTE: this never propagates the update to other products' rows for this user.
+
+        Raises:
+            UserNotFoundInRepoError: if the user has no password at all, i.e. neither for
+                this product nor for the fallback product
+        """
         async with transaction_context(self._engine, connection) as conn:
-            await self.get_password_hash(connection=conn, user_id=user_id)  # ensure user exists
+            # ensures a row exists for this product (falling back to/copying from the
+            # osparc product if needed) before raising if the user has no password at all
+            await self.get_password_hash(connection=conn, user_id=user_id, product_name=product_name)
+
             await conn.execute(
-                users_secrets.update().where(users_secrets.c.user_id == user_id).values(password_hash=password_hash)
+                postgresql.insert(users_secrets)
+                .values(user_id=user_id, product_name=product_name, password_hash=password_hash)
+                .on_conflict_do_update(
+                    index_elements=["user_id", "product_name"],
+                    set_={"password_hash": password_hash, "modified": sa.func.now()},
+                )
             )
 
     async def is_email_used(self, connection: AsyncConnection | None = None, *, email: str) -> bool:

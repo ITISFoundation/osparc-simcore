@@ -40,7 +40,10 @@ async def test_users_repo_get(asyncpg_engine: AsyncEngine, user: dict[str, Any])
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         assert await repo.get_email(connection, user_id=user["id"]) == user["email"]
         assert await repo.get_role(connection, user_id=user["id"]) == user["role"]
-        assert await repo.get_password_hash(connection, user_id=user["id"]) == user["password_hash"]
+        assert (
+            await repo.get_password_hash(connection, user_id=user["id"], product_name=user["product_name"])
+            == user["password_hash"]
+        )
         assert await repo.get_active_user_email(connection, user_id=user["id"]) == user["email"]
 
         with pytest.raises(UserNotFoundInRepoError):
@@ -48,7 +51,7 @@ async def test_users_repo_get(asyncpg_engine: AsyncEngine, user: dict[str, Any])
         with pytest.raises(UserNotFoundInRepoError):
             await repo.get_email(connection, user_id=55)
         with pytest.raises(UserNotFoundInRepoError):
-            await repo.get_password_hash(connection, user_id=55)
+            await repo.get_password_hash(connection, user_id=55, product_name=user["product_name"])
         with pytest.raises(UserNotFoundInRepoError):
             await repo.get_active_user_email(connection, user_id=55)
 
@@ -61,17 +64,23 @@ async def test_update_user_password_hash_updates_modified_column(
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         # Get initial modified timestamp
         result = await connection.execute(
-            sa.select(users_secrets.c.modified).where(users_secrets.c.user_id == user["id"])
+            sa.select(users_secrets.c.modified).where(
+                (users_secrets.c.user_id == user["id"]) & (users_secrets.c.product_name == user["product_name"])
+            )
         )
         initial_modified = result.scalar_one()
 
         # Update password hash
         new_password_hash = faker.password()
-        await repo.update_user_password_hash(connection, user_id=user["id"], password_hash=new_password_hash)
+        await repo.update_user_password_hash(
+            connection, user_id=user["id"], product_name=user["product_name"], password_hash=new_password_hash
+        )
 
         # Get updated modified timestamp
         result = await connection.execute(
-            sa.select(users_secrets.c.modified).where(users_secrets.c.user_id == user["id"])
+            sa.select(users_secrets.c.modified).where(
+                (users_secrets.c.user_id == user["id"]) & (users_secrets.c.product_name == user["product_name"])
+            )
         )
         updated_modified = result.scalar_one()
 
@@ -79,4 +88,58 @@ async def test_update_user_password_hash_updates_modified_column(
         assert updated_modified > initial_modified
 
         # Verify password hash was actually updated
-        assert await repo.get_password_hash(connection, user_id=user["id"]) == new_password_hash
+        assert (
+            await repo.get_password_hash(connection, user_id=user["id"], product_name=user["product_name"])
+            == new_password_hash
+        )
+
+
+async def test_get_password_hash_falls_back_to_osparc_and_copies_it(
+    asyncpg_engine: AsyncEngine, user: dict[str, Any], create_fake_product: Any
+):
+    """user fixture only has a password for 'osparc' (the default). Accessing another
+    product should fall back to the osparc password hash and persist a copy for that product."""
+    repo = UsersRepo(asyncpg_engine)
+    other_product = await create_fake_product("other-product")
+
+    async with pass_or_acquire_connection(asyncpg_engine) as connection:
+        # no row yet for "other-product"
+        result = await connection.execute(
+            sa.select(users_secrets.c.password_hash).where(
+                (users_secrets.c.user_id == user["id"]) & (users_secrets.c.product_name == other_product["name"])
+            )
+        )
+        assert result.one_or_none() is None
+
+        hash_from_fallback = await repo.get_password_hash(
+            connection, user_id=user["id"], product_name=other_product["name"]
+        )
+        assert hash_from_fallback == user["password_hash"]
+
+        # a row now exists for "other-product" with the copied hash
+        result = await connection.execute(
+            sa.select(users_secrets.c.password_hash).where(
+                (users_secrets.c.user_id == user["id"]) & (users_secrets.c.product_name == other_product["name"])
+            )
+        )
+        assert result.scalar_one() == user["password_hash"]
+
+
+async def test_update_user_password_hash_does_not_propagate_to_other_products(
+    asyncpg_engine: AsyncEngine, user: dict[str, Any], create_fake_product: Any, faker: Faker
+):
+    repo = UsersRepo(asyncpg_engine)
+    other_product = await create_fake_product("other-product")
+
+    # trigger fallback+copy for "other-product"
+    await repo.get_password_hash(user_id=user["id"], product_name=other_product["name"])
+
+    # update password only for the original ("osparc") product
+    new_password_hash = faker.password()
+    await repo.update_user_password_hash(
+        user_id=user["id"], product_name=user["product_name"], password_hash=new_password_hash
+    )
+
+    assert await repo.get_password_hash(user_id=user["id"], product_name=user["product_name"]) == new_password_hash
+    # other product's row is untouched
+    assert await repo.get_password_hash(user_id=user["id"], product_name=other_product["name"]) == user["password_hash"]

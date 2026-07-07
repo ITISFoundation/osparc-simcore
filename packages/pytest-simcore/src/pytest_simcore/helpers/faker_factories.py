@@ -93,6 +93,7 @@ def random_user_secrets(
     # foreign keys
     user_id: int,
     password: str | None = None,
+    product_name: str = "osparc",
     **overrides,
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.users_secrets import users_secrets  # noqa: PLC0415
@@ -103,6 +104,7 @@ def random_user_secrets(
 
     data = {
         "user_id": user_id,
+        "product_name": product_name,
         "password_hash": _compute_hash(DEFAULT_TEST_PASSWORD),
     }
     assert set(data.keys()).issubset({c.name for c in users_secrets.columns})

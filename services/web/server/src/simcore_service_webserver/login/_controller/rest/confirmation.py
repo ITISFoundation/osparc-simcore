@@ -251,6 +251,7 @@ async def complete_reset_password(request: web.Request):
             user_id=user["id"],
             current_password="",
             new_password=request_body.password.get_secret_value(),
+            product_name=product.name,
             verify_current_password=False,  # confirmed by code
         )
 

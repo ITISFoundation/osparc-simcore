@@ -130,7 +130,9 @@ async def unregister_account(request: web.Request):
     settings = get_plugin_settings(request.app, product_name=product.name)
 
     # checks before deleting
-    credentials = await users_service.get_user_credentials(request.app, user_id=req_ctx.user_id)
+    credentials = await users_service.get_user_credentials(
+        request.app, user_id=req_ctx.user_id, product_name=product.name
+    )
     if body.email != credentials.email or not security_service.check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):

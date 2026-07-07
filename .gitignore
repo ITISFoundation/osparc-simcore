@@ -129,6 +129,11 @@ services/docker-compose.stack.*.yml
 *ignore*
 !.dockerignore
 !.gitignore
+# postgres-database model/migration/utils files legitimately reference the users_secrets /
+# service_vendor_secrets tables in their filenames - these are not actual secret files
+!packages/postgres-database/src/simcore_postgres_database/models/*secret*.py
+!packages/postgres-database/src/simcore_postgres_database/migration/versions/*secret*.py
+!packages/postgres-database/src/simcore_postgres_database/*secret*.py
 
 # Any generated output folder (e.g. codegen, build, ...)
 out/

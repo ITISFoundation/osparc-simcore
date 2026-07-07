@@ -1,8 +1,10 @@
 import contextlib
 
 import sqlalchemy as sa
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.users_secrets import users_secrets
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .faker_factories import random_user, random_user_secrets
@@ -17,7 +19,28 @@ def _get_kwargs_from_overrides(overrides: dict) -> tuple[dict, dict]:
     secrets_kwargs = {"password": user_kwargs.pop("password", None)}
     if "password_hash" in user_kwargs:
         secrets_kwargs["password_hash"] = user_kwargs.pop("password_hash")
+    if "product_name" in user_kwargs:
+        secrets_kwargs["product_name"] = user_kwargs.pop("product_name")
     return user_kwargs, secrets_kwargs
+
+
+async def _ensure_product_exists(conn, product_name: str) -> None:
+    # NOTE: users_secrets.product_name is a FK to products.name. Test databases created
+    # via metadata.create_all() (as opposed to running the actual migrations) do not have
+    # the 'osparc' product seeded, so it is idempotently created here on demand.
+    await conn.execute(
+        postgresql.insert(products)
+        .values(name=product_name, host_regex=".*", base_url="https://example.com")
+        .on_conflict_do_nothing(index_elements=["name"])
+    )
+
+
+def _sync_ensure_product_exists(conn, product_name: str) -> None:
+    conn.execute(
+        postgresql.insert(products)
+        .values(name=product_name, host_regex=".*", base_url="https://example.com")
+        .on_conflict_do_nothing(index_elements=["name"])
+    )
 
 
 @contextlib.asynccontextmanager
@@ -35,13 +58,17 @@ async def insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine: Asyn
             )
         )
 
+        secrets_values = random_user_secrets(user_id=user["id"], **secrets_kwargs)
+        async with sqlalchemy_async_engine.begin() as conn:
+            await _ensure_product_exists(conn, secrets_values["product_name"])
+
         # users_secrets
         secrets = await stack.enter_async_context(
             insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
                 sqlalchemy_async_engine,
                 table=users_secrets,
-                values=random_user_secrets(user_id=user["id"], **secrets_kwargs),
-                pk_col=users_secrets.c.user_id,
+                values=secrets_values,
+                pk_cols=[users_secrets.c.user_id, users_secrets.c.product_name],
             )
         )
 
@@ -65,13 +92,17 @@ def sync_insert_and_get_user_and_secrets_lifespan(sqlalchemy_sync_engine: sa.eng
             )
         )
 
+        secrets_values = random_user_secrets(user_id=user["id"], **secrets_kwargs)
+        with sqlalchemy_sync_engine.begin() as conn:
+            _sync_ensure_product_exists(conn, secrets_values["product_name"])
+
         # users_secrets
         secrets = stack.enter_context(
             sync_insert_and_get_row_lifespan(
                 sqlalchemy_sync_engine,
                 table=users_secrets,
-                values=random_user_secrets(user_id=user["id"], **secrets_kwargs),
-                pk_col=users_secrets.c.user_id,
+                values=secrets_values,
+                pk_cols=[users_secrets.c.user_id, users_secrets.c.product_name],
             )
         )
 
@@ -90,6 +121,8 @@ async def insert_user_and_secrets(conn, **overrides) -> int:
     assert user_id is not None
 
     # secrets
-    await conn.execute(users_secrets.insert().values(**random_user_secrets(user_id=user_id, **secrets_kwargs)))
+    secrets_values = random_user_secrets(user_id=user_id, **secrets_kwargs)
+    await _ensure_product_exists(conn, secrets_values["product_name"])
+    await conn.execute(users_secrets.insert().values(**secrets_values))
 
     return user_id

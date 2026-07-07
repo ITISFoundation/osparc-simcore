@@ -45,7 +45,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     )
 
 
-async def test_reading_a_user(client: TestClient, faker: Faker, user: UserInfoDict):
+async def test_reading_a_user(client: TestClient, faker: Faker, user: UserInfoDict, osparc_product_name: str):
     assert client.app
     user_id = user["id"]
 
@@ -57,7 +57,7 @@ async def test_reading_a_user(client: TestClient, faker: Faker, user: UserInfoDi
 
     user_primary_group_id = got["primary_gid"]
 
-    email, phash, display = await get_user_credentials(client.app, user_id=user_id)
+    email, phash, display = await get_user_credentials(client.app, user_id=user_id, product_name=osparc_product_name)
     assert email == user["email"]
     assert phash
     assert display

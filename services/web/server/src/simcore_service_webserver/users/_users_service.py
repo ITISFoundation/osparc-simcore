@@ -149,14 +149,16 @@ async def get_user_display_and_id_names(app: web.Application, *, user_id: UserID
 get_user_role = _users_repository.get_user_role
 
 
-async def get_user_credentials(app: web.Application, *, user_id: UserID) -> UserCredentialsTuple:
+async def get_user_credentials(
+    app: web.Application, *, user_id: UserID, product_name: ProductName
+) -> UserCredentialsTuple:
     repo = UsersRepo(get_asyncpg_engine(app))
 
     user_row = await repo.get_user_by_id_or_none(user_id=user_id)
     if user_row is None:
         raise UserNotFoundError(user_id=user_id)
 
-    user_password_hash = await repo.get_password_hash(user_id=user_id)
+    user_password_hash = await repo.get_password_hash(user_id=user_id, product_name=product_name)
 
     return UserCredentialsTuple(
         email=TypeAdapter(LowerCaseEmailStr).validate_python(user_row.email),
