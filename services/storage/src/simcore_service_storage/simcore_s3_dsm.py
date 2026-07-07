@@ -1243,19 +1243,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         if not list_of_expired_exports:
             return
-        _logger.debug(
-            "found following expired exports: [%s]",
-            [fmd.file_id for fmd in list_of_expired_exports],
-        )
+        _logger.debug("found following expired exports: [%s]", [fmd.file_id for fmd in list_of_expired_exports])
 
         for fmd in list_of_expired_exports:
             if fmd.user_id is not None:
                 await self.delete_file(fmd.user_id, fmd.file_id)
 
-        _logger.warning(
-            "expired exports of [%s] removed",
-            [fmd.file_id for fmd in list_of_expired_exports],
-        )
+        _logger.warning("expired exports of [%s] removed", [fmd.file_id for fmd in list_of_expired_exports])
 
     async def _update_fmd_from_other(
         self,
