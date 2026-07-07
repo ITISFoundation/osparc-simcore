@@ -252,9 +252,10 @@ class DaskClient:
             await dask_utils.wrap_client_async_routine(self.backend.client.publish_dataset(task_future, name=job_id))
 
             _logger.info(
-                "Dask task %s started [%s]",
+                "Dask task %s started [%s] with encryption [%s]",
                 f"{job_id=}",
                 f"{node_image.command=}",
+                f"{'enabled' if encryption else 'disabled'}",
             )
             return PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
         except Exception:
