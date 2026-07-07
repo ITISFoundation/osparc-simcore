@@ -79,7 +79,7 @@ def app_environment(
         {
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
-            "API_SERVER_CHATBOT": "http://chatbot:8000",
+            "API_SERVER_CHATBOT": '{"CHATBOT_URL": "http://chatbot:8000", "GRAPH_NAME": "simple_rag"}',
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
