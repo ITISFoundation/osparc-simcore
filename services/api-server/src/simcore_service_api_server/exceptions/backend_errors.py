@@ -170,6 +170,11 @@ class JobAssetsMissingError(BaseBackEndError):
     status_code = status.HTTP_409_CONFLICT
 
 
+class ChatbotNotAvailableError(BaseBackEndError):
+    msg_template = user_message("The chatbot service is not enabled.", _version=1)
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
 class CeleryTaskNotFoundError(BaseBackEndError):
     msg_template = user_message("Task {task_uuid} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND

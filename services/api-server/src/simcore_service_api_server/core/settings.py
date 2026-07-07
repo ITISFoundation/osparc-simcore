@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Annotated
+from typing import Annotated, Literal
 
 from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
@@ -9,6 +9,7 @@ from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     Field,
+    HttpUrl,
     NonNegativeInt,
     PositiveInt,
     SecretStr,
@@ -53,6 +54,21 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
     @classmethod
     def _check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
+
+
+class ChatbotSettings(BaseCustomSettings):
+    CHATBOT_URL: Annotated[
+        HttpUrl,
+        Field(
+            description="URL of the chatbot service",
+        ),
+    ]
+    GRAPH_NAME: Annotated[
+        Literal["simple_rag", "multi_query_rag", "simple_agentic_rag"],
+        Field(
+            description="Name of the graph to be used in the chatbot service",
+        ),
+    ]
 
 
 # MAIN SETTINGS --------------------------------------------
@@ -118,6 +134,11 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
 class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None = None
+
+    API_SERVER_CHATBOT: Annotated[
+        ChatbotSettings | None,
+        Field(description="URL of the chatbot service", json_schema_extra={"auto_default_from_env": True}),
+    ] = None
 
     API_SERVER_CELERY: Annotated[CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})] = None
 
