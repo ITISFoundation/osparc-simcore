@@ -1234,11 +1234,11 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
     async def clean_expired_exports(self) -> None:
         """Removes exported archives that have outlived their retention.
 
-        Rationale: exported archives are regular, already-completed files (no `upload_expires_at`
-        tracking applies once uploaded), so left alone they would live in S3/file_meta_data
-        forever. This method looks up files under the `exports/` S3 prefix whose `created_at` is
+        Rationale: exported archives get removed automatically from the bucket after 30 days.
+        Left alone, the file_meta_data entry will live there forever.
+        This method looks up files under the `exports/` S3 prefix whose `created_at` is
         older than `STORAGE_EXPORT_RETENTION` and removes them, S3 object first then the
-        file_meta_data entry, fixing divergences where the DB entry outlives the S3 file.
+        file_meta_data entry.
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
         retention = get_application_settings(self.app).STORAGE_EXPORT_RETENTION

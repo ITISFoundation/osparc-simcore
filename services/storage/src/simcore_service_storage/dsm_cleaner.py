@@ -27,43 +27,70 @@ from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
-_TASK_NAME_PERIODICALLY_CLEAN_DSM = "periodic_cleanup_of_dsm"
+_TASK_NAME_PERIODICALLY_CLEAN_DSM = "periodic_cleanup_of_dsm_uploads"
+_TASK_NAME_PERIODICALLY_CLEAN_EXPORTS = "periodic_cleanup_exports"
+
+
+def _get_simcore_s3_dsm(app: FastAPI) -> SimcoreS3DataManager:
+    dsm = get_dsm_provider(app)
+    return cast(SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id()))
 
 
 @traced
 async def dsm_cleaner_task(app: FastAPI) -> None:
     with log_context(_logger, logging.INFO, "dsm cleaner task"):
-        dsm = get_dsm_provider(app)
-        simcore_s3_dsm: SimcoreS3DataManager = cast(
-            SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
-        )
-        await simcore_s3_dsm.clean_expired_uploads()
-        await simcore_s3_dsm.clean_expired_exports()
+        await _get_simcore_s3_dsm(app).clean_expired_uploads()
+
+
+@traced
+async def dsm_export_cleaner_task(app: FastAPI) -> None:
+    with log_context(_logger, logging.INFO, "export cleaner task"):
+        await _get_simcore_s3_dsm(app).clean_expired_exports()
 
 
 @asynccontextmanager
 async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Lifespan context manager for DSM cleaner."""
     app.state.dsm_cleaner_task = None
+    app.state.dsm_export_cleaner_task = None
 
     try:
         cfg = get_application_settings(app)
-        assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
+        lock_client = get_redis_client_manager(app).client(RedisDatabase.LOCKS)
 
-        @exclusive_periodic(
-            get_redis_client_manager(app).client(RedisDatabase.LOCKS),
-            task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
-            retry_after=timedelta(minutes=5),
-        )
-        async def _periodic_dsm_clean() -> None:
-            await dsm_cleaner_task(app)
+        if cfg.STORAGE_CLEANER_INTERVAL_S:
 
-        app.state.dsm_cleaner_task = asyncio.create_task(_periodic_dsm_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_DSM)
+            @exclusive_periodic(
+                lock_client,
+                task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
+                retry_after=timedelta(minutes=5),
+            )
+            async def _periodic_dsm_clean() -> None:
+                await dsm_cleaner_task(app)
+
+            app.state.dsm_cleaner_task = asyncio.create_task(
+                _periodic_dsm_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_DSM
+            )
+
+        if cfg.STORAGE_EXPORT_CLEANER_INTERVAL:
+
+            @exclusive_periodic(
+                lock_client,
+                task_interval=cfg.STORAGE_EXPORT_CLEANER_INTERVAL,
+                retry_after=timedelta(minutes=5),
+            )
+            async def _periodic_dsm_export_clean() -> None:
+                await dsm_export_cleaner_task(app)
+
+            app.state.dsm_export_cleaner_task = asyncio.create_task(
+                _periodic_dsm_export_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_EXPORTS
+            )
 
         yield
     finally:
-        if isinstance(app.state.dsm_cleaner_task, asyncio.Task):
-            await cancel_wait_task(app.state.dsm_cleaner_task)
+        for task in (app.state.dsm_cleaner_task, app.state.dsm_export_cleaner_task):
+            if isinstance(task, asyncio.Task):
+                await cancel_wait_task(task)
 
 
 def configure_dsm_cleaner(app_lifespan: LifespanManager) -> None:

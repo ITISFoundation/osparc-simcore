@@ -74,6 +74,17 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
+    STORAGE_EXPORT_CLEANER_INTERVAL: Annotated[
+        timedelta | None,
+        Field(
+            description=(
+                "Interval when task cleaning expired exporter archives runs. Exports are kept for "
+                "STORAGE_EXPORT_RETENTION, so unlike the pending uploads cleaner this does not need to run often. "
+                "Setting to NULL disables this cleaner."
+            ),
+        ),
+    ] = timedelta(hours=6)
+
     STORAGE_EXPORT_RETENTION: Annotated[
         timedelta,
         Field(
@@ -134,6 +145,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def _ensure_settings_consistency(self) -> Self:
         if self.STORAGE_CLEANER_INTERVAL_S is not None and not self.STORAGE_REDIS:
             msg = "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! Please correct settings."
+            raise ValueError(msg)
+        if self.STORAGE_EXPORT_CLEANER_INTERVAL is not None and not self.STORAGE_REDIS:
+            msg = (
+                "STORAGE_EXPORT_CLEANER_INTERVAL cleaner cannot be set without STORAGE_REDIS! Please correct settings."
+            )
             raise ValueError(msg)
         return self
 
