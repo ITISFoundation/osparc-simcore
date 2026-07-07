@@ -21,7 +21,6 @@ from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-from ..constants import EXPORTS_DEFAULT_RETENTION
 from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 
@@ -75,7 +74,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    STORAGE_EXPORTER_RETENTION: Annotated[
+    STORAGE_EXPORT_RETENTION: Annotated[
         timedelta,
         Field(
             description=(
@@ -83,7 +82,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "permanently removed from S3 and file_meta_data"
             ),
         ),
-    ] = EXPORTS_DEFAULT_RETENTION
+    ] = timedelta(days=30)
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
         int,

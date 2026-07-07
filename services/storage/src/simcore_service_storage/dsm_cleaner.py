@@ -17,7 +17,7 @@
       - removes the entry
       - aborts the multipart upload if any
  - also lists exported archives (`exports/` S3 prefix) whose `created_at` is older than
-   `STORAGE_EXPORTER_RETENTION` and removes them (S3 object then database entry), fixing
+   `STORAGE_EXPORT_RETENTION` and removes them (S3 object then database entry), fixing
    divergences where the file_meta_data entry outlives the corresponding S3 object
 """
 

@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import Final
 
 from aws_library.s3 import PRESIGNED_LINK_MAX_SIZE, S3_MAX_FILE_SIZE
@@ -47,6 +46,3 @@ EXPAND_DIR_MAX_ITEM_COUNT: Final[int] = 1000
 
 
 EXPORTS_S3_PREFIX: Final[str] = "exports"
-
-
-EXPORTS_DEFAULT_RETENTION: Final[timedelta] = timedelta(days=30)
