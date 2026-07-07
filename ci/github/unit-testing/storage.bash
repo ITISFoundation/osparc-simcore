@@ -15,19 +15,6 @@ install() {
   uv pip list
 }
 
-_test_shard() {
-  # shellcheck source=/dev/null
-  source .venv/bin/activate
-  pushd services/storage
-  local shard_args=""
-  local test_file
-  for test_file in "$@"; do
-    shard_args+="${test_file} "
-  done
-  make test-ci-unit pytest-parameters="--disk-usage ${shard_args}"
-  popd
-}
-
 TEST_01_FILES=(
   tests/unit/test__legacy_storage_sdk_compatibility.py
   tests/unit/test_async_jobs_handlers_paths.py
@@ -46,41 +33,32 @@ TEST_01_FILES=(
   tests/unit/test_utils_handlers.py
 )
 
-_is_test_01_file() {
-  local candidate=$1
-  local shard_file
-  for shard_file in "${TEST_01_FILES[@]}"; do
-    if [[ "${shard_file}" == "${candidate}" ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
-
-_test_remaining_shard() {
+test_01() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/storage
-  local all_tests pytest_args test_file
-  mapfile -t all_tests < <(find tests/unit -type f -name 'test*.py' | sort)
-  pytest_args=""
-  for test_file in "${all_tests[@]}"; do
-    if _is_test_01_file "${test_file}"; then
-      continue
-    fi
-    pytest_args+="${test_file} "
-  done
-  make test-ci-unit pytest-parameters="--disk-usage ${pytest_args}"
+  # NOTE: "${TEST_01_FILES[*]}" would join with IFS (set to $'\n\t' above), not a
+  # space, so printf is used instead to build a space-separated argument list.
+  local test_01_targets
+  test_01_targets="$(printf '%s ' "${TEST_01_FILES[@]}")"
+  # NOTE: target must be set explicitly to the selected test files, otherwise
+  # test-ci-unit defaults it to the whole tests/unit folder (running ALL tests)
+  make test-ci-unit target="${test_01_targets}" pytest-parameters="--disk-usage"
   popd
 }
 
-test_01() {
-  _test_shard \
-    "${TEST_01_FILES[@]}"
-}
-
 test_02() {
-  _test_remaining_shard
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/storage
+  local ignore_args=""
+  local test_file
+  for test_file in "${TEST_01_FILES[@]}"; do
+    ignore_args+="--ignore=${test_file} "
+  done
+  # runs everything in tests/unit except what test_01 already covers
+  make test-ci-unit pytest-parameters="--disk-usage ${ignore_args}"
+  popd
 }
 
 test() {
