@@ -18,10 +18,12 @@ install() {
 TEST_01_FILES=(
   tests/unit/test__legacy_storage_sdk_compatibility.py
   tests/unit/test_async_jobs_handlers_paths.py
+  tests/unit/test_async_jobs_handlers_simcore_s3.py
   tests/unit/test_cli.py
   tests/unit/test_core_settings.py
   tests/unit/test_handlers_datcore.py
   tests/unit/test_handlers_datasets.py
+  tests/unit/test_handlers_files_metadata.py
   tests/unit/test_handlers_health.py
   tests/unit/test_handlers_locations.py
   tests/unit/test_handlers_paths.py
