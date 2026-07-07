@@ -13055,6 +13055,12 @@
         ],
         "title": "ResponseStatus"
       },
+      "RootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded 32-byte root key shared by all tasks of the job",
+        "writeOnly": true
+      },
       "RunningState": {
         "type": "string",
         "enum": [

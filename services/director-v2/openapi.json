@@ -2145,7 +2145,8 @@
       "FileIDStr": {
         "type": "string",
         "maxLength": 65535,
-        "minLength": 1
+        "minLength": 1,
+        "description": "client-chosen file identifier mixed into HKDF key derivation"
       },
       "GetProjectInactivityResponse": {
         "properties": {
