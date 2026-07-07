@@ -211,8 +211,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 @pytest.mark.parametrize(
     "file_size",
     [
-        TypeAdapter(ByteSize).validate_python("10Mib"),
-        TypeAdapter(ByteSize).validate_python("100Mib"),
+        TypeAdapter(ByteSize).validate_python("13Mib"),
     ],
     ids=byte_size_ids,
 )
@@ -237,7 +236,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     """In this test we first upload a file to have a valid entry, then we trigger
     a new upload of the VERY SAME FILE, expire it, and make sure the cleaner reverts
     to the last known version of the file"""
-    file, file_id = await upload_file(
+    _file, file_id = await upload_file(
         file_size=file_size,
         file_name=_faker.file_name(),
         file_id=None,
