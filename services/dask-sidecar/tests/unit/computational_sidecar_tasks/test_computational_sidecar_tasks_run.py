@@ -34,7 +34,7 @@ pytest_simcore_core_services_selection = [
 
 def _assert_log_file_exists_and_contains_expected_logs(
     log_file_url: AnyUrl, expected_logs: list[str], s3_settings: S3Settings
-):
+) -> None:
     s3_storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     with fsspec.open(f"{log_file_url}", mode="rt", **s3_storage_kwargs) as fp:
         saved_logs = fp.read()  # type: ignore
