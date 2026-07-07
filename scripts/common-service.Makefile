@@ -62,15 +62,15 @@ check-test-dispatch: ## validates test target dispatch and mode-specific pytest 
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
 
-test-%-unit: FORCE _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
-	# Targets tests/unit folder
-	@make --no-print-directory _run-test-$* target=$(CURDIR)/tests/unit$(TEST_PATH)
+test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/unit folder (or an explicit target= if provided)
+	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
 
-test-%-integration: FORCE ## run app integration tests (specifying test-path can restrict to a folder)
-	# Targets tests/integration folder using local/$(image-name):production images
+test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	make --no-print-directory _run-test-$* target=$(CURDIR)/tests/integration$(TEST_PATH)
+	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
 
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
