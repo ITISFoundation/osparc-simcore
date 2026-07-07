@@ -29,7 +29,7 @@ from servicelib.progress_bar import ProgressBarData
 from simcore_postgres_database.storage_models import (
     file_meta_data as file_meta_data_table,
 )
-from simcore_service_storage.constants import LinkType
+from simcore_service_storage.constants import EXPORTS_S3_PREFIX, LinkType
 from simcore_service_storage.exceptions.errors import FileMetaDataNotFoundError
 from simcore_service_storage.models import FileMetaData, S3BucketName
 from simcore_service_storage.modules.db.file_meta_data import FileMetaDataRepository
@@ -511,12 +511,6 @@ async def _set_created_at(
         )
 
 
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
 async def test_clean_expired_exports_deletes_expired_export(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
@@ -554,12 +548,6 @@ async def test_clean_expired_exports_deletes_expired_export(
         await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
 
 
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
 async def test_clean_expired_exports_keeps_recent_export(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
@@ -620,6 +608,69 @@ async def test_clean_expired_exports_does_not_touch_non_export_files(
 
     assert await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
     assert await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_list_fmds_filters_by_file_id_prefix(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    product_name: ProductName,
+    paths_for_export: set[SimcoreS3FileID],
+    sqlalchemy_async_engine: AsyncEngine,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """an entry under the `exports/` prefix must be included, one outside of it must be excluded"""
+    selection_to_export = {S3ObjectKey(project_id) for project_id in {Path(p).parents[-2] for p in paths_for_export}}
+    async with ProgressBarData(num_steps=1, description="data export") as progress_bar:
+        included_file_id = await simcore_s3_dsm.create_s3_export(
+            user_id,
+            product_name,
+            selection_to_export,
+            progress_bar=progress_bar,
+        )
+    _, excluded_file_id = await upload_file(file_size, "some_regular_file.dat")
+
+    found = await FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(
+        file_id_prefix=f"{EXPORTS_S3_PREFIX}/"
+    )
+
+    found_file_ids = {fmd.file_id for fmd in found}
+    assert included_file_id in found_file_ids
+    assert excluded_file_id not in found_file_ids
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_list_fmds_filters_by_created_before(
+    sqlalchemy_async_engine: AsyncEngine,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """an entry created before the threshold must be included, one created after it must be excluded"""
+    now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+    threshold = now - datetime.timedelta(days=30)
+
+    _, included_file_id = await upload_file(file_size, "old_file.dat")
+    await _set_created_at(sqlalchemy_async_engine, included_file_id, now - datetime.timedelta(days=40))
+
+    _, excluded_file_id = await upload_file(file_size, "recent_file.dat")
+    await _set_created_at(sqlalchemy_async_engine, excluded_file_id, now - datetime.timedelta(days=5))
+
+    found = await FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(created_before=threshold)
+
+    found_file_ids = {fmd.file_id for fmd in found}
+    assert included_file_id in found_file_ids
+    assert excluded_file_id not in found_file_ids
 
 
 @pytest.mark.parametrize(
