@@ -129,6 +129,7 @@ async def test_list_users_accounts(  # noqa: PLR0915
         password=DEFAULT_TEST_PASSWORD,
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,
+        product_name=product_name,
     )
     assert new_user["status"] == UserStatus.ACTIVE
 

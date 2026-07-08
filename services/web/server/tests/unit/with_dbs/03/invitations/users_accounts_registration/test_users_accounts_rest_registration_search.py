@@ -11,6 +11,7 @@ from aiohttp.test_utils import TestClient
 from common_library.pydantic_fields_extension import is_nullable
 from common_library.users_enums import UserRole, UserStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
+from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -73,6 +74,7 @@ async def test_search_and_pre_registration(
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
     pre_registration_details_db_cleanup: None,
+    product_name: ProductName,
 ):
     assert client.app
 
@@ -138,6 +140,7 @@ async def test_search_and_pre_registration(
         password=DEFAULT_TEST_PASSWORD,
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,
+        product_name=product_name,
     )
 
     resp = await client.get(

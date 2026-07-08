@@ -214,6 +214,7 @@ async def seeded_user_accounts_for_registered_review_filters(
         password=DEFAULT_TEST_PASSWORD,
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,
+        product_name=product_name,
     )
 
     # reviewed + unregistered
@@ -231,6 +232,7 @@ async def seeded_user_accounts_for_registered_review_filters(
         password=DEFAULT_TEST_PASSWORD,
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,
+        product_name=product_name,
     )
 
     return {
