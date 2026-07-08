@@ -1,13 +1,6 @@
 from typing import Any
 
 from models_library.services_metadata_runtime import SimcoreContainerLabels
-from models_library.services_resources import (
-    CPU_10_PERCENT,
-    CPU_100_PERCENT,
-    MEMORY_50MB,
-    MEMORY_250MB,
-)
-from pydantic import ByteSize
 from servicelib.common_headers import X_SIMCORE_USER_AGENT
 from settings_library import webserver
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -66,7 +59,7 @@ def get_dynamic_proxy_spec(
                 "TargetPort": proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
             }
         )
-    if proxy_settings.PROXY_EXPOSE_PORT:
+    if proxy_settings.DYNAMIC_SIDECAR_PROXY_EXPOSE_PORT:
         ports.append({"Protocol": "tcp", "TargetPort": 80})
 
     return {
@@ -76,27 +69,56 @@ def get_dynamic_proxy_spec(
             "traefik.swarm.network": swarm_network_name,
             "traefik.enable": "true",
             # security
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowcredentials": "true",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowheaders": f"{X_SIMCORE_USER_AGENT},Set-Cookie",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": ",".join(
+            (
+                f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers."
+                "accesscontrolallowcredentials"
+            ): "true",
+            (
+                f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers."
+                "customresponseheaders.Content-Security-Policy"
+            ): (
+                f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services."
+                f"{scheduler_data.request_dns}"
+            ),
+            (
+                f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers."
+                "accesscontrolallowmethods"
+            ): "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
+            (
+                f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers."
+                "accesscontrolallowheaders"
+            ): f"{X_SIMCORE_USER_AGENT},Set-Cookie",
+            (
+                f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers."
+                "accessControlAllowOriginList"
+            ): ",".join(
                 [
                     f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",
                     f"{scheduler_data.request_scheme}://{scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
                 ]
             ),
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
+            (
+                f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers."
+                "accesscontrolmaxage"
+            ): ("100"),
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": (
+                "true"
+            ),
             # auth
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{wb_auth_settings.api_base_url}/auth:check",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": (
+                f"{wb_auth_settings.api_base_url}/auth:check"
+            ),
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": (
+                f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}"
+            ),
             # routing
             f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": rf"HostRegexp(`{scheduler_data.node_uuid}\.services\.(?P<host>.+)`)",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": (
+                rf"HostRegexp(`{scheduler_data.node_uuid}\.services\.(?P<host>.+)`)"
+            ),
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": ",".join(
                 [
                     f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm",
@@ -113,8 +135,8 @@ def get_dynamic_proxy_spec(
             product_name=scheduler_data.product_name,
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
             swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-            memory_limit=ByteSize(MEMORY_50MB),
-            cpu_limit=float(CPU_10_PERCENT) / 1e9,
+            memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION,
+            cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.proxy_service_name,
         "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
@@ -134,8 +156,8 @@ def get_dynamic_proxy_spec(
                     product_name=scheduler_data.product_name,
                     simcore_user_agent=scheduler_data.request_simcore_user_agent,
                     swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    memory_limit=ByteSize(MEMORY_50MB),
-                    cpu_limit=float(CPU_10_PERCENT) / 1e9,
+                    memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION,
+                    cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
                 ).to_simcore_runtime_docker_labels(),
                 "Command": [
                     "sh",
@@ -158,10 +180,13 @@ def get_dynamic_proxy_spec(
             },
             "Resources": {
                 "Reservations": {
-                    "MemoryBytes": MEMORY_50MB,
-                    "NanoCPUs": CPU_10_PERCENT,
+                    "MemoryBytes": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION),
+                    "NanoCPUs": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION),
                 },
-                "Limits": {"MemoryBytes": MEMORY_250MB, "NanoCPUs": CPU_100_PERCENT},
+                "Limits": {
+                    "MemoryBytes": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_LIMIT),
+                    "NanoCPUs": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT),
+                },
             },
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
         },

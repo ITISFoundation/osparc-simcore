@@ -25,6 +25,7 @@ from pydantic import (
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.egress_proxy import EgressProxySettings
 from settings_library.node_ports import StorageAuthSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings
@@ -185,6 +186,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         StorageAuthSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
     ]
     DY_SIDECAR_R_CLONE_SETTINGS: Annotated[RCloneSettings, Field(json_schema_extra={"auto_default_from_env": True})]
+    DY_SIDECAR_EGRESS_PROXY_SETTINGS: Annotated[
+        EgressProxySettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
     POSTGRES_SETTINGS: Annotated[PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})]
     RABBIT_SETTINGS: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})]
     REDIS_SETTINGS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]

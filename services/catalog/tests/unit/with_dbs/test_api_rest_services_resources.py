@@ -212,7 +212,7 @@ async def test_get_service_resources(
     response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    received_resources: ServiceResourcesDict = ServiceResourcesDict(**data)
+    received_resources: ServiceResourcesDict = dict(**data)
     assert isinstance(received_resources, dict)
 
     expected_service_resources = ServiceResourcesDictHelpers.create_from_single_service(

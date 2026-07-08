@@ -95,6 +95,7 @@ def _get_environment_variables(
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     redis_settings = app_settings.REDIS
     r_clone_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
+    egress_proxy_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
 
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -144,6 +145,7 @@ def _get_environment_variables(
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
         "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.model_dump_json(),
         "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": r_clone_settings.R_CLONE_SIMCORE_SDK_SYNC_SETTINGS.model_dump_json(),
+        "DY_SIDECAR_EGRESS_PROXY_SETTINGS": egress_proxy_settings.model_dump_json(),
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",

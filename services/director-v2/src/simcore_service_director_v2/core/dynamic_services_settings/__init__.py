@@ -1,8 +1,8 @@
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
+from settings_library.egress_proxy import EgressProxySettings
 from settings_library.webserver import WebServerSettings
 
-from .egress_proxy import EgressProxySettings
 from .proxy import DynamicSidecarProxySettings
 from .scheduler import DynamicServicesSchedulerSettings
 from .sidecar import DynamicSidecarSettings, PlacementSettings

@@ -2,8 +2,9 @@ from enum import auto
 
 from models_library.docker import DockerGenericTag
 from models_library.utils.enums import StrAutoEnum
-from pydantic import Field
-from settings_library.base import BaseCustomSettings
+from pydantic import ByteSize, Field, TypeAdapter
+
+from .base import BaseCustomSettings
 
 
 class EnvoyLogLevel(StrAutoEnum):
@@ -28,4 +29,12 @@ class EgressProxySettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
         default=EnvoyLogLevel.ERROR,
         description="log level for envoy proxy service",
+    )
+    DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT: ByteSize = Field(
+        default=TypeAdapter(ByteSize).validate_python("128MiB"),
+        description="memory limit for the envoy egress proxy container",
+    )
+    DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT: float = Field(
+        default=0.1,
+        description="CPU cores limit for the envoy egress proxy container",
     )
