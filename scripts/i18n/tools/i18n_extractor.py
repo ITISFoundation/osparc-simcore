@@ -35,6 +35,7 @@ Usage:
 """
 
 import ast
+import json
 import subprocess
 from pathlib import Path
 
@@ -206,6 +207,79 @@ def run_babel_jinja(src_dir: Path, out_pot: Path) -> bool:
     out_pot.parent.mkdir(parents=True, exist_ok=True)
     pot.save(str(out_pot))
     console.print(f"  [jinja] {len(pot)} entry/ies -> {out_pot}")
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Step 1c: JSON extraction for the guided-tours resource files
+# ---------------------------------------------------------------------------
+#
+# The frontend guided tours are stored as data in
+# ``source/resource/osparc/tours/*_tours.json`` and loaded at runtime, so their
+# user-facing strings are NOT reachable by xgettext (which only sees literal
+# ``tr()`` calls in .js). This step reads those JSON files and emits a .pot the
+# same shape as the xgettext/jinja outputs so it merges into the frontend
+# catalog. Runtime translation is done at the consumption points by wrapping the
+# fetched values in ``qx.locale.Manager.tr(...)`` (a catalog lookup by msgid).
+#
+# Extraction is line-based: in these files every translatable key/value pair sits
+# on its own line (e.g. ``"title": "Start ..."``), which yields exact #: line
+# numbers for `enrich` and correctly handles JSON string escaping.
+
+# Keys whose string values are shown to the user (name/description in the tour
+# list, title/text in each step). Everything else (id, context, anchorEl,
+# selector, placement, action) is wiring and must NOT be extracted.
+JSON_TOURS_KEYS = ("name", "description", "title", "text")
+
+
+def run_json_tours(src_dir: Path, out_pot: Path, keys: tuple[str, ...] = JSON_TOURS_KEYS) -> bool:
+    """Extract translatable string values from ``*_tours.json`` under *src_dir*.
+
+    Returns True on success. Occurrence paths are recorded relative to the given
+    *src_dir* prefix so they resolve from the repo root (matching the xgettext
+    and jinja steps), which lets `enrich` locate the source snippets.
+    """
+    import re  # noqa: PLC0415
+
+    # matches:  "key": "json-escaped value"   (value may be empty)
+    line_re = re.compile(r'"(?P<key>' + "|".join(re.escape(k) for k in keys) + r')"\s*:\s*"(?P<val>(?:[^"\\]|\\.)*)"')
+
+    # msgid -> POEntry so repeated strings merge into one entry with many #:.
+    entries: dict[str, polib.POEntry] = {}
+
+    json_files = sorted(src_dir.rglob("*_tours.json"))
+    for path in json_files:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        for lineno, line in enumerate(lines, start=1):
+            match = line_re.search(line)
+            if not match:
+                continue
+            # Decode the JSON-escaped value into the real msgid.
+            try:
+                msgid = json.loads('"' + match.group("val") + '"')
+            except json.JSONDecodeError:
+                continue
+            if not msgid:
+                continue
+
+            occurrence = (f"{src_dir}/{path.relative_to(src_dir)}", str(lineno))
+            if msgid in entries:
+                entries[msgid].occurrences.append(occurrence)
+            else:
+                entries[msgid] = polib.POEntry(msgid=msgid, msgstr="", occurrences=[occurrence])
+
+    pot = polib.POFile(wrapwidth=0)
+    pot.metadata = {
+        "Project-Id-Version": "osparc-simcore",
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Transfer-Encoding": "8bit",
+    }
+    for entry in entries.values():
+        pot.append(entry)
+
+    out_pot.parent.mkdir(parents=True, exist_ok=True)
+    pot.save(str(out_pot))
+    console.print(f"  [json-tours] {len(pot)} entry/ies from {len(json_files)} file(s) -> {out_pot}")
     return True
 
 
@@ -590,6 +664,25 @@ def jinja_cmd(
     if not run_babel_jinja(src, out):
         raise typer.Exit(code=1)
     console.print(f"[done] jinja -> {out}")
+
+
+@app.command("json-tours")
+def json_tours_cmd(
+    src: Path = typer.Option(Path("src"), help="Directory to scan for *_tours.json files"),
+    out: Path = typer.Option(Path("tours.pot"), help="Output .pot file"),
+    keys: str = typer.Option(
+        ",".join(JSON_TOURS_KEYS),
+        help="Comma-separated JSON keys whose string values are extracted",
+    ),
+) -> None:
+    """Extract translatable strings from the guided-tours JSON resource files."""
+    if not src.is_dir():
+        console.print(f"[error] source directory not found: {src}")
+        raise typer.Exit(code=1)
+    key_tuple = tuple(k.strip() for k in keys.split(",") if k.strip())
+    if not run_json_tours(src, out, key_tuple):
+        raise typer.Exit(code=1)
+    console.print(f"[done] json-tours -> {out}")
 
 
 @app.command("enrich")
