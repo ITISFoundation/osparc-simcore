@@ -581,7 +581,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         return osparc.auth.core.Utils.checkSamePasswords(newPassword, confirm);
       });
 
-      const resetBtn = new qx.ui.form.Button("Reset Password").set({
+      const resetBtn = new qx.ui.form.Button(this.tr("Reset Password")).set({
         appearance: "form-button",
         alignX: "right",
         allowGrowX: false

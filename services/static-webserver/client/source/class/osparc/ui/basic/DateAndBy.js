@@ -64,7 +64,7 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
             alignY: "middle",
             allowGrowX: false,
             allowShrinkX: false,
-            label: "by",
+            label: this.tr("by"),
             font: "text-12",
             icon: osparc.dashboard.CardBase.SHARED_USER,
             iconPosition: "right",
@@ -97,11 +97,11 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
         if (groupId === myGroupId) {
           atom.set({
-            label: "by me",
+            label: this.tr("by me"),
             icon: null,
           })
         } else {
-          atom.setLabel("by ");
+          atom.setLabel(this.tr("by") + " ");
           osparc.dashboard.CardBase.addHintFromGids(atom, [groupId]);
         }
       }

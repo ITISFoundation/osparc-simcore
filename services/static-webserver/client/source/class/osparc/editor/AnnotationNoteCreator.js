@@ -137,7 +137,7 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
       const usersManager = new osparc.share.NewCollaboratorsManager(currentStudyData, false, false).set({
         acceptOnlyOne: true,
       });
-      usersManager.setCaption("Recipient");
+      usersManager.setCaption(this.tr("Recipient"));
       usersManager.getActionButton().setLabel(this.tr("Add"));
       usersManager.addListener("addCollaborators", e => {
         usersManager.close();

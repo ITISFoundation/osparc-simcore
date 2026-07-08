@@ -67,7 +67,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
     openWindow: function() {
       const win = new osparc.ui.window.Window();
       win.set({
-        caption: "Rocket Preview",
+        caption: qx.locale.Manager.tr("Rocket Preview"),
         width: 800,
         height: 600,
         minWidth: 400,
