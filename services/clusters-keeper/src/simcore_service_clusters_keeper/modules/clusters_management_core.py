@@ -1,6 +1,7 @@
 import datetime
 import logging
 from collections.abc import Iterable
+from typing import Final
 
 import arrow
 from aws_library.ec2 import EC2InstanceData
@@ -169,6 +170,11 @@ async def _handle_starting_clusters(app: FastAPI, starting_instances: set[EC2Ins
         await _deploy_to_instances(app, instances_in_need_of_deployment)
 
 
+_BACKWARDS_COMPATIBLE_PRODUCT_NAME_TAG_VALUE: Final[AWSTagValue] = TypeAdapter(AWSTagValue).validate_python(
+    "undefined-product-name"
+)
+
+
 async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) -> None:
     ssm_client = get_ssm_client(app)
     ssm_connection_states = await limited_gather(
@@ -205,7 +211,11 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
                         USER_ID_TAG_KEY: instance.tags[USER_ID_TAG_KEY],
                         WALLET_ID_TAG_KEY: instance.tags[WALLET_ID_TAG_KEY],
                         ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
-                        PRODUCT_NAME_TAG_KEY: instance.tags[PRODUCT_NAME_TAG_KEY],
+                        PRODUCT_NAME_TAG_KEY: instance.tags.get(
+                            # NOTE: necessary until https://github.com/ITISFoundation/osparc-simcore/pull/9394 is deployed to everywhere
+                            PRODUCT_NAME_TAG_KEY,
+                            _BACKWARDS_COMPATIBLE_PRODUCT_NAME_TAG_VALUE,
+                        ),
                     },
                 ),
                 command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
