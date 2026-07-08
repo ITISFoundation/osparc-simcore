@@ -331,7 +331,7 @@ class FileMetaDataRepository(BaseRepository):
                 (file_meta_data.c.file_id.in_(file_ids)) if file_ids else sa.true(),
                 ((file_meta_data.c.upload_expires_at < expired_after) if expired_after else sa.true()),
                 (file_meta_data.c.file_id.startswith(file_id_prefix) if file_id_prefix else sa.true()),
-                ((sa.cast(file_meta_data.c.created_at, sa.DateTime) < created_before) if created_before else sa.true()),
+                ((file_meta_data.c.created_at < created_before.isoformat()) if created_before else sa.true()),
             )
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
