@@ -1,14 +1,11 @@
 import datetime
 import logging
 from collections.abc import Iterable
-from typing import Final
 
 import arrow
-from aws_library.ec2 import AWSTagKey, EC2InstanceData
+from aws_library.ec2 import EC2InstanceData
 from aws_library.ec2._models import AWSTagValue
 from fastapi import FastAPI
-from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch
 from servicelib.tracing import traced
@@ -17,6 +14,7 @@ from servicelib.utils import limited_gather
 from ..constants import (
     DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY,
     DOCKER_STACK_DEPLOY_COMMAND_NAME,
+    PRODUCT_NAME_TAG_KEY,
     ROLE_TAG_KEY,
     USER_ID_TAG_KEY,
     WALLET_ID_TAG_KEY,
@@ -62,27 +60,19 @@ def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime
     return None
 
 
-_USER_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("user_id")
-_WALLET_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("wallet_id")
-
-
 async def _get_all_associated_worker_instances(
     app: FastAPI,
     primary_instances: Iterable[EC2InstanceData],
 ) -> set[EC2InstanceData]:
     worker_instances: set[EC2InstanceData] = set()
     for instance in primary_instances:
-        assert "user_id" in instance.tags  # nosec
-        user_id = TypeAdapter(UserID).validate_python(instance.tags[_USER_ID_TAG_KEY])
-        assert "wallet_id" in instance.tags  # nosec
-        # NOTE: wallet_id can be None
-        wallet_id = (
-            TypeAdapter(WalletID).validate_python(instance.tags[_WALLET_ID_TAG_KEY])
-            if instance.tags[_WALLET_ID_TAG_KEY] != "None"
-            else None
+        worker_instances.update(
+            await get_cluster_workers(
+                app,
+                user_id=user_id_from_instance_tags(instance.tags),
+                wallet_id=wallet_id_from_instance_tags(instance.tags),
+            )
         )
-
-        worker_instances.update(await get_cluster_workers(app, user_id=user_id, wallet_id=wallet_id))
     return worker_instances
 
 
@@ -201,6 +191,14 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
     # Each instance is handled independently so a failure on one does not block the others
     for instance in ssm_ready:
         with log_catch(_logger, reraise=False):
+            additional_custom_tags = {
+                USER_ID_TAG_KEY: instance.tags[USER_ID_TAG_KEY],
+                WALLET_ID_TAG_KEY: instance.tags[WALLET_ID_TAG_KEY],
+                ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
+            }
+            if PRODUCT_NAME_TAG_KEY in instance.tags:
+                additional_custom_tags[PRODUCT_NAME_TAG_KEY] = instance.tags[PRODUCT_NAME_TAG_KEY]
+
             ssm_command = await ssm_client.send_command(
                 [instance.id],
                 command=create_deploy_cluster_stack_script(
@@ -211,11 +209,7 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
                         wallet_id=wallet_id_from_instance_tags(instance.tags),
                         is_manager=False,
                     ),
-                    additional_custom_tags={
-                        USER_ID_TAG_KEY: instance.tags[USER_ID_TAG_KEY],
-                        WALLET_ID_TAG_KEY: instance.tags[WALLET_ID_TAG_KEY],
-                        ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
-                    },
+                    additional_custom_tags=additional_custom_tags,
                 ),
                 command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
             )

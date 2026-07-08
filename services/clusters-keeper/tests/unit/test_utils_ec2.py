@@ -4,6 +4,7 @@
 
 import pytest
 from faker import Faker
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
@@ -28,28 +29,74 @@ def test_get_cluster_name(
     disabled_ssm: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
 ):
     assert app_settings.SWARM_STACK_NAME
+    manager_name = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-manager"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:{wallet_id}"
+    )
+    worker_name = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-worker"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:{wallet_id}"
+    )
+    manager_name_no_wallet = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-manager"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:None"
+    )
+    worker_name_no_wallet = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-worker"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:None"
+    )
+
     # manager
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            is_manager=True,
+        )
+        == manager_name
     )
     # worker
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            is_manager=False,
+        )
+        == worker_name
     )
 
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=None, is_manager=True)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=None,
+            is_manager=True,
+        )
+        == manager_name_no_wallet
     )
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=None, is_manager=False)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=None,
+            is_manager=False,
+        )
+        == worker_name_no_wallet
     )
 
 
@@ -59,15 +106,17 @@ def test_creation_ec2_tags(
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
 ):
-    received_tags = creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id)
+    received_tags = creation_ec2_tags(app_settings, product_name=product_name, user_id=user_id, wallet_id=wallet_id)
     assert received_tags
     EXPECTED_TAG_KEY_NAMES = [
         f"{_APPLICATION_TAG_KEY}.deploy",
         f"{_APPLICATION_TAG_KEY}.version",
         "Name",
+        "io.simcore.runtime.product_name",
         "user_id",
         "wallet_id",
         "role",

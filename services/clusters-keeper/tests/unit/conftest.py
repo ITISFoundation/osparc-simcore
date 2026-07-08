@@ -50,6 +50,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.faker_products_data",
     "pytest_simcore.logging",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
@@ -147,7 +148,8 @@ def app_environment(
                 }
             ),
             "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json_dumps({"osparc-tag": "the pytest tag is here"}),
-            "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": "",  # must be empty since we would need to add it to moto as well
+            # must be empty since we would need to add it to moto as well
+            "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": "",
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY": faker.pystr(),
@@ -305,6 +307,12 @@ def create_ec2_workers(
     async def _do(num: int) -> list[str]:
         instance_type: InstanceTypeType = "c3.8xlarge"
         assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES
+        worker_name_prefix = get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            is_manager=False,
+        )
         instances = await ec2_client.run_instances(
             ImageId=aws_ami_id,
             MinCount=num,
@@ -317,7 +325,7 @@ def create_ec2_workers(
                     "Tags": [
                         {
                             "Key": "Name",
-                            "Value": f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}_blahblah",
+                            "Value": f"{worker_name_prefix}_blahblah",
                         }
                     ],
                 }
@@ -341,15 +349,7 @@ def create_ec2_workers(
                 assert "Key" in tags
                 if "Name" in tags["Key"]:
                     assert "Value" in tags
-                    assert (
-                        get_cluster_name(
-                            app_settings,
-                            user_id=user_id,
-                            wallet_id=wallet_id,
-                            is_manager=False,
-                        )
-                        in tags["Value"]
-                    )
+                    assert worker_name_prefix in tags["Value"]
         return instance_ids
 
     return _do

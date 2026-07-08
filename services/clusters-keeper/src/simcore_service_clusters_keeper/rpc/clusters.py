@@ -4,6 +4,7 @@ from aws_library.ec2 import EC2InstanceData
 from aws_library.ec2._errors import EC2InstanceNotFoundError
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
@@ -35,7 +36,8 @@ def _get_redis_client_from_app(*args, **kwargs) -> RedisClientSDK:
     return get_redis_client(app)
 
 
-def _get_redis_lock_key(*_args, user_id: UserID, wallet_id: WalletID | None) -> str:
+def _get_redis_lock_key(*_args, product_name: ProductName, user_id: UserID, wallet_id: WalletID | None) -> str:
+    assert product_name  # nosec
     return f"get_or_create_cluster-{user_id=}-{wallet_id=}"
 
 
@@ -46,7 +48,13 @@ def _get_redis_lock_key(*_args, user_id: UserID, wallet_id: WalletID | None) -> 
     blocking=True,
     blocking_timeout=datetime.timedelta(seconds=10),
 )
-async def get_or_create_cluster(app: FastAPI, *, user_id: UserID, wallet_id: WalletID | None) -> OnDemandCluster:
+async def get_or_create_cluster(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+) -> OnDemandCluster:
     """Get or create cluster for user_id and wallet_id
     This function will create a new instance on AWS if needed or return the already running one.
     It will also check that the underlying computational backend is up and running.
@@ -59,7 +67,12 @@ async def get_or_create_cluster(app: FastAPI, *, user_id: UserID, wallet_id: Wal
     try:
         ec2_instance = await clusters.get_cluster(app, user_id=user_id, wallet_id=wallet_id)
     except EC2InstanceNotFoundError:
-        new_ec2_instances = await clusters.create_cluster(app, user_id=user_id, wallet_id=wallet_id)
+        new_ec2_instances = await clusters.create_cluster(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            wallet_id=wallet_id,
+        )
         assert new_ec2_instances  # nosec
         assert len(new_ec2_instances) == 1  # nosec
         ec2_instance = new_ec2_instances[0]
