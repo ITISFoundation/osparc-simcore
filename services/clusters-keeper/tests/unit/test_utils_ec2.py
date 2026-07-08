@@ -116,7 +116,7 @@ def test_creation_ec2_tags(
         f"{_APPLICATION_TAG_KEY}.deploy",
         f"{_APPLICATION_TAG_KEY}.version",
         "Name",
-        "io.simcore.runtime.product_name",
+        "io.simcore.product_name",
         "user_id",
         "wallet_id",
         "role",

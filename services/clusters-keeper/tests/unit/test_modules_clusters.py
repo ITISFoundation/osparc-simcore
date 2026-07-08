@@ -81,7 +81,7 @@ async def _assert_cluster_instance_created(
             f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}manager-"
             f"{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
         ),
-        "io.simcore.runtime.product_name": f"{product_name}",
+        "io.simcore.product_name": f"{product_name}",
         "user_id": f"{user_id}",
         "wallet_id": f"{wallet_id}",
         "role": "manager",
