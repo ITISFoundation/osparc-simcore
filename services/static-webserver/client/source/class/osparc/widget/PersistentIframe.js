@@ -374,7 +374,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
               resourceDetails.set({
                 showOpenButton: false,
               });
-              window.setCaption("Function Details");
+              window.setCaption(this.tr("Function Details"));
             }
             break;
           }
