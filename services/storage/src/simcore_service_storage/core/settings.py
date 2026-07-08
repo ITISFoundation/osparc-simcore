@@ -3,6 +3,7 @@ from typing import Annotated
 
 from celery_library.basic_types import BootServerMode
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
+from common_library.pydantic_validators import validate_positive_timedelta
 from fastapi import FastAPI
 from pydantic import (
     AliasChoices,
@@ -49,6 +50,9 @@ class DsmCleanerSettings(BaseCustomSettings):
             ),
         ),
     ] = timedelta(days=30)
+
+    _validate_positive_uploads_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL")
+    _validate_positive_export_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPORT_INTERVAL")
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
