@@ -23,6 +23,7 @@ x-tracing-open-telemetry: &tracing_open_telemetry_environments
   TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION: ${TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION}
   TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
   TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY: ${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}
+  TRACING_OPENTELEMETRY_TRACED_FUNCTIONS: ${TRACING_OPENTELEMETRY_TRACED_FUNCTIONS}
 
 ## third-party party services
 x-postgres-settings: &postgres_settings
@@ -159,6 +160,10 @@ services:
         "max_connections=413",
         "-c",
         "shared_buffers=256MB",
+        # pg_stat_statements tracks execution statistics of all SQL statements.
+        # Execute `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;` to expose the view.
+        "-c",
+        "shared_preload_libraries=pg_stat_statements",
         # statement_timeout is set to 120 seconds (120_000 in ms), so that long running queries
         # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
         # queries will not be used. Setting >1 minutes to be safe
@@ -1420,6 +1425,7 @@ services:
         - *tracing_open_telemetry_environments
 
       API_SERVER_BOOT_SERVER_MODE: AS_REST_API_SERVER
+      API_SERVER_CHATBOT: ${API_SERVER_CHATBOT:-null}
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
       API_SERVER_LOCALIZED_MESSAGES_ENABLED: ${API_SERVER_LOCALIZED_MESSAGES_ENABLED}
       API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}

@@ -191,12 +191,6 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 
 
 @pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -220,14 +214,14 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with 1 large file
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_projects_list = await project_with_seeded_files_factory(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -266,12 +260,6 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
 
 
 @pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -305,14 +293,14 @@ async def test_copy_folders_from_valid_project(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with some files
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_projects_list = await project_with_seeded_files_factory(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -441,12 +429,6 @@ def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> N
 
 
 @pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -468,7 +450,7 @@ async def test_create_and_delete_folders_from_project(
     client: httpx.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
-    with_random_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
     ],
@@ -476,7 +458,7 @@ async def test_create_and_delete_folders_from_project(
     mock_datcore_download,
     num_concurrent_calls: int,
 ):
-    project_in_db, _ = with_random_project_with_files
+    project_in_db, _ = project_with_seeded_files
     # NOTE: here the point is to NOT have a limit on the number of calls!!
     await asyncio.gather(
         *[
@@ -546,12 +528,6 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
 
 
 @pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -580,7 +556,7 @@ async def test_start_export_data(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
@@ -588,7 +564,7 @@ async def test_start_export_data(
     task_progress_spy: Mock,
     task_name: Literal["export_data", "export_data_as_download_link"],
 ):
-    _, src_projects_list = await random_project_with_files(project_params)
+    _, src_projects_list = await project_with_seeded_files_factory(project_params)
 
     all_available_files: set[SimcoreS3FileID] = set()
     for x in src_projects_list.values():
