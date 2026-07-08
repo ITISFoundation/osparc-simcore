@@ -24,6 +24,7 @@ from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from common_library.async_tools import cancel_wait_task, iter_with_timeout
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import TransferEncryptionSettings
 from dask_task_models_library.container_tasks.errors import ServiceTimeoutLoggingError
 from dask_task_models_library.container_tasks.protocol import (
     ContainerCommands,
@@ -200,6 +201,7 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     with log_context(
@@ -244,11 +246,11 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
                     log_file_url,
                     log_publishing_cb=log_publishing_cb,
                     s3_settings=s3_settings,
-                    encryption=None,
+                    encryption=encryption,
                 )
 
 
-async def _parse_container_docker_logs(
+async def _parse_container_docker_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     *,
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
@@ -260,6 +262,7 @@ async def _parse_container_docker_logs(
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     """
 
@@ -340,7 +343,7 @@ async def _parse_container_docker_logs(
                         log_file_url,
                         log_publishing_cb=log_publishing_cb,
                         s3_settings=s3_settings,
-                        encryption=None,
+                        encryption=encryption,
                     )
 
 
@@ -357,6 +360,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -386,6 +390,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
                 log_publishing_cb=log_publishing_cb,
                 s3_settings=s3_settings,
                 progress_bar=progress_bar,
+                encryption=encryption,
             )
         else:
             await _parse_container_log_file(
@@ -400,6 +405,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
                 log_publishing_cb=log_publishing_cb,
                 s3_settings=s3_settings,
                 progress_bar=progress_bar,
+                encryption=encryption,
             )
 
 
@@ -436,6 +442,7 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> AsyncIterator[Awaitable[None]]:
     """
     Raises:
@@ -463,6 +470,7 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
                 log_publishing_cb=log_publishing_cb,
                 s3_settings=s3_settings,
                 progress_bar=progress_bar,
+                encryption=encryption,
             )
 
         monitoring_task = asyncio.create_task(
