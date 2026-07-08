@@ -1614,14 +1614,43 @@ qx.Class.define("osparc.data.model.Node", {
             console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
             break;
           case "outputs": {
-            const updatedPortKey = path.split("/")[4];
+            const pathParts = path.split("/"); // ["", "workbench", nodeId, "outputs", portKey, ...subKeys]
+            const updatedPortKey = pathParts[4];
+            // a path of length <= 5 targets the whole outputs object or a whole port value
+            const isPortValuePath = pathParts.length <= 5;
             // "remove" ops have no value field, so value is undefined.
-            if (op === "remove" && this.isFilePicker()) {
+            if (op === "remove" && this.isFilePicker() && isPortValuePath) {
               // Reset File Picker
               osparc.file.FilePicker.resetOutputValue(this);
             } else {
               const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
-              currentOutputs[updatedPortKey] = value;
+              if (isPortValuePath) {
+                if (updatedPortKey === undefined) {
+                  // the whole outputs object was added/replaced
+                  Object.keys(value || {}).forEach(portKey => {
+                    currentOutputs[portKey] = value[portKey];
+                  });
+                } else {
+                  currentOutputs[updatedPortKey] = value;
+                }
+              } else if (currentOutputs[updatedPortKey] && typeof currentOutputs[updatedPortKey] === "object") {
+                // deep path: only a sub-field of the port value changed (e.g. .../outputs/outFile/store).
+                // Merge it into the existing value instead of replacing the whole port, which
+                // would corrupt/clear the output (e.g. "store":"0" vs "store":0 mismatches).
+                let target = currentOutputs[updatedPortKey];
+                for (let i = 5; i < pathParts.length - 1; i++) {
+                  if (target[pathParts[i]] === undefined || target[pathParts[i]] === null) {
+                    target[pathParts[i]] = {};
+                  }
+                  target = target[pathParts[i]];
+                }
+                const leafKey = pathParts[pathParts.length - 1];
+                if (op === "remove") {
+                  delete target[leafKey];
+                } else {
+                  target[leafKey] = value;
+                }
+              }
               this.setOutputData(currentOutputs);
             }
             break;

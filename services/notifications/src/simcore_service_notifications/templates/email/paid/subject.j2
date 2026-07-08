@@ -1,1 +1,1 @@
-Your Payment {{ payment.price_dollars }} USD for {{ payment.osparc_credits }} Credits Was Successful
+{% trans price_dollars=payment.price_dollars, osparc_credits=payment.osparc_credits %}Your Payment {{ price_dollars }} USD for {{ osparc_credits }} Credits Was Successful{% endtrans %}

@@ -114,7 +114,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           opacity: 1
         };
         if (states.hovered) {
-          style.opacity = 0.5;
+          style.decorator = "pb-listitem-hovered";
         }
         if (states.selected || states.checked) {
           style.opacity = 1;

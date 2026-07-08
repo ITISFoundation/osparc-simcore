@@ -193,6 +193,7 @@ class ComputationalSidecar:
         )
         # NOTE: this is for tracing purpose
         _logger.info("Running task owner: %s", self.task_parameters.task_owner)
+        _logger.info("encryption: %s", "enabled" if self.encryption else "disabled")
 
         settings = ApplicationSettings.create_from_envs()
         run_id = f"{uuid4()}"

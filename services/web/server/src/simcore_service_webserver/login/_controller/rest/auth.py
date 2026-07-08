@@ -12,7 +12,7 @@ from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.users import UserRole
 
 from ...._meta import API_VTAG
-from ....locale import translate_message
+from ....locale import get_locale_or_none, translate_message
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_web
@@ -144,13 +144,16 @@ async def login(request: web.Request):
         assert product.twilio_messaging_sid  # nosec
 
         await _twofa_service.send_sms_code(
+            request.app,
             phone_number=user["phone"],
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=user["first_name"] or user["name"],
+            product_name=product.name,
             user_id=user["id"],
+            locale=get_locale_or_none(request),
         )
 
         return envelope_response(
@@ -178,6 +181,7 @@ async def login(request: web.Request):
         product_name=product.name,
         host=request.host,
         user_id=user["id"],
+        locale=get_locale_or_none(request),
     )
     return envelope_response(
         {
