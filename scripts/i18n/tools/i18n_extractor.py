@@ -275,7 +275,7 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
     return False
 
 
-def _extract_hints_from_python_file(path: Path) -> dict[str, str]:
+def _extract_hints_from_file(path: Path) -> dict[str, str]:
     """Return {msgid: hint} from ``user_message(_hint=...)`` calls in a single Python file."""
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
@@ -304,7 +304,7 @@ def _extract_hints_from_python_file(path: Path) -> dict[str, str]:
     return hints
 
 
-def collect_py_hints(src_files: list[Path]) -> dict[str, str]:
+def collect_python_hints(src_files: list[Path]) -> dict[str, str]:
     """Scan Python source files and return {msgid: hint} from ``user_message(_hint=...)`` calls.
 
     Only plain string literals are accepted for both ``msg`` and ``_hint``
@@ -318,7 +318,7 @@ def collect_py_hints(src_files: list[Path]) -> dict[str, str]:
         if path.suffix.lower() != ".py":
             continue
 
-        for msgid, hint in _extract_hints_from_python_file(path).items():
+        for msgid, hint in _extract_hints_from_file(path).items():
             if msgid in hints and hints[msgid] != hint:
                 console.print(f"  [warn] {path}: duplicate _hint for msgid {msgid!r} (keeping first occurrence)")
             else:
@@ -433,7 +433,7 @@ def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = No
         py_files = sorted(
             {repo_root / filepath for entry in po for filepath, _ in entry.occurrences if filepath.endswith(".py")}
         )
-        py_hints = collect_py_hints([f for f in py_files if f.exists()])
+        py_hints = collect_python_hints([f for f in py_files if f.exists()])
         if py_hints:
             console.print(f"  [hints] {len(py_hints)} _hint value(s) collected from Python sources")
 
