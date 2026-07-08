@@ -45,6 +45,9 @@ qx.Class.define("osparc.Application", {
       // remove the up/down caps and track border from every scrollbar (see the mixin)
       qx.Class.patch(qx.ui.core.scroll.ScrollBar, osparc.wrapper.MScrollBar);
 
+      // keep font icons at their postfix size across re-layouts / theme switches (see the class)
+      osparc.wrapper.ImageFontIcon.patch();
+
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox

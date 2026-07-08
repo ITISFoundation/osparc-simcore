@@ -154,9 +154,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from models_library.api_schemas_directorv2.encryption import (
-    AES_256_GCM_KEY_SIZE_BYTES,
-)
+from models_library.api_schemas_directorv2.encryption import AES_256_GCM_KEY_SIZE_BYTES, MAX_LP_STRING_BYTES
 from pydantic import Field
 
 NONCE_SIZE_BYTES: Final[int] = 12
@@ -167,7 +165,6 @@ PROTOCOL_LABEL: Final[bytes] = b"simcore-aesgcm-stream-v1"
 FORMAT_MAGIC: Final[bytes] = b"SCAGSTRM"
 FORMAT_VERSION: Final[int] = 1
 
-_MAX_LP_STRING_BYTES: Final[int] = 0xFFFF
 _FINAL_CHUNK_FLAG: Final[int] = 0b0000_0001
 _KNOWN_CHUNK_FLAGS_MASK: Final[int] = _FINAL_CHUNK_FLAG
 _MAX_CHUNK_INDEX_EXCLUSIVE: Final[int] = 2**64
@@ -212,8 +209,8 @@ def _validate_chunk_size(chunk_size: int) -> None:
 
 def _length_prefixed(value: str) -> bytes:
     encoded = value.encode("utf-8")
-    if len(encoded) > _MAX_LP_STRING_BYTES:
-        msg = f"String field too long: {len(encoded)} bytes exceeds {_MAX_LP_STRING_BYTES} byte limit"
+    if len(encoded) > MAX_LP_STRING_BYTES:
+        msg = f"String field too long: {len(encoded)} bytes exceeds {MAX_LP_STRING_BYTES} byte limit"
         raise AesGcmStreamError(msg)
     return _U16_STRUCT.pack(len(encoded)) + encoded
 
