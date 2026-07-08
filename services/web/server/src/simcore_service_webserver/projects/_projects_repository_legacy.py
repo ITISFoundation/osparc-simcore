@@ -79,7 +79,6 @@ from ._projects_repository_legacy_utils import (
     ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
-    create_project_access_rights,
     get_projects_workbenches,
 )
 from .exceptions import (
@@ -230,6 +229,9 @@ class ProjectDBAPI(BaseProjectDB):
         # NOTE: tags are removed in convert_to_db_names so we keep it
         project_tag_ids = TypeAdapter(list[int]).validate_python(project.get("tags", []).copy())
         insert_values = convert_to_db_names(project)
+        # NOTE: access rights are stored in `project_to_groups`. The owner group is
+        # assigned automatically by a database trigger on project insertion.
+        insert_values.pop("access_rights", None)
         insert_values.update(
             {
                 "type": (ProjectType.TEMPLATE if (force_as_template or user_id is None) else ProjectType.STANDARD),
@@ -243,13 +245,6 @@ class ProjectDBAPI(BaseProjectDB):
                 "product_name": product_name,
             }
         )
-
-        # validate access_rights. are the gids valid? also ensure prj_owner is in there
-        if user_id:
-            async with self.engine.connect() as conn:
-                primary_gid = await self._get_user_primary_group_gid(conn, user_id=user_id)
-            insert_values.setdefault("access_rights", {})
-            insert_values["access_rights"].update(create_project_access_rights(primary_gid, ProjectAccessRights.OWNER))
 
         # ensure we have the minimal amount of data here
         # All non-default in projects table
@@ -853,7 +848,6 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectIDStr,
         *,
         new_project_owner: UserID,
-        new_project_access_rights: dict,
     ) -> None:
         """The garbage collector needs to alter the row without passing through the
         permissions layer (sic)."""
@@ -863,7 +857,6 @@ class ProjectDBAPI(BaseProjectDB):
                 projects.update()
                 .values(
                     prj_owner=new_project_owner,
-                    access_rights=new_project_access_rights,
                     last_change_date=now(),
                 )
                 .where(projects.c.uuid == project_uuid)
