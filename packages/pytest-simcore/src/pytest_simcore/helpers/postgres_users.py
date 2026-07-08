@@ -35,12 +35,13 @@ async def _ensure_product_exists(conn, product_name: str) -> None:
     )
 
 
-def _sync_ensure_product_exists(conn, product_name: str) -> None:
-    conn.execute(
-        postgresql.insert(products)
-        .values(name=product_name, host_regex=".*", base_url="https://example.com")
-        .on_conflict_do_nothing(index_elements=["name"])
-    )
+def _sync_ensure_product_exists(sqlalchemy_sync_engine: sa.engine.Engine, product_name: str) -> None:
+    with sqlalchemy_sync_engine.begin() as conn:
+        conn.execute(
+            postgresql.insert(products)
+            .values(name=product_name, host_regex=".*", base_url="https://example.com")
+            .on_conflict_do_nothing(index_elements=["name"])
+        )
 
 
 @contextlib.asynccontextmanager
@@ -93,8 +94,8 @@ def sync_insert_and_get_user_and_secrets_lifespan(sqlalchemy_sync_engine: sa.eng
         )
 
         secrets_values = random_user_secrets(user_id=user["id"], **secrets_kwargs)
-        with sqlalchemy_sync_engine.begin() as conn:
-            _sync_ensure_product_exists(conn, secrets_values["product_name"])
+
+        _sync_ensure_product_exists(sqlalchemy_sync_engine, secrets_values["product_name"])
 
         # users_secrets
         secrets = stack.enter_context(
