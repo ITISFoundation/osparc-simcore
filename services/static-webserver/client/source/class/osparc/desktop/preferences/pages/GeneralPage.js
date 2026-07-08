@@ -101,10 +101,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       walletIndicatorVisibilitySB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "always",
-        label: "Always"
+        label: this.tr("Always")
       }, {
         id: "warning",
-        label: "Warning"
+        label: this.tr("Warning")
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
         walletIndicatorVisibilitySB.add(lItem);
