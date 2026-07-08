@@ -248,10 +248,10 @@ qx.Class.define("osparc.tours.Manager", {
       }
 
       if (step.title) {
-        stepWidget.setTitle(step.title);
+        stepWidget.setTitle(qx.locale.Manager.tr(step.title));
       }
       if (step.text) {
-        stepWidget.setText(step.text);
+        stepWidget.setText(qx.locale.Manager.tr(step.text));
       }
       if (steps.length > 1) {
         stepWidget.set({
