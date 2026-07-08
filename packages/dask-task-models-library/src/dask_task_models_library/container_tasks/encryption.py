@@ -14,7 +14,7 @@ _SIDECAR_LOGS_FILE_ID: Final[str] = "service-logs"
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 
 
-_RootKeySecretBytes = Annotated[
+type _RootKeySecretBytes = Annotated[
     SecretBytes,
     Field(
         min_length=AES_256_GCM_KEY_SIZE_BYTES,
