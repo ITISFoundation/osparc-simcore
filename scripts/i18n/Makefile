@@ -16,7 +16,7 @@
 #
 # Frontend catalog (full pipeline):
 #   make frontend-all       # frontend-extract -> frontend-translate
-#   make frontend-extract   # xgettext this.tr() -> frontend.pot (+enrich)
+#   make frontend-extract   # xgettext this.tr() + json guided-tours -> frontend.pot (+enrich)
 #   make frontend-plan      # dry-run: log the LLM prompts that WOULD be sent (no call, no save)
 #   make frontend-translate # msgmerge + AI translate frontend catalogs from frontend.pot
 #
@@ -74,8 +74,17 @@ CLIENT_DIR          := $(REPO_ROOT)/services/static-webserver/client
 # git-blame), matching the backend convention instead of embedding absolute paths.
 CLIENT_SRC_REL      := services/static-webserver/client/source/class
 CLIENT_TRANS_DIR    := $(CLIENT_DIR)/source/translation
+FRONTEND_PARTIALS_DIR := $(CLIENT_TRANS_DIR)/_partials
 FRONTEND_POT        := $(CLIENT_TRANS_DIR)/frontend.pot
 CLIENT_LANGS        ?= es_ES zh_CN
+
+# --- Guided tours JSON resources (extracted via json_cmd, not xgettext) ---
+# Data loaded at runtime (osparc.tours.Manager/List/Step), so their
+# user-facing strings are invisible to xgettext's this.tr() scan. Only the
+# listed keys hold user-facing text; id/context/anchorEl/selector/placement/
+# action/beforeClick are wiring and must never be extracted.
+TOURS_DIR_REL    := services/static-webserver/client/source/resource/osparc/tours
+JSON_TOURS_KEYS  := name,description,title,text
 
 # --- Flag helpers ---
 ifeq ($(USE_GIT),true)
@@ -205,16 +214,25 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.mo: $(LOCALE_OUT_DIR)/%/LC_MESSAGES/mes
 frontend-all: frontend-extract frontend-translate  ## Frontend catalog: extract -> translate
 
 # ---------------------------------------------------------------------------
-# frontend-extract — extract this.tr() strings from qooxdoo frontend into the
-# frontend-owned frontend.pot, then enrich with source context.
+# frontend-extract — gather this.tr() (qooxdoo JS) + guided-tours JSON values
+# into per-source _partials/*.pot, msgcat them into the frontend-owned
+# frontend.pot, then enrich with source context. Kept strictly separate from
+# the backend `messages` catalog (see header note).
 # ---------------------------------------------------------------------------
-frontend-extract:  ## Extract frontend this.tr() -> frontend.pot (+enrich)
-	@echo "  [extract] frontend JS -> $(FRONTEND_POT)"
-	@mkdir -p $(CLIENT_TRANS_DIR)
+frontend-extract:  ## Extract frontend this.tr() + guided-tours JSON -> frontend.pot (+enrich)
+	@mkdir -p $(FRONTEND_PARTIALS_DIR)
+	@echo "  [extract] frontend JS -> $(FRONTEND_PARTIALS_DIR)/frontend-js.pot"
 	@cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
 	  --src $(CLIENT_SRC_REL) \
-	  --out $(FRONTEND_POT) \
+	  --out $(FRONTEND_PARTIALS_DIR)/frontend-js.pot \
 	  --langs javascript
+	@echo "  [extract] guided tours JSON -> $(FRONTEND_PARTIALS_DIR)/frontend-tours.pot"
+	@cd $(REPO_ROOT) && $(EXTRACTOR) json \
+	  --src $(TOURS_DIR_REL) \
+	  --keys $(JSON_TOURS_KEYS) \
+	  --out $(FRONTEND_PARTIALS_DIR)/frontend-tours.pot
+	@echo "  [merge] frontend _partials/*.pot -> $(FRONTEND_POT)"
+	msgcat --use-first $(FRONTEND_PARTIALS_DIR)/*.pot -o $(FRONTEND_POT)
 	@echo "  [enrich] frontend source context -> $(FRONTEND_POT)"
 	@cd $(REPO_ROOT) && $(EXTRACTOR) enrich --pot $(FRONTEND_POT) --repo-root $(REPO_ROOT)
 
@@ -291,7 +309,7 @@ check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DI
 # versioned (human/AI-reviewed translations) and are NEVER deleted here.
 # ---------------------------------------------------------------------------
 clean:  ## Remove regenerable artifacts (_partials/, *.pot, *.mo); keeps versioned .po
-	rm -rf $(PARTIALS_DIR)
+	rm -rf $(PARTIALS_DIR) $(FRONTEND_PARTIALS_DIR)
 	rm -f $(POT) $(FRONTEND_POT)
 	rm -f $(MO_FILES)
 

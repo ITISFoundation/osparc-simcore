@@ -22,6 +22,14 @@ Two-step .pot extractor:
                      so Babel's jinja2.ext.babel_extract is used. Produces a
                      .pot with the same #: filepath:lineno references.
 
+    Step 1c — json: extract translatable string values from JSON resource
+                     files (e.g. frontend guided tours) by key. These strings
+                     are data loaded at runtime, not literal tr()/gettext()
+                     calls, so neither xgettext nor Babel can see them.
+                     Extraction is line-based (one "key": "value" pair per
+                     line), which yields exact #: filepath:lineno references
+                     and lets json.loads() handle string unescaping.
+
     Step 2 — enrich: for each entry, read #: references to load
                      surrounding source lines (CTX-SNIPPET) and write a
              extractor-owned snippet freshness marker (CTX-SNIPPET-VERSION).
@@ -30,11 +38,14 @@ Usage:
     uv run tools/i18n_extractor.py extract --src src/ --out messages.pot
     uv run tools/i18n_extractor.py xgettext --src src/ --langs python,cpp --out messages.pot
     uv run tools/i18n_extractor.py jinja --src src/templates --out templates.pot
+    uv run tools/i18n_extractor.py json --src src/resource/tours --keys name,description,title,text --out tours.pot
     uv run tools/i18n_extractor.py enrich --pot messages.pot
     uv run tools/i18n_extractor.py validate --src src/
 """
 
 import ast
+import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Final
@@ -219,6 +230,84 @@ def run_babel_jinja(src_dir: Path, out_pot: Path) -> bool:
     out_pot.parent.mkdir(parents=True, exist_ok=True)
     pot.save(str(out_pot))
     console.print(f"  [jinja] {len(pot)} entry/ies -> {out_pot}")
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Step 1c: JSON-value extraction (e.g. frontend guided tours)
+# ---------------------------------------------------------------------------
+#
+# Guided tours (services/static-webserver/client/source/resource/osparc/tours/
+# *_tours.json) are data loaded at runtime, so their user-facing strings are
+# NOT reachable by xgettext (which only sees literal tr() calls in .js).
+# This step reads JSON files and pulls out the *values* of a given set of
+# keys (e.g. name/description/title/text), emitting a .pot the same shape as
+# the xgettext/jinja outputs so it merges into the frontend catalog. Runtime
+# translation is expected to happen at the consumption points by wrapping the
+# fetched values in qx.locale.Manager.tr(...) (a catalog lookup by msgid) --
+# that wiring is out of scope for this extractor.
+#
+# Extraction is line-based: every translatable "key": "value" pair is expected
+# on its own line (as produced by standard JSON formatting), which yields an
+# accurate source-line reference for `enrich` and lets the JSON decoder
+# correctly handle string escaping. Keys not in *keys* (id, context, anchorEl,
+# selector, placement, action, ...) are wiring and are skipped.
+
+_JSON_KV_LINE_RE = re.compile(r'^\s*"(?P<key>[^"]+)"\s*:\s*(?P<val>"(?:[^"\\]|\\.)*")\s*,?\s*$')
+
+
+def run_json_keys(src_dir: Path, out_pot: Path, keys: set[str], pattern: str) -> bool:
+    """Extract translatable string values for *keys* from JSON files under *src_dir*.
+
+    Only lines matching "key": "value" (one pair per line) are considered, so
+    a #: reference always resolves to the exact line. Returns True on success,
+    False when no files match *pattern* under *src_dir*.
+    """
+    files = sorted(src_dir.rglob(pattern))
+    if not files:
+        console.print(f"[json] No files matching {pattern!r} under {src_dir}.")
+        return False
+
+    # msgid -> POEntry, so the same string reused across tours/steps merges
+    # into one entry carrying multiple #: occurrences.
+    entries: dict[str, polib.POEntry] = {}
+
+    for path in files:
+        rel = path.relative_to(src_dir)
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        for lineno, line in enumerate(lines, start=1):
+            match = _JSON_KV_LINE_RE.match(line)
+            if not match or match.group("key") not in keys:
+                continue
+
+            try:
+                msgid = json.loads(match.group("val"))
+            except json.JSONDecodeError:
+                console.print(f"  [warn] {path}:{lineno}: could not decode JSON value, skipping")
+                continue
+
+            if not msgid:
+                continue
+
+            occurrence = (f"{src_dir}/{rel}", str(lineno))
+            if msgid in entries:
+                entries[msgid].occurrences.append(occurrence)
+                continue
+
+            entries[msgid] = polib.POEntry(msgid=msgid, msgstr="", occurrences=[occurrence])
+
+    pot = polib.POFile(wrapwidth=0)
+    pot.metadata = {
+        "Project-Id-Version": "osparc-simcore",
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Transfer-Encoding": "8bit",
+    }
+    for entry in entries.values():
+        pot.append(entry)
+
+    out_pot.parent.mkdir(parents=True, exist_ok=True)
+    pot.save(str(out_pot))
+    console.print(f"  [json] {len(pot)} entry/ies from {len(files)} file(s) -> {out_pot}")
     return True
 
 
@@ -633,6 +722,31 @@ def jinja_cmd(
     if not run_babel_jinja(src, out):
         raise typer.Exit(code=1)
     console.print(f"[done] jinja -> {out}")
+
+
+@app.command("json")
+def json_cmd(
+    src: Path = typer.Option(Path("src"), help="Directory to scan for JSON resource files"),
+    out: Path = typer.Option(Path("json.pot"), help="Output .pot file"),
+    keys: str = typer.Option(
+        ...,
+        help="Comma-separated JSON keys whose string values are translatable (e.g. name,description,title,text)",
+    ),
+    pattern: str = typer.Option("*.json", help="Glob pattern (relative to --src) selecting JSON files"),
+) -> None:
+    """Extract translatable string values from JSON files by key (e.g. guided tours)."""
+    if not src.is_dir():
+        console.print(f"[error] source directory not found: {src}")
+        raise typer.Exit(code=1)
+
+    key_set = {k.strip() for k in keys.split(",") if k.strip()}
+    if not key_set:
+        console.print("[error] --keys must contain at least one non-empty key")
+        raise typer.Exit(code=1)
+
+    if not run_json_keys(src, out, key_set, pattern):
+        raise typer.Exit(code=1)
+    console.print(f"[done] json -> {out}")
 
 
 @app.command("enrich")
