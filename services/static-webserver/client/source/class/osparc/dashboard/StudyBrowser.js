@@ -1492,7 +1492,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
@@ -1500,13 +1500,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES:
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           // workspaces can't be sorted and don't support list view
           this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1518,7 +1518,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES) {
             this._searchBarFilter.resetFilters();
           }
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Templates");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
@@ -1528,7 +1528,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES) {
             this._searchBarFilter.resetFilters();
           }
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Public Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Public Projects"));
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
@@ -1538,7 +1538,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS) {
             this._searchBarFilter.resetFilters();
           }
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
           // functions don't support all options yet
           this.__sortByButton.hideOptionButton("name");
           this.__sortByButton.hideOptionButton("prj_owner");
@@ -1547,7 +1547,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__reloadStudies();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search Files");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search Files"));
           // Files can't be sorted and don't support list view
           this._toolbar.exclude();
           this._loadingResourcesBtn.setFetching(false);
@@ -1556,7 +1556,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);

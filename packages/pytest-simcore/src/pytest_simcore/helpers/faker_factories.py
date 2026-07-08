@@ -174,7 +174,6 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "prj_owner": fake.pyint(),
         "thumbnail": fake.image_url(width=120, height=120),
         "access_rights": {},
-        "workbench": {},
         "published": False,
         "product_name": "osparc",
     }

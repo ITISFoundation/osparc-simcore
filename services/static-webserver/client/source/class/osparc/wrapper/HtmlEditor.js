@@ -182,7 +182,9 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
       // Default options following Quill documentation
       const defaultOptions = {
         theme: "snow",
-        placeholder: "Start typing...",
+        // Quill (3rd-party) stores the placeholder internally and cannot react to
+        // live locale changes, so resolve the translation to a plain string here.
+        placeholder: qx.locale.Manager.tr("Start typing...").toString(),
         modules: {
           toolbar: [
             [{ "header": [1, 2, false] }],

@@ -93,14 +93,6 @@ projects = sa.Table(
         nullable=True,
         default=None,
     ),
-    # CHILDREN/CONTENT--------------------------
-    sa.Column(
-        "workbench",
-        sa.JSON,
-        nullable=True,
-        server_default=sa.text("'{}'::json"),
-        doc="DEPRECATED: kept as safety-net. Use projects_nodes table instead.",
-    ),
     # FRONT-END ----------------------------
     sa.Column(
         "ui",

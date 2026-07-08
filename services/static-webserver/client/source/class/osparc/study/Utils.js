@@ -156,13 +156,13 @@ qx.Class.define("osparc.study.Utils", {
       });
       templateTypeSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       const templateTypes = [{
-        label: "Template",
+        label: qx.locale.Manager.tr("Template"),
         id: osparc.data.model.StudyUI.TEMPLATE_TYPE,
       }, {
-        label: "Tutorial",
+        label: qx.locale.Manager.tr("Tutorial"),
         id: osparc.data.model.StudyUI.TUTORIAL_TYPE,
       }, {
-        label: "Hypertool",
+        label: qx.locale.Manager.tr("Hypertool"),
         id: osparc.data.model.StudyUI.HYPERTOOL_TYPE,
       }]
       templateTypes.forEach(tempType => {

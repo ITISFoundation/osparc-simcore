@@ -474,13 +474,13 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       twoFAPreferenceSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "SMS",
-        label: "SMS"
+        label: this.tr("SMS")
       }, {
         id: "EMAIL",
-        label: "e-mail"
+        label: this.tr("e-mail")
       }, {
         id: "DISABLED",
-        label: "Disabled"
+        label: this.tr("Disabled")
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
         if (options.id === "SMS") {
@@ -581,7 +581,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         return osparc.auth.core.Utils.checkSamePasswords(newPassword, confirm);
       });
 
-      const resetBtn = new qx.ui.form.Button("Reset Password").set({
+      const resetBtn = new qx.ui.form.Button(this.tr("Reset Password")).set({
         appearance: "form-button",
         alignX: "right",
         allowGrowX: false
