@@ -1237,7 +1237,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         Rationale: exported archives get removed automatically from the bucket after 30 days.
         Left alone, the file_meta_data entry will live there forever.
         This method looks up files under the `exports/` S3 prefix whose `created_at` is
-        older than `STORAGE_EXPORT_RETENTION` and removes them, S3 object first then the
+        older than `STORAGE_CLEANER_EXPORT_RETENTION` and removes them, S3 object first then the
         file_meta_data entry.
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
