@@ -9,6 +9,7 @@ from unittest import mock
 import pytest
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_storage.core.settings import get_application_settings
 from simcore_service_storage.dsm_cleaner import (
     _TASK_NAME_CLEAN_EXPIRED_EXPORTS,
@@ -38,13 +39,13 @@ def mocked_dsm_export_clean(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
+def short_dsm_cleaner_interval(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> int:
     monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL": "PT1S"}')
     return 1
 
 
 @pytest.fixture
-def short_dsm_export_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
+def short_dsm_export_cleaner_interval(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> int:
     monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPORT_INTERVAL": "PT1S"}')
     return 1
 

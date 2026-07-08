@@ -54,6 +54,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
@@ -185,7 +186,7 @@ async def test_copy_folders_from_empty_project(
 
 
 @pytest.fixture
-def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
+def short_dsm_cleaner_interval(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> int:
     monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL": "PT1S"}')
     return 1
 
