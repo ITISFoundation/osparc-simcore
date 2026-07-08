@@ -207,7 +207,7 @@ qx.Class.define("osparc.tours.Manager", {
 
     __createStep: function() {
       const tour = this.getTour();
-      const stepWidget = new osparc.tours.Step(tour["name"]).set({
+      const stepWidget = new osparc.tours.Step(qx.locale.Manager.tr(tour["name"])).set({
         maxWidth: 400
       });
       [
