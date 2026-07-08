@@ -559,7 +559,7 @@ async def clone_project_data(
         }
 
     db = ProjectDBAPI.get_from_app_context(app)
-    await db.insert_project(
+    new_project = await db.insert_project(
         new_project,
         user_id,
         product_name=product_name,
