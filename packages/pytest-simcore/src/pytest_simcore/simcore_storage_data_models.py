@@ -198,25 +198,18 @@ def share_with_collaborator(
 
     async def _() -> None:
         async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(sa.select(projects.c.access_rights).where(projects.c.uuid == f"{project_id}"))
-            row = result.fetchone()
-            assert row
-            access_rights: dict[str | int, Any] = row.access_rights
-
-            access_rights[await _get_user_group(conn, user_id)] = {
-                "read": True,
-                "write": True,
-                "delete": True,
+            access_rights: dict[str | int, Any] = {
+                await _get_user_group(conn, user_id): {
+                    "read": True,
+                    "write": True,
+                    "delete": True,
+                },
+                await _get_user_group(conn, collaborator_id): {
+                    "read": True,
+                    "write": True,
+                    "delete": False,
+                },
             }
-            access_rights[await _get_user_group(conn, collaborator_id)] = {
-                "read": True,
-                "write": True,
-                "delete": False,
-            }
-
-            await conn.execute(
-                projects.update().where(projects.c.uuid == f"{project_id}").values(access_rights=access_rights)
-            )
 
             # project_to_groups needs to be updated
             for group_id, permissions in access_rights.items():
