@@ -483,7 +483,7 @@ def _translate_entry(  # noqa: C901
         glossary_block = "\n".join(f"  {source_term} → {target_term}" for source_term, target_term in glossary.items())
         sections.append(f"Glossary (use these translations for these terms):\n{glossary_block}")
 
-    if translator_notes.strip():
+    if translator_notes.strip(": "):
         sections.append(f"Translator notes from maintainers (follow these instructions):\n{translator_notes}")
 
     if snippet.strip():
