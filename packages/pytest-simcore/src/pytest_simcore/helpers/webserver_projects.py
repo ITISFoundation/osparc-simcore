@@ -23,6 +23,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects._groups_repository import (
+    list_project_groups,
     update_or_insert_project_group,
 )
 from simcore_service_webserver.projects._projects_repository_legacy import (
@@ -128,6 +129,11 @@ async def create_project(
                 write=permissions["write"],
                 delete=permissions["delete"],
             )
+
+    project_groups = await list_project_groups(app, project_id=project_created["uuid"])
+    project_created["accessRights"] = {
+        f"{group.gid}": {"read": group.read, "write": group.write, "delete": group.delete} for group in project_groups
+    }
 
     try:
         uuidlib.UUID(str(project_data["uuid"]))
