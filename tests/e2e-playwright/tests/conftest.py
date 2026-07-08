@@ -618,12 +618,13 @@ def create_new_project_and_delete(
             logging.INFO,
             f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
-            for attempt in range(10):
+            _max_delete_attempts = 24
+            for attempt in range(_max_delete_attempts):
                 response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
                 if response.status == 204:
                     break
-                if response.status == 409 and attempt < 9:
-                    time.sleep(3)
+                if response.status == 409 and attempt < _max_delete_attempts - 1:
+                    time.sleep(5)
                     continue
                 assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 
@@ -813,3 +814,23 @@ def playwright_test_results_dir() -> Path:
     results_dir = Path.cwd() / "test-results"
     results_dir.mkdir(parents=True, exist_ok=True)
     return results_dir
+
+
+@pytest.fixture
+def api_key_and_secret(
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+) -> Iterator[tuple[str, str]]:
+    """Creates a temporary API key/secret pair and deletes it on teardown."""
+    resp = api_request_context.post(
+        f"{product_url}v0/auth/api-keys",
+        data=json.dumps({"displayName": "e2e-temp-api-key"}),
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.ok, f"Failed to create API key: {resp.status} {resp.text()}"
+    data = resp.json()["data"]
+    api_key_id = data["id"]
+
+    yield data["apiKey"], data["apiSecret"]
+
+    api_request_context.delete(f"{product_url}v0/auth/api-keys/{api_key_id}")

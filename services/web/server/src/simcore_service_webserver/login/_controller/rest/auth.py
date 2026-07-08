@@ -8,11 +8,11 @@ from models_library.authentication import TwoFactorAuthenticationMethod
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.users import UserRole
 
 from ...._meta import API_VTAG
+from ....locale import get_locale_or_none, translate_message
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_web
@@ -21,6 +21,8 @@ from ....session.access_policies import (
     session_access_required,
 )
 from ....user_preferences import user_preferences_service
+from ....user_preferences.models import TwoFAFrontendUserPreference
+from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response, flash_response
 from ... import _auth_service, _login_service, _security_service, _twofa_service
 from ...constants import (
@@ -94,11 +96,11 @@ async def login(request: web.Request):
         request.app,
         user_id=user["id"],
         product_name=product.name,
-        preference_class=user_preferences_service.TwoFAFrontendUserPreference,
+        preference_class=TwoFAFrontendUserPreference,
     )
     if not user_2fa_preference:
         user_2fa_authentication_method = TwoFactorAuthenticationMethod.SMS
-        preference_id = user_preferences_service.TwoFAFrontendUserPreference().preference_identifier
+        preference_id = TwoFAFrontendUserPreference().preference_identifier
         await user_preferences_service.set_frontend_user_preference(
             request.app,
             user_id=user["id"],
@@ -121,7 +123,7 @@ async def login(request: web.Request):
             {
                 "name": CODE_PHONE_NUMBER_REQUIRED,
                 "parameters": {
-                    "message": MSG_PHONE_MISSING,
+                    "message": translate_message(MSG_PHONE_MISSING, request),
                     "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
                 },
             },
@@ -142,13 +144,16 @@ async def login(request: web.Request):
         assert product.twilio_messaging_sid  # nosec
 
         await _twofa_service.send_sms_code(
+            request.app,
             phone_number=user["phone"],
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=user["first_name"] or user["name"],
+            product_name=product.name,
             user_id=user["id"],
+            locale=get_locale_or_none(request),
         )
 
         return envelope_response(
@@ -156,7 +161,9 @@ async def login(request: web.Request):
             {
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
-                    "message": MSG_2FA_CODE_SENT.format(phone_number=_twofa_service.mask_phone_number(user["phone"])),
+                    "message": translate_message(MSG_2FA_CODE_SENT, request).format(
+                        phone_number=_twofa_service.mask_phone_number(user["phone"])
+                    ),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
             },
@@ -174,12 +181,13 @@ async def login(request: web.Request):
         product_name=product.name,
         host=request.host,
         user_id=user["id"],
+        locale=get_locale_or_none(request),
     )
     return envelope_response(
         {
             "name": CODE_2FA_EMAIL_CODE_REQUIRED,
             "parameters": {
-                "message": MSG_EMAIL_SENT.format(email=user["email"]),
+                "message": translate_message(MSG_EMAIL_SENT, request).format(email=user["email"]),
                 "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             },
         },
@@ -240,7 +248,7 @@ async def logout(request: web.Request) -> web.Response:
         f"{logout_.client_session_id=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
-        response = flash_response(MSG_LOGGED_OUT, "INFO")
+        response = flash_response(translate_message(MSG_LOGGED_OUT, request), "INFO")
         await _login_service.notify_user_logout(request.app, user_id, logout_.client_session_id)
         await security_web.forget_identity(request, response)
 

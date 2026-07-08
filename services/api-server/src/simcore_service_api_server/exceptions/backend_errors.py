@@ -29,6 +29,13 @@ class InvalidInputError(BaseBackEndError):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+class InvalidEncryptionInputsError(BaseBackEndError):
+    msg_template = user_message(
+        "The provided encryption inputs {inputs} are not valid. Available node inputs '{node_inputs}'", _version=1
+    )
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
 class ListSolversOrStudiesError(BaseBackEndError):
     msg_template = user_message("Unable to retrieve the list of solvers and projects.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
@@ -70,8 +77,18 @@ class JobForbiddenAccessError(BaseBackEndError):
     status_code = status.HTTP_403_FORBIDDEN
 
 
+class BatchJobForbiddenAccessError(BaseBackEndError):
+    msg_template = user_message("You do not have permission to access jobs {project_uuids}.", _version=1)
+    status_code = status.HTTP_403_FORBIDDEN
+
+
 class JobNotFoundError(BaseBackEndError):
     msg_template = user_message("The solver or project job {project_id} could not be found.", _version=1)
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class BatchJobNotFoundError(BaseBackEndError):
+    msg_template = user_message("The solver or project jobs {project_uuids} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 
@@ -86,8 +103,6 @@ class LogFileNotFoundError(BaseBackEndError):
 class SolverOutputNotFoundError(BaseBackEndError):
     msg_template = user_message("The output for project {project_id} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
-
-
 
 
 class ConfigurationError(BaseBackEndError):
@@ -160,6 +175,11 @@ class LicensedItemCheckoutNotFoundError(BaseBackEndError):
 class JobAssetsMissingError(BaseBackEndError):
     msg_template = user_message("The assets for job {job_id} are missing.", _version=1)
     status_code = status.HTTP_409_CONFLICT
+
+
+class ChatbotNotAvailableError(BaseBackEndError):
+    msg_template = user_message("The chatbot service is not enabled.", _version=1)
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 class CeleryTaskNotFoundError(BaseBackEndError):

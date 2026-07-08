@@ -5,7 +5,7 @@ from typing import Any, cast
 import sqlalchemy as sa
 from models_library.basic_types import IDStr
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -15,7 +15,7 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
-from sqlalchemy import literal_column
+from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from .....core.errors import ComputationalTaskNotFoundError
@@ -135,6 +135,7 @@ class CompTasksRepository(BaseRepository):
         self,
         *,
         project: ProjectAtDB,
+        project_nodes: NodesDict,
         catalog_client: CatalogClient,
         published_nodes: list[NodeID],
         user_id: UserID,
@@ -142,14 +143,19 @@ class CompTasksRepository(BaseRepository):
         rut_client: ResourceUsageTrackerClient,
         wallet_info: WalletInfo | None,
         rabbitmq_rpc_client: RabbitMQRPCClient,
-    ) -> list[CompTaskAtDB]:
+    ) -> tuple[list[CompTaskAtDB], bool]:
+        """Returns (comp_tasks, insufficient_credits).
+
+        If insufficient_credits is True, affected published nodes were set to ABORTED.
+        """
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with self.db_engine.begin() as conn:
-            list_of_comp_tasks_in_project: list[CompTaskAtDB] = (
+            list_of_comp_tasks_in_project, insufficient_credits = (
                 # WARNING: this is NOT a real repository method, it is a utility function
                 # that calls backend services to generate the tasks list!! Refactoring needed!!
                 await _utils.generate_tasks_list_from_project(
                     project=project,
+                    project_nodes=project_nodes,
                     catalog_client=catalog_client,
                     published_nodes=published_nodes,
                     user_id=user_id,
@@ -166,7 +172,7 @@ class CompTasksRepository(BaseRepository):
             )
             # remove the tasks that were removed from project workbench
             if all_nodes := result.all():
-                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project.workbench]
+                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project_nodes]
                 for node_id in node_ids_to_delete:
                     await conn.execute(
                         sa.delete(comp_tasks).where(
@@ -193,18 +199,19 @@ class CompTasksRepository(BaseRepository):
                     exclusion_rule.add("outputs")
                 else:
                     update_values = {}
-                on_update_stmt = insert_stmt.on_conflict_do_update(
-                    index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                    set_=comp_task_db.to_db_model(exclude=exclusion_rule) | update_values,
-                ).returning(literal_column("*"))
-                result = await conn.execute(on_update_stmt)
+                result = await conn.execute(
+                    insert_stmt.on_conflict_do_update(
+                        index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
+                        set_=comp_task_db.to_db_model(exclude=exclusion_rule) | update_values,
+                    ).returning(literal_column("*"))
+                )
                 row = result.one()
                 inserted_comp_tasks_db.append(CompTaskAtDB.model_validate(row))
                 _logger.debug(
                     "inserted the following tasks in comp_tasks: %s",
                     f"{inserted_comp_tasks_db=}",
                 )
-            return inserted_comp_tasks_db
+            return inserted_comp_tasks_db, insufficient_credits
 
     async def _update_task(
         self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, **task_kwargs
@@ -215,7 +222,7 @@ class CompTasksRepository(BaseRepository):
             msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
         ):
             async with self.db_engine.begin() as conn:
-                result = await conn.execute(
+                result: CursorResult = await conn.execute(
                     sa.update(comp_tasks)
                     .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}"))
                     .values(**task_kwargs)

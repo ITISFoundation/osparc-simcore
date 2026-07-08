@@ -47,6 +47,7 @@ from .models.schemas.files import File as SchemaFile
 from .models.schemas.jobs import (
     ArgumentTypes,
     Job,
+    JobEncryptionInputs,
     JobID,
     JobInputs,
     JobOutputs,
@@ -112,9 +113,10 @@ class JobService:
         self,
         job_parent_resource_name: str,
         *,
-        filter_any_custom_metadata: list[NameValueTuple] | None = None,
-        pagination_offset: PageOffsetInt | None = None,
-        pagination_limit: PageLimitInt | None = None,
+        filter_any_custom_metadata: list[NameValueTuple] | None,
+        filter_all_custom_metadata: list[NameValueTuple] | None,
+        pagination_offset: PageOffsetInt | None,
+        pagination_limit: PageLimitInt | None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
@@ -126,6 +128,8 @@ class JobService:
             user_id=self.user_id,
             filter_by_job_parent_resource_name_prefix=job_parent_resource_name,
             filter_any_custom_metadata=filter_any_custom_metadata,
+            filter_all_custom_metadata=filter_all_custom_metadata,
+            filter_by_project_uuids=None,
             **pagination_kwargs,
         )
 
@@ -163,6 +167,7 @@ class JobService:
         filter_by_solver_key: SolverKeyId | None = None,
         filter_by_solver_version: VersionStr | None = None,
         filter_any_custom_metadata: list[NameValueTuple] | None = None,
+        filter_all_custom_metadata: list[NameValueTuple] | None = None,
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all solver jobs for a user with pagination"""
 
@@ -184,6 +189,7 @@ class JobService:
         return await self._list_jobs(
             job_parent_resource_name=job_parent_resource_name,
             filter_any_custom_metadata=filter_any_custom_metadata,
+            filter_all_custom_metadata=filter_all_custom_metadata,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
         )
@@ -209,6 +215,8 @@ class JobService:
         # 2. list jobs under job_parent_resource_name
         return await self._list_jobs(
             job_parent_resource_name=job_parent_resource_name,
+            filter_any_custom_metadata=None,
+            filter_all_custom_metadata=None,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
         )
@@ -433,6 +441,7 @@ class JobService:
         version: VersionStr,
         job_id: JobID,
         pricing_spec: JobPricingSpecification | None,
+        encryption: JobEncryptionInputs | None,
     ) -> JobStatus:
         """
         Raises ProjectAlreadyStartedError if the project is already started
@@ -447,6 +456,7 @@ class JobService:
             pricing_spec=pricing_spec,
             job_id=job_id,
             expected_job_name=job_name,
+            encryption=encryption,
             webserver_api=self._web_rest_client,
         )
         return await self.inspect_solver_job(
@@ -534,6 +544,7 @@ class JobService:
             expected_job_name=job_name,
             webserver_api=self._web_rest_client,
             pricing_spec=pricing_spec,
+            encryption=None,  # NOTE: study jobs (multi-node) do not support encryption
         )
         return await self.inspect_study_job(
             job_id=job_id,

@@ -12,10 +12,11 @@ from ....exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ....groups import api as groups_service
+from ....groups import groups_service
+from ....locale import translate_message
 from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
-from ....users.exceptions import AlreadyPreRegisteredError
+from ....users.errors import AlreadyPreRegisteredError
 from ...constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_WRONG_PASSWORD,
@@ -33,9 +34,9 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     AlreadyPreRegisteredError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "An account for the email {email} has been submitted. "
+            "An account for the email {email} was already submitted. "
             "If you haven't received any updates, please contact support.",
-            _version=1,
+            _version=2,
         ),
     ),
     SendingVerificationSmsError: HttpErrorInfo(
@@ -102,13 +103,13 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
     user_id = exception.error_context().get("user_id")
     assert user_id is not None, "user_id must be present in error context"  # nosec
 
-    msg = MSG_WRONG_PASSWORD
+    msg = translate_message(MSG_WRONG_PASSWORD, request)
     product_name = products_web.get_product_name(request)
     suggested_product = await _try_show_login_fallbacks_on_wrong_password(
         request.app, user_id=user_id, product_name=product_name
     )
     if suggested_product:
-        msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product=suggested_product)
+        msg = translate_message(MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product=suggested_product), request)
 
     return handle_aiohttp_web_http_error(
         request=request,

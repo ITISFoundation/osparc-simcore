@@ -1,0 +1,11 @@
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
+
+{% trans product_name=product.display_name, host=host %}Thank you for your interest in {{ product_name }}. You have successfully registered for {{ host }}.{% endtrans %}
+
+{% trans %}Please activate your account via the link below:{% endtrans %}
+{{ link }}
+
+{% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need further help.{% endtrans %}
+
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

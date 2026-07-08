@@ -7,13 +7,16 @@ from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.notifications import Channel
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
 from ...._meta import API_VTAG
-from ....groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
+from ....groups.groups_service import (
+    auto_add_user_to_groups,
+    auto_add_user_to_product_group,
+)
 from ....invitations.api import is_service_invitation_code
+from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact
 from ....products import products_web
@@ -25,6 +28,7 @@ from ....session.access_policies import (
 from ....utils import MINUTE
 from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response, flash_response
 from ... import (
     _auth_service,
@@ -49,6 +53,7 @@ from ...constants import (
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
     MSG_CANT_SEND_MAIL,
+    MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
@@ -234,6 +239,7 @@ async def register(request: web.Request):
                         "user_name": user.get("name"),
                     },
                 },
+                locale=get_locale_or_none(request),
             )
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
@@ -260,8 +266,7 @@ async def register(request: web.Request):
             raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
         return flash_response(
-            "You are registered successfully! To activate your account, please, "
-            f"click on the verification link in the email we sent you to {registration.email}.",
+            translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
             "INFO",
         )
 
@@ -335,12 +340,15 @@ async def register_phone(request: web.Request):
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
         await _twofa_service.send_sms_code(
+            request.app,
             phone_number=registration.phone,
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=_registration_service.get_user_name_from_email(registration.email),
+            product_name=product.name,
+            locale=get_locale_or_none(request),
         )
 
         return envelope_response(

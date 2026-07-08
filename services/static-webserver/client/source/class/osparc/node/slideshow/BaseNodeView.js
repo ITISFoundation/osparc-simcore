@@ -138,7 +138,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const inputsStateBtn = this.__inputsButton = new qx.ui.form.Button().set({
         width: 110,
         label: this.tr("Inputs"),
-        icon: "@FontAwesome5Solid/sign-in-alt/14",
+        icon: "@FontAwesomeSolid/sign-in-alt/14",
         backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       inputsStateBtn.addListener("execute", () => this.showPreparingInputs(), this);
@@ -156,7 +156,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
 
-      const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
+      const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesomeSolid/book/17").set({
         backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       instructionsBtn.addListener("appear", () => this.__openInstructions(), this);
@@ -165,7 +165,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
       const startBtn = this.__nodeStartButton = new qx.ui.form.Button().set({
         label: this.tr("Start"),
-        icon: "@FontAwesome5Solid/play/14",
+        icon: "@FontAwesomeSolid/play/14",
         backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR,
         visibility: "excluded"
       });
@@ -173,7 +173,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
       const stopBtn = this.__nodeStopButton = new qx.ui.form.Button().set({
         label: this.tr("Stop"),
-        icon: "@FontAwesome5Solid/stop/14",
+        icon: "@FontAwesomeSolid/stop/14",
         backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR,
         visibility: "excluded"
       });
@@ -192,7 +192,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const outputsBtn = this.__outputsBtn = new qx.ui.form.ToggleButton().set({
         width: 110,
         label: this.tr("Outputs"),
-        icon: "@FontAwesome5Solid/sign-out-alt/14",
+        icon: "@FontAwesomeSolid/sign-out-alt/14",
         backgroundColor: this.self().BUTTONS_BACKGROUND_COLOR
       });
       osparc.utils.Utils.setIdToWidget(outputsBtn, "outputsBtn");
@@ -356,9 +356,9 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       const waiting = Boolean(preparingNodes && preparingNodes.length);
       const buttonsIcon = this.__inputsButton.getChildControl("icon");
       if (waiting) {
-        this.__inputsButton.setIcon("@FontAwesome5Solid/circle-notch/14");
+        this.__inputsButton.setIcon("@FontAwesomeSolid/circle-notch/14");
       } else {
-        this.__inputsButton.setIcon("@FontAwesome5Solid/sign-in-alt/14");
+        this.__inputsButton.setIcon("@FontAwesomeSolid/sign-in-alt/14");
       }
       osparc.service.StatusUI.updateCircleAnimation(buttonsIcon);
       this.__enableIframeContent(!waiting);

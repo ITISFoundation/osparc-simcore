@@ -54,7 +54,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
           this._add(control);
           break;
         case "reload-button":
-          control = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14");
+          control = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesomeSolid/sync-alt/14");
           this.getChildControl("header-toolbar").add(control);
           break;
         case "intro-label":

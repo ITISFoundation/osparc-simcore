@@ -26,6 +26,7 @@ from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
 from ..modules import db, director_v0, dynamic_sidecar
 from ..modules.catalog import CatalogClient
 from ..modules.db.repositories.projects import ProjectsRepository
+from ..modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ..modules.dynamic_sidecar import api_client
 from ..modules.projects_networks import requires_dynamic_sidecar
 from ..utils.db import get_repository
@@ -33,11 +34,11 @@ from ._client import ThinDV2LocalhostClient
 
 
 @asynccontextmanager
-async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
+async def _initialized_app(*, only_db: bool = False) -> AsyncIterator[FastAPI]:
     app = create_base_app()
     settings: AppSettings = app.state.settings
     # Initialize minimal required components for the application
-    db.setup(app, settings.POSTGRES)
+    db.setup(app, settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
 
     if not only_db:
         dynamic_sidecar.setup(app)
@@ -84,11 +85,13 @@ async def _save_node_state(
 async def async_project_save_state(project_id: ProjectID, save_attempts: int) -> None:
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
-        project_at_db = await projects_repository.get_project(project_id)
+        projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
+        project_at_db = await projects_repository.get(project_id)
+        workbench = await projects_nodes_repository.get_all(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
         nodes_failed_to_save: list[NodeIDStr] = []
-        for node_uuid, node_content in project_at_db.workbench.items():
+        for node_uuid, node_content in workbench.items():
             # only dynamic-sidecars are used
             if not await requires_dynamic_sidecar(
                 service_key=node_content.key,
@@ -150,7 +153,7 @@ async def _get_dy_service_state(client: AsyncClient, node_uuid: NodeIDStr) -> Dy
         return None
 
     result_dict = result.json()
-    return DynamicServiceGet(**(result_dict["data"] if "data" in result_dict else result_dict))
+    return DynamicServiceGet(**(result_dict.get("data", result_dict)))
 
 
 async def _to_render_data(
@@ -213,12 +216,14 @@ async def _get_nodes_render_data(
     project_id: ProjectID,
 ) -> list[RenderData]:
     projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
+    projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
 
-    project_at_db = await projects_repository.get_project(project_id)
+    await projects_repository.get(project_id)
+    workbench = await projects_nodes_repository.get_all(project_id)
 
     render_data: list[RenderData] = []
     async with AsyncClient() as client:
-        for node_uuid, node_content in project_at_db.workbench.items():
+        for node_uuid, node_content in workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
             render_data.append(await _to_render_data(client, node_uuid, node_content.label, service_type))
     sorted_render_data: list[RenderData] = sorted(render_data, key=_get_node_id)
@@ -254,7 +259,7 @@ async def _display(
             live.update(generate_table(await _get_nodes_render_data(app, project_id)))
 
 
-async def async_project_state(project_id: ProjectID, blocking: bool, update_interval: PositiveInt) -> None:
+async def async_project_state(project_id: ProjectID, *, blocking: bool, update_interval: PositiveInt) -> None:
     async with _initialized_app(only_db=True) as app:
         await _display(app, project_id, update_interval=update_interval, blocking=blocking)
 

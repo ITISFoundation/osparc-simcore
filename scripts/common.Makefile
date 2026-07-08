@@ -41,6 +41,7 @@ VCS_URL       := $(shell git config --get remote.origin.url)
 VCS_REF       := $(shell git rev-parse --short HEAD)
 NOW_TIMESTAMP := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+include $(REPO_BASE_DIR)/scripts/common-templates.Makefile
 
 # relevant repo folders
 SCRIPTS_DIR := $(abspath $(REPO_BASE_DIR)/scripts)
@@ -72,23 +73,9 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 # COMMON TASKS
 #
 
-# spellchecker:ignore-next-line
-.PHONY: hel%
-# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-# spellchecker:ignore-next-line
-hel%:
-	@echo "usage: make [target] ..."
-	@echo ""
-	@echo "Targets for '$(notdir $(CURDIR))':"
-	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-
-
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 .env: .env-devel ## creates .env file from defaults in .env-devel
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+	$(clone_from_template)
 
 
 .PHONY: devenv

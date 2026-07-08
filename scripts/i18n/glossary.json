@@ -1,0 +1,25 @@
+{
+  "lang_names": {
+    "zh_CN": "Simplified Chinese",
+    "es_ES": "Spanish"
+  },
+  "glossary": {
+    "zh_CN": {
+      "boundary condition": "边界条件",
+      "cell size": "网格尺寸",
+      "mesh": "网格",
+      "resolution": "分辨率",
+      "solver": "求解器",
+      "voxel": "体素"
+    },
+    "es_ES": {
+      "boundary condition": "condición de contorno",
+      "cell size": "tamaño de celda",
+      "job": "tareas",
+      "mesh": "mallado",
+      "resolution": "resolución",
+      "solver": "simulador",
+      "voxel": "vóxel"
+    }
+  }
+}

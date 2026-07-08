@@ -210,10 +210,10 @@ qx.Class.define("osparc.study.Conversations", {
       conversationsLayout.add(conversationPage);
 
       if (this.__newConversationButton === null) {
-          const studyData = this.getStudyData();
+        const studyData = this.getStudyData();
         // initialize the new button only once
         const newConversationButton = this.__newConversationButton = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/plus/12",
+          icon: "@FontAwesomeSolid/plus/12",
           toolTipText: this.tr("Add new conversation"),
           allowGrowX: false,
           backgroundColor: "transparent",

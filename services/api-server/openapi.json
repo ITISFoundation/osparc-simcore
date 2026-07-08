@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.13.0"
+    "version": "0.14.0"
   },
   "paths": {
     "/v0/meta": {
@@ -2837,9 +2837,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -2967,9 +2965,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3106,9 +3102,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3241,9 +3235,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           },
           {
@@ -3266,6 +3258,23 @@
             "deprecated": true
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/JobEncryptionInputs"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encryption"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -3429,9 +3438,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3568,9 +3575,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3707,9 +3712,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3844,9 +3847,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -3991,6 +3992,27 @@
               "title": "Metadata.Any"
             },
             "description": "\nFilters jobs based on **any** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n"
+          },
+          {
+            "name": "metadata.all",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\nFilters jobs based on **all** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n",
+              "title": "Metadata.All"
+            },
+            "description": "\nFilters jobs based on **all** of the matches on custom metadata fields.\n\n*Format*: `key:pattern` where pattern can contain glob wildcards\n"
           }
         ],
         "responses": {
@@ -4000,6 +4022,119 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Page_Job_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/-/releases/-/jobs/metadata:batchGet": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Batch Get Jobs Custom Metadata",
+        "description": "Gets custom metadata for multiple jobs in a single request\n\nNew in *version 0.7*",
+        "operationId": "batch_get_jobs_custom_metadata",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/JobID"
+              },
+              "minItems": 1,
+              "maxItems": 50,
+              "title": "Job Ids"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchGetJobMetadataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metadata not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -4207,9 +4342,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4356,9 +4489,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4493,9 +4624,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4632,9 +4761,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -4760,9 +4887,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5347,9 +5472,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5404,9 +5527,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5466,9 +5587,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           },
           {
@@ -5635,9 +5754,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5693,9 +5810,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5751,9 +5866,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5809,9 +5922,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5868,9 +5979,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -5925,9 +6034,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
+              "$ref": "#/components/schemas/JobID"
             }
           }
         ],
@@ -8794,6 +8901,123 @@
         }
       }
     },
+    "/v0/responses": {
+      "post": {
+        "tags": [
+          "responses"
+        ],
+        "summary": "Create Response",
+        "description": "Creates a model response (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*",
+        "operationId": "create_response",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResponseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseObject"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Chatbot service is not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "x-openai-compatible": true
+      }
+    },
+    "/v0/responses/{response_id}": {
+      "get": {
+        "tags": [
+          "responses"
+        ],
+        "summary": "Get Response",
+        "description": "Retrieves a model response by ID. Use to poll status of background responses (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*",
+        "operationId": "get_response",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Response Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseObject"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-openai-compatible": true
+      }
+    },
     "/v0/tasks": {
       "get": {
         "tags": [
@@ -9024,9 +9248,78 @@
         ],
         "title": "ApiServerEnvelope[list[TaskGet]]"
       },
+      "ArgumentTypes-Input": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/File"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "items": {},
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "ArgumentTypes-Output": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/File"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "items": {},
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "AsyncJobId": {
         "type": "string",
         "format": "uuid"
+      },
+      "BatchGetJobMetadataResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/JobMetadata"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "List of job metadata results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "BatchGetJobMetadataResponse"
       },
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {
@@ -9166,6 +9459,63 @@
         ],
         "title": "ClientFileUploadData"
       },
+      "CreateResponseRequest": {
+        "properties": {
+          "background": {
+            "type": "boolean",
+            "const": true,
+            "title": "Background"
+          },
+          "input": {
+            "items": {
+              "$ref": "#/components/schemas/InputMessage"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Input"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/MetadataValue"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/MetadataKey"
+                },
+                "type": "object",
+                "maxProperties": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "model": {
+            "title": "Model"
+          },
+          "temperature": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Temperature"
+          }
+        },
+        "type": "object",
+        "required": [
+          "background",
+          "input",
+          "model",
+          "temperature"
+        ],
+        "title": "CreateResponseRequest",
+        "description": "Request body for POST /responses."
+      },
+      "ETag": {
+        "type": "string"
+      },
       "ErrorDict": {
         "properties": {
           "loc": {
@@ -9278,13 +9628,12 @@
           "e_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "E Tag",
             "description": "S3 entity tag"
           }
         },
@@ -9295,6 +9644,12 @@
         ],
         "title": "File",
         "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud."
+      },
+      "FileIDStr": {
+        "type": "string",
+        "maxLength": 65535,
+        "minLength": 1,
+        "description": "client-chosen file identifier mixed into HKDF key derivation"
       },
       "FileUploadCompletionBody": {
         "properties": {
@@ -9484,6 +9839,32 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "InputMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "system",
+              "developer"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "InputMessage"
+      },
       "JSONFunctionInputSchema": {
         "properties": {
           "schema_content": {
@@ -9525,9 +9906,7 @@
       "Job": {
         "properties": {
           "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
+            "$ref": "#/components/schemas/JobID"
           },
           "name": {
             "type": "string",
@@ -9620,37 +9999,41 @@
           "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c"
         }
       },
+      "JobEncryptionInputs": {
+        "properties": {
+          "root_key": {
+            "$ref": "#/components/schemas/RootKeyStr"
+          },
+          "input_port_to_file_id": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FileIDStr"
+            },
+            "type": "object",
+            "title": "Input Port To File Id",
+            "description": "Maps each encrypted input port key to the file_id used to derive its key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "root_key"
+        ],
+        "title": "JobEncryptionInputs",
+        "description": "Optional encryption context supplied at job-start time.",
+        "example": {
+          "input_port_to_file_id": {
+            "input_file": "input_file"
+          },
+          "root_key": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+        }
+      },
+      "JobID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "JobInputs": {
         "properties": {
           "values": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/File"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "items": {},
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "object",
-            "title": "Values"
+            "$ref": "#/components/schemas/KeywordArguments-Input"
           }
         },
         "type": "object",
@@ -9737,9 +10120,7 @@
       "JobMetadata": {
         "properties": {
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
+            "$ref": "#/components/schemas/JobID",
             "description": "Parent Job"
           },
           "metadata": {
@@ -9809,40 +10190,11 @@
       "JobOutputs": {
         "properties": {
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
+            "$ref": "#/components/schemas/JobID",
             "description": "Job that produced this output"
           },
           "results": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/File"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "items": {},
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "object",
-            "title": "Results"
+            "$ref": "#/components/schemas/KeywordArguments-Output"
           }
         },
         "type": "object",
@@ -9868,9 +10220,7 @@
       "JobStatus": {
         "properties": {
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id"
+            "$ref": "#/components/schemas/JobID"
           },
           "state": {
             "$ref": "#/components/schemas/RunningState"
@@ -9941,6 +10291,18 @@
           "state": "STARTED",
           "submitted_at": "2021-04-01 07:15:54.631007"
         }
+      },
+      "KeywordArguments-Input": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ArgumentTypes-Input"
+        },
+        "type": "object"
+      },
+      "KeywordArguments-Output": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ArgumentTypes-Output"
+        },
+        "type": "object"
       },
       "LicensedItemCheckoutData": {
         "properties": {
@@ -10442,6 +10804,14 @@
           }
         ]
       },
+      "MetadataKey": {
+        "type": "string",
+        "maxLength": 64
+      },
+      "MetadataValue": {
+        "type": "string",
+        "maxLength": 512
+      },
       "OnePage_SolverPort_": {
         "properties": {
           "items": {
@@ -10497,6 +10867,68 @@
           "items"
         ],
         "title": "OnePage[StudyPort]"
+      },
+      "OutputMessage": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "message",
+            "title": "Type",
+            "default": "message"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "in_progress",
+              "completed",
+              "incomplete"
+            ],
+            "title": "Status"
+          },
+          "role": {
+            "type": "string",
+            "const": "assistant",
+            "title": "Role",
+            "default": "assistant"
+          },
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/OutputTextContent"
+            },
+            "type": "array",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "content"
+        ],
+        "title": "OutputMessage"
+      },
+      "OutputTextContent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "output_text",
+            "title": "Type",
+            "default": "output_text"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "OutputTextContent"
       },
       "PageRegisteredFunctionJobWithorWithoutStatus": {
         "properties": {
@@ -12532,6 +12964,103 @@
         ],
         "title": "RegisteredSolverFunctionJobWithStatus"
       },
+      "ResponseObject": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "object": {
+            "$ref": "#/components/schemas/ResponseObjectType",
+            "default": "response"
+          },
+          "background": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OutputMessage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ResponseStatus",
+            "default": "in_progress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ResponseObject",
+        "description": "Response object returned by both POST and GET endpoints."
+      },
+      "ResponseObjectType": {
+        "type": "string",
+        "enum": [
+          "response"
+        ],
+        "title": "ResponseObjectType"
+      },
+      "ResponseStatus": {
+        "type": "string",
+        "enum": [
+          "cancelled",
+          "completed",
+          "failed",
+          "in_progress",
+          "incomplete",
+          "queued"
+        ],
+        "title": "ResponseStatus"
+      },
+      "RootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded 32-byte root key shared by all tasks of the job",
+        "writeOnly": true
+      },
       "RunningState": {
         "type": "string",
         "enum": [
@@ -13164,8 +13693,7 @@
             "title": "Number"
           },
           "e_tag": {
-            "type": "string",
-            "title": "E Tag"
+            "$ref": "#/components/schemas/ETag"
           }
         },
         "type": "object",
@@ -13237,9 +13765,7 @@
             "description": "Program version"
           },
           "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
+            "$ref": "#/components/schemas/JobID",
             "description": "Job identifier"
           },
           "workspace_path": {

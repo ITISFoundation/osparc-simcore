@@ -18,6 +18,7 @@ from models_library.functions_errors import (
     FunctionHasJobsCannotDeleteError,
     FunctionIDNotFoundError,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -38,8 +39,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import ColumnElement, func
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups.api import list_all_user_groups_ids
-from ..users import users_service
 from ._functions_permissions_repository import (
     _internal_set_group_permissions,
     check_user_api_access_rights,
@@ -57,6 +56,8 @@ async def create_function(  # noqa: PLR0913
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
+    user_primary_group_id: GroupID,
     product_name: ProductName,
     function_class: FunctionClass,
     class_specific_data: dict,
@@ -71,6 +72,7 @@ async def create_function(  # noqa: PLR0913
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTIONS],
         )
@@ -92,7 +94,6 @@ async def create_function(  # noqa: PLR0913
 
         registered_function = RegisteredFunctionDB.model_validate(row)
 
-        user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
         await _internal_set_group_permissions(
             app,
             connection=transaction,
@@ -113,6 +114,7 @@ async def get_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
@@ -121,6 +123,7 @@ async def get_function(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_id,
             object_type="function",
@@ -159,11 +162,12 @@ def _create_list_functions_attributes_filters(
     return attributes_filters
 
 
-async def list_functions(
+async def list_functions(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
@@ -177,10 +181,10 @@ async def list_functions(
             app,
             connection=conn,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             api_access_rights=[FunctionsApiAccessRights.READ_FUNCTIONS],
         )
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
         attributes_filters = _create_list_functions_attributes_filters(
             filter_by_function_class=filter_by_function_class,
             search_by_multi_columns=search_by_multi_columns,
@@ -204,7 +208,7 @@ async def list_functions(
         )
 
         # Get total count
-        total_count = await conn.scalar(func.count().select().select_from(base_query.subquery()))
+        total_count = await conn.scalar(func.count().select().select_from(base_query.subquery())) or 0
         if total_count == 0:
             return [], PageMetaInfoLimitOffset(total=0, offset=pagination_offset, limit=pagination_limit, count=0)
 
@@ -240,6 +244,7 @@ async def delete_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_id: FunctionID,
     force: bool = False,
@@ -249,6 +254,7 @@ async def delete_function(
             app,
             connection=transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_id,
             object_type="function",
@@ -283,6 +289,7 @@ async def update_function(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     function_id: FunctionID,
     function: FunctionUpdate,
@@ -292,6 +299,7 @@ async def update_function(
             app,
             transaction,
             user_id=user_id,
+            user_groups=user_groups,
             product_name=product_name,
             object_id=function_id,
             object_type="function",

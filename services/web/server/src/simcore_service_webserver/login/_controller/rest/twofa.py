@@ -4,11 +4,12 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 
+from ....locale import get_locale_or_none
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import session_access_required
+from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response
 from ... import _auth_service, _twofa_service
 from ...constants import (
@@ -71,13 +72,16 @@ async def resend_2fa_code(request: web.Request):
             raise web.HTTPBadRequest(text=user_message("User does not have a phone number registered"))
 
         await _twofa_service.send_sms_code(
+            request.app,
             phone_number=user_phone_number,
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=user["first_name"] or user["name"],
+            product_name=product.name,
             user_id=user["id"],
+            locale=get_locale_or_none(request),
         )
 
         response = envelope_response(
@@ -105,6 +109,7 @@ async def resend_2fa_code(request: web.Request):
             product_name=product.name,
             host=request.host,
             user_id=user["id"],
+            locale=get_locale_or_none(request),
         )
 
         response = envelope_response(

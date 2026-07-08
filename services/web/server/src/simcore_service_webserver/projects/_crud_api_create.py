@@ -1,6 +1,8 @@
 import asyncio
 import logging
-from collections.abc import Coroutine
+from collections.abc import AsyncIterator, Coroutine
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
@@ -11,18 +13,20 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
+    WORKBENCH_NODE_ALIAS_TO_COLUMN,
     ProjectNode,
     ProjectNodeCreate,
 )
@@ -35,12 +39,9 @@ from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..folders import _folders_repository as folders_folders_repository
 from ..redis import get_redis_lock_manager_client_sdk
-from ..storage.api import (
-    copy_data_folders_from_project,
-    get_project_total_size_simcore_s3,
-)
-from ..workspaces.api import check_user_workspace_access, get_user_workspace
+from ..storage.api import copy_data_folders_from_project, get_project_total_size_simcore_s3
 from ..workspaces.errors import WorkspaceAccessForbiddenError
+from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
 from . import _folders_repository, _projects_repository, _projects_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
@@ -64,6 +65,56 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 
 
 _logger = logging.getLogger(__name__)
+
+
+async def _cleanup_failed_project(
+    app: web.Application,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    simcore_user_agent: str,
+    product_name: ProductName,
+) -> None:
+    with log_catch(_logger), log_context(_logger, logging.INFO, f"cleaning up failed project {project_uuid=}"):
+        await _projects_service.submit_delete_project_task(
+            app=app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            simcore_user_agent=simcore_user_agent,
+            product_name=product_name,
+        )
+
+
+@dataclass
+class _ProjectCleanupContext:
+    project_uuid: ProjectID | None = None
+
+    def mark_inserted(self, project_uuid: str | ProjectID) -> None:
+        self.project_uuid = ProjectID(f"{project_uuid}")
+
+
+@asynccontextmanager
+async def _cleanup_project_on_error(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    simcore_user_agent: str,
+    product_name: ProductName,
+) -> AsyncIterator[_ProjectCleanupContext]:
+    """Cleans up the project if the wrapped block raises *after* the project
+    row has been inserted (signalled via ``ctx.mark_inserted(...)``).
+    """
+    ctx = _ProjectCleanupContext()
+    try:
+        yield ctx
+    except asyncio.CancelledError:
+        if ctx.project_uuid is not None:
+            await _cleanup_failed_project(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
+        raise
+    except Exception:
+        if ctx.project_uuid is not None:
+            await _cleanup_failed_project(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
+        raise
+
 
 type CopyFileCoro = Coroutine[Any, Any, None]
 type CopyProjectNodesCoro = Coroutine[Any, Any, dict[NodeID, ProjectNodeCreate]]
@@ -110,7 +161,9 @@ async def _prepare_project_copy(
 
     copy_project_nodes_coro = None
     if len(nodes_map) > 0:
-        copy_project_nodes_coro = _copy_project_nodes_from_source_project(app, source_project, nodes_map)
+        copy_project_nodes_coro = _copy_project_nodes_from_source_project(
+            app, source_project, nodes_map, clean_output_data=(deep_copy is False)
+        )
 
     copy_file_coro = None
     if deep_copy and len(nodes_map) > 0:
@@ -126,27 +179,58 @@ async def _prepare_project_copy(
     return new_project, copy_project_nodes_coro, copy_file_coro
 
 
+# Fields to clear when copying without data (snake_case names matching ProjectNodeCreate)
+_NODE_FIELDS_TO_CLEAN_ON_COPY = {"outputs", "progress", "run_hash"}
+
+
+def _remap_port_links(inputs: dict | None, nodes_map: NodesMap) -> dict | None:
+    """Remap PortLink node_uuid references in inputs using nodes_map (old UUID -> new UUID)."""
+    if not inputs:
+        return inputs
+    remapped: dict[str, Any] = {}
+    for port_key, port_value in inputs.items():
+        if isinstance(port_value, dict) and "nodeUuid" in port_value:
+            old_uuid = f"{port_value['nodeUuid']}"
+            new_uuid = nodes_map.get(old_uuid, old_uuid)
+            remapped[port_key] = {**port_value, "nodeUuid": new_uuid}
+        elif isinstance(port_value, PortLink):
+            old_uuid = f"{port_value.node_uuid}"
+            new_uuid = nodes_map.get(old_uuid, old_uuid)
+            remapped[port_key] = port_value.model_copy(update={"node_uuid": NodeID(new_uuid)})
+        else:
+            remapped[port_key] = port_value
+    return remapped
+
+
 async def _copy_project_nodes_from_source_project(
     app: web.Application,
     source_project: ProjectDict,
     nodes_map: NodesMap,
+    *,
+    clean_output_data: bool = False,
 ) -> dict[NodeID, ProjectNodeCreate]:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     def _mapped_node_id(node: ProjectNode) -> NodeID:
         return NodeID(nodes_map[f"{node.node_id}"])
 
-    return {
-        _mapped_node_id(node): ProjectNodeCreate(
-            node_id=_mapped_node_id(node),
-            **{
-                k: v
-                for k, v in node.model_dump().items()
-                if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
-            },
-        )
-        for node in await db.list_project_nodes(ProjectID(source_project["uuid"]))
-    }
+    valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+    result = {}
+    for node in await db.list_project_nodes(ProjectID(source_project["uuid"])):
+        node_data = {
+            k: v
+            for k, v in node.model_dump().items()
+            if k in valid_fields and not (clean_output_data and k in _NODE_FIELDS_TO_CLEAN_ON_COPY)
+        }
+        # Remap PortLink references in inputs and input_nodes to use new node UUIDs
+        if "inputs" in node_data:
+            node_data["inputs"] = _remap_port_links(node_data["inputs"], nodes_map)
+        if node_data.get("input_nodes"):
+            node_data["input_nodes"] = [nodes_map.get(f"{nid}", f"{nid}") for nid in node_data["input_nodes"]]
+        new_node_id = _mapped_node_id(node)
+        result[new_node_id] = ProjectNodeCreate(node_id=new_node_id, **node_data)
+    return result
 
 
 async def _copy_files_from_source_project(
@@ -220,20 +304,23 @@ async def _compose_project_data(
                 new_project[key] = non_null_value
     else:
         # when predefined_project is ProjectCreateNew
-        project_nodes = {
-            NodeID(node_id): ProjectNodeCreate(
-                node_id=NodeID(node_id),
-                required_resources=jsonable_encoder(
-                    await catalog_service.get_service_resources(
-                        app, user_id, node_data["key"], node_data["version"], product_name
-                    )
-                ),
-                key=node_data.get("key"),
-                version=node_data.get("version"),
-                label=node_data.get("label"),
+        # when predefined_project is ProjectCreateNew
+        # Convert workbench JSON (camelCase aliases) to ProjectNodeCreate fields (snake_case columns)
+        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+        project_nodes = {}
+        for node_id, node_data in predefined_project.get("workbench", {}).items():
+            create_kwargs = {
+                WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
+                for k, v in node_data.items()
+                if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
+            }
+            create_kwargs["required_resources"] = jsonable_encoder(
+                await catalog_service.get_service_resources(
+                    app, user_id, node_data["key"], node_data["version"], product_name
+                )
             )
-            for node_id, node_data in predefined_project.get("workbench", {}).items()
-        }
+            project_nodes[NodeID(node_id)] = ProjectNodeCreate(node_id=NodeID(node_id), **create_kwargs)
 
         new_project = predefined_project
 
@@ -290,207 +377,200 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     new_project: ProjectDict = {}
     copy_file_coro = None
     project_nodes = None
-    try:
-        await progress.update(message="creating new study...")
+    # Any failure raised after the project row has been inserted (signalled via
+    # ``cleanup_ctx.mark_inserted(...)``) triggers a centralized cleanup,
+    # so we never leave a half-created project behind.
+    async with _cleanup_project_on_error(
+        app,
+        user_id=user_id,
+        simcore_user_agent=simcore_user_agent,
+        product_name=product_name,
+    ) as cleanup_ctx:
+        try:
+            await progress.update(message="creating new study...")
 
-        workspace_id = None
-        folder_id = None
-        if predefined_project:
-            if workspace_id := predefined_project.get("workspaceId", None):
-                await check_user_workspace_access(
+            workspace_id = None
+            folder_id = None
+            if predefined_project:
+                if workspace_id := predefined_project.get("workspaceId", None):
+                    await check_user_workspace_access(
+                        app,
+                        user_id=user_id,
+                        workspace_id=workspace_id,
+                        product_name=product_name,
+                        permission="write",
+                    )
+                if folder_id := predefined_project.get("folderId", None):
+                    # Check user has access to folder
+                    await folders_folders_repository.get_for_user_or_workspace(
+                        app,
+                        folder_id=folder_id,
+                        product_name=product_name,
+                        user_id=user_id if workspace_id is None else None,
+                        workspace_id=workspace_id,
+                    )
+                    # Folder ID is not part of the project resource
+                    predefined_project.pop("folderId")
+
+            if from_study:  # Either clone or creation of template out of study
+                # 1.1 prepare copy
+                (
+                    new_project,
+                    project_node_coro,
+                    copy_file_coro,
+                ) = await _prepare_project_copy(
+                    app,
+                    user_id=user_id,
+                    product_name=product_name,
+                    src_project_uuid=from_study,
+                    as_template=as_template,
+                    deep_copy=copy_data,
+                    task_progress=progress,
+                )
+                if project_node_coro:
+                    project_nodes = await project_node_coro
+
+                # 1.2 does project belong to some folder?
+                workspace_id = new_project["workspaceId"]
+                prj_to_folder_db = await _folders_repository.get_project_to_folder(
+                    app,
+                    project_id=from_study,
+                    private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
+                )
+                if prj_to_folder_db:
+                    # As user has access to the project, it has implicitly access to the folder
+                    folder_id = prj_to_folder_db.folder_id
+
+                if as_template:
+                    # For template we do not care about workspace/folder
+                    workspace_id = None
+                    new_project["workspaceId"] = workspace_id
+                    folder_id = None
+
+            if predefined_project:
+                # 2. overrides with optional body and re-validate
+                new_project, project_nodes = await _compose_project_data(
+                    app,
+                    user_id=user_id,
+                    product_name=product_name,
+                    new_project=new_project,
+                    predefined_project=predefined_project,
+                )
+
+            # 3.1 save new project in DB
+            new_project = await _projects_repository_legacy.insert_project(
+                project=jsonable_encoder(new_project),
+                user_id=user_id,
+                product_name=product_name,
+                force_as_template=as_template,
+                hidden=copy_data,
+                project_nodes=project_nodes,
+            )
+            # From this point on the project row exists: register it so that any
+            # subsequent failure triggers the centralized cleanup.
+            cleanup_ctx.mark_inserted(new_project["uuid"])
+            # add parent linking if needed
+            await set_project_ancestors(
+                app,
+                user_id=user_id,
+                project_uuid=new_project["uuid"],
+                parent_project_uuid=parent_project_uuid,
+                parent_node_id=parent_node_id,
+            )
+            await progress.update()
+
+            # 3.2 move project to proper folder
+            if folder_id:
+                await _folders_repository.insert_project_to_folder(
+                    app,
+                    project_id=new_project["uuid"],
+                    folder_id=folder_id,
+                    private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
+                )
+
+            # 4. deep copy source project's files
+            if copy_file_coro:
+                # NOTE: storage needs to have access to the new project prior to copying files
+                await copy_file_coro
+
+            # 5. unhide the project if needed since it is now complete
+            if not new_project_was_hidden_before_data_was_copied:
+                await _projects_repository.patch_project(
+                    app,
+                    project_uuid=new_project["uuid"],
+                    new_partial_project_data={"hidden": False},
+                )
+
+            # update the network information in director-v2
+            await dynamic_scheduler_service.update_projects_networks(app, project_id=ProjectID(new_project["uuid"]))
+            await progress.update()
+
+            # This is a new project and every new graph needs to be reflected in the pipeline tables
+            await director_v2_service.create_or_update_pipeline(
+                app,
+                user_id,
+                new_project["uuid"],
+                product_name,
+                product_api_base_url,
+            )
+            # get the latest state of the project (lastChangeDate for instance)
+            new_project, _ = await _projects_repository_legacy.get_project_dict_and_type(
+                project_uuid=new_project["uuid"]
+            )
+            # Appends state
+            new_project = await _projects_service.add_project_states_for_user(
+                user_id=user_id, project=new_project, app=app
+            )
+            await progress.update()
+
+            # Adds permalink
+            await update_or_pop_permalink_in_project(app, request_url, request_headers, new_project)
+
+            # Adds folderId
+            user_specific_project_data_db = await _projects_repository_legacy.get_user_specific_project_data_db(
+                project_uuid=new_project["uuid"],
+                private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
+            )
+            new_project["folderId"] = user_specific_project_data_db.folder_id
+
+            # Overwrite project access rights
+            if workspace_id:
+                workspace: UserWorkspaceWithAccessRights = await get_user_workspace(
                     app,
                     user_id=user_id,
                     workspace_id=workspace_id,
                     product_name=product_name,
-                    permission="write",
+                    permission=None,
                 )
-            if folder_id := predefined_project.get("folderId", None):
-                # Check user has access to folder
-                await folders_folders_repository.get_for_user_or_workspace(
-                    app,
-                    folder_id=folder_id,
-                    product_name=product_name,
-                    user_id=user_id if workspace_id is None else None,
-                    workspace_id=workspace_id,
-                )
-                # Folder ID is not part of the project resource
-                predefined_project.pop("folderId")
+                new_project["accessRights"] = {
+                    f"{gid}": access.model_dump() for gid, access in workspace.access_rights.items()
+                }
 
-        if from_study:  # Either clone or creation of template out of study
-            # 1.1 prepare copy
-            (
-                new_project,
-                project_node_coro,
-                copy_file_coro,
-            ) = await _prepare_project_copy(
-                app,
-                user_id=user_id,
-                product_name=product_name,
-                src_project_uuid=from_study,
-                as_template=as_template,
-                deep_copy=copy_data,
-                task_progress=progress,
+            _project_product_name = await _projects_repository_legacy.get_project_product(
+                project_uuid=new_project["uuid"]
             )
-            if project_node_coro:
-                project_nodes = await project_node_coro
+            if _project_product_name != product_name:
+                # Cleanup is handled centrally by the context manager.
+                raise web.HTTPBadRequest(text=f"Project product name mismatch {product_name=} {_project_product_name=}")
 
-            # 1.2 does project belong to some folder?
-            workspace_id = new_project["workspaceId"]
-            prj_to_folder_db = await _folders_repository.get_project_to_folder(
-                app,
-                project_id=from_study,
-                private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
-            )
-            if prj_to_folder_db:
-                # As user has access to the project, it has implicitly access to the folder
-                folder_id = prj_to_folder_db.folder_id
+            data = ProjectGet.from_domain_model(new_project).model_dump(**RESPONSE_MODEL_POLICY)
 
-            if as_template:
-                # For template we do not care about workspace/folder
-                workspace_id = None
-                new_project["workspaceId"] = workspace_id
-                folder_id = None
-
-        if predefined_project:
-            # 2. overrides with optional body and re-validate
-            new_project, project_nodes = await _compose_project_data(
-                app,
-                user_id=user_id,
-                product_name=product_name,
-                new_project=new_project,
-                predefined_project=predefined_project,
+            return web.HTTPCreated(
+                text=json_dumps({"data": data}),
+                content_type=MIMETYPE_APPLICATION_JSON,
             )
 
-        # 3.1 save new project in DB
-        new_project = await _projects_repository_legacy.insert_project(
-            project=jsonable_encoder(new_project),
-            user_id=user_id,
-            product_name=product_name,
-            force_as_template=as_template,
-            hidden=copy_data,
-            project_nodes=project_nodes,
-        )
-        # add parent linking if needed
-        await set_project_ancestors(
-            app,
-            user_id=user_id,
-            project_uuid=new_project["uuid"],
-            parent_project_uuid=parent_project_uuid,
-            parent_node_id=parent_node_id,
-        )
-        await progress.update()
+        except JsonSchemaValidationError as exc:
+            raise web.HTTPBadRequest(text="Invalid project data") from exc
 
-        # 3.2 move project to proper folder
-        if folder_id:
-            await _folders_repository.insert_project_to_folder(
-                app,
-                project_id=new_project["uuid"],
-                folder_id=folder_id,
-                private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
-            )
+        except ProjectNotFoundError as exc:
+            raise web.HTTPNotFound(text=f"Project {exc.project_uuid} not found") from exc
 
-        # 4. deep copy source project's files
-        if copy_file_coro:
-            # NOTE: storage needs to have access to the new project prior to copying files
-            await copy_file_coro
+        except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
+            raise web.HTTPForbidden from exc
 
-        # 5. unhide the project if needed since it is now complete
-        if not new_project_was_hidden_before_data_was_copied:
-            await _projects_repository.patch_project(
-                app,
-                project_uuid=new_project["uuid"],
-                new_partial_project_data={"hidden": False},
-            )
-
-        # update the network information in director-v2
-        await dynamic_scheduler_service.update_projects_networks(app, project_id=ProjectID(new_project["uuid"]))
-        await progress.update()
-
-        # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await director_v2_service.create_or_update_pipeline(
-            app,
-            user_id,
-            new_project["uuid"],
-            product_name,
-            product_api_base_url,
-        )
-        # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await _projects_repository_legacy.get_project_dict_and_type(project_uuid=new_project["uuid"])
-        # Appends state
-        new_project = await _projects_service.add_project_states_for_user(user_id=user_id, project=new_project, app=app)
-        await progress.update()
-
-        # Adds permalink
-        await update_or_pop_permalink_in_project(app, request_url, request_headers, new_project)
-
-        # Adds folderId
-        user_specific_project_data_db = await _projects_repository_legacy.get_user_specific_project_data_db(
-            project_uuid=new_project["uuid"],
-            private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
-        )
-        new_project["folderId"] = user_specific_project_data_db.folder_id
-
-        # Overwrite project access rights
-        if workspace_id:
-            workspace: UserWorkspaceWithAccessRights = await get_user_workspace(
-                app,
-                user_id=user_id,
-                workspace_id=workspace_id,
-                product_name=product_name,
-                permission=None,
-            )
-            new_project["accessRights"] = {
-                f"{gid}": access.model_dump() for gid, access in workspace.access_rights.items()
-            }
-
-        _project_product_name = await _projects_repository_legacy.get_project_product(project_uuid=new_project["uuid"])
-        assert (
-            _project_product_name == product_name  # nosec
-        ), "Project product name mismatch"
-        if _project_product_name != product_name:
-            raise web.HTTPBadRequest(text=f"Project product name mismatch {product_name=} {_project_product_name=}")
-
-        data = ProjectGet.from_domain_model(new_project).model_dump(**RESPONSE_MODEL_POLICY)
-
-        return web.HTTPCreated(
-            text=json_dumps({"data": data}),
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
-    except JsonSchemaValidationError as exc:
-        raise web.HTTPBadRequest(text="Invalid project data") from exc
-
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(text=f"Project {exc.project_uuid} not found") from exc
-
-    except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
-        raise web.HTTPForbidden from exc
-
-    except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
-        if project_uuid := new_project.get("uuid"):
-            await _projects_service.submit_delete_project_task(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                simcore_user_agent=simcore_user_agent,
-                product_name=product_name,
-            )
-        raise web.HTTPNotFound(text=f"{exc}") from exc
-
-    except asyncio.CancelledError:
-        _logger.warning(
-            "cancelled create_project for '%s'. Cleaning up",
-            f"{user_id=}",
-        )
-        if project_uuid := new_project.get("uuid"):
-            await _projects_service.submit_delete_project_task(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                simcore_user_agent=simcore_user_agent,
-                product_name=product_name,
-            )
-        raise
+        except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
+            raise web.HTTPNotFound(text=f"{exc}") from exc
 
 
 def register_create_project_task(app: web.Application) -> None:

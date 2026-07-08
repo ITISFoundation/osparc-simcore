@@ -42,7 +42,7 @@ from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.garbage_collector._tasks_core import _GC_TASK_NAME
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
 from simcore_service_webserver.groups._groups_service import create_standard_group
-from simcore_service_webserver.groups.api import add_user_in_group
+from simcore_service_webserver.groups.groups_service import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects import _projects_repository
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
@@ -392,18 +392,20 @@ async def disconnect_user_from_socketio(client: TestClient, sio_connection_data:
 
 async def assert_users_count(asyncpg_engine: AsyncEngine, expected_users: int) -> None:
     async with asyncpg_engine.connect() as conn:
-        users_count = await conn.scalar(select(func.count()).select_from(users))
+        users_count = await conn.scalar(select(func.count()).select_from(users))  # pylint: disable=not-callable
         assert users_count == expected_users
 
 
 async def assert_projects_count(asyncpg_engine: AsyncEngine, expected_projects: int) -> None:
     async with asyncpg_engine.connect() as conn:
-        projects_count = await conn.scalar(select(func.count()).select_from(projects))
+        projects_count = await conn.scalar(select(func.count()).select_from(projects))  # pylint: disable=not-callable
         assert projects_count == expected_projects
 
 
-def assert_dicts_match_by_common_keys(first_dict, second_dict) -> None:
+def assert_dicts_match_by_common_keys(first_dict, second_dict, *, exclude_keys: set[str] | None = None) -> None:
     common_keys = set(first_dict.keys()) & set(second_dict.keys())
+    if exclude_keys:
+        common_keys -= exclude_keys
     for key in common_keys:
         assert first_dict[key] == second_dict[key], key
 
@@ -452,7 +454,8 @@ async def assert_project_in_db(asyncpg_engine: AsyncEngine, user_project: dict) 
     assert project
     project_as_dict = _enum_to_value(dict(project))
 
-    assert_dicts_match_by_common_keys(project_as_dict, user_project)
+    # NOTE: workbench is now stored in projects_nodes table, not in projects.workbench column
+    assert_dicts_match_by_common_keys(project_as_dict, user_project, exclude_keys={"workbench"})
 
 
 async def assert_user_is_owner_of_project(

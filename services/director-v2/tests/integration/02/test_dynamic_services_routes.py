@@ -227,18 +227,24 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_project_repository(mocker: MockerFixture) -> None:
-    class ExtendedMagicMock(MagicMock):
-        @property
-        def name(self) -> str:
-            return "test_name"
+    project_mock = MagicMock()
+    project_mock.name = "test_name"
 
-        @property
-        def label(self) -> str:
-            return "test_label"
+    node_mock = MagicMock()
+    node_mock.label = "test_label"
+    node_mock.boot_options = None
 
     mocker.patch(
-        f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get_project",
-        side_effect=lambda *args, **kwargs: ExtendedMagicMock(),
+        f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.exists",
+        return_value=True,
+    )
+    mocker.patch(
+        f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get",
+        return_value=project_mock,
+    )
+    mocker.patch(
+        f"{DIRECTOR_V2_MODULES}.db.repositories.projects_nodes.ProjectsNodesRepository.get",
+        return_value=node_mock,
     )
 
 

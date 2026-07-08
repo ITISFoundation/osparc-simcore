@@ -53,7 +53,7 @@ qx.Class.define("osparc.tours.ListItem", {
         column: 0
       });
     }
-    const image = new qx.ui.basic.Image("@FontAwesome5Solid/arrow-right/14").set({
+    const image = new qx.ui.basic.Image("@FontAwesomeSolid/arrow-right/14").set({
       alignY: "middle"
     });
     this._add(image, {

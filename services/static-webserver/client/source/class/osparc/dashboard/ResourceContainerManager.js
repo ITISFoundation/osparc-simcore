@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     fitToContainer: function(card, container) {
-      const __fitToContainer = () => {
+      const fitToContainerImpl = () => {
         const bounds = container.getBounds() || container.getSizeHint();
         card.setWidth(bounds.width);
       };
@@ -142,9 +142,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "appear",
         "resize",
       ].forEach(ev => {
-        container.addListener(ev, () => __fitToContainer());
+        container.addListener(ev, () => fitToContainerImpl());
       });
-      __fitToContainer();
+      fitToContainerImpl();
     },
   },
 
@@ -615,7 +615,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             groupContainer = this.__createGroupContainer(tag.getTagId(), tag.getName(), tag.getColor());
             tag.bind("name", groupContainer, "headerLabel");
             tag.bind("color", groupContainer, "headerColor");
-            groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
+            groupContainer.setHeaderIcon("@FontAwesomeSolid/tag/24");
             this.__groupedContainers.add(groupContainer);
             this.__groupedContainers.getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
             this.__moveNoGroupToLast();
@@ -648,11 +648,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
               if (group.getThumbnail()) {
                 icon = group.getThumbnail();
               } else if (group["collabType"] === osparc.store.Groups.COLLAB_TYPE.EVERYONE) {
-                icon = "@FontAwesome5Solid/globe/24";
+                icon = "@FontAwesomeSolid/globe/24";
               } else if (group["collabType"] === osparc.store.Groups.COLLAB_TYPE.ORGANIZATION) {
-                icon = "@FontAwesome5Solid/users/24";
+                icon = "@FontAwesomeSolid/users/24";
               } else if (group["collabType"] === osparc.store.Groups.COLLAB_TYPE.USER) {
-                icon = "@FontAwesome5Solid/user/24";
+                icon = "@FontAwesomeSolid/user/24";
               }
               groupContainer.set({
                 headerIcon: icon,
@@ -682,7 +682,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       groupedServicesConfig["categories"].forEach(category => {
         if (this.__getGroupContainer(category["id"]) === null) {
           const groupContainer = this.__createGroupContainer(category["id"], category["title"], category["color"]);
-          groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
+          groupContainer.setHeaderIcon("@FontAwesomeSolid/tag/24");
           this.__groupedContainers.add(groupContainer);
         }
       });
@@ -698,7 +698,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
       if (container === null) {
         container = this.__getGroupContainer("no-group");
-        container.setHeaderIcon("@FontAwesome5Solid/tag/24");
+        container.setHeaderIcon("@FontAwesomeSolid/tag/24");
       }
 
       // create the card and add it to the container

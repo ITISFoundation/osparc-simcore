@@ -3,48 +3,33 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import importlib
 from collections.abc import Callable
 from functools import partial
-from typing import Any
 
-import pip
 import pytest
 from aiohttp import web
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY, setup_tracing
-from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingConfig
+from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingConfig, traced
 from settings_library.tracing import TracingSettings
 
 
 @pytest.fixture
-def tracing_settings_in(request):
+def tracing_settings_in(request: pytest.FixtureRequest) -> tuple[str, int, float]:
     return request.param
 
 
 @pytest.fixture()
-def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_settings_in):
-    endpoint_mocked = False
+def tracing_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_settings_in: tuple[str, int, float]) -> None:
     if tracing_settings_in[0]:
-        endpoint_mocked = True
         monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}")
-    port_mocked = False
     if tracing_settings_in[1]:
-        port_mocked = True
         monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}")
-    sampling_probability_mocked = False
     if tracing_settings_in[2]:
-        sampling_probability_mocked = True
         monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{tracing_settings_in[2]}")
-    yield
-    if endpoint_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
-    if port_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
-    if sampling_probability_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY")
+    monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION", "0.144.0")
 
 
 @pytest.mark.parametrize(
@@ -57,8 +42,8 @@ def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_set
 async def test_valid_tracing_settings(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     app = web.Application()
     service_name = "simcore_service_webserver"
@@ -80,60 +65,11 @@ async def test_valid_tracing_settings(
 async def test_invalid_tracing_settings(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     with pytest.raises(ValidationError):
         TracingSettings.create_from_envs()
-
-
-def install_package(package):
-    pip.main(["install", package])
-
-
-def uninstall_package(package):
-    pip.main(["uninstall", "-y", package])
-
-
-@pytest.fixture
-def manage_package(request):
-    package, importname = request.param
-    install_package(package)
-    yield importname
-    uninstall_package(package)
-
-
-@pytest.mark.skip(reason="this test installs always the latest version of the package which creates conflicts.")
-@pytest.mark.parametrize(
-    "tracing_settings_in, manage_package",
-    [
-        (
-            ("http://opentelemetry-collector", 4318, 1.0),
-            (
-                "opentelemetry-instrumentation-botocore",
-                "opentelemetry.instrumentation.botocore",
-            ),
-        ),
-    ],
-    indirect=True,
-)
-async def test_tracing_setup_package_detection(
-    mock_otel_collector: InMemorySpanExporter,
-    aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
-    manage_package,
-):
-    package_name = manage_package
-    importlib.import_module(package_name)
-    app = web.Application()
-    service_name = "simcore_service_webserver"
-    tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=service_name)
-    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
-        # idempotency
-        async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
-            pass
 
 
 @pytest.mark.parametrize(
@@ -147,8 +83,8 @@ async def test_tracing_setup_package_detection(
 async def test_trace_id_in_response_header(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
     server_response: web.Response | web.HTTPException,
 ) -> None:
     app = web.Application()
@@ -190,8 +126,8 @@ async def test_trace_id_in_response_header(
 async def test_tracing_opentelemetry_sampling_probability_effective(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     """
     This test checks that the TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY setting in TracingSettings
@@ -237,8 +173,8 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
 async def test_tracing_finds_project_id_and_node_id_if_available(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in,
+    tracing_env_vars: None,
+    tracing_settings_in: tuple[str, int, float],
 ):
     app = web.Application()
 
@@ -270,5 +206,11 @@ async def test_tracing_finds_project_id_and_node_id_if_available(
         assert len(spans) == 4  # there are now 2 more spans, one for the server and one for the client
         server_span = spans[2]  # the third span is the server span for the second request
         assert server_span.attributes
-        assert server_span.attributes.get("project_id") == "123"
-        assert server_span.attributes.get("node_id") == "456"
+        assert server_span.attributes.get("simcore.project_id") == "123"
+        assert server_span.attributes.get("simcore.node_id") == "456"
+
+
+def test_traced_decorator_accepts_aiohttp_app():
+    @traced
+    async def _aiohttp(app: web.Application) -> None:
+        pass

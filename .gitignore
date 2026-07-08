@@ -111,6 +111,7 @@ node_modules/
 # IDEs config (except templates)
 .vscode/*
 !.vscode/*.template.json
+!.vscode/Makefile
 .idea/
 
 # manual overrides
@@ -179,7 +180,10 @@ services/**/settings-schema.json
 tests/public-api/osparc_python_wheels/*
 
 # osparc-config repo files
-repo.config
+repo*.config*
 
 # repomix
 .repomix/*
+
+# uv
+.uv-bin/*

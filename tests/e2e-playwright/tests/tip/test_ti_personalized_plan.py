@@ -13,6 +13,22 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
+from _tip_steps import (
+    POST_PRO_AUTOSCALED_MAX_STARTUP_TIME,
+    POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+    POST_PRO_LOAD_APPEARANCE_TIME,
+    POST_PRO_LOAD_RESULT_MAX_TIME,
+    POST_PRO_MAX_STARTUP_TIME,
+    POST_PRO_REPORTING_MAX_TIME,
+    POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+    POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+    get_node_id_from_service_key,
+    raise_if_button_spinner_running,
+    run_optimization_and_load_analysis,
+    set_fast_optimization_settings,
+    wait_and_select_target_tissue,
+    wait_for_export_complete,
+)
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
@@ -24,7 +40,7 @@ from pytest_simcore.helpers.playwright import (
     app_mode_trigger_next_app,
     expected_service_running,
 )
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, stop_after_delay, wait_fixed
 
 _OPEN_PROJECT_WAIT_TIME: Final[int] = 20 * SECOND
 
@@ -64,18 +80,6 @@ _SIM_COLOR_SUCCESS: Final[str] = "#0090D0"
 _SIM_COLOR_FAILED: Final[str] = "#FF0000"
 _SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
 _SIMULATION_EXPORT_MAX_TIME: Final[int] = 5 * MINUTE
-
-
-_POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
-_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
-_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
-)
-_POST_PRO_LOAD_APPEARANCE_TIME: Final[int] = 5 * MINUTE
-_POST_PRO_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 10 * MINUTE
-_POST_PRO_LOAD_ANALYSIS_MAX_TIME: Final[int] = 5 * MINUTE
-_POST_PRO_LOAD_RESULT_MAX_TIME: Final[int] = 30 * SECOND
-_POST_PRO_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 
 
 _SIM4LIFE_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
@@ -149,37 +153,23 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
 
 
 @retry(
-    stop=stop_after_attempt(_SIMULATION_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_SIMULATION_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),  # wait 1 minute between retries to avoid spamming the page with checks
     reraise=True,
 )
 def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: FrameLocator) -> None:
     _log_simulation_progress(simulator_iframe)
-    try:
-        icon_class = setup_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Setup button icon not found — simulation likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(setup_button, description="Simulation")
 
 
 @retry(
-    stop=stop_after_attempt(_SIMULATION_EXPORT_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_SIMULATION_EXPORT_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),
     reraise=True,
 )
 def _wait_for_export_simulation_results(export_button: Locator) -> None:
     # Wait for the export to complete, spinner is on the button while exporting
-    try:
-        icon_class = export_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Export button icon not found — export likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation is being exported: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(export_button, description="Simulation export")
 
 
 def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
@@ -218,121 +208,52 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         _wait_for_export_simulation_results(export_button)
 
 
-@retry(
-    stop=stop_after_attempt(_POST_PRO_RUN_OPTIMIZATION_MAX_TIME // (60 * SECOND)),
-    wait=wait_fixed(60),
-    reraise=True,
-)
-def _wait_for_postpro_optimization_complete(run_optimization_button: Locator) -> None:
-    try:
-        icon_class = run_optimization_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Run Optimization button icon not found — optimization likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Post-pro optimization still running: {icon_class=}"
-        raise ValueError(msg)
-
-
-@retry(
-    stop=stop_after_attempt(_POST_PRO_LOAD_ANALYSIS_MAX_TIME // (60 * SECOND)),
-    wait=wait_fixed(60),
-    reraise=True,
-)
-def _wait_for_postpro_analysis_load(run_optimization_button: Locator) -> None:
-    try:
-        icon_class = run_optimization_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Load Analysis button icon not found — analysis likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Post-pro analysis still running: {icon_class=}"
-        raise ValueError(msg)
-
-
-@retry(
-    stop=stop_after_attempt(_POST_PRO_LOAD_RESULT_MAX_TIME // (10 * SECOND)),
-    wait=wait_fixed(10),
-    reraise=True,
-)
-def _wait_for_postpro_result_load(load_result_button: Locator) -> None:
-    try:
-        icon_class = load_result_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Load button icon not found — result likely loaded")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Result still loading: {icon_class=}"
-        raise ValueError(msg)
-
-
 def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
     with log_context(logging.INFO, "Run TI and generate report"):
-        with log_context(logging.INFO, "Wait for UI to load"):
-            load_button = ti_postpro_iframe.get_by_role("button", name="Load")
-            expect(load_button).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
+        wait_and_select_target_tissue(
+            ti_postpro_iframe,
+            label_timeout=POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+            select_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+        )
 
-        with log_context(logging.INFO, "Select Target tissue"):
-            target_tissue_select = ti_postpro_iframe.get_by_label("Target tissue")
-            expect(target_tissue_select).to_be_visible(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-            # Pick the first non-empty option
-            options = target_tissue_select.locator("option").all()
-            selected = False
-            for option in options:
-                value = option.get_attribute("value") or ""
-                if value.strip():
-                    target_tissue_select.select_option(value=value)
-                    logging.info("Selected target tissue: %s", option.inner_text())
-                    selected = True
-                    break
-            assert selected, "No non-empty target tissue option found"
+        # make it faster
+        set_fast_optimization_settings(ti_postpro_iframe)
 
-        with log_context(logging.INFO, "Run Optimization"):
-            run_optimization_button = ti_postpro_iframe.get_by_role("button", name="Run Optimization")
-            run_optimization_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for optimization to complete"):
-            _wait_for_postpro_optimization_complete(run_optimization_button)
-
-        with log_context(logging.INFO, "Load Analysis"):
-            load_analysis_button = ti_postpro_iframe.get_by_role("button", name="Load Analysis")
-            load_analysis_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for analysis to be loaded"):
-            _wait_for_postpro_analysis_load(load_analysis_button)
-
-        with log_context(logging.INFO, "Load first result"):
-            # nth(0) is the Settings "Load" button at the top; nth(1) is the first table row
-            load_result_button = ti_postpro_iframe.get_by_role("button", name="Load", exact=True).nth(1)
-            load_result_button.click(timeout=_POST_PRO_LOAD_APPEARANCE_TIME)
-
-        with log_context(logging.INFO, "Wait for result to load"):
-            _wait_for_postpro_result_load(load_result_button)
+        run_optimization_and_load_analysis(
+            ti_postpro_iframe,
+            click_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+            optimization_timeout=POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+            optimization_start_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+            analysis_timeout=POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+            result_timeout=POST_PRO_LOAD_RESULT_MAX_TIME,
+        )
 
         with log_context(
             logging.INFO,
-            f"Click button - `Add to Report (0)` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Add to Report (0)` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
             ti_postpro_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
         with log_context(
             logging.INFO,
-            f"Click button - `Export to S4L` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Export to S4L` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
-            ti_postpro_iframe.get_by_role("button", name="Export to S4L").click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            export_s4l_button = ti_postpro_iframe.get_by_role("button", name="Export to S4L")
+            export_s4l_button.click()
+            wait_for_export_complete(export_s4l_button)
         with log_context(
             logging.INFO,
-            f"Click button - `Add to Report (1)` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Add to Report (1)` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
             ti_postpro_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
         with log_context(
             logging.INFO,
-            f"Click button - `Export Report` and wait for {_POST_PRO_REPORTING_MAX_TIME}",
+            f"Click button - `Export Report` and wait for {POST_PRO_REPORTING_MAX_TIME}",
         ):
-            ti_postpro_iframe.get_by_role("button", name="Export Report").click()
-            page.wait_for_timeout(_POST_PRO_REPORTING_MAX_TIME)
+            export_report_button = ti_postpro_iframe.get_by_role("button", name="Export Report")
+            export_report_button.click()
+            wait_for_export_complete(export_report_button)
 
 
 @dataclass(frozen=True)
@@ -420,13 +341,13 @@ def _run_classic_ti_step(
     with params.page.expect_websocket(
         _JLabWaitForWebSocket(),
         timeout=_OUTER_EXPECT_TIMEOUT_RATIO
-        * (_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _POST_PRO_MAX_STARTUP_TIME),
+        * (POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else POST_PRO_MAX_STARTUP_TIME),
     ) as ws_info:
         with expected_service_running(
             page=params.page,
             node_id=node_id,
             websocket=params.websocket,
-            timeout=(_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _POST_PRO_MAX_STARTUP_TIME),
+            timeout=(POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else POST_PRO_MAX_STARTUP_TIME),
             press_start_button=False,
             product_url=params.product_url,
             is_service_legacy=params.is_service_legacy,
@@ -485,9 +406,10 @@ def test_personalized_classic_ti_plan(
         # press + button
         project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
 
+    assert project_data
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
-    node_ids: list[str] = list(project_data["workbench"])
+    workbench: dict = project_data["workbench"]
 
     # count the number of elements with test id matching the pattern
     # 0. File Picker with the test_data already uploaded (file-picker) - it is not exposed
@@ -502,7 +424,7 @@ def test_personalized_classic_ti_plan(
     assert step_buttons.count() == expected_number_of_steps, (
         f"Expected {expected_number_of_steps} step buttons, found {step_buttons.count()}"
     )
-    assert len(node_ids) >= expected_number_of_steps, (
+    assert len(workbench) >= expected_number_of_steps, (
         f"Expected at least {expected_number_of_steps} nodes in the workbench"
     )
 
@@ -520,16 +442,18 @@ def test_personalized_classic_ti_plan(
         expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
 
     with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
-        _run_personalizer_step(params, node_ids[2])
+        _run_personalizer_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-pers"))
 
     with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
-        _run_model_inspector_step(params, node_ids[3])
+        _run_model_inspector_step(
+            params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui-modeling")
+        )
 
     with log_context(logging.INFO, "Simulator step (4/%s)", expected_number_of_steps):
-        _run_simulator_step(params, node_ids[4])
+        _run_simulator_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-simu"))
 
     with log_context(logging.INFO, "Classic TI step (5/%s)", expected_number_of_steps):
-        _run_classic_ti_step(params, node_ids[5])
+        _run_classic_ti_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-postpro"))
 
     with log_context(logging.INFO, "Exposure Analysis step (6/%s)", expected_number_of_steps):
-        _run_exposure_analysis_step(params, node_ids[6])
+        _run_exposure_analysis_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui"))

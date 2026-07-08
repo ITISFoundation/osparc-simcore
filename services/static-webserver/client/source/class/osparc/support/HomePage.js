@@ -57,10 +57,11 @@ qx.Class.define("osparc.support.HomePage", {
     },
 
     addExternalLinkIcon: function(button) {
-      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/external-link-alt/14").set({
+      const icon = new qx.ui.basic.Image("@FontAwesomeSolid/external-link-alt/14").set({
         alignY: "middle",
         marginLeft: 5
       });
+      // eslint-disable-next-line no-underscore-dangle
       button._add(icon);
     },
   },
@@ -79,7 +80,7 @@ qx.Class.define("osparc.support.HomePage", {
           break;
         }
         case "ask-a-question-button":
-          control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesome5Solid/comments/16").set({
+          control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesomeSolid/comments/16").set({
             gap: 8,
             appearance: "strong-button",
             center: true,
@@ -89,7 +90,7 @@ qx.Class.define("osparc.support.HomePage", {
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "book-a-call-button":
-          control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesome5Solid/phone/16").set({
+          control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesomeSolid/phone/16").set({
             gap: 8,
             appearance: "strong-button",
             center: true,
@@ -99,7 +100,7 @@ qx.Class.define("osparc.support.HomePage", {
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "book-a-call-button-3rd":
-          control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesome5Solid/flask/16").set({
+          control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesomeSolid/flask/16").set({
             gap: 8,
             appearance: "strong-button",
             center: true,
@@ -109,14 +110,14 @@ qx.Class.define("osparc.support.HomePage", {
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "learning-box":
-          control = new osparc.widget.SectionBox(this.tr("Learning"), "@FontAwesome5Solid/graduation-cap/14");
+          control = new osparc.widget.SectionBox(this.tr("Learning"), "@FontAwesomeSolid/graduation-cap/14");
           control.getChildControl("legend").set({
             gap: 8
           });
           this._add(control);
           break;
         case "references-box":
-          control = new osparc.widget.SectionBox(this.tr("References"), "@FontAwesome5Solid/book/14");
+          control = new osparc.widget.SectionBox(this.tr("References"), "@FontAwesomeSolid/book/14");
           control.getChildControl("legend").set({
             gap: 8
           });
@@ -134,13 +135,13 @@ qx.Class.define("osparc.support.HomePage", {
       }
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
-        const tutorialsBtn = new qx.ui.form.Button(this.tr("Explore Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
+        const tutorialsBtn = new qx.ui.form.Button(this.tr("Explore Tutorials"), "@FontAwesomeSolid/graduation-cap/14");
         const store = osparc.store.Store.getInstance();
         store.bind("currentStudy", tutorialsBtn, "enabled", {
-          converter: study => !Boolean(study)
+          converter: study => !study
         });
         tutorialsBtn.addListener("execute", () => qx.event.message.Bus.getInstance().dispatchByName("showTab", "tutorialsTab"), this);
-       learningButtons.push(tutorialsBtn);
+        learningButtons.push(tutorialsBtn);
       }
       const guidedToursButton = osparc.store.Support.getGuidedToursButton();
       if (guidedToursButton) {
@@ -171,7 +172,7 @@ qx.Class.define("osparc.support.HomePage", {
       this.self().decorateButton(releaseNotesButton);
       this.self().addExternalLinkIcon(releaseNotesButton);
       releaseNotesButton.set({
-        icon: "@FontAwesome5Solid/bullhorn/14",
+        icon: "@FontAwesomeSolid/bullhorn/14",
         // align it with the rest of the buttons in section boxes
         marginLeft: 11,
         marginRight: 11,

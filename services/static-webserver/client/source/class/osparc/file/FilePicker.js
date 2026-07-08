@@ -220,9 +220,49 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
+    // Track active downloads by node ID so recreated buttons can pick up progress
+    __activeDownloads: {},
+
     downloadOutput: function(node, downloadFileBtn) {
-      const progressCb = () => downloadFileBtn.setFetching(true);
-      const loadedCb = () => downloadFileBtn.setFetching(false);
+      const nodeId = node.getNodeId();
+      // If a download is already in progress for this node, just register the button
+      if (this.__activeDownloads[nodeId]) {
+        this.__activeDownloads[nodeId].btn = downloadFileBtn;
+        this.__applyDownloadState(downloadFileBtn, this.__activeDownloads[nodeId]);
+        return;
+      }
+
+      downloadFileBtn.setFetching(true);
+      const state = {
+        btn: downloadFileBtn,
+        originalLabel: downloadFileBtn.getLabel(),
+        progress: null,
+        label: null,
+      };
+      this.__activeDownloads[nodeId] = state;
+
+      const btnWidth = downloadFileBtn.getSizeHint().width;
+      downloadFileBtn.setMinWidth(btnWidth);
+
+      const progressCb = ({loaded, total, progress}) => {
+        if (progress == null) {
+          state.label = osparc.utils.Utils.bytesToSize(loaded);
+        } else {
+          state.label = `${Math.round(progress * 100)}%`;
+        }
+        state.progress = progress;
+        if (state.btn) {
+          state.btn.setLabel(state.label);
+        }
+      };
+      const doneCb = () => {
+        if (state.btn) {
+          state.btn.setFetching(false);
+          state.btn.setLabel(state.originalLabel);
+          state.btn.resetMinWidth();
+        }
+        delete this.__activeDownloads[nodeId];
+      };
       if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
         this.self().getOutputFileMetadata(node)
           .then(fileMetadata => {
@@ -232,14 +272,31 @@ qx.Class.define("osparc.file.FilePicker", {
               osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
                 .then(data => {
                   if (data) {
-                    osparc.utils.Utils.downloadLink(data.link, "GET", data.fileName, progressCb, loadedCb);
+                    osparc.utils.Utils.downloadNatively(data.link, data.fileName, progressCb)
+                      .then(() => doneCb())
+                      .catch(() => doneCb());
+                  } else {
+                    doneCb();
                   }
-                });
+                })
+                .catch(() => doneCb());
+            } else {
+              doneCb();
             }
-          });
+          })
+          .catch(() => doneCb());
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-        osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", outFileValue["label"], progressCb, loadedCb);
+        osparc.utils.Utils.downloadNatively(outFileValue["downloadLink"], outFileValue["label"], progressCb)
+          .then(() => doneCb())
+          .catch(() => doneCb());
+      }
+    },
+
+    __applyDownloadState: function(btn, state) {
+      btn.setFetching(true);
+      if (state.label) {
+        btn.setLabel(state.label);
       }
     },
 
@@ -328,7 +385,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const stopButton = new osparc.ui.form.FetchButton().set({
         minHeight: 24,
-        icon: "@FontAwesome5Solid/times/16",
+        icon: "@FontAwesomeSolid/times/16",
         toolTipText: this.tr("Cancel upload"),
         appearance: "danger-button",
         allowGrowX: false
@@ -379,15 +436,23 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __getDownloadFileButton: function() {
       const node = this.getNode();
-      const downloadFileBtn = new osparc.ui.form.FetchButton(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
+      const downloadFileBtn = new osparc.ui.form.FetchButton(this.tr("Download"), "@FontAwesomeSolid/cloud-download-alt/14").set({
         allowGrowX: false
       });
       downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(node, downloadFileBtn));
+      // If a download is already active for this node, attach the new button to it
+      // eslint-disable-next-line no-underscore-dangle
+      const activeDownload = osparc.file.FilePicker.__activeDownloads[node.getNodeId()];
+      if (activeDownload) {
+        activeDownload.btn = downloadFileBtn;
+        // eslint-disable-next-line no-underscore-dangle
+        osparc.file.FilePicker.__applyDownloadState(downloadFileBtn, activeDownload);
+      }
       return downloadFileBtn;
     },
 
     __getResetFileButton: function() {
-      const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
+      const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesomeSolid/sync-alt/14").set({
         allowGrowX: false
       });
       resetFileBtn.addListener("execute", () => this.__resetOutput());
@@ -539,7 +604,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const reloadButton = new qx.ui.form.Button().set({
         label: this.tr("Reload"),
-        icon: "@FontAwesome5Solid/sync-alt/16",
+        icon: "@FontAwesomeSolid/sync-alt/16",
         allowGrowX: false
       });
       reloadButton.addListener("execute", () => this.__reloadFilesTree(), this);

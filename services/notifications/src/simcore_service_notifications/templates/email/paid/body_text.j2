@@ -1,0 +1,10 @@
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
+
+{% trans price_dollars=payment.price_dollars, osparc_credits=payment.osparc_credits, product_name=product.display_name %}We are delighted to confirm the successful processing of your payment of {{ price_dollars }} USD for the purchase of {{ osparc_credits }} credits. The credits have been added to your {{ product_name }} account, and you are all set to utilize them.{% endtrans %}
+
+{% trans invoice_url=payment.invoice_url %}For more details you can view or download your receipt: {{ invoice_url }}.{% endtrans %}
+
+{% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need further help.{% endtrans %}
+
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

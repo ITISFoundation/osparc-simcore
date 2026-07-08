@@ -34,8 +34,6 @@ def test_all_products_models_examples(model_cls: type[BaseModel], example_name: 
     # Some extra checks for Products
     if isinstance(model_instance, Product):
         assert model_instance.to_statics()
-        if "registration_email_template" in example_data:
-            assert model_instance.get_template_name_for("registration_email.jinja2")
 
         if model_instance.vendor and "ui" in model_instance.vendor:
             assert model_instance.vendor["ui"]["strong_color"]
@@ -67,6 +65,7 @@ def test_product_to_static():
                 "logo_url": "https://acme.com/logo",
                 "strong_color": "#123456",
             },
+            "status_page_url": "https://status.acme.com",
         },
         "issues": [
             {
@@ -168,15 +167,3 @@ def test_twilio_sender_id_is_truncated(fake_product_from_db: dict[str, Any]):
     product = Product.model_validate(fake_product_from_db)
 
     assert re.match(TWILIO_ALPHANUMERIC_SENDER_ID_RE, product.twilio_alpha_numeric_sender_id)
-
-
-def test_template_names_from_file(fake_product_from_db: dict[str, Any]):
-    fake_product_from_db.update(registration_email_template="some_template_name_id")
-    product = Product.model_validate(fake_product_from_db)
-
-    assert product.get_template_name_for(filename="registration_email.jinja2") == "some_template_name_id"
-    assert product.get_template_name_for(filename="other_template.jinja2") is None
-
-    fake_product_from_db.update(registration_email_template=None)
-    product = Product.model_validate(fake_product_from_db)
-    assert product.get_template_name_for(filename="registration_email_template.jinja2") is None

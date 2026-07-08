@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /* ************************************************************************
 
    osparc - the simcore frontend
@@ -185,15 +186,6 @@ qx.Class.define("osparc.utils.Utils", {
       return new qx.ui.basic.Image().set(this.getThumbnailProps(size));
     },
 
-    disableAutocomplete: function(control) {
-      if (control && control.getContentElement()) {
-        control.getContentElement().setAttribute("autocomplete", "off");
-        control.getContentElement().setAttribute("type", "search");
-        control.getContentElement().setAttribute("name", "osparcdontautomplete");
-        control.getContentElement().setAttribute("id", "osparcdontautomplete");
-      }
-    },
-
     checkImageExists: function(url) {
       return new Promise(resolve => {
         const img = new Image();
@@ -359,6 +351,49 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    /**
+     * Animates swapping two widgets: slides the hiding widget out to the left
+     * and slides the showing widget in from the right.
+     *
+     * @param {qx.ui.core.Widget} toHide Widget to hide
+     * @param {qx.ui.core.Widget} toShow Widget to show
+     * @param {Object} [opts] Options
+     * @param {Number} [opts.duration=200] Animation duration in ms
+     * @param {Number} [opts.translation=200] Slide distance in px
+     */
+    animateSwap: function(toHide, toShow, opts) {
+      const duration = (opts && opts.duration) || 200;
+      const translation = (opts && opts.translation) || 200;
+      const hideContainer = toHide.getLayoutParent();
+      const hideDom = hideContainer ? hideContainer.getContentElement().getDomElement() : null;
+      if (hideDom) {
+        qx.bom.element.Animation.animate(hideDom, {
+          duration,
+          keyFrames: {
+            0: {opacity: 1, translate: ["0px"]},
+            100: {opacity: 0, translate: [`-${translation}px`]}
+          }
+        }).addListenerOnce("end", () => {
+          toHide.setVisibility("excluded");
+          toShow.setVisibility("visible");
+          const showContainer = toShow.getLayoutParent();
+          const showDom = showContainer ? showContainer.getContentElement().getDomElement() : null;
+          if (showDom) {
+            qx.bom.element.Animation.animate(showDom, {
+              duration,
+              keyFrames: {
+                0: {opacity: 0, translate: [`${translation}px`]},
+                100: {opacity: 1, translate: ["0px"]}
+              }
+            });
+          }
+        });
+      } else {
+        toHide.setVisibility("excluded");
+        toShow.setVisibility("visible");
+      }
+    },
+
     getGridsFirstColumnWidth: function(grid) {
       let firstColumnWidth = null;
       const firstElement = grid.getCellWidget(0, 0);
@@ -375,8 +410,10 @@ qx.Class.define("osparc.utils.Utils", {
       return firstColumnWidth;
     },
 
-    makeButtonBlink: function(button, nTimes = 1) {
-      const baseColor = button.getBackgroundColor();
+    makeButtonBlink: function(button, nTimes = 1, colorProperty = "backgroundColor") {
+      const getter = "get" + qx.lang.String.firstUp(colorProperty);
+      const setter = "set" + qx.lang.String.firstUp(colorProperty);
+      let baseColor = button[getter]();
       const blinkColor = "strong-main";
       const interval = 500;
       let count = 0;
@@ -384,17 +421,21 @@ qx.Class.define("osparc.utils.Utils", {
       // If a blink is already in progress, cancel it
       if (button._blinkingIntervalId) {
         clearInterval(button._blinkingIntervalId);
-        button.setBackgroundColor(baseColor); // reset to base
+        button[setter](baseColor); // reset to base
       }
 
       const blinkInterval = setInterval(() => {
         if (button && button.getContentElement()) {
-          button.setBackgroundColor((count % 2 === 0) ? blinkColor : baseColor);
+          // Capture base color on first tick if it wasn't available at call time
+          if (baseColor === null || baseColor === undefined) {
+            baseColor = button[getter]();
+          }
+          button[setter]((count % 2 === 0) ? blinkColor : baseColor);
           count++;
 
           if (count >= nTimes * 2) {
             clearInterval(blinkInterval);
-            button.setBackgroundColor(baseColor);
+            button[setter](baseColor);
             button._blinkingIntervalId = null; // cleanup
           }
         }
@@ -416,7 +457,7 @@ qx.Class.define("osparc.utils.Utils", {
     reloadNoCacheButton: function() {
       const reloadButton = new qx.ui.form.Button().set({
         label: qx.locale.Manager.tr("Reload"),
-        icon: "@FontAwesome5Solid/redo/16",
+        icon: "@FontAwesomeSolid/redo/16",
         font: "text-16",
         gap: 10,
         appearance: "strong-button",
@@ -565,7 +606,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getEditButton: function(isVisible = true, toolTipText = qx.locale.Manager.tr("Edit")) {
-      return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+      return new qx.ui.form.Button(null, "@FontAwesomeSolid/pencil-alt/12").set({
         appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
@@ -576,7 +617,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getLinkButton: function(isVisible = true, toolTipText = "") {
-      return new qx.ui.form.Button(null, "@FontAwesome5Solid/link/12").set({
+      return new qx.ui.form.Button(null, "@FontAwesomeSolid/link/12").set({
         appearance: "form-button-transparent",
         allowGrowY: false,
         padding: 3,
@@ -587,7 +628,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getCopyButton: function() {
-      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+      const button = new qx.ui.form.Button(null, "@FontAwesomeSolid/copy/12").set({
         allowGrowY: false,
         toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
         padding: 3,
@@ -597,7 +638,9 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isDateLike: function(v) {
-      if (typeof v === "string") return !isNaN(new Date(v));
+      if (typeof v === "string") {
+        return !isNaN(new Date(v));
+      }
       return false;
     },
 
@@ -679,6 +722,7 @@ qx.Class.define("osparc.utils.Utils", {
       const formatted = dtf.format(date);
 
       // Timezone city
+      // eslint-disable-next-line new-cap
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const city = tz.split("/").pop().replace("_", " ");
 
@@ -733,8 +777,8 @@ qx.Class.define("osparc.utils.Utils", {
       return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
     },
 
-    createReleaseNotesLink: function() {
-      let text = "osparc-simcore " + this.getReleaseTag();
+    createReleaseNotesLink: function(prefix = "osparc") {
+      let text = prefix + " " + this.getReleaseTag();
       const platformName = osparc.store.StaticInfo.getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
       const url = this.self().getReleaseNotesLink();
@@ -873,7 +917,7 @@ qx.Class.define("osparc.utils.Utils", {
       return {
         major: Number(match[1]),
         minor: Number(match[2]),
-        patch: match[3] !== undefined ? Number(match[3]) : 0,
+        patch: match[3] === undefined ? 0 : Number(match[3]),
         preRelease: match[4] || null,
       };
     },
@@ -1067,6 +1111,108 @@ qx.Class.define("osparc.utils.Utils", {
       downloadAnchorNode.setAttribute("download", filename);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
+    },
+
+    /**
+     * Downloads a file using the File System Access API (showSaveFilePicker) when available,
+     * which prompts the user for a save location and streams data directly to disk.
+     * Falls back to fetch + blob download for browsers without File System Access API support.
+     * Unlike downloadLink(), this avoids buffering the entire file in an XHR response.
+     *
+     * @param {String} url The URL to download from
+     * @param {String} fileName Suggested file name
+     * @param {Function} [progressCb] Optional callback receiving {loaded, total, progress} during download
+     */
+    downloadNatively: async function(url, fileName, progressCb) {
+      if (window.showSaveFilePicker) {
+        try {
+          return await this.self().__downloadWithFileSystemAccess(url, fileName, progressCb);
+        } catch (err) {
+          // Fall back to fetch+blob if user activation expired or picker was denied
+          if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+            return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
+          }
+          throw err;
+        }
+      }
+      return this.self().__downloadWithFetchBlob(url, fileName, progressCb);
+    },
+
+    __downloadWithFileSystemAccess: async function(url, fileName, progressCb) {
+      const extension = (fileName.split(".").pop() || "").toLowerCase();
+      const mimeTypes = {
+        "zip": "application/zip",
+        "tar": "application/x-tar",
+        "gz": "application/gzip",
+      };
+      const pickerOpts = {
+        suggestedName: fileName,
+      };
+      if (mimeTypes[extension]) {
+        pickerOpts.types = [{
+          description: "Downloaded file",
+          accept: { [mimeTypes[extension]]: ["." + extension] },
+        }];
+      }
+      const fileHandle = await window.showSaveFilePicker(pickerOpts);
+      const writable = await fileHandle.createWritable();
+      const response = await fetch(url);
+      if (!response.ok) {
+        await writable.abort();
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      if (progressCb && response.body) {
+        const contentLength = parseInt(response.headers.get("Content-Length") || "0", 10);
+        const reader = response.body.getReader();
+        let loaded = 0;
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) {
+            break;
+          }
+          loaded += value.byteLength;
+          await writable.write(value);
+          progressCb({
+            loaded,
+            total: contentLength || null,
+            progress: contentLength ? loaded / contentLength : null,
+          });
+        }
+        await writable.close();
+      } else {
+        await response.body.pipeTo(writable);
+      }
+    },
+
+    __downloadWithFetchBlob: async function(url, fileName, progressCb) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      if (progressCb && response.body) {
+        const contentLength = parseInt(response.headers.get("Content-Length") || "0", 10);
+        const reader = response.body.getReader();
+        const chunks = [];
+        let loaded = 0;
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) {
+            break;
+          }
+          chunks.push(value);
+          loaded += value.byteLength;
+          progressCb({
+            loaded,
+            total: contentLength || null,
+            progress: contentLength ? loaded / contentLength : null,
+          });
+        }
+        const blob = new Blob(chunks);
+        osparc.utils.Utils.downloadBlobContent(blob, fileName);
+      } else {
+        const blob = await response.blob();
+        osparc.utils.Utils.downloadBlobContent(blob, fileName);
+      }
     },
 
     filenameFromContentDisposition: function(xhr) {
@@ -1264,7 +1410,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     camelToTitle: function(str) {
       return str
-        .replace(/([A-Z])/g, ' $1')          // insert space before capital letters
+        .replace(/([A-Z])/g, " $1")           // insert space before capital letters
         .replace(/^./, c => c.toUpperCase()); // capitalize first letter
     },
 
@@ -1427,11 +1573,13 @@ qx.Class.define("osparc.utils.Utils", {
           e.preventDefault();
 
           const dom = textArea.getContentElement().getDomElement();
-          if (!dom) return;
+          if (!dom) {
+            return;
+          }
 
           const value = textArea.getValue() || "";
-          const start = dom.selectionStart != null ? dom.selectionStart : value.length;
-          const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
+          const start = dom.selectionStart == null ? value.length : dom.selectionStart;
+          const end = dom.selectionEnd == null ? value.length : dom.selectionEnd;
 
           const newValue = value.substring(0, start) + "\n" + value.substring(end);
           const newPos = start + 1;
@@ -1441,7 +1589,9 @@ qx.Class.define("osparc.utils.Utils", {
 
           qx.event.Timer.once(function() {
             const dom2 = textArea.getContentElement().getDomElement();
-            if (!dom2) return;
+            if (!dom2) {
+              return;
+            }
             dom2.selectionStart = newPos;
             dom2.selectionEnd = newPos;
           }, this, 0);

@@ -113,7 +113,7 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
           const editorId = "email-html-editor-" + Date.now();
           const htmlEditorWrapper = osparc.wrapper.HtmlEditor.getInstance();
           control = htmlEditorWrapper.createEditor(editorId, this.__initialContent, {
-            placeholder: 'Write your email...',
+            placeholder: "Write your email...",
             modules: {
               toolbar: osparc.wrapper.HtmlEditor.getRichToolbarConfig()
             }
@@ -205,10 +205,13 @@ qx.Class.define("osparc.editor.EmailContentEditor", {
      */
     composeWholeHtml: function() {
       const templateHtml = this.getTemplateEmail();
-      if (!templateHtml) return "";
+      if (!templateHtml) {
+        return "";
+      }
 
       const wrapper = osparc.wrapper.HtmlEditor.getInstance();
-      const contentHtml = wrapper.getHTML(this.__quillInstance);
+      // Quill converts spaces to &nbsp; — restore normal spaces for proper word-wrap in email clients
+      const contentHtml = wrapper.getHTML(this.__quillInstance).replace(/&nbsp;/g, " ").replace(/&#160;/g, " ");
       const parser = new DOMParser();
       const doc = parser.parseFromString(templateHtml, "text/html");
 

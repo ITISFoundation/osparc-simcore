@@ -10,6 +10,29 @@
 # NOTE: the dask-scheduler uses the same image as the dask-sidecar. there is no need to build it twice!
 #
 services:
+  # Shared base images consumed by every python service Dockerfile via
+  # `FROM ${DOCKER_REGISTRY}/simcore-{runtime,build}-base:${BASE_TAG}`.
+  #
+  # - On local/test builds (no push) the Makefile links these targets in-memory as
+  #   build contexts, so no registry is needed (see scripts/common.Makefile / root Makefile).
+  # - On deploy (push) builds the service FROM pulls the pre-built & pushed base images.
+  #
+  # NOTE: these targets are NOT part of SERVICES_NAMES_TO_BUILD, they are only built
+  # when referenced (as a build context or explicitly via `make build-base`).
+  simcore-runtime-base:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-runtime-base:${BASE_TAG:-latest}
+    build:
+      context: ../
+      dockerfile: services/_base_images/Dockerfile
+      target: runtime-base
+
+  simcore-build-base:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-build-base:${BASE_TAG:-latest}
+    build:
+      context: ../
+      dockerfile: services/_base_images/Dockerfile
+      target: build-base
+
   service-integration:
     image: local/service-integration:${BUILD_TARGET:?build_target_required}
     build:
@@ -22,9 +45,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/service-integration:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "service-integration"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore service-integration service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${SERVICE_INTEGRATION_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   # Services below are part of the osparc-simcore stack ---------------------------
 
@@ -40,11 +69,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/api-server:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "api-server"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${API_SERVER_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore api-server service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${API_SERVER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   autoscaling:
     image: local/autoscaling:${BUILD_TARGET:?build_target_required}
@@ -58,11 +91,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "autoscaling"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${AUTOSCALING_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore autoscaling service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${AUTOSCALING_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   catalog:
     image: local/catalog:${BUILD_TARGET:?build_target_required}
@@ -76,11 +113,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/catalog:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "catalog"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${CATALOG_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore catalog service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${CATALOG_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   clusters-keeper:
     image: local/clusters-keeper:${BUILD_TARGET:?build_target_required}
@@ -94,9 +135,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "clusters-keeper"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore clusters-keeper service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${CLUSTERS_KEEPER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   director:
     image: local/director:${BUILD_TARGET:?build_target_required}
@@ -110,14 +157,17 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/director:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "director"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${DIRECTOR_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore director service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${DIRECTOR_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
-  dask-sidecar:
-    &build-dask-sidecar
+  dask-sidecar: &build-dask-sidecar
     image: local/dask-sidecar:${BUILD_TARGET:?build_target_required}
     build:
       context: ../
@@ -129,10 +179,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "dask-sidecar"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore dask-sidecar service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${DASK_SIDECAR_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   director-v2:
     image: local/director-v2:${BUILD_TARGET:?build_target_required}
@@ -146,11 +201,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/director-v2:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "director-v2"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${DIRECTOR_V2_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore director-v2 service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${DIRECTOR_V2_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   migration:
     image: local/migration:${BUILD_TARGET:?build_target_required}
@@ -164,10 +223,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/migration:release-github-latest
       target: production
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "migration"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore migration service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${MIGRATION_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   notifications:
     image: local/notifications:${BUILD_TARGET:?build_target_required}
@@ -181,11 +245,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/notifications:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "notifications"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${NOTIFICATIONS_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore notifications service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${NOTIFICATIONS_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   resource-usage-tracker:
     image: local/resource-usage-tracker:${BUILD_TARGET:?build_target_required}
@@ -199,9 +267,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "resource-usage-tracker"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore resource-usage-tracker service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${RESOURCE_USAGE_TRACKER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   static-webserver:
     image: local/static-webserver:${BUILD_TARGET:?build_target_required}
@@ -221,10 +295,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "static-webserver"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore static-webserver service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${STATIC_WEBSERVER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   webserver:
     image: local/webserver:${BUILD_TARGET:?build_target_required}
@@ -242,11 +321,15 @@ services:
         - VCS_URL=${VCS_URL}
         - VCS_REF=${VCS_REF}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "webserver"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${WEBSERVER_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore webserver service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${WEBSERVER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   dynamic-sidecar:
     image: local/dynamic-sidecar:${BUILD_TARGET:?build_target_required}
@@ -260,10 +343,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "dynamic-sidecar"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore dynamic-sidecar service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${DYNAMIC_SIDECAR_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   efs-guardian:
     image: local/efs-guardian:${BUILD_TARGET:?build_target_required}
@@ -277,9 +365,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "efs-guardian"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore efs-guardian service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${EFS_GUARDIAN_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   invitations:
     image: local/invitations:${BUILD_TARGET:?build_target_required}
@@ -293,12 +387,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/invitations:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "invitations"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${INVITATIONS_API_VERSION}"
-
+        org.opencontainers.image.description: "osparc-simcore invitations service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${INVITATIONS_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   payments:
     image: local/payments:${BUILD_TARGET:?build_target_required}
@@ -312,10 +409,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/payments:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "payments"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${PAYMENTS_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore payments service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${PAYMENTS_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   dynamic-scheduler:
     image: local/dynamic-scheduler:${BUILD_TARGET:?build_target_required}
@@ -329,10 +431,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "dynamic-scheduler"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${DYNAMIC_SCHEDULER_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore dynamic-scheduler service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${DYNAMIC_SCHEDULER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   docker-api-proxy:
     image: local/docker-api-proxy:${BUILD_TARGET:?build_target_required}
@@ -346,9 +453,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
+        org.opencontainers.image.title: "docker-api-proxy"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
+        org.opencontainers.image.description: "osparc-simcore docker-api-proxy service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${DOCKER_API_PROXY_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   datcore-adapter:
     image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}
@@ -362,11 +475,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "datcore-adapter"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${DATCORE_ADAPTER_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore datcore-adapter service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${DATCORE_ADAPTER_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   storage:
     image: local/storage:${BUILD_TARGET:?build_target_required}
@@ -380,11 +497,15 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/storage:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "storage"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${STORAGE_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore storage service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${STORAGE_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"
 
   agent:
     image: local/agent:${BUILD_TARGET:?build_target_required}
@@ -404,8 +525,12 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/agent:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
+        org.opencontainers.image.title: "agent"
         org.opencontainers.image.created: "${BUILD_DATE}"
         org.opencontainers.image.source: "${VCS_URL}"
         org.opencontainers.image.revision: "${VCS_REF}"
-        io.osparc.api-version: "${AGENT_API_VERSION}"
+        org.opencontainers.image.description: "osparc-simcore agent service"
+        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
+        org.opencontainers.image.version: "${AGENT_API_VERSION}"
+        org.opencontainers.image.vendor: "IT'IS Foundation"
+        org.opencontainers.image.licenses: "MIT"

@@ -1,0 +1,35 @@
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/support_reply/subject.j2' %} {% endblock %}
+{% block content %}
+<p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+
+{% if conversation_name %}
+{% set convo_name_display %}<i>"{{ conversation_name }}"</i>{% endset %}
+<p>{% trans convo_name=convo_name_display %}There is a new reply in the Support conversation {{ convo_name }}.{% endtrans %}</p>
+{% else %}
+<p>{% trans %}There is a new reply in the Support conversation.{% endtrans %}</p>
+{% endif %}
+
+<!-- Quoted message block with left border -->
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="margin: 16px 0;">
+  <tr>
+    <td style="border-left: 4px solid #cccccc; padding-left: 16px; color: #555555;">
+      <small style="color: #888888;">{{ message_created_at.strftime('%Y-%m-%d %H:%M UTC') }}</small><br>
+      <i>{{ message_content }}</i>
+    </td>
+  </tr>
+</table>
+
+<!-- Bulletproof button: table-based for maximum email client compatibility -->
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 10px; margin-bottom: 10px;">
+  <tr>
+    <td style="{{ strong_button_td_style }}">
+      <a href="{{ conversation_url }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+        {% trans %}Go to the Conversation{% endtrans %}
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p>{% trans %}Best Regards,{% endtrans %}<br>{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}</p>
+{% endblock %}

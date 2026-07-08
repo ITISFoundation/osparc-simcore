@@ -55,6 +55,7 @@ def products_raw_data() -> dict[ProductName, dict[str, Any]]:
             url="https://acme.com",
             license_url="http://docs.acme.app/#/license-terms",
             invitation_url="http://docs.acme.app/#/how-to-request-invitation",
+            status_page_url="https://status.acme.com",
         ),
         "issues": [
             IssueTracker(
@@ -235,22 +236,6 @@ async def test_product_repository_get_product_stripe_info(
     product_name = "s4l"
     stripe_info = await product_repository.get_product_stripe_info_or_none(product_name)
     assert stripe_info is None
-
-
-async def test_product_repository_get_template_content(
-    product_repository: ProductRepository,
-):
-    template_name = "some_template"
-    content = await product_repository.get_template_content(template_name)
-    assert content is None or isinstance(content, str)
-
-
-async def test_product_repository_get_product_template_content(
-    product_repository: ProductRepository,
-):
-    product_name = "tis"
-    content = await product_repository.get_product_template_content(product_name)
-    assert content is None or isinstance(content, str)
 
 
 async def test_product_repository_get_product_ui(product_repository: ProductRepository):

@@ -225,7 +225,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addDeleteItemButton: function() {
       const deleteItemButton = this.__deleteItemButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/trash/18",
+        icon: "@FontAwesomeSolid/trash/18",
         width: this.self().BUTTON_SIZE,
         height: this.self().BUTTON_SIZE,
         visibility: "excluded"
@@ -330,7 +330,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const boxWidth = osparc.workbench.NodeUI.NODE_WIDTH;
       const boxHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
       const circleSize = 26;
-      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/"+circleSize).set({
+      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/"+circleSize).set({
         opacity: 0.8
       });
       temporaryNodeUI.getContentElement().addClass("rotate");
@@ -484,7 +484,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.getSelectedNodeUIs().forEach(selectedNodeUI => delete selectedNodeUI["initPos"]);
       this.getSelectedAnnotations().forEach(selectedAnnotation => delete selectedAnnotation["initPos"]);
 
-        // the moving item could be an annotation, so we need to check if it is a nodeUI
+      // the moving item could be an annotation, so we need to check if it is a nodeUI
       if (nodeUI) {
         this.getSelectedNodeUIs().forEach(selectedNodeUI => {
           if (nodeUI !== selectedNodeUI) {
@@ -836,6 +836,21 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       // build representation
       const nodeUI1 = this.getNodeUI(node1Id);
       const nodeUI2 = this.getNodeUI(node2Id);
+      if (!nodeUI1 || !nodeUI2) {
+        // NodeUI not yet created (e.g. RTC: node added in same patch batch).
+        // Retry after the missing node's UI is added to the workbench.
+        // eslint-disable-next-line no-negated-condition
+        const missingNodeId = !nodeUI1 ? node1Id : node2Id;
+        const workbench = this.__getWorkbench();
+        const missingNode = workbench.getNode(missingNodeId);
+        if (missingNode) {
+          workbench.addListenerOnce("nodeAdded", () => {
+            // give WorkbenchView time to create the nodeUI from the same event
+            setTimeout(() => this._createEdgeBetweenNodes(node1Id, node2Id, false), 100);
+          }, this);
+        }
+        return;
+      }
       if (nodeUI1.getCurrentBounds() === null || nodeUI2.getCurrentBounds() === null) {
         console.error("bounds not ready");
         return;
@@ -900,9 +915,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const edgeObj = edgeUi.getEdge();
         const inputNode = edgeObj.getInputNode();
         const outputNode = edgeObj.getOutputNode();
-        if (inputNode.getNodeId() === node1Id && outputNode.getNodeId() === node2Id) {
-          return true;
-        }
+        return inputNode.getNodeId() === node1Id && outputNode.getNodeId() === node2Id;
       });
       return foundEdgeUI;
     },
@@ -1682,7 +1695,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __openNodeRenamer: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
-      const treeItemRenamer = new osparc.widget.Renamer(node.getLabel());
+      const title = this.tr("Rename Node");
+      const treeItemRenamer = new osparc.widget.Renamer(node.getLabel(), null, title);
       treeItemRenamer.addListener("labelChanged", e => {
         const {
           newLabel
@@ -1963,13 +1977,13 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __consolidateAnnotation: function(initPos) {
+      const type = this.__annotating;
       const annotationTypes = osparc.workbench.Annotation.TYPES;
       if (type === annotationTypes.RECT && !this.__rectAnnotationRepr) {
         osparc.FlashMessenger.logAs(this.tr("Draw a rectangle first"), "WARNING");
         return;
       }
 
-      const type = this.__annotating;
       const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
       const serializeData = {
         type,

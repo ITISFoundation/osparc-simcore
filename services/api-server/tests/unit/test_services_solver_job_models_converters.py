@@ -2,16 +2,32 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
+import base64
+import json
+
 import pytest
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata, RootKeyStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
+from models_library.projects_nodes_io import NodeID
 from pydantic import RootModel, TypeAdapter, create_model
+from simcore_service_api_server.exceptions.backend_errors import InvalidEncryptionInputsError
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.files import File
-from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
+from simcore_service_api_server.models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobEncryptionInputs,
+    JobInputs,
+    JobStatus,
+)
 from simcore_service_api_server.models.schemas.solvers import Solver
+from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 from simcore_service_api_server.services_http.solver_job_models_converters import (
+    build_job_encryption_context,
     create_job_from_project,
     create_job_inputs_from_node_inputs,
     create_jobstatus_from_task,
@@ -66,8 +82,6 @@ def test_create_project_model_for_job(faker: Faker):
 
 
 def test_job_to_node_inputs_conversion():
-    # TODO: add here service input schemas and cast correctly?
-
     # Two equivalent inputs
     job_inputs = JobInputs(
         values={
@@ -120,7 +134,12 @@ def test_create_job_from_project(faker: Faker):
         {
             "uuid": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
-            "description": 'Study associated to solver job:\n{\n  "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "inputs_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",\n  "created_at": "2021-03-26T10:43:27.828975"\n}',
+            "description": (
+                'Study associated to solver job:\n{\n  "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  '
+                '"name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",'
+                '\n  "inputs_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",\n  '
+                '"created_at": "2021-03-26T10:43:27.828975"\n}'
+            ),
             "thumbnail": "https://2xx2gy2ovf3r21jclkjio3x8-wpengine.netdna-ssl.com/wp-content/uploads/2018/12/API-Examples.jpg",
             "prjOwner": "foo@itis.swiss",
             "type": "STANDARD",
@@ -150,7 +169,9 @@ def test_create_job_from_project(faker: Faker):
                     "outputs": {
                         "output_1": {
                             "store": 0,
-                            "path": "f925e30f-19de-42dc-acab-3ce93ea0a0a7/e694de0b-2e91-5be7-9319-d89404170991/single_number.txt",
+                            "path": (
+                                "f925e30f-19de-42dc-acab-3ce93ea0a0a7/e694de0b-2e91-5be7-9319-d89404170991/single_number.txt"
+                            ),
                             "eTag": "6c22e9b968b205c0dd3614edd1b28d35-1",
                         },
                         "output_2": 1,
@@ -239,15 +260,58 @@ def test_create_job_from_project(faker: Faker):
 
 @pytest.mark.skip(reason="TODO: next PR")
 def test_create_jobstatus_from_task():
-    from simcore_service_api_server.models.schemas.jobs import JobStatus
-    from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
-
-    task = ComputationTaskGet.model_validate({})  # TODO:
+    task = ComputationTaskGet.model_validate({})
     job_status: JobStatus = create_jobstatus_from_task(task)
 
     assert job_status.job_id == task.id
 
-    # TODO: activate
-    # #frozen = True
-    # #allow_mutation = False
-    # and remove take_snapshot by generating A NEW JobStatus!
+
+_VALID_ROOT_KEY_BASE64 = base64.b64encode(b"0" * 32).decode("ascii")
+_NODE_ID = NodeID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+
+
+def test_build_job_encryption_context_returns_none_when_no_encryption():
+    assert build_job_encryption_context(None, node_id=_NODE_ID, node_input_keys=["input_1"]) is None
+
+
+def test_build_job_encryption_context_wraps_flat_inputs_per_node():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"input_1": "input_1"},
+    )
+
+    metadata = build_job_encryption_context(encryption, node_id=_NODE_ID, node_input_keys=["input_1", "input_2"])
+
+    assert metadata is not None
+    # the flat client-supplied map is nested under the resolved node id
+    assert metadata.input_port_to_file_id == {_NODE_ID: {"input_1": "input_1"}}
+    # the secret root_key is preserved (not masked)
+    assert metadata.root_key.get_secret_value() == _VALID_ROOT_KEY_BASE64
+
+
+def test_build_job_encryption_context_raises_on_unknown_port_key():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"not_a_node_input": "some_file_id"},
+    )
+
+    with pytest.raises(InvalidEncryptionInputsError, match="not_a_node_input"):
+        build_job_encryption_context(encryption, node_id=_NODE_ID, node_input_keys=["input_1", "input_2"])
+
+
+def test_job_encryption_metadata_serialization_preserves_root_key():
+    # regression: the SecretStr root_key must survive serialization to the outgoing HTTP
+    # body. Plain jsonable_encoder / model_dump(mode="json") masks it to "**********",
+    # which would break decryption end-to-end (both api-server->webserver and
+    # webserver->director-v2 hops rely on this exact serialization pattern).
+    metadata = JobEncryptionContextMetadata(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={_NODE_ID: {"input_1": "input_1"}},
+    )
+
+    body = model_dump_with_secrets(metadata, show_secrets=True, mode="json")
+
+    assert body["root_key"] == _VALID_ROOT_KEY_BASE64
+    assert "**********" not in json.dumps(body)
+    # dict keyed by NodeID becomes a JSON-native string key
+    assert body["input_port_to_file_id"] == {f"{_NODE_ID}": {"input_1": "input_1"}}

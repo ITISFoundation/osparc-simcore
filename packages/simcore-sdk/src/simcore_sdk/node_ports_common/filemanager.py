@@ -1,6 +1,7 @@
 import logging
 from asyncio import CancelledError
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import aiofiles
@@ -30,6 +31,7 @@ from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
 from . import _filemanager_utils, exceptions, r_clone, storage_client
+from ._filemanager_utils import CompletedUpload
 from .file_io_utils import (
     LogRedirectCB,
     UploadableFileObject,
@@ -48,7 +50,7 @@ async def complete_file_upload(
     is_directory: bool = False,
 ) -> ETag | None:
     async with ClientSessionContextManager(client_session) as session:
-        e_tag: ETag | None = await _filemanager_utils.complete_upload(
+        completed = await _filemanager_utils.complete_upload(
             session=session,
             upload_completion_link=upload_completion_link,
             parts=uploaded_parts,
@@ -56,8 +58,8 @@ async def complete_file_upload(
         )
     # should not be None because a file is being uploaded
     if not is_directory:
-        assert e_tag is not None  # nosec
-    return e_tag
+        assert completed is not None  # nosec
+    return completed.e_tag if completed else None
 
 
 async def get_download_link_from_s3(
@@ -87,12 +89,21 @@ async def get_download_link_from_s3(
         return URL(f"{file_link}")
 
 
-async def create_r_clone_mounted_directory_entry(
+async def get_directory_mount_s3_link(
     *,
     user_id: UserID,
     s3_object: StorageFileID,
     store_id: LocationID | None,
-) -> None:
+) -> AnyUrl:
+    """Requests storage for the S3 link to be used when mounting a directory via rclone.
+
+    The link is provided by storage (``s3://<bucket>/<s3_object>``) so that the mount
+    targets the bucket actually used by storage.
+
+    NOTE: the upload is completed immediately to register the directory entry in
+    storage (file_meta_data) and avoid leaving a dangling pending entry behind. The
+    actual data transfer is then managed externally by the rclone mount.
+    """
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
         store_name=None,
@@ -104,6 +115,7 @@ async def create_r_clone_mounted_directory_entry(
         is_directory=True,
         sha256_checksum=None,
     )
+    assert upload_links.urls  # nosec
     async with ClientSessionContextManager(None) as session:
         await _filemanager_utils.complete_upload(
             session,
@@ -111,6 +123,7 @@ async def create_r_clone_mounted_directory_entry(
             [],
             is_directory=True,
         )
+    return upload_links.urls[0]
 
 
 async def get_upload_links_from_s3(
@@ -267,6 +280,7 @@ async def abort_upload(abort_upload_link: AnyUrl, client_session: ClientSession 
 class UploadedFile:
     store_id: LocationID
     etag: ETag
+    last_modified: datetime
 
 
 @dataclass
@@ -364,9 +378,9 @@ async def _upload_path(  # pylint: disable=too-many-arguments
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"uploading {path_to_upload}, please wait...")
 
-    # NOTE: when uploading a directory there is no e_tag as this is provided only for
-    # each single file and it makes no sense to have one for directories
-    e_tag: ETag | None = None
+    # NOTE: when uploading a directory there is no e_tag (nor last_modified) as these
+    # are provided only for a single file and make no sense for directories
+    completed: CompletedUpload | None = None
     async with ClientSessionContextManager(client_session) as session:
         upload_links: FileUploadSchema | None = None
         try:
@@ -383,7 +397,7 @@ async def _upload_path(  # pylint: disable=too-many-arguments
                 is_directory=is_directory,
                 sha256_checksum=checksum,
             )
-            e_tag, upload_links = await _upload_to_s3(
+            completed, upload_links = await _upload_to_s3(
                 upload_links=upload_links,
                 path_to_upload=path_to_upload,
                 io_log_redirect_cb=io_log_redirect_cb,
@@ -411,7 +425,11 @@ async def _upload_path(  # pylint: disable=too-many-arguments
             raise
         if io_log_redirect_cb:
             await io_log_redirect_cb(f"upload of {path_to_upload} complete.")
-    return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
+
+    if completed is None:
+        # a directory was uploaded: there is no single e_tag nor last_modified
+        return UploadedFolder()
+    return UploadedFile(store_id, completed.e_tag, completed.last_modified)
 
 
 async def _upload_to_s3(
@@ -424,7 +442,7 @@ async def _upload_to_s3(
     is_directory: bool,
     session: ClientSession,
     exclude_patterns: set[str] | None,
-) -> tuple[ETag | None, FileUploadSchema]:
+) -> tuple[CompletedUpload | None, FileUploadSchema]:
     uploaded_parts: list[UploadedPart] = []
     if is_directory:
         assert isinstance(path_to_upload, Path)  # nosec
@@ -450,13 +468,13 @@ async def _upload_to_s3(
             progress_bar=progress_bar,
         )
     # complete the upload
-    e_tag = await _filemanager_utils.complete_upload(
+    completed = await _filemanager_utils.complete_upload(
         session,
         upload_links.links.complete_upload,
         uploaded_parts,
         is_directory=is_directory,
     )
-    return e_tag, upload_links
+    return completed, upload_links
 
 
 async def _get_file_meta_data(
@@ -507,6 +525,7 @@ async def entry_exists(
 class FileMetaData:
     location: LocationID
     etag: ETag
+    last_modified: datetime
 
 
 async def get_file_metadata(
@@ -529,6 +548,7 @@ async def get_file_metadata(
     return FileMetaData(
         location=file_metadata.location_id,
         etag=file_metadata.entity_tag,
+        last_modified=file_metadata.last_modified,
     )
 
 

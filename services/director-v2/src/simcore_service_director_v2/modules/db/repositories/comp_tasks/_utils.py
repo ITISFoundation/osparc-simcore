@@ -15,7 +15,7 @@ from models_library.api_schemas_directorv2.services import (
     ServiceExtras,
 )
 from models_library.function_services_catalog import iter_service_docker_data
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -53,7 +53,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
     EC2InstanceTypeNotFoundError,
-    WalletNotEnoughCreditsError,
 )
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from .....models.pricing import PricingInfo
@@ -303,6 +302,7 @@ async def _update_project_node_resources_from_hardware_info(
 async def generate_tasks_list_from_project(
     *,
     project: ProjectAtDB,
+    project_nodes: NodesDict,
     catalog_client: CatalogClient,
     published_nodes: list[NodeID],
     user_id: UserID,
@@ -311,12 +311,17 @@ async def generate_tasks_list_from_project(
     rut_client: ResourceUsageTrackerClient,
     wallet_info: WalletInfo | None,
     rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> list[CompTaskAtDB]:
+) -> tuple[list[CompTaskAtDB], bool]:
+    """Returns (tasks_list, insufficient_credits).
+
+    If insufficient_credits is True, affected published nodes were set to ABORTED.
+    """
     list_comp_tasks = []
+    insufficient_credits = False
 
     unique_service_key_versions: set[ServiceKeyVersion] = {
         ServiceKeyVersion(key=node.key, version=node.version)  # the service key version is frozen
-        for node in project.workbench.values()
+        for node in project_nodes.values()
     }
 
     key_version_to_node_infos = {
@@ -329,8 +334,8 @@ async def generate_tasks_list_from_project(
         for key_version in unique_service_key_versions
     }
 
-    for internal_id, node_id in enumerate(project.workbench, 1):
-        node: Node = project.workbench[node_id]
+    for internal_id, node_id in enumerate(project_nodes, 1):
+        node: Node = project_nodes[node_id]
         node_key_version = ServiceKeyVersion(key=node.key, version=node.version)
         node_details, node_extras, node_labels = key_version_to_node_infos.get(
             node_key_version,
@@ -366,20 +371,16 @@ async def generate_tasks_list_from_project(
             node_key=node.key,
             node_version=node.version,
         )
-        # Check for zero credits (if pricing unit is greater than 0).
+
+        # Check credits for published nodes with non-zero cost
         if (
-            wallet_info
+            task_state == RunningState.PUBLISHED
+            and wallet_info
             and pricing_info
             and pricing_info.pricing_unit_cost > Decimal(0)
             and wallet_info.wallet_credit_amount <= ZERO_CREDITS
         ):
-            raise WalletNotEnoughCreditsError(
-                wallet_name=wallet_info.wallet_name,
-                wallet_credit_amount=wallet_info.wallet_credit_amount,
-                user_id=user_id,
-                product_name=product_name,
-                project_id=project.uuid,
-            )
+            insufficient_credits = True
 
         assert rabbitmq_rpc_client  # nosec
         await _update_project_node_resources_from_hardware_info(
@@ -424,4 +425,11 @@ async def generate_tasks_list_from_project(
         )
 
         list_comp_tasks.append(task_db)
-    return list_comp_tasks
+
+    # If any published node had insufficient credits, abort ALL published nodes
+    if insufficient_credits:
+        for task in list_comp_tasks:
+            if task.state == RunningState.PUBLISHED:
+                task.state = RunningState.ABORTED
+
+    return list_comp_tasks, insufficient_credits

@@ -7,7 +7,6 @@ from unittest.mock import Mock
 import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from models_library.api_schemas__common.health import HealthCheckGet
 from models_library.errors import (
     POSRGRES_DATABASE_UNHEALTHY_MSG,
     RABBITMQ_CLIENT_UNHEALTHY_MSG,
@@ -15,7 +14,6 @@ from models_library.errors import (
 )
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from simcore_service_notifications.api.rest._health import HealthCheckError
 from simcore_service_notifications.api.rest.dependencies import (
     get_postgres_liveness,
     get_rabbitmq_rpc_client,
@@ -25,15 +23,17 @@ from simcore_service_notifications.api.rest.dependencies import (
 
 @pytest.fixture
 def mock_lifespans(mocker: MockerFixture) -> None:
-    for lifespan in (
-        "postgres_database_lifespan",
-        "postgres_lifespan",
-        "rabbitmq_lifespan",
-        "rpc_api_routes_lifespan",
-        "redis_lifespan",
-        "task_manager_lifespan",
+    mocker.patch("simcore_service_notifications.core.application.configure_postgres_database")
+
+    for configure_fn in (
+        "configure_postgres_liveness",
+        "configure_smtp_config_check",
+        "configure_rabbitmq_client",
+        "configure_rpc_api",
+        "configure_redis_client",
+        "configure_task_manager",
     ):
-        mocker.patch(f"simcore_service_notifications.core.events.{lifespan}")
+        mocker.patch(f"simcore_service_notifications.core.application.{configure_fn}")
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def app_environment(
             **mock_env_devel_environment,
             **external_envfile_dict,
             "NOTIFICATIONS_TRACING": "null",
-            "NOTIFICATIONS_WORKER_MODE": "false",
+            "NOTIFICATIONS_BOOT_SERVER_MODE": "AS_REST_API_SERVER",
         },
     )
 
@@ -85,7 +85,6 @@ def mock_services_health(
 def test_health_ok(mock_services_health: None, test_client: TestClient):
     response = test_client.get("/")
     assert response.status_code == status.HTTP_200_OK
-    assert HealthCheckGet.model_validate(response.json())
 
 
 @pytest.mark.parametrize(
@@ -97,6 +96,6 @@ def test_health_ok(mock_services_health: None, test_client: TestClient):
     ],
 )
 def test_unhealthy_services(mock_services_health: None, test_client: TestClient, expected_msg: str):
-    with pytest.raises(HealthCheckError) as exc:
-        test_client.get("/")
-    assert expected_msg in f"{exc.value}"
+    response = test_client.get("/")
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert expected_msg in response.text

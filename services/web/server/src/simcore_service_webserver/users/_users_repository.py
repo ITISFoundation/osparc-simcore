@@ -39,7 +39,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
 from ._models import FullNameDict
-from .exceptions import (
+from .errors import (
     BillingDetailsNotFoundError,
     UserNameDuplicateError,
     UserNotFoundError,
@@ -91,19 +91,32 @@ async def search_public_user(
     connection: AsyncConnection | None = None,
     *,
     caller_id: UserID,
+    product_name: ProductName,
     search_pattern: str,
     limit: int,
 ) -> list:
     _pattern = f"%{search_pattern}%"
 
+    # Only return users who belong to the current product's group
+    in_product_subq = (
+        sa.select(sa.literal(1))
+        .select_from(user_to_groups.join(products, products.c.group_id == user_to_groups.c.gid))
+        .where((user_to_groups.c.uid == users.c.id) & (products.c.name == product_name))
+        .exists()
+    )
+
     query = (
         sa.select(*_public_user_cols(caller_id=caller_id))
         .where(
-            (is_public(users.c.privacy_hide_username, caller_id) & users.c.name.ilike(_pattern))
-            | (is_public(users.c.privacy_hide_email, caller_id) & users.c.email.ilike(_pattern))
-            | (
-                is_public(users.c.privacy_hide_fullname, caller_id)
-                & (users.c.first_name.ilike(_pattern) | users.c.last_name.ilike(_pattern))
+            in_product_subq
+            & (users.c.status == UserStatus.ACTIVE)
+            & (
+                (is_public(users.c.privacy_hide_username, caller_id) & users.c.name.ilike(_pattern))
+                | (is_public(users.c.privacy_hide_email, caller_id) & users.c.email.ilike(_pattern))
+                | (
+                    is_public(users.c.privacy_hide_fullname, caller_id)
+                    & (users.c.first_name.ilike(_pattern) | users.c.last_name.ilike(_pattern))
+                )
             )
         )
         .limit(limit)
@@ -198,12 +211,12 @@ async def get_active_users_email_data_by_ids(
 
 async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> UserID:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
-        user_id: UserID = await conn.scalar(
+        user_id = await conn.scalar(
             sa.select(
                 users.c.id,
             ).where(users.c.primary_gid == primary_gid)
         )
-        return user_id
+        return _parse_as_user(user_id)
 
 
 async def get_user_email_legacy(engine: AsyncEngine, *, user_id: UserID | None) -> str:
@@ -310,7 +323,7 @@ async def do_update_expired_users(
             .where(
                 (users.c.expires_at.is_not(None))
                 & (users.c.status == UserStatus.ACTIVE)
-                & (users.c.expires_at < sa.sql.func.now())
+                & (users.c.expires_at < sa.sql.func.now())  # pylint: disable=not-callable
             )
             .returning(users.c.id)
         )

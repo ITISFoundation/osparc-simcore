@@ -25,9 +25,9 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     env:
-      TO_TAG_PREFIX: staging-github
+      TO_DOCKER_TAG_PREFIX: staging-github
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
       - name: find branch name
@@ -35,7 +35,7 @@ jobs:
         run: echo "BRANCH_NAME=$(git name-rev --refs="refs/remotes/origin/master" --refs="refs/remotes/origin/hotfix_v*" --refs="refs/remotes/origin/hotfix_staging_*" --name-only ${GITHUB_SHA})" >> $GITHUB_ENV
       - name: setup docker buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v4.1.0
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: set git tag
@@ -44,9 +44,9 @@ jobs:
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
       - name: source image is master
-        run: echo "FROM_TAG_PREFIX=master-github" >> $GITHUB_ENV
+        run: echo "FROM_DOCKER_TAG_PREFIX=master-github" >> $GITHUB_ENV
       - if: contains(env.BRANCH_NAME, 'remotes/origin/hotfix_staging_')
         name: source image is hotfix-staging (instead of master)
-        run: echo "FROM_TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
+        run: echo "FROM_DOCKER_TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
       - name: deploy
         run: ./ci/deploy/dockerhub-tag-version.bash

@@ -23,9 +23,6 @@ from pytest_simcore.helpers.postgres_users import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.projects import projects
-from simcore_service_dynamic_scheduler.repository.events import (
-    get_project_networks_repo,
-)
 from simcore_service_dynamic_scheduler.repository.project_networks import (
     ProjectNetworkNotFoundError,
     ProjectNetworksRepo,
@@ -110,7 +107,7 @@ async def project_in_db(
 
 @pytest.fixture()
 def project_networks_repo(app: FastAPI) -> ProjectNetworksRepo:
-    return get_project_networks_repo(app)
+    return ProjectNetworksRepo(app.state.engine)
 
 
 @pytest.fixture

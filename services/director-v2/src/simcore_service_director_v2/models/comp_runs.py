@@ -4,9 +4,11 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
     TypedDict,
 )
 
+from models_library.api_schemas_directorv2.encryption import FileIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
@@ -25,6 +27,12 @@ class ProjectMetadataDict(TypedDict, total=False):
     root_parent_node_name: str
 
 
+class JobEncryptionRunMetadataDict(TypedDict):
+    # storage form of models_library JobEncryptionContextMetadata
+    root_key: str  # base64-encoded 32-byte root key
+    input_port_to_file_id: dict[NodeID, dict[ServicePortKey, FileIDStr]]
+
+
 class RunMetadataDict(TypedDict, total=False):
     node_id_names_map: dict[NodeID, str]
     project_name: str
@@ -35,6 +43,7 @@ class RunMetadataDict(TypedDict, total=False):
     wallet_id: int | None
     wallet_name: str | None
     project_metadata: ProjectMetadataDict
+    encryption: JobEncryptionRunMetadataDict
 
 
 type Iteration = PositiveInt

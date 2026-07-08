@@ -23,6 +23,14 @@ qx.Class.define("osparc.ui.window.SingletonWindow", {
     this.base(arguments, caption, icon);
   },
 
+  statics: {
+    getWindowById: function(id) {
+      return qx.core.Init.getApplication().getRoot()
+        .getChildren()
+        .find(child => child instanceof osparc.ui.window.SingletonWindow && child.getId() === id) || null;
+    },
+  },
+
   properties: {
     id: {
       check: "String",

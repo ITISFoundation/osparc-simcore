@@ -326,7 +326,7 @@ type UserAccountSortableField = Literal[
     "name",
     "email",
     "status",
-    "accountRequestedReviewedAt",
+    "accountRequestReviewedAt",
     "preRegistrationCreated",
 ]
 
@@ -337,7 +337,7 @@ class UsersAccountListOrderParams(
     _default_order_by: ClassVar[str] = "email"
     _field_name_map: ClassVar[dict[str, str]] = {
         "name": "first_name",
-        "accountRequestedReviewedAt": "account_request_reviewed_at",
+        "accountRequestReviewedAt": "account_request_reviewed_at",
         "preRegistrationCreated": "created",
     }
 
@@ -361,6 +361,7 @@ class _InvitationDetails(InputSchema):
 
 class UserAccountApprove(InputSchema):
     email: EmailStr
+    bcc_emails: list[EmailStr] | None = None
     invitation_url: HttpUrl
     message_content: MessageContent | None = None
 
@@ -382,6 +383,7 @@ class UserAccountPreviewApprovalGet(OutputSchema):
 
 class UserAccountReject(InputSchema):
     email: EmailStr
+    bcc_emails: list[EmailStr] | None = None
     message_content: MessageContent | None = None
 
 

@@ -72,7 +72,7 @@ from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
 from tenacity import (
@@ -1200,7 +1200,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     assert dynamic_node_id
     url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=dynamic_node_id)
 
-    node_sample = deepcopy(NodeGet.model_config["json_schema_extra"]["examples"][1])
+    node_sample = deepcopy(NodeGet.model_json_schema()["examples"][0])
     assert node_sample
     assert isinstance(node_sample, dict)
     mocked_dynamic_services_interface[

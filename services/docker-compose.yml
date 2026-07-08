@@ -20,8 +20,10 @@ x-webserver-diagnostics: &webserver_diagnostics_environments
 x-tracing-open-telemetry: &tracing_open_telemetry_environments
   TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
   TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
+  TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION: ${TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION}
   TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
   TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY: ${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}
+  TRACING_OPENTELEMETRY_TRACED_FUNCTIONS: ${TRACING_OPENTELEMETRY_TRACED_FUNCTIONS}
 
 ## third-party party services
 x-postgres-settings: &postgres_settings
@@ -61,14 +63,6 @@ x-s3-settings: &s3_settings
   S3_ENDPOINT: ${S3_ENDPOINT}
   S3_REGION: ${S3_REGION}
   S3_SECRET_KEY: ${S3_SECRET_KEY}
-
-x-smtp-settings: &smtp_settings
-  SMTP_HOST: ${SMTP_HOST}
-  SMTP_PORT: ${SMTP_PORT}
-  SMTP_USERNAME: ${SMTP_USERNAME}
-  SMTP_PASSWORD: ${SMTP_PASSWORD}
-  SMTP_PROTOCOL: ${SMTP_PROTOCOL}
-  SMTP_EXTRA_HEADERS: ${SMTP_EXTRA_HEADERS}
 
 ## simcore stack services
 
@@ -166,6 +160,10 @@ services:
         "max_connections=413",
         "-c",
         "shared_buffers=256MB",
+        # pg_stat_statements tracks execution statistics of all SQL statements.
+        # Execute `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;` to expose the view.
+        "-c",
+        "shared_preload_libraries=pg_stat_statements",
         # statement_timeout is set to 120 seconds (120_000 in ms), so that long running queries
         # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
         # queries will not be used. Setting >1 minutes to be safe
@@ -190,7 +188,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "11",
+        "12",
         "--appendonly",
         "yes",
         "--requirepass",
@@ -425,6 +423,7 @@ services:
     environment:
       <<:
         - *postgres_settings
+        - *redis_settings
         - *registry_settings
         - *tracing_open_telemetry_environments
 
@@ -701,9 +700,9 @@ services:
     networks:
       - default
 
-###############################
-### Group dependent simcore ###
-###############################
+  ###############################
+  ### Group dependent simcore ###
+  ###############################
 
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
@@ -745,7 +744,7 @@ services:
         - *s3_settings
         - *tracing_open_telemetry_environments
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
-      STORAGE_WORKER_MODE: "false"
+      STORAGE_BOOT_SERVER_MODE: AS_REST_API_SERVER
       STORAGE_LOGLEVEL: ${STORAGE_LOGLEVEL}
       STORAGE_MONITORING_ENABLED: 1
       STORAGE_PROFILING: ${STORAGE_PROFILING}
@@ -762,9 +761,10 @@ services:
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_BOOT_SERVER_MODE: AS_CELERY_WORKER
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      STORAGE_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 100
       CELERY_POOL: threads
     networks: *storage_networks
@@ -775,9 +775,10 @@ services:
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_BOOT_SERVER_MODE: AS_CELERY_WORKER
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      STORAGE_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: 1
       CELERY_QUEUES: cpu_bound
       CELERY_POOL: prefork
@@ -805,6 +806,7 @@ services:
       COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ${COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH}
       COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: ${COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE}
       COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE: ${COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE}
+      COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY: ${COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY}
 
       DIRECTOR_HOST: ${DIRECTOR_HOST}
       DIRECTOR_PORT: ${DIRECTOR_PORT}
@@ -918,7 +920,6 @@ services:
         - *rabbit_settings
         - *redis_settings
         - *resource_usage_tracker_settings
-        - *smtp_settings
         - *storage_settings
         - *tracing_open_telemetry_environments
         - *webserver_diagnostics_environments
@@ -1046,16 +1047,17 @@ services:
       # see [https://docs.gunicorn.org/en/stable/settings.html#timeout],
       # since we have the docker healthcheck already, this should be ok
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
-      WEBSERVER_DB_LISTENER: ${WEBSERVER_DB_LISTENER}
       WEBSERVER_ANNOUNCEMENTS: ${WEBSERVER_ANNOUNCEMENTS}
-      WEBSERVER_NOTIFICATIONS: ${WEBSERVER_NOTIFICATIONS}
+      WEBSERVER_DB_LISTENER: ${WEBSERVER_DB_LISTENER}
+      WEBSERVER_FOLDERS: ${WEBSERVER_FOLDERS}
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for front-end
       WEBSERVER_GROUPS: ${WEBSERVER_GROUPS}
+      WEBSERVER_LOCALIZED_MESSAGES_ENABLED: ${WEBSERVER_LOCALIZED_MESSAGES_ENABLED}
+      WEBSERVER_NOTIFICATIONS: ${WEBSERVER_NOTIFICATIONS}
       WEBSERVER_PRODUCTS: ${WEBSERVER_PRODUCTS}
       WEBSERVER_SOCKETIO: ${WEBSERVER_SOCKETIO}
       WEBSERVER_TAGS: ${WEBSERVER_TAGS}
       WEBSERVER_USERS: ${WEBSERVER_USERS}
-      WEBSERVER_FOLDERS: ${WEBSERVER_FOLDERS}
 
     deploy:
       # NOTE: having 2 replicas is necessary to detect early on if in-process tasks are mistakenly added to the webserver
@@ -1150,9 +1152,9 @@ services:
       WEBSERVER_ACTIVITY: ${WB_GC_ACTIVITY}
       WEBSERVER_ANNOUNCEMENTS: ${WB_GC_ANNOUNCEMENTS}
       WEBSERVER_CATALOG: ${WB_GC_CATALOG}
+      WEBSERVER_CELERY: "null"
       WEBSERVER_CHATBOT: "null"
       WEBSERVER_CONVERSATIONS: "false"
-      WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_GC_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_GC_DIAGNOSTICS}
       WEBSERVER_EXPORTER: ${WB_GC_EXPORTER}
@@ -1163,6 +1165,7 @@ services:
       WEBSERVER_GARBAGE_COLLECTOR: ${WB_GC_GARBAGE_COLLECTOR}
       WEBSERVER_GROUPS: ${WB_GC_GROUPS}
       WEBSERVER_HOST: ${WEBSERVER_HOST}
+      WEBSERVER_LOCALIZED_MESSAGES_ENABLED: ${WEBSERVER_LOCALIZED_MESSAGES_ENABLED}
       WEBSERVER_INVITATIONS: ${WB_GC_INVITATIONS}
       WEBSERVER_LICENSES: "null"
       WEBSERVER_LOGIN: ${WB_GC_LOGIN}
@@ -1257,6 +1260,7 @@ services:
       WEBSERVER_FUNCTIONS: 0
       WEBSERVER_GARBAGE_COLLECTOR: "null"
       WEBSERVER_GROUPS: 0
+      WEBSERVER_LOCALIZED_MESSAGES_ENABLED: ${WEBSERVER_LOCALIZED_MESSAGES_ENABLED}
       WEBSERVER_INVITATIONS: "null"
       WEBSERVER_LICENSES: "null"
       WEBSERVER_LOGIN: "null"
@@ -1327,6 +1331,7 @@ services:
       WEBSERVER_FUNCTIONS: 0
       WEBSERVER_GARBAGE_COLLECTOR: ${WB_DB_EL_GARBAGE_COLLECTOR}
       WEBSERVER_GROUPS: ${WB_DB_EL_GROUPS}
+      WEBSERVER_LOCALIZED_MESSAGES_ENABLED: ${WEBSERVER_LOCALIZED_MESSAGES_ENABLED}
       WEBSERVER_INVITATIONS: ${WB_DB_EL_INVITATIONS}
       WEBSERVER_LICENSES: "null"
       WEBSERVER_FOGBUGZ: "null"
@@ -1419,12 +1424,15 @@ services:
         - *storage_settings
         - *tracing_open_telemetry_environments
 
+      API_SERVER_BOOT_SERVER_MODE: AS_REST_API_SERVER
+      API_SERVER_CHATBOT: ${API_SERVER_CHATBOT:-null}
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
-      API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      API_SERVER_LOCALIZED_MESSAGES_ENABLED: ${API_SERVER_LOCALIZED_MESSAGES_ENABLED}
       API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
-      API_SERVER_TRACING: ${API_SERVER_TRACING}
+      API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       API_SERVER_LOGLEVEL: ${API_SERVER_LOGLEVEL}
       API_SERVER_PROFILING: ${API_SERVER_PROFILING}
+      API_SERVER_TRACING: ${API_SERVER_TRACING}
       API_SERVER_WORKER_MODE: "false"
 
       # NOTE: points to wb-api server
@@ -1458,9 +1466,10 @@ services:
     hostname: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *api_server_environment
+      API_SERVER_BOOT_SERVER_MODE: AS_CELERY_WORKER
       API_SERVER_TRACING: "null"
       API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      API_SERVER_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
       CELERY_POOL: threads
       CELERY_QUEUES: api_server
@@ -1496,10 +1505,11 @@ services:
         - *rabbit_settings
         - *redis_settings
         - *tracing_open_telemetry_environments
+      NOTIFICATIONS_BOOT_SERVER_MODE: AS_REST_API_SERVER
+      NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
       NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: ${NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE}
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
-      NOTIFICATIONS_WORKER_MODE: "false"
       CELERY_EPHEMERAL_RESULT_EXPIRES: ${NOTIFICATIONS_CELERY_EPHEMERAL_RESULT_EXPIRES}
     networks: &notifications_networks
       - default
@@ -1514,10 +1524,12 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
-        - *smtp_settings
+
+      NOTIFICATIONS_BOOT_SERVER_MODE: AS_CELERY_WORKER
+      NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
-      NOTIFICATIONS_WORKER_MODE: "true"
+      HEALTHCHECK_MODE: heartbeat
       # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
       NOTIFICATIONS_EMAIL_RATE_LIMIT: ${NOTIFICATIONS_EMAIL_RATE_LIMIT}
       CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
@@ -1537,7 +1549,6 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *resource_usage_tracker_settings
-        - *smtp_settings
         - *tracing_open_telemetry_environments
 
       PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: ${PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES}

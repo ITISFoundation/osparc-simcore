@@ -20,6 +20,7 @@ from aiohttp import ClientResponseError
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
@@ -184,6 +185,7 @@ class DaskClient:
         task_labels: ContainerLabelsDict,
         task_owner: TaskOwner,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
         dask_resources: DaskResources,
         node_id: NodeID,
         job_id: DaskJobID,
@@ -195,6 +197,7 @@ class DaskClient:
             docker_auth: DockerBasicAuth,
             log_file_url: LogFileUploadURL,
             s3_settings: S3Settings | None,
+            encryption: JobEncryptionContext | None,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
@@ -208,6 +211,7 @@ class DaskClient:
                 docker_auth=docker_auth,
                 log_file_url=log_file_url,
                 s3_settings=s3_settings,
+                encryption=encryption,
             )
 
         if remote_fct is None:
@@ -236,6 +240,7 @@ class DaskClient:
                 ),
                 log_file_url=log_file_url,
                 s3_settings=s3_settings,
+                encryption=encryption,
                 key=job_id,
                 resources=dask_resources,
                 retries=0,
@@ -247,9 +252,10 @@ class DaskClient:
             await dask_utils.wrap_client_async_routine(self.backend.client.publish_dataset(task_future, name=job_id))
 
             _logger.info(
-                "Dask task %s started [%s]",
+                "Dask task %s started [%s] with encryption [%s]",
                 f"{job_id=}",
                 f"{node_image.command=}",
+                f"{'enabled' if encryption else 'disabled'}",
             )
             return PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
         except Exception:
@@ -283,6 +289,7 @@ class DaskClient:
         """
 
         list_of_node_id_to_job_id: list[PublishedComputationTask] = []
+
         for node_id, node_image in tasks.items():
             job_id = generate_dask_job_id(
                 service_key=node_image.name,
@@ -368,6 +375,10 @@ class DaskClient:
                 task_owner = dask_utils.compute_task_owner(
                     user_id, project_id, node_id, metadata.get("project_metadata", {})
                 )
+                encryption_metadata = dask_utils.get_job_encryption_context_metadata(metadata)
+                encryption = (
+                    JobEncryptionContext.from_metadata(encryption_metadata, node_id) if encryption_metadata else None
+                )
                 list_of_node_id_to_job_id.append(
                     await self._publish_in_dask(
                         remote_fct=remote_fct,
@@ -379,6 +390,7 @@ class DaskClient:
                         task_labels=task_labels,
                         task_owner=task_owner,
                         s3_settings=s3_settings,
+                        encryption=encryption,
                         dask_resources=dask_resources,
                         node_id=node_id,
                         job_id=job_id,

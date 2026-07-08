@@ -42,6 +42,12 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
+      // remove the up/down caps and track border from every scrollbar (see the mixin)
+      qx.Class.patch(qx.ui.core.scroll.ScrollBar, osparc.wrapper.MScrollBar);
+
+      // keep font icons at their postfix size across re-layouts / theme switches (see the class)
+      osparc.wrapper.ImageFontIcon.patch();
+
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox
@@ -52,8 +58,10 @@ qx.Class.define("osparc.Application", {
 
       this.__preventAutofillBrowserStyles();
       this.__loadCommonCss();
+      this.__setupScrollbarColors();
       this.__updateTabName();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        osparc.utils.LanguageManager.applyStoredLocale();
         this.__updateMetaTags();
         this.__setDeviceSpecificIcons();
       }
@@ -140,6 +148,23 @@ qx.Class.define("osparc.Application", {
                 const studyId = urlFragment.nav[1];
                 const loadAfterLogin = {
                   id: "startStudy",
+                  studyId,
+                };
+                this.__loadMainPage(loadAfterLogin);
+              })
+              .catch(() => this.__loadLoginPage());
+          }
+          break;
+        }
+        case "dispatch": {
+          // Route: /#/dispatch?study_id={studyId}
+          if (urlFragment.params && urlFragment.params.study_id) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(() => {
+                const studyId = urlFragment.params.study_id;
+                const loadAfterLogin = {
+                  id: "dispatchStudy",
                   studyId,
                 };
                 this.__loadMainPage(loadAfterLogin);
@@ -292,7 +317,7 @@ qx.Class.define("osparc.Application", {
       const manifestLink = document.querySelector("link[rel='manifest']");
       const msApplicationLink = document.querySelector("link[rel='msapplication-config']");
 
-      const {productName, productColor} = this.__getProductMetaData();
+      const { productName, productColor } = this.__getProductMetaData();
 
       if (themeColorMeta) {
         themeColorMeta.setAttribute("content", productColor);
@@ -326,7 +351,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __setDefaultIcons: function() {
-      const {productName} = this.__getProductMetaData()
+      const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons/`;
       const favIconUrls = [
         "favicon-16x16.png",
@@ -348,7 +373,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __setGoogleIcons: function() {
-      const {productName} = this.__getProductMetaData()
+      const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons`;
 
       const favIconUrls = [
@@ -371,7 +396,7 @@ qx.Class.define("osparc.Application", {
 
     __setIOSpIcons: function() {
       // Array of promises to resolve icon URLs for Apple Touch Icons
-      const {productName} = this.__getProductMetaData()
+      const { productName } = this.__getProductMetaData()
       const resourcePath = `../resource/osparc/${productName}/icons`;
 
       const appleIconUrls = [
@@ -513,6 +538,14 @@ qx.Class.define("osparc.Application", {
                 osparc.store.Store.getInstance().setCurrentStudyId(studyId);
               }
 
+              if (loadAfterLogin["id"] === "dispatchStudy" && loadAfterLogin["studyId"]) {
+                const studyId = loadAfterLogin["studyId"];
+                // Reuse the existing MainPage startup path that triggers startStudy.
+                // MainPageHandler.startStudy will intercept and run dispatchStudy instead.
+                osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+                osparc.store.Store.getInstance().setCurrentDispatchStudyId(studyId);
+              }
+
               if (loadAfterLogin["id"] === "openConversation" && loadAfterLogin["conversationId"]) {
                 const conversationId = loadAfterLogin["conversationId"];
                 const supportCenterWindow = osparc.support.SupportCenter.openWindow();
@@ -565,7 +598,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loadView: function(view, opts, clearUrl=true) {
+    __loadView: function(view, opts, clearUrl = true) {
       const options = {
         top: 0,
         bottom: 0,
@@ -681,6 +714,19 @@ qx.Class.define("osparc.Application", {
     __loadCommonCss: function() {
       const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
       qx.module.Css.includeStylesheet(commonCssUri);
+    },
+
+    // feed the native (webkit) scrollbar CSS with the theme scrollbar colors,
+    // kept in sync when the theme changes
+    __setupScrollbarColors: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const update = () => {
+        const root = document.documentElement;
+        root.style.setProperty("--osparc-scrollbar-thumb", colorManager.resolve("scrollbar-passive"));
+        root.style.setProperty("--osparc-scrollbar-thumb-hover", colorManager.resolve("scrollbar-active"));
+      };
+      update();
+      colorManager.addListener("changeTheme", update);
     }
   }
 });

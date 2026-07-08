@@ -7,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import AfterValidator, validate_call
 
-from ._access_rights_service import check_user_project_permission
+from . import _access_rights_service
 from ._jobs_repository import ProjectJobsRepository
 from .exceptions import ProjectNotFoundError
 from .models import ProjectJobDBGet
@@ -32,7 +32,7 @@ async def set_project_as_job(
     job_parent_resource_name: Annotated[str, AfterValidator(_validate_job_parent_resource_name)],
     storage_assets_deleted: bool,
 ) -> None:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
@@ -59,13 +59,20 @@ async def list_my_projects_marked_as_jobs(
     pagination_limit: int = 10,
     filter_by_job_parent_resource_name_prefix: str | None = None,
     filter_any_custom_metadata: list[tuple[str, str]] | None = None,
+    filter_all_custom_metadata: list[tuple[str, str]] | None = None,
+    filter_by_project_uuids: list[ProjectID] | None = None,
 ) -> tuple[int, list[ProjectJobDBGet]]:
     """
     Lists paginated projects marked as jobs for the given user and product.
 
     Keyword Arguments:
-        filter_by_job_parent_resource_name_prefix -- Optionally filters by job_parent_resource_name using SQL-like wildcard patterns. (default: {None})
-        filter_any_custom_metadata -- is a list of dictionaries with key-pattern pairs for custom metadata fields (OR logic). (default: {None})
+        filter_by_job_parent_resource_name_prefix -- Optionally filters by
+            job_parent_resource_name using SQL-like wildcard patterns. (default: {None})
+        filter_any_custom_metadata -- is a list of key-pattern pairs
+            for custom metadata fields (OR logic). (default: {None})
+        filter_all_custom_metadata -- is a list of key-pattern pairs
+            for custom metadata fields (AND logic). (default: {None})
+        filter_by_project_uuids -- Optionally filters by a list of project UUIDs. (default: {None})
 
     Returns:
         A tuple containing the total number of projects and a list of ProjectJobDBGet objects for this page.
@@ -78,6 +85,8 @@ async def list_my_projects_marked_as_jobs(
         pagination_limit=pagination_limit,
         filter_by_job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
         filter_any_custom_metadata=filter_any_custom_metadata,
+        filter_all_custom_metadata=filter_all_custom_metadata,
+        filter_by_project_uuids=filter_by_project_uuids,
     )
 
 
@@ -95,7 +104,7 @@ async def get_project_marked_as_job(
     Raises:
         web.HTTPNotFound: if no project is found.
     """
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,

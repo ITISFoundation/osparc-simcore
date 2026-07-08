@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=unused-variable
+# ruff: noqa:SLF001
 
 import asyncio
 import json
@@ -14,6 +15,7 @@ import pytest
 import simcore_service_webserver
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from prometheus_client import Counter
 from pytest_mock import MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -49,7 +51,7 @@ async def _health_check_emulator(
     *,
     min_num_checks: int = 2,
     start_period: int = 0,
-    timeout: int = 30,
+    timeout: int = 30,  # noqa: ASYNC109
     interval: int = 30,
     retries: int = 3,
 ):
@@ -114,7 +116,7 @@ async def client(
     @routes.get("/error")
     async def unexpected_error(request: web.Request):
         msg = "boom shall produce 500"
-        raise Exception(msg)  # pylint: disable=broad-exception-raised
+        raise Exception(msg)  # pylint: disable=broad-exception-raised  # noqa: TRY002
 
     @routes.get(r"/fail")
     async def expected_failure(request: web.Request):
@@ -122,7 +124,7 @@ async def client(
 
     @routes.get(r"/slow")
     async def blocking_slow(request: web.Request):
-        time.sleep(SLOW_HANDLER_DELAY_SECS * 1.1)
+        time.sleep(SLOW_HANDLER_DELAY_SECS * 1.1)  # noqa: ASYNC251
         return web.json_response({"data": True, "error": None})
 
     @routes.get(r"/cancel")
@@ -171,6 +173,7 @@ def test_diagnostics_setup(client: TestClient):
         "servicelib.aiohttp.monitoring.monitor_simcore_service_webserver",
         "servicelib.aiohttp.rest_middlewares.envelope_v0",
         "servicelib.aiohttp.rest_middlewares.error_v0",
+        "simcore_service_webserver.locale.locale_middleware",
         "simcore_service_webserver.session.plugin.session",
     }
 
@@ -195,7 +198,10 @@ async def test_unhealthy_app_with_slow_callbacks(client: TestClient, api_version
     await assert_status(resp, status.HTTP_200_OK)
 
     resp = await client.get(f"/{api_version_prefix}/health")
-    await assert_status(resp, status.HTTP_503_SERVICE_UNAVAILABLE)
+    _, error = await assert_status(resp, status.HTTP_503_SERVICE_UNAVAILABLE)
+    assert error
+    assert {"errors", "status", "message"}.issubset(error)
+    assert error["status"] == status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 async def test_diagnose_on_unexpected_error(client: TestClient):
@@ -235,9 +241,6 @@ async def test_diagnose_on_response_delays(client: TestClient):
 
 
 def test_read_prometheus_counter():
-    # TODO move to test_prometheus_utils.py in servicelib
-    from prometheus_client import Counter
-
     counter = Counter("my_fullname_counter", "description", labelnames=("name", "surname"))
 
     def get_total():

@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from models_library.projects import Project
 from models_library.projects_nodes_io import NodeID
+from simcore_service_webserver.projects._crud_api_create import _remap_port_links
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.nodes_utils import project_get_depending_nodes
 from simcore_service_webserver.projects.utils import (
@@ -139,7 +140,37 @@ def test_default_copy_project_name(original_name: str, expected_copy_suffix: str
 def test_validate_project_json_schema():
     CURRENT_DIR = Path(__file__).resolve().parent
 
-    with open(CURRENT_DIR / "data/project-data.json") as f:
+    with (CURRENT_DIR / "data/project-data.json").open() as f:
         project: ProjectDict = json.load(f)
 
     Project.model_validate(project)
+
+
+def test_remap_port_links_remaps_node_uuid():
+    old_uuid = "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"
+    new_uuid = "aaaaaaaa-0000-0000-0000-000000000001"
+    nodes_map = {old_uuid: new_uuid}
+
+    inputs = {
+        "in_1": {"nodeUuid": old_uuid, "output": "outFile"},
+        "in_2": 42,
+    }
+
+    result = _remap_port_links(inputs, nodes_map)
+    assert result is not None
+    assert result["in_1"]["nodeUuid"] == new_uuid
+    assert result["in_1"]["output"] == "outFile"
+    assert result["in_2"] == 42
+
+
+def test_remap_port_links_unknown_uuid_is_preserved():
+    unknown = "cccccccc-0000-0000-0000-000000000099"
+    inputs = {"in_1": {"nodeUuid": unknown, "output": "x"}}
+    result = _remap_port_links(inputs, nodes_map={})
+    assert result is not None
+    assert result["in_1"]["nodeUuid"] == unknown
+
+
+def test_remap_port_links_none_and_empty():
+    assert _remap_port_links(None, {}) is None
+    assert _remap_port_links({}, {}) == {}

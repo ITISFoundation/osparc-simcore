@@ -70,7 +70,7 @@ qx.Class.define("osparc.pricing.Plans", {
             appearance: "form-button",
             label: this.tr("New Pricing Plan"),
             alignX: "center",
-            icon: "@FontAwesome5Solid/plus/14",
+            icon: "@FontAwesomeSolid/plus/14",
             allowGrowX: false
           });
           control.addListener("execute", () => this.__openCreatePricingPlan());

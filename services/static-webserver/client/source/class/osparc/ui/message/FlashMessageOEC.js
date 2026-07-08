@@ -28,12 +28,9 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
   construct: function(message, duration, supportId) {
     this.base(arguments, message, "ERROR", duration ? duration*2 : null);
 
-    if (osparc.store.Groups.getInstance().isSupportEnabled() && false) {
-      this.getChildControl("contact-support");
-    } else {
-      const oecAtom = this.getChildControl("oec-atom");
-      this.bind("supportId", oecAtom, "label");
-    }
+    const oecAtom = this.getChildControl("oec-atom");
+    this.bind("supportId", oecAtom, "label");
+
     if (supportId) {
       this.setSupportId(supportId);
     }
@@ -54,7 +51,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
       switch (id) {
         case "oec-atom":
           control = new qx.ui.basic.Atom().set({
-            icon: "@FontAwesome5Solid/copy/10",
+            icon: "@FontAwesomeSolid/copy/10",
             iconPosition: "right",
             gap: 8,
             cursor: "pointer",
@@ -67,7 +64,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
         case "contact-support":
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Contact Support"),
-            icon: "@FontAwesome5Solid/comments/10",
+            icon: "@FontAwesomeSolid/comments/10",
             iconPosition: "left",
             gap: 8,
             cursor: "pointer",
@@ -123,7 +120,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
       }
 
       const caption = this.tr("Something went wrong");
-      const introText = this.tr("Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster.");
+      const introText = this.tr("Please describe what you were doing before the error (optional).") + "\n" + this.tr("This will help our support team understand the context and resolve the issue faster.");
       const confirmationWindow = new osparc.ui.window.Confirmation(introText);
       confirmationWindow.setCaption(caption);
       confirmationWindow.getChildControl("message-label").setFont("text-13");

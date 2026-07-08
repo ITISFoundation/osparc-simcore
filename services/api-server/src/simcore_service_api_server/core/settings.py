@@ -1,6 +1,7 @@
 from functools import cached_property
-from typing import Annotated
+from typing import Annotated, Literal
 
+from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
@@ -8,6 +9,7 @@ from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     Field,
+    HttpUrl,
     NonNegativeInt,
     PositiveInt,
     SecretStr,
@@ -54,6 +56,21 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
         return cls.do_check_valid_fernet_key(v)
 
 
+class ChatbotSettings(BaseCustomSettings):
+    CHATBOT_URL: Annotated[
+        HttpUrl,
+        Field(
+            description="URL of the chatbot service",
+        ),
+    ]
+    GRAPH_NAME: Annotated[
+        Literal["simple_rag", "multi_query_rag", "simple_agentic_rag"],
+        Field(
+            description="Name of the graph to be used in the chatbot service",
+        ),
+    ]
+
+
 # MAIN SETTINGS --------------------------------------------
 
 
@@ -63,6 +80,13 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         bool,
         Field(
             validation_alias=AliasChoices("API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"),
+        ),
+    ] = False
+
+    API_SERVER_LOCALIZED_MESSAGES_ENABLED: Annotated[
+        bool,
+        Field(
+            description=("Enable server-side translation of user-facing messages."),
         ),
     ] = False
 
@@ -111,6 +135,11 @@ class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None = None
 
+    API_SERVER_CHATBOT: Annotated[
+        ChatbotSettings | None,
+        Field(description="URL of the chatbot service", json_schema_extra={"auto_default_from_env": True}),
+    ] = None
+
     API_SERVER_CELERY: Annotated[CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})] = None
 
     API_SERVER_POSTGRES: Annotated[
@@ -151,7 +180,10 @@ class ApplicationSettings(BasicSettings):
         ),
     ]
 
-    API_SERVER_WORKER_MODE: Annotated[bool, Field(description="If True, the API server runs in worker mode")] = False
+    API_SERVER_BOOT_SERVER_MODE: Annotated[
+        BootServerMode,
+        Field(description="Boot mode: REST API server or Celery worker"),
+    ] = BootServerMode.AS_REST_API_SERVER
 
     @cached_property
     def debug(self) -> bool:
@@ -164,6 +196,5 @@ __all__: tuple[str, ...] = (
     "BasicSettings",
     "DirectorV2Settings",
     "StorageSettings",
-    "WebServerSettings",
     "WebServerSettings",
 )

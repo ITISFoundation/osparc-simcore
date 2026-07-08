@@ -16,12 +16,14 @@ def test_resultstypes_and_argument_type_sync():
     # I/O types returned by node-ports must be one-to-one mapped
     # with those returned as output results
 
-    # Python 3.10 and later treats unions with | as types.UnionType
-    assert get_origin(ArgumentTypes) in (types.UnionType, Union)
-    argument_types_args = set(get_args(ArgumentTypes))
+    # Python 3.12+ `type` statement creates TypeAliasType; unwrap with __value__
+    argument_types = ArgumentTypes.__value__ if hasattr(ArgumentTypes, "__value__") else ArgumentTypes
+    assert get_origin(argument_types) in (types.UnionType, Union)
+    argument_types_args = set(get_args(argument_types))
 
-    assert get_origin(ResultsTypes) in (types.UnionType, Union)
-    results_types_args = set(get_args(ResultsTypes))
+    results_types = ResultsTypes.__value__ if hasattr(ResultsTypes, "__value__") else ResultsTypes
+    assert get_origin(results_types) in (types.UnionType, Union)
+    results_types_args = set(get_args(results_types))
 
     # files are in the inputs as File (or Raises KeyError if not)
     argument_types_args.remove(File)

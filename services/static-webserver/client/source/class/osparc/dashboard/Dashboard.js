@@ -108,7 +108,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         id: "studiesTab",
         buttonId: "studiesTabBtn",
         label: this.tr("PROJECTS"),
-        icon: "@FontAwesome5Solid/file/"+tabIconSize,
+        icon: "@FontAwesomeSolid/file/"+tabIconSize,
         buildLayout: this.__createStudyBrowser
       }];
       if (permissions.canDo("dashboard.templates.read")) {
@@ -116,7 +116,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           id: "tutorialsTab",
           buttonId: "tutorialsTabBtn",
           label: this.tr("TUTORIALS"),
-          icon: "@FontAwesome5Solid/copy/"+tabIconSize,
+          icon: "@FontAwesomeSolid/copy/"+tabIconSize,
           buildLayout: this.__createTutorialBrowser
         });
       }
@@ -125,7 +125,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           id: "appsTab",
           buttonId: "appsTabBtn",
           label: this.tr("APPS"),
-          icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
+          icon: "@FontAwesomeSolid/cogs/"+tabIconSize,
           buildLayout: this.__createAppBrowser
         });
       }
@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           id: "dataTab",
           buttonId: "dataTabBtn",
           label: this.tr("DATA"),
-          icon: "@FontAwesome5Solid/folder/"+tabIconSize,
+          icon: "@FontAwesomeSolid/folder/"+tabIconSize,
           buildLayout: this.__createDataBrowser
         });
       }

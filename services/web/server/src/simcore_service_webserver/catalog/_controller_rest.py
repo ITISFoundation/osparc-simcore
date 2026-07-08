@@ -23,18 +23,18 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..resource_usage.service import get_default_service_pricing_plan
+from ..resource_usage.resource_usage_service import get_default_service_pricing_plan
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from . import _catalog_rest_client_service, _service
 from ._controller_rest_exceptions import (
     handle_plugin_requests_exceptions,

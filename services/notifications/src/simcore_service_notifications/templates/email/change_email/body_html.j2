@@ -1,0 +1,26 @@
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/change_email/subject.j2' %} {% endblock %}
+{% block content %}
+<p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+<p>
+  {% trans product_name=product.display_name %}You have requested to change the email address linked to your {{ product_name }} account. Please follow the on-screen information in the link below:{% endtrans %}
+</p>
+
+<!-- Bulletproof button: table-based for maximum email client compatibility -->
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 10px; margin-bottom: 10px;">
+  <tr>
+    <td style="{{ strong_button_td_style }}">
+      <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+        {% trans %}Change email{% endtrans %}
+      </a>
+    </td>
+  </tr>
+</table>
+
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+<p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}
+</p>
+<p>{% trans %}Best Regards,{% endtrans %}</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+{% endblock %}

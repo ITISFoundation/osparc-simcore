@@ -1,13 +1,18 @@
+# ruff: noqa: SLF001
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
 import asyncio
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from typing import Any, Final
 
+import aiodocker
 import pytest
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import NonNegativeInt, ValidationError
+from pytest_mock import MockerFixture
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -15,6 +20,9 @@ from servicelib.rabbitmq import (
     RPCNotInitializedError,
 )
 from settings_library.rabbit import RabbitSettings
+from tenacity.asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -263,3 +271,128 @@ async def test_get_namespaced_method_name_max_length(
             await rpc_client.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
     else:
         await rpc_client.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
+
+
+async def test_rpc_rebuilds_surface_after_reconnection(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
+    assert rpc_client.healthy is True
+
+    # Simulate a RabbitMQ reconnection by invoking the callback directly
+    await rpc_client._on_reconnect()
+
+    # the client reconnects (no service restart) and keeps serving requests
+    assert rpc_client.healthy is True
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
+
+
+async def test_rpc_reconnection_without_registered_handlers(rpc_client: RabbitMQRPCClient):
+    assert rpc_client.healthy is True
+
+    await rpc_client._on_reconnect()
+
+    assert rpc_client.healthy is True
+
+
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
+async def test_rpc_client_recovers_after_broker_disruption(
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
+    rabbitmq_rpc_client: Callable[..., Awaitable[RabbitMQRPCClient]],
+    namespace: RPCNamespace,
+):
+    # low heartbeat so the frozen broker is detected quickly and the robust
+    # connection triggers a reconnection once the container is resumed
+    rpc_client = await rabbitmq_rpc_client("pytest_rpc_reconnect_client", heartbeat=1)
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
+
+    async with paused_container("rabbit"):
+        # while the broker is frozen requests cannot be served
+        with pytest.raises(asyncio.TimeoutError):
+            await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3, timeout_s=5)
+
+    # once the broker is back the client rebuilds its RPC surface (fresh channel
+    # + re-registered handlers) and keeps serving requests without a restart
+    async for attempt in AsyncRetrying(stop=stop_after_delay(60), wait=wait_fixed(1), reraise=True):
+        with attempt:
+            assert rpc_client.healthy is True
+            assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5) == 9
+
+
+async def test_rpc_client_stays_unhealthy_when_rebuild_fails(rpc_client: RabbitMQRPCClient, mocker: MockerFixture):
+    mocker.patch.object(rpc_client, "_rebuild_rpc_surface", side_effect=RuntimeError("boom"))
+    assert rpc_client.healthy is True
+
+    with pytest.raises(RuntimeError):
+        await rpc_client._on_reconnect()
+
+    # the client stays unhealthy so the liveness probe restarts the service as a fallback
+    assert rpc_client.healthy is False
+
+
+def _get_rpc_result_queue_name(rpc_client: RabbitMQRPCClient) -> str:
+    assert rpc_client._rpc is not None
+    return rpc_client._rpc.result_queue.name
+
+
+async def test_rpc_result_queue_is_not_auto_restored_by_robust_channel(rpc_client: RabbitMQRPCClient):
+    # regression guard: the exclusive RPC result queue must NOT be part of the
+    # robust channel's restore set. Otherwise aio-pika would try to re-declare it
+    # (with the same name) on reconnect while the previous connection still holds
+    # it, failing with ACCESS_REFUSED and preventing `_on_reconnect` from running.
+    assert rpc_client._channel is not None
+    restored_queue_names = set(rpc_client._channel._queues.keys())
+    assert _get_rpc_result_queue_name(rpc_client) not in restored_queue_names
+
+
+async def test_rpc_reconnection_creates_a_fresh_result_queue(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    queue_before = _get_rpc_result_queue_name(rpc_client)
+
+    await rpc_client._on_reconnect()
+
+    # the rebuild allocates a brand-new mailbox (fresh exclusive queue) so it can
+    # never collide with the stale queue still held by the previous connection
+    queue_after = _get_rpc_result_queue_name(rpc_client)
+    assert queue_after != queue_before
+    assert rpc_client.healthy is True
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
+
+
+async def test_rpc_concurrent_reconnections_are_serialized(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+
+    # a flapping connection can fire the reconnect callback multiple times at once;
+    # the surface lock must serialize the rebuilds so they cannot interleave and
+    # leak a channel or leave the client in an inconsistent state
+    await asyncio.gather(*(rpc_client._on_reconnect() for _ in range(5)))
+
+    # a single consistent surface remains and keeps serving requests
+    assert rpc_client.healthy is True
+    assert rpc_client._channel is not None
+    assert rpc_client._rpc is not None
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
+
+
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
+async def test_rpc_client_recovers_when_broker_closes_all_connections(
+    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
+):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
+    queue_before = _get_rpc_result_queue_name(rpc_client)
+
+    # force a broker-side disconnect of every client, mirroring the AWS maintenance
+    # `CONNECTION_FORCED` event; the robust connection reconnects and fires
+    # `_on_reconnect`, which rebuilds the RPC surface with a fresh mailbox
+    async with aiodocker.Docker() as docker_client:
+        containers = await docker_client.containers.list(filters={"name": ["rabbit"]})
+        assert len(containers) == 1, "missing rabbit container!"
+        exec_instance = await containers[0].exec(["rabbitmqctl", "close_all_connections", "pytest simulate reconnect"])
+        await exec_instance.start(detach=True)
+
+    async for attempt in AsyncRetrying(stop=stop_after_delay(60), wait=wait_fixed(1), reraise=True):
+        with attempt:
+            assert rpc_client.healthy is True
+            assert _get_rpc_result_queue_name(rpc_client) != queue_before
+            assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5) == 9

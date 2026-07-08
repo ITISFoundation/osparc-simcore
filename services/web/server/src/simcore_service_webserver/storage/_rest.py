@@ -45,11 +45,6 @@ from pydantic import (
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME, DELETE_PATHS_TASK_NAME
 from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
@@ -64,6 +59,11 @@ from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..security.decorators import permission_required
 from ..tasks._controller._rest_exceptions import handle_rest_requests_exceptions
+from ..web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 

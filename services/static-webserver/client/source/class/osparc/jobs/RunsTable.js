@@ -63,7 +63,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
         if (!job) {
           return false;
         }
-        return Object.keys(job.getInfo()).length > 0;
+        const info = job.getInfo();
+        return info ? Object.keys(info).length > 0 : false;
       }
       return false;
     }
@@ -185,7 +186,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     __handleButtonClick: function(action, row) {
       this.resetSelection();
-       // In order to make the button tappable again, the cell needs to be unfocused (blurred)
+      // In order to make the button tappable again, the cell needs to be unfocused (blurred)
       this.resetCellFocus();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {

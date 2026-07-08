@@ -245,13 +245,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
-        const tutorialsButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
+        const tutorialsButton = this.self().createMenuButton("@FontAwesomeSolid/copy/16", this.tr("Tutorials..."));
         tutorialsButton.addListener("execute", () => this.fireDataEvent("changeTab", "tutorialsTab"), this);
         moreMenu.add(tutorialsButton);
       }
 
       if (permissions.canDo("dashboard.services.read")) {
-        const servicesButton = this.self().createMenuButton("@FontAwesome5Solid/cog/16", this.tr("Apps..."));
+        const servicesButton = this.self().createMenuButton("@FontAwesomeSolid/cog/16", this.tr("Apps..."));
         servicesButton.addListener("execute", () => this.fireDataEvent("changeTab", "appsTab"), this);
         moreMenu.add(servicesButton);
       }

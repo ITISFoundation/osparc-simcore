@@ -1,6 +1,7 @@
 from common_library.user_messages import user_message
 from models_library.notifications.errors import (
     NotificationsNoActiveRecipientsError,
+    NotificationsProductSMTPSettingsNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsTooManyRecipientsError,
@@ -20,6 +21,13 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_400_BAD_REQUEST,
         user_message(
             "No active recipients selected.",
+            _version=1,
+        ),
+    ),
+    NotificationsProductSMTPSettingsNotFoundError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        user_message(
+            "Email settings for product '{product_name}' are not configured.",
             _version=1,
         ),
     ),

@@ -141,6 +141,3 @@ async def test_get_notification_data(
     assert data.last_name == user["last_name"]
     assert data.email == user["email"]
     assert data.product_name == product["name"]
-    assert data.display_name == product["display_name"]
-    assert data.vendor == product["vendor"]
-    assert data.support_email == product["support_email"]

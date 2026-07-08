@@ -53,14 +53,14 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       this.__addPaymentMethodBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("Add Payment Method"),
-        icon: "@FontAwesome5Solid/plus/14",
+        icon: "@FontAwesomeSolid/plus/14",
         allowGrowX: false
       });
       this.__addPaymentMethodBtn.addListener("execute", () => this.__addNewPaymentMethod(), this);
       buttonContainer.add(this.__addPaymentMethodBtn);
       this.__fetchingMsg = new qx.ui.basic.Atom().set({
         label: this.tr("Fetching Payment Methods"),
-        icon: "@FontAwesome5Solid/circle-notch/12",
+        icon: "@FontAwesomeSolid/circle-notch/12",
         font: "text-14",
         visibility: "excluded"
       });

@@ -21,10 +21,6 @@ from models_library.api_schemas_webserver.users import (
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -38,6 +34,7 @@ from ....security.decorators import (
     permission_required,
 )
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
+from ....web_requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from ... import _accounts_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import UserAccountRestPreRegister, UsersRequestContext
@@ -229,6 +226,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
         pre_registration_email=approval_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
+        bcc_emails=approval_data.bcc_emails,
         invitation_url=f"{approval_data.invitation_url}" if approval_data.invitation_url else None,
         message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
     )
@@ -307,9 +305,10 @@ async def reject_user_account(request: web.Request) -> web.Response:
     # Reject the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _accounts_service.reject_user_account(
         request.app,
-        pre_registration_email=rejection_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
+        pre_registration_email=rejection_data.email,
+        bcc_emails=rejection_data.bcc_emails,
         message_content=rejection_data.message_content.model_dump() if rejection_data.message_content else None,
     )
     assert pre_registration_id  # nosec

@@ -367,6 +367,7 @@ async def is_completed_upload_file(
         response = FileUploadCompleteFutureResponse(
             state=FileUploadCompleteState.OK,
             e_tag=new_fmd.entity_tag,
+            last_modified=new_fmd.last_modified,
         )
     else:
         # the task is still running

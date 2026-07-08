@@ -1,10 +1,6 @@
 from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
     TagOperationNotAllowedError,
@@ -20,6 +16,7 @@ from ..exception_handling import (
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from . import _service
 from .errors import (
     InsufficientTagShareAccessError,

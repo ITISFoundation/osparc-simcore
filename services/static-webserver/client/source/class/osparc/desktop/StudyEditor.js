@@ -285,6 +285,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
+      workbench.addListener("nodeAddedToBackend", e => this.__markNodeAsSynced(e.getData()), this);
+
       study.listenToChanges(); // this includes the listener on the workbench and ui
       study.addListener("projectDocumentChanged", e => this.__projectDocumentChanged(e.getData()), this);
 
@@ -302,6 +304,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           delete this.__lastSyncedProjectDocument["workbench"][nodeId]["runHash"];
         }
       });
+    },
+
+    __markNodeAsSynced: function(node) {
+      if (!this.__lastSyncedProjectDocument) {
+        return;
+      }
+      this.__lastSyncedProjectDocument["workbench"][node.getNodeId()] = {
+        key: node.getKey(),
+        version: node.getVersion(),
+      };
     },
 
     __attachSocketEventHandlers: function() {
@@ -479,9 +491,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbenchPatches = [];
       const studyPatches = [];
       for (const jsonPatch of jsonPatches) {
-        if (jsonPatch.path.startsWith('/ui/')) {
+        if (jsonPatch.path.startsWith("/ui/")) {
           uiPatches.push(jsonPatch);
-        } else if (jsonPatch.path.startsWith('/workbench/')) {
+        } else if (jsonPatch.path.startsWith("/workbench/")) {
           workbenchPatches.push(jsonPatch);
         } else {
           studyPatches.push(jsonPatch);

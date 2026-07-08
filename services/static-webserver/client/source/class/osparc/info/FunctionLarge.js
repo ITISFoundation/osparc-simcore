@@ -70,7 +70,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
 
       // Copy Id button
       const text = "Function Id";
-      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/copy/12").set({
         label: text,
         toolTipText: "Copy " + text,
         marginTop: 15,
@@ -149,7 +149,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
     },
 
     __openTitleEditor: function() {
-      const title = this.tr("Edit Title");
+      const title = this.tr("Rename Function");
       const titleEditor = new osparc.widget.Renamer(this.getFunction().getTitle(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();

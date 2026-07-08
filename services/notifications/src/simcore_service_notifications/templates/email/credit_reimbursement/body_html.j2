@@ -1,0 +1,28 @@
+{% extends 'email/_base/body_html.j2' %}
+
+{% block title %} {% include 'email/credit_reimbursement/subject.j2' %} {% endblock %}
+
+{% block content %}
+
+<p>{% trans %}Dear User,{% endtrans %}</p>
+
+{% set service_run %}<strong>{{ service_run_id }}</strong>{% endset %}
+<p>
+  {% trans service_run=service_run, product_name=product.display_name %}We want to inform you that your service run ({{ service_run }}) on {{ product_name }} was affected by a platform issue and was not billed.{% endtrans %}
+</p>
+
+{% set credit_amount %}<strong><em>{{ reimbursed_credits }}</em></strong>{% endset %}
+<p>
+  {% trans credit_amount=credit_amount %}{{ credit_amount }} credits have been reimbursed to your Credit Account.{% endtrans %}
+</p>
+
+<p>{% trans %}No action is needed on your part.{% endtrans %}</p>
+
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+<p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
+
+<p>{% trans %}Best Regards,{% endtrans %}</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+
+{% endblock %}

@@ -1,0 +1,13 @@
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
+
+{% trans sharer_name=sharer.user_name, product_name=product.display_name %}Great news! {{ sharer_name }} has shared a project with you on {{ product_name }}.{% endtrans %}
+
+{% trans %}To view the project and accept the sharing, follow below:{% endtrans %}
+
+{{ sharer.message }}
+{{ accept_link }}
+
+{% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need further help.{% endtrans %}
+
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

@@ -17,8 +17,15 @@
 
 qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
   extend: qx.ui.core.Widget,
-  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
+  implement: [
+    qx.ui.form.IModel,
+    osparc.filter.IFilterable
+  ],
+  include: [
+    qx.ui.form.MModelProperty,
+    osparc.filter.MFilterable,
+    osparc.dashboard.MShowMenuOnHover
+  ],
   type: "abstract",
 
   construct: function() {
@@ -271,8 +278,17 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
 
     __applyThumbnail: function(value) {
       const image = this.getChildControl("thumbnail").getChildControl("image");
+      if (!value) {
+        this.getContentElement().setStyles({
+          "background-image": "none",
+        });
+        image.set({
+          visibility: "excluded",
+        });
+        return;
+      }
       if (
-        value.includes("@FontAwesome5Solid/") ||
+        value.includes("@FontAwesomeSolid/") ||
         value.includes("@MaterialIcons/")
       ) {
         this.getContentElement().setStyles({
@@ -302,6 +318,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
      */
     _onPointerOver: function() {
       this.addState("hovered");
+      this._evalHoverReveal();
     },
 
     /**
@@ -309,6 +326,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
      */
     _onPointerOut : function() {
       this.removeState("hovered");
+      this._evalHoverReveal();
     },
 
     _filter: function() {

@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-positional-arguments
 
+import base64
 import datetime as dt
 import json
 import re
@@ -28,6 +29,9 @@ from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
     ComputationGet,
 )
+from models_library.api_schemas_directorv2.encryption import (
+    JobEncryptionContextMetadata,
+)
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingPlanGet,
@@ -49,9 +53,6 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
 from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
@@ -77,29 +78,6 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
         "simcore_service_director_v2.core.application.rabbitmq.RabbitMQClient",
         autospec=True,
     )
-
-
-@pytest.fixture()
-def minimal_configuration(
-    mock_env: EnvVarsDict,
-    postgres_host_config: dict[str, str],
-    rabbit_service: RabbitSettings,
-    redis_service: RedisSettings,
-    monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-    with_disabled_auto_scheduling: mock.Mock,
-    with_disabled_scheduler_publisher: mock.Mock,
-    with_product: dict[str, Any],
-):
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", faker.url())
-    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
-    monkeypatch.setenv("S3_REGION", faker.pystr())
-    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
-    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
 @pytest.fixture(scope="session")
@@ -722,6 +700,59 @@ async def test_start_computation(
     mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
     # there should be as many calls to the catalog as there are no defined resources by default
     assert mocked_get_service_resources.call_count == len(fake_workbench_without_outputs)
+
+
+async def test_start_computation_with_encryption_propagates_context_to_pipeline(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    product_name: str,
+    product_api_base_url: AnyHttpUrl,
+    fake_workbench_without_outputs: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+    fake_collection_run_id: CollectionRunID,
+    mocker: MockerFixture,
+):
+    mocked_run_new_pipeline = mocker.patch(
+        "simcore_service_director_v2.api.routes.computations.run_new_pipeline",
+        autospec=True,
+    )
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+
+    root_key_b64 = base64.b64encode(b"0" * 32).decode("ascii")
+    # encryption is defined per computational node of the pipeline
+    encrypted_node_id = next(iter(proj.workbench))
+    node_input_port_to_file_id = {"input_1": "input_1"}
+
+    create_computation_url = httpx.URL("/v2/computations")
+    body = jsonable_encoder(
+        ComputationCreate(
+            user_id=user["id"],
+            project_id=proj.uuid,
+            start_pipeline=True,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+            collection_run_id=fake_collection_run_id,
+        )
+    )
+    # NOTE: the SecretStr root_key would be masked by jsonable_encoder, so we inject the
+    # encryption payload as a raw JSON dict carrying the base64-encoded root_key
+    body["encryption"] = {
+        "root_key": root_key_b64,
+        "input_port_to_file_id": {encrypted_node_id: node_input_port_to_file_id},
+    }
+    response = await async_client.post(create_computation_url, json=body)
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+
+    mocked_run_new_pipeline.assert_called_once()
+    run_metadata = mocked_run_new_pipeline.call_args.kwargs["run_metadata"]
+    stored_encryption = run_metadata["encryption"]
+    assert stored_encryption["root_key"] == root_key_b64
+    reparsed = JobEncryptionContextMetadata.model_validate(stored_encryption)
+    assert reparsed.input_port_to_file_id == {NodeID(encrypted_node_id): node_input_port_to_file_id}
 
 
 async def test_start_computation_with_project_node_resources_defined(

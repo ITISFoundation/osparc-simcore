@@ -123,6 +123,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = False
 
+    WEBSERVER_LOCALIZED_MESSAGES_ENABLED: Annotated[
+        bool,
+        Field(
+            description="Enable server-side translation for user-facing messages.",
+        ),
+    ] = False
+
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
@@ -559,7 +566,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def public_dict(self) -> dict[str, Any]:
         """Config publicly available"""
 
-        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT
+        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY
         config.update(
             self._export_by_alias(
                 include={

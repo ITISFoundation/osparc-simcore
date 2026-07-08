@@ -1,6 +1,6 @@
 import logging
 from asyncio import Lock
-from typing import Any, Final
+from typing import Any
 
 from aiodocker import DockerError
 from common_library.errors_classes import OsparcErrorMixin
@@ -28,8 +28,7 @@ from ..core.validation import (
 )
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
-
-_INACTIVE_FOR_LONG_TIME: Final[int] = 2**63 - 1
+from ..modules.user_services_tracing import is_user_services_tracing_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -48,6 +47,7 @@ async def create_compose_spec(
             settings=settings,
             compose_file_content=containers_compose_spec.docker_compose_yaml,
             mounted_volumes=mounted_volumes,
+            is_user_services_tracing_enabled=is_user_services_tracing_enabled(app),
         )
         shared_store.compose_spec = compose_spec_validation.compose_spec
         shared_store.container_names = compose_spec_validation.current_container_names
@@ -88,6 +88,14 @@ async def containers_docker_inspect(app: FastAPI, *, only_status: bool) -> dict[
 
 
 async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
+    """Returns activity details, or ``None`` when inactivity detection is unavailable.
+
+    Returning ``None`` is intentional: the caller (director-v2) interprets it as
+    "service is inactive", so project auto-shutdown is not blocked. This fail-open
+    behavior applies when activity cannot be determined (misconfiguration, command
+    failure, or unparsable command output).
+    """
+
     settings: ApplicationSettings = app.state.settings
     shared_store: SharedStore = app.state.shared_store
 
@@ -97,9 +105,23 @@ async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
 
     container_name = inactivity_command.service
 
+    resolved_container_name = shared_store.original_to_container_names.get(container_name)
+    if resolved_container_name is None:
+        # NOTE: guards against misconfigured services where inactivity.service
+        # does not match any service in the compose spec (e.g. "container" used
+        # instead of the actual compose service name). New services are caught
+        # at publish time by ooil validation; this handles existing services.
+        _logger.warning(
+            "Inactivity command references service '%s' but it is not found "
+            "in original_to_container_names=%s. Check metadata.",
+            container_name,
+            shared_store.original_to_container_names,
+        )
+        return None
+
     try:
         inactivity_response = await run_command_in_container(
-            shared_store.original_to_container_names[inactivity_command.service],
+            resolved_container_name,
             command=inactivity_command.command,
             timeout=inactivity_command.timeout,
         )
@@ -110,12 +132,13 @@ async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
         DockerError,
     ):
         _logger.warning(
-            "Could not run inactivity command '%s' in container '%s'",
+            "Could not run inactivity command '%s' in container '%s' (resolved='%s')",
             inactivity_command.command,
             container_name,
+            resolved_container_name,
             exc_info=True,
         )
-        return ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+        return None
 
     try:
         return TypeAdapter(ActivityInfo).validate_json(inactivity_response)
@@ -127,7 +150,7 @@ async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
             exc_info=True,
         )
 
-    return ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+    return None
 
 
 class BaseGetNameError(OsparcErrorMixin, RuntimeError):

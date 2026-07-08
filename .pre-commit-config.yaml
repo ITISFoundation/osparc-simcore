@@ -1,5 +1,5 @@
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: "^.venv$|^.cache$|^.pytest_cache$"
+exclude: "^.venv$|^.cache$|^.pytest_cache$|^services/static-webserver/client/qx_libs/"
 fail_fast: false
 default_language_version:
   python: python3.13
@@ -10,7 +10,7 @@ repos:
     hooks:
       # Run the linter.
       - id: ruff-check
-        args: [ --fix ]
+        args: [--fix]
       # Run the formatter.
       - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -25,6 +25,7 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: trailing-whitespace
+        exclude: '^services/static-webserver/client/source/translation/.*\.po$|^packages/common-library/src/common_library/locale/.*\.po$'
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
       - id: detect-aws-credentials
@@ -33,21 +34,21 @@ repos:
       - id: no-commit-to-branch
   - repo: local
     hooks:
-    - id: pytest-testit
-      name: pytest-testit
-      language: script
-      types: [file, python]
-      entry: scripts/precommit/pytest-testit.bash
+      - id: pytest-testit
+        name: pytest-testit
+        language: script
+        types: [file, python]
+        entry: scripts/precommit/pytest-testit.bash
   - repo: local
     hooks:
-    - id: validate-docker-compose
-      name: validate-docker-compose
-      language: script
-      types: [file]
-      entry: scripts/precommit/validate-docker-compose.bash
+      - id: validate-docker-compose
+        name: validate-docker-compose
+        language: script
+        types: [file]
+        entry: scripts/precommit/validate-docker-compose.bash
   - repo: https://github.com/crate-ci/typos
     rev: v1.40.0
     hooks:
       - id: typos
         name: spellchecker
-        exclude: "(^|/)generated_models/"
+        exclude: "(^|/)generated_models/|^services/static-webserver/client/source/translation/.*\\.po$|^packages/common-library/src/common_library/locale/.*\\.po$"

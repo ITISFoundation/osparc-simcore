@@ -7,10 +7,13 @@ from typing import Any
 from aiohttp import web
 from pydantic import BaseModel
 from servicelib.aiohttp import status
+from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
 
 from .._meta import API_VTAG
-from ..application_keys import APP_SETTINGS_APPKEY
-from ..constants import APP_PUBLIC_CONFIG_PER_PRODUCT
+from ..application_keys import (
+    APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY,
+    APP_SETTINGS_APPKEY,
+)
 from ..login.decorators import login_required
 from ..products import products_web
 from ..redis import get_redis_scheduled_maintenance_client
@@ -36,11 +39,18 @@ async def healthcheck_liveness_probe(request: web.Request):
     try:
         # if slots append get too delayed, just timeout
         health_report = await healthcheck.run(request.app)
+        return web.json_response(data={"data": health_report})
     except HealthCheckError as err:
         _logger.warning("%s", err)
-        raise web.HTTPServiceUnavailable(text="unhealthy") from err
-
-    return web.json_response(data={"data": health_report})
+        # Build the standard REST error envelope without raising to avoid noisy logs.
+        return exception_to_response(
+            create_http_error(
+                err,
+                error_message=f"{err}",
+                http_error_cls=web.HTTPServiceUnavailable,
+                status_reason="unhealthy",
+            )
+        )
 
 
 @routes.get(f"/{API_VTAG}/", name="healthcheck_readiness_probe")
@@ -75,7 +85,7 @@ async def get_config(request: web.Request):
     app_public_config: dict[str, Any] = request.app[APP_SETTINGS_APPKEY].public_dict()
 
     product_name = products_web.get_product_name(request=request)
-    product_public_config = request.app.get(APP_PUBLIC_CONFIG_PER_PRODUCT, {}).get(product_name, {})
+    product_public_config = request.app.get(APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY, {}).get(product_name, {})
 
     return envelope_json_response(app_public_config | product_public_config)
 
@@ -93,9 +103,6 @@ async def get_scheduled_maintenance(request: web.Request):
 
     redis_client = get_redis_scheduled_maintenance_client(request.app)
     hash_key = "maintenance"
-    # Examples.
-    #  {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
-    #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
     # NOTE: datetime is UTC (Canary islands / UK)
 
     if maintenance_data := await redis_client.get(hash_key):

@@ -133,7 +133,7 @@ qx.Class.define("osparc.ErrorPage", {
           break;
         case "copy-to-clipboard": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/copy/14",
+            icon: "@FontAwesomeSolid/copy/14",
             label: this.tr("Copy to clipboard")
           });
           control.addListener("execute", () => this.__copyMessagesToClipboard(), this);
@@ -141,7 +141,7 @@ qx.Class.define("osparc.ErrorPage", {
         }
         case "support-email": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/envelope/14",
+            icon: "@FontAwesomeSolid/envelope/14",
             label: this.tr("Support email")
           });
           control.addListener("execute", () => this.__supportEmail(), this);
@@ -153,7 +153,7 @@ qx.Class.define("osparc.ErrorPage", {
         }
         case "log-in-button": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/sign-in-alt/14",
+            icon: "@FontAwesomeSolid/sign-in-alt/14",
             label: this.tr("Log in"),
             appearance: "strong-button",
             center: true

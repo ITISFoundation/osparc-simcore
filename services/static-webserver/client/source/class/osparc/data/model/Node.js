@@ -239,9 +239,9 @@ qx.Class.define("osparc.data.model.Node", {
       // "inputConnected", // frontend only
       // "outputConnected", // frontend only
       // "logger", // frontend only
-     "inputNodes", // !! not a property but goes into the model
-     "inputsRequired", // !! not a property but goes into the model
-     "progress", // !! not a property but goes into the model
+      "inputNodes", // !! not a property but goes into the model
+      "inputsRequired", // !! not a property but goes into the model
+      "progress", // !! not a property but goes into the model
     ],
 
     getProperties: function() {
@@ -465,10 +465,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __getInputUnits: function() {
       if (this.hasPropsForm()) {
-        const changedUnits = this.getPropsForm().getChangedXUnits();
-        if (Object.keys(changedUnits).length) {
-          return changedUnits;
-        }
+        return this.getPropsForm().getChangedXUnits();
       }
       return null;
     },
@@ -615,7 +612,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __populateProgress: function(nodeData) {
       if ("progress" in nodeData) {
-        const progress = Number.parseInt(nodeData["progress"]);
+        const progress = osparc.data.model.NodeStatus.getValidProgress(nodeData["progress"]);
         const oldProgress = this.getStatus().getProgress();
         if (this.isFilePicker() && oldProgress > 0 && oldProgress < 100) {
           // file is being uploaded
@@ -795,15 +792,20 @@ qx.Class.define("osparc.data.model.Node", {
         const inputLinks = {};
         const inputData = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
+        const metadataInputs = this.getMetadata() ? this.getMetadata()["inputs"] : null;
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
+          } else if (osparc.utils.Ports.isDataMustached(inputsCopy[key]) && metadataInputs && metadataInputs[key] && metadataInputs[key].defaultValue !== undefined) {
+            // resolve template placeholder (e.g. "{{stimulation_mode}}") to the service metadata's default value
+            inputData[key] = metadataInputs[key].defaultValue;
           } else {
             inputData[key] = inputsCopy[key];
           }
         }
         this.getPropsForm().setInputLinks(inputLinks);
-        this.__settingsForm.setData(inputData);
+        const convertedData = this.getPropsForm().convertInputsToCurrentUnits(inputData);
+        this.__settingsForm.setData(convertedData);
       }
     },
 
@@ -1324,13 +1326,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     setPosition: function(pos) {
       const {x, y} = pos;
-      if (x === this.__posX && y === this.__posY) {
-        return; // no change
-      }
 
       // keep positions positive
-      this.__posX = parseInt(x) < 0 ? 0 : parseInt(x);
-      this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);
+      const newX = parseInt(x) < 0 ? 0 : parseInt(x);
+      const newY = parseInt(y) < 0 ? 0 : parseInt(y);
+      if (newX === this.__posX && newY === this.__posY) {
+        return; // no change
+      }
+      this.__posX = newX;
+      this.__posY = newY;
 
       const nodeId = this.getNodeId();
       this.fireDataEvent("projectDocumentChanged", {
@@ -1554,11 +1558,37 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           }
           case "inputsUnits": {
-            // this is never transmitted by the frontend
             const updatedPortKey = path.split("/")[4];
-            const currentInputUnits = this.__getInputUnits() || {};
-            currentInputUnits[updatedPortKey] = value;
-            this.__setInputUnits(currentInputUnits);
+            const nodeMD = this.getMetadata();
+            const getDefaultXUnit = portKey => {
+              const portMD = (nodeMD && nodeMD.inputs) ? nodeMD.inputs[portKey] : null;
+              return (portMD && "x_unit" in portMD) ? portMD["x_unit"] : null;
+            };
+            if (updatedPortKey === undefined) {
+              // the whole inputsUnits object was added/replaced/removed
+              if (op === "remove" || value === undefined || value === null || Object.keys(value).length === 0) {
+                // units were cleared: switch every port back to its metadata default unit
+                const resetUnits = {};
+                if (nodeMD && nodeMD.inputs) {
+                  Object.keys(nodeMD.inputs).forEach(portKey => {
+                    const defaultXUnit = getDefaultXUnit(portKey);
+                    if (defaultXUnit) {
+                      resetUnits[portKey] = defaultXUnit;
+                    }
+                  });
+                }
+                this.__setInputUnits(resetUnits);
+              } else {
+                this.__setInputUnits(value);
+              }
+            } else {
+              // a single port's unit changed or was removed
+              // on "remove" there is no value, so fall back to the metadata default unit
+              const targetXUnit = (op === "remove" || value === undefined || value === null) ? getDefaultXUnit(updatedPortKey) : value;
+              if (targetXUnit) {
+                this.__setInputUnits({ [updatedPortKey]: targetXUnit });
+              }
+            }
             break;
           }
           case "inputNodes":
@@ -1584,21 +1614,50 @@ qx.Class.define("osparc.data.model.Node", {
             console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
             break;
           case "outputs": {
-            const updatedPortKey = path.split("/")[4];
+            const pathParts = path.split("/"); // ["", "workbench", nodeId, "outputs", portKey, ...subKeys]
+            const updatedPortKey = pathParts[4];
+            // a path of length <= 5 targets the whole outputs object or a whole port value
+            const isPortValuePath = pathParts.length <= 5;
             // "remove" ops have no value field, so value is undefined.
-            if (op === "remove" && this.isFilePicker()) {
+            if (op === "remove" && this.isFilePicker() && isPortValuePath) {
               // Reset File Picker
               osparc.file.FilePicker.resetOutputValue(this);
             } else {
               const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
-              currentOutputs[updatedPortKey] = value;
+              if (isPortValuePath) {
+                if (updatedPortKey === undefined) {
+                  // the whole outputs object was added/replaced
+                  Object.keys(value || {}).forEach(portKey => {
+                    currentOutputs[portKey] = value[portKey];
+                  });
+                } else {
+                  currentOutputs[updatedPortKey] = value;
+                }
+              } else if (currentOutputs[updatedPortKey] && typeof currentOutputs[updatedPortKey] === "object") {
+                // deep path: only a sub-field of the port value changed (e.g. .../outputs/outFile/store).
+                // Merge it into the existing value instead of replacing the whole port, which
+                // would corrupt/clear the output (e.g. "store":"0" vs "store":0 mismatches).
+                let target = currentOutputs[updatedPortKey];
+                for (let i = 5; i < pathParts.length - 1; i++) {
+                  if (target[pathParts[i]] === undefined || target[pathParts[i]] === null) {
+                    target[pathParts[i]] = {};
+                  }
+                  target = target[pathParts[i]];
+                }
+                const leafKey = pathParts[pathParts.length - 1];
+                if (op === "remove") {
+                  delete target[leafKey];
+                } else {
+                  target[leafKey] = value;
+                }
+              }
               this.setOutputData(currentOutputs);
             }
             break;
           }
           case "progress":
             if (this.isFilePicker()) {
-              if (value ===  undefined) {
+              if (value === undefined) {
                 console.debug("Ignoring undefined value for progress");
                 return;
               }
@@ -1628,7 +1687,7 @@ qx.Class.define("osparc.data.model.Node", {
         version: this.getVersion(),
         label: this.getLabel(),
         inputs: this.__getInputData(),
-        inputsUnits: this.__getInputUnits(), // this is not working
+        inputsUnits: this.__getInputUnits(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()

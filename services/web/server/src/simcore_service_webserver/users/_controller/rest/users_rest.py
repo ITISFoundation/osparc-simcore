@@ -9,23 +9,21 @@ from models_library.api_schemas_webserver.users import (
     UsersSearch,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-)
 
 from simcore_service_webserver.application_settings_utils import (
     requires_dev_feature_enabled,
 )
-from simcore_service_webserver.users.exceptions import BillingDetailsNotFoundError
+from simcore_service_webserver.users.errors import BillingDetailsNotFoundError
 
 from ...._meta import API_VTAG
-from ....groups import api as groups_service
+from ....groups import groups_service
 from ....login.decorators import login_required
 from ....products import products_web
 from ....products.models import Product
 from ....security.decorators import permission_required
 from ....session.api import get_session
 from ....utils_aiohttp import envelope_json_response
+from ....web_requests_validation import parse_request_body_as
 from ... import _users_service
 from ..._users_web import RegistrationSessionManager
 from ._rest_exceptions import handle_rest_requests_exceptions
@@ -179,6 +177,7 @@ async def search_users(request: web.Request) -> web.Response:
     found = await _users_service.search_public_users(
         request.app,
         caller_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         match_=search_params.match_,
         limit=search_params.limit,
     )

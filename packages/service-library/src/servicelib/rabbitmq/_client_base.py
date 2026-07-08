@@ -15,6 +15,12 @@ _DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S: Final[int] = 60
 
 _logger = logging.getLogger(__name__)
 
+# Constant for RabbitMQ maintenance mode message
+# This message is specific to Amazon MQ for RabbitMQ and occurs during scheduled maintenance windows.
+# Reference: https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/maintaining-brokers.html#rabbitmq-broker-architecture-cluster
+# During maintenance, Amazon MQ restarts a broker node. For cluster deployments, implement connection retry logic.
+_AWS_MAINTENANCE_MODE_MESSAGE: Final[str] = "Node was put into maintenance mode"
+
 
 @dataclass
 class RabbitMQClientBase:
@@ -54,10 +60,12 @@ class RabbitMQClientBase:
         exc: BaseException | None,
     ) -> None:
         if exc:
-            if isinstance(exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed):
+            if isinstance(exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed) or (
+                isinstance(exc, aiormq.exceptions.ConnectionClosed) and _AWS_MAINTENANCE_MODE_MESSAGE in f"{exc}"
+            ):
                 _logger.info(
                     **create_troubleshooting_log_kwargs(
-                        "RabbitMQ channel closed",
+                        "RabbitMQ channel closed gracefully (maintenance mode)",
                         error=exc,
                         error_context={"sender": sender},
                     )
@@ -71,6 +79,16 @@ class RabbitMQClientBase:
                     )
                 )
                 self._healthy_state = False
+
+    def _connection_reconnect_callback(
+        self,
+        _connection: Any = None,
+    ) -> None:
+        _logger.info(
+            "RabbitMQ (re)connected (%s): restoring healthy state",
+            self.client_name,
+        )
+        self._healthy_state = True
 
     @property
     def healthy(self) -> bool:

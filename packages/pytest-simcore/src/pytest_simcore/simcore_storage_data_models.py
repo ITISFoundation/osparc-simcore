@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
@@ -14,6 +15,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -55,13 +57,73 @@ async def create_project(
         async def _creator(**kwargs) -> dict[str, Any]:
             prj_config = {"prj_owner": user_id, "product_name": with_product["name"]}
             prj_config.update(kwargs)
+
+            # `projects.workbench` is deprecated and kept as a safety-net;
+            # these tests store node data in the `projects_nodes` table instead
+            workbench: dict[str, Any] = prj_config.pop("workbench", {})
+
             ctx = insert_and_get_row_lifespan(
                 sqlalchemy_async_engine,
                 table=projects,
                 values=random_project(DEFAULT_FAKER, **prj_config),
                 pk_col=projects.c.uuid,
             )
-            return await stack.enter_async_context(ctx)
+            project_row = await stack.enter_async_context(ctx)
+
+            # Insert nodes from workbench into projects_nodes table
+            if workbench:
+                project_uuid = project_row["uuid"]
+                async with sqlalchemy_async_engine.begin() as conn:
+                    for node_id, node_data in workbench.items():
+                        node_values = {
+                            "project_uuid": project_uuid,
+                            "node_id": node_id,
+                            "key": node_data.get("key"),
+                            "version": node_data.get("version"),
+                            "label": node_data.get("label", "unknown"),
+                        }
+                        # Copy optional fields that exist in projects_nodes.
+                        # Tests in this repository still commonly seed the public
+                        # camelCase workbench shape, while the DB columns are snake_case.
+                        # Accept both, preferring the explicit snake_case key if both
+                        # representations are provided.
+                        _optional_field_aliases: dict[str, tuple[str, ...]] = {
+                            "inputs": ("inputs",),
+                            "inputs_required": ("inputs_required", "inputsRequired"),
+                            "outputs": ("outputs",),
+                            "input_nodes": ("input_nodes", "inputNodes"),
+                            "input_access": ("input_access", "inputAccess"),
+                            "inputs_units": ("inputs_units", "inputsUnits"),
+                            "progress": ("progress",),
+                            "thumbnail": ("thumbnail",),
+                            "run_hash": ("run_hash", "runHash"),
+                            "state": ("state",),
+                            "boot_options": ("boot_options", "bootOptions"),
+                            "required_resources": (
+                                "required_resources",
+                                "requiredResources",
+                            ),
+                        }
+                        for field, aliases in _optional_field_aliases.items():
+                            for alias in aliases:
+                                if alias in node_data:
+                                    node_values[field] = node_data[alias]
+                                    break
+                        await conn.execute(sa.insert(projects_nodes).values(**node_values))
+
+                # Re-read the project row to get updated last_change_date
+                # (a trigger updates it when projects_nodes changes)
+                async with sqlalchemy_async_engine.connect() as conn:
+                    result = await conn.execute(sa.select(projects).where(projects.c.uuid == project_uuid))
+                    project_row = result.one()._asdict()
+
+                # Return workbench without internal DB fields
+                project_row["workbench"] = {
+                    node_id: {k: v for k, v in node_data.items() if k != "project_node_id"}
+                    for node_id, node_data in workbench.items()
+                }
+
+            return project_row
 
         yield _creator
 
@@ -187,24 +249,32 @@ def share_with_collaborator(
 @pytest.fixture
 async def create_project_node(
     user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
-) -> Callable[..., Awaitable[NodeID]]:
-    async def _creator(project_id: ProjectID, node_id: NodeID | None = None, **kwargs) -> NodeID:
-        async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(sa.select(projects.c.workbench).where(projects.c.uuid == f"{project_id}"))
-            row = result.fetchone()
-            assert row
-            project_workbench: dict[str, Any] = row.workbench
-            new_node_id = node_id or NodeID(f"{faker.uuid4()}")
-            node_data = {
+) -> AsyncIterator[Callable[..., Awaitable[tuple[NodeID, dict[str, Any]]]]]:
+    async with contextlib.AsyncExitStack() as stack:
+
+        async def _creator(
+            project_id: ProjectID, node_id: NodeID | None = None, **kwargs
+        ) -> tuple[NodeID, dict[str, Any]]:
+            new_node_id = node_id or NodeID(faker.uuid4())
+            node_values = {
+                "node_id": f"{new_node_id}",
+                "project_uuid": f"{project_id}",
                 "key": "simcore/services/frontend/file-picker",
                 "version": "1.0.0",
                 "label": "pytest_fake_node",
+                **kwargs,
             }
-            node_data.update(**kwargs)
-            project_workbench.update({f"{new_node_id}": node_data})
-            await conn.execute(
-                projects.update().where(projects.c.uuid == f"{project_id}").values(workbench=project_workbench)
-            )
-        return new_node_id
 
-    return _creator
+            node_row = await stack.enter_async_context(
+                insert_and_get_row_lifespan(
+                    sqlalchemy_async_engine,
+                    table=projects_nodes,
+                    values=node_values,
+                    pk_cols=[projects_nodes.c.project_uuid, projects_nodes.c.node_id],
+                    pk_values=[f"{project_id}", f"{new_node_id}"],
+                )
+            )
+
+            return new_node_id, node_row
+
+        yield _creator

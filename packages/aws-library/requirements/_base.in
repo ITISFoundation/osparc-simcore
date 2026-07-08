@@ -10,6 +10,8 @@
 aioboto3
 aiocache
 arrow
+fastapi
+fastapi-lifespan-manager
 pydantic[email]
 types-aiobotocore[ec2,s3,ssm]
 opentelemetry-instrumentation-botocore

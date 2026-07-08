@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.83.0"
+    "version": "0.85.0"
   },
   "servers": [
     {
@@ -883,6 +883,54 @@
             "schema": {
               "$ref": "#/components/schemas/ConversationType"
             }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "is_read_by_user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By User"
+            }
+          },
+          {
+            "name": "is_read_by_support",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read By Support"
+            }
           }
         ],
         "responses": {
@@ -912,9 +960,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -953,9 +999,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -977,9 +1021,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1010,9 +1052,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -1051,9 +1091,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1104,9 +1142,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1114,9 +1150,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1155,9 +1189,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1165,9 +1197,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1189,9 +1219,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1199,9 +1227,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -1232,9 +1258,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -1242,9 +1266,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9405,9 +9427,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9457,9 +9477,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9492,9 +9510,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9536,9 +9552,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           }
         ],
@@ -9588,9 +9602,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9655,9 +9667,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9665,9 +9675,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9717,9 +9725,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9727,9 +9733,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -9762,9 +9766,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Conversation Id"
+              "$ref": "#/components/schemas/ConversationID"
             }
           },
           {
@@ -9772,9 +9774,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Message Id"
+              "$ref": "#/components/schemas/ConversationMessageID"
             }
           }
         ],
@@ -11907,6 +11907,39 @@
         }
       }
     },
+    "/v0/studies/{study_id}:dispatch": {
+      "post": {
+        "tags": [
+          "studies-dispatcher"
+        ],
+        "summary": "Dispatch Study",
+        "description": "Start an async clone of a published study into the requesting user's account",
+        "operationId": "dispatch_study",
+        "parameters": [
+          {
+            "name": "study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Study Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TaskGet_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -11990,8 +12023,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12068,8 +12100,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12111,8 +12142,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -12160,8 +12190,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -12193,8 +12222,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12248,8 +12276,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12302,8 +12329,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12351,8 +12377,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12399,8 +12424,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12486,8 +12510,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12520,8 +12543,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12554,8 +12576,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12605,8 +12626,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           },
           {
@@ -12655,8 +12675,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -12738,8 +12757,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Location Id"
+              "$ref": "#/components/schemas/LocationID"
             }
           }
         ],
@@ -14878,6 +14896,10 @@
         ],
         "title": "BootOption"
       },
+      "BootOptions": {
+        "additionalProperties": true,
+        "type": "object"
+      },
       "CatalogLatestServiceGet": {
         "properties": {
           "key": {
@@ -16131,6 +16153,16 @@
             "uniqueItems": true,
             "title": "Subgraph",
             "default": []
+          },
+          "encryption": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobEncryptionContextMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -16272,6 +16304,14 @@
         ],
         "title": "ConnectServiceToPricingPlanBodyParams"
       },
+      "ConversationID": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "ConversationMessageID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "ConversationMessagePatch": {
         "properties": {
           "content": {
@@ -16292,14 +16332,10 @@
       "ConversationMessageRestGet": {
         "properties": {
           "messageId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Messageid"
+            "$ref": "#/components/schemas/ConversationMessageID"
           },
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "userGroupId": {
             "$ref": "#/components/schemas/GroupID"
@@ -16342,6 +16378,11 @@
           "NOTIFICATION"
         ],
         "title": "ConversationMessageType"
+      },
+      "ConversationName": {
+        "type": "string",
+        "maxLength": 50,
+        "minLength": 1
       },
       "ConversationPatch": {
         "properties": {
@@ -16389,6 +16430,16 @@
               }
             ],
             "title": "Isreadbysupport"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -16397,18 +16448,21 @@
       "ConversationRestGet": {
         "properties": {
           "conversationId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Conversationid"
+            "$ref": "#/components/schemas/ConversationID"
           },
           "productName": {
             "type": "string",
             "title": "Productname"
           },
           "name": {
-            "type": "string",
-            "maxLength": 50,
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "projectUuid": {
             "anyOf": [
@@ -16464,6 +16518,9 @@
             "type": "boolean",
             "title": "Isreadbysupport"
           },
+          "status": {
+            "$ref": "#/components/schemas/ConversationStatus"
+          },
           "lastMessageCreatedAt": {
             "type": "string",
             "format": "date-time",
@@ -16484,9 +16541,18 @@
           "extraContext",
           "isReadByUser",
           "isReadBySupport",
+          "status",
           "lastMessageCreatedAt"
         ],
         "title": "ConversationRestGet"
+      },
+      "ConversationStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "ARCHIVED"
+        ],
+        "title": "ConversationStatus"
       },
       "ConversationType": {
         "type": "string",
@@ -16791,25 +16857,18 @@
         ],
         "title": "CursorPage[TypeVar]Customized[PathMetaDataGet]"
       },
-      "DatCoreFileLink": {
+      "DatCoreFileID": {
+        "type": "string",
+        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+      },
+      "DatCoreFileLink-Input": {
         "properties": {
           "store": {
-            "type": "integer",
-            "title": "Store",
+            "$ref": "#/components/schemas/LocationID",
             "description": "The store identifier: 0 for simcore S3, 1 for datcore"
           },
           "path": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-              },
-              {
-                "type": "string",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-              }
-            ],
-            "title": "Path",
+            "$ref": "#/components/schemas/StorageFileID",
             "description": "The path to the file in the storage provider domain"
           },
           "label": {
@@ -16828,6 +16887,76 @@
             ],
             "title": "Etag",
             "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
+          },
+          "dataset": {
+            "type": "string",
+            "title": "Dataset",
+            "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "store",
+          "path",
+          "label",
+          "dataset"
+        ],
+        "title": "DatCoreFileLink",
+        "description": "I/O port type to hold a link to a file in DATCORE storage"
+      },
+      "DatCoreFileLink-Output": {
+        "properties": {
+          "store": {
+            "$ref": "#/components/schemas/LocationID",
+            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
+          },
+          "path": {
+            "$ref": "#/components/schemas/StorageFileID",
+            "description": "The path to the file in the storage provider domain"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "The real file name"
+          },
+          "eTag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etag",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
           },
           "dataset": {
             "type": "string",
@@ -16921,6 +17050,9 @@
         ],
         "title": "DownloadLink",
         "description": "I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"
+      },
+      "ETag": {
+        "type": "string"
       },
       "EmptyModel": {
         "properties": {},
@@ -20182,15 +20314,19 @@
         ],
         "title": "FeaturesDict"
       },
+      "FileIDStr": {
+        "type": "string",
+        "maxLength": 65535,
+        "minLength": 1,
+        "description": "client-chosen file identifier mixed into HKDF key derivation"
+      },
       "FileLocation": {
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Name"
+            "$ref": "#/components/schemas/LocationName"
           },
           "id": {
-            "type": "integer",
-            "title": "Id"
+            "$ref": "#/components/schemas/LocationID"
           }
         },
         "additionalProperties": false,
@@ -20349,8 +20485,7 @@
             "description": "NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure"
           },
           "location_id": {
-            "type": "integer",
-            "title": "Location Id",
+            "$ref": "#/components/schemas/LocationID",
             "description": "Storage location"
           },
           "project_name": {
@@ -20383,17 +20518,7 @@
             "description": "Display name for a file"
           },
           "file_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-              },
-              {
-                "type": "string",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-              }
-            ],
-            "title": "File Id",
+            "$ref": "#/components/schemas/StorageFileID",
             "description": "THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore"
           },
           "created_at": {
@@ -20409,8 +20534,7 @@
           "file_size": {
             "anyOf": [
               {
-                "type": "integer",
-                "const": -1
+                "$ref": "#/components/schemas/UNDEFINED_SIZE_TYPE"
               },
               {
                 "type": "integer",
@@ -20424,13 +20548,12 @@
           "entity_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Entity Tag",
             "description": "Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore"
           },
           "is_soft_link": {
@@ -20478,13 +20601,25 @@
           "e_tag": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ETag"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_modified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "E Tag"
+            "title": "Last Modified",
+            "description": "Last modification timestamp reported by S3, set together with e_tag"
           }
         },
         "type": "object",
@@ -21371,10 +21506,10 @@
               "$ref": "#/components/schemas/PortLink"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Input"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Input"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -21414,10 +21549,10 @@
               "$ref": "#/components/schemas/PortLink"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Output"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Output"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -21585,6 +21720,32 @@
         },
         "type": "object",
         "title": "JSONFunctionOutputSchema"
+      },
+      "JobEncryptionContextMetadata": {
+        "properties": {
+          "root_key": {
+            "$ref": "#/components/schemas/RootKeyStr"
+          },
+          "input_port_to_file_id": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/FileIDStr"
+              },
+              "type": "object"
+            },
+            "propertyNames": {
+              "format": "uuid"
+            },
+            "type": "object",
+            "title": "Input Port To File Id",
+            "description": "Per computational node, maps each encrypted input port key to the file_id the client used to derive its key (may differ from the port key). Only listed inputs are decrypted."
+          }
+        },
+        "type": "object",
+        "required": [
+          "root_key"
+        ],
+        "title": "JobEncryptionContextMetadata"
       },
       "LicensedItemPurchaseGet": {
         "properties": {
@@ -21844,6 +22005,12 @@
           "S3"
         ],
         "title": "LinkType"
+      },
+      "LocationID": {
+        "type": "integer"
+      },
+      "LocationName": {
+        "type": "string"
       },
       "Log": {
         "properties": {
@@ -22857,49 +23024,6 @@
             ],
             "description": "values of output properties"
           },
-          "outputNode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnode",
-            "deprecated": true
-          },
-          "outputNodes": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnodes",
-            "description": "Used in group-nodes. Node IDs of those connected to the output",
-            "deprecated": true
-          },
-          "parent": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent",
-            "description": "Parent's (group-nodes') node ID s. Used to group",
-            "deprecated": true
-          },
           "position": {
             "anyOf": [
               {
@@ -23099,49 +23223,6 @@
             ],
             "description": "values of output properties"
           },
-          "outputNode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnode",
-            "deprecated": true
-          },
-          "outputNodes": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outputnodes",
-            "description": "Used in group-nodes. Node IDs of those connected to the output",
-            "deprecated": true
-          },
-          "parent": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent",
-            "description": "Parent's (group-nodes') node ID s. Used to group",
-            "deprecated": true
-          },
           "position": {
             "anyOf": [
               {
@@ -23322,6 +23403,11 @@
             "type": "string",
             "title": "Userid",
             "description": "the user that started the service"
+          },
+          "productName": {
+            "type": "string",
+            "title": "Productname",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -23333,7 +23419,8 @@
           "serviceHost",
           "servicePort",
           "serviceState",
-          "userId"
+          "userId",
+          "productName"
         ],
         "title": "NodeGet"
       },
@@ -23450,6 +23537,23 @@
             ],
             "title": "Inputsrequired"
           },
+          "inputsUnits": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/UnitStr"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/InputID"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputsunits"
+          },
           "inputNodes": {
             "anyOf": [
               {
@@ -23481,14 +23585,12 @@
           "bootOptions": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/BootOptions"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Bootoptions"
+            ]
           },
           "outputs": {
             "anyOf": [
@@ -23514,8 +23616,7 @@
               "pattern": "^[-_a-zA-Z0-9]+$"
             },
             "type": "array",
-            "title": "Port Keys",
-            "default": []
+            "title": "Port Keys"
           }
         },
         "type": "object",
@@ -23855,10 +23956,10 @@
               "type": "string"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Input"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Input"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -23895,10 +23996,10 @@
               "type": "string"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink"
+              "$ref": "#/components/schemas/SimCoreFileLink-Output"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink"
+              "$ref": "#/components/schemas/DatCoreFileLink-Output"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -27151,6 +27252,12 @@
         ],
         "title": "ResourceValue"
       },
+      "RootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded 32-byte root key shared by all tasks of the job",
+        "writeOnly": true
+      },
       "RunningDynamicServiceDetails": {
         "properties": {
           "service_key": {
@@ -27259,6 +27366,11 @@
             "title": "Is Collaborative",
             "description": "True if service allows collaboration (multi-tenant access)",
             "default": false
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -27270,7 +27382,8 @@
           "service_uuid",
           "service_host",
           "service_port",
-          "service_state"
+          "service_state",
+          "product_name"
         ],
         "title": "RunningDynamicServiceDetails"
       },
@@ -28108,25 +28221,14 @@
         ],
         "title": "ServicesAggregatedUsagesType"
       },
-      "SimCoreFileLink": {
+      "SimCoreFileLink-Input": {
         "properties": {
           "store": {
-            "type": "integer",
-            "title": "Store",
+            "$ref": "#/components/schemas/LocationID",
             "description": "The store identifier: 0 for simcore S3, 1 for datcore"
           },
           "path": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
-              },
-              {
-                "type": "string",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-              }
-            ],
-            "title": "Path",
+            "$ref": "#/components/schemas/StorageFileID",
             "description": "The path to the file in the storage provider domain"
           },
           "label": {
@@ -28152,6 +28254,88 @@
             ],
             "title": "Etag",
             "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset",
+            "deprecated": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "store",
+          "path"
+        ],
+        "title": "SimCoreFileLink",
+        "description": "I/O port type to hold a link to a file in simcore S3 storage"
+      },
+      "SimCoreFileLink-Output": {
+        "properties": {
+          "store": {
+            "$ref": "#/components/schemas/LocationID",
+            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
+          },
+          "path": {
+            "$ref": "#/components/schemas/StorageFileID",
+            "description": "The path to the file in the storage provider domain"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "The real file name"
+          },
+          "eTag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etag",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "lastModified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmodified",
+            "description": "Timestamp of the last modification of the file, set together with e_tag"
           },
           "dataset": {
             "anyOf": [
@@ -28389,6 +28573,17 @@
           "top_tracemalloc"
         ],
         "title": "StatusDiagnosticsGet"
+      },
+      "StorageFileID": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+          },
+          {
+            "$ref": "#/components/schemas/DatCoreFileID"
+          }
+        ]
       },
       "StorageFileIDStr": {
         "type": "string"
@@ -29152,6 +29347,10 @@
         ],
         "description": "Expiration time in days for trial accounts; `null` means not a trial account"
       },
+      "UNDEFINED_SIZE_TYPE": {
+        "type": "integer",
+        "const": -1
+      },
       "UnitExtraInfoLicense": {
         "properties": {
           "num_of_seats": {
@@ -29337,8 +29536,7 @@
             "title": "Number"
           },
           "e_tag": {
-            "type": "string",
-            "title": "E Tag"
+            "$ref": "#/components/schemas/ETag"
           }
         },
         "type": "object",
@@ -29354,6 +29552,21 @@
             "type": "string",
             "format": "email",
             "title": "Email"
+          },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
           },
           "invitationUrl": {
             "type": "string",
@@ -29781,6 +29994,21 @@
             "type": "string",
             "format": "email",
             "title": "Email"
+          },
+          "bccEmails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bccemails"
           },
           "messageContent": {
             "anyOf": [
@@ -30718,8 +30946,14 @@
       "_ConversationsCreateBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Name"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationName"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "type": {
             "$ref": "#/components/schemas/ConversationType"
@@ -30739,7 +30973,6 @@
         },
         "type": "object",
         "required": [
-          "name",
           "type"
         ],
         "title": "_ConversationsCreateBodyParams"

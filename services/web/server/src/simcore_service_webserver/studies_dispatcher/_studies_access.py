@@ -1,22 +1,16 @@
 """handles access to *public* studies
 
-    Handles a request to share a given sharable study via '/study/{id}'
+Handles a request to share a given sharable study via '/study/{id}'
 
-    - defines '/study/{id}' routes (this route does NOT belong to restAPI)
-    - access to projects management subsystem
-    - access to statics
-    - access to security
-    - access to login
-
-
-NOTE: Some of the code below is duplicated in the studies_dispatcher!
-SEE refactoring plan in https://github.com/ITISFoundation/osparc-simcore/issues/3977
+- defines '/study/{id}' routes (this route does NOT belong to restAPI)
+- access to projects management subsystem
+- access to statics
+- access to security
+- access to login
 """
 
 import functools
 import logging
-from functools import lru_cache
-from uuid import UUID, uuid5
 
 from aiohttp import web
 from aiohttp_session import get_session
@@ -27,13 +21,9 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
 from ..constants import INDEX_RESOURCE_NAME
-from ..director_v2 import director_v2_service
-from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
-from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
 from ..projects._projects_repository_legacy import ProjectDBAPI
-from ..projects.api import check_user_project_permission
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
     ProjectInvalidRightsError,
@@ -41,10 +31,10 @@ from ..projects.exceptions import (
 )
 from ..projects.models import ProjectDict
 from ..security import security_web
-from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
+from ..utils_aiohttp import create_redirect_to_page_response
 from ._constants import (
+    MSG_LOGIN_REQUIRED,
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
     MSG_PUBLIC_PROJECT_NOT_PUBLISHED,
@@ -54,20 +44,9 @@ from ._constants import (
 from ._errors import GuestUsersLimitError
 from ._guards import check_studies_dispatcher_enabled
 from ._users import create_temporary_guest_user, get_authorized_user
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-
-_BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
-
-
-@lru_cache
-def _compose_uuid(template_uuid, user_id, query="") -> str:
-    """Creates a new uuid composing a project's and user ids such that
-    any template pre-assigned to a user
-
-    Enforces a constraint: a user CANNOT have multiple copies of the same template
-    """
-    return str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
 
 
 async def _get_published_template_project(
@@ -148,92 +127,6 @@ async def _get_published_template_project(
     raise _create_access_denied_error(reason)
 
 
-async def copy_study_to_account(request: web.Request, template_project: dict, user: dict):
-    """
-    Creates a copy of the study to a given project in user's account
-
-    - Replaces template parameters by values passed in query
-    - Avoids multiple copies of the same template on each account
-    """
-    # NOTE: Avoids circular dependencies
-    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY  # noqa: PLC0415
-    from ..projects.utils import clone_project_document, substitute_parameterized_inputs  # noqa: PLC0415
-
-    db: ProjectDBAPI = request.config_dict[PROJECT_DBAPI_APPKEY]
-    template_parameters = dict(request.query)
-
-    # assign new uuid to copy
-    project_uuid = _compose_uuid(template_project["uuid"], user["id"], str(template_parameters))
-
-    try:
-        product_name = await db.get_project_product(template_project["uuid"])
-        await check_user_project_permission(
-            request.app,
-            project_id=template_project["uuid"],
-            user_id=user["id"],
-            product_name=product_name,
-            permission="read",
-        )
-
-        # Avoids multiple copies of the same template on each account
-        await db.get_project_dict_and_type(project_uuid)
-
-    except ProjectNotFoundError:
-        # New project cloned from template
-        project, nodes_map = clone_project_document(template_project, forced_copy_project_id=UUID(project_uuid))
-
-        # remove template access rights
-        # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/8887
-        project["accessRights"] = {}
-
-        # check project inputs and substitute template_parameters
-        if template_parameters:
-            _logger.info("Substituting parameters '%s' in template", template_parameters)
-            project = substitute_parameterized_inputs(project, template_parameters) or project
-        # add project model + copy data TODO: guarantee order and atomicity
-        product_name = products_web.get_product_name(request)
-        await db.insert_project(
-            project,
-            user["id"],
-            product_name=product_name,
-            force_project_uuid=True,
-            project_nodes=None,
-        )
-        async for lr_task in copy_data_folders_from_project(
-            request.app,
-            source_project=template_project,
-            destination_project=project,
-            nodes_map=nodes_map,
-            user_id=user["id"],
-            product_name=product_name,
-        ):
-            _logger.info(
-                "copying %s into %s for %s: %s",
-                f"{template_project['uuid']=}",
-                f"{project['uuid']}",
-                f"{user['id']}",
-                f"{lr_task.status.progress=}",
-            )
-            if lr_task.done:
-                await lr_task.result()
-        await director_v2_service.create_or_update_pipeline(
-            request.app,
-            user["id"],
-            project["uuid"],
-            product_name,
-            get_api_base_url(request),
-        )
-        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
-
-        await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
-            request.app,
-            from_project_uuid=template_project["uuid"],
-            to_project_uuid=project["uuid"],
-        )
-
-    return project_uuid
-
-
 # HANDLERS --------------------------------------------------------
 
 
@@ -251,10 +144,6 @@ def _handle_errors_with_error_page(handler: Handler):
         try:
             return await handler(request)
 
-        except web.HTTPNotFound:
-            # Pass through 404 to allow dispatcher-disabled responses
-            raise
-
         except ProjectNotFoundError as err:
             raise create_redirect_to_page_response(
                 request.app,
@@ -271,6 +160,14 @@ def _handle_errors_with_error_page(handler: Handler):
                 request.app,
                 page="error",
                 message=err.human_readable_message,
+                status_code=err.status_code,
+            ) from err
+
+        except web.HTTPError as err:
+            raise create_redirect_to_page_response(
+                request.app,
+                page="error",
+                message=err.reason or MSG_UNEXPECTED_DISPATCH_ERROR,
                 status_code=err.status_code,
             ) from err
 
@@ -342,6 +239,13 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get or create a valid USER
     if not user:
+        if get_plugin_settings(request.app).is_login_required():
+            raise RedirectToFrontEndPageError(
+                MSG_LOGIN_REQUIRED,
+                error_code="LOGIN_REQUIRED",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
         try:
             _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
             user = await create_temporary_guest_user(request)
@@ -371,47 +275,17 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             ) from exc
 
-    # COPY
+    # Redirect immediately to the SPA dispatching route — the actual clone is done
+    # by a separate POST /{VTAG}/studies/{id}:dispatch call from the SPA, which runs
+    # as a long-running task so the user gets live progress feedback.
     assert user  # nosec
-    try:
-        _logger.debug(
-            "Granted access to study name='%s' for user email='%s'. Copying study over ...",
-            template_project.get("name"),
-            user.get("email"),
-        )
 
-        copied_project_id = await copy_study_to_account(request, template_project, user)
-
-        _logger.debug("Study %s copied", copied_project_id)
-
-    except Exception as exc:  # pylint: disable=broad-except
-        error_code = create_error_code(exc)
-        user_error_msg = compose_support_error_msg(
-            msg=MSG_UNEXPECTED_DISPATCH_ERROR,
-            error_code=error_code,
-        )
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                user_error_msg,
-                error=exc,
-                error_code=error_code,
-                error_context={
-                    "user_id": user.get("id"),
-                    "user": dict(user),
-                    "template_project": {k: template_project.get(k) for k in ["name", "uuid"]},
-                },
-                tip=f"Failed while copying project '{template_project.get('name')}' to '{user.get('email')}'",
-            )
-        )
-
-        raise RedirectToFrontEndPageError(
-            user_error_msg,
-            error_code=error_code,
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        ) from exc
-
-    # Creating REDIRECTION LINK
-    redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(f"/study/{copied_project_id}")
+    # Creating REDIRECTION LINK — points to the SPA dispatch fragment, not the final study
+    redirect_url = (
+        request.app.router[INDEX_RESOURCE_NAME]
+        .url_for()
+        .with_fragment(f"/dispatch?study_id={template_project['uuid']}")
+    )
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:

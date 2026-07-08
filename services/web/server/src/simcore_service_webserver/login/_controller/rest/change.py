@@ -5,12 +5,12 @@ from aiohttp.web import RouteTableDef
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.notifications import Channel
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
 from ....exception_handling import create_error_context_from_request
+from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact
 from ....products import products_web
@@ -18,6 +18,7 @@ from ....products.models import Product
 from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_requests_validation import parse_request_body_as
 from ....web_utils import flash_response
 from ... import _auth_service, _confirmation_web
 from ..._login_service import (
@@ -28,6 +29,7 @@ from ..._login_service import (
 from ...constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
+    MSG_EMAIL_CHANGED,
     MSG_EMAIL_SENT,
     MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
@@ -208,10 +210,12 @@ async def initiate_reset_password(request: web.Request):
                 "link": link,
                 "reason": failure_reason,
             },
+            locale=get_locale_or_none(request),
         )
 
     # NOTE: Always same response: guideline #1
-    return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
+    translated_msg = translate_message(MSG_EMAIL_SENT, request).format(email=request_body.email)
+    return flash_response(translated_msg, "INFO")
 
 
 async def initiate_change_email(request: web.Request):
@@ -225,7 +229,7 @@ async def initiate_change_email(request: web.Request):
     assert user  # nosec
 
     if user["email"] == request_body.email:
-        return flash_response("Email changed")
+        return flash_response(translate_message(MSG_EMAIL_CHANGED, request))
 
     repo = UsersRepo(get_asyncpg_engine(request.app))
     if await repo.is_email_used(email=request_body.email):
@@ -264,6 +268,7 @@ async def initiate_change_email(request: web.Request):
                 },
                 "link": link,
             },
+            locale=get_locale_or_none(request),
         )
     except Exception as err:  # pylint: disable=broad-except
         _logger.exception(
@@ -282,7 +287,7 @@ async def initiate_change_email(request: web.Request):
         await confirmation_service.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
-    return flash_response(MSG_CHANGE_EMAIL_REQUESTED)
+    return flash_response(translate_message(MSG_CHANGE_EMAIL_REQUESTED, request))
 
 
 @routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
@@ -310,4 +315,4 @@ async def change_password(request: web.Request):
         verify_current_password=False,
     )
 
-    return flash_response(MSG_PASSWORD_CHANGED)
+    return flash_response(translate_message(MSG_PASSWORD_CHANGED, request))

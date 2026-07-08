@@ -17,10 +17,14 @@ from ..projects._projects_service import (
 )
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
-from ..resource_manager.registry import RedisResourceRegistry
-from ..users import exceptions, users_service
-from ..users.exceptions import UserNotFoundError
-from ._core_utils import get_new_project_owner_gid, replace_current_owner
+from ..resource_manager.resource_manager_service import RedisResourceRegistry
+from ..users import errors, users_service
+from ..users.errors import UserNotFoundError
+from ._core_utils import (
+    get_new_project_owner_gid,
+    replace_current_owner,
+    try_get_product_name,
+)
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +46,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     # recover user's primary_gid
     try:
         project_owner_primary_gid = await users_service.get_user_primary_group_id(app=app, user_id=user_id)
-    except exceptions.UserNotFoundError:
+    except errors.UserNotFoundError:
         _logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
             f"{user_id=}",
@@ -97,13 +101,17 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{user_id=}",
                 )
                 project_id = ProjectID(project_uuid)
-                project_at_db = await project_repo.get_project_db(project_id)
+
+                product_name = await try_get_product_name(app, project_id)
+                if product_name is None:
+                    raise ProjectNotFoundError(project_uuid=project_id)  # noqa: TRY301
+
                 task = await submit_delete_project_task(
                     app,
                     project_id,
                     user_id,
                     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    product_name=project_at_db.product_name,
+                    product_name=product_name,
                 )
                 assert task  # nosec
                 delete_tasks.append(task)
