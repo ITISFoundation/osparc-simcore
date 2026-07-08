@@ -16,7 +16,7 @@ from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.background_task_utils import exclusive_periodic
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import traced
 from settings_library.redis import RedisDatabase
 
@@ -80,8 +80,9 @@ async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
         yield
     finally:
-        await cancel_wait_task(app.state.dsm_cleanup_uploads_task)
-        await cancel_wait_task(app.state.dsm_cleanup_exports_task)
+        for task in (app.state.dsm_cleanup_uploads_task, app.state.dsm_cleanup_exports_task):
+            with log_catch(_logger):
+                await cancel_wait_task(task)
 
 
 def configure_dsm_cleanup(app_lifespan: LifespanManager) -> None:
