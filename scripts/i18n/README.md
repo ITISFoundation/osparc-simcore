@@ -153,12 +153,12 @@ The versioned `.po` files (reviewed translations) are **never** deleted by `clea
 Any standard `.po` editor works — the `CTX-*` fields appear as normal translator
 comments and are fully editable:
 
-```markdown
+- [**weblate**](https://github.com/WeblateOrg/weblate/)  —  web-based continuous localization system
 - [**Poedit**](https://poedit.net) — GUI, shows `CTX-SNIPPET` and `CTX-INTERPRETATION` in the sidebar
 - [**Gtranslator**](https://wiki.gnome.org/Apps/Gtranslator) — GNOME desktop editor
 - [**Virtaal**](http://virtaal.translatehouse.org) — lightweight cross-platform option
 - [**VS Code**](https://code.visualstudio.com) — plugins as [*i18n Ally*](https://marketplace.visualstudio.com/items?itemName=lokalise.i18n-ally)
-```
+
 
 ## References
 
