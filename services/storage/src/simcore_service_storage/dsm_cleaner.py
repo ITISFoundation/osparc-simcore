@@ -5,8 +5,8 @@ For details see `SimcoreS3DataManager`:
     - `.clean_expired_exports()`
 """
 
-import asyncio
 import logging
+from asyncio import create_task
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -27,8 +27,8 @@ from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
-_TASK_NAME_PERIODICALLY_CLEAN_DSM = "periodic_cleanup_of_dsm_uploads"
-_TASK_NAME_PERIODICALLY_CLEAN_EXPORTS = "periodic_cleanup_exports"
+_TASK_NAME_CLEAN_EXPIRED_UPLOADS = "clean_expired_uploads"
+_TASK_NAME_CLEAN_EXPIRED_EXPORTS = "clean_expired_exports"
 
 
 def _get_simcore_s3_dsm(app: FastAPI) -> SimcoreS3DataManager:
@@ -37,22 +37,21 @@ def _get_simcore_s3_dsm(app: FastAPI) -> SimcoreS3DataManager:
 
 
 @traced
-async def dsm_cleaner_task(app: FastAPI) -> None:
-    with log_context(_logger, logging.INFO, "dsm cleaner task"):
+async def clean_expired_uploads(app: FastAPI) -> None:
+    with log_context(_logger, logging.INFO, "clean expired uploads"):
         await _get_simcore_s3_dsm(app).clean_expired_uploads()
 
 
 @traced
-async def dsm_export_cleaner_task(app: FastAPI) -> None:
-    with log_context(_logger, logging.INFO, "export cleaner task"):
+async def clean_expired_exports(app: FastAPI) -> None:
+    with log_context(_logger, logging.INFO, "clean expired exports"):
         await _get_simcore_s3_dsm(app).clean_expired_exports()
 
 
 @asynccontextmanager
-async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Lifespan context manager for DSM cleaner."""
-    app.state.dsm_cleaner_task = None
-    app.state.dsm_export_cleaner_task = None
+async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    app.state.dsm_cleanup_uploads_task = None
+    app.state.dsm_cleanup_exports_task = None
 
     try:
         cfg = get_application_settings(app)
@@ -65,11 +64,11 @@ async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
                 task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
                 retry_after=timedelta(minutes=5),
             )
-            async def _periodic_dsm_clean() -> None:
-                await dsm_cleaner_task(app)
+            async def _run_clean_expired_uploads() -> None:
+                await clean_expired_uploads(app)
 
-            app.state.dsm_cleaner_task = asyncio.create_task(
-                _periodic_dsm_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_DSM
+            app.state.dsm_cleanup_uploads_task = create_task(
+                _run_clean_expired_uploads(), name=_TASK_NAME_CLEAN_EXPIRED_UPLOADS
             )
 
         if cfg.STORAGE_EXPORT_CLEANER_INTERVAL:
@@ -79,20 +78,19 @@ async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
                 task_interval=cfg.STORAGE_EXPORT_CLEANER_INTERVAL,
                 retry_after=timedelta(minutes=5),
             )
-            async def _periodic_dsm_export_clean() -> None:
-                await dsm_export_cleaner_task(app)
+            async def _run_clean_expired_exports() -> None:
+                await clean_expired_exports(app)
 
-            app.state.dsm_export_cleaner_task = asyncio.create_task(
-                _periodic_dsm_export_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_EXPORTS
+            app.state.dsm_cleanup_exports_task = create_task(
+                _run_clean_expired_exports(), name=_TASK_NAME_CLEAN_EXPIRED_EXPORTS
             )
 
         yield
     finally:
-        for task in (app.state.dsm_cleaner_task, app.state.dsm_export_cleaner_task):
-            if isinstance(task, asyncio.Task):
+        for task in (app.state.dsm_cleanup_uploads_task, app.state.dsm_cleanup_exports_task):
+            if task is not None:
                 await cancel_wait_task(task)
 
 
-def configure_dsm_cleaner(app_lifespan: LifespanManager) -> None:
-    """Configure DSM cleaner lifespan."""
-    app_lifespan.add(_dsm_cleaner_lifespan)
+def configure_dsm_cleanup(app_lifespan: LifespanManager) -> None:
+    app_lifespan.add(_dsm_cleanup_lifespan)

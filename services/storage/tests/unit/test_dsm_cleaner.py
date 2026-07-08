@@ -11,8 +11,8 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from simcore_service_storage.core.settings import get_application_settings
 from simcore_service_storage.dsm_cleaner import (
-    _TASK_NAME_PERIODICALLY_CLEAN_DSM,
-    _TASK_NAME_PERIODICALLY_CLEAN_EXPORTS,
+    _TASK_NAME_CLEAN_EXPIRED_EXPORTS,
+    _TASK_NAME_CLEAN_EXPIRED_UPLOADS,
 )
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -61,15 +61,15 @@ def short_dsm_export_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 
 async def test_setup_dsm_cleaner(initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
-    assert any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_DSM}") for t in all_tasks)
+    assert any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_UPLOADS}") for t in all_tasks)
 
 
 async def test_disable_dsm_cleaner(disable_dsm_cleaner, initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
-    assert not any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_DSM}") for t in all_tasks)
+    assert not any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_UPLOADS}") for t in all_tasks)
 
 
-async def test_dsm_cleaner_task_restarts_if_error(
+async def test_clean_expired_uploads_restarts_if_error(
     mocked_dsm_clean: mock.Mock,
     short_dsm_cleaner_interval: int,
     initialized_app: FastAPI,
@@ -82,7 +82,7 @@ async def test_dsm_cleaner_task_restarts_if_error(
 
 async def test_setup_dsm_export_cleaner(initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
-    assert any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_EXPORTS}") for t in all_tasks)
+    assert any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_EXPORTS}") for t in all_tasks)
 
 
 async def test_dsm_export_cleaner_interval_is_a_timedelta(initialized_app: FastAPI):
@@ -94,10 +94,10 @@ async def test_dsm_export_cleaner_interval_is_a_timedelta(initialized_app: FastA
 
 async def test_disable_dsm_export_cleaner(disable_dsm_export_cleaner, initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
-    assert not any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_EXPORTS}") for t in all_tasks)
+    assert not any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_EXPORTS}") for t in all_tasks)
 
 
-async def test_dsm_export_cleaner_task_restarts_if_error(
+async def test_clean_expired_exports_restarts_if_error(
     mocked_dsm_export_clean: mock.Mock,
     short_dsm_export_cleaner_interval: int,
     initialized_app: FastAPI,
@@ -108,12 +108,12 @@ async def test_dsm_export_cleaner_task_restarts_if_error(
     assert mocked_dsm_export_clean.call_count > num_calls
 
 
-async def test_dsm_cleaners_run_independently(
+async def test_cleaners_run_independently(
     disable_dsm_cleaner,
     short_dsm_export_cleaner_interval: int,
     initialized_app: FastAPI,
 ):
     """uploads cleaner disabled, exports cleaner still runs on its own interval"""
     all_tasks = asyncio.all_tasks()
-    assert not any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_DSM}") for t in all_tasks)
-    assert any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_EXPORTS}") for t in all_tasks)
+    assert not any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_UPLOADS}") for t in all_tasks)
+    assert any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_EXPORTS}") for t in all_tasks)
