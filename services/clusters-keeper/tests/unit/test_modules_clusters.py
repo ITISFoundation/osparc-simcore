@@ -13,6 +13,7 @@ from aws_library.ec2 import EC2InstanceData
 from aws_library.ec2._errors import EC2InstanceNotFoundError
 from faker import Faker
 from fastapi import FastAPI
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from parse import Result, search
@@ -57,6 +58,7 @@ async def _assert_cluster_instance_created(
     app_settings: ApplicationSettings,
     ec2_client: EC2Client,
     instance_id: str,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> None:
@@ -66,14 +68,20 @@ async def _assert_cluster_instance_created(
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
     instance_ec2_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_ec2_tags) == 7
+    assert len(instance_ec2_tags) == 8
     assert all("Key" in x for x in instance_ec2_tags)
     assert all("Value" in x for x in instance_ec2_tags)
 
     _EXPECTED_TAGS: dict[str, str] = {
-        f"{_APPLICATION_TAG_KEY}.deploy": f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}",
+        f"{_APPLICATION_TAG_KEY}.deploy": (
+            f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}"
+        ),
         f"{_APPLICATION_TAG_KEY}.version": f"{APP_VERSION}",
-        "Name": f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
+        "Name": (
+            f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}manager-"
+            f"{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+        ),
+        "io.simcore.product_name": f"{product_name}",
         "user_id": f"{user_id}",
         "wallet_id": f"{wallet_id}",
         "role": "manager",
@@ -99,10 +107,11 @@ async def _assert_cluster_instance_created(
 async def _create_cluster(
     app: FastAPI,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> list[EC2InstanceData]:
-    created_clusters = await create_cluster(app, user_id=user_id, wallet_id=wallet_id)
+    created_clusters = await create_cluster(app, product_name=product_name, user_id=user_id, wallet_id=wallet_id)
     assert len(created_clusters) == 1
     # check we do have a new machine in AWS
 
@@ -110,6 +119,7 @@ async def _create_cluster(
         get_application_settings(app),
         ec2_client,
         created_clusters[0].id,
+        product_name,
         user_id,
         wallet_id,
     )
@@ -119,16 +129,18 @@ async def _create_cluster(
 async def test_create_cluster(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
+    await _create_cluster(initialized_app, ec2_client, product_name, user_id, wallet_id)
 
 
 async def test_get_cluster(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
@@ -136,7 +148,10 @@ async def test_get_cluster(
     # create multiple clusters for different users
     user_ids = [user_id, user_id + 13, user_id + 456]
     list_created_clusters = await asyncio.gather(
-        *(_create_cluster(initialized_app, ec2_client, user_id=u, wallet_id=wallet_id) for u in user_ids)
+        *(
+            _create_cluster(initialized_app, ec2_client, product_name=product_name, user_id=u, wallet_id=wallet_id)
+            for u in user_ids
+        )
     )
     for u, created_clusters in zip(user_ids, list_created_clusters, strict=True):
         returned_cluster = await get_cluster(initialized_app, user_id=u, wallet_id=wallet_id)
@@ -146,6 +161,7 @@ async def test_get_cluster(
 async def test_get_cluster_raises_if_not_found(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
@@ -157,6 +173,7 @@ async def test_get_cluster_raises_if_not_found(
 async def test_get_cluster_workers_returns_empty_if_no_workers(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
@@ -167,17 +184,19 @@ async def test_get_cluster_workers_returns_empty_if_no_workers(
 async def test_get_cluster_workers_does_not_return_cluster_primary_machine(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
+    await _create_cluster(initialized_app, ec2_client, product_name, user_id, wallet_id)
     assert await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id) == []
 
 
 async def test_get_cluster_workers(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
@@ -197,7 +216,7 @@ async def _assert_cluster_heartbeat_on_instance(
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
     instance_tags = instances["Reservations"][0]["Instances"][0]["Tags"]
-    assert len(instance_tags) == 8
+    assert len(instance_tags) == 9
     assert all("Key" in x for x in instance_tags)
     list_of_heartbeats = list(
         filter(lambda x: x["Key"] == HEARTBEAT_TAG_KEY, instance_tags)  # type:ignore
@@ -212,11 +231,12 @@ async def _assert_cluster_heartbeat_on_instance(
 async def test_cluster_heartbeat(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
+    await _create_cluster(initialized_app, ec2_client, product_name, user_id, wallet_id)
 
     await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
     first_heartbeat_time = await _assert_cluster_heartbeat_on_instance(ec2_client)
@@ -232,6 +252,7 @@ async def test_cluster_heartbeat(
 async def test_cluster_heartbeat_on_non_existing_cluster_raises(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
@@ -262,10 +283,11 @@ async def _assert_all_clusters_terminated(
 async def test_delete_cluster(
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    created_instances = await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
+    created_instances = await _create_cluster(initialized_app, ec2_client, product_name, user_id, wallet_id)
     await delete_clusters(initialized_app, instances=created_instances)
     await _assert_all_clusters_terminated(ec2_client)

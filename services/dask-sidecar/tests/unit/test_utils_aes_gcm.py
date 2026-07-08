@@ -367,7 +367,7 @@ def test_encrypt_reads_are_bounded_by_chunk_size(root_key: bytes, context: dict[
     # every explicit read is bounded by chunk_size: the whole file is never read at once
     assert recorder.read_sizes
     assert all(size == chunk_size for size in recorder.read_sizes)
-    assert max(recorder.read_sizes) < len(plaintext)  # pyright: ignore[reportArgumentType]
+    assert max(size for size in recorder.read_sizes if size is not None) < len(plaintext)
 
 
 def test_decrypt_reads_are_bounded(root_key: bytes, context: dict[str, str]):
