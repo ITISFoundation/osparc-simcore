@@ -3048,7 +3048,7 @@ msgstr "提交新应用"
 
 # CTX-SNIPPET:
 #           },
-# 
+#
 #           __displayServiceSubmissionForm: function(formData) {
 #   >>>       const addServiceWindow = new
 # osparc.ui.window.Window(qx.locale.Manager.tr("Submit a new app")).set({
@@ -4748,7 +4748,7 @@ msgstr "运行部分管道"
 #             rbManager.setSelection(partialPipeline.length ?
 # [runPartialPipeline] : [runPipeline]);
 #             this._add(partialBox);
-# 
+#
 #   >>>       const reRunBox = new qx.ui.groupbox.GroupBox(this.tr("Re-Run"));
 #             reRunBox.set({
 #               layout: new qx.ui.layout.VBox(),
@@ -4783,7 +4783,7 @@ msgid "Caching"
 msgstr "缓存中"
 
 # CTX-SNIPPET:
-# 
+#
 #             const cacheBox = new
 # qx.ui.groupbox.GroupBox(this.tr("Caching"));
 #             cacheBox.setLayout(new qx.ui.layout.VBox());
@@ -7876,10 +7876,10 @@ msgstr "从"
 
 # CTX-SNIPPET:
 #             const defaultTo = new Date();
-# 
+#
 #             this.__from = this.__addDateInput(this.tr("From"), defaultFrom);
 #   >>>       this.__until = this.__addDateInput(this.tr("Until"), defaultTo);
-# 
+#
 #             const todayBtn = new qx.ui.form.Button(this.tr("Today")).set({
 #               allowStretchY: false,
 # CTX-SNIPPET-VERSION: 7a537a1
@@ -7931,7 +7931,7 @@ msgstr "正在搜索..."
 #         construct: function(filterId, filterGroupId) {
 #   >>>     this.base(arguments, this.tr("Studies"), filterId, filterGroupId);
 #         },
-# 
+#
 #         members: {
 # CTX-SNIPPET-VERSION: 05bd572
 # CTX-INTERPRETATION: The string 'Studies' is used as a label or category name
@@ -8117,7 +8117,7 @@ msgid "Apply Tags"
 msgstr "应用标签"
 
 # CTX-SNIPPET:
-# 
+#
 #             const resourceAlias =
 # osparc.product.Utils.resourceTypeToAlias(this.__studyData["resourceType"],
 # {plural: true}) || "projects";
@@ -8126,7 +8126,7 @@ msgstr "应用标签"
 # " + resourceAlias + ". Select from existing tags or create new ones, then
 # save your changes when ready."),
 #             });
-# 
+#
 #             this.__selectedTags.clear();
 # CTX-SNIPPET-VERSION: 44da577
 # CTX-INTERPRETATION: This string appears in the user interface of a
@@ -10616,7 +10616,7 @@ msgstr "更新成功"
 #             const label = this.getChildControl("pp-id");
 #   >>>       label.setValue(this.tr("Id: %1", id));
 #           },
-# 
+#
 #           __applyPpKey: function(id) {
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a label in the user interface of
@@ -10632,7 +10632,7 @@ msgstr "编号: %1"
 #             const label = this.getChildControl("pp-key");
 #   >>>       label.setValue(this.tr("Key: %1", id));
 #           },
-# 
+#
 #           __applyIsActive: function(value) {
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a label in the user interface,
@@ -12433,7 +12433,7 @@ msgid "Log in in "
 msgstr "登录 "
 
 # CTX-SNIPPET:
-# 
+#
 #           __openSendEmailFeedbackDialog: function(email) {
 #             const productName = osparc.product.Utils.getProductName();
 #   >>>       const giveEmailFeedbackWindow = new
@@ -12692,7 +12692,7 @@ msgstr "添加新对话"
 
 # CTX-SNIPPET:
 #         },
-# 
+#
 #         statics: {
 #   >>>     CREATE_FUNCTION_TEXT: qx.locale.Manager.tr(`
 #             In order to Create a Function, the pipeline needs:
@@ -13279,7 +13279,7 @@ msgstr "浏览教程"
 # current project?"));
 #             this.__addAnswers(answers);
 #           },
-# 
+#
 # CTX-SNIPPET-VERSION: baed7f7
 # CTX-INTERPRETATION: This string appears as a label for a question in a user
 # interface, asking if the user's inquiry pertains to the current project they
@@ -13710,8 +13710,8 @@ msgstr "请描述在错误发生之前您正在做什么（可选）。"
 # CTX-VERSION: 900ab6f 2026-07-08T13:50:26Z
 #: services/static-webserver/client/source/class/osparc/ui/message/FlashMessageOEC.js:123
 msgid ""
-"This will help our support team understand the context and resolve the issue"
-" faster."
+"This will help our support team understand the context and resolve the issue "
+"faster."
 msgstr "这将帮助我们的支持团队了解上下文并更快地解决问题。"
 
 # CTX-INTERPRETATION: This string appears as a button label in the
@@ -14059,11 +14059,11 @@ msgstr "折叠"
 
 # CTX-SNIPPET:
 #         extend: osparc.ui.window.Window,
-# 
+#
 #         construct: function(winTitle, value) {
 #   >>>     this.base(arguments, winTitle || this.tr("Choose a Date and
 # Time"));
-# 
+#
 #           const width = 260;
 #           const height = 26;
 # CTX-SNIPPET-VERSION: 3a35a33

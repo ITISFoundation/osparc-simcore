@@ -3089,7 +3089,7 @@ msgstr "Enviar nueva aplicación"
 
 # CTX-SNIPPET:
 #           },
-# 
+#
 #           __displayServiceSubmissionForm: function(formData) {
 #   >>>       const addServiceWindow = new
 # osparc.ui.window.Window(qx.locale.Manager.tr("Submit a new app")).set({
@@ -4797,7 +4797,7 @@ msgstr "Ejecutar parte del pipeline"
 #             rbManager.setSelection(partialPipeline.length ?
 # [runPartialPipeline] : [runPipeline]);
 #             this._add(partialBox);
-# 
+#
 #   >>>       const reRunBox = new qx.ui.groupbox.GroupBox(this.tr("Re-Run"));
 #             reRunBox.set({
 #               layout: new qx.ui.layout.VBox(),
@@ -4831,7 +4831,7 @@ msgid "Caching"
 msgstr "Almacenando en caché"
 
 # CTX-SNIPPET:
-# 
+#
 #             const cacheBox = new
 # qx.ui.groupbox.GroupBox(this.tr("Caching"));
 #             cacheBox.setLayout(new qx.ui.layout.VBox());
@@ -7957,10 +7957,10 @@ msgstr "De"
 
 # CTX-SNIPPET:
 #             const defaultTo = new Date();
-# 
+#
 #             this.__from = this.__addDateInput(this.tr("From"), defaultFrom);
 #   >>>       this.__until = this.__addDateInput(this.tr("Until"), defaultTo);
-# 
+#
 #             const todayBtn = new qx.ui.form.Button(this.tr("Today")).set({
 #               allowStretchY: false,
 # CTX-SNIPPET-VERSION: 7a537a1
@@ -8012,7 +8012,7 @@ msgstr "Buscando..."
 #         construct: function(filterId, filterGroupId) {
 #   >>>     this.base(arguments, this.tr("Studies"), filterId, filterGroupId);
 #         },
-# 
+#
 #         members: {
 # CTX-SNIPPET-VERSION: 05bd572
 # CTX-INTERPRETATION: The string 'Studies' is used as a label or category name
@@ -8203,7 +8203,7 @@ msgid "Apply Tags"
 msgstr "Aplicar Etiquetas"
 
 # CTX-SNIPPET:
-# 
+#
 #             const resourceAlias =
 # osparc.product.Utils.resourceTypeToAlias(this.__studyData["resourceType"],
 # {plural: true}) || "projects";
@@ -8212,7 +8212,7 @@ msgstr "Aplicar Etiquetas"
 # " + resourceAlias + ". Select from existing tags or create new ones, then
 # save your changes when ready."),
 #             });
-# 
+#
 #             this.__selectedTags.clear();
 # CTX-SNIPPET-VERSION: 44da577
 # CTX-INTERPRETATION: This string appears in the user interface of a
@@ -10738,7 +10738,7 @@ msgstr "Actualizado con éxito"
 #             const label = this.getChildControl("pp-id");
 #   >>>       label.setValue(this.tr("Id: %1", id));
 #           },
-# 
+#
 #           __applyPpKey: function(id) {
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a label in the user interface,
@@ -10755,7 +10755,7 @@ msgstr "Id: %1"
 #             const label = this.getChildControl("pp-key");
 #   >>>       label.setValue(this.tr("Key: %1", id));
 #           },
-# 
+#
 #           __applyIsActive: function(value) {
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a label in the user interface,
@@ -12653,7 +12653,7 @@ msgid "Log in in "
 msgstr "Iniciar sesión en "
 
 # CTX-SNIPPET:
-# 
+#
 #           __openSendEmailFeedbackDialog: function(email) {
 #             const productName = osparc.product.Utils.getProductName();
 #   >>>       const giveEmailFeedbackWindow = new
@@ -12924,7 +12924,7 @@ msgstr "Agregar nueva conversación"
 
 # CTX-SNIPPET:
 #         },
-# 
+#
 #         statics: {
 #   >>>     CREATE_FUNCTION_TEXT: qx.locale.Manager.tr(`
 #             In order to Create a Function, the pipeline needs:
@@ -13520,7 +13520,7 @@ msgstr "Explorar tutoriales"
 # current project?"));
 #             this.__addAnswers(answers);
 #           },
-# 
+#
 # CTX-SNIPPET-VERSION: baed7f7
 # CTX-INTERPRETATION: This string appears as a label for a question in a user
 # interface, asking the user if their inquiry pertains to the project they are
@@ -14308,11 +14308,11 @@ msgstr "Colapsar"
 
 # CTX-SNIPPET:
 #         extend: osparc.ui.window.Window,
-# 
+#
 #         construct: function(winTitle, value) {
 #   >>>     this.base(arguments, winTitle || this.tr("Choose a Date and
 # Time"));
-# 
+#
 #           const width = 260;
 #           const height = 26;
 # CTX-SNIPPET-VERSION: 3a35a33
