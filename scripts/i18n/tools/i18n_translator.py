@@ -60,6 +60,10 @@ from rich.table import Table
 
 DEFAULT_GLOSSARY_FILE = "glossary.json"
 
+# @TRANSLATOR marker: human note in source -> xgettext --add-comments -> #. line.
+# Literal is duplicated in i18n_extractor.py (TRANSLATOR_TAG); keep in sync.
+TRANSLATOR_TAG: Final = "@TRANSLATOR"
+
 # --- Type aliases ----------------------------------------------------------
 # Scalars end in `Str`; mapping aliases end in `Dict`.
 type LangCodeStr = str  # e.g. "zh_CN"
@@ -306,8 +310,8 @@ def _extract_translator_notes(comment: str) -> str:
     notes: list[str] = []
     for raw_line in comment.splitlines():
         line = raw_line.strip()
-        if line.startswith("@TRANSLATOR"):
-            notes.append(line[len("@TRANSLATOR") :].strip())
+        if line.startswith(TRANSLATOR_TAG):
+            notes.append(line[len(TRANSLATOR_TAG) :].strip())
         elif line:
             notes.append(line)
     return "\n".join(notes)

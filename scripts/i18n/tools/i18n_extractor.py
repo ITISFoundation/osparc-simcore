@@ -37,6 +37,7 @@ Usage:
 import ast
 import subprocess
 from pathlib import Path
+from typing import Final
 
 import polib
 import typer
@@ -44,6 +45,10 @@ from rich.console import Console
 
 CONTEXT_LINES = 6  # source lines captured around each string
 console = Console()
+
+# @TRANSLATOR marker: human note in source -> xgettext --add-comments -> #. line.
+# Literal is duplicated in i18n_translator.py (_extract_translator_notes); keep in sync.
+TRANSLATOR_TAG: Final = "@TRANSLATOR"
 
 # xgettext language flag per file extension
 LANG_MAP = {
@@ -60,14 +65,21 @@ LANG_MAP = {
     ".rc": "C++",  # STRINGTABLE entries; xgettext treats .rc as C-like
 }
 
-TRANSLATION_FUNC_NAMES = {
-    "_",
-    "user_message",  # osparc
-    "gettext",
-    "tr",  # qooxdoo frontend
-    "t",  # rocket frontend
-    "QT_TR_NOOP",
+# xgettext --keyword flags: single source of truth for run_xgettext()'s cmd, mapped
+# to the language(s)/tool that call each translation function.
+XGETTEXT_KEYWORDS: Final[dict[str, str]] = {
+    "_": "Python",
+    "gettext": "Python",
+    "user_message": "Python (osparc)",
+    "tr": "Qt/MFC C++, qooxdoo JS",
+    "t": "rocket JS/TS",
+    "QT_TR_NOOP": "Qt no-op marker (C++)",
 }
+
+# Subset of XGETTEXT_KEYWORDS that Python code can actually call; used only by the
+# Python AST-based validate_no_fstring_translations() (never scans .js/.cpp files).
+PYTHON_TRANSLATION_FUNC_NAMES: Final[set[str]] = {"_", "gettext", "user_message"}
+assert set(XGETTEXT_KEYWORDS) >= PYTHON_TRANSLATION_FUNC_NAMES  # nosec
 
 
 # ---------------------------------------------------------------------------
@@ -88,13 +100,8 @@ def run_xgettext(src_files: list[Path], out_pot: Path) -> bool:
         # Extract translatable strings from given input files
         # SEE https://www.gnu.org/software/gettext/manual/html_node/xgettext-Invocation.html
         "xgettext",
-        "--keyword=_",
-        "--keyword=gettext",
-        "--keyword=user_message",  # osparc marker
-        "--keyword=tr",  # Qt / MFC
-        "--keyword=t",  # rocket
-        "--keyword=QT_TR_NOOP",  # Qt no-op marker
-        "--add-comments=@TRANSLATOR",
+        *(f"--keyword={keyword}" for keyword in XGETTEXT_KEYWORDS),
+        f"--add-comments={TRANSLATOR_TAG}",
         "--from-code=UTF-8",
         "--output",
         str(out_pot),
@@ -244,7 +251,7 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
                 continue
 
             call_name = _call_name(node.func)
-            if call_name not in TRANSLATION_FUNC_NAMES:
+            if call_name not in PYTHON_TRANSLATION_FUNC_NAMES:
                 continue
 
             if not node.args:
@@ -458,7 +465,7 @@ def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = No
         # Inject @TRANSLATOR hint from _hint kwarg if not already present.
         hint = hints.get(entry.msgid)
         if hint:
-            at_translator_line = f"@TRANSLATOR {hint}"
+            at_translator_line = f"{TRANSLATOR_TAG} {hint}"
             existing = entry.comment or ""
             if at_translator_line not in existing:
                 entry.comment = (at_translator_line + "\n" + existing).strip()
