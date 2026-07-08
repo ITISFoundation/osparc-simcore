@@ -86,10 +86,7 @@ class JobEncryptionContext(BaseModel):
         return TransferEncryptionSettings(root_key=self.root_key, file_id=output_key)
 
     def transfer_settings_for_logs(self) -> TransferEncryptionSettings | None:
-        """Returns the per-file transfer settings for the logs, or None when the task has no encrypted inputs."""
-        if not self.input_port_to_file_id:
-            return None
-        # use a fixed file_id for logs, as they are not tied to any input port
+        """Returns the per-file transfer settings for the logs (the file_id is fixed)."""
         return TransferEncryptionSettings(root_key=self.root_key, file_id=_SIDECAR_LOGS_FILE_ID)
 
     @staticmethod

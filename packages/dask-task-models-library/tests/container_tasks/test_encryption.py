@@ -114,17 +114,6 @@ def test_transfer_settings_for_output_uses_output_key_as_file_id():
     )
 
 
-def test_transfer_settings_for_logs_returns_none_without_encrypted_inputs():
-    context = JobEncryptionContext(
-        root_key=TypeAdapter(_RootKeySecretBytes).validate_python(b"0" * AES_256_GCM_KEY_SIZE_BYTES),
-        input_port_to_file_id={},
-    )
-
-    settings = context.transfer_settings_for_logs()
-
-    assert settings is None
-
-
 def test_transfer_settings_for_logs_uses_fixed_logs_file_id_when_inputs_are_encrypted():
     root_key = b"0" * AES_256_GCM_KEY_SIZE_BYTES
     context = JobEncryptionContext(
