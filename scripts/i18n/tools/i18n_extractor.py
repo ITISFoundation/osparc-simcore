@@ -49,6 +49,9 @@ console = Console()
 LANG_MAP = {
     ".py": "Python",
     ".js": "JavaScript",  # qooxdoo frontend
+    ".ts": "JavaScript",  # rocket frontend; xgettext has no TypeScript language
+    ".tsx": "JavaScript",
+    ".jsx": "JavaScript",
     ".cpp": "C++",
     ".cxx": "C++",
     ".cc": "C++",
@@ -61,7 +64,8 @@ TRANSLATION_FUNC_NAMES = {
     "_",
     "user_message",  # osparc
     "gettext",
-    "tr",
+    "tr",  # qooxdoo frontend
+    "t",  # rocket frontend
     "QT_TR_NOOP",
 }
 
@@ -82,11 +86,13 @@ def run_xgettext(src_files: list[Path], out_pot: Path) -> bool:
 
     cmd = [
         # Extract translatable strings from given input files
+        # SEE https://www.gnu.org/software/gettext/manual/html_node/xgettext-Invocation.html
         "xgettext",
         "--keyword=_",
         "--keyword=gettext",
         "--keyword=user_message",  # osparc marker
         "--keyword=tr",  # Qt / MFC
+        "--keyword=t",  # rocket
         "--keyword=QT_TR_NOOP",  # Qt no-op marker
         "--add-comments=@TRANSLATOR",
         "--from-code=UTF-8",
@@ -262,7 +268,7 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
     return False
 
 
-def _extract_hints_from_file(path: Path) -> dict[str, str]:
+def _extract_hints_from_python_file(path: Path) -> dict[str, str]:
     """Return {msgid: hint} from ``user_message(_hint=...)`` calls in a single Python file."""
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
@@ -305,7 +311,7 @@ def collect_py_hints(src_files: list[Path]) -> dict[str, str]:
         if path.suffix.lower() != ".py":
             continue
 
-        for msgid, hint in _extract_hints_from_file(path).items():
+        for msgid, hint in _extract_hints_from_python_file(path).items():
             if msgid in hints and hints[msgid] != hint:
                 console.print(f"  [warn] {path}: duplicate _hint for msgid {msgid!r} (keeping first occurrence)")
             else:
