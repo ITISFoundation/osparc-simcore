@@ -17,8 +17,10 @@ from ...api.dependencies.authentication import Identity
 from ...models.api_resources import JobLinks
 from ...models.domain.functions import PreRegisteredFunctionJobData
 from ...models.schemas.jobs import JobInputs, JobPricingSpecification
+from ...models.schemas.responses import CreateResponseRequest
 
 pydantic_types_to_register = (
+    CreateResponseRequest,
     Identity,
     JobInputs,
     JobLinks,
