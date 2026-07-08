@@ -51,6 +51,13 @@ except ImportError:
     HAS_BOTOCORE = False
 
 try:
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor
+
+    HAS_CELERY = True
+except ImportError:
+    HAS_CELERY = False
+
+try:
     from opentelemetry.instrumentation.threading import ThreadingInstrumentor
 
     HAS_THREADING = True
@@ -128,6 +135,13 @@ def _startup(
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
             AsyncPGInstrumentor().instrument(tracer_provider=tracer_provider)
+    if HAS_CELERY:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add celery opentelemetry autoinstrumentation...",
+        ):
+            CeleryInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REDIS:
         with log_context(
             _logger,
