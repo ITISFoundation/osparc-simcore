@@ -34,13 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: "3.13"
       - name: install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.2.0
         with:
-          version: "0.9.x"
+          version: "0.11.x"
           enable-cache: false
       - name: checkout source branch
         uses: actions/checkout@v7.0.0
@@ -57,6 +57,52 @@ jobs:
             echo "::error:: OAS are not up to date. Run 'make openapi-specs' to update them"; exit 1; \
           fi
 
+  api-server-openai-compatible:
+    needs: api-specs
+    timeout-minutes: 10
+    name: "api-server openai compatibility"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.0
+      - name: check for api-server changes
+        uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            api-server:
+              - 'services/api-server/**'
+      - name: setup python environment
+        if: steps.changes.outputs.api-server == 'true'
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.13"
+      - name: install uv
+        if: steps.changes.outputs.api-server == 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.x"
+          enable-cache: false
+      - name: Generate openapi specs
+        if: steps.changes.outputs.api-server == 'true'
+        run: |
+          make devenv
+          source .venv/bin/activate
+          cd services/api-server
+          make install-dev
+          make openapi-openai-compatible.json
+      - name: check api-server openai compatibility
+        if: steps.changes.outputs.api-server == 'true'
+        run: |
+          ./scripts/openapi-diff.bash breaking \
+            --strip-prefix-base="/v0" \
+            --fail-on ERR \
+            --flatten-allof \
+            "/specs/services/api-server/openapi-openai-compatible.json" \
+            "https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml"
+
+
   api-server-oas-breaking:
     needs: api-specs
     timeout-minutes: 10
@@ -64,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: "3.13"
       - name: checkout
@@ -92,7 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: "3.13"
       - name: checkout

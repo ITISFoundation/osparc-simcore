@@ -16,7 +16,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import TracingConfig, get_trace_info_headers
+from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
+from ..tracing import (
+    TracingConfig,
+    get_trace_info_headers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -164,6 +168,8 @@ def _startup(
         ):
             AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
 
+    TracedFunctionsInstrumentor().instrument(tracing_settings=tracing_settings, tracer_provider=tracer_provider)
+
 
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
@@ -191,6 +197,9 @@ def _shutdown() -> None:
     if HAS_AIOHTTP_CLIENT:
         with log_catch(_logger, reraise=False):
             AioHttpClientInstrumentor().uninstrument()
+
+    with log_catch(_logger, reraise=False):
+        TracedFunctionsInstrumentor().uninstrument()
 
 
 def initialize_fastapi_app_tracing(

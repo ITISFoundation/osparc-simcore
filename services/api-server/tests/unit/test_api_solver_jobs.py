@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import base64
 import datetime as datetime_main
 import uuid
 from collections.abc import Callable
@@ -14,6 +15,7 @@ from uuid import UUID, uuid4
 
 import httpx
 import pytest
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -31,7 +33,7 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
 )
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
+from simcore_service_api_server.models.schemas.jobs import Job, JobEncryptionInputs, JobStatus
 from simcore_service_api_server.models.schemas.model_adapter import (
     PricingUnitGetLegacy,
     WalletGetWithAvailableCreditsLegacy,
@@ -586,3 +588,90 @@ async def test_get_solver_job_outputs_assets_deleted(
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
+
+
+async def test_start_solver_job_with_encryption(
+    mocked_app_rpc_dependencies: None,
+    client: AsyncClient,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
+):
+    _solver_key: str = "simcore/services/comp/itis/sleeper"
+    _version: str = "2.0.2"
+    _job_id: str = "e551e994-a68d-4c26-b6fc-59019b35ee6e"
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_rest_api_base,
+            mocked_webserver_rest_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "start_job_with_encryption.json",
+        side_effects_callbacks=[
+            _start_job_side_effect,
+            _start_job_side_effect,
+            _get_inspect_job_side_effect(job_id=_job_id),
+        ],
+    )
+
+    root_key = base64.b64encode(b"0123456789abcdef0123456789abcdef").decode("ascii")
+    encryption = JobEncryptionInputs(
+        root_key=root_key,
+        input_port_to_file_id={"input_file": "input_file"},
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
+        auth=auth,
+        json=model_dump_with_secrets(encryption, show_secrets=True),
+    )
+
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    job_status = JobStatus.model_validate(response.json())
+    assert f"{job_status.job_id}" == _job_id
+
+
+async def test_start_solver_job_with_invalid_encryption(
+    mocked_app_rpc_dependencies: None,
+    client: AsyncClient,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
+):
+    _solver_key: str = "simcore/services/comp/itis/sleeper"
+    _version: str = "2.0.2"
+    _job_id: str = "e551e994-a68d-4c26-b6fc-59019b35ee6e"
+
+    # Encryption with an invalid input port key (not in the node inputs)
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_webserver_rest_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "start_job_with_wrong_encryption.json",
+        side_effects_callbacks=[
+            _start_job_side_effect,
+        ],
+    )
+
+    root_key = base64.b64encode(b"0123456789abcdef0123456789abcdef").decode("ascii")
+    encryption = JobEncryptionInputs(
+        root_key=root_key,
+        input_port_to_file_id={"nonexistent_port": "nonexistent_port"},
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
+        auth=auth,
+        json=model_dump_with_secrets(encryption, show_secrets=True),
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    body = response.json()
+    assert "nonexistent_port" in str(body)

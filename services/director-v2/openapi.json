@@ -2145,7 +2145,8 @@
       "FileIDStr": {
         "type": "string",
         "maxLength": 65535,
-        "minLength": 1
+        "minLength": 1,
+        "description": "client-chosen file identifier mixed into HKDF key derivation"
       },
       "GetProjectInactivityResponse": {
         "properties": {
@@ -2359,11 +2360,7 @@
       "JobEncryptionContextMetadata": {
         "properties": {
           "root_key": {
-            "type": "string",
-            "format": "password",
-            "title": "Root Key",
-            "description": "base64-encoded 32-byte root key shared by all tasks of the job",
-            "writeOnly": true
+            "$ref": "#/components/schemas/RootKeyStr"
           },
           "input_port_to_file_id": {
             "additionalProperties": {
@@ -2849,6 +2846,12 @@
           "data"
         ],
         "title": "RetrieveDataOutEnveloped"
+      },
+      "RootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded 32-byte root key shared by all tasks of the job",
+        "writeOnly": true
       },
       "RunningDynamicServiceDetails": {
         "properties": {

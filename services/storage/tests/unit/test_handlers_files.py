@@ -64,7 +64,7 @@ from tenacity.wait import wait_fixed
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -1478,15 +1478,15 @@ async def test_listing_with_project_id_filter(
     user_id: UserID,
     product_name: ProductName,
     faker: Faker,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     uuid_filter: bool,
     project_params: ProjectWithFilesParams,
 ):
-    src_project, src_projects_list = await random_project_with_files(project_params)
-    _, _ = await random_project_with_files(project_params)
+    src_project, src_projects_list = await project_with_seeded_files_factory(project_params)
+    _, _ = await project_with_seeded_files_factory(project_params)
     assert len(src_projects_list.keys()) > 0
     node_id = next(iter(src_projects_list.keys()))
     project_files_in_db = set(src_projects_list[node_id])

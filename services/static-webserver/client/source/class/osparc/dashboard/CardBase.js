@@ -17,8 +17,15 @@
 
 qx.Class.define("osparc.dashboard.CardBase", {
   extend: qx.ui.core.Widget,
-  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
+  implement: [
+    qx.ui.form.IModel,
+    osparc.filter.IFilterable
+  ],
+  include: [
+    qx.ui.form.MModelProperty,
+    osparc.filter.MFilterable,
+    osparc.dashboard.MShowMenuOnHover
+  ],
   type: "abstract",
 
   construct: function() {
@@ -613,6 +620,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.setSelected(false);
       }
       this.__evalSelectedButton();
+      this._evalHoverReveal();
+    },
+
+    // hook for osparc.dashboard.MShowMenuOnHover
+    _isHoverRevealForced: function() {
+      return this.isMultiSelectionMode();
     },
 
     __evalSelectedButton: function() {
@@ -1072,8 +1085,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         });
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
         menu.addListener("appear", () => this.evaluateMenuButtons());
+        this._keepRevealedWhileMenuOpen(menu);
       }
       menuButton.setVisibility(menu ? "visible" : "excluded");
+      this._setHoverRevealWidget(this.getChildControl("menu-selection-stack"));
     },
 
     _setStudyPermissions: function(accessRights) {
@@ -1177,6 +1192,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
      */
     _onPointerOver: function() {
       this.addState("hovered");
+      this._evalHoverReveal();
     },
 
     /**
@@ -1184,6 +1200,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
      */
     _onPointerOut : function() {
       this.removeState("hovered");
+      this._evalHoverReveal();
     },
 
     /**

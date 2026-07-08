@@ -1,14 +1,17 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/new_2fa_code/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name or user.user_name }},</p>
-<p>Please find below the Two-factor Authentication sign-in code for your {{ host }} account.</p>
+<p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+<p>{% trans host=host %}Please find below the Two-factor Authentication sign-in code for your {{ host }} account.{% endtrans %}</p>
 
+{% set code_display %}<b> {{ code }} </b>{% endset %}
 <p>
-  Your code is: <b> {{ code }} </b>
+  {% trans code_display=code_display %}Your code is: {{ code_display }}{% endtrans %}
 </p>
 
-<p>Please don't hesitate to contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a> if you need further help.</p>
-<p>Best Regards,</p>
-<p>The <i>{{ product.display_name }}</i> Team</p>
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+<p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
+<p>{% trans %}Best Regards,{% endtrans %}</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
 {% endblock %}

@@ -44,7 +44,7 @@ class JobEncryptionContext(BaseModel):
         """
         return cls(
             root_key=SecretBytes(base64.b64decode(metadata.root_key.get_secret_value())),
-            input_port_to_file_id=metadata.input_port_to_file_id.get(node_id, {}),
+            input_port_to_file_id=metadata.input_port_to_file_id.get(NodeID(f"{node_id}"), {}),
         )
 
     def transfer_settings_for_input(self, input_key: str) -> "TransferEncryptionSettings | None":
