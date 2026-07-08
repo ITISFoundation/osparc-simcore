@@ -5,13 +5,17 @@ from collections.abc import Callable
 from celery import Celery  # type: ignore[import-untyped]
 from celery.signals import (  # type: ignore[import-untyped]
     heartbeat_sent,
+    setup_logging,
     worker_init,
     worker_process_init,
     worker_process_shutdown,
     worker_shutdown,
 )
 from common_library.heartbeat import update_heartbeat
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from servicelib.celery.app_server import BaseAppServer
+from servicelib.logging_utils import LogLevelInt, setup_loggers
+from servicelib.tracing import TracingConfig
 from settings_library.celery import CeleryPoolType, CelerySettings
 
 from .app_server import get_app_server, set_app_server
@@ -53,11 +57,48 @@ def _worker_shutdown_wrapper(app: Celery) -> Callable[..., None]:
     return _worker_shutdown_handler
 
 
+def _setup_logging_wrapper(
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_config: TracingConfig,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...] | None,
+) -> Callable[..., None]:
+    def _setup_logging_handler(**_kwargs) -> None:
+        setup_loggers(
+            log_format_local_dev_enabled=log_format_local_dev_enabled,
+            logger_filter_mapping=logger_filter_mapping,
+            tracing_config=tracing_config,
+            log_base_level=log_base_level,
+            noisy_loggers=noisy_loggers,
+        )
+
+    return _setup_logging_handler
+
+
 def register_worker_signals(
     app: Celery,
     settings: CelerySettings,
     app_server_factory: Callable[[], BaseAppServer],
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_config: TracingConfig,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...] | None,
 ) -> None:
+    setup_logging.connect(
+        _setup_logging_wrapper(
+            log_format_local_dev_enabled=log_format_local_dev_enabled,
+            logger_filter_mapping=logger_filter_mapping,
+            tracing_config=tracing_config,
+            log_base_level=log_base_level,
+            noisy_loggers=noisy_loggers,
+        ),
+        weak=False,
+    )
+
     match settings.CELERY_POOL:
         case CeleryPoolType.PREFORK:
             worker_process_init.connect(_worker_init_wrapper(app, app_server_factory), weak=False)
