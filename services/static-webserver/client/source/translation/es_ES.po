@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-08 13:18+0200\n"
+"POT-Creation-Date: 2026-07-08 15:18+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -748,10 +748,11 @@ msgid "Unsuccessful Login"
 msgstr "Inicio de sesión no exitoso"
 
 # CTX-INTERPRETATION: This string appears in a search bar within the
+# application interface, prompting the user to enter a secure password.
 # application interface, prompting the user to enter a password.
 # application where users are required to input a minimum of three characters
 # to perform a search.
-# CTX-VERSION: 7a537a1 2026-07-08T11:53:51Z
+# CTX-VERSION: d92b8ba 2026-07-08T13:19:33Z
 #: services/static-webserver/client/source/class/osparc/auth/core/Utils.js:25
 msgid "Please enter a password with at least 12 characters."
 msgstr "Por favor, introduzca una contraseña con al menos 12 caracteres."
@@ -3088,7 +3089,7 @@ msgstr "Enviar nueva aplicación"
 
 # CTX-SNIPPET:
 #           },
-#
+# 
 #           __displayServiceSubmissionForm: function(formData) {
 #   >>>       const addServiceWindow = new
 # osparc.ui.window.Window(qx.locale.Manager.tr("Submit a new app")).set({
@@ -4796,7 +4797,7 @@ msgstr "Ejecutar parte del pipeline"
 #             rbManager.setSelection(partialPipeline.length ?
 # [runPartialPipeline] : [runPipeline]);
 #             this._add(partialBox);
-#
+# 
 #   >>>       const reRunBox = new qx.ui.groupbox.GroupBox(this.tr("Re-Run"));
 #             reRunBox.set({
 #               layout: new qx.ui.layout.VBox(),
@@ -4830,7 +4831,7 @@ msgid "Caching"
 msgstr "Almacenando en caché"
 
 # CTX-SNIPPET:
-#
+# 
 #             const cacheBox = new
 # qx.ui.groupbox.GroupBox(this.tr("Caching"));
 #             cacheBox.setLayout(new qx.ui.layout.VBox());
@@ -7956,10 +7957,10 @@ msgstr "De"
 
 # CTX-SNIPPET:
 #             const defaultTo = new Date();
-#
+# 
 #             this.__from = this.__addDateInput(this.tr("From"), defaultFrom);
 #   >>>       this.__until = this.__addDateInput(this.tr("Until"), defaultTo);
-#
+# 
 #             const todayBtn = new qx.ui.form.Button(this.tr("Today")).set({
 #               allowStretchY: false,
 # CTX-SNIPPET-VERSION: 7a537a1
@@ -8011,7 +8012,7 @@ msgstr "Buscando..."
 #         construct: function(filterId, filterGroupId) {
 #   >>>     this.base(arguments, this.tr("Studies"), filterId, filterGroupId);
 #         },
-#
+# 
 #         members: {
 # CTX-SNIPPET-VERSION: 05bd572
 # CTX-INTERPRETATION: The string 'Studies' is used as a label or category name
@@ -8202,7 +8203,7 @@ msgid "Apply Tags"
 msgstr "Aplicar Etiquetas"
 
 # CTX-SNIPPET:
-#
+# 
 #             const resourceAlias =
 # osparc.product.Utils.resourceTypeToAlias(this.__studyData["resourceType"],
 # {plural: true}) || "projects";
@@ -8211,7 +8212,7 @@ msgstr "Aplicar Etiquetas"
 # " + resourceAlias + ". Select from existing tags or create new ones, then
 # save your changes when ready."),
 #             });
-#
+# 
 #             this.__selectedTags.clear();
 # CTX-SNIPPET-VERSION: 44da577
 # CTX-INTERPRETATION: This string appears in the user interface of a
@@ -10737,7 +10738,7 @@ msgstr "Actualizado con éxito"
 #             const label = this.getChildControl("pp-id");
 #   >>>       label.setValue(this.tr("Id: %1", id));
 #           },
-#
+# 
 #           __applyPpKey: function(id) {
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a label in the user interface,
@@ -10754,7 +10755,7 @@ msgstr "Id: %1"
 #             const label = this.getChildControl("pp-key");
 #   >>>       label.setValue(this.tr("Key: %1", id));
 #           },
-#
+# 
 #           __applyIsActive: function(value) {
 # CTX-SNIPPET-VERSION: 0000000
 # CTX-INTERPRETATION: This string appears as a label in the user interface,
@@ -12652,7 +12653,7 @@ msgid "Log in in "
 msgstr "Iniciar sesión en "
 
 # CTX-SNIPPET:
-#
+# 
 #           __openSendEmailFeedbackDialog: function(email) {
 #             const productName = osparc.product.Utils.getProductName();
 #   >>>       const giveEmailFeedbackWindow = new
@@ -12923,7 +12924,7 @@ msgstr "Agregar nueva conversación"
 
 # CTX-SNIPPET:
 #         },
-#
+# 
 #         statics: {
 #   >>>     CREATE_FUNCTION_TEXT: qx.locale.Manager.tr(`
 #             In order to Create a Function, the pipeline needs:
@@ -13519,7 +13520,7 @@ msgstr "Explorar tutoriales"
 # current project?"));
 #             this.__addAnswers(answers);
 #           },
-#
+# 
 # CTX-SNIPPET-VERSION: baed7f7
 # CTX-INTERPRETATION: This string appears as a label for a question in a user
 # interface, asking the user if their inquiry pertains to the project they are
@@ -14307,11 +14308,11 @@ msgstr "Colapsar"
 
 # CTX-SNIPPET:
 #         extend: osparc.ui.window.Window,
-#
+# 
 #         construct: function(winTitle, value) {
 #   >>>     this.base(arguments, winTitle || this.tr("Choose a Date and
 # Time"));
-#
+# 
 #           const width = 260;
 #           const height = 26;
 # CTX-SNIPPET-VERSION: 3a35a33
@@ -14809,14 +14810,1346 @@ msgstr "Error al verificar el enlace"
 msgid "Start typing..."
 msgstr "Comience a escribir..."
 
+# CTX-INTERPRETATION: The string 'projects' appears as a menu item in the
+# application interface.
+# application interface.
+# application's user interface, allowing users to manage and access their
+# simulation projects.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:19Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:4
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:4
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:4
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:63
+msgid "Projects"
+msgstr "Proyectos"
+
+# CTX-SNIPPET:
+#         "projects": {
+#           "id": "projects",
+#           "name": "Projects",
+#   >>>     "description": "All you need to know about Project handling",
+#           "context": "osparc-test-id=newPlusBtn",
+#           "steps": [{
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a description or tooltip for a
+# section or button related to managing projects within the application.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:20Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:5
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:5
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:5
+msgid "All you need to know about Project handling"
+msgstr "Todo lo que necesitas saber sobre la gestión de proyectos"
+
+# CTX-INTERPRETATION: This string appears as a menu item or section header in
+# a software application where users can create new projects.
+# a software application.
+# the application, allowing users to access or view a list of other projects
+# they have worked on or can work on.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:22Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:13
+msgid "Create Projects"
+msgstr "Crear Proyectos"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=newPlusMenu",
+#             "title": "Create Projects",
+#   >>>       "text": "Clicking on the (+) New button, allows you to create
+# new Projects, start your favourite Apps or create new Folders to organize
+# the projects",
+#             "placement": "right"
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or instructional text
+# guiding users on how to use the 'New' button in the application's interface
+# to create projects, launch apps, or organize projects into folders.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:23Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:14
+msgid ""
+"Clicking on the (+) New button, allows you to create new Projects, start "
+"your favourite Apps or create new Folders to organize the projects"
+msgstr ""
+"Al hacer clic en el botón (+) Nuevo, puedes crear nuevos Proyectos, iniciar "
+"tus Aplicaciones favoritas o crear nuevas Carpetas para organizar los "
+"proyectos."
+
+# CTX-SNIPPET:
+#             "placement": "right"
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+#   >>>       "title": "Filter and Search",
+#             "text": "This tool allows you to search Projects, Templates or
+# Public Projects.<br>You can search and filter by:<br>- Title, description,
+# owner, id...<br>- Tags<br>- Shared with",
+#             "placement": "bottom"
+#           }, {
+# CTX-SNIPPET-VERSION: 21f2405
+# CTX-INTERPRETATION: This string appears as a title or label for a user
+# interface element that allows users to filter and search through various
+# projects and templates within the application.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:25Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:18
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:18
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:18
+msgid "Filter and Search"
+msgstr "Filtrar y Buscar"
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+#             "title": "Filter and Search",
+#   >>>       "text": "This tool allows you to search Projects, Templates or
+# Public Projects.<br>You can search and filter by:<br>- Title, description,
+# owner, id...<br>- Tags<br>- Shared with",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or help text in a user
+# interface, guiding users on how to use the search and filter functionality
+# for projects and templates.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:26Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:19
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:19
+msgid ""
+"This tool allows you to search Projects, Templates or Public "
+"Projects.<br>You can search and filter by:<br>- Title, description, owner, "
+"id...<br>- Tags<br>- Shared with"
+msgstr ""
+"Esta herramienta le permite buscar Proyectos, Plantillas o Proyectos "
+"Públicos.<br>Puede buscar y filtrar por:<br>- Título, descripción, "
+"propietario, id...<br>- Etiquetas<br>- Compartido con"
+
+# CTX-INTERPRETATION: This string refers to a button in the user interface
+# that provides additional settings or configurations.
+# guiding the user to access additional settings or features.
+# instruction, guiding the user to access additional settings or features
+# through a 'More options...' menu.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:28Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:27
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:27
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:27
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:71
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:90
+msgid "More options button"
+msgstr "Botón de más opciones"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=studyItemMenuMenu",
+#             "title": "More options button",
+#   >>>       "text": "On the Project card, you can use the three dots button
+# to access more information and operation on the Project.",
+#             "placement": "left"
+#           }, {
+#             "anchorEl": "osparc-test-id=updateStudyBtn",
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or instructional text
+# guiding users on how to access additional options for a project within the
+# application's user interface.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:29Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:28
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:28
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:28
+msgid ""
+"On the Project card, you can use the three dots button to access more "
+"information and operation on the Project."
+msgstr ""
+"En la tarjeta del Proyecto, puedes usar el botón de tres puntos para acceder"
+" a más información y operaciones sobre el Proyecto."
+
+# CTX-INTERPRETATION: This string appears as a menu option or button label in
+# a software application.
+# a software application.
+# the application interface, allowing users to update the software or its
+# components.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:30Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:32
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:32
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:32
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:76
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:95
+msgid "Update Services"
+msgstr "Actualizar Servicios"
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=updateStudyBtn",
+#             "title": "Update Services",
+#   >>>       "text": "On the Project card, you can use the Update button to
+# update the corresponding service to the latest version.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or instructional text
+# guiding users on how to update a service to its latest version using the
+# Update button on a project card within the application.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:32Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:33
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:33
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:33
+msgid ""
+"On the Project card, you can use the Update button to update the "
+"corresponding service to the latest version."
+msgstr ""
+"En la tarjeta del Proyecto, puedes usar el botón Actualizar para actualizar "
+"el servicio correspondiente a la última versión."
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=templatesFilterItem",
+#             "title": "Templates",
+#   >>>       "text": "Templates let you freeze a project and reuse it
+# anytime. When you create a template, it saves a snapshot of your project.
+# Later, you can click on it to start a fresh, independent copy.<br>Templates
+# shared with you by others will also appear here, so you can build on their
+# work too.",
+#             "placement": "right"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# explaining the functionality of templates in the user interface of the
+# application.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:33Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:41
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:41
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:41
+msgid ""
+"Templates let you freeze a project and reuse it anytime. When you create a "
+"template, it saves a snapshot of your project. Later, you can click on it to"
+" start a fresh, independent copy.<br>Templates shared with you by others "
+"will also appear here, so you can build on their work too."
+msgstr ""
+"Las plantillas te permiten congelar un proyecto y reutilizarlo en cualquier "
+"momento. Cuando creas una plantilla, guarda una instantánea de tu proyecto. "
+"Más tarde, puedes hacer clic en ella para iniciar una copia nueva e "
+"independiente.<br>Las plantillas compartidas contigo por otros también "
+"aparecerán aquí, para que puedas construir sobre su trabajo también."
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=publicProjectsFilterItem",
+#             "title": "Public Projects",
+#   >>>       "text": "Just like templates, Public Projects are frozen
+# snapshots—but they’re shared with the entire scientific community. Anyone
+# can browse them and create their own copy and build upon.",
+#             "placement": "right"
+#           }]
+#         },
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# explaining the concept of Public Projects within the user interface of a
+# scientific simulation application.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:36Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:49
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:49
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:49
+msgid ""
+"Just like templates, Public Projects are frozen snapshots—but they’re shared"
+" with the entire scientific community. Anyone can browse them and create "
+"their own copy and build upon."
+msgstr ""
+"Al igual que las plantillas, los Proyectos Públicos son instantáneas "
+"congeladas, pero se comparten con toda la comunidad científica. Cualquiera "
+"puede explorarlos, crear su propia copia y desarrollarlos."
+
+# CTX-INTERPRETATION: This string appears as a navigation option for users to
+# access an introductory section about the different tabs available on the
+# Dashboard.
+# return to the main interface of the application.
+# return to the main control panel of the application after viewing or editing
+# simulation settings.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:37Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:56
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:56
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:56
+msgid "Introduction to the Dashboard tabs"
+msgstr "Introducción a las pestañas del Panel de Control"
+
+# CTX-INTERPRETATION: The string 'Dashboard' appears as the title of the main
+# interface where users can access various features and settings of the
+# application.
+# interface where users can access various features and information about the
+# scientific simulation application.
+# interface screen where users can access various features and settings of the
+# scientific simulation application.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:38Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:60
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:60
+msgid "Dashboard Menu"
+msgstr "Menú del Tablero"
+
+# CTX-SNIPPET:
+#           "steps": [{
+#             "anchorEl": "osparc-test-id=dashboardTabs",
+#             "title": "Dashboard Menu",
+#   >>>       "text": "The menu tabs give you quick access to a set of core
+# elements of the platform, namely Projects, Tutorials, Apps and Data.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or guide text in the
+# user interface, explaining the purpose of the menu tabs in the dashboard.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:40Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:61
+msgid ""
+"The menu tabs give you quick access to a set of core elements of the "
+"platform, namely Projects, Tutorials, Apps and Data."
+msgstr ""
+"Las pestañas del menú le brindan acceso rápido a un conjunto de elementos "
+"centrales de la plataforma, a saber, Proyectos, Tutoriales, Aplicaciones y "
+"Datos."
+
+# CTX-SNIPPET:
+#               "selector": "osparc-test-id=studiesTabBtn"
+#             },
+#             "anchorEl": "osparc-test-id=studiesTabBtn",
+#   >>>       "text": "Any Project is accessible via the Dashboard. The
+# Projects, which belong to or are shared with you, can be found here. You can
+# also create Folders to help you organize the Projects. Also, the Templates
+# you have access to and Public Projects can be found in their own sections.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in the user interface, explaining how users can access and organize their
+# projects within the application dashboard.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:41Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:68
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:68
+msgid ""
+"Any Project is accessible via the Dashboard. The Projects, which belong to "
+"or are shared with you, can be found here. You can also create Folders to "
+"help you organize the Projects. Also, the Templates you have access to and "
+"Public Projects can be found in their own sections."
+msgstr ""
+"Cualquier Proyecto es accesible a través del Tablero. Los Proyectos que te "
+"pertenecen o que se comparten contigo se pueden encontrar aquí. También "
+"puedes crear Carpetas para ayudarte a organizar los Proyectos. Además, las "
+"Plantillas a las que tienes acceso y los Proyectos Públicos se pueden "
+"encontrar en sus propias secciones."
+
+# CTX-SNIPPET:
+#               "selector": "osparc-test-id=tutorialsTabBtn"
+#             },
+#             "anchorEl": "osparc-test-id=tutorialsTabBtn",
+#   >>>       "text": "Clicking on a Tutorial will create a copy of that
+# Project, which will appear in your own Projects tab with the same name as
+# the Tutorial. Any changes you make to this copy will not affect the original
+# Tutorial.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational
+# message when a user hovers over or clicks on the Tutorials tab button in the
+# application interface.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:46Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:75
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:75
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:72
+msgid ""
+"Clicking on a Tutorial will create a copy of that Project, which will appear"
+" in your own Projects tab with the same name as the Tutorial. Any changes "
+"you make to this copy will not affect the original Tutorial."
+msgstr ""
+"Al hacer clic en un Tutorial, se creará una copia de ese Proyecto, que "
+"aparecerá en la pestaña de tus propios Proyectos con el mismo nombre que el "
+"Tutorial. Cualquier cambio que realices en esta copia no afectará al "
+"Tutorial original."
+
+# CTX-SNIPPET:
+#               "selector": "osparc-test-id=appsTabBtn"
+#             },
+#             "anchorEl": "osparc-test-id=appsTabBtn",
+#   >>>       "text": "Every Project in oSparc is composed of so-called
+# Apps.<br>These are building blocks for Projects and can provide data/files,
+# visualize results (2D, 3D), implement code in Jupyter notebooks or perform
+# computations to execute simulations within a Project.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in the user interface of the oSparc application, explaining the role of Apps
+# within a Project.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:47Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:82
+msgid ""
+"Every Project in oSparc is composed of so-called Apps.<br>These are building"
+" blocks for Projects and can provide data/files, visualize results (2D, 3D),"
+" implement code in Jupyter notebooks or perform computations to execute "
+"simulations within a Project."
+msgstr ""
+"Cada Proyecto en oSparc está compuesto por las llamadas Apps.<br>Estas son "
+"bloques de construcción para Proyectos y pueden proporcionar datos/archivos,"
+" visualizar resultados (2D, 3D), implementar código en cuadernos de Jupyter "
+"o realizar cálculos para ejecutar simulaciones dentro de un Proyecto."
+
+# CTX-SNIPPET:
+#               "selector": "osparc-test-id=dataTabBtn"
+#             },
+#             "anchorEl": "osparc-test-id=dataTabBtn",
+#   >>>       "text": "All the Data of the Projects you have access to can be
+# explored here.",
+#             "placement": "bottom"
+#           }]
+#         },
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in a user interface, guiding users to explore data related to projects they
+# have access to.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:48Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:89
+msgid "All the Data of the Projects you have access to can be explored here."
+msgstr ""
+"Todos los datos de los proyectos a los que tienes acceso se pueden explorar "
+"aquí."
+
+# CTX-SNIPPET:
+#         },
+#         "navbar": {
+#           "id": "navbar",
+#   >>>     "name": "Navigation Bar",
+#           "description": "Introduction to the Navigation Bar",
+#           "context": "osparc-test-id=navigationBar",
+#           "steps": [{
+# CTX-SNIPPET-VERSION: 21f2405
+# CTX-INTERPRETATION: The string 'Navigation Bar' appears as a label or title
+# for the main navigation component of the application's user interface.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:50Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:95
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:88
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:78
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:4
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:4
+msgid "Navigation Bar"
+msgstr "Barra de Navegación"
+
+# CTX-SNIPPET:
+#         "navbar": {
+#           "id": "navbar",
+#           "name": "Navigation Bar",
+#   >>>     "description": "Introduction to the Navigation Bar",
+#           "context": "osparc-test-id=navigationBar",
+#           "steps": [{
+#             "anchorEl": "osparc-test-id=jobsButton",
+# CTX-SNIPPET-VERSION: 21f2405
+# CTX-INTERPRETATION: This string appears as a title or heading in the user
+# interface, introducing users to the navigation bar of the application.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:51Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:96
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:89
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:79
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:5
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:5
+msgid "Introduction to the Navigation Bar"
+msgstr "Introducción a la Barra de Navegación"
+
+# CTX-SNIPPET:
+#           "steps": [{
+#             "anchorEl": "osparc-test-id=jobsButton",
+#             "title": "Activity Center",
+#   >>>       "text": "Here you can track all your running jobs, recent
+# activity, and completed tasks. If you want to check the results once these
+# are ready, you will find more details in the Activity Overview on the
+# Project card.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in the user interface of a scientific simulation application, guiding users
+# on how to track and review their simulation tasks and results.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:52Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:101
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:94
+msgid ""
+"Here you can track all your running jobs, recent activity, and completed "
+"tasks. If you want to check the results once these are ready, you will find "
+"more details in the Activity Overview on the Project card."
+msgstr ""
+"Aquí puedes seguir todas tus tareas en ejecución, la actividad reciente y "
+"las tareas completadas. Si deseas verificar los resultados una vez que estén"
+" listos, encontrarás más detalles en el Resumen de Actividad en la tarjeta "
+"del Proyecto."
+
+# CTX-SNIPPET:
+#               "action": "toggle"
+#             },
+#             "anchorEl": "osparc-test-id=notificationsContainer",
+#   >>>       "text": "By clicking on the Bell, you will see notifications
+# about which Projects, Templates and Organizations have been shared with
+# you.",
+#             "placement": "left"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational
+# message when a user hovers over or clicks on a bell icon in the
+# application's user interface.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:53Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:109
+msgid ""
+"By clicking on the Bell, you will see notifications about which Projects, "
+"Templates and Organizations have been shared with you."
+msgstr ""
+"Al hacer clic en la campana, verás notificaciones sobre qué Proyectos, "
+"Plantillas y Organizaciones se han compartido contigo."
+
+# CTX-SNIPPET:
+#               "action": "open"
+#             },
+#             "anchorEl": "osparc-test-id=userMenuMenu",
+#   >>>       "text": "The User Menu gives you access to Your Account,
+# Organizations and more.",
+#             "placement": "left"
+#           }]
+#         }
+# CTX-SNIPPET-VERSION: 21f2405
+# CTX-INTERPRETATION: This string appears as a tooltip or description text in
+# a user interface element, specifically in the user menu section of a
+# scientific simulation application.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:54Z
+#: services/static-webserver/client/source/resource/osparc/tours/osparc_tours.json:117
+msgid ""
+"The User Menu gives you access to Your Account, Organizations and more."
+msgstr "El Menú de Usuario te da acceso a Tu Cuenta, Organizaciones y más."
+
+# CTX-SNIPPET:
+#               "action": "open"
+#             },
+#             "anchorEl": "osparc-test-id=newPlusMenu",
+#   >>>       "title": "Start Sim4Life and more",
+#             "text": "Clicking on the (+) New button, allows you to create
+# new Sim4Life projects, start other featured Apps or create new Folders to
+# organize the projects",
+#             "placement": "right"
+#           }, {
+# CTX-SNIPPET-VERSION: 21f2405
+# CTX-INTERPRETATION: This string appears as a tooltip or menu title when a
+# user hovers over or clicks on a button to start the Sim4Life application or
+# access additional features.
+# CTX-VERSION: 21f2405 2026-07-08T13:20:55Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:13
+msgid "Start Sim4Life and more"
+msgstr "Iniciar Sim4Life y más"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=newPlusMenu",
+#             "title": "Start Sim4Life and more",
+#   >>>       "text": "Clicking on the (+) New button, allows you to create
+# new Sim4Life projects, start other featured Apps or create new Folders to
+# organize the projects",
+#             "placement": "right"
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or instructional text
+# guiding users on the functionality of the (+) New button in the application
+# interface.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:58Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:14
+msgid ""
+"Clicking on the (+) New button, allows you to create new Sim4Life projects, "
+"start other featured Apps or create new Folders to organize the projects"
+msgstr ""
+"Al hacer clic en el botón (+) Nuevo, puedes crear nuevos proyectos de "
+"Sim4Life, iniciar otras aplicaciones destacadas o crear nuevas carpetas para"
+" organizar los proyectos."
+
+# CTX-SNIPPET:
+#           "steps": [{
+#             "anchorEl": "osparc-test-id=dashboardTabs",
+#             "title": "Dashboard Menu",
+#   >>>       "text": "The menu tabs give you quick access to a set of core
+# elements of the platform, namely Projects, Tutorials and Apps.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or description for the
+# dashboard menu in the user interface of the application, explaining the
+# purpose of the menu tabs.
+# CTX-VERSION: 4d8911d 2026-07-08T13:20:59Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:61
+msgid ""
+"The menu tabs give you quick access to a set of core elements of the "
+"platform, namely Projects, Tutorials and Apps."
+msgstr ""
+"Las pestañas del menú le brindan acceso rápido a un conjunto de elementos "
+"centrales de la plataforma, a saber, Proyectos, Tutoriales y Aplicaciones."
+
+# CTX-SNIPPET:
+#               "selector": "osparc-test-id=appsTabBtn"
+#             },
+#             "anchorEl": "osparc-test-id=appsTabBtn",
+#   >>>       "text": "Every Project in Sim4Life is composed of at least one
+# so-called Apps.<br>Apps are building blocks for Projects and can provide
+# data/files, visualize results (2D, 3D), implement code in Jupyter notebooks
+# or perform computations to execute simulations within a Project.",
+#             "placement": "bottom"
+#           }]
+#         },
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in the user interface of the Sim4Life application, explaining the role and
+# functionality of Apps within a Project.
+# CTX-VERSION: 4d8911d 2026-07-08T13:21:01Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:82
+msgid ""
+"Every Project in Sim4Life is composed of at least one so-called "
+"Apps.<br>Apps are building blocks for Projects and can provide data/files, "
+"visualize results (2D, 3D), implement code in Jupyter notebooks or perform "
+"computations to execute simulations within a Project."
+msgstr ""
+"Cada Proyecto en Sim4Life se compone de al menos una llamada Apps.<br>Las "
+"Apps son bloques de construcción para Proyectos y pueden proporcionar "
+"datos/archivos, visualizar resultados (2D, 3D), implementar código en "
+"cuadernos de Jupyter o realizar cálculos para ejecutar simulaciones dentro "
+"de un Proyecto."
+
+# CTX-SNIPPET:
+#               "action": "toggle"
+#             },
+#             "anchorEl": "osparc-test-id=notificationsContainer",
+#   >>>       "text": "By clicking on the Bell, you will see notifications
+# about which Projects, Credits and Organizations have been shared with you.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational
+# message when a user hovers over or clicks on a bell icon in the
+# application's user interface.
+# CTX-VERSION: 4d8911d 2026-07-08T13:21:04Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:102
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:18
+msgid ""
+"By clicking on the Bell, you will see notifications about which Projects, "
+"Credits and Organizations have been shared with you."
+msgstr ""
+"Al hacer clic en la campana, verás notificaciones sobre qué Proyectos, "
+"Créditos y Organizaciones se han compartido contigo."
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=creditsSummary",
+#             "title": "Credits Indicator",
+#   >>>       "text": "By clicking on the Credits indicator, you will see the
+# number of available Credits. Click the three dots to access the Billing
+# Center.",
+#             "placement": "left"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: b22b4dc
+# CTX-INTERPRETATION: This string appears in a tooltip or informational pop-up
+# within the application's user interface, guiding users on how to view their
+# available credits and access the billing section.
+# CTX-VERSION: b22b4dc 2026-07-08T13:21:06Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:111
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:27
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:115
+msgid ""
+"By clicking on the Credits indicator, you will see the number of available "
+"Credits. Click the three dots to access the Billing Center."
+msgstr ""
+"Al hacer clic en el indicador de Créditos, verá el número de Créditos "
+"disponibles. Haga clic en los tres puntos para acceder al Centro de "
+"Facturación."
+
+# CTX-SNIPPET:
+#               "action": "open"
+#             },
+#             "anchorEl": "osparc-test-id=userMenuMenu",
+#   >>>       "text": "The User Menu gives you access to Your Account, Billing
+# Center, Preferences, Organizations and more.",
+#             "placement": "left"
+#           }]
+#         }
+# CTX-SNIPPET-VERSION: 2bfa6bf
+# CTX-INTERPRETATION: This string appears as a tooltip or description text for
+# a user interface element labeled 'User Menu' in a scientific simulation
+# application.
+# CTX-VERSION: 2bfa6bf 2026-07-08T13:21:07Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4l_tours.json:119
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:35
+msgid ""
+"The User Menu gives you access to Your Account, Billing Center, Preferences,"
+" Organizations and more."
+msgstr ""
+"El Menú de Usuario le da acceso a Su Cuenta, Centro de Facturación, "
+"Preferencias, Organizaciones y más."
+
+# CTX-INTERPRETATION: This string appears as the name of a lightweight version
+# of the Sim4Life application.
+# of the Sim4Life application.
+# of the Sim4Life scientific simulation application.
+# CTX-VERSION: 21f2405 2026-07-08T13:21:08Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:13
+msgid "Start Sim4Life.lite"
+msgstr "Iniciar Sim4Life.lite"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=newPlusMenu",
+#             "title": "Start Sim4Life.lite",
+#   >>>       "text": "Clicking on the (+) New button, allows you to create
+# new Sim4Life.lite projects or new Folders to organize the projects",
+#             "placement": "right"
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+# CTX-SNIPPET-VERSION: 21f2405
+# CTX-INTERPRETATION: This string appears as a tooltip or instructional text
+# guiding users on how to create new projects or folders within the
+# Sim4Life.lite application by clicking the New button.
+# CTX-VERSION: 21f2405 2026-07-08T13:21:09Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:14
+msgid ""
+"Clicking on the (+) New button, allows you to create new Sim4Life.lite "
+"projects or new Folders to organize the projects"
+msgstr ""
+"Al hacer clic en el botón (+) Nuevo, puedes crear nuevos proyectos de "
+"Sim4Life.lite o nuevas carpetas para organizar los proyectos."
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+#             "title": "Filter and Search",
+#   >>>       "text": "This tool allows you to filter Projects, Templates or
+# Public Projects.<br>You can search and filter by:<br>- Title, description,
+# owner, id...<br>- Tags<br>- Shared with",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or help text in a user
+# interface, explaining how to use a search and filter tool for projects and
+# templates.
+# CTX-VERSION: 4d8911d 2026-07-08T13:21:11Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:19
+msgid ""
+"This tool allows you to filter Projects, Templates or Public "
+"Projects.<br>You can search and filter by:<br>- Title, description, owner, "
+"id...<br>- Tags<br>- Shared with"
+msgstr ""
+"Esta herramienta te permite filtrar Proyectos, Plantillas o Proyectos "
+"Públicos.<br>Puedes buscar y filtrar por:<br>- Título, descripción, "
+"propietario, id...<br>- Etiquetas<br>- Compartido con"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=studiesTabBtn",
+#             "title": "Projects",
+#   >>>       "text": "Any Project is accessible via the Dashboard. The
+# Projects, which belong to or are shared with you, can be found here.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 1032d56
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in the user interface, explaining how users can access their projects
+# through the Dashboard.
+# CTX-VERSION: 1032d56 2026-07-08T13:21:12Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:64
+msgid ""
+"Any Project is accessible via the Dashboard. The Projects, which belong to "
+"or are shared with you, can be found here."
+msgstr ""
+"Cualquier proyecto es accesible a través del Panel de Control. Los proyectos"
+" que te pertenecen o que se comparten contigo se pueden encontrar aquí."
+
+# CTX-SNIPPET:
+#               "action": "toggle"
+#             },
+#             "anchorEl": "osparc-test-id=notificationsContainer",
+#   >>>       "text": "By clicking on the Bell, you will see notifications
+# about which Projects and Organizations have been shared with you.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational
+# message when a user hovers over or clicks on a bell icon in the
+# application's user interface, indicating that they can view notifications
+# about shared projects and organizations.
+# CTX-VERSION: 4d8911d 2026-07-08T13:21:13Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:87
+msgid ""
+"By clicking on the Bell, you will see notifications about which Projects and"
+" Organizations have been shared with you."
+msgstr ""
+"Al hacer clic en la campana, verás notificaciones sobre qué Proyectos y "
+"Organizaciones se han compartido contigo."
+
+# CTX-SNIPPET:
+#               "action": "open"
+#             },
+#             "anchorEl": "osparc-test-id=userMenuMenu",
+#   >>>       "text": "The User Menu gives you access to Your Account,
+# Preferences, Organizations and more.",
+#             "placement": "left"
+#           }]
+#         }
+# CTX-SNIPPET-VERSION: 1032d56
+# CTX-INTERPRETATION: This string appears as a tooltip or description in the
+# user interface, explaining the options available in the User Menu of the
+# application.
+# CTX-VERSION: 1032d56 2026-07-08T13:21:15Z
+#: services/static-webserver/client/source/resource/osparc/tours/s4llite_tours.json:95
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:21
+msgid ""
+"The User Menu gives you access to Your Account, Preferences, Organizations "
+"and more."
+msgstr ""
+"El Menú de Usuario le da acceso a Su Cuenta, Preferencias, Organizaciones y "
+"más."
+
+# CTX-SNIPPET:
+#               "action": "toggle"
+#             },
+#             "anchorEl": "osparc-test-id=notificationsContainer",
+#   >>>       "text": "By clicking on the Bell, you will see notifications
+# about which Studies and Organizations have been shared with you.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational
+# message in the user interface, explaining the function of the Bell icon
+# related to notifications.
+# CTX-VERSION: 4d8911d 2026-07-08T13:21:16Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:13
+msgid ""
+"By clicking on the Bell, you will see notifications about which Studies and "
+"Organizations have been shared with you."
+msgstr ""
+"Al hacer clic en la campana, verás notificaciones sobre qué estudios y "
+"organizaciones se han compartido contigo."
+
+# CTX-INTERPRETATION: This string appears as a label or button in the user
+# interface.
+# interface.
+# interface for creating a new simulation plan or project.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:16Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:27
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:52
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:41
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:71
+msgid "Plans"
+msgstr "Planes"
+
+# CTX-SNIPPET:
+#         "plans": {
+#           "id": "plans",
+#           "name": "Plans",
+#   >>>     "description": "All you need to know about Plan handling",
+#           "context": "osparc-test-id=studiesTabBtn",
+#           "steps": [{
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears as a description or tooltip for a
+# section or button related to managing plans within the application.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:20Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:28
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:42
+msgid "All you need to know about Plan handling"
+msgstr "Todo lo que necesitas saber sobre la gestión de Planes"
+
+# CTX-INTERPRETATION: This string appears as a button or menu option in the
+# application interface.
+# application interface to initiate a specific mode of the application.
+# user interface to initiate the application in a specific mode.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:21Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:35
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:49
+msgid "Start A new Plan"
+msgstr "Iniciar un nuevo plan"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=newStudyBtn",
+#             "title": "Start A new Plan",
+#   >>>       "text": "Clicking on this (+) button a window with all the Plans
+# available will pop up.",
+#             "placement": "right"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears as a tooltip or instruction text
+# guiding the user to click a button to view available plans in the
+# application.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:22Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:36
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:50
+msgid ""
+"Clicking on this (+) button a window with all the Plans available will pop "
+"up."
+msgstr ""
+"Al hacer clic en este botón (+), aparecerá una ventana con todos los Planes "
+"disponibles."
+
+# CTX-INTERPRETATION: This string appears as a heading on a webpage or in an
+# application interface, indicating plans or configurations that have been
+# calculated in advance.
+# application, indicating different subscription or payment options available
+# for the software.
+# application where different subscription or payment options for the software
+# are listed.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:23Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:43
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:57
+msgid "Precomputed Plans"
+msgstr "Planes Precomputados"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=precomputedGroup",
+#             "title": "Precomputed Plans",
+#   >>>       "text": "These plans have been available in prior versions and
+# continue to be free of charge. They utilize pre-installed models and do not
+# support personalization. Please select these for basic stimulation
+# optimization.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears as a description for a set of
+# precomputed plans in a user interface, informing users about their
+# availability, cost, and limitations.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:25Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:44
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:58
+msgid ""
+"These plans have been available in prior versions and continue to be free of"
+" charge. They utilize pre-installed models and do not support "
+"personalization. Please select these for basic stimulation optimization."
+msgstr ""
+"Estos planes han estado disponibles en versiones anteriores y continúan "
+"siendo gratuitos. Utilizan modelos preinstalados y no admiten "
+"personalización. Por favor, seleccione estos para la optimización básica de "
+"la estimulación."
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=studiesList",
+#             "title": "Plans",
+#   >>>       "text": "The Plans you create and the ones shared with you will
+# be listed here.",
+#             "placement": "top"
+#           }, {
+#             "anchorEl": "osparc-test-id=resourceFilter",
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears in the user interface of a
+# scientific simulation application, specifically in a section where users can
+# view a list of their created plans and those shared with them.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:26Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:53
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:72
+msgid "The Plans you create and the ones shared with you will be listed here."
+msgstr ""
+"Los planes que crees y los que se compartan contigo se enumerarán aquí."
+
+# CTX-INTERPRETATION: The string 'Filters' is used as a label for a feature in
+# the scientific simulation application.
+# the scientific simulation application.
+# the application that allows users to apply specific criteria to refine or
+# limit the data displayed in the simulation results.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:27Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:57
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:76
+msgid "Filters"
+msgstr "Filtros"
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=resourceFilter",
+#             "title": "Filters",
+#   >>>       "text": "These filters allows you to display a better organized
+# Dashboard.<br>You can filter by with with whom the resources is Shared with
+# and also Tags if you assign them.",
+#             "placement": "right"
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears as a tooltip or help text in a user
+# interface, explaining how to use filters to organize the Dashboard by shared
+# resources and tags.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:29Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:58
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:77
+msgid ""
+"These filters allows you to display a better organized Dashboard.<br>You can"
+" filter by with with whom the resources is Shared with and also Tags if you "
+"assign them."
+msgstr ""
+"Estos filtros te permiten mostrar un Panel de Control mejor "
+"organizado.<br>Puedes filtrar por con quién se comparten los recursos y "
+"también por Etiquetas si las asignas."
+
+# CTX-SNIPPET:
+#             "placement": "right"
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+#   >>>       "title": "Filters and Search",
+#             "text": "This tool allows you to search and filter Plans.<br>You
+# can search and filter by:<br>- Title, description, owner, id...<br>-
+# Tags<br>- Shared with",
+#             "placement": "bottom"
+#           }, {
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears as a title or label for a user
+# interface element that allows users to filter and search through various
+# plans or projects within the application.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:30Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:62
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:81
+msgid "Filters and Search"
+msgstr "Filtros y Búsqueda"
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
+#             "title": "Filters and Search",
+#   >>>       "text": "This tool allows you to search and filter Plans.<br>You
+# can search and filter by:<br>- Title, description, owner, id...<br>-
+# Tags<br>- Shared with",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears in the user interface of a
+# scientific simulation application, providing instructions on how to use the
+# search and filter functionality for plans.
+# CTX-VERSION: 4d8911d 2026-07-08T13:21:32Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:63
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:82
+msgid ""
+"This tool allows you to search and filter Plans.<br>You can search and "
+"filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with"
+msgstr ""
+"Esta herramienta le permite buscar y filtrar Planes.<br>Puede buscar y "
+"filtrar por:<br>- Título, descripción, propietario, id...<br>- "
+"Etiquetas<br>- Compartido con"
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=studyItemMenuMenu",
+#             "title": "More options button",
+#   >>>       "text": "On the Plan card, you can use the three dots button to
+# access more information and operation on the Plan.",
+#             "placement": "left"
+#           }, {
+#             "anchorEl": "osparc-test-id=updateStudyBtn",
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears as a tooltip or instructional text
+# guiding users on how to access additional options or information related to
+# a Plan within the application's user interface.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:34Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:72
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:91
+msgid ""
+"On the Plan card, you can use the three dots button to access more "
+"information and operation on the Plan."
+msgstr ""
+"En la tarjeta del Plan, puedes usar el botón de tres puntos para acceder a "
+"más información y operaciones sobre el Plan."
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=updateStudyBtn",
+#             "title": "Update Services",
+#   >>>       "text": "On the Plan card, you can use the Update button to
+# update the corresponding service to its latest version.",
+#             "placement": "bottom"
+#           }]
+#         }
+# CTX-SNIPPET-VERSION: 3457e01
+# CTX-INTERPRETATION: This string appears as a tooltip or instructional text
+# guiding users on how to update a service to its latest version using the
+# Update button on the Plan card within the application interface.
+# CTX-VERSION: 3457e01 2026-07-08T13:21:35Z
+#: services/static-webserver/client/source/resource/osparc/tours/tiplite_tours.json:77
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:96
+msgid ""
+"On the Plan card, you can use the Update button to update the corresponding "
+"service to its latest version."
+msgstr ""
+"En la tarjeta de Plan, puedes usar el botón Actualizar para actualizar el "
+"servicio correspondiente a su última versión."
+
+# CTX-SNIPPET:
+#           "steps": [{
+#             "anchorEl": "osparc-test-id=jobsButton",
+#             "title": "Activity Center",
+#   >>>       "text": "Here you can track all your running simulations, recent
+# activity, and completed tasks. If you want to check the results once these
+# are ready, you will find more details in the Activity Overview on the
+# Project card.",
+#             "placement": "bottom"
+#           },{
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 4d8911d
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in the Activity Center section of the application, guiding users on how to
+# track their simulation activities and where to find detailed results.
+# CTX-VERSION: 4d8911d 2026-07-08T13:21:39Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:10
+msgid ""
+"Here you can track all your running simulations, recent activity, and "
+"completed tasks. If you want to check the results once these are ready, you "
+"will find more details in the Activity Overview on the Project card."
+msgstr ""
+"Aquí puedes seguir todas tus simulaciones en ejecución, la actividad "
+"reciente y las tareas completadas. Si deseas verificar los resultados una "
+"vez que estén listos, encontrarás más detalles en el Resumen de Actividades "
+"en la tarjeta del Proyecto."
+
+# CTX-SNIPPET:
+#                   label: this.tr("Data Analysis")
+#                 }, {
+#                   id: "Personalized_Medicine",
+#   >>>             label: this.tr("Personalized Medicine")
+#                 }, {
+#                   id: "Neurostimulation",
+#                   label: this.tr("Neurostimulation")
+# CTX-SNIPPET-VERSION: 0000000
+# CTX-INTERPRETATION: The string 'Personalized Plans' likely refers to
+# customized strategies or approaches in a scientific or medical context.
+# the user interface of a scientific simulation application, likely as a
+# category or feature related to data analysis.
+# CTX-VERSION: 2bfa6bf 2026-07-08T13:21:40Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:62
+msgid "Personalized Plans"
+msgstr "Planes Personalizados"
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=personalizedGroup",
+#             "title": "Personalized Plans",
+#   >>>       "text": "These plans support personalization and allow for
+# customized models. Running the simulations required for personalized
+# optimization will incur charges. Choose these plans for advanced stimulation
+# optimization. If you want to learn how to purchase credits, follow the 'Buy
+# Credits' Guided Tour.",
+#             "placement": "top"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: 2bfa6bf
+# CTX-INTERPRETATION: This string appears as a tooltip or informational text
+# in a user interface, explaining the benefits and cost implications of
+# selecting personalized plans for simulation optimization.
+# CTX-VERSION: 2bfa6bf 2026-07-08T13:21:42Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:63
+msgid ""
+"These plans support personalization and allow for customized models. Running"
+" the simulations required for personalized optimization will incur charges. "
+"Choose these plans for advanced stimulation optimization. If you want to "
+"learn how to purchase credits, follow the 'Buy Credits' Guided Tour."
+msgstr ""
+"Estos planes admiten la personalización y permiten modelos personalizados. "
+"Ejecutar las simulaciones necesarias para la optimización personalizada "
+"incurrirá en cargos. Elija estos planes para una optimización avanzada de la"
+" estimulación. Si desea aprender cómo comprar créditos, siga el 'Tour Guiado"
+" para Comprar Créditos'."
+
+# CTX-SNIPPET:
+#         "credits": {
+#           "id": "credits",
+#           "name": "Buy Credits",
+#   >>>     "description": "Buy Credits for Personalization",
+#           "context": "osparc-test-id=creditsIndicatorButton",
+#           "steps": [{
+#             "title": "Credits",
+# CTX-SNIPPET-VERSION: 2bfa6bf
+# CTX-INTERPRETATION: This string appears as a button label in the application
+# interface, allowing users to purchase credits for customizing their
+# simulation experience.
+# CTX-VERSION: 2bfa6bf 2026-07-08T13:21:44Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:103
+msgid "Buy Credits for Personalization"
+msgstr "Comprar créditos para personalización"
+
+# CTX-SNIPPET:
+#           "context": "osparc-test-id=creditsIndicatorButton",
+#           "steps": [{
+#             "title": "Credits",
+#   >>>       "text": "In order to run personalized TI plans, Credits are
+# required. In the next steps you will learn how to purchase them."
+#           }, {
+#             "beforeClick": {
+#               "selector": "osparc-test-id=creditsIndicatorButton",
+# CTX-SNIPPET-VERSION: f6a95e9
+# CTX-INTERPRETATION: This string appears in a user interface guide explaining
+# the necessity of credits for executing personalized TI plans and instructs
+# users on how to purchase them.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:46Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:107
+msgid ""
+"In order to run personalized TI plans, Credits are required. In the next "
+"steps you will learn how to purchase them."
+msgstr ""
+"Para ejecutar planes de TI personalizados, se requieren créditos. En los "
+"siguientes pasos aprenderás cómo comprarlos."
+
+# CTX-SNIPPET:
+#             },
+#             "anchorEl": "osparc-test-id=walletsList",
+#             "title": "Credit Accounts",
+#   >>>       "text": "This lists the Credit Accounts you have access to.
+# Apart from your own Account, the list also includes Credit Accounts that
+# were shared with you.",
+#             "placement": "bottom"
+#           }, {
+#             "anchorEl": "osparc-test-id=personalWalletsList",
+# CTX-SNIPPET-VERSION: f6a95e9
+# CTX-INTERPRETATION: This string appears in a user interface element that
+# displays a list of credit accounts accessible to the user, including both
+# personal and shared accounts.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:47Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:124
+msgid ""
+"This lists the Credit Accounts you have access to. Apart from your own "
+"Account, the list also includes Credit Accounts that were shared with you."
+msgstr ""
+"Esto muestra las Cuentas de Crédito a las que tienes acceso. Además de tu "
+"propia Cuenta, la lista también incluye Cuentas de Crédito que fueron "
+"compartidas contigo."
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=personalWalletsList",
+#             "title": "Buy Credits",
+#   >>>       "text": "There are two ways to add Credits to your Credit
+# Account: you can set up an auto-top-up procedure or make a one-time
+# payment.",
+#             "placement": "bottom"
+#           }, {
+#             "anchorEl": "osparc-test-id=autorechargeBtn",
+# CTX-SNIPPET-VERSION: f6a95e9
+# CTX-INTERPRETATION: This string appears in a user interface element
+# explaining the options for adding credits to a user's account in the
+# application.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:49Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:129
+msgid ""
+"There are two ways to add Credits to your Credit Account: you can set up an "
+"auto-top-up procedure or make a one-time payment."
+msgstr ""
+"Hay dos maneras de añadir créditos a su cuenta de crédito: puede configurar "
+"un procedimiento de recarga automática o realizar un pago único."
+
+# CTX-INTERPRETATION: This string refers to a feature option in the settings
+# that allows automatic recharging.
+# menu, allowing the application to automatically recharge resources or tools
+# when they are depleted.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:50Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:133
+msgid "Auto-Recharge"
+msgstr "Recarga Automática"
+
+# CTX-INTERPRETATION: This string appears in the application's settings menu,
+# guiding users on how to enable automatic credit top-up by adding a payment
+# method.
+# offering an option to automatically recharge credits when they are low.
+# where users can configure automatic credit recharging for uninterrupted
+# access to premium features.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:51Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:134
+msgid ""
+"Keep your balance running smoothly by automatically setting your Credits to "
+"be topped up when it runs low. Before the automated top-up function can be "
+"activated, you must add a payment method."
+msgstr ""
+"Mantén tu saldo funcionando sin problemas configurando automáticamente la "
+"recarga de tus Créditos cuando esté bajo. Antes de que se pueda activar la "
+"función de recarga automática, debes añadir un método de pago."
+
+# CTX-SNIPPET:
+#             "placement": "bottom"
+#           }, {
+#             "anchorEl": "osparc-test-id=buyCreditsBtn",
+#   >>>       "title": "One-Time payment",
+#             "text": "You can top up your Credits with a one-off, non-
+# recurring payment. After the payment is made, the new Credits will be added
+# to your Credit Account. The payment method can be saved for future top
+# ups.",
+#             "placement": "bottom"
+#           }, {
+# CTX-SNIPPET-VERSION: f6a95e9
+# CTX-INTERPRETATION: This string appears as a title for a payment option in a
+# user interface, indicating a single, non-recurring payment method for adding
+# credits.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:52Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:138
+msgid "One-Time payment"
+msgstr "Pago único"
+
+# CTX-SNIPPET:
+#           }, {
+#             "anchorEl": "osparc-test-id=buyCreditsBtn",
+#             "title": "One-Time payment",
+#   >>>       "text": "You can top up your Credits with a one-off, non-
+# recurring payment. After the payment is made, the new Credits will be added
+# to your Credit Account. The payment method can be saved for future top
+# ups.",
+#             "placement": "bottom"
+#           }, {
+#             "beforeClick": {
+# CTX-SNIPPET-VERSION: f6a95e9
+# CTX-INTERPRETATION: This string appears as a tooltip or informational
+# message when a user hovers over or clicks on a button related to purchasing
+# credits in the application.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:56Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:139
+msgid ""
+"You can top up your Credits with a one-off, non-recurring payment. After the"
+" payment is made, the new Credits will be added to your Credit Account. The "
+"payment method can be saved for future top ups."
+msgstr ""
+"Puedes recargar tus Créditos con un pago único y no recurrente. Después de "
+"realizar el pago, los nuevos Créditos se añadirán a tu Cuenta de Créditos. "
+"El método de pago puede guardarse para futuras recargas."
+
+# CTX-SNIPPET:
+#               "selector": "osparc-test-id=billingCenterWindow",
+#               "action": "close"
+#             },
+#   >>>       "text": "Once the payment is validated, the Credits will be
+# added to your Credit Account and they will be ready to be used."
+#           }]
+#         }
+#       }
+# CTX-SNIPPET-VERSION: f6a95e9
+# CTX-INTERPRETATION: This string appears in a notification or confirmation
+# message within the application, informing the user that their credits will
+# be available after payment validation.
+# CTX-VERSION: f6a95e9 2026-07-08T13:21:57Z
+#: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:146
+msgid ""
+"Once the payment is validated, the Credits will be added to your Credit "
+"Account and they will be ready to be used."
+msgstr ""
+"Una vez que el pago sea validado, los Créditos se añadirán a su Cuenta de "
+"Crédito y estarán listos para ser utilizados."
+
 # CTX-INTERPRETATION: This string appears as a keyboard shortcut instruction
+# for executing a command.
 # for executing a command.
 # for executing a command or confirming an action within the application.
 # CTX-VERSION: unknown
 #~ msgid "Ctrl+Enter"
 #~ msgstr "Ctrl+Intro"
 
-# CTX-INTERPRETATION: This message appears in a notification or email
+# CTX-INTERPRETATION: This message informs the user that all projects have
+# been shared with another user and the sender is no longer a co-owner.
 # informing a user that their access rights to certain projects have been
 # changed.
 # CTX-VERSION: unknown
@@ -14824,5 +16157,5 @@ msgstr "Comience a escribir..."
 #~ "All projects have been shared with the target user and you have been removed"
 #~ " as co-owner."
 #~ msgstr ""
-#~ "Todos los proyectos han sido compartidos con el usuario objetivo y has sido "
+#~ "Todos los proyectos han sido compartidos con el usuario objetivo y se te ha "
 #~ "eliminado como copropietario."
