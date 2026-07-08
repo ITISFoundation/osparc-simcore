@@ -176,16 +176,16 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const avatar = this.getChildControl("avatar");
       const userName = this.getChildControl("user-name");
       if (osparc.data.model.Message.isSupportMessage(message)) {
-        userName.setValue("Support");
+        userName.setValue(this.tr("Support"));
       } else {
         osparc.store.Users.getInstance().getUser(message.getUserGroupId())
           .then(user => {
             avatar.setUser(user);
-            userName.setValue(user ? user.getLabel() : "Unknown user");
+            userName.setValue(user ? user.getLabel() : this.tr("Unknown user"));
           })
           .catch(() => {
             avatar.setSource(osparc.utils.Avatar.emailToThumbnail());
-            userName.setValue("Unknown user");
+            userName.setValue(this.tr("Unknown user"));
           });
       }
 
