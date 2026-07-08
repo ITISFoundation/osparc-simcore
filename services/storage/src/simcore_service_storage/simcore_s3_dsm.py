@@ -1241,7 +1241,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         file_meta_data entry.
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
-        retention = get_application_settings(self.app).STORAGE_EXPORT_RETENTION
+        retention = get_application_settings(self.app).STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_RETENTION
         threshold = now - retention
 
         list_of_expired_exports = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(

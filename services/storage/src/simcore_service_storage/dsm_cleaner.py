@@ -50,46 +50,38 @@ async def clean_expired_exports(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    app.state.dsm_cleanup_uploads_task = None
-    app.state.dsm_cleanup_exports_task = None
-
     try:
         cfg = get_application_settings(app)
         lock_client = get_redis_client_manager(app).client(RedisDatabase.LOCKS)
 
-        if cfg.STORAGE_CLEANER_INTERVAL_S:
+        @exclusive_periodic(
+            lock_client,
+            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL,
+            retry_after=timedelta(minutes=5),
+        )
+        async def _run_clean_expired_uploads() -> None:
+            await clean_expired_uploads(app)
 
-            @exclusive_periodic(
-                lock_client,
-                task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
-                retry_after=timedelta(minutes=5),
-            )
-            async def _run_clean_expired_uploads() -> None:
-                await clean_expired_uploads(app)
+        app.state.dsm_cleanup_uploads_task = create_task(
+            _run_clean_expired_uploads(), name=_TASK_NAME_CLEAN_EXPIRED_UPLOADS
+        )
 
-            app.state.dsm_cleanup_uploads_task = create_task(
-                _run_clean_expired_uploads(), name=_TASK_NAME_CLEAN_EXPIRED_UPLOADS
-            )
+        @exclusive_periodic(
+            lock_client,
+            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_INTERVAL,
+            retry_after=timedelta(minutes=5),
+        )
+        async def _run_clean_expired_exports() -> None:
+            await clean_expired_exports(app)
 
-        if cfg.STORAGE_EXPORT_CLEANER_INTERVAL:
-
-            @exclusive_periodic(
-                lock_client,
-                task_interval=cfg.STORAGE_EXPORT_CLEANER_INTERVAL,
-                retry_after=timedelta(minutes=5),
-            )
-            async def _run_clean_expired_exports() -> None:
-                await clean_expired_exports(app)
-
-            app.state.dsm_cleanup_exports_task = create_task(
-                _run_clean_expired_exports(), name=_TASK_NAME_CLEAN_EXPIRED_EXPORTS
-            )
+        app.state.dsm_cleanup_exports_task = create_task(
+            _run_clean_expired_exports(), name=_TASK_NAME_CLEAN_EXPIRED_EXPORTS
+        )
 
         yield
     finally:
-        for task in (app.state.dsm_cleanup_uploads_task, app.state.dsm_cleanup_exports_task):
-            if task is not None:
-                await cancel_wait_task(task)
+        await cancel_wait_task(app.state.dsm_cleanup_uploads_task)
+        await cancel_wait_task(app.state.dsm_cleanup_exports_task)
 
 
 def configure_dsm_cleanup(app_lifespan: LifespanManager) -> None:

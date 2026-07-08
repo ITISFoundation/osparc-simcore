@@ -186,7 +186,7 @@ async def test_copy_folders_from_empty_project(
 
 @pytest.fixture
 def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
-    monkeypatch.setenv("STORAGE_CLEANER_INTERVAL_S", "1")
+    monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL": "PT1S"}')
     return 1
 
 

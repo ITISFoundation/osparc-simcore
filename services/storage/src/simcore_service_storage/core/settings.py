@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated, Self
+from typing import Annotated
 
 from celery_library.basic_types import BootServerMode
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
@@ -9,9 +9,9 @@ from pydantic import (
     Field,
     PositiveInt,
     field_validator,
-    model_validator,
 )
 from settings_library.application import BaseApplicationSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
@@ -22,6 +22,33 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
+
+
+class DsmCleanerSettings(BaseCustomSettings):
+    STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL: Annotated[
+        timedelta, Field(description="Interval when task cleaning pending uploads runs.")
+    ] = timedelta(seconds=30)
+
+    STORAGE_CLEANER_EXPORT_INTERVAL: Annotated[
+        timedelta,
+        Field(
+            description=(
+                "Interval when task cleaning expired exporter archives runs. Exports are kept for "
+                "STORAGE_CLEANER_EXPORT_RETENTION, so unlike the pending uploads cleaner this does "
+                "not need to run often."
+            ),
+        ),
+    ] = timedelta(hours=6)
+
+    STORAGE_CLEANER_EXPORT_RETENTION: Annotated[
+        timedelta,
+        Field(
+            description=(
+                "Amount of time an exported archive (exports/ S3 prefix) is kept before being "
+                "permanently removed from S3 and file_meta_data"
+            ),
+        ),
+    ] = timedelta(days=30)
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -64,36 +91,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(3600, description="Default expiration time in seconds for presigned links"),
     ]
 
-    STORAGE_CLEANER_INTERVAL_S: Annotated[
-        int | None,
-        Field(
-            30,
-            description=(
-                "Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner."
-            ),
-        ),
-    ]
-
-    STORAGE_EXPORT_CLEANER_INTERVAL: Annotated[
-        timedelta | None,
-        Field(
-            description=(
-                "Interval when task cleaning expired exporter archives runs. Exports are kept for "
-                "STORAGE_EXPORT_RETENTION, so unlike the pending uploads cleaner this does not need to run often. "
-                "Setting to NULL disables this cleaner."
-            ),
-        ),
-    ] = timedelta(hours=6)
-
-    STORAGE_EXPORT_RETENTION: Annotated[
-        timedelta,
-        Field(
-            description=(
-                "Amount of time an exported archive (exports/ S3 prefix) is kept before being "
-                "permanently removed from S3 and file_meta_data"
-            ),
-        ),
-    ] = timedelta(days=30)
+    STORAGE_CLEANER: Annotated[DsmCleanerSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
         int,
@@ -140,18 +138,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def _validate_loglevel(cls, value: str) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
-
-    @model_validator(mode="after")
-    def _ensure_settings_consistency(self) -> Self:
-        if self.STORAGE_CLEANER_INTERVAL_S is not None and not self.STORAGE_REDIS:
-            msg = "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! Please correct settings."
-            raise ValueError(msg)
-        if self.STORAGE_EXPORT_CLEANER_INTERVAL is not None and not self.STORAGE_REDIS:
-            msg = (
-                "STORAGE_EXPORT_CLEANER_INTERVAL cleaner cannot be set without STORAGE_REDIS! Please correct settings."
-            )
-            raise ValueError(msg)
-        return self
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:

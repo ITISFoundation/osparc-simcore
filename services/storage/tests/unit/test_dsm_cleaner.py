@@ -20,16 +20,6 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 
 @pytest.fixture
-def disable_dsm_cleaner(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("STORAGE_CLEANER_INTERVAL_S", "null")
-
-
-@pytest.fixture
-def disable_dsm_export_cleaner(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("STORAGE_EXPORT_CLEANER_INTERVAL", "null")
-
-
-@pytest.fixture
 def mocked_dsm_clean(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_storage.dsm_cleaner.SimcoreS3DataManager.clean_expired_uploads",
@@ -49,24 +39,19 @@ def mocked_dsm_export_clean(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.fixture
 def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
-    monkeypatch.setenv("STORAGE_CLEANER_INTERVAL_S", "1")
+    monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL": "PT1S"}')
     return 1
 
 
 @pytest.fixture
 def short_dsm_export_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
-    monkeypatch.setenv("STORAGE_EXPORT_CLEANER_INTERVAL", "PT1S")
+    monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPORT_INTERVAL": "PT1S"}')
     return 1
 
 
 async def test_setup_dsm_cleaner(initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
     assert any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_UPLOADS}") for t in all_tasks)
-
-
-async def test_disable_dsm_cleaner(disable_dsm_cleaner, initialized_app: FastAPI):
-    all_tasks = asyncio.all_tasks()
-    assert not any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_UPLOADS}") for t in all_tasks)
 
 
 async def test_clean_expired_uploads_restarts_if_error(
@@ -87,14 +72,9 @@ async def test_setup_dsm_export_cleaner(initialized_app: FastAPI):
 
 async def test_dsm_export_cleaner_interval_is_a_timedelta(initialized_app: FastAPI):
     settings = get_application_settings(initialized_app)
-    interval = settings.STORAGE_EXPORT_CLEANER_INTERVAL
+    interval = settings.STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_INTERVAL
     assert isinstance(interval, timedelta)
     assert interval == timedelta(hours=6)
-
-
-async def test_disable_dsm_export_cleaner(disable_dsm_export_cleaner, initialized_app: FastAPI):
-    all_tasks = asyncio.all_tasks()
-    assert not any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_EXPORTS}") for t in all_tasks)
 
 
 async def test_clean_expired_exports_restarts_if_error(
@@ -106,14 +86,3 @@ async def test_clean_expired_exports_restarts_if_error(
     await asyncio.sleep(short_dsm_export_cleaner_interval + 1)
     mocked_dsm_export_clean.assert_called()
     assert mocked_dsm_export_clean.call_count > num_calls
-
-
-async def test_cleaners_run_independently(
-    disable_dsm_cleaner,
-    short_dsm_export_cleaner_interval: int,
-    initialized_app: FastAPI,
-):
-    """uploads cleaner disabled, exports cleaner still runs on its own interval"""
-    all_tasks = asyncio.all_tasks()
-    assert not any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_UPLOADS}") for t in all_tasks)
-    assert any(t.get_name().startswith(f"{_TASK_NAME_CLEAN_EXPIRED_EXPORTS}") for t in all_tasks)
