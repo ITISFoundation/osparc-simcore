@@ -14,7 +14,7 @@ _SIDECAR_LOGS_FILE_ID: Final[str] = "service-logs"
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
 
 
-_RootKeyType = Annotated[
+_RootKeySecretBytes = Annotated[
     SecretBytes,
     Field(
         min_length=AES_256_GCM_KEY_SIZE_BYTES,
@@ -25,7 +25,7 @@ _RootKeyType = Annotated[
 
 
 class TransferEncryptionSettings(BaseModel):
-    root_key: _RootKeyType
+    root_key: _RootKeySecretBytes
     file_id: Annotated[
         FileIDStr,
         Field(description="Per-file identifier mixed into key derivation"),
@@ -51,7 +51,7 @@ class TransferEncryptionSettings(BaseModel):
 
 
 class JobEncryptionContext(BaseModel):
-    root_key: _RootKeyType
+    root_key: _RootKeySecretBytes
     input_port_to_file_id: Annotated[
         dict[str, FileIDStr],
         Field(
