@@ -81,15 +81,10 @@ make -C scripts/i18n frontend-plan
 
 ## Key Variables
 
-| Variable       | Default         | Description                             |
-| -------------- | --------------- | --------------------------------------- |
-| `LANGS`        | `zh_CN es_ES`   | Backend locale codes to translate       |
-| `CLIENT_LANGS` | `es_ES zh_CN`   | Frontend locale codes to translate      |
-| `MODEL`        | `openai/gpt-4o` | LiteLLM model string                    |
-| `BASE_URL`     | _(empty)_       | Custom LLM endpoint (e.g. local Ollama) |
-| `PARALLEL`     | `false`         | Enable parallel translation workers     |
-| `MAX_WORKERS`  | `4`             | Worker count when `PARALLEL=true`       |
-| `USE_GIT`      | `true`          | Skip already-committed translations     |
+Run `make -C scripts/i18n vars` to list all configurable variables (defaults +
+descriptions) straight from the Makefile — no need to keep a separate table
+here in sync.
+
 
 ## Model
 
