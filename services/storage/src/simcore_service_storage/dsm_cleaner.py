@@ -5,6 +5,7 @@ For details see `SimcoreS3DataManager`:
     - `.clean_expired_exports()`
 """
 
+import asyncio
 import logging
 from asyncio import create_task
 from collections.abc import AsyncGenerator
@@ -50,6 +51,7 @@ async def clean_expired_exports(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    tasks_to_stop: list[asyncio.Task] = []
     try:
         cfg = get_application_settings(app)
         lock_client = get_redis_client_manager(app).client(RedisDatabase.LOCKS)
@@ -62,9 +64,7 @@ async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
         async def _run_clean_expired_uploads() -> None:
             await clean_expired_uploads(app)
 
-        app.state.dsm_cleanup_uploads_task = create_task(
-            _run_clean_expired_uploads(), name=_TASK_NAME_CLEAN_EXPIRED_UPLOADS
-        )
+        tasks_to_stop.append(create_task(_run_clean_expired_uploads(), name=_TASK_NAME_CLEAN_EXPIRED_UPLOADS))
 
         @exclusive_periodic(
             lock_client,
@@ -74,13 +74,11 @@ async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
         async def _run_clean_expired_exports() -> None:
             await clean_expired_exports(app)
 
-        app.state.dsm_cleanup_exports_task = create_task(
-            _run_clean_expired_exports(), name=_TASK_NAME_CLEAN_EXPIRED_EXPORTS
-        )
+        tasks_to_stop.append(create_task(_run_clean_expired_exports(), name=_TASK_NAME_CLEAN_EXPIRED_EXPORTS))
 
         yield
     finally:
-        for task in (app.state.dsm_cleanup_uploads_task, app.state.dsm_cleanup_exports_task):
+        for task in tasks_to_stop:
             with log_catch(_logger):
                 await cancel_wait_task(task)
 
