@@ -78,8 +78,7 @@ def _aggregate_access_rights(access_rights: dict[str, dict], group_ids: list[Gro
                     prj_access[operation] |= grp_access[operation]
 
         return AccessRights(**prj_access)
-    except KeyError:
-        # NOTE: database does NOT include schema for json access_rights column!
+    except (KeyError, TypeError, ValueError):
         _logger.warning(
             "Invalid entry in access_rights. Revoking all rights [%s]",
             access_rights,
