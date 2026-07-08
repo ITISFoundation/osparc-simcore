@@ -567,6 +567,13 @@ async def clone_project_data(
         project_nodes=project_nodes,
     )
 
+    project_groups = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        app, project_id=TypeAdapter(ProjectID).validate_python(new_project["uuid"])
+    )
+    new_project["accessRights"] = {
+        f"{group.gid}": {"read": group.read, "write": group.write, "delete": group.delete} for group in project_groups
+    }
+
     needs_lock_source_project = (
         await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))
         != ProjectType.TEMPLATE
