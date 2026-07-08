@@ -71,12 +71,7 @@ def creation_ec2_tags(
         | {
             # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
             EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
-                get_cluster_name(
-                    app_settings,
-                    user_id=user_id,
-                    wallet_id=wallet_id,
-                    is_manager=True,
-                )
+                get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True)
             ),
             PRODUCT_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{product_name}"),
             USER_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{user_id}"),
@@ -92,10 +87,7 @@ def all_created_ec2_instances_filter(app_settings: ApplicationSettings) -> EC2Ta
 
 
 def ec2_instances_for_user_wallet_filter(
-    app_settings: ApplicationSettings,
-    *,
-    user_id: UserID,
-    wallet_id: WalletID | None,
+    app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None
 ) -> EC2Tags:
     return (
         _minimal_identification_tag(app_settings)
