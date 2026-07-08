@@ -32,7 +32,6 @@ from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
-from ..users.errors import UserNotFoundError
 from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (
@@ -162,14 +161,6 @@ class BaseProjectDB:
         email = await conn.scalar(sa.select(users.c.email).where(users.c.id == user_id))
         assert isinstance(email, str) or email is None  # nosec
         return email or "Unknown"
-
-    @staticmethod
-    async def _get_user_primary_group_gid(conn: AsyncConnection, user_id: int) -> int:
-        primary_gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.id == user_id))
-        if not primary_gid:
-            raise UserNotFoundError(user_id=user_id)
-        assert isinstance(primary_gid, int)
-        return primary_gid
 
     @staticmethod
     async def _get_tags_by_project(conn: AsyncConnection, project_id: int) -> list:

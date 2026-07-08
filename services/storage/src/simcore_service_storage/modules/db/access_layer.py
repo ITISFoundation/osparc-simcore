@@ -21,7 +21,7 @@
         So far, there are two resources that define access rights (AR):
             - one applies to projects (read/write/delete) and
             - the other to services (execute/write)
-        The project access rights are set in the column "access_rights" of the "projects" table .
+        The project access rights are set in the "project_to_groups" table .
         The service access rights has its own table: service_access_rights
 
         Access rights apply hierarchically, meaning that the access granted to a project applies
@@ -81,7 +81,7 @@ def _aggregate_access_rights(access_rights: dict[str, dict], group_ids: list[Gro
     except KeyError:
         # NOTE: database does NOT include schema for json access_rights column!
         _logger.warning(
-            "Invalid entry in projects.access_rights. Revoking all rights [%s]",
+            "Invalid entry in access_rights. Revoking all rights [%s]",
             access_rights,
         )
         return AccessRights.none()
