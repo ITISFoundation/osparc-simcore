@@ -70,7 +70,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
 from ..db.plugin import get_asyncpg_engine
-from ..users.errors import UserNotFoundError
 from ..utils import now
 from ._access_rights_repository import published_project_read_condition
 from ._projects_repository import PROJECT_DB_COLS
@@ -255,12 +254,10 @@ class ProjectDBAPI(BaseProjectDB):
             int(insert_values["workspace_id"]) if insert_values.get("workspace_id") is not None else None
         )
 
-        # validate that the owner is a registered user (prj_owner is a foreign key to users)
-        if user_id is not None:
+        # validate that the owner is a registered user (i.e. has a primary group)
+        if user_id:
             async with self.engine.connect() as conn:
-                owner_exists = await conn.scalar(sa.select(users.c.id).where(users.c.id == user_id))
-            if not owner_exists:
-                raise UserNotFoundError(user_id=user_id)
+                await self._get_user_primary_group_gid(conn, user_id=user_id)
 
         # must be valid uuid
         try:
