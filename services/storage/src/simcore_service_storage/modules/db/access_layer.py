@@ -21,7 +21,8 @@
         So far, there are two resources that define access rights (AR):
             - one applies to projects (read/write/delete) and
             - the other to services (execute/write)
-        The project access rights are set in the "project_to_groups" table.
+        The project access rights are set in the `project_to_groups` table for private projects, and are derived
+        from `workspaces_access_rights` for projects inside shared workspaces.
         The service access rights has its own table: service_access_rights
 
         Access rights apply hierarchically, meaning that the access granted to a project applies
