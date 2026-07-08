@@ -16141,8 +16141,6 @@ msgstr ""
 "Crédito y estarán listos para ser utilizados."
 
 # CTX-INTERPRETATION: This string appears as a keyboard shortcut instruction
-# for executing a command.
-# for executing a command.
 # for executing a command or confirming an action within the application.
 # CTX-VERSION: unknown
 #~ msgid "Ctrl+Enter"
