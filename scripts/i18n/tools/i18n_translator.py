@@ -48,6 +48,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Final, NamedTuple
 
@@ -236,7 +237,7 @@ class LiteLLMProvider:
 
 
 class DryRunProvider:
-    """Provider stand-in for `--plan`: composes/logs the prompt but never calls the LLM.
+    """Provider stand-in for `--dry-run`: composes/logs the prompt but never calls the LLM.
 
     Same `_generate_json` interface as `LiteLLMProvider` (duck-typed), so the whole
     translation pipeline runs unchanged. It needs no API key and no model validation;
@@ -435,18 +436,28 @@ def _get_blame_commit(filepath: str, lineno: int) -> BlameCommitResult:
 # ---------------------------------------------------------------------------
 
 
-def _translate_entry(
+def _filter_glossary(glossary: TermGlossaryDict, msgid: str, snippet: str) -> TermGlossaryDict:
+    """Keep only glossary terms that appear (case-insensitively) in the msgid or snippet.
+
+    Passing the full glossary on every entry adds terms irrelevant to that particular
+    string; filtering keeps the prompt minimal and reduces noise.
+    """
+    haystack = f"{msgid} {snippet}".lower()
+    return {term: translation for term, translation in glossary.items() if term.lower() in haystack}
+
+
+def _translate_entry(  # noqa: C901
     provider: LiteLLMProvider | DryRunProvider,
     msgid: str,
     snippet: str,
     translator_notes: str,
-    existing_interp: str,
     lang_name: LangNameStr,
     glossary: TermGlossaryDict,
+    occurrences: list[tuple[str, str]] | None = None,
     msgid_plural: str = "",
     logger: logging.Logger | None = None,
 ) -> Translation:
-    """Translate one msgid; reuses existing_interp when already computed (cached).
+    """Translate one msgid; the context interpretation is always regenerated fresh.
 
     When ``msgid_plural`` is set the entry is pluralized: both the singular and the
     plural English source forms are translated and returned (``Translation.text`` and
@@ -456,11 +467,9 @@ def _translate_entry(
     is_plural = bool(msgid_plural)
     protected_plural = _protect(msgid_plural) if is_plural else None
 
-    # If we already have a CTX-INTERPRETATION, skip re-interpreting (saves tokens)
     interp_instruction = (
-        f"Reuse the existing context interpretation below (do not regenerate it):\n{existing_interp}"
-        if existing_interp and existing_interp != "(pending)"
-        else "Write a one-sentence context interpretation explaining where/how this string appears."
+        "Write a one-sentence context interpretation explaining where/how this string "
+        "appears (max ~150 characters, a single sentence, no line breaks)."
     )
 
     # Assemble the prompt from sections; skip blocks that have nothing to say so
@@ -478,7 +487,20 @@ def _translate_entry(
         sections.append(f"Translator notes from maintainers (follow these instructions):\n{translator_notes}")
 
     if snippet.strip():
-        sections.append(f"Source code context (the string appears at the line marked >>>):\n{snippet}")
+        sections.append(
+            "Source code snippet around this translatable string (line marked >>> is the "
+            "string itself). This is a snapshot of the surrounding code, not the full file "
+            "-- use it, and the file path(s) below, to infer the context and meaning of the "
+            f"string:\n{snippet}"
+        )
+
+    if occurrences:
+        max_shown = 5
+        shown = occurrences[:max_shown]
+        loc_lines = "\n".join(f"  - {filepath}:{lineno}" for filepath, lineno in shown)
+        if len(occurrences) > max_shown:
+            loc_lines += f"\n  ... and {len(occurrences) - max_shown} more location(s)"
+        sections.append(f"File path(s) where this string is used (may hint at its domain/purpose):\n{loc_lines}")
 
     if is_plural:
         assert protected_plural is not None  # nosec
@@ -544,15 +566,21 @@ def _build_translation_job(
     use_git: bool,
     pot_creation_at: datetime | None,
     logger: logging.Logger | None = None,
+    *,
+    force: bool = False,
 ) -> TranslationJob:
     """Compute a translation job without mutating shared PO state."""
     ctx = _parse_translator_comments(entry)
-    state = _classify_entry_state(
-        entry=entry,
-        ctx=ctx,
-        use_git=use_git,
-        pot_creation_at=pot_creation_at,
-    )
+    if force:
+        # Bypass staleness check: --force / --filter always (re)translate matched entries.
+        state: EntryState = EntryNew(entry=entry) if _is_untranslated(entry) else EntryUpdated(entry=entry)
+    else:
+        state = _classify_entry_state(
+            entry=entry,
+            ctx=ctx,
+            use_git=use_git,
+            pot_creation_at=pot_creation_at,
+        )
     if isinstance(state, EntrySkipped):
         return TranslationSkipped(entry=entry)
 
@@ -562,9 +590,9 @@ def _build_translation_job(
             msgid=entry.msgid,
             snippet=ctx.snippet,
             translator_notes=_extract_translator_notes(entry.comment or ""),
-            existing_interp=ctx.interp,
             lang_name=lang_name,
-            glossary=glossary,
+            glossary=_filter_glossary(glossary, entry.msgid, ctx.snippet),
+            occurrences=entry.occurrences,
             msgid_plural=entry.msgid_plural or "",
             logger=logger,
         )
@@ -589,10 +617,16 @@ def _build_translation_job(
 
 
 def _parse_translator_comments(entry: polib.POEntry) -> TranslatorContext:
-    """Extract Pass-2 enrichment fields (CTX-SNIPPET, CTX-INTERPRETATION, CTX-VERSION) from # comment lines."""
+    """Extract Pass-2 enrichment fields (CTX-SNIPPET, CTX-INTERPRETATION, CTX-VERSION) from # comment lines.
+
+    CTX-INTERPRETATION may wrap onto continuation lines (e.g. a long LLM response);
+    those lines are joined with spaces so the field is always returned as one string.
+    """
     snippet_lines: list[str] = []
-    interp = version = snippet_version = ""
+    interp_lines: list[str] = []
+    version = snippet_version = ""
     in_snippet = False
+    in_interp = False
     # CTX-* fields are stored in translator comments (# => tcomment).
     # Fallback to extracted comments for backward compatibility.
     comment_block = entry.tcomment or entry.comment or ""
@@ -600,34 +634,54 @@ def _parse_translator_comments(entry: polib.POEntry) -> TranslatorContext:
         line = line.strip()  # noqa: PLW2901
         if line.startswith("CTX-SNIPPET:"):
             in_snippet = True
+            in_interp = False
         elif line.startswith("CTX-INTERPRETATION:"):
             in_snippet = False
-            interp = line[len("CTX-INTERPRETATION:") :].strip()
+            in_interp = True
+            interp_lines = [line[len("CTX-INTERPRETATION:") :].strip()]
         elif line.startswith("CTX-SNIPPET-VERSION:"):
             in_snippet = False
+            in_interp = False
             snippet_version = line[len("CTX-SNIPPET-VERSION:") :].strip()
         elif line.startswith("CTX-VERSION:"):
             in_snippet = False
+            in_interp = False
             version = line[len("CTX-VERSION:") :].strip()
         elif in_snippet:
             snippet_lines.append(line)
+        elif in_interp:
+            interp_lines.append(line)
+    interp = " ".join(part for part in interp_lines if part)
     return TranslatorContext("\n".join(snippet_lines), snippet_version, interp, version)
 
 
 def _update_comment(comment: str, interp: str, version: str) -> str:
-    """Rewrite Pass-2 enrichment fields CTX-INTERPRETATION and CTX-VERSION in the # comment block."""
+    """Rewrite Pass-2 enrichment fields CTX-INTERPRETATION and CTX-VERSION in the # comment block.
+
+    Drops any stale continuation lines left over from a previous multiline
+    CTX-INTERPRETATION so interpretations never accumulate across rounds.
+    """
     new_lines = []
     saw_interp = False
+    skipping_old_interp = False
     for line in comment.splitlines():
         stripped = line.strip()
         # Skip old CTX-VERSION lines - they will be re-added below
         if stripped.startswith("CTX-VERSION:"):
+            skipping_old_interp = False
             continue
         if stripped.startswith("CTX-INTERPRETATION:"):
             new_lines.append(f"CTX-INTERPRETATION: {interp}")
             saw_interp = True
-        else:
+            skipping_old_interp = True  # drop stale continuation lines below, if any
+            continue
+        if stripped.startswith("CTX-"):
+            skipping_old_interp = False
             new_lines.append(line)
+            continue
+        if skipping_old_interp:
+            continue
+        new_lines.append(line)
 
     if not saw_interp:
         new_lines.append(f"CTX-INTERPRETATION: {interp}")
@@ -658,6 +712,8 @@ def _is_stale(  # noqa: PLR0911
     """
     if _is_untranslated(entry):
         return True
+
+    # https://www.gnu.org/software/gettext/manual/html_node/Fuzzy-Entries.html
     if "fuzzy" in entry.flags:
         return True
     if ctx.version in ("(pending)", "unknown", ""):
@@ -773,21 +829,31 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
         min=1,
         help="Maximum number of concurrent translation workers when parallel mode is enabled.",
     ),
-    dry_run: bool = typer.Option(False, help="Print without saving"),
-    plan: bool = typer.Option(
-        False,
-        "--plan",
+    msgid_filter: str | None = typer.Option(
+        None,
+        "--filter",
         help=(
-            "Dry-run: compose and log the exact LLM prompts (with a stub '(dry-run)' "
-            "response) for entries that WOULD be translated, without calling the LLM "
-            "or saving. Spends no tokens and needs no API key; prompts are printed and "
-            "appended to the log file."
+            "Only translate entries whose msgid matches this glob pattern (fnmatch). "
+            "Implies --force for matched entries."
+        ),
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Force (re)translation even if entries appear fresh, bypassing the staleness check.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help=(
+            "Compose and log the exact LLM prompts (with a stub '(dry-run)' response) for "
+            "entries that WOULD be translated, without calling the LLM or saving. Spends no "
+            "tokens and needs no API key; prompts are printed and appended to the log file."
         ),
     ),
 ) -> None:
     """Translate a .pot/.po catalog into a language-specific .po."""
-    if plan:
-        dry_run = True
+    if dry_run:
         parallel = False
         progress = False
         incremental_save = False
@@ -801,9 +867,9 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     effective_log_file = log_file or (out.parent / "translate.log")
     logger = _build_logger(effective_log_file)
     provider: LiteLLMProvider | DryRunProvider = (
-        DryRunProvider() if plan else LiteLLMProvider(model=model, base_url=base_url)
+        DryRunProvider() if dry_run else LiteLLMProvider(model=model, base_url=base_url)
     )
-    if plan:
+    if dry_run:
         console.print("[bold]\\[provider][/bold] dry-run (no LLM call, nothing saved)")
     else:
         console.print(f"[bold]\\[provider][/bold] model={model}" + (f" base_url={base_url}" if base_url else ""))
@@ -874,6 +940,11 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
             _save_po_atomic(po, out)
 
     entries = list(po)
+    if msgid_filter:
+        entries = [e for e in entries if fnmatch(e.msgid, msgid_filter)]
+        entry_word = "entry" if len(entries) == 1 else "entries"
+        console.print(f"[bold]\\[filter][/bold] {len(entries)} {entry_word} match {msgid_filter!r}")
+    effective_force = force or bool(msgid_filter)
 
     if progress:
         progress_bar = Progress(
@@ -898,6 +969,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                             use_git,
                             pot_creation_at,
                             logger,
+                            force=effective_force,
                         )
                         for entry in entries
                     ]
@@ -919,6 +991,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                         use_git,
                         pot_creation_at,
                         logger,
+                        force=effective_force,
                     )
                     apply_job(job)
                     total += 1
@@ -939,6 +1012,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                     use_git,
                     pot_creation_at,
                     logger,
+                    force=effective_force,
                 )
                 for entry in entries
             ]
@@ -955,12 +1029,13 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 use_git,
                 pot_creation_at,
                 logger,
+                force=effective_force,
             )
             apply_job(job)
             total += 1
 
-    summary_label = "plan" if plan else "done"
-    translated_label = "would translate" if plan else "translated"
+    summary_label = "dry-run" if dry_run else "done"
+    translated_label = "would translate" if dry_run else "translated"
     console.print(
         f"\n[bold]\\[{summary_label}][/bold] {total} entries: "
         f"[green]{translated} {translated_label}[/green], "

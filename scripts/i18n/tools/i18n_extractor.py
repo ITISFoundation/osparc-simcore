@@ -43,7 +43,7 @@ import polib
 import typer
 from rich.console import Console
 
-CONTEXT_LINES = 6  # source lines captured around each string
+CONTEXT_MAX_LINES = 10  # max lines to expand in each direction around a string
 console = Console()
 
 # @TRANSLATOR marker: human note in source -> xgettext --add-comments -> #. line.
@@ -408,6 +408,37 @@ def key_not_seen(key: str, seen: set[str]) -> bool:
     return key.startswith("CTX-") and key not in seen and key != "CTX-SNIPPET"
 
 
+def _snippet_bounds(lines: list[str], lineno: int, max_context: int = CONTEXT_MAX_LINES) -> tuple[int, int]:
+    """Return a 0-based inclusive (start, end) line range around lineno (1-based).
+
+    Expands to the enclosing block instead of a fixed window: walks upward/downward
+    while sibling lines share the same or deeper indentation, stopping at the first
+    blank line or shallower-indented line (the block's natural boundary, e.g. the
+    enclosing `def`/JSX tag). Bounded by max_context lines in each direction so
+    prompts stay small even inside large blocks.
+    """
+    idx = lineno - 1
+    target_indent = len(lines[idx]) - len(lines[idx].lstrip())
+    min_start = max(0, idx - max_context)
+    max_end = min(len(lines) - 1, idx + max_context)
+
+    start = idx
+    while start > min_start:
+        prev_line = lines[start - 1]
+        start -= 1
+        if not prev_line.strip() or (len(prev_line) - len(prev_line.lstrip())) < target_indent:
+            break
+
+    end = idx
+    while end < max_end:
+        next_line = lines[end + 1]
+        if not next_line.strip() or (len(next_line) - len(next_line.lstrip())) < target_indent:
+            break
+        end += 1
+
+    return start, end
+
+
 def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = None) -> None:
     """
     Step 2: read the .pot produced by xgettext, add extractor-owned CTX metadata
@@ -455,10 +486,9 @@ def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = No
             continue
 
         lines = abs_path.read_text(encoding="utf-8", errors="replace").splitlines()
-        start = max(0, lineno - CONTEXT_LINES // 2 - 1)
-        end = min(len(lines), lineno + CONTEXT_LINES // 2)
+        start, end = _snippet_bounds(lines, lineno)
 
-        snippet_lines = [f"  {'>>>' if i + 1 == lineno else '   '} {lines[i]}" for i in range(start, end)]
+        snippet_lines = [f"  {'>>>' if i + 1 == lineno else '   '} {lines[i]}" for i in range(start, end + 1)]
 
         snippet_version = get_blame_commit(filepath, lineno, cwd=repo_root)
 

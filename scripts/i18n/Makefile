@@ -162,7 +162,7 @@ backend-plan:  ## Dry-run backend: log LLM prompts that WOULD be sent (no call, 
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
 	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --plan --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
+	    --dry-run --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
 	done
 
 # ---------------------------------------------------------------------------
@@ -233,7 +233,7 @@ frontend-plan:  ## Dry-run frontend: log LLM prompts that WOULD be sent (no call
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
 	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --plan --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
+	    --dry-run --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
 	done
 
 # ---------------------------------------------------------------------------
