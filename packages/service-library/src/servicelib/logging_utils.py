@@ -102,7 +102,7 @@ _DEFAULT_FORMATTING: Final[str] = " | ".join(
     [
         "log_level=%(levelname)s",
         "log_timestamp=%(asctime)s",
-        "log_source=%(name)s:%(funcName)s(%(lineno)d)[%(processName)s]",
+        "log_source=%(name)s:%(funcName)s(%(lineno)d)[%(processName)s/%(threadName)s]",
         "log_uid=%(log_uid)s",
         "log_oec=%(log_oec)s",
         "log_trace_id=%(otelTraceID)s",
