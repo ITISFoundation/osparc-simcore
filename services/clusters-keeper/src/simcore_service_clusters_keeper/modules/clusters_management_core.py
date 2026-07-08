@@ -191,14 +191,6 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
     # Each instance is handled independently so a failure on one does not block the others
     for instance in ssm_ready:
         with log_catch(_logger, reraise=False):
-            additional_custom_tags = {
-                USER_ID_TAG_KEY: instance.tags[USER_ID_TAG_KEY],
-                WALLET_ID_TAG_KEY: instance.tags[WALLET_ID_TAG_KEY],
-                ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
-            }
-            if PRODUCT_NAME_TAG_KEY in instance.tags:
-                additional_custom_tags[PRODUCT_NAME_TAG_KEY] = instance.tags[PRODUCT_NAME_TAG_KEY]
-
             ssm_command = await ssm_client.send_command(
                 [instance.id],
                 command=create_deploy_cluster_stack_script(
@@ -209,7 +201,12 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
                         wallet_id=wallet_id_from_instance_tags(instance.tags),
                         is_manager=False,
                     ),
-                    additional_custom_tags=additional_custom_tags,
+                    additional_custom_tags={
+                        USER_ID_TAG_KEY: instance.tags[USER_ID_TAG_KEY],
+                        WALLET_ID_TAG_KEY: instance.tags[WALLET_ID_TAG_KEY],
+                        ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
+                        PRODUCT_NAME_TAG_KEY: instance.tags[PRODUCT_NAME_TAG_KEY],
+                    },
                 ),
                 command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
             )

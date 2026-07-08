@@ -68,10 +68,7 @@ async def get_or_create_cluster(
         ec2_instance = await clusters.get_cluster(app, user_id=user_id, wallet_id=wallet_id)
     except EC2InstanceNotFoundError:
         new_ec2_instances = await clusters.create_cluster(
-            app,
-            product_name=product_name,
-            user_id=user_id,
-            wallet_id=wallet_id,
+            app, product_name=product_name, user_id=user_id, wallet_id=wallet_id
         )
         assert new_ec2_instances  # nosec
         assert len(new_ec2_instances) == 1  # nosec
