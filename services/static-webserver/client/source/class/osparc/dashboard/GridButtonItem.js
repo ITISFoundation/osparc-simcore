@@ -111,14 +111,16 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             alignX: "center",
             alignY: "middle"
           });
-          this.getChildControl("header").add(control, {
-            column: 2,
-            row: 0,
+          // Overlay it on the top-right corner of the card instead of reserving a header
+          // column, so the title can use the full width. It only shows on hover/multi-select.
+          this._add(control, {
+            top: 7,
+            right: 4,
           });
           break;
         case "menu-button": {
           this.getChildControl("title").set({
-            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.CardBase.ICON_SIZE - this.self().MENU_BTN_DIMENSIONS - 2,
+            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.CardBase.ICON_SIZE - 2,
           });
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
@@ -195,6 +197,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    // hook for osparc.dashboard.MShowMenuOnHover: shorten the title while the menu/tick is visible
+    // so it doesn't sit under the top-right overlay button
+    _onHoverRevealChanged: function(show) {
+      if (this.hasChildControl("title")) {
+        const fullWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.CardBase.ICON_SIZE - 2;
+        this.getChildControl("title").setMaxWidth(show ? fullWidth - this.self().MENU_BTN_DIMENSIONS - 4 : fullWidth);
+      }
     },
 
     // overridden
