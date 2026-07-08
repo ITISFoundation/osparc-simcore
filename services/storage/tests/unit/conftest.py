@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 
 @pytest.fixture
 def disable_dsm_cleaner(mocker: MockerFixture) -> None:
-    return mocker.patch(
+    mocker.patch(
         "simcore_service_storage.dsm_cleaner.SimcoreS3DataManager.clean_expired_uploads",
         autospec=True,
     )
@@ -15,7 +15,7 @@ def disable_dsm_cleaner(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def disable_dsm_export_cleaner(mocker: MockerFixture) -> None:
-    return mocker.patch(
+    mocker.patch(
         "simcore_service_storage.dsm_cleaner.SimcoreS3DataManager.clean_expired_exports",
         autospec=True,
     )
