@@ -76,7 +76,6 @@ from ._projects_repository import PROJECT_DB_COLS
 from ._projects_repository_legacy_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
-    ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
     get_projects_workbenches,
@@ -1094,6 +1093,3 @@ PROJECT_DBAPI_APPKEY: Final = web.AppKey(ProjectDBAPI.__name__, ProjectDBAPI)
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
     return ProjectDBAPI.set_once_in_app_context(app)
-
-
-__all__ = ("ProjectAccessRights",)
