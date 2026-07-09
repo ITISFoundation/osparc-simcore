@@ -542,6 +542,7 @@ class _StatusHighlighter(RegexHighlighter):
 console = Console(
     highlighter=_StatusHighlighter(),
     theme=Theme({"status_done": "bold green", "status_error": "bold red", "status_warn": "yellow"}),
+    markup=False,  # brackets like [done]/[error] are literal status tags, not Rich markup
 )
 
 
