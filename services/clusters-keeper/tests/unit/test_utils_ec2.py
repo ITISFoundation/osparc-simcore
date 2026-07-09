@@ -117,9 +117,9 @@ def test_creation_ec2_tags(
         f"{_APPLICATION_TAG_KEY}.version",
         "Name",
         "io.simcore.product_name",
-        "user_id",
-        "wallet_id",
-        "role",
+        "io.simcore.user_id",
+        "io.simcore.wallet_id",
+        "io.simcore.clusters-keeper.role",
         "osparc-tag",
     ]
     assert all(tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES), (
