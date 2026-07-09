@@ -16,7 +16,7 @@
 #
 # Frontend catalog (full pipeline):
 #   make frontend-all       # frontend-extract -> frontend-translate
-#   make frontend-extract   # xgettext this.tr() -> frontend.pot (+enrich)
+#   make frontend-extract   # xgettext this.tr() + json guided-tours -> frontend.pot (+enrich)
 #   make frontend-plan      # dry-run: log the LLM prompts that WOULD be sent (no call, no save)
 #   make frontend-translate # msgmerge + AI translate frontend catalogs from frontend.pot
 #
@@ -29,17 +29,17 @@ PARTIALS_DIR   := $(LOCALE_OUT_DIR)/_partials
 ENV_FILE       := $(REPO_ROOT)/.env
 
 # --- Backend configuration ---
-LANGS            ?= zh_CN es_ES
+LANGS            ?= zh_CN es_ES               ## Backend target locales (space-separated locale codes)
 POT              := $(LOCALE_OUT_DIR)/messages.pot
 PO_FILES         := $(foreach lang,$(LANGS),$(LOCALE_OUT_DIR)/$(lang)/LC_MESSAGES/messages.po)
 MO_FILES         := $(PO_FILES:.po=.mo)
-MODEL            ?= openai/gpt-4o
-BASE_URL         ?=
-PARALLEL         ?= false
-PROGRESS         ?= true
-INCREMENTAL_SAVE ?= true
-USE_GIT          ?= true
-MAX_WORKERS      ?= 4
+MODEL            ?= openai/gpt-4o             ## LLM model id (provider/model) used for translation
+BASE_URL         ?=                           ## Custom OpenAI-compatible API base URL (empty = provider default)
+PARALLEL         ?= false                     ## Translate entries in parallel
+PROGRESS         ?= true                      ## Show progress bar during translation
+INCREMENTAL_SAVE ?= true                      ## Save .po incrementally as entries are translated
+USE_GIT          ?= true                      ## Use git blame for source-context enrichment
+MAX_WORKERS      ?= 4                         ## Max parallel workers when PARALLEL=true
 TRANSLATE_TS     := $(shell date +%Y%m%dT%H%M%S)
 
 # --- Services/packages containing user_message() calls ---
@@ -74,8 +74,17 @@ CLIENT_DIR          := $(REPO_ROOT)/services/static-webserver/client
 # git-blame), matching the backend convention instead of embedding absolute paths.
 CLIENT_SRC_REL      := services/static-webserver/client/source/class
 CLIENT_TRANS_DIR    := $(CLIENT_DIR)/source/translation
+FRONTEND_PARTIALS_DIR := $(CLIENT_TRANS_DIR)/_partials
 FRONTEND_POT        := $(CLIENT_TRANS_DIR)/frontend.pot
-CLIENT_LANGS        ?= es_ES zh_CN
+CLIENT_LANGS        ?= es_ES zh_CN            ## Frontend target locales (space-separated locale codes)
+
+# --- Guided tours JSON resources (extracted via json_cmd, not xgettext) ---
+# Data loaded at runtime (osparc.tours.Manager/List/Step), so their
+# user-facing strings are invisible to xgettext's this.tr() scan. Only the
+# listed keys hold user-facing text; id/context/anchorEl/selector/placement/
+# action/beforeClick are wiring and must never be extracted.
+TOURS_DIR_REL    := services/static-webserver/client/source/resource/osparc/tours
+JSON_TOURS_KEYS  := name,description,title,text
 
 # --- Flag helpers ---
 ifeq ($(USE_GIT),true)
@@ -112,11 +121,24 @@ EXTRACTOR  := uv run $(I18N_TOOLS)/i18n_extractor.py
 TRANSLATOR := uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py
 
 # ---------------------------------------------------------------------------
+# Step header — bold-yellow "[TAG] message" banner printed before each
+# pipeline step, so Makefile-level step boundaries stay legible against the
+# rich-based Python CLI's own colors (i18n_extractor.py / i18n_translator.py
+# use cyan for [translate]/NEW, green for translated counts/"->", yellow
+# foreground for UPDATED, and Rich auto-highlights paths/filenames in magenta
+# and numbers in cyan). Bold yellow reads as "step info", not error, and
+# doesn't collide with any of those. Usage: $(call STEP,TAG,message text)
+# with TAG always uppercase (EXTRACT, MERGE, ENRICH, PLAN, TRANSLATE,
+# COMPILE, VALIDATE).
+# ---------------------------------------------------------------------------
+STEP = printf '\033[1;33m[%s]\033[0m %s\n' "$(1)" "$(2)"
+
+# ---------------------------------------------------------------------------
 .DEFAULT_GOAL := help
 
 .PHONY: backend-all backend-extract backend-plan backend-translate backend-compile \
         frontend-all frontend-extract frontend-plan frontend-translate \
-        check-i18n-style clean
+        check-i18n-style clean vars
 
 # ===========================================================================
 # BACKEND catalog  (messages.pot / messages.po / messages.mo)
@@ -135,19 +157,20 @@ backend-extract:  ## Extract backend user_message() + {% trans %} -> messages.po
 	@for dir in $(I18N_DIRS); do \
 	  name=$$(basename $$dir); \
 	  out=$(PARTIALS_DIR)/$$name.pot; \
-	  echo "  [extract] $(REPO_ROOT)/$$dir/src -> $$out"; \
+	  $(call STEP,EXTRACT,$(REPO_ROOT)/$$dir/src -> $$out); \
 	  cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
 	    --src $$dir/src \
 	    --out $$out \
 	    --langs python; \
 	done
-	@echo "  [extract] notifications Jinja2 templates -> $(PARTIALS_DIR)/notifications-templates.pot"
+	@$(call STEP,EXTRACT,notifications Jinja2 templates -> $(PARTIALS_DIR)/notifications-templates.pot)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) jinja \
 	  --src $(NOTIFICATIONS_TEMPLATES_DIR) \
 	  --out $(PARTIALS_DIR)/notifications-templates.pot
-	@echo "  [merge] backend _partials/*.pot -> $(POT)"
+	@$(call STEP,MERGE,backend _partials/*.pot -> $(POT))
 	@mkdir -p $(LOCALE_OUT_DIR)
 	msgcat --use-first $(PARTIALS_DIR)/*.pot -o $(POT)
+	@$(call STEP,ENRICH,$(POT))
 	$(EXTRACTOR) enrich --pot $(POT) --repo-root $(REPO_ROOT)
 
 # ---------------------------------------------------------------------------
@@ -157,12 +180,12 @@ backend-extract:  ## Extract backend user_message() + {% trans %} -> messages.po
 # ---------------------------------------------------------------------------
 backend-plan:  ## Dry-run backend: log LLM prompts that WOULD be sent (no call, no save)
 	@for lang in $(LANGS); do \
-	  echo "  [plan] backend $$lang"; \
+	  $(call STEP,PLAN,backend $$lang); \
 	  po=$(LOCALE_OUT_DIR)/$$lang/LC_MESSAGES/messages.po; \
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
 	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --plan --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
+	    --dry-run --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
 	done
 
 # ---------------------------------------------------------------------------
@@ -177,6 +200,7 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT)
 	else \
 	  msginit --no-translator --input="$(POT)" --locale="$*" --output-file="$@"; \
 	fi
+	@$(call STEP,TRANSLATE,backend $* -> $@)
 	$(TRANSLATOR) translate \
 	  --pot $(POT) \
 	  --in-po $@ \
@@ -197,6 +221,7 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT)
 backend-compile: $(MO_FILES)  ## Compile backend .po -> .mo
 
 $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.mo: $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po
+	@$(call STEP,COMPILE,$< -> $@)
 	msgfmt $< -o $@
 
 # ===========================================================================
@@ -205,17 +230,26 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.mo: $(LOCALE_OUT_DIR)/%/LC_MESSAGES/mes
 frontend-all: frontend-extract frontend-translate  ## Frontend catalog: extract -> translate
 
 # ---------------------------------------------------------------------------
-# frontend-extract — extract this.tr() strings from qooxdoo frontend into the
-# frontend-owned frontend.pot, then enrich with source context.
+# frontend-extract — gather this.tr() (qooxdoo JS) + guided-tours JSON values
+# into per-source _partials/*.pot, msgcat them into the frontend-owned
+# frontend.pot, then enrich with source context. Kept strictly separate from
+# the backend `messages` catalog (see header note).
 # ---------------------------------------------------------------------------
-frontend-extract:  ## Extract frontend this.tr() -> frontend.pot (+enrich)
-	@echo "  [extract] frontend JS -> $(FRONTEND_POT)"
-	@mkdir -p $(CLIENT_TRANS_DIR)
+frontend-extract:  ## Extract frontend this.tr() + guided-tours JSON -> frontend.pot (+enrich)
+	@mkdir -p $(FRONTEND_PARTIALS_DIR)
+	@$(call STEP,EXTRACT,frontend JS -> $(FRONTEND_PARTIALS_DIR)/frontend-js.pot)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
 	  --src $(CLIENT_SRC_REL) \
-	  --out $(FRONTEND_POT) \
+	  --out $(FRONTEND_PARTIALS_DIR)/frontend-js.pot \
 	  --langs javascript
-	@echo "  [enrich] frontend source context -> $(FRONTEND_POT)"
+	@$(call STEP,EXTRACT,guided tours JSON -> $(FRONTEND_PARTIALS_DIR)/frontend-tours.pot)
+	@cd $(REPO_ROOT) && $(EXTRACTOR) json \
+	  --src $(TOURS_DIR_REL) \
+	  --keys $(JSON_TOURS_KEYS) \
+	  --out $(FRONTEND_PARTIALS_DIR)/frontend-tours.pot
+	@$(call STEP,MERGE,frontend _partials/*.pot -> $(FRONTEND_POT))
+	msgcat --use-first $(FRONTEND_PARTIALS_DIR)/*.pot -o $(FRONTEND_POT)
+	@$(call STEP,ENRICH,frontend source context -> $(FRONTEND_POT))
 	@cd $(REPO_ROOT) && $(EXTRACTOR) enrich --pot $(FRONTEND_POT) --repo-root $(REPO_ROOT)
 
 # ---------------------------------------------------------------------------
@@ -228,12 +262,12 @@ frontend-plan:  ## Dry-run frontend: log LLM prompts that WOULD be sent (no call
 	    zh_CN) out_lang=zh ;; \
 	    *) out_lang=$$lang ;; \
 	  esac; \
-	  echo "  [plan] frontend $$lang"; \
+	  $(call STEP,PLAN,frontend $$lang); \
 	  po=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
 	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --plan --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
+	    --dry-run --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
 	done
 
 # ---------------------------------------------------------------------------
@@ -252,7 +286,7 @@ frontend-translate:  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS
 	    *) out_lang=$$lang ;; \
 	  esac; \
 	  out=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
-	  echo "  [translate] frontend $$lang -> $$out"; \
+	  $(call STEP,TRANSLATE,frontend $$lang -> $$out); \
 	  if [ -f "$$out" ]; then \
 	    msgmerge --update --backup=none "$$out" "$(FRONTEND_POT)"; \
 	  else \
@@ -278,11 +312,25 @@ frontend-translate:  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
+# vars — list configurable variables (the ones declared with '?=' above),
+# parsed straight from this file's source so the doc can never drift from the
+# actual defaults. Shows the DECLARED default (not the live resolved value),
+# mirroring how help.mk parses '## description' comments for targets.
+# ---------------------------------------------------------------------------
+vars:  ## List configurable variables (override via 'make VAR=value ...')
+	@echo "Configurable variables for '$(notdir $(CURDIR))' (override via 'make VAR=value ...'):"
+	@echo ""
+	@grep -hE '^[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\?=.*##' $(MAKEFILE_LIST) | \
+	  sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*\?=[[:space:]]*(.*)##[[:space:]]*(.*)$$/\1|\2|\3/' | \
+	  awk -F'|' '{gsub(/[[:space:]]+$$/, "", $$2); printf "  \033[36m%-18s\033[0m default=%-20s %s\n", $$1, ($$2==""?"(empty)":$$2), $$3}'
+	@echo ""
+
+# ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
 check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DIRS)
 	@for dir in $(I18N_DIRS); do \
-	  echo "  [validate] $$dir"; \
+	  $(call STEP,VALIDATE,$$dir); \
 	  cd $(REPO_ROOT) && $(EXTRACTOR) validate --src $$dir/src --langs python; \
 	done
 
@@ -291,7 +339,7 @@ check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DI
 # versioned (human/AI-reviewed translations) and are NEVER deleted here.
 # ---------------------------------------------------------------------------
 clean:  ## Remove regenerable artifacts (_partials/, *.pot, *.mo); keeps versioned .po
-	rm -rf $(PARTIALS_DIR)
+	rm -rf $(PARTIALS_DIR) $(FRONTEND_PARTIALS_DIR)
 	rm -f $(POT) $(FRONTEND_POT)
 	rm -f $(MO_FILES)
 
