@@ -82,9 +82,9 @@ async def _assert_cluster_instance_created(
             f"{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
         ),
         "io.simcore.product_name": f"{product_name}",
-        "user_id": f"{user_id}",
-        "wallet_id": f"{wallet_id}",
-        "role": "manager",
+        "io.simcore.user_id": f"{user_id}",
+        "io.simcore.wallet_id": f"{wallet_id}",
+        "io.simcore.clusters-keeper.role": "manager",
         "osparc-tag": "the pytest tag is here",
     }
     for tag in instances["Reservations"][0]["Instances"][0]["Tags"]:
