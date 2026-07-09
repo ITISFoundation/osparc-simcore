@@ -27,7 +27,11 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from simcore_service_autoscaling.constants import INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY
+from simcore_service_autoscaling.constants import (
+    INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY,
+    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    INSTANCE_PULLING_EC2_TAG_KEY,
+)
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
     DynamicAutoscalingProvider,
@@ -216,8 +220,8 @@ async def _test_monitor_buffer_machines(
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="running",
                 expected_additional_tag_keys=[
-                    "io.simcore.pre-pulling-images",
-                    "io.simcore.ssm-command-id",
+                    INSTANCE_PULLING_EC2_TAG_KEY,
+                    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                     *list(ec2_instance_custom_tags),
                 ],
                 expected_pre_pulled_images=None,
