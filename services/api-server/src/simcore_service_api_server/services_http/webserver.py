@@ -511,7 +511,8 @@ class AuthSession:
             body_input["encryption"] = encryption
 
         body: ComputationStart = ComputationStart(**body_input)
-        # NOTE: encryption keys are secrets and must be transmitted in plaintext (webserver -> director-v2), so we use model_dump_with_secrets with show_secrets=True
+        # NOTE: encryption keys are secrets and must be transmitted in plaintext (api-server -> webserver -> director-v2),
+        # so we use model_dump_with_secrets with show_secrets=True
         body_data = model_dump_with_secrets(
             body,
             show_secrets=True,
