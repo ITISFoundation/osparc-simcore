@@ -146,7 +146,6 @@ def extract_dns_without_default_port(url: URL) -> str:
 
 
 COPY_SUFFIX_RE = re.compile(r"^(.*? \(Copy\))(\(\d+\))?$")
-COPY_SUFFIX = "(Copy)"
 
 
 def default_copy_project_name(name: str) -> str:
@@ -157,8 +156,3 @@ def default_copy_project_name(name: str) -> str:
             new_copy_index = TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
         return f"{match.group(1)}({new_copy_index})"
     return f"{name} (Copy)"
-
-
-def replace_multiple_spaces(text: str) -> str:
-    # Use regular expression to replace multiple spaces with a single space
-    return re.sub(r"\s+", " ", text)
