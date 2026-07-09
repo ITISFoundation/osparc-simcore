@@ -27,32 +27,25 @@ from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSet
 
 class DsmCleanerSettings(BaseCustomSettings):
     STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL: Annotated[
-        timedelta, Field(description="Interval when task cleaning pending uploads runs.")
-    ] = timedelta(seconds=30)
+        timedelta, Field(description="Interval when task cleaning expired upload links runs.")
+    ] = timedelta(minutes=15)
 
     STORAGE_CLEANER_EXPORT_INTERVAL: Annotated[
         timedelta,
         Field(
             description=(
                 "Interval when task cleaning expired exporter archives runs. Exports are kept for "
-                "STORAGE_CLEANER_EXPORT_RETENTION, so unlike the pending uploads cleaner this does "
-                "not need to run often."
+                "STORAGE_CLEANER_EXPORT_RETENTION"
             ),
         ),
     ] = timedelta(hours=6)
 
     STORAGE_CLEANER_EXPORT_RETENTION: Annotated[
-        timedelta,
-        Field(
-            description=(
-                "Amount of time an exported archive (exports/ S3 prefix) is kept before being "
-                "permanently removed from S3 and file_meta_data"
-            ),
-        ),
+        timedelta, Field(description=("Amount of time an exported archive (exports/ S3 prefix) is kept for"))
     ] = timedelta(days=30)
 
-    _validate_positive_uploads_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL")
-    _validate_positive_export_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPORT_INTERVAL")
+    _validate_positive_expire_uploads_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL")
+    _validate_positive_expire_export_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPORT_INTERVAL")
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
