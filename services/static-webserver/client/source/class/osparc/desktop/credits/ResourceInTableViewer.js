@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
       let control;
       switch (id) {
         case "intro-text":
-          control = new qx.ui.basic.Label("Select a Credit Account:");
+          control = new qx.ui.basic.Label(this.tr("Select a Credit Account:"));
           this._add(control);
           break;
         case "wallet-selector-layout":

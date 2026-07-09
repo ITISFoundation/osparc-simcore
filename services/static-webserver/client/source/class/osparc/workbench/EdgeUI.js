@@ -98,7 +98,7 @@ qx.Class.define("osparc.workbench.EdgeUI", {
       if (this.getEdge().isPortConnected() === false) {
         hint.setText(this.self().noPortsConnectedText(this.getEdge()));
       } else if (output === "out-of-date") {
-        hint.setText("Out-of-date");
+        hint.setText(this.tr("Out-of-date"));
       } else {
         hint.setText(null);
       }

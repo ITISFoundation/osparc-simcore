@@ -20,7 +20,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
 
   construct: function() {
     const rootData = {
-      label: "Workspaces",
+      label: qx.locale.Manager.tr("Workspaces"),
       icon: "default",
       workspaceId: -1,
       children: [],
@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
       parent.setLoaded(true);
 
       const myWorkspaceData = {
-        label: "My Workspace",
+        label: qx.locale.Manager.tr("My Workspace"),
         icon: "default",
         workspaceId: null,
         loaded: true,

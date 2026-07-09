@@ -26,10 +26,10 @@ qx.Class.define("osparc.filter.DateFilters", {
       const defaultFrom = new Date();
       const defaultTo = new Date();
 
-      this.__from = this.__addDateInput("From", defaultFrom);
-      this.__until = this.__addDateInput("Until", defaultTo);
+      this.__from = this.__addDateInput(this.tr("From"), defaultFrom);
+      this.__until = this.__addDateInput(this.tr("Until"), defaultTo);
 
-      const todayBtn = new qx.ui.form.Button("Today").set({
+      const todayBtn = new qx.ui.form.Button(this.tr("Today")).set({
         allowStretchY: false,
         alignY: "bottom"
       });
@@ -40,7 +40,7 @@ qx.Class.define("osparc.filter.DateFilters", {
       });
       this._add(todayBtn);
 
-      const lastWeekBtn = new qx.ui.form.Button("Last week").set({
+      const lastWeekBtn = new qx.ui.form.Button(this.tr("Last week")).set({
         allowStretchY: false,
         alignY: "bottom"
       });
@@ -53,7 +53,7 @@ qx.Class.define("osparc.filter.DateFilters", {
       });
       this._add(lastWeekBtn);
 
-      const lastMonthBtn = new qx.ui.form.Button("Last month").set({
+      const lastMonthBtn = new qx.ui.form.Button(this.tr("Last month")).set({
         allowStretchY: false,
         alignY: "bottom"
       });
@@ -66,7 +66,7 @@ qx.Class.define("osparc.filter.DateFilters", {
       });
       this._add(lastMonthBtn);
 
-      const lastYearBtn = new qx.ui.form.Button("Last year").set({
+      const lastYearBtn = new qx.ui.form.Button(this.tr("Last year")).set({
         allowStretchY: false,
         alignY: "bottom"
       });

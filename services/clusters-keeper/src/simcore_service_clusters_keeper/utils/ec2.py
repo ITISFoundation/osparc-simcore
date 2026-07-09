@@ -2,6 +2,7 @@ from textwrap import dedent
 from typing import Final
 
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
@@ -9,6 +10,7 @@ from pydantic import TypeAdapter
 from .._meta import VERSION
 from ..constants import (
     MANAGER_ROLE_TAG_VALUE,
+    PRODUCT_NAME_TAG_KEY,
     ROLE_TAG_KEY,
     USER_ID_TAG_KEY,
     WALLET_ID_TAG_KEY,
@@ -40,7 +42,11 @@ def get_cluster_name(
     wallet_id: WalletID | None,
     is_manager: bool,
 ) -> str:
-    return f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+    return (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}"
+        f"{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:{wallet_id}"
+    )
 
 
 def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
@@ -51,7 +57,13 @@ def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
     }
 
 
-def creation_ec2_tags(app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None) -> EC2Tags:
+def creation_ec2_tags(
+    app_settings: ApplicationSettings,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+) -> EC2Tags:
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return (
         _minimal_identification_tag(app_settings)
@@ -61,6 +73,7 @@ def creation_ec2_tags(app_settings: ApplicationSettings, *, user_id: UserID, wal
             EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
                 get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True)
             ),
+            PRODUCT_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{product_name}"),
             USER_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{user_id}"),
             WALLET_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{wallet_id}"),
             ROLE_TAG_KEY: MANAGER_ROLE_TAG_VALUE,
@@ -103,3 +116,7 @@ def wallet_id_from_instance_tags(tags: EC2Tags) -> WalletID | None:
 
 def user_id_from_instance_tags(tags: EC2Tags) -> UserID:
     return TypeAdapter(UserID).validate_python(tags[USER_ID_TAG_KEY])
+
+
+def product_name_from_instance_tags(tags: EC2Tags) -> ProductName:
+    return TypeAdapter(ProductName).validate_python(tags[PRODUCT_NAME_TAG_KEY])

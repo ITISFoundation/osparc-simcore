@@ -129,7 +129,7 @@ qx.Class.define("osparc.widget.NodesTree", {
     nodeToModel: function(node) {
       const nodeData = {
         id: node.getNodeId(),
-        label: "Node",
+        label: qx.locale.Manager.tr("Node"),
         children: [],
         icon: "",
         iconColor: "text",

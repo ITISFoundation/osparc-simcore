@@ -315,7 +315,7 @@ qx.Class.define("osparc.store.Support", {
 
     __openSendEmailFeedbackDialog: function(email) {
       const productName = osparc.product.Utils.getProductName();
-      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Feedback", null, qx.locale.Manager.tr("Please send us an email to:"));
+      const giveEmailFeedbackWindow = new osparc.ui.window.Dialog(qx.locale.Manager.tr("Feedback"), null, qx.locale.Manager.tr("Please send us an email to:"));
       const mailto = this.getMailToLabel(email, productName + " feedback");
       mailto.setTextAlign("center");
       giveEmailFeedbackWindow.addWidget(mailto);
@@ -323,7 +323,7 @@ qx.Class.define("osparc.store.Support", {
     },
 
     openInvitationRequiredDialog: function() {
-      const createAccountWindow = new osparc.ui.window.Dialog("Create Account").set({
+      const createAccountWindow = new osparc.ui.window.Dialog(qx.locale.Manager.tr("Create Account")).set({
         maxWidth: 380
       });
       osparc.utils.Utils.setIdToWidget(createAccountWindow, "createAccountWindow");
