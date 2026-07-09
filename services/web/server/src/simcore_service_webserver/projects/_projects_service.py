@@ -557,13 +557,15 @@ async def clone_project_data(
         }
 
     db = ProjectDBAPI.get_from_app_context(app)
-    await db.insert_project(
+    inserted_project = await db.insert_project(
         new_project,
         user_id,
         product_name=product_name,
         force_project_uuid=forced_copy_project_id is not None,
         project_nodes=project_nodes,
     )
+
+    new_project["accessRights"] = inserted_project["accessRights"]
 
     needs_lock_source_project = (
         await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))
