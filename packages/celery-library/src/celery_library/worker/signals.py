@@ -57,26 +57,6 @@ def _worker_shutdown_wrapper(app: Celery) -> Callable[..., None]:
     return _worker_shutdown_handler
 
 
-def _setup_logging_wrapper(
-    *,
-    log_format_local_dev_enabled: bool,
-    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_config: TracingConfig,
-    log_base_level: LogLevelInt,
-    noisy_loggers: tuple[str, ...] | None,
-) -> Callable[..., None]:
-    def _setup_logging_handler(**_kwargs) -> None:
-        setup_loggers(
-            log_format_local_dev_enabled=log_format_local_dev_enabled,
-            logger_filter_mapping=logger_filter_mapping,
-            tracing_config=tracing_config,
-            log_base_level=log_base_level,
-            noisy_loggers=noisy_loggers,
-        )
-
-    return _setup_logging_handler
-
-
 def register_worker_signals(
     app: Celery,
     settings: CelerySettings,
@@ -88,16 +68,16 @@ def register_worker_signals(
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> None:
-    setup_logging.connect(
-        _setup_logging_wrapper(
+    def _on_setup_logging(**_kwargs) -> None:
+        setup_loggers(
             log_format_local_dev_enabled=log_format_local_dev_enabled,
             logger_filter_mapping=logger_filter_mapping,
             tracing_config=tracing_config,
             log_base_level=log_base_level,
             noisy_loggers=noisy_loggers,
-        ),
-        weak=False,
-    )
+        )
+
+    setup_logging.connect(_on_setup_logging, weak=False)
 
     match settings.CELERY_POOL:
         case CeleryPoolType.PREFORK:
