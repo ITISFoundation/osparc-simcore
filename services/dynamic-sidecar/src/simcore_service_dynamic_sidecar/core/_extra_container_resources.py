@@ -7,8 +7,6 @@ Fails sidecar startup if the deduction would leave the target service with:
   - < 48 % of its original CPU or RAM (soft floor).
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
