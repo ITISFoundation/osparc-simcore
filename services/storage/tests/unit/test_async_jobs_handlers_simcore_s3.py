@@ -7,11 +7,11 @@
 # pylint:disable=unused-variable
 
 import asyncio
-import datetime
 import logging
 import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Literal
 from unittest.mock import Mock
@@ -80,7 +80,7 @@ async def _request_copy_folders(
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
     *,
-    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: timedelta = timedelta(seconds=60),
 ) -> dict[str, Any]:
     with log_context(
         logging.INFO,
@@ -186,9 +186,9 @@ async def test_copy_folders_from_empty_project(
 
 
 @pytest.fixture
-def short_dsm_cleaner_interval(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> int:
+def short_dsm_cleaner_interval(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> timedelta:
     monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL": "PT1S"}')
-    return 1
+    return timedelta(seconds=1)
 
 
 @pytest.mark.parametrize(
@@ -209,7 +209,7 @@ def short_dsm_cleaner_interval(app_environment: EnvVarsDict, monkeypatch: pytest
 )
 async def test_copy_folders_from_valid_project_with_one_large_file(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
@@ -287,7 +287,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     ids=str,
 )
 async def test_copy_folders_from_valid_project(
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     initialized_app: FastAPI,
     task_manager: TaskManager,
     user_id: UserID,
@@ -350,7 +350,7 @@ async def _create_and_delete_folders_from_project(
     project_db_creator: Callable,
     check_list_files: bool,
     *,
-    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: timedelta = timedelta(seconds=60),
 ) -> None:
     destination_project, nodes_map = clone_project_data(project)
     await project_db_creator(**destination_project)
@@ -472,7 +472,7 @@ async def test_create_and_delete_folders_from_project(
                 initialized_app,
                 create_project,
                 check_list_files=False,
-                stop_after=datetime.timedelta(seconds=300),
+                stop_after=timedelta(seconds=300),
             )
             for _ in range(num_concurrent_calls)
         ]
@@ -486,7 +486,7 @@ async def _request_start_export_data(
     product_name: ProductName,
     paths_to_export: list[PathToExport],
     *,
-    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: timedelta = timedelta(seconds=60),
 ) -> str:
     with log_context(
         logging.INFO,
@@ -550,7 +550,7 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
 )
 async def test_start_export_data(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     with_storage_celery_worker: WorkController,
     user_id: UserID,
@@ -608,7 +608,7 @@ async def test_start_export_data(
 )
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     with_storage_celery_worker: WorkController,
     user_id: UserID,
@@ -624,7 +624,7 @@ async def test_start_export_data_access_error(
             user_id,
             product_name,
             paths_to_export=[path_to_export],
-            stop_after=datetime.timedelta(seconds=60),
+            stop_after=timedelta(seconds=60),
         )
 
     assert isinstance(exc.value, JobError)
@@ -635,7 +635,7 @@ async def test_start_export_data_access_error(
 
 async def test_start_export_invalid_export_format(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     with_storage_celery_worker: WorkController,
     user_id: UserID,
@@ -650,7 +650,7 @@ async def test_start_export_invalid_export_format(
             user_id,
             product_name,
             paths_to_export=[path_to_export],
-            stop_after=datetime.timedelta(seconds=60),
+            stop_after=timedelta(seconds=60),
         )
 
     assert exc.value.exc_type == "NotRegistered"

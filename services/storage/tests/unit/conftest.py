@@ -22,5 +22,5 @@ def disable_dsm_export_cleaner(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def disable_all_dsm_cleanup_tasks(disable_dsm_cleaner: None, disable_dsm_export_cleaner: None) -> None:
+def disable_all_dsm_cleaner_tasks(disable_dsm_cleaner: None, disable_dsm_export_cleaner: None) -> None:
     pass

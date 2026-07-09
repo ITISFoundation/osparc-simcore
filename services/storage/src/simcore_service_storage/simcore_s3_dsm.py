@@ -1151,11 +1151,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         """Removes uploads that never completed.
 
         Rationale: an upload starts by creating a file_meta_data entry with an
-        `upload_expires_at` timestamp and handing the client an S3/HTTP upload link. Once the
-        client notifies completion, that entry is updated: `file_size` is set and both
-        `upload_expires_at` and `upload_id` (for multipart uploads) are cleared to null.
-
-        So any entry whose `upload_expires_at` is still set and in the past means the client
+        `upload_expires_at` timestamp and handing the client an upload link. Once the
+        client notifies completion, that entry upload expiration date is cleared.
+        Any entry whose `upload_expires_at` is set and in the past means the client
         never completed (or notified) the upload. For each such entry, this method:
         1. tries to recover it by refreshing its metadata from S3 (the upload might have
            actually finished and the client just forgot to notify us);
@@ -1235,7 +1233,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         """Removes exported archives that have outlived their retention.
 
         Rationale: exported archives get removed automatically from the bucket after 30 days.
-        Left alone, the file_meta_data entry will live there forever.
+        The file_meta_data row is then orphaned and shall be removed.
         This method looks up files under the `exports/` S3 prefix whose `created_at` is
         older than `STORAGE_CLEANER_EXPORT_RETENTION` and removes them, S3 object first then the
         file_meta_data entry.
