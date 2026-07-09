@@ -26357,24 +26357,6 @@
             ],
             "title": "Thumbnail"
           },
-          "accessRights": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/AccessRights"
-                },
-                "propertyNames": {
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Accessrights"
-          },
           "classifiers": {
             "anyOf": [
               {
