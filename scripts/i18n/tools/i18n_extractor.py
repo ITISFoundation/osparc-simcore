@@ -253,7 +253,7 @@ def run_babel_jinja(src_dir: Path, out_pot: Path) -> bool:
 # correctly handle string escaping. Keys not in *keys* (id, context, anchorEl,
 # selector, placement, action, ...) are wiring and are skipped.
 
-_JSON_KV_LINE_RE = re.compile(r'^\s*"(?P<key>[^"]+)"\s*:\s*(?P<val>"(?:[^"\\]|\\.)*")\s*,?\s*$')
+_JSON_KV_LINE_RE: Final[re.Pattern[str]] = re.compile(r'^\s*"(?P<key>[^"]+)"\s*:\s*(?P<val>"(?:[^"\\]|\\.)*")\s*,?\s*$')
 
 
 def run_json_keys(src_dir: Path, out_pot: Path, keys: set[str], pattern: str) -> bool:
