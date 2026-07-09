@@ -4,7 +4,6 @@ from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileAddressGet,
     MyProfileRestGet,
-    MyProfileRestPatch,
     UserGet,
     UsersSearch,
 )
@@ -27,7 +26,12 @@ from ....web_requests_validation import parse_request_body_as
 from ... import _users_service
 from ..._users_web import RegistrationSessionManager
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._rest_schemas import MyPhoneConfirm, MyPhoneRegister, UsersRequestContext
+from ._rest_schemas import (
+    MyPhoneConfirm,
+    MyPhoneRegister,
+    MyProfileRestPatch,
+    UsersRequestContext,
+)
 
 _logger = logging.getLogger(__name__)
 

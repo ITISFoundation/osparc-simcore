@@ -14502,9 +14502,10 @@
         ],
         "title": "Activity"
       },
-      "AnnotationID": {
+      "AddressLineSafeStr": {
         "type": "string",
-        "format": "uuid"
+        "maxLength": 200,
+        "minLength": 1
       },
       "AnnotationUI-Input": {
         "properties": {
@@ -16585,6 +16586,9 @@
           "alpha2"
         ],
         "title": "CountryInfoDict"
+      },
+      "CountryNameStr": {
+        "type": "string"
       },
       "CreatePricingPlanBodyParams": {
         "properties": {
@@ -22561,12 +22565,14 @@
         "title": "MyProfileAddressGet",
         "description": "Details provided upon registration and used e.g. for invoicing"
       },
-      "MyProfileAddressPatch": {
+      "MyProfileAddressRestPatch": {
         "properties": {
           "institution": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -22577,18 +22583,19 @@
           "address": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/AddressLineSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Address"
+            ]
           },
           "city": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -22599,41 +22606,39 @@
           "state": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "State",
-            "description": "State, province, canton, ..."
+            "title": "State"
           },
           "postalCode": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/PostalCodeSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Postalcode"
+            ]
           },
           "country": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/CountryNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Country"
+            ]
           }
         },
         "type": "object",
-        "title": "MyProfileAddressPatch",
-        "description": "Billing address: a property of the user, editable independently of pre-registration"
+        "title": "MyProfileAddressRestPatch"
       },
       "MyProfilePrivacyGet": {
         "properties": {
@@ -22880,13 +22885,12 @@
           "contact": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/MyProfileAddressPatch"
+                "$ref": "#/components/schemas/MyProfileAddressRestPatch"
               },
               {
                 "type": "null"
               }
-            ],
-            "description": "Billing address. The user owns and can edit it directly."
+            ]
           }
         },
         "type": "object",
@@ -25035,6 +25039,12 @@
           "y"
         ],
         "title": "Position"
+      },
+      "PostalCodeSafeStr": {
+        "type": "string",
+        "maxLength": 20,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 \\-]+$"
       },
       "Preference": {
         "properties": {
@@ -30084,10 +30094,12 @@
         "properties": {
           "firstName": {
             "type": "string",
+            "maxLength": 255,
             "title": "Firstname"
           },
           "lastName": {
             "type": "string",
+            "maxLength": 255,
             "title": "Lastname"
           },
           "email": {
@@ -30096,7 +30108,9 @@
           "institution": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -30116,17 +30130,20 @@
             ]
           },
           "address": {
-            "type": "string",
-            "title": "Address"
+            "$ref": "#/components/schemas/AddressLineSafeStr"
           },
           "city": {
             "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
             "title": "City"
           },
           "state": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -30135,12 +30152,10 @@
             "title": "State"
           },
           "postalCode": {
-            "type": "string",
-            "title": "Postalcode"
+            "$ref": "#/components/schemas/PostalCodeSafeStr"
           },
           "country": {
-            "type": "string",
-            "title": "Country"
+            "$ref": "#/components/schemas/CountryNameStr"
           },
           "extras": {
             "additionalProperties": true,

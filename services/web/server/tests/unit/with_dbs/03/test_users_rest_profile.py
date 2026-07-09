@@ -364,7 +364,7 @@ async def test_update_profile_contact_address(
         "city": "Zurich",
         "state": "ZH",
         "postalCode": "8000",
-        "country": "CH",
+        "country": "Switzerland",  # NOTE: normalized from "CH" via pycountry
     }
 
     # PATCH: partial update only changes the given field

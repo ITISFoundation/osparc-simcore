@@ -12,13 +12,20 @@ from faker import Faker
 from models_library.api_schemas_webserver.users import (
     MyProfilePrivacyGet,
     MyProfileRestGet,
-    MyProfileRestPatch,
+)
+from models_library.api_schemas_webserver.users import (
+    MyProfileRestPatch as _ModelsLibraryMyProfileRestPatch,
 )
 from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import ValidationError
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database import utils_users
 from simcore_service_webserver.users._models import UserModelAdapter
+from simcore_service_webserver.users.schemas import (
+    MyProfileAddressRestPatch,
+    MyProfileRestPatch,
+)
 
 
 @pytest.fixture
@@ -155,3 +162,28 @@ def test_mapping_update_models_excludes_contact_from_db_values():
     profile_update_db = UserModelAdapter.from_rest_schema_model(profile_update)
 
     assert profile_update_db.to_db_values() == {"first_name": "foo"}
+
+
+def test_profile_rest_patch_is_hardened_variant_of_models_library_schema():
+    # The webserver-local `MyProfileRestPatch` (used at the actual REST boundary)
+    # narrows `contact` to the pycountry-validated `MyProfileAddressRestPatch`,
+    # but otherwise behaves like the models-library base schema.
+    assert issubclass(MyProfileRestPatch, _ModelsLibraryMyProfileRestPatch)
+
+
+def test_profile_rest_patch_contact_normalizes_country():
+    profile_update = MyProfileRestPatch.model_validate({"contact": {"country": "CH", "city": "Zurich"}})
+
+    assert isinstance(profile_update.contact, MyProfileAddressRestPatch)
+    assert profile_update.contact.country == "Switzerland"
+
+
+def test_profile_rest_patch_contact_rejects_invalid_country():
+    with pytest.raises(ValidationError):
+        MyProfileRestPatch.model_validate({"contact": {"country": "Not-A-Real-Country"}})
+
+
+@pytest.mark.parametrize("field_name", ["address", "city", "institution", "state"])
+def test_profile_rest_patch_contact_rejects_xss_payload(field_name: str):
+    with pytest.raises(ValidationError, match="string_unsafe_content"):
+        MyProfileRestPatch.model_validate({"contact": {field_name: "<script>alert(1)</script>"}})
