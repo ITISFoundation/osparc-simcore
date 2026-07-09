@@ -102,7 +102,7 @@ class ImageResources(BaseModel):
     )
 
 
-type ServiceResourcesDict = dict[DockerGenericTag, ImageResources]
+ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]  # noqa: UP040
 
 
 class ServiceResourcesDictHelpers:
