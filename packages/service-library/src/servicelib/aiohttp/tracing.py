@@ -241,6 +241,9 @@ def _shutdown() -> None:
         with log_catch(_logger, reraise=False):
             BotocoreInstrumentor().uninstrument()
             AiobotocoreInstrumentor().uninstrument()
+    if HAS_CELERY:
+        with log_catch(_logger, reraise=False):
+            CeleryInstrumentor().uninstrument()
     if HAS_THREADING:
         with log_catch(_logger, reraise=False):
             ThreadingInstrumentor().uninstrument()

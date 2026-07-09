@@ -195,6 +195,9 @@ def _shutdown() -> None:
     if HAS_ASYNCPG:
         with log_catch(_logger, reraise=False):
             AsyncPGInstrumentor().uninstrument()
+    if HAS_CELERY:
+        with log_catch(_logger, reraise=False):
+            CeleryInstrumentor().uninstrument()
     if HAS_REDIS:
         with log_catch(_logger, reraise=False):
             RedisInstrumentor().uninstrument()
