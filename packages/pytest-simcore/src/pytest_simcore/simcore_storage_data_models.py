@@ -198,7 +198,7 @@ def share_with_collaborator(
 
     async def _() -> None:
         async with sqlalchemy_async_engine.begin() as conn:
-            access_rights: dict[str | int, Any] = {
+            access_rights: dict[int, dict[str, bool]] = {
                 await _get_user_group(conn, user_id): {
                     "read": True,
                     "write": True,
