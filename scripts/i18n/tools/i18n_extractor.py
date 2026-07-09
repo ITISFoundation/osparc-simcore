@@ -53,9 +53,11 @@ from typing import Final
 import polib
 import typer
 from rich.console import Console
+from rich.highlighter import RegexHighlighter
+from rich.theme import Theme
 
 CONTEXT_MAX_LINES = 10  # max lines to expand in each direction around a string
-console = Console()
+
 
 # @TRANSLATOR marker: human note in source -> xgettext --add-comments -> #. line.
 # Literal is duplicated in i18n_translator.py (_extract_translator_notes); keep in sync.
@@ -322,7 +324,7 @@ class JsonKeysExtractor:
 #   CTX-VERSION:         → translation/version stamp by i18n_translator.py
 
 
-def _call_name(node: ast.AST) -> str | None:
+def _get_name(node: ast.AST) -> str | None:
     if isinstance(node, ast.Name):
         return node.id
     if isinstance(node, ast.Attribute):
@@ -350,7 +352,7 @@ def validate_no_fstring_translations(src_files: list[Path]) -> bool:  # noqa: C9
             if not isinstance(node, ast.Call):
                 continue
 
-            call_name = _call_name(node.func)
+            call_name = _get_name(node.func)
             if call_name not in PYTHON_TRANSLATION_FUNC_NAMES:
                 continue
 
@@ -388,7 +390,7 @@ def _extract_hints_from_file(path: Path) -> dict[str, str]:
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
-        if _call_name(node.func) != "user_message":
+        if _get_name(node.func) != "user_message":
             continue
         if not node.args or not isinstance(node.args[0], ast.Constant):
             continue
@@ -468,7 +470,11 @@ def parse_ctx_comment(comment: str) -> tuple[list[str], dict[str, str], list[str
     return passthrough_lines, ctx_fields, snippet_lines
 
 
-def render_ctx_comment(passthrough_lines: list[str], ctx_fields: dict[str, str], snippet_lines: list[str]) -> str:
+def _key_not_seen(key: str, seen: set[str]) -> bool:
+    return key.startswith("CTX-") and key not in seen and key != "CTX-SNIPPET"
+
+
+def _render_ctx_comment(passthrough_lines: list[str], ctx_fields: dict[str, str], snippet_lines: list[str]) -> str:
     """Render comment preserving non-CTX lines while canonicalizing CTX layout."""
     ordered_lines = [line for line in passthrough_lines if line.strip() != ""]
 
@@ -484,13 +490,9 @@ def render_ctx_comment(passthrough_lines: list[str], ctx_fields: dict[str, str],
             seen.add(key)
 
     # Preserve any additional CTX-* fields that might have been added later.
-    ordered_lines.extend(f"{key}: {ctx_fields[key]}" for key in sorted(k for k in ctx_fields if key_not_seen(k, seen)))
+    ordered_lines.extend(f"{key}: {ctx_fields[key]}" for key in sorted(k for k in ctx_fields if _key_not_seen(k, seen)))
 
     return "\n".join(ordered_lines).strip()
-
-
-def key_not_seen(key: str, seen: set[str]) -> bool:
-    return key.startswith("CTX-") and key not in seen and key != "CTX-SNIPPET"
 
 
 def _snippet_bounds(lines: list[str], lineno: int, max_context: int = CONTEXT_MAX_LINES) -> tuple[int, int]:
@@ -522,6 +524,25 @@ def _snippet_bounds(lines: list[str], lineno: int, max_context: int = CONTEXT_MA
         end += 1
 
     return start, end
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
+class _StatusHighlighter(RegexHighlighter):
+    highlights: Final = [
+        r"(?P<status_done>\[done\])",
+        r"(?P<status_error>\[(?:error|[^\]]*ERROR)\])",
+        r"(?P<status_warn>\[warn\])",
+    ]
+
+
+console = Console(
+    highlighter=_StatusHighlighter(),
+    theme=Theme({"status_done": "bold green", "status_error": "bold red", "status_warn": "yellow"}),
+)
 
 
 def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = None) -> None:
@@ -588,7 +609,7 @@ def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = No
         # entry.comment (#. lines) is left untouched -- it holds @TRANSLATOR notes.
         passthrough, ctx_fields, _ = parse_ctx_comment(entry.tcomment or "")
         ctx_fields["CTX-SNIPPET-VERSION"] = snippet_version
-        entry.tcomment = render_ctx_comment(passthrough, ctx_fields, snippet_lines)
+        entry.tcomment = _render_ctx_comment(passthrough, ctx_fields, snippet_lines)
 
     # Ensure enriched POT keeps UTF-8 metadata for non-ASCII msgids/comments.
     po.encoding = "utf-8"
@@ -596,11 +617,6 @@ def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = No
     po.metadata["Content-Transfer-Encoding"] = "8bit"
     po.save(str(pot_path))
     console.print(f"[enrich] {len(po)} entries enriched -> {pot_path}")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def collect_sources(src_dir: Path, langs: list[str] | None) -> list[Path]:
