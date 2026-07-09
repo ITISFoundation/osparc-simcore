@@ -5,10 +5,9 @@ import pytest
 from common_library.pydantic_validators import (
     _validate_legacy_timedelta_str,
     validate_numeric_string_as_timedelta,
-    validate_positive_timedelta,
 )
 from faker import Faker
-from pydantic import BeforeValidator, ValidationError
+from pydantic import BeforeValidator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
@@ -65,33 +64,3 @@ def test_validate_timedelta_in_legacy_mode(monkeypatch: pytest.MonkeyPatch, fake
     print(settings.model_dump())
     assert app_name == settings.APP_NAME
     assert timedelta(seconds=5555) == settings.REQUEST_TIMEOUT
-
-
-@pytest.mark.parametrize(
-    "value,is_valid",
-    [
-        (timedelta(seconds=1), True),
-        (timedelta(hours=1), True),
-        (timedelta(days=7), True),
-        (timedelta(seconds=0), False),
-        (timedelta(seconds=-1), False),
-        (timedelta(days=-1), False),
-    ],
-)
-def test_validate_positive_timedelta(monkeypatch: pytest.MonkeyPatch, value: timedelta, is_valid: bool):
-    class Settings(BaseSettings):
-        EXPIRATION_INTERVAL: timedelta = timedelta(hours=1)
-
-        _validate_expiration_interval = validate_positive_timedelta("EXPIRATION_INTERVAL")
-
-        model_config = SettingsConfigDict()
-
-    iso_value = f"PT{int(value.total_seconds())}S"
-    monkeypatch.setenv("EXPIRATION_INTERVAL", iso_value)
-
-    if is_valid:
-        settings = Settings()
-        assert value == settings.EXPIRATION_INTERVAL
-    else:
-        with pytest.raises(ValidationError):
-            Settings()

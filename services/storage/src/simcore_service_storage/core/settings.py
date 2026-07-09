@@ -1,9 +1,9 @@
 from datetime import timedelta
 from typing import Annotated
 
+from annotated_types import Gt
 from celery_library.basic_types import BootServerMode
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
-from common_library.pydantic_validators import validate_positive_timedelta
 from fastapi import FastAPI
 from pydantic import (
     AliasChoices,
@@ -24,14 +24,16 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
+PositiveTimedelta = Annotated[timedelta, Gt(timedelta(0))]
+
 
 class DsmCleanerSettings(BaseCustomSettings):
     STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL: Annotated[
-        timedelta, Field(description="Interval when task cleaning expired upload links runs.")
+        PositiveTimedelta, Field(description="Interval when task cleaning expired upload links runs.")
     ] = timedelta(minutes=15)
 
     STORAGE_CLEANER_EXPORT_INTERVAL: Annotated[
-        timedelta,
+        PositiveTimedelta,
         Field(
             description=(
                 "Interval when task cleaning expired exporter archives runs. Exports are kept for "
@@ -41,11 +43,8 @@ class DsmCleanerSettings(BaseCustomSettings):
     ] = timedelta(hours=6)
 
     STORAGE_CLEANER_EXPORT_RETENTION: Annotated[
-        timedelta, Field(description=("Amount of time an exported archive (exports/ S3 prefix) is kept for"))
+        PositiveTimedelta, Field(description=("Amount of time an exported archive (exports/ S3 prefix) is kept for"))
     ] = timedelta(days=30)
-
-    _validate_positive_expire_uploads_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL")
-    _validate_positive_expire_export_interval = validate_positive_timedelta("STORAGE_CLEANER_EXPORT_INTERVAL")
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
