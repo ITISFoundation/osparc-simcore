@@ -15,6 +15,7 @@ from servicelib.utils import limited_gather
 from ..constants import (
     DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY,
     DOCKER_STACK_DEPLOY_COMMAND_NAME,
+    HEARTBEAT_TAG_KEY,
     PRODUCT_NAME_TAG_KEY,
     ROLE_TAG_KEY,
     USER_ID_TAG_KEY,
@@ -31,7 +32,6 @@ from ..modules.clusters import (
 from ..utils.clusters import create_deploy_cluster_stack_script
 from ..utils.dask import get_scheduler_auth, get_scheduler_url
 from ..utils.ec2 import (
-    HEARTBEAT_TAG_KEY,
     get_cluster_name,
     user_id_from_instance_tags,
     wallet_id_from_instance_tags,

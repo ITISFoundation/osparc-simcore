@@ -10,7 +10,6 @@ from models_library.wallets import WalletID
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.ec2 import (
-    _APPLICATION_TAG_KEY,
     all_created_ec2_instances_filter,
     compose_user_data,
     creation_ec2_tags,
@@ -113,8 +112,8 @@ def test_creation_ec2_tags(
     received_tags = creation_ec2_tags(app_settings, product_name=product_name, user_id=user_id, wallet_id=wallet_id)
     assert received_tags
     EXPECTED_TAG_KEY_NAMES = [
-        f"{_APPLICATION_TAG_KEY}.deploy",
-        f"{_APPLICATION_TAG_KEY}.version",
+        "io.simcore.clusters-keeper.deploy",
+        "io.simcore.clusters-keeper.version",
         "Name",
         "io.simcore.product_name",
         "io.simcore.user_id",
@@ -140,7 +139,7 @@ def test_all_created_ec2_instances_filter(
     received_tags = all_created_ec2_instances_filter(app_settings)
     assert len(received_tags) == 1
     EXPECTED_TAG_KEY_NAMES = [
-        f"{_APPLICATION_TAG_KEY}.deploy",
+        "io.simcore.clusters-keeper.deploy",
     ]
     assert all(tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES), (
         f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
