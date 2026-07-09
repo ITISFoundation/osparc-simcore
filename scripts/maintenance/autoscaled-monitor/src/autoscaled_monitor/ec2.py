@@ -1,3 +1,4 @@
+import warnings
 from datetime import timedelta
 from typing import Any, Final
 
@@ -33,6 +34,13 @@ def _list_running_ec2_instances(
         ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
 
     if user_id:
+        warnings.warn(
+            "The tag 'user_id' is deprecated and will be removed in the future. "
+            'Please use ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]}) '
+            "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         ec2_filters.append(
             {
                 "Name": "tag-key",
@@ -45,9 +53,14 @@ def _list_running_ec2_instances(
                 "Values": [f"{user_id}"],
             }
         )
-        # NOTE: this should be reverted to below once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production
-        # ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]})  # noqa: ERA001
     if wallet_id:
+        warnings.warn(
+            "The tag 'wallet_id' is deprecated and will be removed in the future. "
+            'Please use ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]}) '
+            "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         ec2_filters.append(
             {
                 "Name": "tag-key",
@@ -60,7 +73,6 @@ def _list_running_ec2_instances(
                 "Values": [f"{wallet_id}"],
             }
         )
-        # NOTE: this should be reverted to below once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production
         # ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]})  # noqa: ERA001
     if instance_id:
         ec2_filters.append({"Name": "instance-id", "Values": [f"{instance_id}"]})
