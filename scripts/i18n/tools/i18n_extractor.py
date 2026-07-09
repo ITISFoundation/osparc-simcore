@@ -61,254 +61,265 @@ console = Console()
 # Literal is duplicated in i18n_translator.py (_extract_translator_notes); keep in sync.
 TRANSLATOR_TAG: Final = "@TRANSLATOR"
 
-# xgettext language flag per file extension
-LANG_MAP = {
-    ".py": "Python",
-    ".js": "JavaScript",  # qooxdoo frontend
-    ".ts": "JavaScript",  # rocket frontend; xgettext has no TypeScript language
-    ".tsx": "JavaScript",
-    ".jsx": "JavaScript",
-    ".cpp": "C++",
-    ".cxx": "C++",
-    ".cc": "C++",
-    ".c": "C",
-    ".h": "C++",
-    ".rc": "C++",  # STRINGTABLE entries; xgettext treats .rc as C-like
-}
+# ---------------------------------------------------------------------------
+# Step 1a: xgettext extraction for source files (Python, C++, MFC .rc)
+# ---------------------------------------------------------------------------
 
-# xgettext --keyword flags: single source of truth for run_xgettext()'s cmd, mapped
-# to the language(s)/tool that call each translation function.
-XGETTEXT_KEYWORDS: Final[dict[str, str]] = {
-    "_": "Python",
-    "gettext": "Python",
-    "user_message": "Python (osparc)",
-    "tr": "Qt/MFC C++, qooxdoo JS",
-    "t": "rocket JS/TS",
-    "QT_TR_NOOP": "Qt no-op marker (C++)",
-}
 
-# Subset of XGETTEXT_KEYWORDS that Python code can actually call; used only by the
+class XgetextExtractor:
+    """Extract translatable strings from source files using GNU xgettext.
+
+    Files are grouped by language to minimize subprocess invocations.
+    SEE https://www.gnu.org/software/gettext/manual/html_node/xgettext-Invocation.html
+    """
+
+    # xgettext --language flag per file extension (case-insensitive match).
+    LANG_MAP: Final[dict[str, str]] = {
+        ".py": "Python",
+        ".js": "JavaScript",  # qooxdoo frontend
+        ".ts": "JavaScript",  # rocket frontend; xgettext has no TypeScript language
+        ".tsx": "JavaScript",
+        ".jsx": "JavaScript",
+        ".cpp": "C++",
+        ".cxx": "C++",
+        ".cc": "C++",
+        ".c": "C",
+        ".h": "C++",
+        ".rc": "C++",  # STRINGTABLE entries; xgettext treats .rc as C-like
+    }
+
+    # --keyword flags: single source of truth for all translation functions.
+    KEYWORDS: Final[dict[str, str]] = {
+        "_": "Python",
+        "gettext": "Python",
+        "user_message": "Python (osparc)",
+        "tr": "Qt/MFC C++, qooxdoo JS",
+        "t": "rocket JS/TS",
+        "QT_TR_NOOP": "Qt no-op marker (C++)",
+    }
+
+    def run(self, src_files: list[Path], out_pot: Path) -> bool:
+        """Returns True on success."""
+        if not src_files:
+            console.print("[extract] No source files found.")
+            return False
+
+        base_cmd = [
+            "xgettext",
+            *(f"--keyword={kw}" for kw in self.KEYWORDS),
+            f"--add-comments={TRANSLATOR_TAG}",
+            "--from-code=UTF-8",
+            "--output",
+            str(out_pot),
+            "--package-name=osparc-simcore",
+            "--msgid-bugs-address=",
+        ]
+
+        # Group files by language to batch invocations.
+        by_lang: dict[str, list[Path]] = {}
+        for f in src_files:
+            lang = self.LANG_MAP.get(f.suffix.lower())
+            if lang:
+                by_lang.setdefault(lang, []).append(f)
+            else:
+                console.print(f"  [skip] unsupported extension: {f}")
+
+        if not by_lang:
+            console.print("[extract] No files with supported extensions.")
+            return False
+
+        first = True
+        for lang, files in by_lang.items():
+            batch_cmd = [*base_cmd, f"--language={lang}", *(str(f) for f in files)]
+            if not first:
+                batch_cmd.append("--join-existing")  # append to the .pot from first batch
+            first = False
+
+            result = subprocess.run(batch_cmd, capture_output=True, text=True, check=False)  # noqa: S603
+            if result.returncode != 0:
+                console.print(f"[xgettext ERROR] {result.stderr.strip()}")
+                return False
+            console.print(f"  [xgettext] {lang}: {len(files)} file(s)")
+
+        return True
+
+
+# Subset of XgetextExtractor.KEYWORDS that Python code can actually call; used only by the
 # Python AST-based validate_no_fstring_translations() (never scans .js/.cpp files).
 PYTHON_TRANSLATION_FUNC_NAMES: Final[set[str]] = {"_", "gettext", "user_message"}
-assert set(XGETTEXT_KEYWORDS) >= PYTHON_TRANSLATION_FUNC_NAMES  # nosec
-
-
-# ---------------------------------------------------------------------------
-# Step 1: xgettext
-# ---------------------------------------------------------------------------
-
-
-def run_xgettext(src_files: list[Path], out_pot: Path) -> bool:
-    """
-    Run xgettext over all source files in one invocation.
-    Returns True on success.
-    """
-    if not src_files:
-        console.print("[extract] No source files found.")
-        return False
-
-    cmd = [
-        # Extract translatable strings from given input files
-        # SEE https://www.gnu.org/software/gettext/manual/html_node/xgettext-Invocation.html
-        "xgettext",
-        *(f"--keyword={keyword}" for keyword in XGETTEXT_KEYWORDS),
-        f"--add-comments={TRANSLATOR_TAG}",
-        "--from-code=UTF-8",
-        "--output",
-        str(out_pot),
-        "--package-name=osparc-simcore",
-        "--msgid-bugs-address=",
-        # SUGGESTION: remove --no-location if you want
-    ]
-
-    # xgettext needs --language per file; pass each file with its language.
-    # Group files by language to avoid per-file subprocess overhead.
-    by_lang: dict[str, list[Path]] = {}
-    for f in src_files:
-        lang = LANG_MAP.get(f.suffix.lower())
-        if lang:
-            by_lang.setdefault(lang, []).append(f)
-        else:
-            console.print(f"  [skip] unsupported extension: {f}")
-
-    if not by_lang:
-        console.print("[extract] No files with supported extensions.")
-        return False
-
-    first = True
-    for lang, files in by_lang.items():
-        batch_cmd = [*cmd, f"--language={lang}", *(str(f) for f in files)]
-        if not first:
-            # append to the .pot produced by the first batch
-            batch_cmd.append("--join-existing")
-        first = False
-
-        result = subprocess.run(batch_cmd, capture_output=True, text=True, check=False)  # noqa: S603
-        if result.returncode != 0:
-            console.print(f"[xgettext ERROR] {result.stderr.strip()}")
-            return False
-        console.print(f"  [xgettext] {lang}: {len(files)} file(s)")
-
-    return True
+assert XgetextExtractor.KEYWORDS.keys() >= PYTHON_TRANSLATION_FUNC_NAMES  # nosec
 
 
 # ---------------------------------------------------------------------------
 # Step 1b: Babel extraction for Jinja2 templates
 # ---------------------------------------------------------------------------
-#
-# xgettext cannot parse Jinja2 ({% trans %} blocks, {{ gettext(...) }} calls),
-# so Babel's jinja2.ext.babel_extract is used for *.j2 templates. The output is
-# a polib .pot with the same #: filepath:lineno references that `enrich` and
-# `msgcat` (in the Makefile `merge` step) consume, so it slots into the existing
-# pipeline unchanged.
-
-_JINJA_METHOD_MAP = [("**.j2", "jinja2.ext.babel_extract")]
-# i18n extension is auto-loaded by babel_extract; encoding pinned to UTF-8.
-_JINJA_OPTIONS_MAP = {"**.j2": {"encoding": "utf-8", "silent": "false"}}
 
 
-def run_babel_jinja(src_dir: Path, out_pot: Path) -> bool:
-    """Extract translatable strings from Jinja2 templates under *src_dir*.
+class BabelJinjaExtractor:
+    """Extract translatable strings from Jinja2 templates via Babel.
 
-    Returns True on success. Occurrence paths are recorded relative to the
-    given *src_dir* prefix so they resolve from the repo root (matching the
-    xgettext step), which lets `enrich` locate the source snippets.
+    xgettext cannot parse Jinja2 ({% trans %} blocks, {{ gettext(...) }} calls),
+    so Babel's jinja2.ext.babel_extract is used for *.j2 templates. Output is a
+    .pot with the same #: filepath:lineno references that slot into the existing
+    pipeline unchanged.
     """
-    from babel.messages.extract import extract_from_dir  # noqa: PLC0415
 
-    # (msgid, msgid_plural, context) -> POEntry, so repeated strings merge
-    # into one entry carrying multiple #: occurrences.
-    entries: dict[tuple[str, str | None, str | None], polib.POEntry] = {}
+    # i18n extension is auto-loaded by babel_extract; encoding pinned to UTF-8.
+    _METHOD_MAP: Final = [("**.j2", "jinja2.ext.babel_extract")]
+    _OPTIONS_MAP: Final = {"**.j2": {"encoding": "utf-8", "silent": "false"}}
 
-    for filename, lineno, message, _comments, context in extract_from_dir(
-        dirname=src_dir,
-        method_map=_JINJA_METHOD_MAP,
-        options_map=_JINJA_OPTIONS_MAP,
-    ):
-        if isinstance(message, tuple | list):
-            msgid, msgid_plural = message[0], message[1]
-        else:
-            msgid, msgid_plural = message, None
+    def run(self, src_dir: Path, out_pot: Path) -> bool:
+        """Returns True on success."""
+        from babel.messages.extract import extract_from_dir  # noqa: PLC0415
 
-        if not msgid:
-            continue
+        # (msgid, msgid_plural, context) -> POEntry, so repeated strings merge
+        # into one entry carrying multiple #: occurrences.
+        entries: dict[tuple[str, str | None, str | None], polib.POEntry] = {}
 
-        msgctxt = context or None
-        key = (msgid, msgid_plural, msgctxt)
-        occurrence = (f"{src_dir}/{filename}", str(lineno))
+        for filename, lineno, message, _comments, context in extract_from_dir(
+            dirname=src_dir,
+            method_map=self._METHOD_MAP,
+            options_map=self._OPTIONS_MAP,
+        ):
+            if isinstance(message, tuple | list):
+                msgid, msgid_plural = message[0], message[1]
+            else:
+                msgid, msgid_plural = message, None
 
-        if key in entries:
-            entries[key].occurrences.append(occurrence)
-            continue
+            if not msgid:
+                continue
 
-        if msgid_plural:
-            entry = polib.POEntry(
-                msgid=msgid,
-                msgid_plural=msgid_plural,
-                msgstr_plural={0: "", 1: ""},
-                msgctxt=msgctxt,
-                occurrences=[occurrence],
-            )
-        else:
-            entry = polib.POEntry(
-                msgid=msgid,
-                msgstr="",
-                msgctxt=msgctxt,
-                occurrences=[occurrence],
-            )
-        entries[key] = entry
+            msgctxt = context or None
+            key = (msgid, msgid_plural, msgctxt)
+            occurrence = (f"{src_dir}/{filename}", str(lineno))
 
-    pot = polib.POFile(wrapwidth=0)
-    pot.metadata = {
-        "Project-Id-Version": "osparc-simcore",
-        "Content-Type": "text/plain; charset=UTF-8",
-        "Content-Transfer-Encoding": "8bit",
-    }
-    for entry in entries.values():
-        pot.append(entry)
+            if key in entries:
+                entries[key].occurrences.append(occurrence)
+                continue
 
-    out_pot.parent.mkdir(parents=True, exist_ok=True)
-    pot.save(str(out_pot))
-    console.print(f"  [jinja] {len(pot)} entry/ies -> {out_pot}")
-    return True
+            if msgid_plural:
+                entry = polib.POEntry(
+                    msgid=msgid,
+                    msgid_plural=msgid_plural,
+                    msgstr_plural={0: "", 1: ""},
+                    msgctxt=msgctxt,
+                    occurrences=[occurrence],
+                )
+            else:
+                entry = polib.POEntry(
+                    msgid=msgid,
+                    msgstr="",
+                    msgctxt=msgctxt,
+                    occurrences=[occurrence],
+                )
+            entries[key] = entry
+
+        pot = polib.POFile(wrapwidth=0)
+        pot.metadata = {
+            "Project-Id-Version": "osparc-simcore",
+            "Content-Type": "text/plain; charset=UTF-8",
+            "Content-Transfer-Encoding": "8bit",
+        }
+        for entry in entries.values():
+            pot.append(entry)
+
+        out_pot.parent.mkdir(parents=True, exist_ok=True)
+        pot.save(str(out_pot))
+        console.print(f"  [jinja] {len(pot)} entry/ies -> {out_pot}")
+        return True
 
 
 # ---------------------------------------------------------------------------
 # Step 1c: JSON-value extraction (e.g. frontend guided tours)
 # ---------------------------------------------------------------------------
-#
-# Guided tours (services/static-webserver/client/source/resource/osparc/tours/
-# *_tours.json) are data loaded at runtime, so their user-facing strings are
-# NOT reachable by xgettext (which only sees literal tr() calls in .js).
-# This step reads JSON files and pulls out the *values* of a given set of
-# keys (e.g. name/description/title/text), emitting a .pot the same shape as
-# the xgettext/jinja outputs so it merges into the frontend catalog. Runtime
-# translation is expected to happen at the consumption points by wrapping the
-# fetched values in qx.locale.Manager.tr(...) (a catalog lookup by msgid) --
-# that wiring is out of scope for this extractor.
-#
-# Extraction is line-based: every translatable "key": "value" pair is expected
-# on its own line (as produced by standard JSON formatting), which yields an
-# accurate source-line reference for `enrich` and lets the JSON decoder
-# correctly handle string escaping. Keys not in *keys* (id, context, anchorEl,
-# selector, placement, action, ...) are wiring and are skipped.
-
-_JSON_KV_LINE_RE: Final[re.Pattern[str]] = re.compile(r'^\s*"(?P<key>[^"]+)"\s*:\s*(?P<val>"(?:[^"\\]|\\.)*")\s*,?\s*$')
 
 
-def run_json_keys(src_dir: Path, out_pot: Path, keys: set[str], pattern: str) -> bool:
-    """Extract translatable string values for *keys* from JSON files under *src_dir*.
+class JsonKeysExtractor:
+    """Extract translatable string values from JSON files by key name.
 
-    Only lines matching "key": "value" (one pair per line) are considered, so
-    a #: reference always resolves to the exact line. Returns True on success,
-    False when no files match *pattern* under *src_dir*.
+    Targets JSON resource files (e.g. guided tour definitions) whose user-facing
+    strings are loaded at runtime and therefore NOT reachable by xgettext (which
+    only sees literal tr() calls in .js). Extraction is line-based: every
+    translatable "key": "value" pair must be on its own line, yielding exact
+    #: filepath:lineno references. Keys not in *keys* (id, anchorEl, ...) are
+    wiring and are skipped.
     """
-    files = sorted(src_dir.rglob(pattern))
-    if not files:
-        console.print(f"[json] No files matching {pattern!r} under {src_dir}.")
-        return False
 
-    # msgid -> POEntry, so the same string reused across tours/steps merges
-    # into one entry carrying multiple #: occurrences.
-    entries: dict[str, polib.POEntry] = {}
+    # Matches one "key": "value" JSON line; `val` is raw-encoded so json.loads() handles escapes.
+    KV_LINE_RE: Final[re.Pattern[str]] = re.compile(r'^\s*"(?P<key>[^"]+)"\s*:\s*(?P<val>"(?:[^"\\]|\\.)*")\s*,?\s*$')
 
-    for path in files:
-        rel = path.relative_to(src_dir)
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        for lineno, line in enumerate(lines, start=1):
-            match = _JSON_KV_LINE_RE.match(line)
-            if not match or match.group("key") not in keys:
-                continue
+    def _collect_entries(
+        self,
+        src_dir: Path,
+        files: list[Path],
+        keys: set[str],
+    ) -> dict[str, polib.POEntry]:
+        # msgid -> POEntry: duplicate strings merge into one entry with multiple #: occurrences.
+        entries: dict[str, polib.POEntry] = {}
 
-            try:
-                msgid = json.loads(match.group("val"))
-            except json.JSONDecodeError:
-                console.print(f"  [warn] {path}:{lineno}: could not decode JSON value, skipping")
-                continue
+        for path in files:
+            rel = path.relative_to(src_dir)
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+            for lineno, line in enumerate(lines, start=1):
+                match = self.KV_LINE_RE.match(line)
+                if not match or match.group("key") not in keys:
+                    continue
 
-            if not msgid:
-                continue
+                try:
+                    msgid = json.loads(match.group("val"))
+                except json.JSONDecodeError:
+                    console.print(f"  [warn] {path}:{lineno}: could not decode JSON value, skipping")
+                    continue
 
-            occurrence = (f"{src_dir}/{rel}", str(lineno))
-            if msgid in entries:
-                entries[msgid].occurrences.append(occurrence)
-                continue
+                if not msgid:
+                    continue
 
-            entries[msgid] = polib.POEntry(msgid=msgid, msgstr="", occurrences=[occurrence])
+                occurrence = (f"{src_dir}/{rel}", str(lineno))
+                if msgid in entries:
+                    entries[msgid].occurrences.append(occurrence)
+                    continue
 
-    pot = polib.POFile(wrapwidth=0)
-    pot.metadata = {
-        "Project-Id-Version": "osparc-simcore",
-        "Content-Type": "text/plain; charset=UTF-8",
-        "Content-Transfer-Encoding": "8bit",
-    }
-    for entry in entries.values():
-        pot.append(entry)
+                entries[msgid] = polib.POEntry(msgid=msgid, msgstr="", occurrences=[occurrence])
 
-    out_pot.parent.mkdir(parents=True, exist_ok=True)
-    pot.save(str(out_pot))
-    console.print(f"  [json] {len(pot)} entry/ies from {len(files)} file(s) -> {out_pot}")
-    return True
+        return entries
+
+    def run(self, src_dir: Path, out_pot: Path, keys: set[str], pattern: str) -> bool:
+        """Returns True on success, False when no files match *pattern*."""
+        files = sorted(src_dir.rglob(pattern))
+        if not files:
+            console.print(f"[json] No files matching {pattern!r} under {src_dir}.")
+            return False
+
+        entries = self._collect_entries(src_dir, files, keys)
+
+        pot = polib.POFile(wrapwidth=0)
+        pot.metadata = {
+            "Project-Id-Version": "osparc-simcore",
+            "Content-Type": "text/plain; charset=UTF-8",
+            "Content-Transfer-Encoding": "8bit",
+        }
+        for entry in entries.values():
+            pot.append(entry)
+
+        out_pot.parent.mkdir(parents=True, exist_ok=True)
+        pot.save(str(out_pot))
+        console.print(f"  [json] {len(pot)} entry/ies from {len(files)} file(s) -> {out_pot}")
+        return True
+
+
+# ---------------------------------------------------------------------------
+# Step 2: enrich with extractor-owned context metadata
+# ---------------------------------------------------------------------------
+#
+# These markers are written by the extractor step (this script), not by xgettext.
+# They use the CTX- prefix to stay distinct from the @TRANSLATOR prefix that
+# xgettext captures via --add-comments=@TRANSLATOR (xgettext command).
+#
+#   @TRANSLATOR ...      →  human note in source code → extracted by xgettext → #. line
+#   CTX-SNIPPET:         → machine-generated by enrich
+#   CTX-SNIPPET-VERSION: → git-blame hash for the referenced line
+#   CTX-INTERPRETATION:  → written by i18n_translator.py
+#   CTX-VERSION:         → translation/version stamp by i18n_translator.py
 
 
 def _call_name(node: ast.AST) -> str | None:
@@ -414,21 +425,6 @@ def collect_python_hints(src_files: list[Path]) -> dict[str, str]:
                 hints[msgid] = hint
 
     return hints
-
-
-# ---------------------------------------------------------------------------
-# Step 2: enrich with extractor-owned context metadata
-# ---------------------------------------------------------------------------
-#
-# These markers are written by the extractor step (this script), not by xgettext.
-# They use the CTX- prefix to stay distinct from the @TRANSLATOR prefix that
-# xgettext captures via --add-comments=@TRANSLATOR (xgettext command).
-#
-#   @TRANSLATOR ...      →  human note in source code → extracted by xgettext → #. line
-#   CTX-SNIPPET:         → machine-generated by enrich
-#   CTX-SNIPPET-VERSION: → git-blame hash for the referenced line
-#   CTX-INTERPRETATION:  → written by i18n_translator.py
-#   CTX-VERSION:         → translation/version stamp by i18n_translator.py
 
 
 def get_blame_commit(filepath: str, lineno: int, cwd: Path | None = None) -> str:
@@ -621,7 +617,7 @@ def collect_sources(src_dir: Path, langs: list[str] | None) -> list[Path]:
         for lang in langs:
             allowed_exts |= lang_to_exts.get(lang.lower(), set())
     else:
-        allowed_exts = set(LANG_MAP.keys())
+        allowed_exts = set(XgetextExtractor.LANG_MAP.keys())
 
     files = [f for f in sorted(src_dir.rglob("*")) if f.suffix.lower() in allowed_exts]
     console.print(f"[collect] {len(files)} file(s) under {src_dir}")
@@ -655,7 +651,7 @@ def run_xgettext_step(src: Path, out: Path, langs: str | None) -> None:
     if not src_files:
         raise typer.Exit(code=1)
 
-    if not run_xgettext(src_files, out):
+    if not XgetextExtractor().run(src_files, out):
         raise typer.Exit(code=1)
 
     if not validate_no_fstring_translations(src_files):
@@ -719,7 +715,7 @@ def jinja_cmd(
     if not src.is_dir():
         console.print(f"[error] source directory not found: {src}")
         raise typer.Exit(code=1)
-    if not run_babel_jinja(src, out):
+    if not BabelJinjaExtractor().run(src, out):
         raise typer.Exit(code=1)
     console.print(f"[done] jinja -> {out}")
 
@@ -744,7 +740,7 @@ def json_cmd(
         console.print("[error] --keys must contain at least one non-empty key")
         raise typer.Exit(code=1)
 
-    if not run_json_keys(src, out, key_set, pattern):
+    if not JsonKeysExtractor().run(src, out, key_set, pattern):
         raise typer.Exit(code=1)
     console.print(f"[done] json -> {out}")
 
