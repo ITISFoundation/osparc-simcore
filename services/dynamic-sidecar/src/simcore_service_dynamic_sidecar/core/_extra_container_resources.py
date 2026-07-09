@@ -8,15 +8,12 @@ Fails sidecar startup if the deduction would leave the target service with:
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final
 
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 
 from .errors import BaseDynamicSidecarError
-
-if TYPE_CHECKING:
-    from .settings import ApplicationSettings
-
+from .settings import ApplicationSettings
 
 # A service must retain at least this fraction of its *own* original allocation
 # after all helper footprints are subtracted.
