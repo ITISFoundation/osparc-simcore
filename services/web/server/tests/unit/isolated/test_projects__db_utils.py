@@ -13,10 +13,8 @@ import pytest
 from faker import Faker
 from models_library.groups import GroupID
 from simcore_service_webserver.projects._projects_repository_legacy import (
-    ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
-    create_project_access_rights,
 )
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
@@ -114,13 +112,6 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
 @pytest.fixture
 def group_id(faker: Faker) -> GroupID:
     return faker.pyint(min_value=1)
-
-
-@pytest.mark.parametrize("project_access_rights", ProjectAccessRights.all())
-def test_project_access_rights_creation(group_id: int, project_access_rights: ProjectAccessRights):
-    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
-    assert str(group_id) in git_to_access_rights
-    assert git_to_access_rights[str(group_id)] == project_access_rights.value
 
 
 def test_assemble_array_groups_empty_user_groups():
