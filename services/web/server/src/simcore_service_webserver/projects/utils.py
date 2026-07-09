@@ -150,35 +150,6 @@ def substitute_parameterized_inputs(parameterized_project: dict, parameters: dic
     return project
 
 
-def is_graph_equal(lhs_workbench: dict[str, Any], rhs_workbench: dict[str, Any]) -> bool:
-    """Checks whether both workbench contain the same graph
-
-    Two graphs are the same when the same topology (i.e. nodes and edges)
-    and the ports at each node have same values/connections
-    """
-    try:
-        if not set(rhs_workbench.keys()) == set(lhs_workbench.keys()):
-            raise ValueError
-
-        for node_id, node in rhs_workbench.items():
-            # same nodes
-            if not all(node.get(k) == lhs_workbench[node_id].get(k) for k in ["key", "version"]):
-                raise ValueError
-
-            # same connectivity (edges)
-            if not set(node.get("inputNodes")) == set(lhs_workbench[node_id].get("inputNodes")):
-                raise ValueError
-
-            # same input values
-            for port_id, port in node.get("inputs", {}).items():
-                if port != lhs_workbench[node_id].get("inputs", {}).get(port_id):
-                    raise ValueError
-
-    except (ValueError, TypeError, AttributeError):
-        return False
-    return True
-
-
 def extract_dns_without_default_port(url: URL) -> str:
     port = "" if url.port == 80 else f":{url.port}"
     return f"{url.host}{port}"
@@ -240,76 +211,6 @@ def any_node_inputs_changed(updated_project: ProjectDict, current_project: Proje
 _SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
     ServiceKey("simcore/services/frontend/file-picker"),
 }
-
-
-def get_frontend_node_outputs_changes(new_node: NodeDict, old_node: NodeDict) -> set[str]:
-    changed_keys: set[str] = set()
-
-    # ANE: if node changes it's outputs and is not a supported
-    # frontend type, return no frontend changes
-    old_key, new_key = old_node.get("key"), new_node.get("key")
-    if old_key == new_key and new_key not in _SUPPORTED_FRONTEND_KEYS:
-        return set()
-
-    _logger.debug("Comparing nodes %s %s", new_node, old_node)
-
-    def _check_for_changes(d1: dict[str, Any], d2: dict[str, Any]) -> None:
-        """
-        Checks if d1's values have changed compared to d2's.
-        NOTE: Does not guarantee that d2's values have changed
-        compare to d1's.
-        """
-        for k, v in d1.items():
-            if k not in d2:
-                changed_keys.add(k)
-                continue
-            if v != d2[k]:
-                changed_keys.add(k)
-
-    new_outputs: dict[str, Any] = new_node.get("outputs", {}) or {}
-    old_outputs: dict[str, Any] = old_node.get("outputs", {}) or {}
-
-    _check_for_changes(new_outputs, old_outputs)
-    _check_for_changes(old_outputs, new_outputs)
-
-    return changed_keys
-
-
-def find_changed_node_keys(
-    current_dict: dict[str, Any],
-    new_dict: dict[str, Any],
-    *,
-    look_for_removed_keys: bool,
-) -> dict[str, Any]:
-    # The `store` key inside outputs could be either `0` (integer) or `"0"` (string)
-    # this generates false positives.
-    # Casting to `int` to fix the issue.
-    # NOTE: this could make services relying on side effects to stop form propagating
-    # changes to downstream connected services.
-    # Will only fix the issue for `file-picker` to avoid issues.
-    def _cast_outputs_store(dict_data: dict[str, Any]) -> None:
-        for data in dict_data.get("outputs", {}).values():
-            if "store" in data:
-                data["store"] = int(data["store"])
-
-    if current_dict.get("key") == "simcore/services/frontend/file-picker":
-        _cast_outputs_store(current_dict)
-        _cast_outputs_store(new_dict)
-
-    # start with the missing keys
-    changed_keys = {k: new_dict[k] for k in new_dict.keys() - current_dict.keys()}
-    if look_for_removed_keys:
-        changed_keys.update({k: current_dict[k] for k in current_dict.keys() - new_dict.keys()})
-    # then go for the modified ones
-    for k in current_dict.keys() & new_dict.keys():
-        if current_dict[k] == new_dict[k]:
-            continue
-        # if the entry was modified put the new one
-        modified_entry = {k: new_dict[k]}
-        if isinstance(current_dict[k], dict) and isinstance(new_dict[k], dict):
-            modified_entry = {k: find_changed_node_keys(current_dict[k], new_dict[k], look_for_removed_keys=True)}
-        changed_keys.update(modified_entry)
-    return changed_keys
 
 
 COPY_SUFFIX_RE = re.compile(r"^(.*? \(Copy\))(\(\d+\))?$")
