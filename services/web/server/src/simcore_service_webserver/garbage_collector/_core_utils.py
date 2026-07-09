@@ -13,7 +13,6 @@ from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..groups.groups_service import get_group_by_gid
 from ..projects._projects_repository_legacy import (
     PROJECT_DBAPI_APPKEY,
-    ProjectAccessRights,
     ProjectDBAPI,
 )
 from ..projects.api import (
@@ -168,9 +167,6 @@ async def replace_current_owner(
 
     # unsetting the project owner and saving the project back
     project["prj_owner"] = int(new_project_owner_id)
-    # removing access rights entry
-    del project["accessRights"][f"{user_primary_gid}"]
-    project["accessRights"][f"{new_project_owner_gid}"] = ProjectAccessRights.OWNER.value
     _logger.info("Syncing back project %s", project)
 
     # syncing back project data

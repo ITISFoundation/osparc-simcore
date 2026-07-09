@@ -531,12 +531,11 @@ async def clone_project_data(
         forced_copy_project_id=forced_copy_project_id,
         clean_output_data=False,
     )
-    # NOTE: `clone_project_document` deep-copies the source project's accessRights (owner +
-    # collaborators). Reset it here so `insert_project` grants ONLY the new owner (`user_id`)
-    # access, instead of merging it into the source project's stale collaborators list.
-    # The actual/authoritative access control is driven by the `project_to_groups` table
-    # (populated automatically via a DB trigger on insert), not by this legacy JSON field.
-    new_project["accessRights"] = {}
+    # NOTE: `clone_project_document` deep-copies the source project's `accessRights`. Clear the
+    # stale value from the cloned document: access control is driven by the `project_to_groups`
+    # table (the new owner is granted automatically via a DB trigger on insert) and the
+    # `accessRights` field is populated by the output schema when the project is read back.
+    new_project.pop("accessRights", None)
 
     if template_parameters:
         new_project = substitute_parameterized_inputs(new_project, template_parameters) or new_project
@@ -566,13 +565,6 @@ async def clone_project_data(
         force_project_uuid=forced_copy_project_id is not None,
         project_nodes=project_nodes,
     )
-
-    project_groups = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-        app, project_id=TypeAdapter(ProjectID).validate_python(new_project["uuid"])
-    )
-    new_project["accessRights"] = {
-        f"{group.gid}": {"read": group.read, "write": group.write, "delete": group.delete} for group in project_groups
-    }
 
     needs_lock_source_project = (
         await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))

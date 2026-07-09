@@ -38,10 +38,10 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from simcore_service_webserver.projects import _groups_service, _projects_service
 from simcore_service_webserver.projects import (
     _projects_repository as projects_repository,
 )
-from simcore_service_webserver.projects import _projects_service
 from simcore_service_webserver.projects._projects_repository_legacy import (
     ProjectDBAPI,
 )
@@ -252,15 +252,14 @@ async def test_clone_project_data_from_standard_project(
     # new project has a new uuid
     assert cloned_project["uuid"] != shared_project["uuid"]
 
-    # access rights are reset to ONLY the new owner (stale collaborators from the
-    # source project, e.g. `all_group`, are dropped)
-    owner_gid = str(logged_user["primary_gid"])
-    assert set(cloned_project["accessRights"].keys()) == {owner_gid}
-    assert cloned_project["accessRights"][owner_gid] == {
-        "read": True,
-        "write": True,
-        "delete": True,
-    }
+    assert "accessRights" not in cloned_project
+    owner_gid = logged_user["primary_gid"]
+    project_groups = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        client.app, project_id=ProjectID(cloned_project["uuid"])
+    )
+    assert {group.gid for group in project_groups} == {owner_gid}
+    owner_group = project_groups[0]
+    assert (owner_group.read, owner_group.write, owner_group.delete) == (True, True, True)
 
     # node uuids were regenerated (1-to-1 with the source workbench)
     assert set(cloned_project["workbench"].keys()) != set(shared_project["workbench"].keys())
