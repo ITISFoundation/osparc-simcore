@@ -46,9 +46,13 @@ _logger = logging.getLogger(__name__)
 def _log_instance(instance: EC2InstanceData) -> str:
     """Consistent instance identifier for log messages with enough info
     to locate the instance in AWS and in our logging facilities."""
-    user_id = instance.tags.get("user_id", "N/A")
-    wallet_id = instance.tags.get("wallet_id", "N/A")
-    return f"[id={instance.id} dns={instance.aws_private_dns} user_id={user_id} wallet_id={wallet_id}]"
+    user_id = instance.tags.get(USER_ID_TAG_KEY, "N/A")
+    wallet_id = instance.tags.get(WALLET_ID_TAG_KEY, "N/A")
+    product_name = instance.tags.get(PRODUCT_NAME_TAG_KEY, "N/A")
+    return (
+        f"[id={instance.id} dns={instance.aws_private_dns} user_id={user_id} "
+        f"wallet_id={wallet_id} product_name={product_name}]"
+    )
 
 
 def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime | None:
