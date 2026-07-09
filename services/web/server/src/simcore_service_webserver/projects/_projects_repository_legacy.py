@@ -243,7 +243,7 @@ class ProjectDBAPI(BaseProjectDB):
             }
         )
 
-        # validate acc`ess_rights. are the gids valid? also ensure prj_owner is in there
+        # validate access_rights. are the gids valid? also ensure prj_owner is in there
         if user_id:
             async with self.engine.connect() as conn:
                 await self._get_user_primary_group_gid(conn, user_id=user_id)
