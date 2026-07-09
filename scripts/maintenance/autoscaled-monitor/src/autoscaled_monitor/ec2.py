@@ -33,9 +33,9 @@ def _list_running_ec2_instances(
         ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
 
     if user_id:
-        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+        ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]})
     if wallet_id:
-        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+        ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]})
     if instance_id:
         ec2_filters.append({"Name": "instance-id", "Values": [f"{instance_id}"]})
     return ec2_resource.instances.filter(Filters=ec2_filters)

@@ -33,7 +33,7 @@ def get_instance_name(instance: Instance) -> str:
 def get_last_heartbeat(instance: Instance) -> datetime.datetime | None:
     for tag in instance.tags:
         assert "Key" in tag  # nosec
-        if tag["Key"] == "last_heartbeat":
+        if tag["Key"] == "io.simcore.clusters-keeper.last_heartbeat":
             assert "Value" in tag  # nosec
             return arrow.get(tag["Value"]).datetime
     return None
