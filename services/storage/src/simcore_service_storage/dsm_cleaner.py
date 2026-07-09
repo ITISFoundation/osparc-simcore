@@ -11,14 +11,16 @@ from asyncio import create_task
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import cast
+from typing import Final, cast
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
+from pydantic import NonNegativeInt
 from servicelib.background_task_utils import exclusive_periodic
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_context
 from servicelib.tracing import traced
+from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
 from .core.settings import get_application_settings
@@ -28,8 +30,7 @@ from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
-_TASK_NAME_CLEAN_EXPIRED_UPLOADS = "clean_expired_uploads"
-_TASK_NAME_CLEAN_EXPIRED_EXPORTS = "clean_expired_exports"
+_CANCEL_CONCURRENCY: Final[NonNegativeInt] = 4
 
 
 def _get_simcore_s3_dsm(app: FastAPI) -> SimcoreS3DataManager:
@@ -51,7 +52,7 @@ async def clean_expired_exports(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    tasks_to_stop: list[asyncio.Task] = []
+    tasks: list[asyncio.Task] = []
     try:
         cfg = get_application_settings(app)
         lock_client = get_redis_client_manager(app).client(RedisDatabase.LOCKS)
@@ -64,7 +65,7 @@ async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
         async def _run_clean_expired_uploads() -> None:
             await clean_expired_uploads(app)
 
-        tasks_to_stop.append(create_task(_run_clean_expired_uploads(), name=_TASK_NAME_CLEAN_EXPIRED_UPLOADS))
+        tasks.append(create_task(_run_clean_expired_uploads()))
 
         @exclusive_periodic(
             lock_client,
@@ -74,13 +75,13 @@ async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
         async def _run_clean_expired_exports() -> None:
             await clean_expired_exports(app)
 
-        tasks_to_stop.append(create_task(_run_clean_expired_exports(), name=_TASK_NAME_CLEAN_EXPIRED_EXPORTS))
+        tasks.append(create_task(_run_clean_expired_exports()))
 
         yield
     finally:
-        for task in tasks_to_stop:
-            with log_catch(_logger):
-                await cancel_wait_task(task)
+        await limited_gather(
+            *(cancel_wait_task(t) for t in tasks), reraise=False, limit=_CANCEL_CONCURRENCY, log=_logger
+        )
 
 
 def configure_dsm_cleaner(app_lifespan: LifespanManager) -> None:
