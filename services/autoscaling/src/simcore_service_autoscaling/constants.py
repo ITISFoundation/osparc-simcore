@@ -33,7 +33,7 @@ APPLICATION_CUSTOM_PLACEMENT_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWST
     f"{_APPLICATION_TAG_PREFIX}.ec2_instance.docker_node_labels"
 )
 INSTANCE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
-    f"{_APPLICATION_TAG_PREFIX}.pulling"
+    f"{_APPLICATION_TAG_PREFIX}.pre-pulling-images"
 )
 INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
     f"{_APPLICATION_TAG_PREFIX}.ssm-command-id"

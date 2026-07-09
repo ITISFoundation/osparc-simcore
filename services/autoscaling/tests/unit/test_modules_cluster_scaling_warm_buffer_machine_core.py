@@ -216,8 +216,8 @@ async def _test_monitor_buffer_machines(
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="running",
                 expected_additional_tag_keys=[
-                    "pulling",
-                    "ssm-command-id",
+                    "io.simcore.pre-pulling-images",
+                    "io.simcore.ssm-command-id",
                     *list(ec2_instance_custom_tags),
                 ],
                 expected_pre_pulled_images=None,

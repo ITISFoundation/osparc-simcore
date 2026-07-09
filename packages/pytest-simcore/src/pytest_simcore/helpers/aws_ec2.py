@@ -30,8 +30,8 @@ async def assert_autoscaled_computational_ec2_instances(
         expected_instance_state=expected_instance_state,
         expected_instance_tag_keys=[
             "io.simcore.autoscaling.dask-scheduler_url",
-            "user_id",
-            "wallet_id",
+            "io.simcore.user_id",
+            "io.simcore.wallet_id",
             *expected_additional_tag_keys,
         ],
         expected_user_data=["docker swarm join"],
