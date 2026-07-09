@@ -76,7 +76,7 @@ qx.Class.define("osparc.workbench.EdgeUI", {
     },
 
     noPortsConnectedText: function(edge) {
-      return `Connection candidate.<br>Check the ${edge.getOutputNode().getLabel()} inputs`;
+      return qx.locale.Manager.tr("Connection candidate.<br>Check the %1 inputs", edge.getOutputNode().getLabel());
     }
   },
 
