@@ -50,7 +50,7 @@ async def clean_expired_exports(app: FastAPI) -> None:
 
 
 @asynccontextmanager
-async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
+async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
     tasks_to_stop: list[asyncio.Task] = []
     try:
         cfg = get_application_settings(app)
@@ -83,5 +83,5 @@ async def _dsm_cleanup_lifespan(app: FastAPI) -> AsyncGenerator[None]:
                 await cancel_wait_task(task)
 
 
-def configure_dsm_cleanup(app_lifespan: LifespanManager) -> None:
-    app_lifespan.add(_dsm_cleanup_lifespan)
+def configure_dsm_cleaner(app_lifespan: LifespanManager) -> None:
+    app_lifespan.add(_dsm_cleaner_lifespan)

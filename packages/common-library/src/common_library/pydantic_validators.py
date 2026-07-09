@@ -62,7 +62,7 @@ def validate_numeric_string_as_timedelta(field: str):
 def validate_positive_timedelta(field: str):
     def _ensure_positive_timedelta(value: dt.timedelta) -> dt.timedelta:
         if value <= dt.timedelta(0):
-            msg = f"{field} settings must be > 0 not '{value}'"
+            msg = f"{field} setting must be > 0 not '{value}'"
             raise ValueError(msg)
         return value
 

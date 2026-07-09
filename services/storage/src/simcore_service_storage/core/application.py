@@ -34,7 +34,7 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_rest_api_routes
 from ..dsm import configure_dsm_provider
-from ..dsm_cleaner import configure_dsm_cleanup
+from ..dsm_cleaner import configure_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
 from ..modules.celery import configure_celery_task_manager
 from ..modules.db import configure_db
@@ -84,7 +84,7 @@ def _configure_app(
 
     match settings.STORAGE_BOOT_SERVER_MODE:
         case BootServerMode.AS_REST_API_SERVER:
-            configure_dsm_cleanup(app_lifespan)
+            configure_dsm_cleaner(app_lifespan)
             # Setup routes and exception handlers (outside the lifespan context)
 
             # Configure middleware (in reverse order due to how middleware is applied)
