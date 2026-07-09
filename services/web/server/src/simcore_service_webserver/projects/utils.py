@@ -2,11 +2,9 @@ import logging
 import re
 from copy import deepcopy
 from re import Match
-from typing import Any, TypedDict
 from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
-from models_library.services import ServiceKey
 from pydantic import TypeAdapter
 from servicelib.decorators import safe_return
 from yarl import URL
@@ -16,14 +14,6 @@ from .models import ProjectDict
 _logger = logging.getLogger(__name__)
 
 _VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
-
-# NOTE: InputTypes/OutputTypes that are NOT links
-_NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
-
-
-class NodeDict(TypedDict, total=False):
-    key: ServiceKey | None
-    outputs: dict[str, Any] | None
 
 
 NodesMap = dict[NodeIDStr, NodeIDStr]
