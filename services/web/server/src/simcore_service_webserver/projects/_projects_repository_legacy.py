@@ -851,7 +851,6 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectIDStr,
         *,
         new_project_owner: UserID,
-        new_project_access_rights: dict,
     ) -> None:
         """The garbage collector needs to alter the row without passing through the
         permissions layer (sic)."""
@@ -861,7 +860,6 @@ class ProjectDBAPI(BaseProjectDB):
                 projects.update()
                 .values(
                     prj_owner=new_project_owner,
-                    access_rights=new_project_access_rights,
                     last_change_date=now(),
                 )
                 .where(projects.c.uuid == project_uuid)
