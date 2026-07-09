@@ -74,7 +74,7 @@ from ...utils.rabbitmq import (
 )
 from ...utils.warm_buffer_machines import (
     get_activated_warm_buffer_ec2_tags,
-    get_deactivated_warm_buffer_ec2_tags,
+    get_warm_buffer_ec2_instances,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
@@ -166,9 +166,10 @@ async def _analyze_current_cluster(
     )
 
     warm_buffer_ec2_instances = _adjust_instances_resources(
-        await get_ec2_client(app).get_instances(
+        await get_warm_buffer_ec2_instances(
+            get_ec2_client(app),
             key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-            tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+            base_ec2_tags=auto_scaling_mode.get_ec2_tags(app),
             state_names=["stopped"],
         ),
         adjusted_resources_by_type,

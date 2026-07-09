@@ -53,6 +53,7 @@ from ...utils.buffer_machines import (
 from ...utils.warm_buffer_machines import (
     ec2_warm_buffer_startup_script,
     get_deactivated_warm_buffer_ec2_tags,
+    get_warm_buffer_ec2_instances,
 )
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
@@ -151,9 +152,10 @@ async def _analyse_current_state(app: FastAPI, *, auto_scaling_mode: Autoscaling
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
-    all_buffer_instances = await ec2_client.get_instances(
+    all_buffer_instances = await get_warm_buffer_ec2_instances(
+        ec2_client,
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+        base_ec2_tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["stopped", "pending", "running", "stopping"],
     )
     buffers_manager = WarmBufferPoolManager()
