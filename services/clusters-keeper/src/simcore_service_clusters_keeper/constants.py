@@ -13,14 +13,18 @@ DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKe
     f"{_APPLICATION_TAG_PREFIX}.private_cluster_docker_deploy"
 )
 
+CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
 
+#
+# EC2 tags
+#
+EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 APPLICATION_VERSION_TAG_KEY: Final[EC2Tags] = TypeAdapter(EC2Tags).validate_python(
     {f"{_APPLICATION_TAG_PREFIX}.version": f"{VERSION}"}
 )
 EC2_MINIMAL_APPLICATION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
     f"{_APPLICATION_TAG_PREFIX}.deploy"
 )
-EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 USER_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("io.simcore.user_id")
 PRODUCT_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("io.simcore.product_name")
 WALLET_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("io.simcore.wallet_id")
@@ -31,6 +35,3 @@ HEARTBEAT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
 
 WORKER_ROLE_TAG_VALUE: Final[AWSTagValue] = TypeAdapter(AWSTagValue).validate_python("worker")
 MANAGER_ROLE_TAG_VALUE: Final[AWSTagValue] = TypeAdapter(AWSTagValue).validate_python("manager")
-
-
-CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"

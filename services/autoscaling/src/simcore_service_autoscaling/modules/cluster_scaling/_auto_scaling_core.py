@@ -33,8 +33,8 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...constants import (
     DOCKER_PULL_COMMAND,
-    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-    MACHINE_PULLING_EC2_TAG_KEY,
+    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    INSTANCE_PULLING_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
 )
 from ...core.errors import (
@@ -407,14 +407,14 @@ async def _cancel_previous_pulling_command_if_any(
     instance: EC2InstanceData,
 ) -> None:
     if not (
-        (MACHINE_PULLING_EC2_TAG_KEY in instance.tags) and (MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY in instance.tags)
+        (INSTANCE_PULLING_EC2_TAG_KEY in instance.tags) and (INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY in instance.tags)
     ):
         # nothing to do
         return
 
     ssm_client = get_ssm_client(app)
     ec2_client = get_ec2_client(app)
-    command_id = instance.tags[MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY]
+    command_id = instance.tags[INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY]
     command = await ssm_client.get_command(instance.id, command_id=command_id)
     if command.status in ("Pending", "InProgress"):
         with log_context(
@@ -426,8 +426,8 @@ async def _cancel_previous_pulling_command_if_any(
         await ec2_client.remove_instances_tags(
             [instance],
             tag_keys=[
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-                MACHINE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
                 *list_pre_pulled_images_tag_keys(instance.tags),
             ],
         )
@@ -1326,12 +1326,12 @@ async def _notify_autoscaling_status(app: FastAPI, cluster: Cluster, auto_scalin
 
 
 async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> AssociatedInstance:
-    if MACHINE_PULLING_EC2_TAG_KEY not in node.ec2_instance.tags:
+    if INSTANCE_PULLING_EC2_TAG_KEY not in node.ec2_instance.tags:
         return node
 
     ssm_client = get_ssm_client(app)
     ec2_client = get_ec2_client(app)
-    ssm_command_id = node.ec2_instance.tags.get(MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY)
+    ssm_command_id = node.ec2_instance.tags.get(INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY)
 
     async def _remove_tags_and_return(node: AssociatedInstance, tag_keys: list[AWSTagKey]) -> AssociatedInstance:
         await ec2_client.remove_instances_tags(
@@ -1347,14 +1347,14 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             "%s has '%s' tag key set but no associated command id '%s' tag key, "
             "this is unexpected but will be cleaned now. Pre-pulling will be retried again later.",
             node.ec2_instance.id,
-            MACHINE_PULLING_EC2_TAG_KEY,
-            MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+            INSTANCE_PULLING_EC2_TAG_KEY,
+            INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
         )
         return await _remove_tags_and_return(
             node,
             [
-                MACHINE_PULLING_EC2_TAG_KEY,
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                 *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
             ],
         )
@@ -1372,8 +1372,8 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
         return await _remove_tags_and_return(
             node,
             [
-                MACHINE_PULLING_EC2_TAG_KEY,
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                 *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
             ],
         )
@@ -1383,8 +1383,8 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             return await _remove_tags_and_return(
                 node,
                 [
-                    MACHINE_PULLING_EC2_TAG_KEY,
-                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                    INSTANCE_PULLING_EC2_TAG_KEY,
+                    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                 ],
             )
         case "Failed" | "TimedOut":
@@ -1396,8 +1396,8 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             return await _remove_tags_and_return(
                 node,
                 [
-                    MACHINE_PULLING_EC2_TAG_KEY,
-                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                    INSTANCE_PULLING_EC2_TAG_KEY,
+                    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                     *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
                 ],
             )
@@ -1423,7 +1423,7 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Clu
     hot_buffer_nodes_needing_pre_pull = []
     for node in cluster.hot_buffer_drained_nodes:
         updated_node = await _handle_pre_pull_status(app, node)
-        if MACHINE_PULLING_EC2_TAG_KEY in updated_node.ec2_instance.tags:
+        if INSTANCE_PULLING_EC2_TAG_KEY in updated_node.ec2_instance.tags:
             continue  # skip this one as it is still pre-pulling
 
         # check what they have
@@ -1479,8 +1479,8 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Clu
         await ec2_client.set_instances_tags(
             (node.ec2_instance,),
             tags={
-                MACHINE_PULLING_EC2_TAG_KEY: "true",
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+                INSTANCE_PULLING_EC2_TAG_KEY: "true",
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
             }
             | dump_pre_pulled_images_as_tags(desired_pre_pulled_images),
         )

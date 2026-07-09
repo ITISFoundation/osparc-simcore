@@ -1,18 +1,15 @@
-from typing import Final
-
-from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagValue, EC2Tags
 from aws_library.ec2._models import EC2InstanceBootSpecific
 from pydantic import TypeAdapter
 
 from ..constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,
-    BUFFER_MACHINE_TAG_KEY,
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
+    EC2_NAME_TAG_KEY,
+    WARM_BUFFER_MACHINE_TAG_KEY,
 )
 from ..core.settings import ApplicationSettings
 from . import utils_docker
-
-_NAME_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
 def get_activated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
@@ -21,14 +18,14 @@ def get_activated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
 
 def get_deactivated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
     new_base_ec2_tags = base_ec2_tags | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
-    new_base_ec2_tags[_NAME_EC2_TAG_KEY] = TypeAdapter(AWSTagValue).validate_python(
-        f"{new_base_ec2_tags[_NAME_EC2_TAG_KEY]}-buffer"
+    new_base_ec2_tags[EC2_NAME_TAG_KEY] = TypeAdapter(AWSTagValue).validate_python(
+        f"{new_base_ec2_tags[EC2_NAME_TAG_KEY]}-buffer"
     )
     return new_base_ec2_tags
 
 
 def is_warm_buffer_machine(tags: EC2Tags) -> bool:
-    return bool(BUFFER_MACHINE_TAG_KEY in tags)
+    return bool(WARM_BUFFER_MACHINE_TAG_KEY in tags)
 
 
 def ec2_warm_buffer_startup_script(
