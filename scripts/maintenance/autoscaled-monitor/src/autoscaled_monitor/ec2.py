@@ -33,9 +33,35 @@ def _list_running_ec2_instances(
         ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
 
     if user_id:
-        ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]})
+        ec2_filters.append(
+            {
+                "Name": "tag-key",
+                "Values": ["user_id", "io.simcore.user_id"],
+            }
+        )
+        ec2_filters.append(
+            {
+                "Name": "tag-value",
+                "Values": [f"{user_id}"],
+            }
+        )
+        # NOTE: this should be reverted to below once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production
+        # ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]})  # noqa: ERA001
     if wallet_id:
-        ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]})
+        ec2_filters.append(
+            {
+                "Name": "tag-key",
+                "Values": ["wallet_id", "io.simcore.wallet_id"],
+            }
+        )
+        ec2_filters.append(
+            {
+                "Name": "tag-value",
+                "Values": [f"{wallet_id}"],
+            }
+        )
+        # NOTE: this should be reverted to below once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production
+        # ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]})  # noqa: ERA001
     if instance_id:
         ec2_filters.append({"Name": "instance-id", "Values": [f"{instance_id}"]})
     return ec2_resource.instances.filter(Filters=ec2_filters)
