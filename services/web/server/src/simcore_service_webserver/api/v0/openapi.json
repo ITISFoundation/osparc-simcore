@@ -22561,6 +22561,80 @@
         "title": "MyProfileAddressGet",
         "description": "Details provided upon registration and used e.g. for invoicing"
       },
+      "MyProfileAddressPatch": {
+        "properties": {
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State",
+            "description": "State, province, canton, ..."
+          },
+          "postalCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postalcode"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          }
+        },
+        "type": "object",
+        "title": "MyProfileAddressPatch",
+        "description": "Billing address: a property of the user, editable independently of pre-registration"
+      },
       "MyProfilePrivacyGet": {
         "properties": {
           "hideUsername": {
@@ -22802,6 +22876,17 @@
                 "type": "null"
               }
             ]
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MyProfileAddressPatch"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Billing address. The user owns and can edit it directly."
           }
         },
         "type": "object",

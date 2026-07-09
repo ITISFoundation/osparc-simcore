@@ -177,21 +177,16 @@ async def list_user_permissions(
     return permissions
 
 
-async def get_user_billing_details(
-    app: web.Application, *, user_id: UserID, product_name: ProductName
-) -> UserBillingDetails:
-    return await _users_repository.get_user_billing_details(
-        get_asyncpg_engine(app), user_id=user_id, product_name=product_name
-    )
+async def get_user_billing_details(app: web.Application, *, user_id: UserID) -> UserBillingDetails:
+    return await _users_repository.get_user_billing_details(get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_invoice_address(
     app: web.Application,
     *,
-    product_name: ProductName,
     user_id: UserID,
 ) -> UserInvoiceAddress:
-    user_billing_details = await get_user_billing_details(app, user_id=user_id, product_name=product_name)
+    user_billing_details = await get_user_billing_details(app, user_id=user_id)
 
     return UserInvoiceAddress(
         line1=user_billing_details.address,
@@ -276,6 +271,13 @@ async def update_my_profile(
         user_id=user_id,
         updated_values=UserModelAdapter.from_rest_schema_model(update).to_db_values(),
     )
+
+    if update.contact is not None:
+        await _users_repository.update_user_billing_details(
+            get_asyncpg_engine(app),
+            user_id=user_id,
+            updates=update.contact.model_dump(exclude_unset=True),
+        )
 
 
 async def update_user_phone(

@@ -390,17 +390,27 @@ async def get_user_billing_details(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    product_name: ProductName,
 ) -> UserBillingDetails:
     """
-    Returns UserBillingDetails for the given user when registered in a product or None
+    Returns UserBillingDetails for the given user, if it has a billing address on file
     Raises:
         BillingDetailsNotFoundError
     """
-    row = await UsersRepo(engine).get_billing_details(connection, product_name=product_name, user_id=user_id)
+    row = await UsersRepo(engine).get_billing_details(connection, user_id=user_id)
     if not row:
         raise BillingDetailsNotFoundError(user_id=user_id)
     return UserBillingDetails.model_validate(row)
+
+
+async def update_user_billing_details(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    updates: dict[str, Any],
+) -> None:
+    """Creates or updates (upsert) the user's billing address"""
+    await UsersRepo(engine).update_billing_details(connection, user_id=user_id, updates=updates)
 
 
 async def delete_user_by_id(engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID) -> bool:

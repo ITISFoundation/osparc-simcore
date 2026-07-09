@@ -140,3 +140,18 @@ def test_utils_user_generates_valid_myprofile_patch():
 
     MyProfileRestPatch.model_validate({"userName": username})
     MyProfileRestPatch.model_validate({"userName": utils_users.generate_alternative_username(username)})
+
+
+def test_mapping_update_models_excludes_contact_from_db_values():
+    # `contact` (billing address) is not a `users` table column: it is handled
+    # separately (users_billing_details), so it must not leak into to_db_values()
+    profile_update = MyProfileRestPatch.model_validate(
+        {
+            "first_name": "foo",
+            "contact": {"country": "CH", "city": "Zurich"},
+        }
+    )
+
+    profile_update_db = UserModelAdapter.from_rest_schema_model(profile_update)
+
+    assert profile_update_db.to_db_values() == {"first_name": "foo"}
