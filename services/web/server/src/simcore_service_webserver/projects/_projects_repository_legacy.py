@@ -201,6 +201,23 @@ class ProjectDBAPI(BaseProjectDB):
                             await ProjectNodesRepo(project_uuid=project_uuid).add(
                                 conn, nodes=list(project_nodes.values())
                             )
+
+                        access_rights_result = await conn.execute(
+                            sa.select(
+                                project_to_groups.c.gid,
+                                project_to_groups.c.read,
+                                project_to_groups.c.write,
+                                project_to_groups.c.delete,
+                            ).where(project_to_groups.c.project_uuid == f"{project_uuid}")
+                        )
+                        selected_values["access_rights"] = {
+                            f"{row.gid}": {
+                                "read": row.read,
+                                "write": row.write,
+                                "delete": row.delete,
+                            }
+                            for row in access_rights_result
+                        }
         return selected_values
 
     async def insert_project(
