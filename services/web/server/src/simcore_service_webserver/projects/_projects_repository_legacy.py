@@ -79,7 +79,6 @@ from ._projects_repository_legacy_utils import (
     ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
-    create_project_access_rights,
     get_projects_workbenches,
 )
 from .exceptions import (
@@ -244,12 +243,10 @@ class ProjectDBAPI(BaseProjectDB):
             }
         )
 
-        # validate access_rights. are the gids valid? also ensure prj_owner is in there
+        # validate acc`ess_rights. are the gids valid? also ensure prj_owner is in there
         if user_id:
             async with self.engine.connect() as conn:
-                primary_gid = await self._get_user_primary_group_gid(conn, user_id=user_id)
-            insert_values.setdefault("access_rights", {})
-            insert_values["access_rights"].update(create_project_access_rights(primary_gid, ProjectAccessRights.OWNER))
+                await self._get_user_primary_group_gid(conn, user_id=user_id)
 
         # ensure we have the minimal amount of data here
         # All non-default in projects table
