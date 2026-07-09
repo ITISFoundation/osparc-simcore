@@ -41,7 +41,7 @@ try:
 except ImportError:
     HAS_BOTOCORE = False
 try:
-    from opentelemetry.instrumentation.celery import CeleryInstrumentor
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor  # type: ignore[import-not-found]
 
     HAS_CELERY = True
 except ImportError:
