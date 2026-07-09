@@ -27,7 +27,6 @@ from simcore_service_webserver.projects._projects_repository_legacy_utils import
     SCHEMA_NON_NULL_KEYS,
     assemble_array_groups,
     patch_workbench,
-    update_workbench,
 )
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
@@ -145,36 +144,6 @@ class FakeUserGroup:
 def test_assemble_array_groups():
     fake_user_groups = [FakeUserGroup(gid=n) for n in range(5)]
     assert assemble_array_groups(fake_user_groups) == "array['0', '1', '2', '3', '4']"  # type: ignore
-
-
-def test_update_workbench_with_new_nodes_raises(faker: Faker):
-    old_project = {"workbench": {faker.uuid4(): faker.pydict()}}
-    new_project = {"workbench": {faker.uuid4(): faker.pydict()}}
-    with pytest.raises(ProjectInvalidUsageError):
-        update_workbench(old_project, new_project)
-
-
-def test_update_workbench(faker: Faker):
-    node_id = faker.uuid4()
-    old_project = {"workbench": {node_id: faker.pydict()}}
-    new_project = {"workbench": {node_id: faker.pydict()}}
-    expected_updated_project = {
-        "workbench": {node_id: old_project["workbench"][node_id] | new_project["workbench"][node_id]}
-    }
-    received_project_with_updated_workbench = update_workbench(old_project, new_project)
-    assert received_project_with_updated_workbench != old_project
-    assert received_project_with_updated_workbench != new_project
-    assert received_project_with_updated_workbench == expected_updated_project
-
-
-def test_patch_workbench_with_empty_changes(faker: Faker):
-    node_id = faker.uuid4()
-    project = {"workbench": {node_id: faker.pydict()}}
-    patched_project, changed_entries = patch_workbench(
-        project, new_partial_workbench_data={}, allow_workbench_changes=False
-    )
-    assert patched_project == project
-    assert changed_entries == {}
 
 
 @pytest.fixture
