@@ -267,6 +267,7 @@ class ProjectDBAPI(BaseProjectDB):
         # extract workbench nodes
         workbench: dict[str, Any] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
+        insert_values.pop("access_rights", None)
 
         valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
