@@ -33,6 +33,8 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...constants import (
     DOCKER_PULL_COMMAND,
+    HOT_BUFFER_MACHINE_EC2_TAGS,
+    HOT_BUFFER_MACHINE_TAG_KEY,
     INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
     INSTANCE_PULLING_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
@@ -1412,6 +1414,38 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
 
 
 @traced
+async def _sync_hot_buffer_ec2_tags(app: FastAPI, cluster: Cluster) -> None:
+    """Keeps the HOT_BUFFER_MACHINE_TAG_KEY EC2 tag in sync with the current hot buffer
+    classification, so hot buffer machines can be easily identified (e.g. in the AWS console).
+
+    The tag reflects the machine's *current* role only: it is added to instances currently
+    classified as hot buffer (idle, reserved), and removed once they are no longer so
+    (e.g. activated to run a task).
+    """
+    ec2_client = get_ec2_client(app)
+
+    to_tag = [
+        n.ec2_instance
+        for n in cluster.hot_buffer_drained_nodes
+        if HOT_BUFFER_MACHINE_TAG_KEY not in n.ec2_instance.tags
+    ]
+    if to_tag:
+        await ec2_client.set_instances_tags(to_tag, tags=HOT_BUFFER_MACHINE_EC2_TAGS)
+        for instance in to_tag:
+            instance.tags.update(HOT_BUFFER_MACHINE_EC2_TAGS)
+
+    to_untag = [
+        n.ec2_instance
+        for n in itertools.chain(cluster.active_nodes, cluster.drained_nodes, cluster.terminating_nodes)
+        if HOT_BUFFER_MACHINE_TAG_KEY in n.ec2_instance.tags
+    ]
+    if to_untag:
+        await ec2_client.remove_instances_tags(to_untag, tag_keys=[HOT_BUFFER_MACHINE_TAG_KEY])
+        for instance in to_untag:
+            instance.tags.pop(HOT_BUFFER_MACHINE_TAG_KEY, None)
+
+
+@traced
 async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Cluster) -> None:
     if not cluster.hot_buffer_drained_nodes:
         return
@@ -1505,6 +1539,9 @@ async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProv
 
     # desired state
     cluster = await _autoscale_cluster(app, cluster, auto_scaling_mode, allowed_instance_types)
+
+    # keep hot buffer EC2 tag in sync for easy identification
+    await _sync_hot_buffer_ec2_tags(app, cluster)
 
     # take care of hot buffer pre-pulling
     await _pre_pull_docker_images_on_idle_hot_buffers(app, cluster)

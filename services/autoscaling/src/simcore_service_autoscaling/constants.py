@@ -44,6 +44,12 @@ INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey
 WARM_BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
     f"{_APPLICATION_TAG_PREFIX}.buffer_machine"
 )
+HOT_BUFFER_MACHINE_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    f"{_APPLICATION_TAG_PREFIX}.hot_buffer_machine"
+)
+HOT_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
+    HOT_BUFFER_MACHINE_TAG_KEY: TypeAdapter(AWSTagValue).validate_python("true")
+}
 DEACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
     WARM_BUFFER_MACHINE_TAG_KEY: TypeAdapter(AWSTagValue).validate_python("true")
 }
