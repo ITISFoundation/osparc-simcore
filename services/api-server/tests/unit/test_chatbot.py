@@ -2,6 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import Final
+
 import pytest
 import respx
 from faker import Faker
@@ -16,10 +18,10 @@ from simcore_service_api_server.models.domain.chatbot import (
 from simcore_service_api_server.models.schemas.responses import InputMessage
 from simcore_service_api_server.services_http.chatbot import ChatbotApi, ChatbotSession
 
-_chat_message_adapter = TypeAdapter(ChatCompletionRequestMessage)
+_chat_message_adapter: Final = TypeAdapter(ChatCompletionRequestMessage)
 
-_CHATBOT_BASE_URL = "http://chatbot:8000"
-_GRAPH_NAME = "simple_rag"
+_CHATBOT_BASE_URL: Final[str] = "http://chatbot:8000"
+_GRAPH_NAME: Final[str] = "simple_rag"
 
 
 @pytest.fixture
