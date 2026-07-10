@@ -74,6 +74,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
@@ -1006,6 +1007,10 @@ async def test_open_project_limit_is_scoped_to_product(
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     """Opening a project in product A must not consume the open-project quota for product B."""
+    assert client.app
+    # Register the user in the second product's group so the product access check passes
+    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=second_product_with_limit)
+
     # Open user_project in the default product (osparc, limit=1) — should succeed
     _, client_id_1, _ = await create_socketio_connection_with_handlers(None, client)
     await _open_project(client, client_id_1, user_project, HTTPStatus(expected.ok))
