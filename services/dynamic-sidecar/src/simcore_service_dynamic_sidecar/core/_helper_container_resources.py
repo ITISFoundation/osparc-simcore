@@ -8,8 +8,9 @@ Fails sidecar startup if the deduction would leave the target service with:
 """
 
 import logging
+import sys
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
 from pydantic import ByteSize
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
@@ -18,6 +19,7 @@ from .errors import BaseDynamicSidecarError
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
+_EPS: Final[float] = sys.float_info.epsilon  # guard against division by zero
 
 # ----- errors ----------------------------------------------------------------
 
@@ -231,17 +233,15 @@ def _deduct_helper_containers_resources(
             service_name=biggest_service_name,
             helpers_desc=helpers_desc,
             helpers_cpu=extra.cpu,
-            helpers_cpu_pct=extra.cpu / biggest_service_resources.cpu if biggest_service_resources.cpu else 0.0,
+            helpers_cpu_pct=extra.cpu / (biggest_service_resources.cpu + _EPS),
             helpers_ram=extra.ram,
             helpers_ram_hr=ByteSize(extra.ram).human_readable(),
-            helpers_ram_pct=extra.ram / biggest_service_resources.ram if biggest_service_resources.ram else 0.0,
+            helpers_ram_pct=extra.ram / (biggest_service_resources.ram + _EPS),
             remaining_cpu=remaining.cpu,
-            remaining_cpu_pct=remaining.cpu / biggest_service_resources.cpu if biggest_service_resources.cpu else 0.0,
+            remaining_cpu_pct=remaining.cpu / (biggest_service_resources.cpu + _EPS),
             remaining_ram=remaining.ram,
             remaining_ram_hr=ByteSize(max(remaining.ram, 0)).human_readable(),
-            remaining_ram_pct=(
-                max(remaining.ram, 0) / biggest_service_resources.ram if biggest_service_resources.ram else 0.0
-            ),
+            remaining_ram_pct=max(remaining.ram, 0) / (biggest_service_resources.ram + _EPS),
             original_cpu=biggest_service_resources.cpu,
             original_ram=biggest_service_resources.ram,
             original_ram_hr=ByteSize(biggest_service_resources.ram).human_readable(),
@@ -258,14 +258,14 @@ def _deduct_helper_containers_resources(
         helpers_desc,
         extra.cpu,
         biggest_service_resources.cpu,
-        extra.cpu / biggest_service_resources.cpu * 100 if biggest_service_resources.cpu else 0,
+        extra.cpu / (biggest_service_resources.cpu + _EPS) * 100,
         remaining.cpu,
-        remaining.cpu / biggest_service_resources.cpu * 100 if biggest_service_resources.cpu else 0,
+        remaining.cpu / (biggest_service_resources.cpu + _EPS) * 100,
         ByteSize(extra.ram).human_readable(),
         ByteSize(biggest_service_resources.ram).human_readable(),
-        extra.ram / biggest_service_resources.ram * 100 if biggest_service_resources.ram else 0,
+        extra.ram / (biggest_service_resources.ram + _EPS) * 100,
         ByteSize(remaining.ram).human_readable(),
-        remaining.ram / biggest_service_resources.ram * 100 if biggest_service_resources.ram else 0,
+        remaining.ram / (biggest_service_resources.ram + _EPS) * 100,
     )
 
 
