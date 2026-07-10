@@ -52,33 +52,52 @@ class _Resources:
 
 
 def _read_limits(service_spec: dict[str, Any]) -> _Resources:
-    """Reads cpu (cores) and ram (bytes) from ``deploy.resources.limits``."""
-    limits = service_spec.get("deploy", {}).get("resources", {}).get("limits", {})
+    """Reads cpu (cores) and ram (bytes) from a compose service spec.
+
+    Handles both:
+    - compose v3+: ``deploy.resources.limits.{cpus, memory}``
+    - compose v2:  top-level ``cpus`` (float) and ``mem_limit`` (str/int)
+    """
+    v3_limits = service_spec.get("deploy", {}).get("resources", {}).get("limits", {})
+    if v3_limits:
+        return _Resources(
+            cpu=float(v3_limits.get("cpus", 0.0)),
+            ram=int(v3_limits.get("memory", 0)),
+        )
+    # compose v2 stores limits as direct service-level fields
     return _Resources(
-        cpu=float(limits.get("cpus", 0.0)),
-        ram=int(limits.get("memory", 0)),
+        cpu=float(service_spec.get("cpus", 0.0)),
+        ram=int(service_spec.get("mem_limit", 0)),
     )
 
 
 def _write_limits(service_spec: dict[str, Any], resources: _Resources) -> None:
-    """Writes cpu and ram back into ``deploy.resources.limits`` and clamps reservations.
+    """Writes cpu and ram back into the compose service spec and clamps reservations.
+
+    Detects compose version from the existing spec structure:
+    - compose v3+: ``deploy.resources.limits.{cpus, memory}``
+    - compose v2:  top-level ``cpus`` and ``mem_limit``
 
     Also updates ``SIMCORE_NANO_CPUS_LIMIT`` and ``SIMCORE_MEMORY_BYTES_LIMIT`` in the
     service environment so that the user service sees the *reduced* limits that Docker
     will actually enforce — not the original pre-deduction values injected by director-v2.
     """
-    deploy = service_spec.setdefault("deploy", {})
-    res = deploy.setdefault("resources", {})
-    limits = res.setdefault("limits", {})
-    limits["cpus"] = f"{resources.cpu}"
-    limits["memory"] = f"{resources.ram}"
-
-    # keep reservations <= new limits (Docker/compose requirement)
-    reservations = res.get("reservations", {})
-    if "cpus" in reservations:
-        reservations["cpus"] = f"{min(float(reservations['cpus']), resources.cpu)}"
-    if "memory" in reservations:
-        reservations["memory"] = f"{min(int(reservations['memory']), resources.ram)}"
+    if service_spec.get("deploy", {}).get("resources", {}).get("limits"):
+        # compose v3+
+        limits = service_spec["deploy"]["resources"]["limits"]
+        limits["cpus"] = f"{resources.cpu}"
+        limits["memory"] = f"{resources.ram}"
+        reservations = service_spec["deploy"]["resources"].get("reservations", {})
+        if "cpus" in reservations:
+            reservations["cpus"] = f"{min(float(reservations['cpus']), resources.cpu)}"
+        if "memory" in reservations:
+            reservations["memory"] = f"{min(int(reservations['memory']), resources.ram)}"
+    else:
+        # compose v2
+        service_spec["cpus"] = resources.cpu
+        service_spec["mem_limit"] = f"{resources.ram}"
+        if "mem_reservation" in service_spec:
+            service_spec["mem_reservation"] = f"{min(int(service_spec['mem_reservation']), resources.ram)}"
 
     # Sync the resource-limit env vars that director-v2 already injected.
     # They must reflect the post-deduction limits so the user service is not misled.
