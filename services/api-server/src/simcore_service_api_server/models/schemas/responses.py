@@ -5,7 +5,7 @@ as needed — the breaking-change check ensures we stay compatible.
 """
 
 from enum import StrEnum
-from typing import Annotated, Any, Literal, get_args
+from typing import Annotated, Any, Final, Literal, get_args
 
 from pydantic import Field, TypeAdapter, field_validator
 
@@ -16,6 +16,8 @@ Temperature = Annotated[float, Field(ge=0, le=2)]
 
 type MetadataKey = Annotated[str, Field(max_length=64)]
 type MetadataValue = Annotated[str, Field(max_length=512)]
+
+_ChatCompletionRequestMessageAdapter: Final = TypeAdapter(ChatCompletionRequestMessage)
 
 
 class ResponseStatus(StrEnum):
@@ -40,7 +42,7 @@ class InputMessage(ApiServerInputSchema):
     name: Annotated[str, Field(max_length=200)] = ""
 
     def to_domain_model(self) -> ChatCompletionRequestMessage:
-        return TypeAdapter(ChatCompletionRequestMessage).validate_python(self.model_dump())
+        return _ChatCompletionRequestMessageAdapter.validate_python(self.model_dump())
 
 
 class CreateResponseRequest(ApiServerInputSchema):
