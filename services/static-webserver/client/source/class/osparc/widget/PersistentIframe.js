@@ -53,7 +53,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       });
     },
 
-    HIDDEN_TOP: -10000
+    HIDDEN_TOP: -10000,
+    THEME_SWITCH_MSG: "osparc;theme=",
+    LOCALE_SWITCH_MSG: "osparc;locale=",
   },
 
   properties: {
@@ -261,7 +263,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     __attachInterIframeThemeSyncer: function() {
       this.postThemeSwitch = theme => {
-        const msg = "osparc;theme=" + theme;
+        const msg = osparc.widget.PersistentIframe.THEME_SWITCH_MSG + theme;
         this.sendMessageToIframe(msg);
       };
 
@@ -273,7 +275,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     __attachInterIframeLocaleSyncer: function() {
       this.postLocaleSwitch = locale => {
-        const msg = "osparc;locale=" + locale;
+        const msg = osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG + locale;
         this.sendMessageToIframe(msg);
       };
 
@@ -339,13 +341,25 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           case "changeTheme":
           case "theme": {
             // switch theme driven by the iframe
-            if (message && message.includes("osparc;theme=")) {
-              const themeName = message.replace("osparc;theme=", "");
+            if (message && message.includes(osparc.widget.PersistentIframe.THEME_SWITCH_MSG)) {
+              const themeName = message.replace(osparc.widget.PersistentIframe.THEME_SWITCH_MSG, "");
               const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
               const themeFound = validThemes.find(theme => theme.basename === themeName);
               const themeManager = qx.theme.manager.Meta.getInstance();
               if (themeFound !== themeManager.getTheme()) {
                 themeManager.setTheme(themeFound);
+              }
+            }
+            break;
+          }
+          case "changeLocale":
+          case "locale": {
+            // switch locale driven by the iframe
+            if (message && message.includes(osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG)) {
+              const locale = message.replace(osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG, "");
+              const validLocales = osparc.utils.Utils.getValidLocales();
+              if (validLocales.includes(locale)) {
+                osparc.store.Store.getInstance().setLocale(locale);
               }
             }
             break;
