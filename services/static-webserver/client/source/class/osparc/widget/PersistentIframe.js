@@ -291,6 +291,11 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       if (currentTheme && this.postThemeSwitch) {
         this.postThemeSwitch(currentTheme.name);
       }
+      // let the iframe know which locale is currently active
+      const currentLocale = qx.locale.Manager.getInstance().getLocale();
+      if (currentLocale && this.postLocaleSwitch) {
+        this.postLocaleSwitch(currentLocale);
+      }
       // let the iframe know what's the user's name
       const username = osparc.auth.Data.getInstance().getFriendlyUserName();
       const msg = "osparc;username=" + username;
@@ -357,9 +362,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             // switch locale driven by the iframe
             if (message && message.includes(osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG)) {
               const locale = message.replace(osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG, "");
-              const validLocales = osparc.utils.Utils.getValidLocales();
+              const validLocales = osparc.utils.LanguageManager.getAvailableLocales();
               if (validLocales.includes(locale)) {
-                osparc.store.Store.getInstance().setLocale(locale);
+                osparc.utils.LanguageManager.setLocale(locale);
               }
             }
             break;
