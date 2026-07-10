@@ -180,7 +180,5 @@ class StudyUI(OutputSchema):
         )
 
     model_config = ConfigDict(
-        extra="allow",
-        populate_by_name=True,
         json_schema_extra=_update_json_schema_extra,
     )
