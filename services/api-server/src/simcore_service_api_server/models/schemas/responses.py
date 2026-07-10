@@ -37,7 +37,7 @@ ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
 class InputMessage(ApiServerInputSchema):
     role: Literal["user", "assistant", "developer"]
     content: Annotated[str, Field(min_length=1, max_length=100_000)]
-    name: Annotated[str, Field(max_length=200)] | None = None
+    name: Annotated[str, Field(max_length=200)] = ""
 
     def to_domain_model(self) -> ChatCompletionRequestMessage:
         return TypeAdapter(ChatCompletionRequestMessage).validate_python(self.model_dump())
