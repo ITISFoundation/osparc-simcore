@@ -1,7 +1,7 @@
 from enum import StrEnum
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 _MIN_INPUT_MESSAGES: Final[int] = 1
 _MAX_INPUT_MESSAGES: Final[int] = 20
@@ -13,10 +13,28 @@ class RoleEnum(StrEnum):
     USER = "user"
 
 
-class ChatCompletionRequestMessage(BaseModel):
-    role: RoleEnum
-    content: str | None
+class _UserMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    role: Literal["user"]
+    content: str
     name: str = ""
+
+
+class _AssistantMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    role: Literal["assistant"]
+    content: str
+
+
+class _DeveloperMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    role: Literal["developer"]
+    content: str
+
+
+type ChatCompletionRequestMessage = _UserMessage | _AssistantMessage | _DeveloperMessage
 
 
 class ChatRequest(BaseModel):

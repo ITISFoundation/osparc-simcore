@@ -13,6 +13,7 @@ from simcore_service_api_server.models.domain.chatbot import (
     CreateChatCompletionResponse,
     RoleEnum,
 )
+from simcore_service_api_server.models.schemas.responses import InputMessage
 from simcore_service_api_server.services_http.chatbot import ChatbotApi, ChatbotSession
 
 _CHATBOT_BASE_URL = "http://chatbot:8000"
@@ -138,3 +139,14 @@ async def test_create_chat_completion_raises_on_error(
             model="gpt-4o-mini",
             metadata={},
         )
+
+
+@pytest.mark.parametrize("role", ["user", "assistant", "developer"])
+def test_input_message_to_domain_model(faker: Faker, role: str):
+    msg = InputMessage(role=role, content=faker.sentence(), name=faker.first_name())
+    domain_msg = msg.to_domain_model()
+
+    assert domain_msg.role == role
+    assert domain_msg.content == msg.content
+    if hasattr(domain_msg, "name"):
+        assert domain_msg.name == msg.name

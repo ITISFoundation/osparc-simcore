@@ -7,8 +7,9 @@ as needed — the breaking-change check ensures we stay compatible.
 from enum import StrEnum
 from typing import Annotated, Any, Literal, get_args
 
-from pydantic import Field, field_validator
+from pydantic import Field, TypeAdapter, field_validator
 
+from ..domain.chatbot import ChatCompletionRequestMessage
 from .base import ApiServerInputSchema, ApiServerOutputSchema
 
 Temperature = Annotated[float, Field(ge=0, le=2)]
@@ -34,9 +35,12 @@ ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
 
 
 class InputMessage(ApiServerInputSchema):
-    role: Literal["user", "assistant", "system", "developer"]
+    role: Literal["user", "assistant", "developer"]
     content: Annotated[str, Field(min_length=1, max_length=100_000)]
     name: Annotated[str, Field(max_length=200)] | None = None
+
+    def to_domain_model(self) -> ChatCompletionRequestMessage:
+        return TypeAdapter(ChatCompletionRequestMessage).validate_python(self.model_dump())
 
 
 class CreateResponseRequest(ApiServerInputSchema):
