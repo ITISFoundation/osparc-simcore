@@ -372,7 +372,7 @@ async def get_and_validate_compose_spec(
         with_tracing=is_user_services_tracing_enabled,
         with_rclone=settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING,
     )
-    deduct_extra_containers_resources(parsed_compose_spec, extra=extra)
+    deduct_extra_containers_resources(parsed_compose_spec, extra=extra, settings=settings)
 
     _remap_service_keys(spec_services, spec_services_to_container_name)
 

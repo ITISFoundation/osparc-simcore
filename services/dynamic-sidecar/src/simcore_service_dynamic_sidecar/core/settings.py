@@ -224,6 +224,20 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = False
 
+    DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION: Annotated[
+        float,
+        Field(
+            ge=0.0,
+            le=1.0,
+            description=(
+                "Minimum fraction of CPU and RAM that must remain for the user service "
+                "after subtracting the helper-container footprint (envoy, otel, rclone). "
+                "If the remaining allocation would fall below this threshold the sidecar "
+                "refuses to start and raises an error."
+            ),
+        ),
+    ] = 0.6
+
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
         return (  # pylint: disable=no-member

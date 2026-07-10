@@ -28,6 +28,13 @@ def envoy_proxy_settings() -> EgressProxySettings:
     return EgressProxySettings.create_from_envs()
 
 
+@pytest.fixture
+def deduct_settings() -> MagicMock:
+    settings = MagicMock()
+    settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION = 0.48
+    return settings
+
+
 def _service(
     cpu: float,
     ram_mib: int,
@@ -202,7 +209,7 @@ def test_footprint_all_enabled(envoy_proxy_settings: EgressProxySettings):
 # ---- deduct_extra_containers_resources: success path -----------------------
 
 
-def test_deduct_subtracts_from_biggest():
+def test_deduct_subtracts_from_biggest(deduct_settings: MagicMock):
     compose = _compose(
         {
             "svc-small": _service(cpu=2.0, ram_mib=2048, inject_resource_limit_envs=True),
@@ -210,7 +217,7 @@ def test_deduct_subtracts_from_biggest():
         }
     )
     extra = _Resources(cpu=1.0, ram=1024 * _MiB)
-    deduct_extra_containers_resources(compose, extra=extra)
+    deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
 
     big_limits = _read_limits(compose["services"]["svc-big"])
     small_limits = _read_limits(compose["services"]["svc-small"])
@@ -222,7 +229,7 @@ def test_deduct_subtracts_from_biggest():
     assert small_limits.ram == 2048 * _MiB
 
 
-def test_deduct_clamps_reservations():
+def test_deduct_clamps_reservations(deduct_settings: MagicMock):
     compose = _compose(
         {
             "svc": _service(
@@ -235,7 +242,7 @@ def test_deduct_clamps_reservations():
         }
     )
     extra = _Resources(cpu=1.0, ram=1024 * _MiB)
-    deduct_extra_containers_resources(compose, extra=extra)
+    deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
 
     spec = compose["services"]["svc"]
     reservations = spec["deploy"]["resources"]["reservations"]
@@ -248,11 +255,11 @@ def test_deduct_clamps_reservations():
     assert int(env[MEM_RESOURCE_LIMIT_KEY]) == 7168 * _MiB
 
 
-def test_deduct_noop_when_no_user_services():
+def test_deduct_noop_when_no_user_services(deduct_settings: MagicMock):
     # service without SIMCORE_NANO_CPUS_LIMIT is treated as a helper — deduction is a no-op
     compose = _compose({"helper-svc": _service(cpu=2.0, ram_mib=2048)})
     original_limits = _read_limits(compose["services"]["helper-svc"])
-    deduct_extra_containers_resources(compose, extra=_Resources(cpu=1.0, ram=512 * _MiB))
+    deduct_extra_containers_resources(compose, extra=_Resources(cpu=1.0, ram=512 * _MiB), settings=deduct_settings)
     assert _read_limits(compose["services"]["helper-svc"]) == original_limits
 
 
@@ -267,10 +274,10 @@ def test_deduct_noop_when_no_user_services():
         pytest.param(_Resources(cpu=4.0, ram=8192 * _MiB), id="both_exactly_zero"),
     ],
 )
-def test_deduct_raises_hard_floor(extra: _Resources):
+def test_deduct_raises_hard_floor(extra: _Resources, deduct_settings: MagicMock):
     compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
     with pytest.raises(BaseDynamicSidecarError):
-        deduct_extra_containers_resources(compose, extra=extra)
+        deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
 
 
 # ---- deduct_extra_containers_resources: soft floor (<48%) ------------------
@@ -285,20 +292,21 @@ def test_deduct_raises_hard_floor(extra: _Resources):
         pytest.param(_Resources(cpu=0.1, ram=int(8192 * _MiB * 0.61)), id="ram_below_48pct"),
     ],
 )
-def test_deduct_raises_soft_floor(extra: _Resources):
+def test_deduct_raises_soft_floor(extra: _Resources, deduct_settings: MagicMock):
     compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
     with pytest.raises(BaseDynamicSidecarError):
-        deduct_extra_containers_resources(compose, extra=extra)
+        deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
 
 
-def test_deduct_exactly_at_48pct_passes():
-    """A remaining fraction of exactly 48% must NOT raise."""
+def test_deduct_exactly_at_48pct_passes(deduct_settings: MagicMock):
+    """A remaining fraction exactly equal to the configured minimum must NOT raise."""
+    min_fraction = deduct_settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
     original_cpu = 4.0
     original_ram = 8192 * _MiB
-    # subtract exactly 52% so that 48% remains
-    extra = _Resources(cpu=original_cpu * 0.52, ram=int(original_ram * 0.52))
+    # subtract exactly (1 - min_fraction) so that min_fraction remains
+    extra = _Resources(cpu=original_cpu * (1 - min_fraction), ram=int(original_ram * (1 - min_fraction)))
     compose = _compose({"svc": _service(cpu=original_cpu, ram_mib=8192, inject_resource_limit_envs=True)})
-    deduct_extra_containers_resources(compose, extra=extra)
+    deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
     r = _read_limits(compose["services"]["svc"])
-    assert r.cpu == pytest.approx(original_cpu * 0.48, rel=1e-6)
-    assert r.ram == pytest.approx(original_ram * 0.48, rel=1e-6)
+    assert r.cpu == pytest.approx(original_cpu * min_fraction, rel=1e-6)
+    assert r.ram == pytest.approx(original_ram * min_fraction, rel=1e-6)

@@ -4,22 +4,17 @@ in the compose spec before starting it.
 
 Fails sidecar startup if the deduction would leave the target service with:
   - ≤ 0 CPU or ≤ 0 RAM (hard floor), or
-  - < 48 % of its original CPU or RAM (soft floor).
+  - < DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION of its original CPU or RAM (soft floor).
 """
 
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any
 
 from pydantic import ByteSize
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 
 from .errors import BaseDynamicSidecarError
 from .settings import ApplicationSettings
-
-# A service must retain at least this fraction of its *own* original allocation
-# after all helper footprints are subtracted.
-_MIN_REMAINING_FRACTION: Final[float] = 0.48
-
 
 # ----- errors ----------------------------------------------------------------
 
@@ -173,6 +168,7 @@ def deduct_extra_containers_resources(
     parsed_compose_spec: dict[str, Any],
     *,
     extra: _Resources,
+    settings: ApplicationSettings,
 ) -> None:
     """Subtracts the combined helper-container footprint from the single biggest user service.
 
@@ -182,8 +178,8 @@ def deduct_extra_containers_resources(
     Mutates ``parsed_compose_spec`` in-place.
 
     Raises:
-        NotEnoughResourcesForExtraContainersError: if the remaining allocation would be
-            <= 0 or < 48 % of the service's original CPU or RAM limit.
+        NotEnoughResourcesForExtraContainersError: if the remaining allocation would be <= 0 or
+            < DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION of the service's original CPU or RAM limit
     """
     spec_services = parsed_compose_spec["services"]
     user_service_names = [name for name, spec in spec_services.items() if _is_user_service(spec)]
@@ -194,15 +190,11 @@ def deduct_extra_containers_resources(
     biggest = _find_biggest_overall_service(spec_services, user_service_names)
     original = _read_limits(spec_services[biggest])
 
-    remaining = _Resources(
-        cpu=original.cpu - extra.cpu,
-        ram=original.ram - extra.ram,
-    )
+    remaining = _Resources(cpu=original.cpu - extra.cpu, ram=original.ram - extra.ram)
 
+    min_fraction = settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
     hard_fail = remaining.cpu <= 0 or remaining.ram <= 0
-    soft_fail = (
-        remaining.cpu < original.cpu * _MIN_REMAINING_FRACTION or remaining.ram < original.ram * _MIN_REMAINING_FRACTION
-    )
+    soft_fail = remaining.cpu < original.cpu * min_fraction or remaining.ram < original.ram * min_fraction
 
     if hard_fail or soft_fail:
         raise NotEnoughResourcesForExtraContainersError(
@@ -221,7 +213,7 @@ def deduct_extra_containers_resources(
             original_cpu=original.cpu,
             original_ram=original.ram,
             original_ram_hr=ByteSize(original.ram).human_readable(),
-            min_fraction=_MIN_REMAINING_FRACTION,
+            min_fraction=min_fraction,
         )
 
     _write_limits(spec_services[biggest], remaining)
