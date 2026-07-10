@@ -1,4 +1,5 @@
 from enum import auto
+from typing import Annotated
 
 from models_library.docker import DockerGenericTag
 from models_library.utils.enums import StrAutoEnum
@@ -22,19 +23,18 @@ class EnvoyLogLevel(StrAutoEnum):
 
 
 class EgressProxySettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_ENVOY_IMAGE: DockerGenericTag = Field(
-        "envoyproxy/envoy:v1.25-latest",
-        description="envoy image to use",
+    DYNAMIC_SIDECAR_ENVOY_IMAGE: Annotated[DockerGenericTag, Field(description="envoy image to use")] = (
+        "envoyproxy/envoy:v1.25-latest"
     )
-    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: EnvoyLogLevel = Field(
-        default=EnvoyLogLevel.ERROR,
-        description="log level for envoy proxy service",
-    )
-    DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT: ByteSize = Field(
-        default=TypeAdapter(ByteSize).validate_python("128MiB"),
-        description="memory limit for the envoy egress proxy container",
-    )
-    DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT: float = Field(
-        default=0.1,
-        description="CPU cores limit for the envoy egress proxy container",
-    )
+
+    DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL: Annotated[
+        EnvoyLogLevel, Field(description="log level for envoy proxy service")
+    ] = EnvoyLogLevel.ERROR
+
+    DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT: Annotated[
+        ByteSize, Field(description="memory limit for the envoy egress proxy container")
+    ] = TypeAdapter(ByteSize).validate_python("128MiB")
+
+    DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT: Annotated[
+        float, Field(description="CPU cores limit for the envoy egress proxy container")
+    ] = 0.1
