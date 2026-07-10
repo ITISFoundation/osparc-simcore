@@ -28619,20 +28619,6 @@
       },
       "StudyUI-Input": {
         "properties": {
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
           "workbench": {
             "anyOf": [
               {
@@ -28678,18 +28664,6 @@
             ],
             "title": "Annotations"
           },
-          "templateType": {
-            "anyOf": [
-              {
-                "type": "string",
-                "const": "hypertool"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatetype"
-          },
           "mode": {
             "anyOf": [
               {
@@ -28709,26 +28683,11 @@
             "title": "Mode"
           }
         },
-        "additionalProperties": true,
         "type": "object",
         "title": "StudyUI"
       },
       "StudyUI-Output": {
         "properties": {
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
           "workbench": {
             "anyOf": [
               {
@@ -28774,18 +28733,6 @@
             ],
             "title": "Annotations"
           },
-          "templateType": {
-            "anyOf": [
-              {
-                "type": "string",
-                "const": "hypertool"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatetype"
-          },
           "mode": {
             "anyOf": [
               {
@@ -28805,7 +28752,6 @@
             "title": "Mode"
           }
         },
-        "additionalProperties": true,
         "type": "object",
         "title": "StudyUI"
       },
