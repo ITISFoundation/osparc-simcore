@@ -95,6 +95,7 @@ async def open_project(request: web.Request) -> web.Response:
             project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
+            product_name=req_ctx.product_name,
             max_number_of_opened_projects_per_user=product.max_open_studies_per_user,
             allow_multiple_sessions=app_settings.WEBSERVER_REALTIME_COLLABORATION is not None,
             max_number_of_user_sessions_per_project=(
