@@ -647,6 +647,7 @@ async def test_running_computation_sends_progress_updates_via_socketio(
         f"Received updates for: {received_progress_node_ids}"
     )
 
+    # check that a node update was sent for each computational node at the end that unlocks the node
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(30),
