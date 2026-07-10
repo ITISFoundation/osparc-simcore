@@ -3,7 +3,6 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyProfileRestPatch
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
@@ -26,7 +25,6 @@ from ._models import (
     UserCredentialsTuple,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
-    UserModelAdapter,
 )
 from .errors import (
     MissingGroupExtraPropertiesForProductError,
@@ -264,19 +262,22 @@ async def update_my_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: MyProfileRestPatch,
+    updated_values: dict[str, Any],
+    updated_contact: dict[str, Any] | None = None,
 ) -> None:
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,
-        updated_values=UserModelAdapter.from_rest_schema_model(update).to_db_values(),
+        updated_values=updated_values,
     )
 
-    if update.contact is not None:
+    if updated_contact:
+        # NOTE: contact or its fields canNOT be deleted, only updated.
+        # An empty `updated_contact` (e.g. `{}`) must be a no-op, not a deletion.
         await _users_repository.update_user_billing_details(
             get_asyncpg_engine(app),
             user_id=user_id,
-            updates=update.contact.model_dump(exclude_unset=True),
+            updates=updated_contact,
         )
 
 

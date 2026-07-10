@@ -24,6 +24,7 @@ from ....session.api import get_session
 from ....utils_aiohttp import envelope_json_response
 from ....web_requests_validation import parse_request_body_as
 from ... import _users_service
+from ..._models import UserModelAdapter
 from ..._users_web import RegistrationSessionManager
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import (
@@ -96,7 +97,14 @@ async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(MyProfileRestPatch, request)
 
-    await _users_service.update_my_profile(request.app, user_id=req_ctx.user_id, update=profile_update)
+    await _users_service.update_my_profile(
+        request.app,
+        user_id=req_ctx.user_id,
+        updated_values=UserModelAdapter.from_rest_schema_model(profile_update).to_db_values(),
+        updated_contact=(
+            profile_update.contact.model_dump(exclude_unset=True) if profile_update.contact is not None else None
+        ),
+    )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
