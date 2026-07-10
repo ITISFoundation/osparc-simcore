@@ -1,16 +1,9 @@
-from enum import StrEnum
 from typing import Annotated, Any, Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 _MIN_INPUT_MESSAGES: Final[int] = 1
 _MAX_INPUT_MESSAGES: Final[int] = 20
-
-
-class RoleEnum(StrEnum):
-    ASSISTANT = "assistant"
-    DEVELOPER = "developer"
-    USER = "user"
 
 
 class _UserMessage(BaseModel):

@@ -7,14 +7,16 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
+from pydantic import TypeAdapter
 from simcore_service_api_server.core.settings import ChatbotSettings
 from simcore_service_api_server.models.domain.chatbot import (
     ChatCompletionRequestMessage,
     CreateChatCompletionResponse,
-    RoleEnum,
 )
 from simcore_service_api_server.models.schemas.responses import InputMessage
 from simcore_service_api_server.services_http.chatbot import ChatbotApi, ChatbotSession
+
+_chat_message_adapter = TypeAdapter(ChatCompletionRequestMessage)
 
 _CHATBOT_BASE_URL = "http://chatbot:8000"
 _GRAPH_NAME = "simple_rag"
@@ -69,7 +71,7 @@ async def test_create_chat_completion(
 
     result = await chatbot_session.create_chat_completion(
         messages=[
-            ChatCompletionRequestMessage(role=RoleEnum.USER, content=user_message),
+            _chat_message_adapter.validate_python({"role": "user", "content": user_message}),
         ],
         model="gpt-4o-mini",
         metadata={},
@@ -108,8 +110,8 @@ async def test_create_chat_completion_with_multiple_messages(
 
     result = await chatbot_session.create_chat_completion(
         messages=[
-            ChatCompletionRequestMessage(role=RoleEnum.DEVELOPER, content=developer_message),
-            ChatCompletionRequestMessage(role=RoleEnum.USER, content=user_message),
+            _chat_message_adapter.validate_python({"role": "developer", "content": developer_message}),
+            _chat_message_adapter.validate_python({"role": "user", "content": user_message}),
         ],
         model="gpt-4o-mini",
         metadata={"session": faker.word()},
@@ -134,7 +136,7 @@ async def test_create_chat_completion_raises_on_error(
     with pytest.raises(Exception):  # noqa: B017, PT011
         await chatbot_session.create_chat_completion(
             messages=[
-                ChatCompletionRequestMessage(role=RoleEnum.USER, content=faker.sentence()),
+                _chat_message_adapter.validate_python({"role": "user", "content": faker.sentence()}),
             ],
             model="gpt-4o-mini",
             metadata={},
