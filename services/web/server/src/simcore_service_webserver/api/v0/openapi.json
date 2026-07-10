@@ -3125,10 +3125,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 200,
-                  "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+                  "$ref": "#/components/schemas/GlobPatternSafeStr"
                 },
                 {
                   "type": "null"
@@ -3160,10 +3157,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 200,
-                  "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+                  "$ref": "#/components/schemas/GlobPatternSafeStr"
                 },
                 {
                   "type": "null"
@@ -17032,6 +17026,16 @@
           "display_name": "simcore-testing"
         }
       },
+      "DescriptionSafeStr": {
+        "type": "string",
+        "maxLength": 5000,
+        "minLength": 3
+      },
+      "DisplaySafeStr": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+      },
       "DownloadLink": {
         "properties": {
           "downloadLink": {
@@ -20741,10 +20745,7 @@
       "FolderCreateBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Name"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "parentFolderId": {
             "anyOf": [
@@ -20870,10 +20871,7 @@
       "FolderReplaceBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Name"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "parentFolderId": {
             "anyOf": [
@@ -21011,6 +21009,12 @@
         ],
         "title": "GetWalletAutoRecharge"
       },
+      "GlobPatternSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 3,
+        "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+      },
       "GroupAccessRights": {
         "properties": {
           "read": {
@@ -21038,17 +21042,10 @@
       "GroupCreate": {
         "properties": {
           "label": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._-]+$",
-            "title": "Label"
+            "$ref": "#/components/schemas/NameSafeStr"
           },
           "description": {
-            "type": "string",
-            "maxLength": 5000,
-            "minLength": 3,
-            "title": "Description"
+            "$ref": "#/components/schemas/DescriptionSafeStr"
           },
           "thumbnail": {
             "anyOf": [
@@ -21168,29 +21165,22 @@
           "label": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
-                "pattern": "^[A-Za-z0-9 ._-]+$"
+                "$ref": "#/components/schemas/NameSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Label"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "thumbnail": {
             "anyOf": [
@@ -22178,6 +22168,9 @@
         "type": "object",
         "title": "LogoutBody"
       },
+      "LongTruncatedStr": {
+        "type": "string"
+      },
       "LowerCaseEmailStr": {
         "type": "string",
         "format": "email"
@@ -22570,15 +22563,12 @@
           "institution": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Institution"
+            ]
           },
           "address": {
             "anyOf": [
@@ -22593,28 +22583,22 @@
           "city": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "City"
+            ]
           },
           "state": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "State"
+            ]
           },
           "postalCode": {
             "anyOf": [
@@ -22962,6 +22946,12 @@
           "token_key"
         ],
         "title": "MyTokenGet"
+      },
+      "NameSafeStr": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 ._-]+$"
       },
       "Node-Input": {
         "properties": {
@@ -26423,24 +26413,22 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ShortTruncatedStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/LongTruncatedStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "thumbnail": {
             "anyOf": [
@@ -27535,6 +27523,12 @@
         ],
         "title": "SearchFilters"
       },
+      "SearchPatternSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 ._@-]*$"
+      },
       "SearchTimerangeFilter": {
         "properties": {
           "from": {
@@ -28302,6 +28296,9 @@
         ],
         "title": "ServicesAggregatedUsagesType"
       },
+      "ShortTruncatedStr": {
+        "type": "string"
+      },
       "SimCoreFileLink-Input": {
         "properties": {
           "store": {
@@ -28898,24 +28895,17 @@
       "TagCreate": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._-]+$",
-            "title": "Name"
+            "$ref": "#/components/schemas/NameSafeStr"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "color": {
             "type": "string",
@@ -29035,29 +29025,22 @@
           "name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
-                "pattern": "^[A-Za-z0-9 ._-]+$"
+                "$ref": "#/components/schemas/NameSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "color": {
             "anyOf": [
@@ -30108,15 +30091,12 @@
           "institution": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Institution",
             "description": "company, university, ..."
           },
           "phone": {
@@ -30133,23 +30113,17 @@
             "$ref": "#/components/schemas/AddressLineSafeStr"
           },
           "city": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "City"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "state": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "State"
+            ]
           },
           "postalCode": {
             "$ref": "#/components/schemas/PostalCodeSafeStr"
@@ -30433,11 +30407,7 @@
       "UsersSearch": {
         "properties": {
           "match": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._@-]*$",
-            "title": "Match",
+            "$ref": "#/components/schemas/SearchPatternSafeStr",
             "description": "Search string to match with usernames and public profiles (e.g. emails, first/last name)"
           },
           "limit": {
