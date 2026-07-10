@@ -5,7 +5,8 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime, timedelta
-from uuid import UUID
+from pathlib import Path
+from uuid import UUID, uuid4
 
 import arrow
 import pytest
@@ -13,7 +14,9 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from models_library.basic_types import IDStr
+from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
+from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.projects import (
     _projects_repository as projects_service_repository,
@@ -218,3 +221,74 @@ async def test_guest_allowed_to_push(client: TestClient, user_project: ProjectDi
         client.app, from_project_uuid=source_uuid, to_project_uuid=copy_uuid
     )
     await _assert_allows_to_push(client.app, copy_uuid, expected=True)
+
+
+async def test_count_projects_in_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    app_products_names: list[ProductName],
+    osparc_product_name: str,
+):
+    assert client.app
+    assert len(app_products_names) >= 2, "Test requires at least two products in the DB"
+
+    other_product = next(p for p in app_products_names if p != osparc_product_name)
+
+    # Empty set always returns 0, regardless of product
+    assert (
+        await projects_service_repository.count_projects_in_product(
+            client.app, project_uuids=set(), product_name=osparc_product_name
+        )
+        == 0
+    )
+
+    # Single project that belongs to the queried product
+    assert (
+        await projects_service_repository.count_projects_in_product(
+            client.app,
+            project_uuids={user_project["uuid"]},
+            product_name=osparc_product_name,
+        )
+        == 1
+    )
+
+    # Same UUID queried against a different product → 0 (cross-product isolation)
+    assert (
+        await projects_service_repository.count_projects_in_product(
+            client.app,
+            project_uuids={user_project["uuid"]},
+            product_name=other_product,
+        )
+        == 0
+    )
+
+    # Non-existent UUID is not counted
+    assert (
+        await projects_service_repository.count_projects_in_product(
+            client.app,
+            project_uuids={str(uuid4())},
+            product_name=osparc_product_name,
+        )
+        == 0
+    )
+
+    # Mixed set: one project in the queried product, one in another product
+    # Only the project belonging to the queried product should be counted.
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=other_product,
+        tests_data_dir=tests_data_dir,
+    ) as other_product_project:
+        assert (
+            await projects_service_repository.count_projects_in_product(
+                client.app,
+                project_uuids={user_project["uuid"], other_product_project["uuid"]},
+                product_name=osparc_product_name,
+            )
+            == 1  # only user_project belongs to osparc_product_name
+        )

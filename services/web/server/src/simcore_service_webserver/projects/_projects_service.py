@@ -1748,6 +1748,7 @@ async def try_open_project_for_user(  # noqa: C901
     client_session_id: ClientSessionID,
     app: web.Application,
     *,
+    product_name: ProductName,
     max_number_of_opened_projects_per_user: int | None,
     allow_multiple_sessions: bool,
     max_number_of_user_sessions_per_project: PositiveInt | None,
@@ -1768,7 +1769,7 @@ async def try_open_project_for_user(  # noqa: C901
             owner=Owner(user_id=user_id),
             notification_cb=None,
         )
-        async def _open_project() -> bool:
+        async def _open_project() -> bool:  # noqa: C901
             with managed_resource(user_id, client_session_id, app) as user_session:
                 # check if the project is already opened
                 if (
@@ -1781,23 +1782,25 @@ async def try_open_project_for_user(  # noqa: C901
                         client_session_id,
                     )
                     return True
-                # Enforce per-user open project limit
-                if max_number_of_opened_projects_per_user is not None and (
-                    len(
-                        {
-                            uuid
-                            for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
-                            if uuid != f"{project_uuid}"
-                        }
+                # Enforce per-user open project limit (scoped to the current product)
+                if max_number_of_opened_projects_per_user is not None:
+                    all_user_open_project_uuids = {
+                        uuid
+                        for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
+                        if uuid != f"{project_uuid}"
+                    }
+                    open_in_this_product = await _projects_repository.count_projects_in_product(
+                        app,
+                        project_uuids=all_user_open_project_uuids,
+                        product_name=product_name,
                     )
-                    >= max_number_of_opened_projects_per_user
-                ):
-                    raise ProjectTooManyProjectOpenedError(
-                        max_num_projects=max_number_of_opened_projects_per_user,
-                        user_id=user_id,
-                        project_uuid=project_uuid,
-                        client_session_id=client_session_id,
-                    )
+                    if open_in_this_product >= max_number_of_opened_projects_per_user:
+                        raise ProjectTooManyProjectOpenedError(
+                            max_num_projects=max_number_of_opened_projects_per_user,
+                            user_id=user_id,
+                            project_uuid=project_uuid,
+                            client_session_id=client_session_id,
+                        )
 
                 # try to assign project_id to current_session
                 sessions_with_project = await user_session.find_users_of_resource(
