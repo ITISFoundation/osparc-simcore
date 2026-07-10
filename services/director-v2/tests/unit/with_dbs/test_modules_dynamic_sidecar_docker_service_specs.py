@@ -260,6 +260,12 @@ def expected_dynamic_sidecar_spec(
                         ':[{"service":"rt-web","command":"ls","timeout":1.0},{"service":"s4l-core",'
                         '"command":["ls","-lah"],"timeout":1.0}],"inactivity":null}'
                     ),
+                    "DY_SIDECAR_EGRESS_PROXY_SETTINGS": (
+                        '{"DYNAMIC_SIDECAR_ENVOY_IMAGE":"envoyproxy/envoy:v1.25-latest",'
+                        '"DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL":"ERROR",'
+                        '"DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT":134217728,'
+                        '"DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT":0.1}'
+                    ),
                     "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/3dviewer",
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
                     "DY_SIDECAR_PRODUCT_NAME": osparc_product_name,
