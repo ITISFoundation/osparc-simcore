@@ -255,6 +255,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     __attachInterframeMessageHandlers: function() {
       this.__attachInterIframeThemeSyncer();
+      this.__attachInterIframeLocaleSyncer();
       this.__attachInterIframeListeners();
     },
 
@@ -268,6 +269,18 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         this.postThemeSwitch(msg.getData());
       };
       qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
+    },
+
+    __attachInterIframeLocaleSyncer: function() {
+      this.postLocaleSwitch = locale => {
+        const msg = "osparc;locale=" + locale;
+        this.sendMessageToIframe(msg);
+      };
+
+      this.localeSwitchHandler = msg => {
+        this.postLocaleSwitch(msg.getData());
+      };
+      qx.event.message.Bus.getInstance().subscribe("localeSwitch", this.localeSwitchHandler);
     },
 
     __postLoadSetup: function() {
