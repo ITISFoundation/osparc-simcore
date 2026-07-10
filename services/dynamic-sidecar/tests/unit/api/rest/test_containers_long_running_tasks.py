@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import aiodocker
 import faker
@@ -157,10 +158,20 @@ def dynamic_sidecar_network_name() -> str:
                     "networks": {
                         _get_dynamic_sidecar_network_name(): None,
                     },
+                    "environment": [
+                        f"SIMCORE_NANO_CPUS_LIMIT={int(4.0 * 1e9)}",
+                        f"SIMCORE_MEMORY_BYTES_LIMIT={16 * 1024 * 1024 * 1024}",
+                    ],
+                    "deploy": {"resources": {"limits": {"cpus": "4.0", "memory": str(16 * 1024 * 1024 * 1024)}}},
                 },
                 "second-box": {
                     "image": "alpine:latest",
                     "command": ["sh", "-c", "sleep 100000"],
+                    "environment": [
+                        f"SIMCORE_NANO_CPUS_LIMIT={int(4.0 * 1e9)}",
+                        f"SIMCORE_MEMORY_BYTES_LIMIT={16 * 1024 * 1024 * 1024}",
+                    ],
+                    "deploy": {"resources": {"limits": {"cpus": "4.0", "memory": str(16 * 1024 * 1024 * 1024)}}},
                 },
             },
             "networks": {_get_dynamic_sidecar_network_name(): None},
@@ -171,6 +182,11 @@ def dynamic_sidecar_network_name() -> str:
                 "solo-box": {
                     "image": "alpine:latest",
                     "command": ["sh", "-c", "sleep 100000"],
+                    "environment": [
+                        f"SIMCORE_NANO_CPUS_LIMIT={int(4.0 * 1e9)}",
+                        f"SIMCORE_MEMORY_BYTES_LIMIT={16 * 1024 * 1024 * 1024}",
+                    ],
+                    "deploy": {"resources": {"limits": {"cpus": "4.0", "memory": str(16 * 1024 * 1024 * 1024)}}},
                 },
             },
         },
@@ -520,10 +536,7 @@ async def test_create_containers_task_invalid_yaml_spec(
         (_get_task_id_docker_compose_down, "unique"),
         (_get_task_id_state_restore, "unique"),
         (_get_task_id_state_save, "unique"),
-        (
-            _get_task_id_task_ports_inputs_pull,
-            "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
-        ),
+        (_get_task_id_task_ports_inputs_pull, f"unique_{uuid4()}"),
         (_get_task_id_task_ports_outputs_pull, "unique"),
         (_get_task_id_task_ports_outputs_push, "unique"),
         (_get_task_id_task_containers_restart, "unique"),

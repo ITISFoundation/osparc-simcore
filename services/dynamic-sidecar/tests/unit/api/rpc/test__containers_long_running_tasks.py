@@ -10,6 +10,7 @@ from collections.abc import Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import aiodocker
 import faker
@@ -505,10 +506,7 @@ async def test_create_containers_task_invalid_yaml_spec(
         (_get_task_id_runs_docker_compose_down_task, "unique"),
         (_get_task_id_state_restore_task, "unique"),
         (_get_task_id_state_save_task, "unique"),
-        (
-            _get_task_id_ports_inputs_pull_task,
-            "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
-        ),
+        (_get_task_id_ports_inputs_pull_task, f"unique_{uuid4()}"),
         (_get_task_id_ports_outputs_pull_task, "unique"),
         (_get_task_id_ports_outputs_push_task, "unique"),
         (_get_task_id_task_containers_restart_task, "unique"),
