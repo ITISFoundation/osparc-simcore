@@ -15,7 +15,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import ServiceRunID
-from models_library.services_resources import ServiceResourcesDict
+from models_library.services_resources import GIGA, ServiceResourcesDict
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -84,11 +84,15 @@ def _merge_service_base_and_user_specs(
 def _subtract_proxy_reservation_from_service_resources(
     service_resources: ServiceResourcesDict,
     *,
-    cpu_reservation: float,
-    ram_reservation: int,
+    cpu_reservation: float,  # in fractional cores (e.g. 0.1), NOT nanocpus
+    ram_reservation: int,  # in bytes
 ) -> None:
-    """Subtracts the proxy's reservation from the service with the largest RAM
-    reservation, in-place, flooring at 0.
+    """Subtracts the proxy's reservation from both limit and reservation of the service
+    with the largest RAM limit, in-place, flooring at 0.
+
+    Selecting by RAM limit keeps this consistent with
+    _helper_container_resources._find_biggest_overall_service so both sides of the
+    pipeline operate on the same container.
     """
     if not service_resources:
         return
@@ -96,15 +100,17 @@ def _subtract_proxy_reservation_from_service_resources(
     biggest_key = max(
         service_resources,
         key=lambda k: (
-            float(service_resources[k].resources["RAM"].reservation) if "RAM" in service_resources[k].resources else 0.0
+            float(service_resources[k].resources["RAM"].limit) if "RAM" in service_resources[k].resources else 0.0
         ),
     )
 
     image_resources = service_resources[biggest_key].resources
     if "RAM" in image_resources:
         image_resources["RAM"].reservation = max(0, int(float(image_resources["RAM"].reservation) - ram_reservation))
+        image_resources["RAM"].limit = max(0, int(float(image_resources["RAM"].limit) - ram_reservation))
     if "CPU" in image_resources:
         image_resources["CPU"].reservation = max(0.0, float(image_resources["CPU"].reservation) - cpu_reservation)
+        image_resources["CPU"].limit = max(0.0, float(image_resources["CPU"].limit) - cpu_reservation)
 
 
 async def _create_proxy_service(
@@ -203,7 +209,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         proxy_settings: DynamicSidecarProxySettings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
         _subtract_proxy_reservation_from_service_resources(
             scheduler_data.service_resources,
-            cpu_reservation=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
+            cpu_reservation=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION / GIGA,  # nanocpus → cores
             ram_reservation=int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION),
         )
 
