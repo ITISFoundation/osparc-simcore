@@ -16,6 +16,7 @@ from models_library.rabbitmq_messages import (
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import ServiceRunID
 from models_library.services_resources import GIGA, ServiceResourcesDict
+from pydantic import ByteSize
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -105,12 +106,29 @@ def _subtract_proxy_reservation_from_service_resources(
     )
 
     image_resources = service_resources[biggest_key].resources
+
+    cpu_before = float(image_resources["CPU"].limit) if "CPU" in image_resources else 0.0
+    ram_before = int(float(image_resources["RAM"].limit)) if "RAM" in image_resources else 0
+
     if "RAM" in image_resources:
         image_resources["RAM"].reservation = max(0, int(float(image_resources["RAM"].reservation) - ram_reservation))
         image_resources["RAM"].limit = max(0, int(float(image_resources["RAM"].limit) - ram_reservation))
     if "CPU" in image_resources:
         image_resources["CPU"].reservation = max(0.0, float(image_resources["CPU"].reservation) - cpu_reservation)
         image_resources["CPU"].limit = max(0.0, float(image_resources["CPU"].limit) - cpu_reservation)
+
+    _logger.info(
+        "Removed reserved dy-proxy resources from '%s': "
+        "cpu removed %.2f of %.2f cores (-%.0f%%); "
+        "ram removed %s of %s (-%.0f%%)",
+        biggest_key,
+        cpu_reservation,
+        cpu_before,
+        cpu_reservation / cpu_before * 100 if cpu_before else 0,
+        ByteSize(ram_reservation).human_readable(),
+        ByteSize(ram_before).human_readable(),
+        ram_reservation / ram_before * 100 if ram_before else 0,
+    )
 
 
 async def _create_proxy_service(
