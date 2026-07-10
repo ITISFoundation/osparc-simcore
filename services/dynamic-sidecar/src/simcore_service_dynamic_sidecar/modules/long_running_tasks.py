@@ -55,10 +55,14 @@ from ..modules import nodeports, user_services_preferences
 from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
-from ..modules.outputs import OutputsManager, event_propagation_disabled
+from ..modules.outputs import (
+    OutputsManager,
+    UploadPortsFailedError,
+    event_propagation_disabled,
+)
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 from .long_running_tasks_utils import (
-    ensure_read_permissions_on_user_service_data,
+    ensure_permissions_on_user_service_data,
     run_before_shutdown_actions,
 )
 from .resource_tracking import send_service_started, send_service_stopped
@@ -287,8 +291,8 @@ async def remove_user_services(
         await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
         raise
     finally:
-        with log_context(_logger, logging.INFO, "ensure read permissions"):
-            await ensure_read_permissions_on_user_service_data(mounted_volumes)
+        with log_context(_logger, logging.INFO, "ensure permissions"):
+            await ensure_permissions_on_user_service_data(mounted_volumes)
 
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 
@@ -556,7 +560,21 @@ async def push_user_services_output_ports(
         log_level=logging.INFO,
     )
 
-    await outputs_manager.wait_for_all_uploads_to_finish()
+    try:
+        await outputs_manager.wait_for_all_uploads_to_finish()
+    except UploadPortsFailedError:
+        # An upload failed, most likely because the user service created output
+        # files the sidecar cannot read. Permissions are ONLY adjusted here, as
+        # part of the closing sequence, to avoid revoking the user's access to
+        # their files while the service is still running. After fixing the
+        # permissions all ports are rescheduled and re-uploaded.
+        _logger.warning("Pushing output ports failed, fixing permissions and retrying")
+        with log_context(_logger, logging.INFO, "ensure permissions"):
+            mounted_volumes: MountedVolumes = app.state.mounted_volumes
+            await ensure_permissions_on_user_service_data(mounted_volumes)
+
+        outputs_manager.set_all_ports_for_upload()
+        await outputs_manager.wait_for_all_uploads_to_finish()
 
     await post_sidecar_log_message(app, "finished outputs pushing", log_level=logging.INFO)
     await progress.update(message="finished outputs pushing", percent=0.99)
