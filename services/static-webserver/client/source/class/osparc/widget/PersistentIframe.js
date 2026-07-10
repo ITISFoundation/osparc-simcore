@@ -353,10 +353,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             // switch locale driven by the iframe
             if (message && message.includes(osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG)) {
               const locale = message.replace(osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG, "");
-              const validLocales = osparc.utils.LanguageManager.getAvailableLocales();
-              if (validLocales.includes(locale)) {
-                osparc.utils.LanguageManager.setLocale(locale);
-              }
+              osparc.utils.LanguageManager.setLocale(locale);
             }
             break;
           }
