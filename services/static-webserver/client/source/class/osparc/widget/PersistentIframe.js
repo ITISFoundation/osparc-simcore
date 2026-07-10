@@ -91,6 +91,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     __diskUsageIndicator: null,
     __reloadButton: null,
     __zoomButton: null,
+    __busHandlers: null,
 
     // override
     _createContentElement : function() {
@@ -256,33 +257,23 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     },
 
     __attachInterframeMessageHandlers: function() {
-      this.__attachInterIframeThemeSyncer();
-      this.__attachInterIframeLocaleSyncer();
+      this.__busHandlers = {};
+      // forward app-driven theme/locale changes to the iframe
+      this.postThemeSwitch = this.__attachInterIframeSyncer("themeSwitch", osparc.widget.PersistentIframe.THEME_SWITCH_MSG);
+      this.postLocaleSwitch = this.__attachInterIframeSyncer("localeSwitch", osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG);
       this.__attachInterIframeListeners();
     },
 
-    __attachInterIframeThemeSyncer: function() {
-      this.postThemeSwitch = theme => {
-        const msg = osparc.widget.PersistentIframe.THEME_SWITCH_MSG + theme;
-        this.sendMessageToIframe(msg);
-      };
-
-      this.themeSwitchHandler = msg => {
-        this.postThemeSwitch(msg.getData());
-      };
-      qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
-    },
-
-    __attachInterIframeLocaleSyncer: function() {
-      this.postLocaleSwitch = locale => {
-        const msg = osparc.widget.PersistentIframe.LOCALE_SWITCH_MSG + locale;
-        this.sendMessageToIframe(msg);
-      };
-
-      this.localeSwitchHandler = msg => {
-        this.postLocaleSwitch(msg.getData());
-      };
-      qx.event.message.Bus.getInstance().subscribe("localeSwitch", this.localeSwitchHandler);
+    /**
+     * Subscribes to a Bus event and forwards its payload to the iframe as an "osparc;<key>=<value>" message.
+     * @return {Function} post function so callers can also push the current value on demand.
+     */
+    __attachInterIframeSyncer: function(busName, switchMsg) {
+      const post = value => this.sendMessageToIframe(switchMsg + value);
+      const handler = msg => post(msg.getData());
+      this.__busHandlers[busName] = handler;
+      qx.event.message.Bus.getInstance().subscribe(busName, handler);
+      return post;
     },
 
     __postLoadSetup: function() {
@@ -454,6 +445,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     this.__iframe.exclude();
     this.__iframe.dispose();
     this.__iframe = undefined;
-    qx.event.message.Bus.getInstance().unsubscribe("themeSwitch", this.themeSwitchHandler);
+    const bus = qx.event.message.Bus.getInstance();
+    Object.entries(this.__busHandlers || {}).forEach(([busName, handler]) => bus.unsubscribe(busName, handler));
   }
 });
