@@ -252,8 +252,8 @@ def _deduct_helper_containers_resources(
 
     _logger.info(
         "Removed reserved resources from service '%s' for helper containers (%s): "
-        "cpu removed %.1f of %.1f cores (-%.0f%%), remaining %.1f cores (%.0f%%); "
-        "ram removed %s of %s (-%.0f%%), remaining %s (%.0f%%)",
+        "cpu removed %.1f of %.1f cores (-%.2f%%), remaining %.1f cores (%.2f%%); "
+        "ram removed %s of %s (-%.2f%%), remaining %s (%.2f%%)",
         biggest_service_name,
         helpers_desc,
         extra.cpu,

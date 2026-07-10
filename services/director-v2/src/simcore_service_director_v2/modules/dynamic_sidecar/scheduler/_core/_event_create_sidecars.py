@@ -119,8 +119,8 @@ def _subtract_proxy_reservation_from_service_resources(
 
     _logger.info(
         "Removed reserved dy-proxy resources from '%s': "
-        "cpu removed %.2f of %.2f cores (-%.0f%%); "
-        "ram removed %s of %s (-%.0f%%)",
+        "cpu removed %.2f of %.2f cores (-%.2f%%); "
+        "ram removed %s of %s (-%.2f%%)",
         biggest_key,
         cpu_reservation,
         cpu_before,
