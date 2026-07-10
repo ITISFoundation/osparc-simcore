@@ -260,7 +260,7 @@ class ProjectDBAPI(BaseProjectDB):
             }
         )
 
-        # validate access_rights. are the gids valid? also ensure prj_owner is in there
+        # ensure the owner user is registered (raises UserNotFoundError otherwise)
         if user_id:
             async with self.engine.connect() as conn:
                 await self._get_user_primary_group_gid(conn, user_id=user_id)
