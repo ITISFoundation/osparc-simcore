@@ -972,7 +972,8 @@ async def second_product_with_limit(
     osparc_product_name: str,
 ) -> AsyncIterator[ProductName]:
     """Sets max_open_studies_per_user=1 on a second product and yields its name."""
-    second_product = next(p for p in app_products_names if p != osparc_product_name)
+    second_product = next((p for p in app_products_names if p != osparc_product_name), None)
+    assert second_product is not None, "Test requires at least two products in the DB"
     async with asyncpg_engine.begin() as conn:
         old_value = await conn.scalar(
             sa.select(products.c.max_open_studies_per_user).where(products.c.name == second_product)
