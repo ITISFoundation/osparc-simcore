@@ -8,6 +8,7 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
     NotRequired,
     TypedDict,
 )
+from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -19,12 +20,12 @@ from pydantic import (
 from pydantic.config import JsonDict
 from pydantic_extra_types.color import Color
 
-from ..projects_nodes_io import NodeID, NodeIDStr
+from ..projects_nodes_io import NodeID
 from ..utils.common_validators import empty_str_to_none_pre_validator
 from ._base import OutputSchema
 from .projects_nodes_ui import MarkerUI, PositionUI
 
-type AnnotationIDStr = str
+type AnnotationID = UUID
 
 
 class WorkbenchUI(BaseModel):
@@ -93,10 +94,10 @@ class AnnotationUI(BaseModel):
 class StudyUI(OutputSchema):
     # Model fully controlled by the UI and stored under `projects.ui`
 
-    workbench: dict[NodeIDStr, WorkbenchUI] | None = None
-    slideshow: dict[NodeIDStr, SlideshowUI] | None = None
+    workbench: dict[NodeID, WorkbenchUI] | None = None
+    slideshow: dict[NodeID, SlideshowUI] | None = None
     current_node_id: NodeID | None = None
-    annotations: dict[AnnotationIDStr, AnnotationUI] | None = None
+    annotations: dict[AnnotationID, AnnotationUI] | None = None
     mode: Literal["workbench", "app", "guided", "standalone", "pipeline"] | None = None
 
     _empty_is_none = field_validator("*", mode="before")(empty_str_to_none_pre_validator)
