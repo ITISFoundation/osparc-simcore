@@ -10,13 +10,13 @@ from typing import Final
 import pytest
 from models_library.api_schemas_directorv2.encryption import (
     AES_256_GCM_KEY_SIZE_BYTES,
+    MAX_LP_STRING_BYTES,
 )
 from simcore_service_dask_sidecar.utils import aes_gcm
 from simcore_service_dask_sidecar.utils.aes_gcm import (
     _CHUNK_PREFIX_STRUCT,
     _HEADER_STRUCT,
     _MAX_CHUNK_INDEX_EXCLUSIVE,
-    _MAX_LP_STRING_BYTES,
     DEFAULT_CHUNK_SIZE_BYTES,
     FORMAT_MAGIC,
     FORMAT_VERSION,
@@ -59,7 +59,7 @@ def _encrypt_to_bytes(
     chunk_size: int = DEFAULT_CHUNK_SIZE_BYTES,
 ) -> bytes:
     dst = io.BytesIO()
-    encrypt_stream(io.BytesIO(plaintext), dst, root_key=root_key, chunk_size=chunk_size, **context)
+    encrypt_stream(io.BytesIO(plaintext), dst, root_key=root_key, chunk_size=chunk_size, **context)  # pyright: ignore[reportArgumentType]
     return dst.getvalue()
 
 
@@ -69,7 +69,7 @@ def _decrypt_to_bytes(
     context: dict[str, str],
 ) -> bytes:
     dst = io.BytesIO()
-    decrypt_stream(io.BytesIO(encrypted), dst, root_key=root_key, **context)
+    decrypt_stream(io.BytesIO(encrypted), dst, root_key=root_key, **context)  # pyright: ignore[reportArgumentType]
     return dst.getvalue()
 
 
@@ -162,7 +162,7 @@ def test_encrypt_stream_progress_on_empty_input(root_key: bytes, context: dict[s
         io.BytesIO(),
         root_key=root_key,
         progress_cb=progress.append,
-        **context,
+        **context,  # pyright: ignore[reportArgumentType]
     )
     # empty input still emits exactly one final chunk, reporting 0 plaintext bytes
     assert progress == [0]
@@ -336,7 +336,7 @@ def test_decrypt_rejects_incomplete_chunk_ciphertext(root_key: bytes, context: d
 
 
 def test_length_prefixed_rejects_oversized_string():
-    too_long = "x" * (_MAX_LP_STRING_BYTES + 1)
+    too_long = "x" * (MAX_LP_STRING_BYTES + 1)
     with pytest.raises(AesGcmStreamError, match="String field too long"):
         _length_prefixed(too_long)
 
@@ -363,11 +363,11 @@ def test_encrypt_reads_are_bounded_by_chunk_size(root_key: bytes, context: dict[
     chunk_size = 64
     plaintext = os.urandom(chunk_size * 5 + 3)
     recorder = _ReadSizeRecorder(plaintext)
-    encrypt_stream(recorder, io.BytesIO(), root_key=root_key, chunk_size=chunk_size, **context)
+    encrypt_stream(recorder, io.BytesIO(), root_key=root_key, chunk_size=chunk_size, **context)  # pyright: ignore[reportArgumentType]
     # every explicit read is bounded by chunk_size: the whole file is never read at once
     assert recorder.read_sizes
     assert all(size == chunk_size for size in recorder.read_sizes)
-    assert max(recorder.read_sizes) < len(plaintext)
+    assert max(size for size in recorder.read_sizes if size is not None) < len(plaintext)
 
 
 def test_decrypt_reads_are_bounded(root_key: bytes, context: dict[str, str]):
@@ -375,7 +375,7 @@ def test_decrypt_reads_are_bounded(root_key: bytes, context: dict[str, str]):
     plaintext = os.urandom(chunk_size * 5 + 3)
     encrypted = _encrypt_to_bytes(plaintext, root_key, context, chunk_size=chunk_size)
     recorder = _ReadSizeRecorder(encrypted)
-    decrypt_stream(recorder, io.BytesIO(), root_key=root_key, **context)
+    decrypt_stream(recorder, io.BytesIO(), root_key=root_key, **context)  # pyright: ignore[reportArgumentType]
     # decryption only ever requests header/prefix/ciphertext-sized reads, never the
     # full ciphertext at once
     assert all(size is None or size <= chunk_size + TAG_SIZE_BYTES for size in recorder.read_sizes)
@@ -445,7 +445,7 @@ def test_path_wrappers_reject_wrong_context(root_key: bytes, context: dict[str, 
     decrypted = tmp_path / "decrypted.bin"
 
     src.write_bytes(b"file-data")
-    encrypt_file(src, encrypted, root_key=root_key, **context)
+    encrypt_file(src, encrypted, root_key=root_key, **context)  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(AesGcmStreamAuthError, match="authentication failed"):
         decrypt_file(encrypted, decrypted, root_key=root_key, **{**context, "file_id": "other-file"})

@@ -81,15 +81,10 @@ make -C scripts/i18n frontend-plan
 
 ## Key Variables
 
-| Variable       | Default         | Description                             |
-| -------------- | --------------- | --------------------------------------- |
-| `LANGS`        | `zh_CN es_ES`   | Backend locale codes to translate       |
-| `CLIENT_LANGS` | `es_ES zh_CN`   | Frontend locale codes to translate      |
-| `MODEL`        | `openai/gpt-4o` | LiteLLM model string                    |
-| `BASE_URL`     | _(empty)_       | Custom LLM endpoint (e.g. local Ollama) |
-| `PARALLEL`     | `false`         | Enable parallel translation workers     |
-| `MAX_WORKERS`  | `4`             | Worker count when `PARALLEL=true`       |
-| `USE_GIT`      | `true`          | Skip already-committed translations     |
+Run `make -C scripts/i18n vars` to list all configurable variables (defaults +
+descriptions) straight from the Makefile — no need to keep a separate table
+here in sync.
+
 
 ## Model
 
@@ -153,7 +148,14 @@ The versioned `.po` files (reviewed translations) are **never** deleted by `clea
 Any standard `.po` editor works — the `CTX-*` fields appear as normal translator
 comments and are fully editable:
 
-- **Poedit** — GUI, shows `CTX-SNIPPET` and `CTX-INTERPRETATION` in the sidebar
-- **Gtranslator** — GNOME desktop editor
-- **Virtaal** — lightweight cross-platform option
-- **VS Code** — install the *i18n Ally* or *gettext* extension for inline review
+- [**weblate**](https://github.com/WeblateOrg/weblate/)  —  web-based continuous localization system
+- [**Poedit**](https://poedit.net) — GUI, shows `CTX-SNIPPET` and `CTX-INTERPRETATION` in the sidebar
+- [**Gtranslator**](https://wiki.gnome.org/Apps/Gtranslator) — GNOME desktop editor
+- [**Virtaal**](http://virtaal.translatehouse.org) — lightweight cross-platform option
+- [**VS Code**](https://code.visualstudio.com) — plugins as [*i18n Ally*](https://marketplace.visualstudio.com/items?itemName=lokalise.i18n-ally)
+
+
+## References
+
+- [GNU `gettext` utilities](https://www.gnu.org/software/gettext/manual/html_node/index.html)
+- [`polib` library](https://github.com/izimobil/polib)

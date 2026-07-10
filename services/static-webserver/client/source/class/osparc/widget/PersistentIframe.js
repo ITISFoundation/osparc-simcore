@@ -106,7 +106,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       });
       const iframeEl = this._getIframeElement();
       const host = window.location.host;
-      iframeEl.setAttribute("allow", `clipboard-read; clipboard-write; hid; from *.services.${host}`);
+      iframeEl.setAttribute("allow", `clipboard-read; clipboard-write; hid *; from *.services.${host}`);
 
       const buttonsContainer = this.__buttonsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "right",
@@ -374,7 +374,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
               resourceDetails.set({
                 showOpenButton: false,
               });
-              window.setCaption("Function Details");
+              window.setCaption(this.tr("Function Details"));
             }
             break;
           }

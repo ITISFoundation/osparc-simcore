@@ -193,6 +193,7 @@ class ComputationalSidecar:
         )
         # NOTE: this is for tracing purpose
         _logger.info("Running task owner: %s", self.task_parameters.task_owner)
+        _logger.info("encryption: %s", "enabled" if self.encryption else "disabled")
 
         settings = ApplicationSettings.create_from_envs()
         run_id = f"{uuid4()}"
@@ -255,6 +256,7 @@ class ComputationalSidecar:
                     log_publishing_cb=self._publish_sidecar_log,
                     s3_settings=self.s3_settings,
                     progress_bar=processing_progress_bar,
+                    encryption=(self.encryption.transfer_settings_for_logs() if self.encryption else None),
                 ),
             ):
                 await container.start()

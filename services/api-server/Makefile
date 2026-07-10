@@ -27,7 +27,7 @@ reqs: ## compiles pip requirements (.in -> .txt)
 
 
 define _create_and_validate_openapi
-	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
+	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'officially released'!)
 	set -o allexport; \
 	source .env; \
 	set +o allexport; \
@@ -51,6 +51,9 @@ openapi.json: .env ## Creates OAS (API_SERVER_DEV_FEATURES_ENABLED=0)
 
 openapi-dev.json: .env ## Creates OAS under development (API_SERVER_DEV_FEATURES_ENABLED=1)
 	@$(call _create_and_validate_openapi,1)
+
+openapi-openai-compatible.json: _check_venv_active ## Creates OAS containing only OpenAI-compatible endpoints
+	./scripts/openapi_openai_compat.py > $@
 
 
 CLIENT_RELEASE=0.5.0

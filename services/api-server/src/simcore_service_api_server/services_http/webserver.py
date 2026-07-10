@@ -10,9 +10,11 @@ from uuid import UUID
 
 import httpx
 from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from cryptography import fernet
 from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.projects import (
@@ -502,15 +504,27 @@ class AuthSession:
         self,
         *,
         project_id: UUID,
+        encryption: JobEncryptionContextMetadata | None,
     ) -> None:
         body_input: dict[str, Any] = {}
+        if encryption is not None:
+            body_input["encryption"] = encryption
 
         body: ComputationStart = ComputationStart(**body_input)
+        # NOTE: encryption keys are secrets and must be transmitted in plaintext (api-server -> webserver -> director-v2),
+        # so we use model_dump_with_secrets with show_secrets=True
+        body_data = model_dump_with_secrets(
+            body,
+            show_secrets=True,
+            mode="json",
+            exclude_unset=True,
+            exclude_defaults=True,
+        )
         response = await self.client.post(
             f"/computations/{project_id}:start",
             cookies=self.session_cookies,
             headers=self._get_session_headers(),
-            json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
+            json=body_data,
         )
         response.raise_for_status()
 

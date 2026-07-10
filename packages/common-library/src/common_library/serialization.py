@@ -5,11 +5,20 @@ from typing import Any
 from pydantic import AnyUrl, BaseModel, SecretStr, TypeAdapter, ValidationError
 from pydantic_core import Url
 
+from .json_serialization import json_dumps, json_loads
+
 
 def model_dump_with_secrets(
     settings_obj: BaseModel, *, show_secrets: bool, **pydantic_export_options
 ) -> dict[str, Any]:
-    data = settings_obj.model_dump(**pydantic_export_options)
+    # NOTE: `model_dump(mode="json")` masks `SecretStr` (and coerces other types) *before*
+    # the `isinstance` checks below can run, which would keep secrets masked even when
+    # `show_secrets=True`. We therefore always dump in python mode and, if the caller
+    # requested `mode="json"`, convert the result to a JSON-safe structure at the end.
+    export_options = {k: v for k, v in pydantic_export_options.items() if k != "mode"}
+    dump_as_json = pydantic_export_options.get("mode") == "json"
+
+    data = settings_obj.model_dump(**export_options)
 
     settings_cls = settings_obj.__class__
 
@@ -35,7 +44,11 @@ def model_dump_with_secrets(
                 data[field_name] = model_dump_with_secrets(
                     TypeAdapter(possible_pydantic_model).validate_python(field_data),
                     show_secrets=show_secrets,
-                    **pydantic_export_options,
+                    **export_options,
                 )
+
+    if dump_as_json:
+        # ensure a JSON-safe structure (e.g. UUID, datetime, Enum, non-str dict keys)
+        data = json_loads(json_dumps(data))
 
     return data
