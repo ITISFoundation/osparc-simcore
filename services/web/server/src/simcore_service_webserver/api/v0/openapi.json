@@ -14502,6 +14502,10 @@
         ],
         "title": "Activity"
       },
+      "AnnotationID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "AnnotationUI-Input": {
         "properties": {
           "type": {
@@ -28622,6 +28626,12 @@
           "workbench": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/WorkbenchUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28633,6 +28643,12 @@
           "slideshow": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SlideshowUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28656,6 +28672,12 @@
           "annotations": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AnnotationUI-Input"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/AnnotationID"
+                },
                 "type": "object"
               },
               {
@@ -28691,6 +28713,12 @@
           "workbench": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/WorkbenchUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28702,6 +28730,12 @@
           "slideshow": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SlideshowUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28725,6 +28759,12 @@
           "annotations": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AnnotationUI-Output"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/AnnotationID"
+                },
                 "type": "object"
               },
               {
