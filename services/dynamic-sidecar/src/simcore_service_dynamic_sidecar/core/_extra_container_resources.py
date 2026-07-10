@@ -10,6 +10,7 @@ Fails sidecar startup if the deduction would leave the target service with:
 from dataclasses import dataclass
 from typing import Any, Final
 
+from pydantic import ByteSize
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 
 from .errors import BaseDynamicSidecarError
@@ -29,13 +30,11 @@ class ExtraContainerResourceError(BaseDynamicSidecarError):
 
 class NotEnoughResourcesForExtraContainersError(ExtraContainerResourceError):
     msg_template = (
-        "Service '{service_name}' has insufficient resource allocation to accommodate "
-        "the extra helper containers (envoy/otel/rclone). "
-        "After reserving cpu={extra_cpu:.3f} cores and ram={extra_ram} bytes for helpers, "
-        "the service would be left with cpu={remaining_cpu:.3f} cores and ram={remaining_ram} bytes "
-        "(original: cpu={original_cpu:.3f} cores, ram={original_ram} bytes). "
-        "Both cpu and ram remaining must be > 0 and >= {min_fraction:.0%} of the original. "
-        "Increase the service resource allocation in the osparc platform."
+        "Service '{service_name}' cannot fit the extra helper containers ({helpers_desc}): "
+        "remaining cpu: {remaining_cpu:.1f} of {original_cpu:.1f} cores ({remaining_cpu_pct:.0%}); "
+        "remaining ram: {remaining_ram_hr} of {original_ram_hr} ({remaining_ram_pct:.0%}). "
+        "Remaining must each be > 0 and >= {min_fraction:.0%} of the original. "
+        "Increase the service resource allocation."
     )
 
 
@@ -46,6 +45,7 @@ class NotEnoughResourcesForExtraContainersError(ExtraContainerResourceError):
 class _Resources:
     cpu: float  # cores (e.g. 0.5 = half a core)
     ram: int  # bytes
+    description: str = ""  # human-readable list of included helper containers
 
 
 # ----- compose-spec helpers --------------------------------------------------
@@ -134,23 +134,27 @@ def compute_extra_containers_footprint(
     """Sums the resource footprint of only the helper containers that are actually added."""
     cpu: float = 0.0
     ram: int = 0
+    parts: list[str] = []
 
     if egress_proxy_count > 0:
         cpu += egress_proxy_count * settings.DY_SIDECAR_EGRESS_PROXY_SETTINGS.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT
         ram += egress_proxy_count * int(settings.DY_SIDECAR_EGRESS_PROXY_SETTINGS.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT)
+        parts.append(f"envoy x{egress_proxy_count}" if egress_proxy_count > 1 else "envoy")
 
     if with_tracing:
         t = settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
         # collector + forwarder share the same CPU/RAM settings
         cpu += 2 * t.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT
         ram += 2 * int(t.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT)
+        parts.append("otel collector+forwarder")
 
     if with_rclone:
         m = settings.DY_SIDECAR_R_CLONE_SETTINGS.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
         cpu += m.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS / 1e9
         ram += int(m.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT)
+        parts.append("rclone")
 
-    return _Resources(cpu=cpu, ram=ram)
+    return _Resources(cpu=cpu, ram=ram, description=", ".join(parts))
 
 
 def _is_user_service(service_spec: dict[str, Any]) -> bool:
@@ -203,12 +207,20 @@ def deduct_extra_containers_resources(
     if hard_fail or soft_fail:
         raise NotEnoughResourcesForExtraContainersError(
             service_name=biggest,
+            helpers_desc=extra.description,
             extra_cpu=extra.cpu,
+            extra_cpu_pct=extra.cpu / original.cpu if original.cpu else 0.0,
             extra_ram=extra.ram,
+            extra_ram_hr=ByteSize(extra.ram).human_readable(),
+            extra_ram_pct=extra.ram / original.ram if original.ram else 0.0,
             remaining_cpu=remaining.cpu,
+            remaining_cpu_pct=remaining.cpu / original.cpu if original.cpu else 0.0,
             remaining_ram=remaining.ram,
+            remaining_ram_hr=ByteSize(max(remaining.ram, 0)).human_readable(),
+            remaining_ram_pct=max(remaining.ram, 0) / original.ram if original.ram else 0.0,
             original_cpu=original.cpu,
             original_ram=original.ram,
+            original_ram_hr=ByteSize(original.ram).human_readable(),
             min_fraction=_MIN_REMAINING_FRACTION,
         )
 
