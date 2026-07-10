@@ -460,7 +460,7 @@ async def test_create_get_and_patch_project_ui_field(
     )
     project_id = new_project["uuid"]
 
-    # Step 2: Get the project and check the ui.mode
+    # Step 2: Get the project and check the ui is empty
     url = client.app.router["get_project"].url_for(project_id=project_id)
     resp = await client.get(f"{url}")
     got_project, _ = await assert_status(resp, status.HTTP_200_OK)
