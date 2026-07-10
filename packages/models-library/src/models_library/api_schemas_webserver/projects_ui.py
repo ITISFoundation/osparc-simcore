@@ -24,6 +24,8 @@ from ..utils.common_validators import empty_str_to_none_pre_validator
 from ._base import OutputSchema
 from .projects_nodes_ui import MarkerUI, PositionUI
 
+type AnnotationIDStr = str
+
 
 class WorkbenchUI(BaseModel):
     position: Annotated[
@@ -94,7 +96,7 @@ class StudyUI(OutputSchema):
     workbench: dict[NodeIDStr, WorkbenchUI] | None = None
     slideshow: dict[NodeIDStr, SlideshowUI] | None = None
     current_node_id: NodeID | None = None
-    annotations: dict[NodeIDStr, AnnotationUI] | None = None
+    annotations: dict[AnnotationIDStr, AnnotationUI] | None = None
     mode: Literal["workbench", "app", "guided", "standalone", "pipeline"] | None = None
 
     _empty_is_none = field_validator("*", mode="before")(empty_str_to_none_pre_validator)
