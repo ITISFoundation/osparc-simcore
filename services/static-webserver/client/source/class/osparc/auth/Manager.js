@@ -24,6 +24,7 @@
 
 qx.Class.define("osparc.auth.Manager", {
   extend: qx.core.Object,
+  include: qx.locale.MTranslation,
   type: "singleton",
 
   events: {

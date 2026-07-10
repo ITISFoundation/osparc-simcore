@@ -40,6 +40,12 @@ try:
     HAS_BOTOCORE = True
 except ImportError:
     HAS_BOTOCORE = False
+try:
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor  # type: ignore[import-not-found]
+
+    HAS_CELERY = True
+except ImportError:
+    HAS_CELERY = False
 
 try:
     from opentelemetry.instrumentation.threading import ThreadingInstrumentor
@@ -173,6 +179,13 @@ def _startup(
         ):
             BotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
             AiobotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
+    if HAS_CELERY:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add celery opentelemetry autoinstrumentation...",
+        ):
+            CeleryInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REQUESTS:
         with log_context(
             _logger,
@@ -228,6 +241,9 @@ def _shutdown() -> None:
         with log_catch(_logger, reraise=False):
             BotocoreInstrumentor().uninstrument()
             AiobotocoreInstrumentor().uninstrument()
+    if HAS_CELERY:
+        with log_catch(_logger, reraise=False):
+            CeleryInstrumentor().uninstrument()
     if HAS_THREADING:
         with log_catch(_logger, reraise=False):
             ThreadingInstrumentor().uninstrument()
