@@ -7,6 +7,7 @@ Fails sidecar startup if the deduction would leave the target service with:
   - < DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION of its original CPU or RAM (soft floor).
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,6 +16,8 @@ from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 
 from .errors import BaseDynamicSidecarError
 from .settings import ApplicationSettings
+
+_logger = logging.getLogger(__name__)
 
 # ----- errors ----------------------------------------------------------------
 
@@ -246,6 +249,24 @@ def _deduct_helper_containers_resources(
         )
 
     _write_limits(spec_services[biggest_service_name], remaining)
+
+    _logger.info(
+        "Service '%s' reserved resources for helper containers (%s): "
+        "cpu removed %.1f of %.1f cores (-%.0f%%), remaining %.1f cores (%.0f%%); "
+        "ram removed %s of %s (-%.0f%%), remaining %s (%.0f%%)",
+        biggest_service_name,
+        helpers_desc,
+        extra.cpu,
+        biggest_service_resources.cpu,
+        extra.cpu / biggest_service_resources.cpu * 100 if biggest_service_resources.cpu else 0,
+        remaining.cpu,
+        remaining.cpu / biggest_service_resources.cpu * 100 if biggest_service_resources.cpu else 0,
+        ByteSize(extra.ram).human_readable(),
+        ByteSize(biggest_service_resources.ram).human_readable(),
+        extra.ram / biggest_service_resources.ram * 100 if biggest_service_resources.ram else 0,
+        ByteSize(remaining.ram).human_readable(),
+        remaining.ram / biggest_service_resources.ram * 100 if biggest_service_resources.ram else 0,
+    )
 
 
 def remove_helper_containers_resources(
