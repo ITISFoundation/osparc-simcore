@@ -1784,14 +1784,14 @@ async def try_open_project_for_user(  # noqa: C901
                     return True
                 # Enforce per-user open project limit (scoped to the current product)
                 if max_number_of_opened_projects_per_user is not None:
-                    other_open_project_uuids = {
+                    all_user_open_project_uuids = {
                         uuid
                         for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
                         if uuid != f"{project_uuid}"
                     }
                     open_in_this_product = await _projects_repository.count_projects_in_product(
                         app,
-                        project_uuids=other_open_project_uuids,
+                        project_uuids=all_user_open_project_uuids,
                         product_name=product_name,
                     )
                     if open_in_this_product >= max_number_of_opened_projects_per_user:
