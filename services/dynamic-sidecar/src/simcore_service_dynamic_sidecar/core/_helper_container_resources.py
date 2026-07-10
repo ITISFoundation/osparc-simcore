@@ -236,9 +236,9 @@ def _deduct_helper_containers_resources(
             remaining_cpu_pct=remaining.cpu / biggest_service_resources.cpu if biggest_service_resources.cpu else 0.0,
             remaining_ram=remaining.ram,
             remaining_ram_hr=ByteSize(max(remaining.ram, 0)).human_readable(),
-            remaining_ram_pct=max(remaining.ram, 0) / biggest_service_resources.ram
-            if biggest_service_resources.ram
-            else 0.0,
+            remaining_ram_pct=(
+                max(remaining.ram, 0) / biggest_service_resources.ram if biggest_service_resources.ram else 0.0
+            ),
             original_cpu=biggest_service_resources.cpu,
             original_ram=biggest_service_resources.ram,
             original_ram_hr=ByteSize(biggest_service_resources.ram).human_readable(),

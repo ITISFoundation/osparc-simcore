@@ -8,15 +8,19 @@ import pytest
 from pydantic import ByteSize, TypeAdapter
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.egress_proxy import EgressProxySettings
-from simcore_service_dynamic_sidecar.core._extra_container_resources import (
+from simcore_service_dynamic_sidecar.core._helper_container_resources import (
+    NotEnoughResourcesForHelperContainersError,
+    NoUserServiceFoundError,
+    _compute_helper_containers_footprint,
+    _deduct_helper_containers_resources,
     _find_biggest_overall_service,
+    _get_biggest_user_service,
     _read_limits,
     _Resources,
     _write_limits,
-    compute_extra_containers_footprint,
-    deduct_extra_containers_resources,
+    remove_helper_containers_resources,
 )
-from simcore_service_dynamic_sidecar.core.errors import BaseDynamicSidecarError
+from simcore_service_dynamic_sidecar.core.settings import ExtraContainersResourceSettings
 
 _MiB = TypeAdapter(ByteSize).validate_python("1MiB")
 _GiB = TypeAdapter(ByteSize).validate_python("1GiB")
@@ -29,9 +33,12 @@ def envoy_proxy_settings() -> EgressProxySettings:
 
 
 @pytest.fixture
-def deduct_settings() -> MagicMock:
+def mocked_settings() -> MagicMock:
     settings = MagicMock()
-    settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION = 0.48
+    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = ExtraContainersResourceSettings(
+        DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION=0.48,
+        DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=0.10,
+    )
     return settings
 
 
@@ -79,6 +86,13 @@ def test_read_limits_missing_deploy_returns_zeros():
     assert r.ram == 0
 
 
+def test_read_limits_compose_v2():
+    spec = {"cpus": 2.0, "mem_limit": f"{4096 * _MiB}"}
+    r = _read_limits(spec)
+    assert r.cpu == pytest.approx(2.0)
+    assert r.ram == 4096 * _MiB
+
+
 def test_write_limits_updates_and_clamps_reservations():
     spec = _service(cpu=4.0, ram_mib=8192, cpu_reservation=4.0, ram_mib_reservation=8192)
     _write_limits(spec, _Resources(cpu=3.0, ram=4096 * _MiB))
@@ -114,6 +128,18 @@ def test_write_limits_adds_env_vars_when_not_previously_set():
     assert MEM_RESOURCE_LIMIT_KEY in env
 
 
+def test_write_limits_compose_v2_updates_and_clamps_reservation():
+    spec: dict[str, Any] = {
+        "cpus": 4.0,
+        "mem_limit": f"{8192 * _MiB}",
+        "mem_reservation": f"{8192 * _MiB}",
+    }
+    _write_limits(spec, _Resources(cpu=3.0, ram=4096 * _MiB))
+    assert spec["cpus"] == pytest.approx(3.0)
+    assert int(spec["mem_limit"]) == 4096 * _MiB
+    assert int(spec["mem_reservation"]) <= 4096 * _MiB
+
+
 # ---- _find_biggest_overall_service ------------------------------------------
 
 
@@ -138,7 +164,7 @@ def test_find_biggest_service_single():
     assert _find_biggest_overall_service(spec_services, ["only"]) == "only"
 
 
-# ---- compute_extra_containers_footprint -------------------------------------
+# ---- _compute_helper_containers_footprint ----------------------------------
 
 
 def _make_settings(
@@ -164,33 +190,47 @@ def _make_settings(
     settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG = tracing_cfg
     settings.DY_SIDECAR_R_CLONE_SETTINGS = rclone_settings
     settings.DY_SIDECAR_EGRESS_PROXY_SETTINGS = egress
+    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = ExtraContainersResourceSettings(
+        DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=1.0,  # no cap in unit tests
+    )
     return settings
+
+
+_LARGE_SERVICE = _Resources(cpu=1000.0, ram=1000 * _GiB)  # reference used where capping must not trigger
 
 
 def test_footprint_nothing_enabled(envoy_proxy_settings: EgressProxySettings):
     settings = _make_settings(envoy_proxy_settings)
-    r = compute_extra_containers_footprint(settings, egress_proxy_count=0, with_tracing=False, with_rclone=False)
+    r, _ = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=0, with_tracing=False, with_rclone=False, biggest_service_resources=_LARGE_SERVICE
+    )
     assert r.cpu == pytest.approx(0.0)
     assert r.ram == 0
 
 
 def test_footprint_envoy_only(envoy_proxy_settings: EgressProxySettings):
     settings = _make_settings(envoy_proxy_settings)
-    r = compute_extra_containers_footprint(settings, egress_proxy_count=1, with_tracing=False, with_rclone=False)
+    r, _ = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=1, with_tracing=False, with_rclone=False, biggest_service_resources=_LARGE_SERVICE
+    )
     assert r.cpu == pytest.approx(envoy_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT)
     assert r.ram == int(envoy_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT)
 
 
 def test_footprint_multiple_envoy_proxies(envoy_proxy_settings: EgressProxySettings):
     settings = _make_settings(envoy_proxy_settings)
-    r = compute_extra_containers_footprint(settings, egress_proxy_count=3, with_tracing=False, with_rclone=False)
+    r, _ = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=3, with_tracing=False, with_rclone=False, biggest_service_resources=_LARGE_SERVICE
+    )
     assert r.cpu == pytest.approx(3 * envoy_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT)
     assert r.ram == 3 * int(envoy_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT)
 
 
 def test_footprint_tracing_counts_collector_and_forwarder(envoy_proxy_settings: EgressProxySettings):
     settings = _make_settings(envoy_proxy_settings, cpu_limit=0.25, ram_mib=256)
-    r = compute_extra_containers_footprint(settings, egress_proxy_count=0, with_tracing=True, with_rclone=False)
+    r, _ = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=0, with_tracing=True, with_rclone=False, biggest_service_resources=_LARGE_SERVICE
+    )
     assert r.cpu == pytest.approx(2 * 0.25)
     assert r.ram == 2 * 256 * _MiB
 
@@ -199,25 +239,68 @@ def test_footprint_all_enabled(envoy_proxy_settings: EgressProxySettings):
     settings = _make_settings(
         envoy_proxy_settings, cpu_limit=0.25, ram_mib=256, rclone_cpu_nano=int(1e9), rclone_ram_mib=10240
     )
-    r = compute_extra_containers_footprint(settings, egress_proxy_count=1, with_tracing=True, with_rclone=True)
+    r, _ = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=1, with_tracing=True, with_rclone=True, biggest_service_resources=_LARGE_SERVICE
+    )
     expected_cpu = envoy_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT + 2 * 0.25 + 1.0
     expected_ram = int(envoy_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT) + 2 * 256 * _MiB + 10240 * _MiB
     assert r.cpu == pytest.approx(expected_cpu)
     assert r.ram == expected_ram
 
 
-# ---- deduct_extra_containers_resources: success path -----------------------
+def test_footprint_rclone_capped_by_service_fraction(envoy_proxy_settings: EgressProxySettings):
+    """rclone allocation is capped at DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION of the service."""
+    max_fraction = 0.10
+    service = _Resources(cpu=4.0, ram=8192 * _MiB)
+    settings = _make_settings(envoy_proxy_settings, rclone_cpu_nano=int(4e9), rclone_ram_mib=8192)
+    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = ExtraContainersResourceSettings(
+        DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=max_fraction,
+    )
+    r, _ = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=0, with_tracing=False, with_rclone=True, biggest_service_resources=service
+    )
+    assert r.cpu == pytest.approx(service.cpu * max_fraction)
+    assert r.ram == int(service.ram * max_fraction)
 
 
-def test_deduct_subtracts_from_biggest(deduct_settings: MagicMock):
+def test_footprint_description_lists_active_helpers(envoy_proxy_settings: EgressProxySettings):
+    settings = _make_settings(envoy_proxy_settings)
+    _, desc = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=2, with_tracing=True, with_rclone=True, biggest_service_resources=_LARGE_SERVICE
+    )
+    assert "envoy x2" in desc
+    assert "otel collector+forwarder" in desc
+    assert "rclone" in desc
+
+
+def test_footprint_description_empty_when_nothing_enabled(envoy_proxy_settings: EgressProxySettings):
+    settings = _make_settings(envoy_proxy_settings)
+    _, desc = _compute_helper_containers_footprint(
+        settings, egress_proxy_count=0, with_tracing=False, with_rclone=False, biggest_service_resources=_LARGE_SERVICE
+    )
+    assert desc == ""
+
+
+# ---- _deduct_helper_containers_resources: success path ---------------------
+
+
+def test_deduct_subtracts_from_biggest(mocked_settings: MagicMock):
     compose = _compose(
         {
             "svc-small": _service(cpu=2.0, ram_mib=2048, inject_resource_limit_envs=True),
             "svc-big": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True),
         }
     )
+    name, resources = _get_biggest_user_service(compose)
     extra = _Resources(cpu=1.0, ram=1024 * _MiB)
-    deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
+    _deduct_helper_containers_resources(
+        mocked_settings,
+        compose,
+        biggest_service_name=name,
+        biggest_service_resources=resources,
+        extra=extra,
+        helpers_desc="test",
+    )
 
     big_limits = _read_limits(compose["services"]["svc-big"])
     small_limits = _read_limits(compose["services"]["svc-small"])
@@ -229,7 +312,7 @@ def test_deduct_subtracts_from_biggest(deduct_settings: MagicMock):
     assert small_limits.ram == 2048 * _MiB
 
 
-def test_deduct_clamps_reservations(deduct_settings: MagicMock):
+def test_deduct_clamps_reservations(mocked_settings: MagicMock):
     compose = _compose(
         {
             "svc": _service(
@@ -241,8 +324,16 @@ def test_deduct_clamps_reservations(deduct_settings: MagicMock):
             ),
         }
     )
+    name, resources = _get_biggest_user_service(compose)
     extra = _Resources(cpu=1.0, ram=1024 * _MiB)
-    deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
+    _deduct_helper_containers_resources(
+        mocked_settings,
+        compose,
+        biggest_service_name=name,
+        biggest_service_resources=resources,
+        extra=extra,
+        helpers_desc="test",
+    )
 
     spec = compose["services"]["svc"]
     reservations = spec["deploy"]["resources"]["reservations"]
@@ -255,15 +346,14 @@ def test_deduct_clamps_reservations(deduct_settings: MagicMock):
     assert int(env[MEM_RESOURCE_LIMIT_KEY]) == 7168 * _MiB
 
 
-def test_deduct_noop_when_no_user_services(deduct_settings: MagicMock):
-    # service without SIMCORE_NANO_CPUS_LIMIT is treated as a helper — deduction is a no-op
+def test_raises_when_no_user_services(mocked_settings: MagicMock):
+    # service without SIMCORE_NANO_CPUS_LIMIT is treated as a helper — raises
     compose = _compose({"helper-svc": _service(cpu=2.0, ram_mib=2048)})
-    original_limits = _read_limits(compose["services"]["helper-svc"])
-    deduct_extra_containers_resources(compose, extra=_Resources(cpu=1.0, ram=512 * _MiB), settings=deduct_settings)
-    assert _read_limits(compose["services"]["helper-svc"]) == original_limits
+    with pytest.raises(NoUserServiceFoundError):
+        _get_biggest_user_service(compose)
 
 
-# ---- deduct_extra_containers_resources: hard floor (<=0) -------------------
+# ---- _deduct_helper_containers_resources: hard floor (<=0) -----------------
 
 
 @pytest.mark.parametrize(
@@ -274,13 +364,21 @@ def test_deduct_noop_when_no_user_services(deduct_settings: MagicMock):
         pytest.param(_Resources(cpu=4.0, ram=8192 * _MiB), id="both_exactly_zero"),
     ],
 )
-def test_deduct_raises_hard_floor(extra: _Resources, deduct_settings: MagicMock):
+def test_deduct_raises_hard_floor(extra: _Resources, mocked_settings: MagicMock):
     compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
-    with pytest.raises(BaseDynamicSidecarError):
-        deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
+    name, resources = _get_biggest_user_service(compose)
+    with pytest.raises(NotEnoughResourcesForHelperContainersError):
+        _deduct_helper_containers_resources(
+            mocked_settings,
+            compose,
+            biggest_service_name=name,
+            biggest_service_resources=resources,
+            extra=extra,
+            helpers_desc="test",
+        )
 
 
-# ---- deduct_extra_containers_resources: soft floor (<48%) ------------------
+# ---- _deduct_helper_containers_resources: soft floor (<48%) ----------------
 
 
 @pytest.mark.parametrize(
@@ -292,21 +390,72 @@ def test_deduct_raises_hard_floor(extra: _Resources, deduct_settings: MagicMock)
         pytest.param(_Resources(cpu=0.1, ram=int(8192 * _MiB * 0.61)), id="ram_below_48pct"),
     ],
 )
-def test_deduct_raises_soft_floor(extra: _Resources, deduct_settings: MagicMock):
+def test_deduct_raises_soft_floor(extra: _Resources, mocked_settings: MagicMock):
     compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
-    with pytest.raises(BaseDynamicSidecarError):
-        deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
+    name, resources = _get_biggest_user_service(compose)
+    with pytest.raises(NotEnoughResourcesForHelperContainersError):
+        _deduct_helper_containers_resources(
+            mocked_settings,
+            compose,
+            biggest_service_name=name,
+            biggest_service_resources=resources,
+            extra=extra,
+            helpers_desc="test",
+        )
 
 
-def test_deduct_exactly_at_48pct_passes(deduct_settings: MagicMock):
+def test_deduct_exactly_at_48pct_passes(mocked_settings: MagicMock):
     """A remaining fraction exactly equal to the configured minimum must NOT raise."""
-    min_fraction = deduct_settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
+    resource_settings = mocked_settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS
+    min_fraction = resource_settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
     original_cpu = 4.0
     original_ram = 8192 * _MiB
     # subtract exactly (1 - min_fraction) so that min_fraction remains
     extra = _Resources(cpu=original_cpu * (1 - min_fraction), ram=int(original_ram * (1 - min_fraction)))
     compose = _compose({"svc": _service(cpu=original_cpu, ram_mib=8192, inject_resource_limit_envs=True)})
-    deduct_extra_containers_resources(compose, extra=extra, settings=deduct_settings)
+    name, resources = _get_biggest_user_service(compose)
+    _deduct_helper_containers_resources(
+        mocked_settings,
+        compose,
+        biggest_service_name=name,
+        biggest_service_resources=resources,
+        extra=extra,
+        helpers_desc="test",
+    )
     r = _read_limits(compose["services"]["svc"])
     assert r.cpu == pytest.approx(original_cpu * min_fraction, rel=1e-6)
     assert r.ram == pytest.approx(original_ram * min_fraction, rel=1e-6)
+
+
+# ---- remove_helper_containers_resources -------------------------------------
+
+
+def test_remove_noop_when_no_helpers(mocked_settings: MagicMock):
+    """With zero helper containers requested the limits are unchanged."""
+    compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
+    remove_helper_containers_resources(
+        mocked_settings, compose, egress_proxy_count=0, with_tracing=False, with_rclone=False
+    )
+    r = _read_limits(compose["services"]["svc"])
+    assert r.cpu == pytest.approx(4.0)
+    assert r.ram == 8192 * _MiB
+
+
+def test_remove_raises_when_no_user_services(mocked_settings: MagicMock):
+    compose = _compose({"helper-svc": _service(cpu=2.0, ram_mib=2048)})
+    with pytest.raises(NoUserServiceFoundError):
+        remove_helper_containers_resources(
+            mocked_settings, compose, egress_proxy_count=0, with_tracing=False, with_rclone=False
+        )
+
+
+def test_remove_propagates_not_enough_resources_error(mocked_settings: MagicMock):
+    """Requesting more helpers than the service can accommodate raises through remove_*."""
+    compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
+    # inject a fake egress_proxy_count that will consume the entire service allocation
+    mocked_settings.DY_SIDECAR_EGRESS_PROXY_SETTINGS.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT = 4.0
+    mocked_settings.DY_SIDECAR_EGRESS_PROXY_SETTINGS.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT = 8192 * _MiB
+    with pytest.raises(NotEnoughResourcesForHelperContainersError):
+        remove_helper_containers_resources(
+            mocked_settings, compose, egress_proxy_count=1, with_tracing=False, with_rclone=False
+        )

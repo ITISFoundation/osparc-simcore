@@ -57,6 +57,35 @@ class SystemMonitorSettings(BaseApplicationSettings):
     ] = False
 
 
+class ExtraContainersResourceSettings(BaseApplicationSettings):
+    DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION: Annotated[
+        float,
+        Field(
+            ge=0.0,
+            le=1.0,
+            description=(
+                "Minimum fraction of CPU and RAM that must remain for the user service "
+                "after subtracting the helper-container footprint (envoy, otel, rclone). "
+                "If the remaining allocation would fall below this threshold the sidecar "
+                "refuses to start and raises an error."
+            ),
+        ),
+    ] = 0.6
+
+    DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION: Annotated[
+        float,
+        Field(
+            ge=0.0,
+            le=1.0,
+            description=(
+                "When rclone is enabled, its resource allocation is capped to this fraction "
+                "of the user service's original CPU and RAM limits. "
+                "Prevents rclone from consuming an outsized share of the service allocation."
+            ),
+        ),
+    ] = 0.10
+
+
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Annotated[
         Path,
@@ -224,19 +253,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = False
 
-    DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION: Annotated[
-        float,
-        Field(
-            ge=0.0,
-            le=1.0,
-            description=(
-                "Minimum fraction of CPU and RAM that must remain for the user service "
-                "after subtracting the helper-container footprint (envoy, otel, rclone). "
-                "If the remaining allocation would fall below this threshold the sidecar "
-                "refuses to start and raises an error."
-            ),
-        ),
-    ] = 0.6
+    DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS: Annotated[
+        ExtraContainersResourceSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
