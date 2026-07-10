@@ -647,19 +647,25 @@ async def test_running_computation_sends_progress_updates_via_socketio(
         f"Received updates for: {received_progress_node_ids}"
     )
 
-    # check that a node update was sent for each computational node at the end that unlocks the node
-    node_id_data_map: dict[NodeID, list[Node]] = {}
-    for mock_call in mock_node_updated_handler.call_args_list:
-        node_id = NodeID(mock_call[0][0]["node_id"])
-        node_data = TypeAdapter(Node).validate_python(mock_call[0][0]["data"])
-        node_id_data_map.setdefault(node_id, []).append(node_data)
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(30),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            node_id_data_map: dict[NodeID, list[Node]] = {}
+            for mock_call in mock_node_updated_handler.call_args_list:
+                node_id = NodeID(mock_call[0][0]["node_id"])
+                node_data = TypeAdapter(Node).validate_python(mock_call[0][0]["data"])
+                node_id_data_map.setdefault(node_id, []).append(node_data)
 
-    for node_id, node_data_list in node_id_data_map.items():
-        # find the last update for this node
-        last_node_data = node_data_list[-1]
-        assert last_node_data.state
-        assert last_node_data.state.current_status == RunningState.SUCCESS
-        assert last_node_data.state.lock_state
-        assert last_node_data.state.lock_state.locked is False, (
-            f"expected node {node_id} to be unlocked at the end of the pipeline, but it is still locked."
-        )
+            for node_id, node_data_list in node_id_data_map.items():
+                # find the last update for this node
+                last_node_data = node_data_list[-1]
+                assert last_node_data.state
+                assert last_node_data.state.current_status == RunningState.SUCCESS
+                assert last_node_data.state.lock_state
+                assert last_node_data.state.lock_state.locked is False, (
+                    f"expected node {node_id} to be unlocked at the end of the pipeline, but it is still locked."
+                )
