@@ -338,6 +338,11 @@ class Node(BaseModel):
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
 
+    ui: Annotated[
+        dict[str, Any] | None,
+        Field(description="UI components. Schema in models_library.projects_nodes_ui"),
+    ] = None
+
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
         Field(
