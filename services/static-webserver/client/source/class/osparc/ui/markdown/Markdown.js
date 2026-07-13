@@ -62,7 +62,14 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      * @param {String} value
      */
     isMarkdownFileUrl: function(value) {
-      return osparc.utils.Utils.isValidHttpUrl(value) && value.endsWith(".md");
+      if (!osparc.utils.Utils.isValidHttpUrl(value)) {
+        return false;
+      }
+      try {
+        return new URL(value).pathname.toLowerCase().endsWith(".md");
+      } catch (err) {
+        return false;
+      }
     },
   },
 
@@ -95,7 +102,12 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     setValueFromUrl: function(url) {
       return fetch(url)
-        .then(response => response.text())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch markdown (${response.status}) from ${url}`);
+          }
+          return response.text();
+        })
         .then(text => this.setValue(text));
     },
 
