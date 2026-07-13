@@ -109,6 +109,13 @@ class _TeardownDeleteError(Exception):
     """Raised when a resource DELETE request fails (non-ok, non-404 status)."""
 
 
+class _SamplingFailedError(Exception):
+    """Raised when a sampling job reaches a terminal failed state.
+
+    Raise an exception that is not an assert to let tenacity stop polling
+    """
+
+
 @retry(
     wait=wait_fixed(_TEARDOWN_RETRY_WAIT_SECONDS),
     stop=stop_after_attempt(_TEARDOWN_MAX_ATTEMPTS),
@@ -373,7 +380,9 @@ def _assert_sampling_completed(
     check_sampling_status: Callable[[Any, Page], str],
 ) -> None:
     status = check_sampling_status(service_iframe, page)
-    assert status != "failed", "Sampling job failed! Check the deployment logs."
+    if status == "failed":
+        msg = "Sampling job failed! Check the deployment logs."
+        raise _SamplingFailedError(msg)
     assert status == "complete", "Sampling is still running"
 
 
