@@ -1,9 +1,4 @@
-"""background task that periodically cleans up the DSM of expired uploads and exporter archives.
-
-For details see `SimcoreS3DataManager`:
-    - `.clean_expired_uploads()`
-    - `.clean_expired_exports()`
-"""
+"""background task that periodically cleans up the DSM of expired uploads and exporter archives."""
 
 import asyncio
 import logging
@@ -30,7 +25,7 @@ from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
-_CANCEL_CONCURRENCY: Final[NonNegativeInt] = 4
+_CANCEL_TASK_CONCURRENCY: Final[NonNegativeInt] = 4
 
 
 def _get_simcore_s3_dsm(app: FastAPI) -> SimcoreS3DataManager:
@@ -80,7 +75,7 @@ async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
         yield
     finally:
         await limited_gather(
-            *(cancel_wait_task(t) for t in tasks), reraise=False, limit=_CANCEL_CONCURRENCY, log=_logger
+            *(cancel_wait_task(t) for t in tasks), reraise=False, limit=_CANCEL_TASK_CONCURRENCY, log=_logger
         )
 
 
