@@ -358,10 +358,20 @@ class FileMetaDataRepository(BaseRepository):
         *,
         connection: AsyncConnection | None = None,
         file_ids: list[SimcoreS3FileID],
-        delete_descendants: bool,
+        recursive: bool,
     ) -> None:
+        """Delete the files with `file_ids`.
+
+        Arguments:
+            file_ids -- the files to delete
+            recursive -- if True, deletes all files that are children of the given file_ids
+                            (e.g. file_id starts with file_id/)
+
+        Keyword Arguments:
+            connection -- the database connection to use (default: {None})
+        """
         async with transaction_context(self.db_engine, connection) as conn:
-            if not delete_descendants:
+            if not recursive:
                 await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
                 return
 
