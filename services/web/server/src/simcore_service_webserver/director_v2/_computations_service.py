@@ -232,14 +232,9 @@ async def list_computations_latest_iteration_tasks(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
     # Fetch projects metadata concurrently
-    _projects_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = await get_by_projects(
+    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = await get_by_projects(
         app, project_ids=unique_project_uuids
     )
-
-    # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = {
-        project_uuid: dict(nodes) for project_uuid, nodes in _projects_nodes.items()
-    }
 
     _service_run_ids = [item.service_run_id for item in _tasks_get.items]
     _is_product_billable = await is_product_billable(app, product_name=product_name)
@@ -381,14 +376,9 @@ async def list_computation_collection_run_tasks(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
 
-    _projects_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = await get_by_projects(
+    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = await get_by_projects(
         app, project_ids=unique_project_uuids
     )
-
-    # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = {
-        project_uuid: dict(nodes) for project_uuid, nodes in _projects_nodes.items()
-    }
 
     # Fetch projects metadata concurrently
     _projects_metadata = await _get_projects_metadata(

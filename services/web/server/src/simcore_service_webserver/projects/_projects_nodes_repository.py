@@ -148,7 +148,7 @@ async def get_by_projects(
     app: web.Application,
     project_ids: set[ProjectID],
     connection: AsyncConnection | None = None,
-) -> dict[ProjectID, list[tuple[NodeID, Node]]]:
+) -> dict[ProjectID, dict[NodeID, Node]]:
     if not project_ids:
         return {}
 
@@ -163,9 +163,9 @@ async def get_by_projects(
         rows = result.all()
         nodes = _NODE_LIST_ADAPTER.validate_python(rows, from_attributes=True)
 
-        projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {pid: [] for pid in project_ids}
+        projects_to_nodes: dict[ProjectID, dict[NodeID, Node]] = {pid: {} for pid in project_ids}
         for row, node in zip(rows, nodes, strict=True):
-            projects_to_nodes[ProjectID(row.project_uuid)].append((NodeID(row.node_id), node))
+            projects_to_nodes[ProjectID(row.project_uuid)][NodeID(row.node_id)] = node
 
         return projects_to_nodes
 
