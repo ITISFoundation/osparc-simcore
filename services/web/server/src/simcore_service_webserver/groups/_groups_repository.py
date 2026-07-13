@@ -178,14 +178,10 @@ def _list_user_groups_with_read_access_query(
     if product_name is None:
         return base_query
 
-    # Exclude standard groups linked by another product row as either the
-    # product group or the product support group. These groups are
+    # Exclude standard groups linked by another product row (product group). These groups are
     # product-internal and must not leak across products.
     other_product_group_or_support_group_exists = sa.exists(
-        sa.select(sa.literal(1)).where(
-            (products.c.name != product_name)
-            & ((products.c.group_id == groups.c.gid) | (products.c.support_standard_group_id == groups.c.gid))
-        )
+        sa.select(sa.literal(1)).where((products.c.name != product_name) & (products.c.group_id == groups.c.gid))
     )
     return base_query.where((groups.c.type != GroupType.STANDARD) | ~other_product_group_or_support_group_exists)
 

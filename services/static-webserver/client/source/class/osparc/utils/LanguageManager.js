@@ -49,6 +49,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
       }
       osparc.utils.Utils.localCache.setLocalStorageItem(this.LOCALE_KEY, localeCode);
       qx.locale.Manager.getInstance().setLocale(localeCode);
+      qx.event.message.Bus.getInstance().dispatchByName("localeSwitch", localeCode);
     },
 
     /**

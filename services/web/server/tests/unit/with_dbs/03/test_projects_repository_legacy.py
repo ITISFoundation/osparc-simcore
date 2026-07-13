@@ -185,3 +185,18 @@ async def test_get_project_dict_and_type_only_templates_bug4(
     )
     assert project_type == ProjectType.TEMPLATE
     assert project_dict["uuid"] == project["uuid"]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_insert_project_populates_owner_access_rights_from_project_to_groups(
+    logged_user: dict[str, Any],
+    insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
+    fake_project: dict[str, Any],
+):
+    """`insert_project` derives `accessRights` from the `project_to_groups` table
+    (populated by a DB trigger on insert), granting the owner full rights.
+    """
+    project = await insert_project_in_db(deepcopy(fake_project), user_id=logged_user["id"])
+
+    owner_gid = f"{logged_user['primary_gid']}"
+    assert project["accessRights"] == {owner_gid: {"read": True, "write": True, "delete": True}}

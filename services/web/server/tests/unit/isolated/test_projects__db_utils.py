@@ -5,7 +5,6 @@
 import datetime
 import json
 import re
-from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
@@ -13,25 +12,14 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.groups import GroupID
-from models_library.projects_nodes import Node
-from models_library.services import ServiceKey
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from simcore_service_webserver.projects._projects_repository_legacy import (
-    ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
-    create_project_access_rights,
 )
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
     assemble_array_groups,
-    patch_workbench,
-    update_workbench,
-)
-from simcore_service_webserver.projects.exceptions import (
-    NodeNotFoundError,
-    ProjectInvalidUsageError,
 )
 
 
@@ -126,13 +114,6 @@ def group_id(faker: Faker) -> GroupID:
     return faker.pyint(min_value=1)
 
 
-@pytest.mark.parametrize("project_access_rights", ProjectAccessRights.all())
-def test_project_access_rights_creation(group_id: int, project_access_rights: ProjectAccessRights):
-    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
-    assert str(group_id) in git_to_access_rights
-    assert git_to_access_rights[str(group_id)] == project_access_rights.value
-
-
 def test_assemble_array_groups_empty_user_groups():
     assert assemble_array_groups([]) == "array[]::text[]"
 
@@ -145,131 +126,3 @@ class FakeUserGroup:
 def test_assemble_array_groups():
     fake_user_groups = [FakeUserGroup(gid=n) for n in range(5)]
     assert assemble_array_groups(fake_user_groups) == "array['0', '1', '2', '3', '4']"  # type: ignore
-
-
-def test_update_workbench_with_new_nodes_raises(faker: Faker):
-    old_project = {"workbench": {faker.uuid4(): faker.pydict()}}
-    new_project = {"workbench": {faker.uuid4(): faker.pydict()}}
-    with pytest.raises(ProjectInvalidUsageError):
-        update_workbench(old_project, new_project)
-
-
-def test_update_workbench(faker: Faker):
-    node_id = faker.uuid4()
-    old_project = {"workbench": {node_id: faker.pydict()}}
-    new_project = {"workbench": {node_id: faker.pydict()}}
-    expected_updated_project = {
-        "workbench": {node_id: old_project["workbench"][node_id] | new_project["workbench"][node_id]}
-    }
-    received_project_with_updated_workbench = update_workbench(old_project, new_project)
-    assert received_project_with_updated_workbench != old_project
-    assert received_project_with_updated_workbench != new_project
-    assert received_project_with_updated_workbench == expected_updated_project
-
-
-def test_patch_workbench_with_empty_changes(faker: Faker):
-    node_id = faker.uuid4()
-    project = {"workbench": {node_id: faker.pydict()}}
-    patched_project, changed_entries = patch_workbench(
-        project, new_partial_workbench_data={}, allow_workbench_changes=False
-    )
-    assert patched_project == project
-    assert changed_entries == {}
-
-
-@pytest.fixture
-def random_minimal_node(faker: Faker) -> Callable[[], Node]:
-    def _creator() -> Node:
-        return Node(
-            key=ServiceKey(f"simcore/services/comp/{faker.pystr().lower()}"),
-            version=faker.numerify("#.#.#"),
-            label=faker.pystr(),
-        )
-
-    return _creator
-
-
-def test_patch_workbench_add_node(faker: Faker, random_minimal_node: Callable[[], Node]):
-    node_id = faker.uuid4()
-    project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
-    new_node_id = faker.uuid4()
-    invalid_partial_workbench_data = {new_node_id: faker.pydict()}
-
-    # with disallowed workbench changes this fails
-    with pytest.raises(ProjectInvalidUsageError):
-        patch_workbench(
-            project,
-            new_partial_workbench_data=invalid_partial_workbench_data,
-            allow_workbench_changes=False,
-        )
-    # with allowed workbench changes this works but a non validated node data this fails
-    with pytest.raises(NodeNotFoundError):
-        patch_workbench(
-            project,
-            new_partial_workbench_data=invalid_partial_workbench_data,
-            allow_workbench_changes=True,
-        )
-    # now with a correct node that should work
-    valid_partial_workbench_data = {new_node_id: jsonable_encoder(random_minimal_node())}
-    patched_project, changed_entries = patch_workbench(
-        project,
-        new_partial_workbench_data=valid_partial_workbench_data,
-        allow_workbench_changes=True,
-    )
-    assert patched_project != project
-    assert new_node_id in changed_entries
-    assert changed_entries == valid_partial_workbench_data
-
-
-def test_patch_workbench_remove_node(faker: Faker):
-    node_id = faker.uuid4()
-    project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
-    valid_partial_workbench_data = {node_id: None}
-
-    # with disallowed workbench changes this fails
-    with pytest.raises(ProjectInvalidUsageError):
-        patch_workbench(
-            project,
-            new_partial_workbench_data=valid_partial_workbench_data,
-            allow_workbench_changes=False,
-        )
-    # with allowed workbench changes this works
-    patched_project, changed_entries = patch_workbench(
-        project,
-        new_partial_workbench_data=valid_partial_workbench_data,
-        allow_workbench_changes=True,
-    )
-    assert patched_project != project
-    assert node_id in changed_entries
-    assert changed_entries == valid_partial_workbench_data
-
-
-def test_patch_workbench_update_node(faker: Faker):
-    node_id = faker.uuid4()
-    project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
-    valid_partial_workbench_data = {node_id: faker.pydict()}
-
-    # with disallowed workbench changes this works as we do not add/remove a node
-    patched_project, changed_entries = patch_workbench(
-        project,
-        new_partial_workbench_data=valid_partial_workbench_data,
-        allow_workbench_changes=False,
-    )
-    assert patched_project != project
-    assert (
-        patched_project["workbench"][node_id] == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
-    )
-    assert node_id in changed_entries
-    assert changed_entries == valid_partial_workbench_data
-    # with allowed workbench changes this works
-    patched_project, changed_entries = patch_workbench(
-        project,
-        new_partial_workbench_data=valid_partial_workbench_data,
-        allow_workbench_changes=True,
-    )
-    assert patched_project != project
-    assert (
-        patched_project["workbench"][node_id] == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
-    )
-    assert node_id in changed_entries
-    assert changed_entries == valid_partial_workbench_data

@@ -2,17 +2,13 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, ClassVar, Final, Literal
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
-from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import (
     projects_nodes as projects_nodes_table,
@@ -36,12 +32,8 @@ from ..users.errors import UserNotFoundError
 from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
 from .exceptions import (
-    NodeNotFoundError,
-    ProjectInvalidUsageError,
     ProjectNotFoundError,
 )
-from .models import ProjectDict
-from .utils import find_changed_node_keys
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +67,6 @@ class ProjectAccessRights:
 ProjectAccessRights.OWNER = ProjectAccessRights(read=True, write=True, delete=True)
 ProjectAccessRights.COLLABORATOR = ProjectAccessRights(read=True, write=True, delete=False)
 ProjectAccessRights.VIEWER = ProjectAccessRights(read=True, write=False, delete=False)
-
-
-def create_project_access_rights(gid: int, access: ProjectAccessRights) -> dict[str, dict[str, bool]]:
-    return {f"{gid}": access.value}
 
 
 def convert_to_db_names(project_document_data: dict) -> dict:
@@ -277,95 +265,6 @@ class BaseProjectDB:
             project["tags"] = tags
 
         return project
-
-
-def update_workbench(old_project: ProjectDict, new_project: ProjectDict) -> ProjectDict:
-    """any non set entry in the new workbench is taken from the old one if available
-
-    Raises:
-        ProjectInvalidUsageError: it is not allowed to add/remove nodes
-
-    Returns:
-        updated project
-    """
-
-    old_workbench: dict[NodeIDStr, Any] = old_project["workbench"]
-    updated_project = deepcopy(new_project)
-    new_workbench: dict[NodeIDStr, Any] = updated_project["workbench"]
-
-    if old_workbench.keys() != new_workbench.keys():
-        # it is forbidden to add/remove nodes here
-        raise ProjectInvalidUsageError
-    for node_key, node in new_workbench.items():
-        old_node = old_workbench.get(node_key)
-        if not old_node:
-            continue
-        for prop in old_node:
-            # check if the key is missing in the new node
-            if prop not in node:
-                # use the old value
-                node[prop] = old_node[prop]
-    return updated_project
-
-
-def patch_workbench(
-    project: ProjectDict,
-    *,
-    new_partial_workbench_data: dict[NodeIDStr, Any],
-    allow_workbench_changes: bool,
-) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
-    """patch the project workbench with the values in new_partial_workbench_data
-
-    - Example: to add a node: ```{new_node_id: {"key": node_key, "version": node_version, "label": node_label, ...}}```
-    - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
-    - Example: to remove a node ```{node_id: None}```
-
-
-    Raises:
-        ProjectInvalidUsageError: if allow_workbench_changes is False and user tries to add/remove nodes
-        NodeNotFoundError: obviously the node does not exist and cannot be patched
-
-    Returns:
-        patched project and changed entries
-    """
-    patched_project = deepcopy(project)
-    changed_entries = {}
-    for (
-        node_key,
-        new_node_data,
-    ) in new_partial_workbench_data.items():
-        current_node_data: dict[str, Any] | None = patched_project.get("workbench", {}).get(node_key)
-
-        if current_node_data is None:
-            if not allow_workbench_changes:
-                raise ProjectInvalidUsageError
-            # if it's a new node, let's check that it validates
-            try:
-                Node.model_validate(new_node_data)
-                patched_project["workbench"][node_key] = new_node_data
-                changed_entries.update({node_key: new_node_data})
-            except ValidationError as err:
-                raise NodeNotFoundError(project_uuid=patched_project["uuid"], node_uuid=node_key) from err
-        elif new_node_data is None:
-            if not allow_workbench_changes:
-                raise ProjectInvalidUsageError
-            # remove the node
-            patched_project["workbench"].pop(node_key)
-            changed_entries.update({node_key: None})
-        else:
-            # find changed keys
-            changed_entries.update(
-                {
-                    node_key: find_changed_node_keys(
-                        current_node_data,
-                        new_node_data,
-                        look_for_removed_keys=False,
-                    )
-                }
-            )
-            # patch
-            current_node_data.update(new_node_data)
-    return (patched_project, changed_entries)
 
 
 async def get_project_workbench(

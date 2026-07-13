@@ -332,3 +332,27 @@ async def copy_allow_guests_to_push_states_and_output_ports(
     # set same setting in new project if True
     if allow_guests:
         await _set_allow_guests_to_push_states_and_output_ports(app, connection, project_uuid=to_project_uuid)
+
+
+async def count_projects_in_product(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuids: set[str],
+    product_name: ProductName,
+) -> int:
+    """Returns how many of the given project UUIDs belong to the specified product."""
+    if not project_uuids:
+        return 0
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.scalar(
+            sa.select(sa.func.count())
+            .select_from(projects)
+            .where(
+                sa.and_(
+                    projects.c.uuid.in_(project_uuids),
+                    projects.c.product_name == product_name,
+                )
+            )
+        )
+        return result or 0

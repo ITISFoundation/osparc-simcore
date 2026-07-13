@@ -173,12 +173,10 @@ from .exceptions import (
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
-    ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
-    ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
@@ -559,13 +557,15 @@ async def clone_project_data(
         }
 
     db = ProjectDBAPI.get_from_app_context(app)
-    await db.insert_project(
+    inserted_project = await db.insert_project(
         new_project,
         user_id,
         product_name=product_name,
         force_project_uuid=forced_copy_project_id is not None,
         project_nodes=project_nodes,
     )
+
+    new_project["accessRights"] = inserted_project["accessRights"]
 
     needs_lock_source_project = (
         await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))
@@ -662,7 +662,7 @@ async def patch_project_for_user(
     project_db = await db_legacy.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
-    _user_project_access_rights = await check_user_project_permission(
+    await check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
@@ -670,33 +670,15 @@ async def patch_project_for_user(
         permission="write",
     )
 
-    # 3. If patching access rights
-    if new_prj_access_rights := patch_project_data.get("access_rights"):
-        # 3.1 Check if user is Owner and therefore can modify access rights
-        if not _user_project_access_rights.delete:
-            raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
-        # 3.2 Ensure the prj owner is always in the access rights
-        _prj_required_permissions = {
-            "read": True,
-            "write": True,
-            "delete": True,
-        }
-        prj_owner_user: dict = await users_service.get_user(app, project_db.prj_owner)
-        _prj_owner_primary_group = f"{prj_owner_user['primary_gid']}"
-        if _prj_owner_primary_group not in new_prj_access_rights:
-            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
-        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
-            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
-
-    # 4. Get user primary group ID
+    # 3. Get user primary group ID
     current_user: dict = await users_service.get_user(app, user_id)
 
-    # 5. If patching template type
+    # 4. If patching template type
     if new_template_type := patch_project_data.get("template_type"):
-        # 5.1 Check if user is a tester
+        # 4.1 Check if user is a tester
         if UserRole(current_user["role"]) < UserRole.TESTER:
             raise InsufficientRoleForProjectTemplateTypeUpdateError
-        # 5.2 Check the compatibility of the template type with the project
+        # 4.2 Check the compatibility of the template type with the project
         if project_db.type == ProjectType.STANDARD and new_template_type is not None:
             raise ProjectTypeAndTemplateIncompatibilityError(
                 project_uuid=project_uuid,
@@ -710,7 +692,7 @@ async def patch_project_for_user(
                 project_template=new_template_type,
             )
 
-    # 6. Patch the project & Notify users involved in the project
+    # 5. Patch the project & Notify users involved in the project
     await patch_project_and_notify_users(
         app,
         project_uuid=project_uuid,
@@ -1748,6 +1730,7 @@ async def try_open_project_for_user(  # noqa: C901
     client_session_id: ClientSessionID,
     app: web.Application,
     *,
+    product_name: ProductName,
     max_number_of_opened_projects_per_user: int | None,
     allow_multiple_sessions: bool,
     max_number_of_user_sessions_per_project: PositiveInt | None,
@@ -1768,7 +1751,7 @@ async def try_open_project_for_user(  # noqa: C901
             owner=Owner(user_id=user_id),
             notification_cb=None,
         )
-        async def _open_project() -> bool:
+        async def _open_project() -> bool:  # noqa: C901
             with managed_resource(user_id, client_session_id, app) as user_session:
                 # check if the project is already opened
                 if (
@@ -1781,23 +1764,25 @@ async def try_open_project_for_user(  # noqa: C901
                         client_session_id,
                     )
                     return True
-                # Enforce per-user open project limit
-                if max_number_of_opened_projects_per_user is not None and (
-                    len(
-                        {
-                            uuid
-                            for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
-                            if uuid != f"{project_uuid}"
-                        }
+                # Enforce per-user open project limit (scoped to the current product)
+                if max_number_of_opened_projects_per_user is not None:
+                    all_user_open_project_uuids = {
+                        uuid
+                        for uuid in await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
+                        if uuid != f"{project_uuid}"
+                    }
+                    open_in_this_product = await _projects_repository.count_projects_in_product(
+                        app,
+                        project_uuids=all_user_open_project_uuids,
+                        product_name=product_name,
                     )
-                    >= max_number_of_opened_projects_per_user
-                ):
-                    raise ProjectTooManyProjectOpenedError(
-                        max_num_projects=max_number_of_opened_projects_per_user,
-                        user_id=user_id,
-                        project_uuid=project_uuid,
-                        client_session_id=client_session_id,
-                    )
+                    if open_in_this_product >= max_number_of_opened_projects_per_user:
+                        raise ProjectTooManyProjectOpenedError(
+                            max_num_projects=max_number_of_opened_projects_per_user,
+                            user_id=user_id,
+                            project_uuid=project_uuid,
+                            client_session_id=client_session_id,
+                        )
 
                 # try to assign project_id to current_session
                 sessions_with_project = await user_session.find_users_of_resource(
