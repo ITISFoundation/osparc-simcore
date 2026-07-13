@@ -262,9 +262,45 @@ def _check_cluster_instances_exist(
     ]
     if custom_tags:
         ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
-    ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+    warnings.warn(
+        "The tag 'user_id' is deprecated and will be removed in the future. "
+        'Please use ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]}) '
+        "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    ec2_filters.append(
+        {
+            "Name": "tag-key",
+            "Values": ["user_id", "io.simcore.user_id"],
+        }
+    )
+    ec2_filters.append(
+        {
+            "Name": "tag-value",
+            "Values": [f"{user_id}"],
+        }
+    )
     if wallet_id:
-        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+        warnings.warn(
+            "The tag 'wallet_id' is deprecated and will be removed in the future. "
+            'Please use ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]}) '
+            "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        ec2_filters.append(
+            {
+                "Name": "tag-key",
+                "Values": ["wallet_id", "io.simcore.wallet_id"],
+            }
+        )
+        ec2_filters.append(
+            {
+                "Name": "tag-value",
+                "Values": [f"{wallet_id}"],
+            }
+        )
 
     instances = ec2_resource.instances.filter(Filters=ec2_filters)
     running_ids = {inst.id for inst in instances}
