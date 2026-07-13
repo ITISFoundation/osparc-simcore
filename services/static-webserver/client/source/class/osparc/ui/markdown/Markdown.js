@@ -107,10 +107,11 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     setValueSmart: function(value) {
       if (osparc.ui.markdown.Markdown.isMarkdownFileUrl(value)) {
-        this.setValueFromUrl(value).catch(err => {
-          console.error(err);
-          this.setValue(value);
-        });
+        this.setValueFromUrl(value)
+          .catch(err => {
+            console.error(err);
+            this.setValue(value);
+          });
       } else {
         this.setValue(value);
       }
