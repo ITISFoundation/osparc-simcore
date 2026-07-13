@@ -120,14 +120,6 @@ def convert_to_schema_names(project_database_data: Mapping, user_email: str, **k
     return converted_args
 
 
-def assemble_array_groups(user_groups: list[Row]) -> str:
-    return (
-        "array[]::text[]"
-        if len(user_groups) == 0
-        else f"""array[{", ".join(f"'{group.gid}'" for group in user_groups)}]"""
-    )
-
-
 class BaseProjectDB:
     @classmethod
     async def _get_everyone_group(cls, conn: AsyncConnection) -> Row:

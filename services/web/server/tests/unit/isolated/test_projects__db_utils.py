@@ -21,7 +21,6 @@ from simcore_service_webserver.projects._projects_repository_legacy import (
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
-    assemble_array_groups,
 )
 
 
@@ -123,15 +122,6 @@ def test_project_access_rights_creation(group_id: int, project_access_rights: Pr
     assert git_to_access_rights[str(group_id)] == project_access_rights.value
 
 
-def test_assemble_array_groups_empty_user_groups():
-    assert assemble_array_groups([]) == "array[]::text[]"
-
-
 @dataclass
 class FakeUserGroup:
     gid: int
-
-
-def test_assemble_array_groups():
-    fake_user_groups = [FakeUserGroup(gid=n) for n in range(5)]
-    assert assemble_array_groups(fake_user_groups) == "array['0', '1', '2', '3', '4']"  # type: ignore
