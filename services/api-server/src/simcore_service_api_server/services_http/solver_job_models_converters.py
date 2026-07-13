@@ -186,14 +186,6 @@ def create_new_project_for_job(
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
         workbench={solver_id: solver_service},
         ui=ProductUI(
-            workbench={
-                f"{solver_id}": {  # type: ignore[dict-item]
-                    "position": {
-                        "x": 633,
-                        "y": 229,
-                    },
-                },
-            },
             slideshow={},
             current_node_id=solver_id,  # type: ignore[arg-type]
             annotations={},
