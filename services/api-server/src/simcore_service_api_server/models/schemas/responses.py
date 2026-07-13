@@ -17,7 +17,9 @@ Temperature = Annotated[float, Field(ge=0, le=2)]
 type MetadataKey = Annotated[str, Field(max_length=64)]
 type MetadataValue = Annotated[str, Field(max_length=512)]
 
-_ChatCompletionRequestMessageAdapter: Final = TypeAdapter(ChatCompletionRequestMessage)
+_ChatCompletionRequestMessageAdapter: Final[TypeAdapter[ChatCompletionRequestMessage]] = TypeAdapter(
+    ChatCompletionRequestMessage
+)
 
 
 class ResponseStatus(StrEnum):
