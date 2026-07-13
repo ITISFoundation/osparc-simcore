@@ -288,9 +288,8 @@ type LongTruncatedStr = Annotated[
     ),
 ]
 
-#  --- tag color string (hex format) ---
-
-ColorStr = Annotated[
+type ColorStr = Annotated[
     str,
     StringConstraints(pattern=re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")),
+    annotated_types.doc("Hex color code in 3-digit or 6-digit format"),
 ]
