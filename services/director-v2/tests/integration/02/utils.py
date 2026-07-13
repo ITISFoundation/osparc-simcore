@@ -288,20 +288,7 @@ async def _get_service_resources(
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: product_name})
-        resources = TypeAdapter(ServiceResourcesDict).validate_python(response.json())
-
-    # Older test images (e.g. dy-static-file-server-dynamic-sidecar:2.0.7) ship with
-    # CPU.limit=0 in their labels.  The dynamic-sidecar now requires at least one user
-    # service with a non-zero SIMCORE_NANO_CPUS_LIMIT in order to allocate helper-
-    # container resources.
-    _MIN_CPU: float = 0.5
-    for image_resources in resources.values():
-        cpu = image_resources.resources.get("CPU")
-        if cpu is not None and cpu.limit == 0:
-            cpu.limit = _MIN_CPU
-            cpu.reservation = min(float(cpu.reservation or 0), _MIN_CPU) or _MIN_CPU
-
-    return resources
+        return TypeAdapter(ServiceResourcesDict).validate_python(response.json())
 
 
 async def _handle_redirection(redirection_response: httpx.Response, *, method: str, **kwargs) -> httpx.Response:
