@@ -3,13 +3,13 @@
 # pylint: disable=no-member
 
 import asyncio
+import hashlib
 import json
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import aiodocker
 import faker
@@ -34,6 +34,7 @@ from models_library.api_schemas_long_running_tasks.base import (
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
 from pytest_simcore.helpers.long_running_tasks import (
     assert_task_is_no_longer_present,
     get_fastapi_long_running_manager,
@@ -158,20 +159,10 @@ def dynamic_sidecar_network_name() -> str:
                     "networks": {
                         _get_dynamic_sidecar_network_name(): None,
                     },
-                    "environment": [
-                        f"SIMCORE_NANO_CPUS_LIMIT={int(4.0 * 1e9)}",
-                        f"SIMCORE_MEMORY_BYTES_LIMIT={16 * 1024 * 1024 * 1024}",
-                    ],
-                    "deploy": {"resources": {"limits": {"cpus": "4.0", "memory": str(16 * 1024 * 1024 * 1024)}}},
                 },
                 "second-box": {
                     "image": "alpine:latest",
                     "command": ["sh", "-c", "sleep 100000"],
-                    "environment": [
-                        f"SIMCORE_NANO_CPUS_LIMIT={int(4.0 * 1e9)}",
-                        f"SIMCORE_MEMORY_BYTES_LIMIT={16 * 1024 * 1024 * 1024}",
-                    ],
-                    "deploy": {"resources": {"limits": {"cpus": "4.0", "memory": str(16 * 1024 * 1024 * 1024)}}},
                 },
             },
             "networks": {_get_dynamic_sidecar_network_name(): None},
@@ -182,11 +173,6 @@ def dynamic_sidecar_network_name() -> str:
                 "solo-box": {
                     "image": "alpine:latest",
                     "command": ["sh", "-c", "sleep 100000"],
-                    "environment": [
-                        f"SIMCORE_NANO_CPUS_LIMIT={int(4.0 * 1e9)}",
-                        f"SIMCORE_MEMORY_BYTES_LIMIT={16 * 1024 * 1024 * 1024}",
-                    ],
-                    "deploy": {"resources": {"limits": {"cpus": "4.0", "memory": str(16 * 1024 * 1024 * 1024)}}},
                 },
             },
         },
@@ -194,7 +180,7 @@ def dynamic_sidecar_network_name() -> str:
 )
 def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
     spec_dict: dict[str, Any] = request.param  # type: ignore
-    return json.dumps(spec_dict)
+    return json.dumps(inject_container_resources(spec_dict))
 
 
 @pytest.fixture
@@ -536,7 +522,13 @@ async def test_create_containers_task_invalid_yaml_spec(
         (_get_task_id_docker_compose_down, "unique"),
         (_get_task_id_state_restore, "unique"),
         (_get_task_id_state_save, "unique"),
-        (_get_task_id_task_ports_inputs_pull, f"unique_{uuid4()}"),
+        (
+            _get_task_id_task_ports_inputs_pull,
+            "unique_"
+            + hashlib.sha256(
+                json.dumps(sorted({"port_keys": None}.items()), separators=(",", ":"), sort_keys=True).encode()
+            ).hexdigest(),
+        ),
         (_get_task_id_task_ports_outputs_pull, "unique"),
         (_get_task_id_task_ports_outputs_push, "unique"),
         (_get_task_id_task_containers_restart, "unique"),

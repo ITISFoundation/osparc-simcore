@@ -5,12 +5,12 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import hashlib
 import json
 from collections.abc import Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import aiodocker
 import faker
@@ -32,6 +32,7 @@ from models_library.api_schemas_long_running_tasks.base import (
 from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
 from pytest_simcore.helpers.long_running_tasks import (
     assert_task_is_no_longer_present,
     get_fastapi_long_running_manager,
@@ -158,7 +159,7 @@ def dynamic_sidecar_network_name() -> str:
 )
 def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
     spec_dict: dict[str, Any] = request.param  # type: ignore
-    return json.dumps(spec_dict)
+    return json.dumps(inject_container_resources(spec_dict))
 
 
 @pytest.fixture
@@ -506,7 +507,13 @@ async def test_create_containers_task_invalid_yaml_spec(
         (_get_task_id_runs_docker_compose_down_task, "unique"),
         (_get_task_id_state_restore_task, "unique"),
         (_get_task_id_state_save_task, "unique"),
-        (_get_task_id_ports_inputs_pull_task, f"unique_{uuid4()}"),
+        (
+            _get_task_id_ports_inputs_pull_task,
+            "unique_"
+            + hashlib.sha256(
+                json.dumps(sorted({"port_keys": None}.items()), separators=(",", ":"), sort_keys=True).encode()
+            ).hexdigest(),
+        ),
         (_get_task_id_ports_outputs_pull_task, "unique"),
         (_get_task_id_ports_outputs_push_task, "unique"),
         (_get_task_id_task_containers_restart_task, "unique"),

@@ -51,3 +51,21 @@ def generate_fake_service_specs(faker: Faker) -> tuple[str, dict[str, Any]]:
         "ports": [f"{faker.random_int(1000, 9999)}:{faker.random_int(1000, 9999)}" for _ in _range(faker)],
     }
     return service_name, service
+
+
+def inject_container_resources(
+    compose_spec: dict[str, Any],
+    *,
+    nano_cpus: int = int(4.0 * 1e9),
+    memory_bytes: int = 16 * 1024 * 1024 * 1024,
+) -> dict[str, Any]:
+    """Injects SIMCORE resource env vars and deploy limits into every service of a compose spec"""
+    cpus_float = nano_cpus / 1e9
+    for service in compose_spec.get("services", {}).values():
+        service.setdefault("environment", [])
+        service["environment"] += [
+            f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus}",
+            f"SIMCORE_MEMORY_BYTES_LIMIT={memory_bytes}",
+        ]
+        service["deploy"] = {"resources": {"limits": {"cpus": str(cpus_float), "memory": str(memory_bytes)}}}
+    return compose_spec
