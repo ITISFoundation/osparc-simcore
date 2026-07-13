@@ -232,7 +232,7 @@ async def list_computations_latest_iteration_tasks(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
     # Fetch projects metadata concurrently
-    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = await get_by_projects(
+    projects_to_nodes: dict[ProjectID, dict[NodeID, Node]] = await get_by_projects(
         app, project_ids=unique_project_uuids
     )
 
@@ -262,7 +262,7 @@ async def list_computations_latest_iteration_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            node_name=project_uuid_to_workbench[item.project_uuid][item.node_id].label or "Unknown",
+            node_name=projects_to_nodes[item.project_uuid][item.node_id].label or "Unknown",
             osparc_credits=credits_or_none,
         )
         for item, credits_or_none in zip(_tasks_get.items, _service_run_osparc_credits, strict=True)
