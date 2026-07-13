@@ -1,7 +1,7 @@
 """Migrate projects UI workbench to projects_nodes
 
 Revision ID: 1f1779261822
-Revises: c9c165644731
+Revises: 2962a102c124
 Create Date: 2026-07-07 06:57:25.548358+00:00
 
 """
@@ -12,18 +12,12 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "1f1779261822"
-down_revision = "c9c165644731"
+down_revision = "2962a102c124"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.create_index(
-        "idx_conversation_messages_created_desc",
-        "conversation_messages",
-        [sa.literal_column("created DESC")],
-        unique=False,
-    )
     op.add_column(
         "projects_nodes",
         sa.Column("ui", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
@@ -80,4 +74,3 @@ def downgrade():
     )
 
     op.drop_column("projects_nodes", "ui")
-    op.drop_index("idx_conversation_messages_created_desc", table_name="conversation_messages")
