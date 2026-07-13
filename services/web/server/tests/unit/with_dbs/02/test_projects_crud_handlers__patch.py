@@ -93,7 +93,6 @@ async def test_patch_project(
         "ui": {
             "mode": "workbench",
             "slideshow": {},
-            "workbench": {"d03d2752-e970-42cd-9483-69440ab9e4b7": {"position": {"x": 250, "y": 100}}},
             "currentNodeId": "d03d2752-e970-42cd-9483-69440ab9e4b7",
         }
     }
