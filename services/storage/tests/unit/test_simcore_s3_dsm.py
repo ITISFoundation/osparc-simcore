@@ -420,8 +420,7 @@ def _get_folder_and_files_selection(
 async def _get_fmds_count(
     connection: AsyncEngine,
 ) -> int:
-    result = await FileMetaDataRepository.instance(connection).list_fmds()
-    return len(result)
+    return len([1 async for _ in FileMetaDataRepository.instance(connection).list_fmds()])
 
 
 async def _assert_meta_data_entries_count(connection: AsyncEngine, *, count: int) -> None:
@@ -642,11 +641,12 @@ async def test_list_fmds_filters_by_file_id_prefix(
         )
     _, excluded_file_id = await upload_file(file_size, "some_regular_file.dat")
 
-    found = await FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(
-        file_id_prefix=f"{EXPORTS_S3_PREFIX}/"
-    )
-
-    found_file_ids = {fmd.file_id for fmd in found}
+    found_file_ids = {
+        fmd.file_id
+        async for fmd in FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(
+            file_id_prefix=f"{EXPORTS_S3_PREFIX}/"
+        )
+    }
     assert included_file_id in found_file_ids
     assert excluded_file_id not in found_file_ids
 
@@ -672,9 +672,10 @@ async def test_list_fmds_filters_by_created_before(
     _, excluded_file_id = await upload_file(file_size, "recent_file.dat")
     await _set_created_at(sqlalchemy_async_engine, excluded_file_id, now - datetime.timedelta(days=5))
 
-    found = await FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(created_before=threshold)
-
-    found_file_ids = {fmd.file_id for fmd in found}
+    found_file_ids = {
+        fmd.file_id
+        async for fmd in FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(created_before=threshold)
+    }
     assert included_file_id in found_file_ids
     assert excluded_file_id not in found_file_ids
 
