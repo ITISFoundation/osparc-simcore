@@ -31,9 +31,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownWindow", {
     });
 
     if (markdownUrl) {
-      fetch(markdownUrl)
-        .then(res => res.text())
-        .then(text => markdown.setValue(text));
+      markdown.setValueFromUrl(markdownUrl);
     }
   },
 });

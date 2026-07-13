@@ -56,6 +56,16 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     this.setHeight(1);
   },
 
+  statics: {
+    /**
+     * Returns true if the given string is an http(s) URL pointing to a markdown (.md) file.
+     * @param {String} value
+     */
+    isMarkdownFileUrl: function(value) {
+      return osparc.utils.Utils.isValidHttpUrl(value) && value.endsWith(".md");
+    },
+  },
+
   properties: {
     /**
      * Holds the raw markdown text and updates the label's {@link #value} whenever new markdown arrives.
@@ -77,6 +87,35 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
 
   members: {
     __loadMarked: null,
+
+    /**
+     * Fetches the markdown content from the given URL and sets it as the value.
+     * @param {String} url URL pointing to a markdown file.
+     * @return {Promise} resolves once the content has been fetched and set.
+     */
+    setValueFromUrl: function(url) {
+      return fetch(url)
+        .then(response => response.text())
+        .then(text => this.setValue(text));
+    },
+
+    /**
+     * Sets the value from a string that can either be raw markdown or a URL to a markdown file.
+     * If it's a URL to a .md file, the content is fetched and rendered; otherwise the string is
+     * rendered as is. On fetch error, the original string is rendered as a fallback.
+     * @param {String} value Raw markdown text or a URL to a markdown (.md) file.
+     */
+    setValueSmart: function(value) {
+      if (osparc.ui.markdown.Markdown.isMarkdownFileUrl(value)) {
+        this.setValueFromUrl(value).catch(err => {
+          console.error(err);
+          this.setValue(value);
+        });
+      } else {
+        this.setValue(value);
+      }
+    },
+
     /**
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
