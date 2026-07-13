@@ -1,7 +1,7 @@
 """Migrate projects UI workbench to projects_nodes
 
 Revision ID: 1f1779261822
-Revises: 2962a102c124
+Revises: d90899964ae0
 Create Date: 2026-07-07 06:57:25.548358+00:00
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "1f1779261822"
-down_revision = "2962a102c124"
+down_revision = "d90899964ae0"
 branch_labels = None
 depends_on = None
 
