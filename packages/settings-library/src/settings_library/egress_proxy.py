@@ -1,4 +1,4 @@
-from enum import StrEnum, auto
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import ByteSize, Field, TypeAdapter
@@ -7,12 +7,12 @@ from .base import BaseCustomSettings
 
 
 class EnvoyLogLevel(StrEnum):
-    TRACE = auto()
-    DEBUG = auto()
-    INFO = auto()
-    WARNING = auto()
-    ERROR = auto()
-    CRITICAL = auto()
+    TRACE = "TRACE"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
     def to_log_level(self) -> str:
         return self.value.lower()
