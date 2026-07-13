@@ -19,7 +19,6 @@ from simcore_service_webserver.projects._projects_repository_legacy import (
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
-    assemble_array_groups,
 )
 
 
@@ -114,15 +113,6 @@ def group_id(faker: Faker) -> GroupID:
     return faker.pyint(min_value=1)
 
 
-def test_assemble_array_groups_empty_user_groups():
-    assert assemble_array_groups([]) == "array[]::text[]"
-
-
 @dataclass
 class FakeUserGroup:
     gid: int
-
-
-def test_assemble_array_groups():
-    fake_user_groups = [FakeUserGroup(gid=n) for n in range(5)]
-    assert assemble_array_groups(fake_user_groups) == "array['0', '1', '2', '3', '4']"  # type: ignore
