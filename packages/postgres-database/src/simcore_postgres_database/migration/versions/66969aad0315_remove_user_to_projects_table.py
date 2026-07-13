@@ -23,18 +23,22 @@ def upgrade():
 def downgrade():
     op.create_table(
         "user_to_projects",
-        sa.Column("id", sa.BIGINT(), autoincrement=True, nullable=False),
-        sa.Column("user_id", sa.BIGINT(), autoincrement=False, nullable=False),
-        sa.Column("project_id", sa.BIGINT(), autoincrement=False, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("user_id", sa.BigInteger(), nullable=False),
+        sa.Column("project_id", sa.BigInteger(), nullable=False),
         sa.ForeignKeyConstraint(
             ["project_id"],
             ["projects.id"],
-            name=op.f("fk_user_to_projects_id_projects"),
+            name="fk_user_to_projects_id_projects",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], name=op.f("fk_user_to_projects_id_users"), onupdate="CASCADE", ondelete="CASCADE"
+            ["user_id"],
+            ["users.id"],
+            name="fk_user_to_projects_id_users",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("id", name=op.f("user_to_projects_pkey")),
+        sa.PrimaryKeyConstraint("id", name="user_to_projects_pkey"),
     )
