@@ -46,12 +46,11 @@ async def _run(  # noqa: C901, PLR0915
         return await load_computational_clusters(state, user_id, wallet_id)
 
     # Run SSH phases first; DB tunnel setup is deferred until needed
-    dyn_result, comp_result = await asyncio.gather(
+    dynamic_autoscaled_instances, computational_clusters = await asyncio.gather(
         _dynamic_phase(),
         _computational_phase(),
     )
-    dynamic_autoscaled_instances = dyn_result
-    computational_clusters = comp_result
+    
 
     # DB engine — opened lazily and cleaned up in finally block
     db_stack = contextlib.AsyncExitStack()
