@@ -8027,16 +8027,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8046,6 +8036,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8253,16 +8253,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8272,6 +8262,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8355,16 +8355,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8374,6 +8364,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8458,16 +8458,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8477,6 +8467,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8562,16 +8562,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8581,6 +8571,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8656,16 +8656,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8675,6 +8665,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8759,16 +8759,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8778,6 +8768,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8959,16 +8959,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8978,6 +8968,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -9062,16 +9062,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -9081,6 +9071,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -12880,8 +12880,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad Request",
+          "402": {
+            "description": "Payment Required",
             "content": {
               "application/json": {
                 "schema": {
@@ -12890,8 +12890,8 @@
               }
             }
           },
-          "402": {
-            "description": "Payment Required",
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
@@ -12987,16 +12987,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13006,6 +12996,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13084,16 +13084,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13103,6 +13093,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13170,16 +13170,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13189,6 +13179,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13267,16 +13267,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13286,6 +13276,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13353,16 +13353,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13372,6 +13362,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13450,16 +13450,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13469,6 +13459,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -15752,6 +15752,10 @@
           "message"
         ],
         "title": "CodePageParams"
+      },
+      "ColorStr": {
+        "type": "string",
+        "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
       },
       "Compatibility": {
         "properties": {
@@ -28912,9 +28916,7 @@
             ]
           },
           "color": {
-            "type": "string",
-            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-            "title": "Color"
+            "$ref": "#/components/schemas/ColorStr"
           },
           "priority": {
             "anyOf": [
@@ -29049,14 +29051,12 @@
           "color": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+                "$ref": "#/components/schemas/ColorStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Color"
+            ]
           },
           "priority": {
             "anyOf": [
