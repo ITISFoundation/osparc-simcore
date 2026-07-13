@@ -7,7 +7,7 @@ from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 
 from ..constants import (
-    APPLICATION_VERSION_TAG_KEY,
+    APPLICATION_VERSION_TAG,
     CLUSTER_NAME_PREFIX,
     EC2_MINIMAL_APPLICATION_TAG_KEY,
     EC2_NAME_TAG_KEY,
@@ -52,7 +52,7 @@ def creation_ec2_tags(
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return (
         _minimal_identification_tag(app_settings)
-        | APPLICATION_VERSION_TAG_KEY
+        | APPLICATION_VERSION_TAG
         | {
             # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
             EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(

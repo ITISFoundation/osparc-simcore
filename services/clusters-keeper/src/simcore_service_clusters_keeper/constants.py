@@ -19,7 +19,7 @@ CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
 # EC2 tags
 #
 EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
-APPLICATION_VERSION_TAG_KEY: Final[EC2Tags] = TypeAdapter(EC2Tags).validate_python(
+APPLICATION_VERSION_TAG: Final[EC2Tags] = TypeAdapter(EC2Tags).validate_python(
     {f"{_APPLICATION_TAG_PREFIX}.version": f"{VERSION}"}
 )
 EC2_MINIMAL_APPLICATION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
