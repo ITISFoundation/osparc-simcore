@@ -5,16 +5,21 @@ as needed — the breaking-change check ensures we stay compatible.
 """
 
 from enum import StrEnum
-from typing import Annotated, Any, Literal, get_args
+from typing import Annotated, Any, Final, Literal, get_args
 
-from pydantic import Field, field_validator
+from pydantic import Field, TypeAdapter, field_validator
 
+from ..domain.chatbot import ChatCompletionRequestMessage
 from .base import ApiServerInputSchema, ApiServerOutputSchema
 
 Temperature = Annotated[float, Field(ge=0, le=2)]
 
 type MetadataKey = Annotated[str, Field(max_length=64)]
 type MetadataValue = Annotated[str, Field(max_length=512)]
+
+_ChatCompletionRequestMessageAdapter: Final[TypeAdapter[ChatCompletionRequestMessage]] = TypeAdapter(
+    ChatCompletionRequestMessage
+)
 
 
 class ResponseStatus(StrEnum):
@@ -34,8 +39,12 @@ ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
 
 
 class InputMessage(ApiServerInputSchema):
-    role: Literal["user", "assistant", "system", "developer"]
+    role: Literal["user", "assistant", "developer"]
     content: Annotated[str, Field(min_length=1, max_length=100_000)]
+    name: Annotated[str, Field(max_length=200)] = ""
+
+    def to_domain_model(self) -> ChatCompletionRequestMessage:
+        return _ChatCompletionRequestMessageAdapter.validate_python(self.model_dump())
 
 
 class CreateResponseRequest(ApiServerInputSchema):

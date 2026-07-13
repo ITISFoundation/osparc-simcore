@@ -36,7 +36,7 @@ qx.Class.define("osparc.info.FunctionUtils", {
     createDescription: function(func, maxHeight) {
       const description = new osparc.ui.markdown.Markdown();
       func.bind("description", description, "value", {
-        converter: desc => desc ? desc : "No description"
+        converter: desc => desc ? desc : qx.locale.Manager.tr("No description")
       });
       const scrollContainer = new qx.ui.container.Scroll();
       if (maxHeight) {
@@ -52,7 +52,7 @@ qx.Class.define("osparc.info.FunctionUtils", {
     createOwner: function(func) {
       const owner = new qx.ui.basic.Label();
       const canIWrite = func.canIWrite();
-      owner.setValue(canIWrite ? "My Function" : "Read Only");
+      owner.setValue(canIWrite ? qx.locale.Manager.tr("My Function") : qx.locale.Manager.tr("Read Only"));
       return owner;
     },
 

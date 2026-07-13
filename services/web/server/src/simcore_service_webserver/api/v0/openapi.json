@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.86.0"
+    "version": "0.87.0"
   },
   "servers": [
     {
@@ -26360,24 +26360,6 @@
               }
             ],
             "title": "Thumbnail"
-          },
-          "accessRights": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/AccessRights"
-                },
-                "propertyNames": {
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Accessrights"
           },
           "classifiers": {
             "anyOf": [

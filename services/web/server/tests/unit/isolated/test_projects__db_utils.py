@@ -13,10 +13,8 @@ import pytest
 from faker import Faker
 from models_library.groups import GroupID
 from simcore_service_webserver.projects._projects_repository_legacy import (
-    ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
-    create_project_access_rights,
 )
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
