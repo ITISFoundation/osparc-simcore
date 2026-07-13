@@ -14501,6 +14501,10 @@
         "maxLength": 200,
         "minLength": 1
       },
+      "AnnotationID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "AnnotationUI-Input": {
         "properties": {
           "type": {
