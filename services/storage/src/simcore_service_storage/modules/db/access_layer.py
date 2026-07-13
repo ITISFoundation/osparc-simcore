@@ -81,7 +81,7 @@ def _aggregate_access_rights(access_rights: dict[str, dict], group_ids: list[Gro
     except KeyError:
         # NOTE: database does NOT include schema for json access_rights column!
         _logger.warning(
-            "Invalid entry in projects.access_rights. Revoking all rights [%s]",
+            "Invalid access-rights entry aggregated from project_to_groups. Revoking all rights [%s]",
             access_rights,
         )
         return AccessRights.none()
