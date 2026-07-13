@@ -34,14 +34,17 @@ def get_instance_name(instance: Instance) -> str:
 def get_last_heartbeat(instance: Instance) -> datetime.datetime | None:
     for tag in instance.tags:
         assert "Key" in tag  # nosec
-        warnings.warn(
-            "The tag 'last_heartbeat' is deprecated and will be removed in the future. "
-            "Please use 'io.simcore.clusters-keeper.last_heartbeat' "
-            "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if tag["Key"] == "io.simcore.clusters-keeper.last_heartbeat" or tag["Key"] == "last_heartbeat":
+        if tag["Key"] == "last_heartbeat":
+            warnings.warn(
+                "The tag 'last_heartbeat' is deprecated and will be removed in the future. "
+                "Please use 'io.simcore.clusters-keeper.last_heartbeat' "
+                "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            assert "Value" in tag  # nosec
+            return arrow.get(tag["Value"]).datetime
+        if tag["Key"] == "io.simcore.clusters-keeper.last_heartbeat":
             assert "Value" in tag  # nosec
             return arrow.get(tag["Value"]).datetime
     return None
