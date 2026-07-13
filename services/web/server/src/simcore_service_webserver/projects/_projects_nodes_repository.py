@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -37,8 +37,6 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.boot_options,
 ]
 
-
-_NODE_LIST_ADAPTER: Final[TypeAdapter[list[Node]]] = TypeAdapter(list[Node])
 
 # Mapping from Node model alias (camelCase) to DB column name (snake_case)
 _ALIAS_TO_COLUMN: dict[str, str] = {
@@ -139,7 +137,7 @@ async def get_by_project(
         assert result  # nosec
 
         rows = result.all()
-        nodes = _NODE_LIST_ADAPTER.validate_python(rows, from_attributes=True)
+        nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
         return {NodeID(row.node_id): node for row, node in zip(rows, nodes, strict=True)}
 
 
@@ -160,7 +158,7 @@ async def get_by_projects(
         assert result  # nosec
 
         rows = result.all()
-        nodes = _NODE_LIST_ADAPTER.validate_python(rows, from_attributes=True)
+        nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
 
         projects_to_nodes: dict[ProjectID, dict[NodeID, Node]] = {pid: {} for pid in project_ids}
         for row, node in zip(rows, nodes, strict=True):
