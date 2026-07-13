@@ -564,7 +564,7 @@ async def test_same_task_id_is_returned_if_task_exists(
 
 
 async def test_containers_down_after_starting(
-    mock_ensure_read_permissions_on_user_service_data: None,
+    mock_ensure_permissions_on_user_service_data: None,
     httpx_async_client: AsyncClient,
     http_client: HttpClient,
     app: FastAPI,

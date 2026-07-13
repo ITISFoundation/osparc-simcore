@@ -127,7 +127,7 @@ async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
 
 @pytest.fixture
 async def httpx_async_client(
-    mock_ensure_read_permissions_on_user_service_data: None,
+    mock_ensure_permissions_on_user_service_data: None,
     app: FastAPI,
     backend_url: AnyHttpUrl,
     ensure_external_volumes: tuple[DockerVolume],

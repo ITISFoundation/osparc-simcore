@@ -135,7 +135,7 @@ def port_notifier(app: FastAPI) -> PortNotifier:
 
 
 @pytest.fixture
-def mock_ensure_read_permissions_on_user_service_data(mocker: MockerFixture) -> None:
+def mock_ensure_permissions_on_user_service_data(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.ensure_read_permissions_on_user_service_data",
+        "simcore_service_dynamic_sidecar.modules.long_running_tasks.ensure_permissions_on_user_service_data",
     )
