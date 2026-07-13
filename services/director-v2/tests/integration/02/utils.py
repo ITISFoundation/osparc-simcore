@@ -303,7 +303,7 @@ async def _handle_redirection(redirection_response: httpx.Response, *, method: s
         return response
 
 
-async def assert_start_service(
+async def assert_start_service(  # pylint: disable=too-many-arguments
     director_v2_client: httpx.AsyncClient,
     product_name: str,
     product_api_base_url: str,
