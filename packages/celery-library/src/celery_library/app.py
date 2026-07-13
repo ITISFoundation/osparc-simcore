@@ -20,6 +20,7 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
         "task_default_queue": DEFAULT_QUEUE,
         "task_send_sent_event": True,
         "task_track_started": True,
+        "worker_hijack_root_logger": False,
         "worker_send_task_events": True,
         # Configure celery to use quorum queues
         # https://docs.celeryq.dev/en/v5.5.2/userguide/configuration.html#std-setting-task_default_queue_type

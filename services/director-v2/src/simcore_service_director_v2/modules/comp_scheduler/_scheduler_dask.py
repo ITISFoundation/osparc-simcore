@@ -98,8 +98,10 @@ async def _cluster_dask_client(
     """
     cluster: BaseCluster = scheduler.settings.default_cluster
     if use_on_demand_clusters:
+        product_name = run_metadata.get("product_name", "undefined-product-name")
         cluster = await get_or_create_on_demand_cluster(
             scheduler.rabbitmq_rpc_client,
+            product_name=product_name,
             user_id=user_id,
             wallet_id=run_metadata.get("wallet_id"),
         )

@@ -256,6 +256,7 @@ class ComputationalSidecar:
                     log_publishing_cb=self._publish_sidecar_log,
                     s3_settings=self.s3_settings,
                     progress_bar=processing_progress_bar,
+                    encryption=(self.encryption.transfer_settings_for_logs() if self.encryption else None),
                 ),
             ):
                 await container.start()

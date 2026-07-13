@@ -1150,7 +1150,7 @@ qx.Class.define("osparc.utils.Utils", {
       };
       if (mimeTypes[extension]) {
         pickerOpts.types = [{
-          description: "Downloaded file",
+          description: qx.locale.Manager.tr("Downloaded file"),
           accept: { [mimeTypes[extension]]: ["." + extension] },
         }];
       }
