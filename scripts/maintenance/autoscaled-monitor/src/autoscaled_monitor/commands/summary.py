@@ -45,12 +45,20 @@ async def _run(  # noqa: C901, PLR0915
             return []
         return await load_computational_clusters(state, user_id, wallet_id)
 
-    # DB engine — opened in parallel, cleaned up in finally block
+    # Run SSH phases first; DB tunnel setup is deferred until needed
+    dyn_result, comp_result = await asyncio.gather(
+        _dynamic_phase(),
+        _computational_phase(),
+    )
+    dynamic_autoscaled_instances = dyn_result
+    computational_clusters = comp_result
+
+    # DB engine — opened lazily and cleaned up in finally block
     db_stack = contextlib.AsyncExitStack()
     db_engine: AsyncEngine | None = None
 
     async def _db_phase() -> AsyncEngine | None:
-        """Open DB engine early so it overlaps with SSH work."""
+        """Open DB engine only when DB queries are required."""
         try:
             t1 = time.monotonic()
             engine = await db_stack.enter_async_context(db.db_engine(state))
@@ -59,20 +67,13 @@ async def _run(  # noqa: C901, PLR0915
         except Exception:  # pylint: disable=broad-exception-caught
             return None
 
-    # Run SSH phases and DB tunnel setup concurrently
-    dyn_result, comp_result, db_engine = await asyncio.gather(
-        _dynamic_phase(),
-        _computational_phase(),
-        _db_phase(),
-    )
-    dynamic_autoscaled_instances = dyn_result
-    computational_clusters = comp_result
-
     # --- Phase 2: DB queries using shared engine ---
     recon = ReconciliationResult()
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] = {}
     services = collect_services(dynamic_autoscaled_instances)
     try:
+        if computational_clusters or services:
+            db_engine = await _db_phase()
         if db_engine is not None:
             with _console.status("[bold]Querying database...[/bold]"):
                 if computational_clusters:
