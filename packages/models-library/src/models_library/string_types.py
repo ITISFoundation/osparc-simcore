@@ -166,7 +166,7 @@ type NameSafeStr = Annotated[
     ),
     AfterValidator(validate_input_xss_safety),
     annotated_types.doc(
-        """ A safe string used in **name identifiers**, It might be very restrictive for
+        """A safe string used in **name identifiers**, It might be very restrictive for
         display names (e.g. titles or labels) """
     ),
 ]
@@ -179,7 +179,7 @@ type DisplaySafeStr = Annotated[
         max_length=MAX_NAME_LENGTH,
     ),
     AfterValidator(validate_input_xss_safety),
-    annotated_types.doc(""" Like `NameSafeStr` but more suited for display names"""),
+    annotated_types.doc("Like `NameSafeStr` but more suited for display names"),
 ]
 
 type DescriptionSafeStr = Annotated[
@@ -203,7 +203,7 @@ type AddressLineSafeStr = Annotated[
         # commas, unicode/accented characters, '#', '/', apostrophes, etc.
     ),
     AfterValidator(validate_input_xss_safety),
-    annotated_types.doc(""" A safe string used for postal address lines (street, institution, city, state, ...)"""),
+    annotated_types.doc("A safe string used for postal address lines (street, institution, city, state, ...)"),
 ]
 
 

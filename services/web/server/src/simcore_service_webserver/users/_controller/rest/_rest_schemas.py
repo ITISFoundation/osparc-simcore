@@ -47,7 +47,7 @@ class UsersRequestContext(AuthenticatedRequestContext): ...
 
 
 def _normalize_country_name(v: str) -> str:
-    # NOTE: requires installing `pycountry`
+    # NOTE: Do not move to models_library since it requires installing `pycountry`
     if v:
         try:
             country = pycountry.countries.lookup(v)
