@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Final, NamedTuple, TypeAlias
+from typing import Annotated, Final, NamedTuple
 
 import annotated_types
 from pydantic import (
@@ -14,6 +14,8 @@ from .utils.common_validators import trim_string_before
 MIN_DESCRIPTION_LENGTH: Final[int] = 3
 MAX_DESCRIPTION_LENGTH: Final[int] = 5000
 MAX_NAME_LENGTH: Final[int] = 100
+MAX_ADDRESS_LINE_LENGTH: Final[int] = 200
+MAX_POSTAL_CODE_LENGTH: Final[int] = 20
 
 _SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
 _LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github descriptions
@@ -153,7 +155,7 @@ def validate_input_xss_safety(value: str) -> str:
 # `*SafeStr` types MUST be used for INPUT string fields in the external APIs
 #
 
-NameSafeStr: TypeAlias = Annotated[
+type NameSafeStr = Annotated[
     str,
     StringConstraints(
         strip_whitespace=True,
@@ -164,11 +166,12 @@ NameSafeStr: TypeAlias = Annotated[
     ),
     AfterValidator(validate_input_xss_safety),
     annotated_types.doc(
-        """ A safe string used in **name identifiers**, It might be very restrictive for display names (e.g. titles or labels) """
+        """A safe string used in **name identifiers**, It might be very restrictive for
+        display names (e.g. titles or labels) """
     ),
 ]
 
-DisplaySafeStr: TypeAlias = Annotated[
+type DisplaySafeStr = Annotated[
     str,
     StringConstraints(
         strip_whitespace=True,
@@ -176,10 +179,10 @@ DisplaySafeStr: TypeAlias = Annotated[
         max_length=MAX_NAME_LENGTH,
     ),
     AfterValidator(validate_input_xss_safety),
-    annotated_types.doc(""" Like `NameSafeStr` but more suited for display names"""),
+    annotated_types.doc("Like `NameSafeStr` but more suited for display names"),
 ]
 
-DescriptionSafeStr: TypeAlias = Annotated[
+type DescriptionSafeStr = Annotated[
     str,
     StringConstraints(
         strip_whitespace=True,
@@ -190,20 +193,47 @@ DescriptionSafeStr: TypeAlias = Annotated[
 ]
 
 
-GlobPatternSafeStr: TypeAlias = Annotated[
+type AddressLineSafeStr = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=MAX_ADDRESS_LINE_LENGTH,
+        # NOTE: no charset regex here on purpose: real-world addresses contain
+        # commas, unicode/accented characters, '#', '/', apostrophes, etc.
+    ),
+    AfterValidator(validate_input_xss_safety),
+    annotated_types.doc("A safe string used for postal address lines (street, institution, city, state, ...)"),
+]
+
+
+type PostalCodeSafeStr = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=MAX_POSTAL_CODE_LENGTH,
+        pattern=r"^[A-Za-z0-9 \-]+$",  # Allow alphanumeric, spaces and hyphens (e.g. "SW1A 1AA", "12345-6789")
+    ),
+    AfterValidator(validate_input_xss_safety),
+]
+
+
+type GlobPatternSafeStr = Annotated[
     str,
     StringConstraints(
         min_length=3,
         max_length=200,
         strip_whitespace=True,
-        pattern=r"^[A-Za-z0-9 ._\*@-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, asterisks and at signs
+        # Allow alphanumeric, spaces, dots, underscores, hyphens, asterisks and at signs
+        pattern=r"^[A-Za-z0-9 ._\*@-]*$",
         to_lower=True,  # make case-insensitive
     ),
     AfterValidator(validate_input_xss_safety),
 ]
 
 
-SearchPatternSafeStr: TypeAlias = Annotated[
+type SearchPatternSafeStr = Annotated[
     str,
     StringConstraints(
         strip_whitespace=True,
@@ -226,7 +256,7 @@ SearchPatternSafeStr: TypeAlias = Annotated[
 
 
 # --- truncating string types ---
-ShortTruncatedStr: TypeAlias = Annotated[
+type ShortTruncatedStr = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_SHORT_TRUNCATED_STR_MAX_LENGTH),
@@ -243,7 +273,7 @@ ShortTruncatedStr: TypeAlias = Annotated[
 ]
 
 
-LongTruncatedStr: TypeAlias = Annotated[
+type LongTruncatedStr = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_LONG_TRUNCATED_STR_MAX_LENGTH),
@@ -258,9 +288,8 @@ LongTruncatedStr: TypeAlias = Annotated[
     ),
 ]
 
-#  --- tag color string (hex format) ---
-
-ColorStr = Annotated[
+type ColorStr = Annotated[
     str,
     StringConstraints(pattern=re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")),
+    annotated_types.doc("Hex color code in 3-digit or 6-digit format"),
 ]
