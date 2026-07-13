@@ -12,6 +12,7 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Final
 
+from fastapi import status
 from pydantic import ByteSize
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 
@@ -26,6 +27,8 @@ _EPS: Final[float] = sys.float_info.epsilon  # guard against division by zero
 
 class HelperContainerResourceError(BaseDynamicSidecarError):
     """Base for all extra-container resource allocation failures."""
+
+    status_code: int = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 class NoUserServiceFoundError(HelperContainerResourceError):
