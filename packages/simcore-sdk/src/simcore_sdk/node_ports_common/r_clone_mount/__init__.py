@@ -1,7 +1,6 @@
 from ._config_provider import MountRemoteType
 from ._errors import (
     InvalidRemotePathError,
-    MountAlreadyStartedError,
     NoMountFoundForRemotePathError,
 )
 from ._manager import RCloneMountManager
@@ -12,7 +11,6 @@ __all__: tuple[str, ...] = (
     "FilesInTransfer",
     "InvalidRemotePathError",
     "MountActivity",
-    "MountAlreadyStartedError",
     "MountRemoteType",
     "NoMountFoundForRemotePathError",
     "RCloneMountManager",

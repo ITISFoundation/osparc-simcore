@@ -16,7 +16,6 @@ from ._config_provider import MountRemoteType, get_config_content
 from ._container import ContainerManager, RemoteControlHttpClient
 from ._errors import (
     InvalidRemotePathError,
-    MountAlreadyStartedError,
     NoMountFoundForRemotePathError,
 )
 from ._models import DelegateInterface, MountActivity, MountId
@@ -194,8 +193,11 @@ class RCloneMountManager:
         ):
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
-                tracked_mount = self._tracked_mounts[mount_id]
-                raise MountAlreadyStartedError(local_mount_path=local_mount_path)
+                _logger.warning(
+                    "Mount for '%s' is already started, skipping duplicate ensure_mounted call",
+                    local_mount_path,
+                )
+                return
 
             tracked_mount = _TrackedMount(
                 node_id,

@@ -542,6 +542,50 @@ async def test_ensure_mounted_handles_optional_s3_prefix(
     r_clone_mount_manager._reverse_path_search.clear()  # noqa: SLF001
 
 
+async def test_ensure_mounted_is_idempotent(
+    monkeypatch: pytest.MonkeyPatch,
+    r_clone_settings: RCloneSettings,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    local_mount_path: Path,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    index: int,
+):
+    start_mount_call_count = 0
+
+    async def _fake_start_mount(self: _TrackedMount) -> None:
+        nonlocal start_mount_call_count
+        start_mount_call_count += 1
+
+    monkeypatch.setattr(_TrackedMount, "start_mount", _fake_start_mount)
+
+    r_clone_mount_manager = RCloneMountManager(
+        r_clone_settings, requires_data_mounting=True, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown)
+    )
+
+    mount_kwargs = {
+        "local_mount_path": local_mount_path,
+        "remote_type": MountRemoteType.S3,
+        "remote_path": remote_path,
+        "mount_s3_link": mount_s3_link_from_remote(remote_path),
+        "node_id": node_id,
+        "index": index,
+    }
+
+    # First call — creates the mount
+    await r_clone_mount_manager.ensure_mounted(**mount_kwargs)
+    assert start_mount_call_count == 1
+
+    # Second call with same arguments — must not raise and must not start a new mount
+    await r_clone_mount_manager.ensure_mounted(**mount_kwargs)
+    assert start_mount_call_count == 1, "start_mount must only be called once for the same path"
+
+    r_clone_mount_manager._tracked_mounts.clear()  # noqa: SLF001
+    r_clone_mount_manager._reverse_path_search.clear()  # noqa: SLF001
+
+
 @pytest.mark.parametrize("file_count", [10])
 @pytest.mark.parametrize("file_size", [TypeAdapter(ByteSize).validate_python("100kb")])
 @pytest.mark.parametrize("recursive", [True, False])
