@@ -69,10 +69,6 @@ ProjectAccessRights.COLLABORATOR = ProjectAccessRights(read=True, write=True, de
 ProjectAccessRights.VIEWER = ProjectAccessRights(read=True, write=False, delete=False)
 
 
-def create_project_access_rights(gid: int, access: ProjectAccessRights) -> dict[str, dict[str, bool]]:
-    return {f"{gid}": access.value}
-
-
 def convert_to_db_names(project_document_data: dict) -> dict:
     # NOTE: this has to be moved to a proper model. check here how schema to model db works!?
     # SEE: https://github.com/ITISFoundation/osparc-simcore/issues/3516

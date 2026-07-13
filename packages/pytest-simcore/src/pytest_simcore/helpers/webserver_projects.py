@@ -129,6 +129,12 @@ async def create_project(
                 delete=permissions["delete"],
             )
 
+            project_created.setdefault("accessRights", {})[f"{group_id}"] = {
+                "read": permissions["read"],
+                "write": permissions["write"],
+                "delete": permissions["delete"],
+            }
+
     try:
         uuidlib.UUID(str(project_data["uuid"]))
         assert project_created["uuid"] == project_data["uuid"]

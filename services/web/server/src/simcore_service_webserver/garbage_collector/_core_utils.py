@@ -182,7 +182,6 @@ async def replace_current_owner(
         # Update project owner in projects table
         await app[PROJECT_DBAPI_APPKEY].update_project_owner_without_checking_permissions(
             new_project_owner=new_project_owner_id,
-            new_project_access_rights=project["accessRights"],
             project_uuid=project_uuid,
         )
         # Add new owner access rights

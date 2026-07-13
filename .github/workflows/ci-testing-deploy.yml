@@ -1926,7 +1926,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
       - name: Setup docker buildx
-        uses: docker/setup-buildx-action@v4.1.0
+        uses: docker/setup-buildx-action@v4.2.0
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: download amd64 digests

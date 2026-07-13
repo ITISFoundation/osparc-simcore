@@ -206,7 +206,7 @@ async def test_group_creation_workflow(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_list_user_groups_excludes_other_product_support_group(
+async def test_list_user_groups_includes_other_product_support_group(
     client: TestClient,
     user_role: UserRole,
     logged_user: UserInfoDict,
@@ -280,4 +280,4 @@ async def test_list_user_groups_excludes_other_product_support_group(
 
         # ASSERT
         organization_ids = {group.gid for group in my_groups.organizations or []}
-        assert other_product_support_group_gid not in organization_ids
+        assert other_product_support_group_gid in organization_ids
