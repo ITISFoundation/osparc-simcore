@@ -920,9 +920,7 @@ async def _check_project_node_has_all_required_inputs(  # noqa: C901
         permission="read",
     )
 
-    nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
-
-    nodes_map = dict(nodes)
+    nodes_map = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
 
     if node_id not in nodes_map:
         raise NodeNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_id}")

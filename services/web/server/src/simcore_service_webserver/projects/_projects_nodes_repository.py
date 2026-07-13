@@ -132,7 +132,7 @@ async def get_by_project(
     connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
-) -> list[tuple[NodeID, Node]]:
+) -> dict[NodeID, Node]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(projects_nodes.c.project_uuid == f"{project_id}")
 
@@ -141,7 +141,7 @@ async def get_by_project(
 
         rows = result.all()
         nodes = _NODE_LIST_ADAPTER.validate_python(rows, from_attributes=True)
-        return list(zip((NodeID(row.node_id) for row in rows), nodes, strict=True))
+        return {NodeID(row.node_id): node for row, node in zip(rows, nodes, strict=True)}
 
 
 async def get_by_projects(
