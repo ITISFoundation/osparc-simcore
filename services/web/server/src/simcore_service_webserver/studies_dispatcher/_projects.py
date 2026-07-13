@@ -12,7 +12,7 @@ from typing import NamedTuple
 
 from aiohttp import web
 from common_library.json_serialization import json_loads
-from models_library.api_schemas_webserver.projects_ui import StudyUI
+from models_library.api_schemas_webserver.projects_ui import ProductUI
 from models_library.products import ProductName
 from models_library.projects import DateTimeStr, Project, ProjectID, ProjectType
 from models_library.projects_access import AccessRights, GroupIDStr
@@ -103,7 +103,7 @@ def _create_project(
         creation_date=DateTimeStr(now_str()),
         last_change_date=DateTimeStr(now_str()),
         workbench=workbench,
-        ui=StudyUI.model_validate(
+        ui=ProductUI.model_validate(
             {
                 "workbench": workbench_ui,
             }

@@ -4,7 +4,7 @@ from typing import Any, TypeAlias
 
 from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.api_schemas_webserver.projects_ui import StudyUI
+from models_library.api_schemas_webserver.projects_ui import ProductUI
 from models_library.folders import FolderID
 from models_library.groups import GroupID
 from models_library.products import ProductName
@@ -47,7 +47,7 @@ class ProjectDBGet(BaseModel):
     prj_owner: UserID  # == user.id (who created)
     creation_date: datetime
     last_change_date: datetime
-    ui: StudyUI | None
+    ui: ProductUI | None
     classifiers: list[ClassifierID]
     dev: dict | None
     quality: dict[str, Any]

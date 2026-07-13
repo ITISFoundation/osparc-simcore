@@ -91,7 +91,7 @@ class AnnotationUI(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)
 
 
-class StudyUI(OutputSchema):
+class ProductUI(OutputSchema):
     # Model fully controlled by the UI and stored under `projects.ui`
 
     workbench: dict[NodeID, WorkbenchUI] | None = None
