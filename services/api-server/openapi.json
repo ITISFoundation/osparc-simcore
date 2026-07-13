@@ -9846,7 +9846,6 @@
             "enum": [
               "user",
               "assistant",
-              "system",
               "developer"
             ],
             "title": "Role"
@@ -9856,6 +9855,12 @@
             "maxLength": 100000,
             "minLength": 1,
             "title": "Content"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name",
+            "default": ""
           }
         },
         "type": "object",
