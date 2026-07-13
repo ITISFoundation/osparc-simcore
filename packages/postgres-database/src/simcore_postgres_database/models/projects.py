@@ -166,14 +166,6 @@ projects = sa.Table(
         server_default=sa.text("'{}'::jsonb"),
         doc="Free JSON with quality assessment based on TSR",
     ),
-    # DEPRECATED ----------------------------
-    sa.Column(
-        "access_rights",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
-    ),
     sa.Column(
         "product_name",
         sa.String,
