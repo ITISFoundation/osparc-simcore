@@ -101,8 +101,8 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
 
     /**
      * Sets the value from a string that can either be raw markdown or a URL to a markdown file.
-     * If it's a URL to a .md file, the content is fetched and rendered; otherwise the string is
-     * rendered as is. On fetch error, the original string is rendered as a fallback.
+     * - If it's a URL to a .md file, the content is fetched and rendered
+     * - Otherwise the string is rendered as is
      * @param {String} value Raw markdown text or a URL to a markdown (.md) file.
      */
     setValueSmart: function(value) {
