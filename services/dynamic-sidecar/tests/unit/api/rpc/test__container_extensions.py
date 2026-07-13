@@ -24,6 +24,7 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from models_library.services_io import ServiceOutput
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
@@ -178,26 +179,28 @@ def dynamic_sidecar_network_name() -> str:
 def compose_spec(dynamic_sidecar_network_name: str) -> ContainersComposeSpec:
     return ContainersComposeSpec(
         docker_compose_yaml=yaml.dump(
-            {
-                "version": "3",
-                "services": {
-                    "first-box": {
-                        "image": "busybox:latest",
-                        "networks": {
-                            dynamic_sidecar_network_name: None,
+            inject_container_resources(
+                {
+                    "version": "3",
+                    "services": {
+                        "first-box": {
+                            "image": "busybox:latest",
+                            "networks": {
+                                dynamic_sidecar_network_name: None,
+                            },
+                            "labels": {"io.osparc.test-label": "mark-entrypoint"},
                         },
-                        "labels": {"io.osparc.test-label": "mark-entrypoint"},
-                    },
-                    "second-box": {"image": "busybox:latest"},
-                    "egress": {
-                        "image": "busybox:latest",
-                        "networks": {
-                            dynamic_sidecar_network_name: None,
+                        "second-box": {"image": "busybox:latest"},
+                        "egress": {
+                            "image": "busybox:latest",
+                            "networks": {
+                                dynamic_sidecar_network_name: None,
+                            },
                         },
                     },
-                },
-                "networks": {dynamic_sidecar_network_name: None},
-            }
+                    "networks": {dynamic_sidecar_network_name: None},
+                }
+            )
         )
     )
 
@@ -206,15 +209,17 @@ def compose_spec(dynamic_sidecar_network_name: str) -> ContainersComposeSpec:
 def compose_spec_single_service() -> ContainersComposeSpec:
     return ContainersComposeSpec(
         docker_compose_yaml=yaml.dump(
-            {
-                "version": "3",
-                "services": {
-                    "solo-box": {
-                        "image": "busybox:latest",
-                        "labels": {"io.osparc.test-label": "mark-entrypoint"},
+            inject_container_resources(
+                {
+                    "version": "3",
+                    "services": {
+                        "solo-box": {
+                            "image": "busybox:latest",
+                            "labels": {"io.osparc.test-label": "mark-entrypoint"},
+                        },
                     },
-                },
-            }
+                }
+            )
         )
     )
 
