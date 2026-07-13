@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.85.1"
+    "version": "0.86.0"
   },
   "servers": [
     {
@@ -14502,6 +14502,10 @@
         ],
         "title": "Activity"
       },
+      "AnnotationID": {
+        "type": "string",
+        "format": "uuid"
+      },
       "AnnotationUI-Input": {
         "properties": {
           "type": {
@@ -28601,23 +28605,15 @@
       },
       "StudyUI-Input": {
         "properties": {
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
           "workbench": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/WorkbenchUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28629,6 +28625,12 @@
           "slideshow": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SlideshowUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28652,6 +28654,12 @@
           "annotations": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AnnotationUI-Input"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/AnnotationID"
+                },
                 "type": "object"
               },
               {
@@ -28659,18 +28667,6 @@
               }
             ],
             "title": "Annotations"
-          },
-          "templateType": {
-            "anyOf": [
-              {
-                "type": "string",
-                "const": "hypertool"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatetype"
           },
           "mode": {
             "anyOf": [
@@ -28691,29 +28687,20 @@
             "title": "Mode"
           }
         },
-        "additionalProperties": true,
         "type": "object",
         "title": "StudyUI"
       },
       "StudyUI-Output": {
         "properties": {
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
           "workbench": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/WorkbenchUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28725,6 +28712,12 @@
           "slideshow": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SlideshowUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
                 "type": "object"
               },
               {
@@ -28748,6 +28741,12 @@
           "annotations": {
             "anyOf": [
               {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AnnotationUI-Output"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/AnnotationID"
+                },
                 "type": "object"
               },
               {
@@ -28755,18 +28754,6 @@
               }
             ],
             "title": "Annotations"
-          },
-          "templateType": {
-            "anyOf": [
-              {
-                "type": "string",
-                "const": "hypertool"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatetype"
           },
           "mode": {
             "anyOf": [
@@ -28787,7 +28774,6 @@
             "title": "Mode"
           }
         },
-        "additionalProperties": true,
         "type": "object",
         "title": "StudyUI"
       },
