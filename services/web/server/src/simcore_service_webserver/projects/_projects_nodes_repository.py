@@ -1,11 +1,11 @@
-import logging
-from typing import Any
+from typing import Any, Final
 
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -15,9 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import NodeNotFoundError
-
-_logger = logging.getLogger(__name__)
-
 
 _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.node_id,
@@ -39,6 +36,9 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.state,
     projects_nodes.c.boot_options,
 ]
+
+
+_NODE_LIST_ADAPTER: Final[TypeAdapter[list[Node]]] = TypeAdapter(list[Node])
 
 # Mapping from Node model alias (camelCase) to DB column name (snake_case)
 _ALIAS_TO_COLUMN: dict[str, str] = {
@@ -135,14 +135,12 @@ async def get_by_project(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(projects_nodes.c.project_uuid == f"{project_id}")
 
-        stream = await conn.stream(query)
-        assert stream  # nosec
+        result = await conn.execute(query)
+        assert result  # nosec
 
-        result: list[tuple[NodeID, Node]] = []
-        async for row in stream:
-            result.append((NodeID(row.node_id), Node.model_validate(row, from_attributes=True)))
-
-        return result
+        rows = result.all()
+        nodes = _NODE_LIST_ADAPTER.validate_python(rows, from_attributes=True)
+        return list(zip((NodeID(row.node_id) for row in rows), nodes, strict=True))
 
 
 async def get_by_projects(
@@ -158,13 +156,14 @@ async def get_by_projects(
             projects_nodes.c.project_uuid.in_([f"{pid}" for pid in project_ids])
         )
 
-        stream = await conn.stream(query)
-        assert stream  # nosec
+        result = await conn.execute(query)
+        assert result  # nosec
+
+        rows = result.all()
+        nodes = _NODE_LIST_ADAPTER.validate_python(rows, from_attributes=True)
 
         projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {pid: [] for pid in project_ids}
-
-        async for row in stream:
-            node = Node.model_validate(row, from_attributes=True)
+        for row, node in zip(rows, nodes, strict=True):
             projects_to_nodes[ProjectID(row.project_uuid)].append((NodeID(row.node_id), node))
 
         return projects_to_nodes
