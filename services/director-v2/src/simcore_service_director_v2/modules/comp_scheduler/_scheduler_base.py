@@ -639,6 +639,7 @@ class BaseCompScheduler(ABC):
                 )
 
                 # NOTE: no need to update task states here as pipeline is already broken
+                await self._release_resources(comp_run)
                 await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except InvalidPipelineError as exc:
                 _logger.exception(
@@ -654,6 +655,7 @@ class BaseCompScheduler(ABC):
                     ),
                 )
                 # NOTE: no need to update task states here as pipeline is already broken
+                await self._release_resources(comp_run)
                 await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except ComputationalSchedulerChangedError as exc:
                 _logger.exception(
