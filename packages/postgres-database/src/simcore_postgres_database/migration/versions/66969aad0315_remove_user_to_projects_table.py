@@ -1,4 +1,4 @@
-"""Remove user_to_projects
+"""Remove user_to_projects table
 
 Revision ID: 66969aad0315
 Revises: 066e6a93b741
