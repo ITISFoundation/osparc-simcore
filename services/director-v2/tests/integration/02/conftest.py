@@ -68,9 +68,16 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
-    )
+    # CPU must be well above the proxy reservation (0.1 core) so that after
+    # _subtract_proxy_reservation_from_service_resources the remaining CPU
+    # satisfies both the hard floor (> 0) and soft floor (>= 60 % of original).
+    example = dict(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0])
+    container_entry = dict(example["container"])
+    resources = dict(container_entry["resources"])
+    resources["CPU"] = {"limit": 1.0, "reservation": 1.0}
+    container_entry["resources"] = resources
+    example["container"] = container_entry
+    return TypeAdapter(ServiceResourcesDict).validate_python(example)
 
 
 @pytest.fixture

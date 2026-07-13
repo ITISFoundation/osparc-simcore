@@ -314,13 +314,15 @@ async def assert_start_service(
     service_uuid: str,
     basepath: str | None,
     catalog_url: URL,
+    service_resources: ServiceResourcesDict | None = None,
 ) -> None:
-    service_resources: ServiceResourcesDict = await _get_service_resources(
-        catalog_url=catalog_url,
-        service_key=service_key,
-        service_version=service_version,
-        product_name=product_name,
-    )
+    if service_resources is None:
+        service_resources = await _get_service_resources(
+            catalog_url=catalog_url,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
     data = {
         "user_id": user_id,
         "project_id": project_id,

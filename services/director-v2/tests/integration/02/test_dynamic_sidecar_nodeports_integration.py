@@ -43,6 +43,7 @@ from models_library.projects_networks import (
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
@@ -639,6 +640,7 @@ async def _start_and_wait_for_dynamic_services_ready(
     workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
     catalog_url: URL,
+    service_resources: ServiceResourcesDict | None = None,
 ) -> dict[str, str]:
     # start dynamic services
     await asyncio.gather(
@@ -654,6 +656,7 @@ async def _start_and_wait_for_dynamic_services_ready(
                 service_uuid=service_uuid,
                 basepath=f"/x/{service_uuid}" if is_legacy(node) else None,
                 catalog_url=catalog_url,
+                service_resources=service_resources,
             )
             for service_uuid, node in workbench_dynamic_services.items()
         )
@@ -827,6 +830,7 @@ async def test_nodeports_integration(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
+    service_resources: ServiceResourcesDict,
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -864,6 +868,7 @@ async def test_nodeports_integration(
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
         catalog_url=services_endpoint["catalog"],
+        service_resources=service_resources,
     )
 
     # STEP 2
@@ -999,6 +1004,7 @@ async def test_nodeports_integration(
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
         catalog_url=services_endpoint["catalog"],
+        service_resources=service_resources,
     )
 
     dy_path_volume_after = await _fetch_data_from_container(

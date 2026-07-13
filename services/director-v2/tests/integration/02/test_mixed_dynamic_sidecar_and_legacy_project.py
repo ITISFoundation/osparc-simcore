@@ -276,6 +276,7 @@ async def test_legacy_and_dynamic_sidecar_run(
                 # extra config (legacy)
                 basepath=f"/x/{node_id}" if is_legacy(node) else None,
                 catalog_url=services_endpoint["catalog"],
+                service_resources=service_resources,
             )
             for node_id, node in dy_static_file_server_project.workbench.items()
         )
