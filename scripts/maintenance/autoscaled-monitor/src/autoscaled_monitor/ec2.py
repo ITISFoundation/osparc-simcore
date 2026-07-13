@@ -7,7 +7,7 @@ import orjson
 import rich
 from aiocache import cached
 from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
+from mypy_boto3_ec2.service_resource import Instance
 from mypy_boto3_ec2.type_defs import FilterTypeDef
 from pydantic import TypeAdapter
 
@@ -23,7 +23,7 @@ def _list_running_ec2_instances(
     user_id: int | None,
     wallet_id: int | None,
     instance_id: str | None,
-) -> ServiceResourceInstancesCollection:
+) -> list[Instance]:
     # get all the running instances
 
     ec2_filters: list[FilterTypeDef] = [
@@ -41,18 +41,6 @@ def _list_running_ec2_instances(
             DeprecationWarning,
             stacklevel=2,
         )
-        ec2_filters.append(
-            {
-                "Name": "tag-key",
-                "Values": ["user_id", "io.simcore.user_id"],
-            }
-        )
-        ec2_filters.append(
-            {
-                "Name": "tag-value",
-                "Values": [f"{user_id}"],
-            }
-        )
     if wallet_id:
         warnings.warn(
             "The tag 'wallet_id' is deprecated and will be removed in the future. "
@@ -61,29 +49,35 @@ def _list_running_ec2_instances(
             DeprecationWarning,
             stacklevel=2,
         )
-        ec2_filters.append(
-            {
-                "Name": "tag-key",
-                "Values": ["wallet_id", "io.simcore.wallet_id"],
-            }
-        )
-        ec2_filters.append(
-            {
-                "Name": "tag-value",
-                "Values": [f"{wallet_id}"],
-            }
-        )
-        # ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]})  # noqa: ERA001
     if instance_id:
         ec2_filters.append({"Name": "instance-id", "Values": [f"{instance_id}"]})
-    return ec2_resource.instances.filter(Filters=ec2_filters)
+    if user_id is None and wallet_id is None:
+        return list(ec2_resource.instances.filter(Filters=ec2_filters))
+
+    legacy_filters: list[FilterTypeDef] = [*ec2_filters]
+    new_filters: list[FilterTypeDef] = [*ec2_filters]
+
+    if user_id is not None:
+        legacy_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+        new_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]})
+    if wallet_id is not None:
+        legacy_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+        new_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]})
+
+    # Transitional rollout: query both legacy and inverted-URL tag keys.
+    legacy_instances = list(ec2_resource.instances.filter(Filters=legacy_filters))
+    new_instances = list(ec2_resource.instances.filter(Filters=new_filters))
+
+    merged_instances_by_id = {inst.id: inst for inst in legacy_instances}
+    merged_instances_by_id.update({inst.id: inst for inst in new_instances})
+    return list(merged_instances_by_id.values())
 
 
 async def list_computational_instances_from_ec2(
     state: AppState,
     user_id: int | None,
     wallet_id: int | None,
-) -> ServiceResourceInstancesCollection:
+) -> list[Instance]:
     assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
     assert state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
     assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"] == state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"], (
@@ -113,7 +107,7 @@ async def list_dynamic_instances_from_ec2(
     filter_by_user_id: int | None,
     filter_by_wallet_id: int | None,
     filter_by_instance_id: str | None,
-) -> ServiceResourceInstancesCollection:
+) -> list[Instance]:
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     custom_tags = {}
     if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
@@ -246,8 +240,8 @@ def _check_cluster_instances_exist(
     ec2_resource: EC2ServiceResource,
     key_name: str,
     custom_tags: dict[str, str],
-    user_id: int,
-    wallet_id: int | None,
+    _user_id: int,
+    _wallet_id: int | None,
     original_primary_id: str,
     original_worker_ids: set[str],
 ) -> bool:
@@ -256,51 +250,14 @@ def _check_cluster_instances_exist(
 
     Returns True if any of the original instances are still in running/pending state.
     """
+    original_instance_ids = {original_primary_id, *original_worker_ids}
     ec2_filters: list[FilterTypeDef] = [
         {"Name": "instance-state-name", "Values": ["running", "pending"]},
         {"Name": "key-name", "Values": [key_name]},
+        {"Name": "instance-id", "Values": sorted(original_instance_ids)},
     ]
     if custom_tags:
         ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
-    warnings.warn(
-        "The tag 'user_id' is deprecated and will be removed in the future. "
-        'Please use ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]}) '
-        "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    ec2_filters.append(
-        {
-            "Name": "tag-key",
-            "Values": ["user_id", "io.simcore.user_id"],
-        }
-    )
-    ec2_filters.append(
-        {
-            "Name": "tag-value",
-            "Values": [f"{user_id}"],
-        }
-    )
-    if wallet_id:
-        warnings.warn(
-            "The tag 'wallet_id' is deprecated and will be removed in the future. "
-            'Please use ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]}) '
-            "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        ec2_filters.append(
-            {
-                "Name": "tag-key",
-                "Values": ["wallet_id", "io.simcore.wallet_id"],
-            }
-        )
-        ec2_filters.append(
-            {
-                "Name": "tag-value",
-                "Values": [f"{wallet_id}"],
-            }
-        )
 
     instances = ec2_resource.instances.filter(Filters=ec2_filters)
     running_ids = {inst.id for inst in instances}
