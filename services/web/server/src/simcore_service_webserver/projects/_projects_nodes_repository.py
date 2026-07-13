@@ -110,16 +110,16 @@ async def get(
     node_id: NodeID,
 ) -> Node:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        get_stmt = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
+        result = await conn.execute(
+            sa.select(
+                *_SELECTION_PROJECTS_NODES_DB_ARGS,
+            ).where((projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}"))
         )
-
-        result = await conn.execute(get_stmt)
-        assert result  # nosec
-
         row = result.one_or_none()
+
         if row is None:
             raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
+
         assert row  # nosec
         return Node.model_validate(row, from_attributes=True)
 
@@ -131,36 +131,36 @@ async def get_by_project(
     project_id: ProjectID,
 ) -> dict[NodeID, Node]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(projects_nodes.c.project_uuid == f"{project_id}")
-
-        result = await conn.execute(query)
-        assert result  # nosec
-
+        result = await conn.execute(
+            sa.select(
+                *_SELECTION_PROJECTS_NODES_DB_ARGS,
+            ).where(projects_nodes.c.project_uuid == f"{project_id}")
+        )
         rows = result.all()
+
         nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
         return {NodeID(row.node_id): node for row, node in zip(rows, nodes, strict=True)}
 
 
 async def get_by_projects(
     app: web.Application,
-    project_ids: set[ProjectID],
     connection: AsyncConnection | None = None,
+    *,
+    project_ids: set[ProjectID],
 ) -> dict[ProjectID, dict[NodeID, Node]]:
     if not project_ids:
         return {}
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            projects_nodes.c.project_uuid.in_([f"{pid}" for pid in project_ids])
+        result = await conn.execute(
+            sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
+                projects_nodes.c.project_uuid.in_([f"{pid}" for pid in project_ids])
+            )
         )
-
-        result = await conn.execute(query)
-        assert result  # nosec
-
         rows = result.all()
         nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
 
-        projects_to_nodes: dict[ProjectID, dict[NodeID, Node]] = {pid: {} for pid in project_ids}
+        projects_to_nodes: dict[ProjectID, dict[NodeID, Node]] = {project_id: {} for project_id in project_ids}
         for row, node in zip(rows, nodes, strict=True):
             projects_to_nodes[ProjectID(row.project_uuid)][NodeID(row.node_id)] = node
 
