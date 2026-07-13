@@ -1,8 +1,8 @@
 """add users_billing_details table
 
 Revision ID: 066e6a93b741
-Revises: 2962a102c124
-Create Date: 2026-07-09 18:56:24.441311+00:00
+Revises: d90899964ae0
+Create Date: 2026-07-13 15:14:24.441311+00:00
 
 """
 
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "066e6a93b741"
-down_revision = "2962a102c124"
+down_revision = "d90899964ae0"
 branch_labels = None
 depends_on = None
 
