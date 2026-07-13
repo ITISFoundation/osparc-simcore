@@ -50,6 +50,8 @@ def test_migration_column_set_matches_live_model():
         "created",
         "modified",
         "required_resources",
+        # added by a later migration (1f1779261822), not part of this migration's column set
+        "ui",
     }
     assert live_data_columns == _ALL_NODE_COLUMNS
 
