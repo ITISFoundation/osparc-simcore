@@ -638,7 +638,7 @@ class BaseCompScheduler(ABC):
                         tip="Check that the project still exists",
                     )
                 )
-                await self._safe_release_resources(comp_run.user_id, comp_run.project_uuid, comp_run.run_id)
+                await self._safe_release_resources(user_id, project_id, iteration)
             except PipelineNotFoundError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
