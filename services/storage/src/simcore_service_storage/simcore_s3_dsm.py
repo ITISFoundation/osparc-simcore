@@ -1150,14 +1150,14 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
     async def clean_expired_uploads(self) -> None:
         """Removes uploads that never completed.
 
-        Rationale: an upload starts by creating a file_meta_data entry with an
-        `upload_expires_at` timestamp and handing the client an upload link. Once the
-        client notifies completion, that entry upload expiration date is cleared.
-        Any entry whose `upload_expires_at` is set and in the past means the client
+        Rationale: an upload starts by creating a file metadata entry with an
+        expiration timestamp and handing the client an upload link. Once the
+        client notifies completion, that entry's expiration is cleared.
+        Any entry whose expiration is set and in the past means the client
         never completed (or notified) the upload. For each such entry, this method:
         1. tries to recover it by refreshing its metadata from S3 (the upload might have
            actually finished and the client just forgot to notify us);
-        2. if nothing exists in S3, deletes the file_meta_data entry and aborts the multipart
+        2. if nothing exists in S3, deletes the file metadata entry and aborts the multipart
            upload, if any.
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
