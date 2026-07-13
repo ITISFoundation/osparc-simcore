@@ -23,19 +23,8 @@ from pydantic_extra_types.color import Color
 from ..projects_nodes_io import NodeID
 from ..utils.common_validators import empty_str_to_none_pre_validator
 from ._base import OutputSchema
-from .projects_nodes_ui import MarkerUI, PositionUI
 
 type AnnotationID = UUID
-
-
-class WorkbenchUI(BaseModel):
-    position: Annotated[
-        PositionUI,
-        Field(description="The node position in the workbench"),
-    ]
-    marker: MarkerUI | None = None
-
-    model_config = ConfigDict(extra="forbid")
 
 
 class SlideshowUI(TypedDict):
@@ -94,7 +83,6 @@ class AnnotationUI(BaseModel):
 class ProductUI(OutputSchema):
     # Model fully controlled by the UI and stored under `projects.ui`
 
-    workbench: dict[NodeID, WorkbenchUI] | None = None
     slideshow: dict[NodeID, SlideshowUI] | None = None
     current_node_id: NodeID | None = None
     annotations: dict[AnnotationID, AnnotationUI] | None = None

@@ -19,6 +19,7 @@ from ..services_enums import ServiceState
 from ..services_history import ServiceRelease
 from ..services_resources import ServiceResourcesDict
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
+from .projects_nodes_ui import NodeUI
 
 assert ServiceResourcesDict  # nosec
 __all__: tuple[str, ...] = ("ServiceResourcesDict",)
@@ -66,6 +67,8 @@ class NodePatch(InputSchemaWithoutCamelCase):
     ] = None
     boot_options: Annotated[BootOptions | None, Field(alias="bootOptions")] = None
     outputs: dict[str, Any] | None = None  # NOTE: it is used by frontend for File Picker
+
+    ui: NodeUI | None = None
 
     def to_domain_model(self) -> PartialNode:
         data = self.model_dump(
