@@ -566,7 +566,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             await self._update_database_from_storage(fmd)
         except S3KeyNotFoundError:
             # the file does not exist, so we delete the entry in the db
-            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete(file_ids=[fmd.file_id])
+            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete(
+                file_ids=[fmd.file_id], delete_descendants=False
+            )
 
     async def complete_file_upload(
         self,
@@ -694,7 +696,11 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
             async with transaction_context(get_db_engine(self.app)) as connection:
                 file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
-                await file_meta_data_repo.delete(connection=connection, file_ids=[file_id])
+                await file_meta_data_repo.delete(
+                    connection=connection,
+                    file_ids=[file_id],
+                    delete_descendants=True,
+                )
 
                 # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
                 if is_nested_level_file_id(file_id) and (

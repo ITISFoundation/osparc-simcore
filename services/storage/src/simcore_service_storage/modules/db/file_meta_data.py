@@ -358,9 +358,22 @@ class FileMetaDataRepository(BaseRepository):
         *,
         connection: AsyncConnection | None = None,
         file_ids: list[SimcoreS3FileID],
+        delete_descendants: bool,
     ) -> None:
         async with transaction_context(self.db_engine, connection) as conn:
-            await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
+            if not delete_descendants:
+                await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
+                return
+
+            conditions = [
+                sa.or_(
+                    file_meta_data.c.file_id == file_id,
+                    file_meta_data.c.file_id.startswith(f"{file_id}/"),
+                )
+                for file_id in file_ids
+            ]
+
+            await conn.execute(file_meta_data.delete().where(sa.or_(*conditions)))
 
     async def delete_all_from_project(
         self, *, connection: AsyncConnection | None = None, project_id: ProjectID
