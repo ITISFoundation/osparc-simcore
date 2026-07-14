@@ -77,7 +77,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.socketio import SocketMessageDict
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
@@ -1575,9 +1575,7 @@ async def _get_node_share_state(
             return NodeShareState(
                 locked=not is_collaborative_service,
                 current_user_groupids=[
-                    await users_service.get_user_primary_group_id(
-                        app, TypeAdapter(UserID).validate_python(service.user_id)
-                    )
+                    await users_service.get_user_primary_group_id(app, UserIDAdapter.validate_python(service.user_id))
                 ],
                 status=NodeShareStatus.OPENED,
             )

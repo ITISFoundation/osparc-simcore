@@ -2,7 +2,7 @@ from textwrap import dedent
 
 from aws_library.ec2 import AWSTagValue, EC2Tags
 from models_library.products import ProductName
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 
@@ -100,7 +100,7 @@ def wallet_id_from_instance_tags(tags: EC2Tags) -> WalletID | None:
 
 
 def user_id_from_instance_tags(tags: EC2Tags) -> UserID:
-    return TypeAdapter(UserID).validate_python(tags[USER_ID_TAG_KEY])
+    return UserIDAdapter.validate_python(tags[USER_ID_TAG_KEY])
 
 
 def product_name_from_instance_tags(tags: EC2Tags) -> ProductName:

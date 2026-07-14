@@ -1,6 +1,7 @@
 import datetime
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     Annotated,
+    Final,
     NewType,
     TypedDict,
 )
@@ -14,6 +15,7 @@ from pydantic import (
     Field,
     PositiveInt,
     StringConstraints,
+    TypeAdapter,
 )
 from pydantic.config import JsonDict
 
@@ -25,6 +27,8 @@ type _UserNameIDStr = Annotated[str, StringConstraints(strip_whitespace=True, mi
 type _UserIDInt = PositiveInt
 
 UserID = NewType("UserID", _UserIDInt)
+UserIDAdapter: Final[TypeAdapter[UserID]] = TypeAdapter(UserID)
+
 UserNameID = NewType("UserNameID", _UserNameIDStr)
 
 

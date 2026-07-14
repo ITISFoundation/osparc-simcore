@@ -4,13 +4,13 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.groups import GroupID
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from pydantic import TypeAdapter
 
 
 @pytest.fixture
 def user_id(faker: Faker) -> UserID:
-    return TypeAdapter(UserID).validate_python(faker.pyint())
+    return UserIDAdapter.validate_python(faker.pyint())
 
 
 @pytest.fixture
