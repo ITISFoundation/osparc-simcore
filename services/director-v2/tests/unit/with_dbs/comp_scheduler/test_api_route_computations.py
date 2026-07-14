@@ -27,6 +27,7 @@ from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
+    ComputationDelete,
     ComputationGet,
 )
 from models_library.api_schemas_directorv2.encryption import (
@@ -56,6 +57,7 @@ from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_service_director_v2.core.errors import ComputationalSchedulerError
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
@@ -1000,3 +1002,120 @@ async def test_get_computation_from_published_computation_task(
     assert returned_computation.model_dump(include=_CHANGED_FIELDS) != expected_computation.model_dump(
         include=_CHANGED_FIELDS
     )
+
+
+async def test_delete_computation_success(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    async_client: httpx.AsyncClient,
+):
+    """Test successful pipeline deletion when pipeline is not running."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+    await create_comp_run(
+        user=user,
+        project=proj,
+        result=StateType.SUCCESS,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+
+    delete_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    response = await async_client.request(
+        "DELETE",
+        delete_computation_url,
+        json=ComputationDelete(user_id=user["id"], force=False).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+
+
+async def test_delete_computation_fails_when_stop_pipeline_raises(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    async_client: httpx.AsyncClient,
+    mocker: MockerFixture,
+):
+    """Test that deletion raises 409 when stop_pipeline fails with ComputationalSchedulerError."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+    await create_comp_run(
+        user=user,
+        project=proj,
+        result=StateType.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+
+    # Mock stop_pipeline to raise an error
+    mocker.patch(
+        "simcore_service_director_v2.api.routes.computations.stop_pipeline",
+        side_effect=ComputationalSchedulerError(
+            msg="Scheduler unavailable",
+        ),
+        autospec=True,
+    )
+
+    delete_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    response = await async_client.request(
+        "DELETE",
+        delete_computation_url,
+        json=ComputationDelete(user_id=user["id"], force=True).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+    assert "could not be stopped" in response.text.lower()
+
+
+async def test_delete_computation_fails_when_pipeline_does_not_stop_in_time(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    async_client: httpx.AsyncClient,
+    mocker: MockerFixture,
+):
+    """Test that deletion raises 409 when pipeline doesn't stop within timeout."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+
+    # Create a comp_run that is always in PUBLISHED (running) state
+    await create_comp_run(
+        user=user,
+        project=proj,
+        result=StateType.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+
+    # Mock stop_pipeline to succeed silently
+    mocker.patch(
+        "simcore_service_director_v2.api.routes.computations.stop_pipeline",
+        autospec=True,
+    )
+
+    # NOTE: check_pipeline_stopped is a nested function and cannot be mocked directly.
+    # Instead, use a short wait_for so the real retry loop times out quickly: since the
+    # comp_run stays PUBLISHED (no scheduler advances it in this test), the pipeline
+    # never reports as stopped.
+    delete_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    response = await async_client.request(
+        "DELETE",
+        delete_computation_url,
+        json=ComputationDelete(user_id=user["id"], force=True, wait_for=dt.timedelta(seconds=0.2)).model_dump(
+            mode="json"
+        ),
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+    assert "could not be stopped properly after" in response.text.lower()
