@@ -233,7 +233,6 @@ async def send_message_from_template(
     resolved_locale = await resolve_effective_locale(
         app,
         user_id=user_id,
-        product_name=product_name,
         group_ids=group_ids,
         locale=locale,
     )

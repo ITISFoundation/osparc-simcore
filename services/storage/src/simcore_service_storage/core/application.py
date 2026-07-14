@@ -84,8 +84,7 @@ def _configure_app(
 
     match settings.STORAGE_BOOT_SERVER_MODE:
         case BootServerMode.AS_REST_API_SERVER:
-            if settings.STORAGE_CLEANER_INTERVAL_S:
-                configure_dsm_cleaner(app_lifespan)
+            configure_dsm_cleaner(app_lifespan)
             # Setup routes and exception handlers (outside the lifespan context)
 
             # Configure middleware (in reverse order due to how middleware is applied)
