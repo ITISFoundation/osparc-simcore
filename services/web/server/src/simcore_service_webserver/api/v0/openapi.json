@@ -28890,6 +28890,14 @@
         ],
         "title": "Structure"
       },
+      "SupportedLocale": {
+        "type": "string",
+        "enum": [
+          "en",
+          "es_ES",
+          "zh_CN"
+        ]
+      },
       "TagAccessRights": {
         "properties": {
           "read": {
