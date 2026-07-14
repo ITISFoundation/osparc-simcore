@@ -101,12 +101,13 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: UserID) -
                 if product_name is None:
                     raise ProjectNotFoundError(project_uuid=project_id)  # noqa: TRY301
 
-                task = _projects_service_delete.delete_project_as_admin(
-                    app,
-                    project_uuid=project_id,
-                    product_name=product_name,
+                delete_coros.append(
+                    _projects_service_delete.delete_project_as_admin(
+                        app,
+                        project_uuid=project_id,
+                        product_name=product_name,
+                    )
                 )
-                delete_coros.append(task)
 
             except ProjectNotFoundError:
                 logging.warning(
