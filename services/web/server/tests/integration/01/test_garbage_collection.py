@@ -118,6 +118,7 @@ async def director_v2_service_mock(
     PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
     get_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$")
     delete_computation_pattern = get_computation_pattern
+    stop_computation_pattern = get_computation_pattern
 
     mocker.patch(
         "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
@@ -137,10 +138,7 @@ async def director_v2_service_mock(
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
-        # NOTE: stops the pipeline (POST .../computations/{id}:stop), used e.g. when
-        # deleting/trashing a project: batch_stop_services_in_project calls stop_pipeline
-        # (not delete_pipeline) so it must be mocked separately here.
-        mock.post(get_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
+        mock.post(stop_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
         yield mock
 
 
