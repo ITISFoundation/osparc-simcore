@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 
+import asyncio
 import datetime
 from uuid import uuid4
 
@@ -15,9 +16,12 @@ from models_library.functions import RegisteredFunction
 from models_library.products import ProductName
 from models_library.users import UserID
 from pytest_mock import MockerFixture
-from simcore_service_api_server._service_function_jobs import FunctionJobService
+from simcore_service_api_server._service_function_jobs import _START_JOB_JITTER_MAX_SECONDS, FunctionJobService
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server._service_jobs import JobService
+from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.models.domain.functions import PreRegisteredFunctionJobData
+from simcore_service_api_server.models.schemas.jobs import JobInputs
 from simcore_service_api_server.services_http.webserver import AuthSession
 from simcore_service_api_server.services_rpc.storage import StorageService
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
@@ -78,3 +82,56 @@ async def test_batch_pre_register_function_jobs_with_empty_list(
     )
 
     assert result == []
+
+
+async def test_run_function_start_is_jittered(
+    function_job_service: FunctionJobService,
+    registered_project_function: RegisteredFunction,
+    fake_job_links: JobLinks,
+    mocker: MockerFixture,
+):
+    """Concurrently calling run_function for a burst of jobs (e.g. a map/sweep)
+    must not trigger the actual computation start (start_study_job) for all of
+    them at the exact same instant: the pre-start jitter should spread out when
+    each one actually starts, to avoid overloading director-v2/dask with a burst
+    of simultaneous submissions.
+    """
+    num_jobs = 40
+
+    fake_job = mocker.Mock(id=uuid4())
+    function_job_service._job_service.create_studies_job = mocker.AsyncMock(return_value=fake_job)  # noqa: SLF001
+    function_job_service._web_rpc_client.patch_registered_function_job = mocker.AsyncMock(  # noqa: SLF001
+        return_value=mocker.Mock()
+    )
+
+    start_times: list[float] = []
+
+    async def _record_start_time(*args, **kwargs) -> None:
+        start_times.append(asyncio.get_running_loop().time())
+
+    function_job_service._job_service.start_study_job = mocker.AsyncMock(  # noqa: SLF001
+        side_effect=_record_start_time
+    )
+
+    pre_registered_jobs = [
+        PreRegisteredFunctionJobData(function_job_id=uuid4(), job_inputs=JobInputs(values={})) for _ in range(num_jobs)
+    ]
+
+    def _run_function(data: PreRegisteredFunctionJobData):
+        return function_job_service.run_function(
+            function=registered_project_function,
+            pre_registered_function_job_data=data,
+            pricing_spec=None,
+            job_links=fake_job_links,
+            x_simcore_parent_project_uuid=None,
+            x_simcore_parent_node_id=None,
+        )
+
+    await asyncio.gather(*map(_run_function, pre_registered_jobs))
+
+    assert len(start_times) == num_jobs
+    spread = max(start_times) - min(start_times)
+    assert spread > _START_JOB_JITTER_MAX_SECONDS * 0.3, (
+        f"Expected start_study_job calls to be spread out by jitter, but spread was only {spread}s "
+        f"(jitter max is {_START_JOB_JITTER_MAX_SECONDS}s)"
+    )
