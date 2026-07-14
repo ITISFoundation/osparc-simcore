@@ -10,6 +10,7 @@ from pydantic import (
     Field,
     PositiveInt,
     field_validator,
+    model_validator,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
@@ -28,23 +29,36 @@ PositiveTimedelta = Annotated[timedelta, Gt(timedelta(0))]
 
 
 class DsmCleanerSettings(BaseCustomSettings):
-    STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL: Annotated[
-        PositiveTimedelta, Field(description="Interval when task cleaning expired upload links runs.")
+    STORAGE_CLEANER_EXPIRED_UPLOADS_INTERVAL: Annotated[
+        PositiveTimedelta,
+        Field(description=("How often the task that removes incomplete uploads runs. ")),
     ] = timedelta(minutes=15)
 
-    STORAGE_CLEANER_EXPORT_INTERVAL: Annotated[
+    STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL: Annotated[
         PositiveTimedelta,
         Field(
             description=(
-                "Interval when task cleaning expired exporter archives runs. Exports are kept for "
-                "STORAGE_CLEANER_EXPORT_RETENTION"
+                "How often the task that removes orphaned export entries runs. "
+                "Must be strictly less than STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL so each "
+                "retention window is checked at least once before an export expires."
             ),
         ),
     ] = timedelta(hours=6)
 
-    STORAGE_CLEANER_EXPORT_RETENTION: Annotated[
-        PositiveTimedelta, Field(description=("Amount of time an exported archive (exports/ S3 prefix) is kept for"))
+    STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL: Annotated[
+        PositiveTimedelta,
+        Field(description=("How long an exported archive (exports/ S3 prefix) is kept before being removed.")),
     ] = timedelta(days=30)
+
+    @model_validator(mode="after")
+    def _exports_interval_lt_retention(self) -> "DsmCleanerSettings":
+        if self.STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL >= self.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL:
+            msg = (
+                f"{self.STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL.__qualname__} must be strictly less than "
+                f"{self.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL.__qualname__}"
+            )
+            raise ValueError(msg)
+        return self
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):

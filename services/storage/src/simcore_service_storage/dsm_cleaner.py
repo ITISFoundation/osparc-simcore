@@ -54,7 +54,7 @@ async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
         @exclusive_periodic(
             lock_client,
-            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPIRE_UPLOADS_INTERVAL,
+            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPIRED_UPLOADS_INTERVAL,
             retry_after=timedelta(minutes=5),
         )
         async def _run_clean_expired_uploads() -> None:
@@ -64,7 +64,7 @@ async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
         @exclusive_periodic(
             lock_client,
-            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_INTERVAL,
+            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL,
             retry_after=timedelta(minutes=5),
         )
         async def _run_clean_expired_exports() -> None:
