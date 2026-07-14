@@ -1380,7 +1380,7 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
 
 # Node fields that only affect the UI and therefore do not require syncing
 # the computational pipeline (director-v2 / comp_* DB tables) on patch.
-_NODE_UI_ONLY_PATCH_KEYS: Final[frozenset[str]] = frozenset({"position", "ui"})
+_NODE_UI_ONLY_PATCH_KEYS: Final[frozenset[str]] = frozenset({"ui"})
 
 
 async def patch_project_node(
