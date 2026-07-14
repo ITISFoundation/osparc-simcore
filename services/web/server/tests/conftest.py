@@ -475,9 +475,6 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
 
     # cleanup projects
     for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
-        # NOTE: delete only marks the project for immediate deletion (hidden=True, trashed=epoch);
-        # actual removal happens exclusively via the periodic trash-pruning GC, so we trigger it
-        # explicitly here to ensure proper test isolation (no leftover projects between tests).
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
         resp = await client.delete(url.path)
 

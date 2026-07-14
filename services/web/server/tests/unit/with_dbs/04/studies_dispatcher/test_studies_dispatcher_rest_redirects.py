@@ -319,9 +319,7 @@ async def test_dispatch_logged_in_user(
     response = await client.delete(f"{url}")
     response.raise_for_status()
     # NOTE: delete only marks the project for immediate deletion; actual removal happens
-    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here so the
-    # project row is actually gone before the owning user gets deleted at fixture teardown
-    # (otherwise that delete raises a ForeignKeyViolationError).
+    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
 

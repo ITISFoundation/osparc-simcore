@@ -72,9 +72,8 @@ async def test_delete_project(
     user_id: int = logged_user["id"]
 
     if expected.no_content == status.HTTP_204_NO_CONTENT:
-        # NOTE: DELETE now only marks the project for immediate deletion (hidden=True,
-        # trashed=epoch). The actual removal (stop services, delete storage, delete DB
-        # row) happens exclusively via the periodic trash-pruning GC, so trigger it here.
+        # NOTE: delete only marks the project for immediate deletion; actual removal happens
+        # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
         await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
         mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].assert_called_once()

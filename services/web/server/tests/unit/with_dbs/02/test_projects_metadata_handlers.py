@@ -89,12 +89,9 @@ async def test_custom_metadata_handlers(
     response = await client.delete(f"{url}")
     await assert_status(response, expected_status_code=expected.no_content)
 
-    async def _wait_until_deleted():
-        # NOTE: DELETE now only marks the project for immediate deletion; the actual
-        # removal happens exclusively via the periodic trash-pruning GC.
-        await trash_service.safe_delete_expired_trash_as_admin(client.app)
-
-    await _wait_until_deleted()
+    # NOTE: delete only marks the project for immediate deletion; actual removal happens
+    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
     # no metadata -> project not found
     url = client.app.router["get_project_metadata"].url_for(project_id=user_project["uuid"])
