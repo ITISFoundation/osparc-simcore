@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import Protocol
 
 from aiohttp import web
 from models_library.products import ProductName
@@ -15,10 +14,6 @@ from . import _projects_repository, _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-
-class StopServicesCallback(Protocol):
-    async def __call__(self, app: web.Application, project_uuid: ProjectID) -> None: ...
 
 
 async def batch_stop_services_in_project(
