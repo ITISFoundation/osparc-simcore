@@ -9693,6 +9693,10 @@
         ],
         "title": "FileUploadData"
       },
+      "FirstNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "FunctionJobCollection": {
         "properties": {
           "title": {
@@ -10306,6 +10310,10 @@
           "$ref": "#/components/schemas/ArgumentTypes-Output"
         },
         "type": "object"
+      },
+      "LastNameStr": {
+        "type": "string",
+        "maxLength": 255
       },
       "LicensedItemCheckoutData": {
         "properties": {
@@ -11657,26 +11665,33 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Last Name"
+            "description": "Persisted UI/communications language. None means no persisted choice."
           },
           "id": {
             "type": "integer",
@@ -11747,26 +11762,33 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Last Name"
+            "description": "Persisted UI/communications language. None means no persisted choice."
           }
         },
         "type": "object",
@@ -13510,6 +13532,14 @@
           "key": "f763658f-a89a-4a90-ace4-c44631290f12",
           "kind": "input"
         }
+      },
+      "SupportedLocale": {
+        "type": "string",
+        "enum": [
+          "en",
+          "es_ES",
+          "zh_CN"
+        ]
       },
       "TaskGet": {
         "properties": {
