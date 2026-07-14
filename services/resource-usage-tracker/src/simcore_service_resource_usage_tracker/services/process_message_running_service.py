@@ -341,7 +341,9 @@ async def _process_stop_event(
             try:
                 await notify_user_of_credit_reimbursement(
                     rabbitmq_rpc_client,
+                    db_engine,
                     product_name=running_service.product_name,
+                    user_id=running_service.user_id,
                     user_email=running_service.user_email,
                     service_run_id=msg.service_run_id,
                     reimbursed_credits=computed_credits,

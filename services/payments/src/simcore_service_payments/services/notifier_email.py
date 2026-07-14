@@ -5,6 +5,7 @@ from typing import Any, Final
 from urllib.parse import urlparse
 
 import httpx
+from common_library.gettext_support import DEFAULT_LOCALE
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import status
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
@@ -236,6 +237,7 @@ class EmailProvider(NotificationProvider):
                     template_name=_PAID_TEMPLATE_NAME,
                 ),
                 context=context,
+                locale=data.language or DEFAULT_LOCALE,
             )
         except Exception as exc:  # pylint: disable=broad-except
             _logger.exception(
