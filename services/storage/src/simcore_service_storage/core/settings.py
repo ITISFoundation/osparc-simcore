@@ -48,7 +48,7 @@ class DsmCleanerSettings(BaseCustomSettings):
     STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL: Annotated[
         PositiveTimedelta,
         Field(description=("How long an exported archive (exports/ S3 prefix) is kept before being removed.")),
-    ] = timedelta(days=30)
+    ] = timedelta(days=15)
 
     @model_validator(mode="after")
     def _exports_interval_lt_retention(self) -> "DsmCleanerSettings":
