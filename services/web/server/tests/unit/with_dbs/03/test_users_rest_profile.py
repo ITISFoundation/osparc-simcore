@@ -444,6 +444,48 @@ async def test_update_profile_and_contact_in_same_request(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_update_profile_language(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    """The language is a property of the user (``users.language``): it can be
+    created/edited directly via PATCH /me, independently of any product.
+    """
+    assert client.app
+
+    # GET: no persisted language yet
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data.get("language") is None
+
+    # PATCH: set the language
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(f"{url}", json={"language": "es_ES"})
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # GET: language now present
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["language"] == "es_ES"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_update_profile_invalid_language_is_rejected(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    assert client.app
+
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(f"{url}", json={"language": "not-a-locale"})
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize("invalid_username", ["", "_foo", "superadmin", "foo..-123"])
 async def test_update_wrong_user_name(
     user_role: UserRole,

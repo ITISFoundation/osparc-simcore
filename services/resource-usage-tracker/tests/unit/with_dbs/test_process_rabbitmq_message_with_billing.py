@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
+from common_library.gettext_support import DEFAULT_LOCALE
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingStoppedMessage,
@@ -299,6 +300,8 @@ async def test_stop_event_with_platform_bad_sends_reimbursement_notification(
     assert call_kwargs["addressing"].to[0].email == msg.user_email
     assert call_kwargs["context"]["service_run_id"] == msg.service_run_id
     assert call_kwargs["template_ref"].template_name == "credit_reimbursement"
+    # No matching `users` row for this synthetic user_id -> falls back to DEFAULT_LOCALE
+    assert call_kwargs["locale"] == DEFAULT_LOCALE
 
 
 async def test_stop_event_with_platform_ok_does_not_send_reimbursement_notification(

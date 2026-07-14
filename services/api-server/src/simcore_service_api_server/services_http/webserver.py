@@ -9,6 +9,7 @@ from typing import Any, Final, Self
 from uuid import UUID
 
 import httpx
+from common_library.gettext_support import SupportedLocale
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from cryptography import fernet
@@ -46,6 +47,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.common_headers import (
+    X_SIMCORE_LANGUAGE,
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
@@ -154,6 +156,7 @@ class AuthSession:
 
     vtag: str
     session_cookies: dict | None = None
+    _locale: SupportedLocale | None = None
 
     @classmethod
     def create(
@@ -162,6 +165,7 @@ class AuthSession:
         session_cookies: dict,
         user_id: UserID,
         product_name: ProductName,
+        locale: SupportedLocale | None = None,
     ) -> Self:
         # WARNING: this client lifespan is tied to the app
         app_http_webserver_client = WebserverApi.get_instance(app)
@@ -180,6 +184,7 @@ class AuthSession:
             _long_running_task_client=app_http_lrt_webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
+            _locale=locale,
         )
 
     def _get_session_headers(
@@ -195,6 +200,9 @@ class AuthSession:
 
         if parent_node_id is not None:
             headers[X_SIMCORE_PARENT_NODE_ID] = str(parent_node_id)
+
+        if self._locale is not None:
+            headers[X_SIMCORE_LANGUAGE] = self._locale
 
         return headers
 
@@ -298,6 +306,7 @@ class AuthSession:
         return Profile(
             first_name=got.first_name,
             last_name=got.last_name,
+            language=got.language,
             id=got.id,
             login=got.login,
             role=UserRoleEnum(got.role),
@@ -311,6 +320,7 @@ class AuthSession:
             _fields_set=profile_update.model_fields_set,
             first_name=profile_update.first_name,
             last_name=profile_update.last_name,
+            language=profile_update.language,
         )
 
         response = await self.client.patch(

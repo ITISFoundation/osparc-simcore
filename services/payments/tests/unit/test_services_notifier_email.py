@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
+from common_library.gettext_support import DEFAULT_LOCALE
 from faker import Faker
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -88,6 +89,7 @@ async def test_email_provider_sends_on_success(
             display_name=product["display_name"],
             vendor=product["vendor"],
             support_email=product["support_email"],
+            language=None,
         ),
     )
 
@@ -101,6 +103,50 @@ async def test_email_provider_sends_on_success(
     assert call_kwargs.kwargs["template_ref"].template_name == "paid"
     assert call_kwargs.kwargs["context"]["payment"]["price_dollars"] == f"{transaction.price_dollars:.2f}"
     assert call_kwargs.kwargs["context"]["payment"]["osparc_credits"] == f"{transaction.osparc_credits:.2f}"
+    assert call_kwargs.kwargs["locale"] == DEFAULT_LOCALE
+
+
+async def test_email_provider_uses_user_language_when_set(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
+    transaction: PaymentsTransactionsDB,
+    mock_rabbitmq_rpc_client: AsyncMock,
+    mock_send_message_from_template: AsyncMock,
+):
+    """The recipient's persisted `users.language` (returned by get_notification_data)
+    must be forwarded as the RPC `locale`, not silently dropped to DEFAULT_LOCALE.
+    """
+    users_repo = PaymentsUsersRepo(MagicMock())
+    mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=SimpleNamespace(
+            payment_id=transaction.payment_id,
+            user_name="jdoe",
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+            language="es_ES",
+        ),
+    )
+
+    provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo)
+
+    await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+
+    assert mock_send_message_from_template.called
+    call_kwargs = mock_send_message_from_template.call_args
+    assert call_kwargs.kwargs["locale"] == "es_ES"
 
 
 async def test_email_provider_skips_non_success(
@@ -184,6 +230,7 @@ async def test_email_provider_logs_on_rpc_failure(
             display_name=product["display_name"],
             vendor=product["vendor"],
             support_email=product["support_email"],
+            language=None,
         ),
     )
 
@@ -237,6 +284,7 @@ async def test_email_provider_attaches_invoice_pdf(
             display_name=product["display_name"],
             vendor=product["vendor"],
             support_email=product["support_email"],
+            language=None,
         ),
     )
 
@@ -287,6 +335,7 @@ async def test_email_provider_propagates_bcc(
             display_name=product["display_name"],
             vendor=product["vendor"],
             support_email=product["support_email"],
+            language=None,
         ),
     )
 

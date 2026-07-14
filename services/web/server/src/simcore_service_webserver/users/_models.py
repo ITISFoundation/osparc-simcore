@@ -1,5 +1,6 @@
 from typing import Annotated, Any, NamedTuple, Self, TypedDict
 
+from common_library.gettext_support import SupportedLocale
 from models_library.api_schemas_webserver.users import MyProfileRestPatch
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
@@ -55,6 +56,7 @@ class UserModelAdapter(BaseModel):
     name: Annotated[str | None, Field(alias="user_name")] = None
     first_name: str | None = None
     last_name: str | None = None
+    language: SupportedLocale | None = None
 
     privacy_hide_username: bool | None = None
     privacy_hide_fullname: bool | None = None
