@@ -45,8 +45,8 @@ def client() -> TestClient:
 # ---------------------------------------------------------------------------
 
 
-def test_locale_middleware_x_app_locale_header(client: TestClient):
-    resp = client.get("/locale-echo", headers={"X-App-Locale": "es-ES"})
+def test_locale_middleware_x_simcore_language_header(client: TestClient):
+    resp = client.get("/locale-echo", headers={"X-Simcore-Language": "es-ES"})
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["locale"] == "es_ES"
 
@@ -57,12 +57,12 @@ def test_locale_middleware_accept_language_header(client: TestClient):
     assert resp.json()["locale"] == "zh_CN"
 
 
-def test_locale_middleware_x_app_locale_takes_precedence_over_accept_language(
+def test_locale_middleware_x_simcore_language_takes_precedence_over_accept_language(
     client: TestClient,
 ):
     resp = client.get(
         "/locale-echo",
-        headers={"X-App-Locale": "es-ES", "Accept-Language": "zh-CN"},
+        headers={"X-Simcore-Language": "es-ES", "Accept-Language": "zh-CN"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["locale"] == "es_ES"
