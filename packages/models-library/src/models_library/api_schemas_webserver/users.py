@@ -82,6 +82,17 @@ class MyProfileAddressGet(OutputSchema):
     country: str | None
 
 
+class MyProfileAddressPatch(InputSchema):
+    """Billing address: a property of the user, editable independently of pre-registration"""
+
+    institution: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")] = None
+    postal_code: str | None = None
+    country: str | None = None
+
+
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[IDStr, Field(description="Unique username identifier", alias="userName")]
@@ -229,6 +240,10 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     # NOTE: phone is updated via a dedicated endpoint!
 
     privacy: MyProfilePrivacyPatch | None = None
+    contact: Annotated[
+        MyProfileAddressPatch | None,
+        Field(description="Billing address. The user owns and can edit it directly."),
+    ] = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

@@ -314,7 +314,7 @@ async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stal
         return_value={
             dataclasses.replace(
                 the_cluster,
-                tags=the_cluster.tags | {"last_heartbeat": stale_heartbeat_time},
+                tags=the_cluster.tags | {"io.simcore.clusters-keeper.last_heartbeat": stale_heartbeat_time},
             )
         },
     )

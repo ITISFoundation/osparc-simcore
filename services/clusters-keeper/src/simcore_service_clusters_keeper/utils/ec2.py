@@ -1,14 +1,16 @@
 from textwrap import dedent
-from typing import Final
 
-from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagValue, EC2Tags
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 
-from .._meta import VERSION
 from ..constants import (
+    APPLICATION_VERSION_TAG,
+    CLUSTER_NAME_PREFIX,
+    EC2_MINIMAL_APPLICATION_TAG_KEY,
+    EC2_NAME_TAG_KEY,
     MANAGER_ROLE_TAG_VALUE,
     PRODUCT_NAME_TAG_KEY,
     ROLE_TAG_KEY,
@@ -16,23 +18,6 @@ from ..constants import (
     WALLET_ID_TAG_KEY,
 )
 from ..core.settings import ApplicationSettings
-
-_APPLICATION_TAG_KEY: Final[str] = "io.simcore.clusters-keeper"
-_APPLICATION_VERSION_TAG: Final[EC2Tags] = TypeAdapter(EC2Tags).validate_python(
-    {f"{_APPLICATION_TAG_KEY}.version": f"{VERSION}"}
-)
-
-HEARTBEAT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("last_heartbeat")
-_CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
-_EC2_MINIMAL_APPLICATION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
-    ".".join(
-        [
-            _APPLICATION_TAG_KEY,
-            "deploy",
-        ]
-    )
-)
-EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
 def get_cluster_name(
@@ -43,7 +28,7 @@ def get_cluster_name(
     is_manager: bool,
 ) -> str:
     return (
-        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}"
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{CLUSTER_NAME_PREFIX}"
         f"{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}"
         f"-user_id:{user_id}-wallet_id:{wallet_id}"
     )
@@ -51,7 +36,7 @@ def get_cluster_name(
 
 def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
     return {
-        _EC2_MINIMAL_APPLICATION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+        EC2_MINIMAL_APPLICATION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
             f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}"
         )
     }
@@ -67,7 +52,7 @@ def creation_ec2_tags(
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return (
         _minimal_identification_tag(app_settings)
-        | _APPLICATION_VERSION_TAG
+        | APPLICATION_VERSION_TAG
         | {
             # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
             EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(

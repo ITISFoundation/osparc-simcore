@@ -1082,6 +1082,85 @@ async def test_delete_file(
     ids=[SimcoreS3DataManager.get_location_name()],
     indirect=True,
 )
+@pytest.mark.parametrize(
+    "file_size",
+    [
+        pytest.param(TypeAdapter(ByteSize).validate_python("1Mib")),
+    ],
+    ids=byte_size_ids,
+)
+async def test_delete_parent_folder_path_removes_descendants_from_db(
+    sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_client: SimcoreS3API,
+    storage_s3_bucket: S3BucketName,
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    file_size: ByteSize,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    location_id: LocationID,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    parent_folder = TypeAdapter(SimcoreS3FileID).validate_python(f"{project_id}/{node_id}/sub-folderA")
+    nested_file_1 = TypeAdapter(SimcoreS3FileID).validate_python(f"{parent_folder}/first.txt")
+    nested_file_2 = TypeAdapter(SimcoreS3FileID).validate_python(f"{parent_folder}/level-2/second.txt")
+    sibling_file = TypeAdapter(SimcoreS3FileID).validate_python(f"{project_id}/{node_id}/sub-folderAB/keep.txt")
+
+    await upload_file(file_size, "first.txt", file_id=nested_file_1)
+    await upload_file(file_size, "second.txt", file_id=nested_file_2)
+    await upload_file(file_size, "keep.txt", file_id=sibling_file)
+
+    delete_url = url_from_operation_id(
+        client,
+        initialized_app,
+        "delete_file",
+        location_id=f"{location_id}",
+        file_id=parent_folder,
+    ).with_query(user_id=user_id)
+    response = await client.delete(f"{delete_url}")
+    assert_status(response, status.HTTP_204_NO_CONTENT, None)
+
+    await assert_file_meta_data_in_db(
+        sqlalchemy_async_engine,
+        file_id=nested_file_1,
+        expected_entry_exists=False,
+        expected_file_size=None,
+        expected_upload_id=None,
+        expected_upload_expiration_date=None,
+        expected_sha256_checksum=None,
+    )
+    await assert_file_meta_data_in_db(
+        sqlalchemy_async_engine,
+        file_id=nested_file_2,
+        expected_entry_exists=False,
+        expected_file_size=None,
+        expected_upload_id=None,
+        expected_upload_expiration_date=None,
+        expected_sha256_checksum=None,
+    )
+    await assert_file_meta_data_in_db(
+        sqlalchemy_async_engine,
+        file_id=sibling_file,
+        expected_entry_exists=True,
+        expected_file_size=file_size,
+        expected_upload_id=False,
+        expected_upload_expiration_date=False,
+        expected_sha256_checksum=None,
+    )
+
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=nested_file_1)
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=nested_file_2)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_copy_as_soft_link(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
