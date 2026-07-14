@@ -57,7 +57,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 from simcore_service_director_v2.core.errors import (
     ClustersKeeperNotAvailableError,
@@ -2950,6 +2950,7 @@ async def test_pipeline_not_found_error_aborts_scheduling(
 
     # Simulate a corrupted state: remove the pipeline from comp_pipelines
     async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(comp_tasks.delete().where(comp_tasks.c.project_id == f"{published_project.project.uuid}"))
         await conn.execute(
             comp_pipeline.delete().where(comp_pipeline.c.project_id == f"{published_project.project.uuid}")
         )
