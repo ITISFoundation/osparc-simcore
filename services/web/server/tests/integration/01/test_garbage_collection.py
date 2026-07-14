@@ -137,6 +137,10 @@ async def director_v2_service_mock(
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
+        # NOTE: stops the pipeline (POST .../computations/{id}:stop), used e.g. when
+        # deleting/trashing a project: batch_stop_services_in_project calls stop_pipeline
+        # (not delete_pipeline) so it must be mocked separately here.
+        mock.post(get_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
         yield mock
 
 
