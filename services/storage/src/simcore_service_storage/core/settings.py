@@ -54,8 +54,8 @@ class DsmCleanerSettings(BaseCustomSettings):
     def _exports_interval_lt_retention(self) -> "DsmCleanerSettings":
         if self.STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL >= self.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL:
             msg = (
-                f"{self.STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL.__qualname__} must be strictly less than "
-                f"{self.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL.__qualname__}"
+                "STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL must be strictly less than "
+                "STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL"
             )
             raise ValueError(msg)
         return self
