@@ -1,8 +1,6 @@
-from typing import cast
-
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
-from models_library.groups import GroupAtDB, GroupID
+from models_library.groups import GroupAtDB, GroupID, GroupIDAdapter
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
@@ -36,17 +34,13 @@ class GroupsRepository(BaseRepository):
 
     async def get_user_gid_from_email(self, user_email: LowerCaseEmailStr) -> GroupID | None:
         async with self.db_engine.connect() as conn:
-            return cast(
-                GroupID | None,
-                await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email)),
-            )
+            gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email))
+            return GroupIDAdapter.validate_python(gid) if gid is not None else None
 
     async def get_gid_from_affiliation(self, affiliation: str) -> GroupID | None:
         async with self.db_engine.connect() as conn:
-            return cast(
-                GroupID | None,
-                await conn.scalar(sa.select(groups.c.gid).where(groups.c.name == affiliation)),
-            )
+            gid = await conn.scalar(sa.select(groups.c.gid).where(groups.c.name == affiliation))
+            return GroupIDAdapter.validate_python(gid) if gid is not None else None
 
     async def get_user_email_from_gid(self, gid: PositiveInt) -> LowerCaseEmailStr | None:
         async with self.db_engine.connect() as conn:
