@@ -7,8 +7,10 @@
 import pytest
 from models_library.string_types import (
     _SHORT_TRUNCATED_STR_MAX_LENGTH,
+    AddressLineSafeStr,
     DescriptionSafeStr,
     NameSafeStr,
+    PostalCodeSafeStr,
     ShortTruncatedStr,
 )
 from pydantic import BaseModel, TypeAdapter, ValidationError
@@ -140,3 +142,56 @@ def test_safe_string_types(name: str, description: str, should_pass: bool):
                 "string_too_short",
                 "string_too_long",
             ), error["msg"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "742 Evergreen Terrace",
+        "Bâtiment A, 12 Rue de l'Église",
+        "Apt. #4, O'Malley Street",
+        "A" * 200,  # max length
+    ],
+)
+def test_address_line_safe_str_accepts_realistic_addresses(value: str):
+    assert TypeAdapter(AddressLineSafeStr).validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "A" * 201,  # exceeds max length
+        "<script>alert(1)</script>",
+        "javascript:alert(1)",
+    ],
+)
+def test_address_line_safe_str_rejects_invalid_addresses(value: str):
+    with pytest.raises(ValidationError):
+        TypeAdapter(AddressLineSafeStr).validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "12345",
+        "12345-6789",
+        "SW1A 1AA",
+    ],
+)
+def test_postal_code_safe_str_accepts_valid_codes(value: str):
+    assert TypeAdapter(PostalCodeSafeStr).validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "1" * 21,  # exceeds max length
+        "<script>alert(1)</script>",
+        "12345;DROP TABLE users",
+    ],
+)
+def test_postal_code_safe_str_rejects_invalid_codes(value: str):
+    with pytest.raises(ValidationError):
+        TypeAdapter(PostalCodeSafeStr).validate_python(value)

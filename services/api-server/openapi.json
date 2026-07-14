@@ -9346,25 +9346,23 @@
           "title": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ShortTruncatedStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Title",
             "empty": true
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/LongTruncatedStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description",
             "empty": true
           }
         },
@@ -10726,6 +10724,9 @@
         "title": "LogLink"
       },
       "LogMessageStr": {
+        "type": "string"
+      },
+      "LongTruncatedStr": {
         "type": "string"
       },
       "LowerCaseEmailStr": {
@@ -13129,6 +13130,9 @@
           "pricingUnits"
         ],
         "title": "ServicePricingPlanGetLegacy"
+      },
+      "ShortTruncatedStr": {
+        "type": "string"
       },
       "Solver": {
         "properties": {
