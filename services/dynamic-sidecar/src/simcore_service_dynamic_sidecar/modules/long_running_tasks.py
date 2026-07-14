@@ -389,7 +389,7 @@ async def restore_user_services_state_paths(
                     state_path=path,
                     index=k,
                 )
-                for k, path in enumerate(sorted(mounted_volumes.disk_state_paths_iter()))
+                for k, path in enumerate(sorted(state_paths))
             ),
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
             reraise=True,  # this should raise if there is an issue
