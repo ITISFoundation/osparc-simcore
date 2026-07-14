@@ -22746,6 +22746,17 @@
             ],
             "title": "Phone"
           },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Persisted UI/communications language. None means no persisted choice."
+          },
           "role": {
             "type": "string",
             "enum": [
@@ -22863,6 +22874,17 @@
               }
             ],
             "title": "Username"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Persisted UI/communications language. The user owns and can edit it directly."
           },
           "privacy": {
             "anyOf": [
@@ -28876,6 +28898,14 @@
         },
         "type": "object",
         "title": "StudyUI"
+      },
+      "SupportedLocale": {
+        "type": "string",
+        "enum": [
+          "en",
+          "es_ES",
+          "zh_CN"
+        ]
       },
       "TagAccessRights": {
         "properties": {
