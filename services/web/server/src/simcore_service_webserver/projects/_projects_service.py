@@ -902,11 +902,11 @@ async def _check_project_node_has_all_required_inputs(  # noqa: C901
         permission="read",
     )
 
-    nodes_map = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
+    project_nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
 
-    if node_id not in nodes_map:
+    if node_id not in project_nodes:
         raise NodeNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_id}")
-    node = nodes_map[node_id]
+    node = project_nodes[node_id]
 
     unset_required_inputs: list[str] = []
     unset_outputs_in_upstream: list[tuple[str, str]] = []
@@ -924,7 +924,7 @@ async def _check_project_node_has_all_required_inputs(  # noqa: C901
         source_node_id = input_entry.node_uuid
         source_output_key = input_entry.output
 
-        source_node = nodes_map[source_node_id]
+        source_node = project_nodes[source_node_id]
 
         output_entry = None
         if source_node.outputs:

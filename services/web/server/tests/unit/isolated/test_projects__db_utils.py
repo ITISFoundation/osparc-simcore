@@ -6,12 +6,9 @@ import datetime
 import json
 import re
 from copy import deepcopy
-from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from faker import Faker
-from models_library.groups import GroupID
 from simcore_service_webserver.projects._projects_repository_legacy import (
     convert_to_db_names,
     convert_to_schema_names,
@@ -106,13 +103,3 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
     db_entries = convert_to_schema_names(fake_db_dict, fake_email)
     assert "prjOwner" in db_entries
     assert db_entries["prjOwner"] == fake_email
-
-
-@pytest.fixture
-def group_id(faker: Faker) -> GroupID:
-    return faker.pyint(min_value=1)
-
-
-@dataclass
-class FakeUserGroup:
-    gid: int

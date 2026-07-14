@@ -187,3 +187,6 @@ repo*.config*
 
 # uv
 .uv-bin/*
+
+# graphify
+/**/graphify-out/cache/*
