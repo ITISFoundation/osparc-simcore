@@ -47,7 +47,6 @@ async def _send_sms_code(
             twilio_messaging_sid="sid",
             twilio_alpha_numeric_sender="sender",
             first_name=_FIRST_NAME,
-            product_name="osparc",
             user_id=user_id,
             locale=locale,
         )
@@ -75,7 +74,6 @@ async def test_send_sms_code_forwards_locale_and_user_id_to_resolver(mock_twilio
     _, kwargs = mock_resolve.call_args
     assert kwargs["user_id"] == 42
     assert kwargs["locale"] is None
-    assert kwargs["product_name"] == "osparc"
     mock_twilio_client.messages.create.assert_called_once()
 
 
