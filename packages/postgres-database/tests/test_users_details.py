@@ -345,13 +345,14 @@ async def test_get_billing_details_from_pre_registration(
     asyncpg_engine: AsyncEngine,
     pre_registered_user: PreRegisteredUserData,
     registered_user: Row,
-    product: ProductRowDict,
 ):
-    """Test that billing details can be retrieved from pre-registration data."""
+    """Test that the billing address is seeded once (on account creation) from the
+    most recent pre-registration data and can be retrieved from `users_billing_details`.
+    """
     _, fake_pre_registration_data = pre_registered_user
 
     repo = UsersRepo(asyncpg_engine)
-    invoice_data = await repo.get_billing_details(user_id=registered_user.id, product_name=product["name"])
+    invoice_data = await repo.get_billing_details(user_id=registered_user.id)
     assert invoice_data is not None
 
     # Test UserAddress model conversion
@@ -365,50 +366,24 @@ async def test_get_billing_details_from_pre_registration(
 
 
 @pytest.mark.acceptance_test(
-    "cannot buy credits on a product without pre-registration "
+    "skip seeding when the most recent pre-registration lacks a country "
     "in https://github.com/ITISFoundation/private-issues/issues/600"
 )
-async def test_get_billing_details_for_a_different_product(
-    asyncpg_engine: AsyncEngine,
-    pre_registered_user: PreRegisteredUserData,
-    registered_user: Row,
-    product_factory: CreateProductCallable,
-):
-    """The billing address belongs to the person, not the product: a user
-    pre-registered on one product must remain invoiceable on another product
-    they have access to (e.g. buying credits on a second product).
-    """
-    _, fake_pre_registration_data = pre_registered_user
-
-    # User has a single pre-registration (on the `product` fixture)
-    # but buys credits on a *different* product
-    other_product = await product_factory("other-product")
-
-    repo = UsersRepo(asyncpg_engine)
-    # Billing details must still be found for the other product
-    invoice_data = await repo.get_billing_details(user_id=registered_user.id, product_name=other_product["name"])
-    assert invoice_data is not None
-
-    user_address = UserAddress.create_from_db(invoice_data)
-    assert user_address.line1
-    assert user_address.state == fake_pre_registration_data["state"]
-    assert user_address.postal_code == fake_pre_registration_data["postal_code"]
-    assert user_address.country == fake_pre_registration_data["country"]
-
-
-@pytest.mark.acceptance_test(
-    "skip pre-registration rows with missing country in https://github.com/ITISFoundation/private-issues/issues/600"
-)
-async def test_get_billing_details_skips_rows_without_country(
+async def test_get_billing_details_returns_none_when_most_recent_pre_registration_lacks_country(
     asyncpg_engine: AsyncEngine,
     pre_registered_user: PreRegisteredUserData,
     faker: Faker,
     product_factory: CreateProductCallable,
 ):
-    pre_email, valid_pre_registration_data = pre_registered_user
+    """The billing address is seeded only from the most recent pre-registration row
+    at account-creation time (no fallback across older rows). If that most recent
+    row lacks a country, no address is seeded.
+    """
+    pre_email, _ = pre_registered_user
 
     other_product = await product_factory("other-product")
-    invalid_other_product_pre_registration = random_pre_registration_details(
+    # inserted after `pre_registered_user`, so this is the most recent row
+    incomplete_pre_registration = random_pre_registration_details(
         faker,
         pre_email=pre_email,
         product_name=other_product["name"],
@@ -418,9 +393,7 @@ async def test_get_billing_details_skips_rows_without_country(
     async with transaction_context(asyncpg_engine) as connection:
         repo = UsersRepo(asyncpg_engine)
 
-        await connection.execute(
-            sa.insert(users_pre_registration_details).values(**invalid_other_product_pre_registration)
-        )
+        await connection.execute(sa.insert(users_pre_registration_details).values(**incomplete_pre_registration))
 
         new_user = await repo.new_user(
             connection,
@@ -435,11 +408,55 @@ async def test_get_billing_details_skips_rows_without_country(
             new_user_email=new_user.email,
         )
 
-    invoice_data = await repo.get_billing_details(user_id=new_user.id, product_name=other_product["name"])
-    assert invoice_data is not None
+    invoice_data = await repo.get_billing_details(user_id=new_user.id)
+    assert invoice_data is None
 
-    user_address = UserAddress.create_from_db(invoice_data)
-    assert user_address.country == valid_pre_registration_data["country"]
+
+async def test_billing_details_not_updated_by_later_pre_registration(
+    asyncpg_engine: AsyncEngine,
+    pre_registered_user: PreRegisteredUserData,
+    registered_user: Row,
+    faker: Faker,
+    product_owner_user: ProductOwnerUserRowDict,
+    product_factory: CreateProductCallable,
+):
+    """Once seeded, the billing address belongs to the user: a later pre-registration
+    (e.g. requesting access to a different product with a different address) must not
+    overwrite it.
+    """
+    _, fake_pre_registration_data = pre_registered_user
+
+    repo = UsersRepo(asyncpg_engine)
+    invoice_data_before = await repo.get_billing_details(user_id=registered_user.id)
+    assert invoice_data_before is not None
+
+    # user requests access to a different product, with a different address
+    other_product = await product_factory("other-product")
+    async with transaction_context(asyncpg_engine) as connection:
+        await connection.execute(
+            sa.insert(users_pre_registration_details).values(
+                **random_pre_registration_details(
+                    faker,
+                    pre_email=registered_user.email,
+                    created_by=product_owner_user["id"],
+                    product_name=other_product["name"],
+                    country="Wonderland",
+                )
+            )
+        )
+        # this is only ever invoked upon *new* user creation, but re-invoking it here
+        # (e.g. simulating the reconciliation of the new pre-registration) must not
+        # touch the already-seeded billing address
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=registered_user.id,
+            new_user_email=registered_user.email,
+        )
+
+    invoice_data_after = await repo.get_billing_details(user_id=registered_user.id)
+    assert invoice_data_after is not None
+    assert invoice_data_after.country == fake_pre_registration_data["country"]
+    assert invoice_data_after.country != "Wonderland"
 
 
 @pytest.mark.acceptance_test(

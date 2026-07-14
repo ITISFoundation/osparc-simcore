@@ -291,7 +291,7 @@ async def init_creation_of_wallet_payment(
 
     # user info
     user = await users_service.get_user_display_and_id_names(app, user_id=user_id)
-    user_invoice_address = await users_service.get_user_invoice_address(app, user_id=user_id, product_name=product_name)
+    user_invoice_address = await users_service.get_user_invoice_address(app, user_id=user_id)
 
     # stripe info
     product_stripe_info = await products_service.get_product_stripe_info(app, product_name=product_name)
@@ -376,7 +376,7 @@ async def pay_with_payment_method(
 
     # user info
     user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
-    user_invoice_address = await users_service.get_user_invoice_address(app, user_id=user_id, product_name=product_name)
+    user_invoice_address = await users_service.get_user_invoice_address(app, user_id=user_id)
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
