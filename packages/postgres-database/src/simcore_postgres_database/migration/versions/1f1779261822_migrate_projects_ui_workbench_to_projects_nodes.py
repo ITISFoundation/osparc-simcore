@@ -16,6 +16,11 @@ down_revision = "66969aad0315"
 branch_labels = None
 depends_on = None
 
+# Trigger that bumps projects_nodes.modified on every row change.
+# The UI backfill below is not a real data change, so we disable it while
+# backfilling to preserve each node's original `modified` timestamp.
+_MODIFIED_TIMESTAMP_TRIGGER = "auto_update_modified_timestamp"
+
 
 def upgrade():
     op.add_column(
@@ -27,6 +32,8 @@ def upgrade():
             nullable=False,
         ),
     )
+
+    op.execute(sa.text(f"ALTER TABLE projects_nodes DISABLE TRIGGER {_MODIFIED_TIMESTAMP_TRIGGER}"))
 
     # Copy each per-node object from projects.ui.workbench into the matching projects_nodes.ui
     op.execute(
@@ -42,6 +49,8 @@ def upgrade():
             """
         )
     )
+
+    op.execute(sa.text(f"ALTER TABLE projects_nodes ENABLE TRIGGER {_MODIFIED_TIMESTAMP_TRIGGER}"))
 
     # Remove the now-migrated workbench key from projects.ui
     op.execute(
