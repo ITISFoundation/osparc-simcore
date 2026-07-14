@@ -319,21 +319,29 @@ class FileMetaDataRepository(BaseRepository):
         self,
         *,
         connection: AsyncConnection | None = None,
-        user_id: UserID | None = None,
         project_ids: list[ProjectID] | None = None,
-        file_ids: list[SimcoreS3FileID] | None = None,
         expired_after: datetime.datetime | None = None,
-    ) -> list[FileMetaDataAtDB]:
+        file_id_prefix: str | None = None,
+        created_before: datetime.datetime | None = None,
+    ) -> AsyncGenerator[FileMetaDataAtDB]:
         stmt = sa.select(file_meta_data).where(
             and_(
-                (file_meta_data.c.user_id == f"{user_id}") if user_id else sa.true(),
                 ((file_meta_data.c.project_id.in_([f"{p}" for p in project_ids])) if project_ids else sa.true()),
-                (file_meta_data.c.file_id.in_(file_ids)) if file_ids else sa.true(),
                 ((file_meta_data.c.upload_expires_at < expired_after) if expired_after else sa.true()),
+                (file_meta_data.c.file_id.startswith(file_id_prefix) if file_id_prefix else sa.true()),
+                (
+                    (
+                        file_meta_data.c.created_at
+                        < created_before.astimezone(datetime.UTC).replace(tzinfo=None).isoformat()
+                    )
+                    if created_before
+                    else sa.true()
+                ),
             )
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return [FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)]
+            async for row in await conn.stream(stmt):
+                yield FileMetaDataAtDB.model_validate(row)
 
     async def total(self, *, connection: AsyncConnection | None = None) -> int:
         """returns the number of uploaded file entries"""

@@ -2,6 +2,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+import datetime
 import math
 import random
 from collections.abc import AsyncIterable, Awaitable, Callable
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from aws_library.s3 import S3KeyNotFoundError, SimcoreS3API
 from aws_library.s3._models import S3ObjectKey
 from faker import Faker
 from models_library.basic_types import SHA256Str
@@ -24,8 +26,12 @@ from pytest_simcore.helpers.storage_utils import (
     ProjectWithFilesParams,
 )
 from servicelib.progress_bar import ProgressBarData
-from simcore_service_storage.constants import LinkType
-from simcore_service_storage.models import FileMetaData
+from simcore_postgres_database.storage_models import (
+    file_meta_data as file_meta_data_table,
+)
+from simcore_service_storage.constants import EXPORTS_S3_PREFIX, LinkType
+from simcore_service_storage.exceptions.errors import FileMetaDataNotFoundError
+from simcore_service_storage.models import FileMetaData, S3BucketName
 from simcore_service_storage.modules.db.file_meta_data import FileMetaDataRepository
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -414,8 +420,7 @@ def _get_folder_and_files_selection(
 async def _get_fmds_count(
     connection: AsyncEngine,
 ) -> int:
-    result = await FileMetaDataRepository.instance(connection).list_fmds()
-    return len(result)
+    return len([1 async for _ in FileMetaDataRepository.instance(connection).list_fmds()])
 
 
 async def _assert_meta_data_entries_count(connection: AsyncEngine, *, count: int) -> None:
@@ -490,6 +495,189 @@ async def test_create_s3_export_abort_upload_upon_error(
                 progress_bar=progress_bar,
             )
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
+
+
+async def _set_created_at(
+    sqlalchemy_async_engine: AsyncEngine,
+    file_id: SimcoreS3FileID,
+    created_at: datetime.datetime,
+) -> None:
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            file_meta_data_table.update()
+            .where(file_meta_data_table.c.file_id == file_id)
+            .values(
+                created_at=(
+                    created_at.astimezone(datetime.UTC).replace(tzinfo=None)
+                    if created_at.tzinfo
+                    else created_at.replace(tzinfo=None)
+                ).isoformat()
+            )
+        )
+
+
+async def test_clean_expired_exports_deletes_expired_export(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    product_name: ProductName,
+    paths_for_export: set[SimcoreS3FileID],
+    sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_client: SimcoreS3API,
+    storage_s3_bucket: S3BucketName,
+):
+    selection_to_export = {S3ObjectKey(project_id) for project_id in {Path(p).parents[-2] for p in paths_for_export}}
+    async with ProgressBarData(num_steps=1, description="data export") as progress_bar:
+        file_id = await simcore_s3_dsm.create_s3_export(
+            user_id,
+            product_name,
+            selection_to_export,
+            progress_bar=progress_bar,
+        )
+
+    # export is fresh: cleaning should not remove it
+    await simcore_s3_dsm.clean_expired_exports()
+    assert await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
+
+    # back-date the export past the default retention (30 days)
+    await _set_created_at(
+        sqlalchemy_async_engine,
+        file_id,
+        datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=31),
+    )
+
+    await simcore_s3_dsm.clean_expired_exports()
+
+    with pytest.raises(FileMetaDataNotFoundError):
+        await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
+
+
+async def test_clean_expired_exports_keeps_recent_export(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    product_name: ProductName,
+    paths_for_export: set[SimcoreS3FileID],
+    sqlalchemy_async_engine: AsyncEngine,
+    storage_s3_client: SimcoreS3API,
+    storage_s3_bucket: S3BucketName,
+    cleanup_files_closure: Callable[[SimcoreS3FileID], None],
+):
+    selection_to_export = {S3ObjectKey(project_id) for project_id in {Path(p).parents[-2] for p in paths_for_export}}
+    async with ProgressBarData(num_steps=1, description="data export") as progress_bar:
+        file_id = await simcore_s3_dsm.create_s3_export(
+            user_id,
+            product_name,
+            selection_to_export,
+            progress_bar=progress_bar,
+        )
+    cleanup_files_closure(file_id)
+
+    # recently created, well within the default 30 days retention
+    await _set_created_at(
+        sqlalchemy_async_engine,
+        file_id,
+        datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1),
+    )
+
+    await simcore_s3_dsm.clean_expired_exports()
+
+    assert await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
+    assert await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_clean_expired_exports_does_not_touch_non_export_files(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    sqlalchemy_async_engine: AsyncEngine,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    storage_s3_client: SimcoreS3API,
+    storage_s3_bucket: S3BucketName,
+    file_size: ByteSize,
+):
+    _, file_id = await upload_file(file_size, "some_old_file.txt")
+
+    # much older than the exports retention, but this is a regular project file, not an export
+    await _set_created_at(
+        sqlalchemy_async_engine,
+        file_id,
+        datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365),
+    )
+
+    await simcore_s3_dsm.clean_expired_exports()
+
+    assert await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
+    assert await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_list_fmds_filters_by_file_id_prefix(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    product_name: ProductName,
+    paths_for_export: set[SimcoreS3FileID],
+    sqlalchemy_async_engine: AsyncEngine,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """an entry under the `exports/` prefix must be included, one outside of it must be excluded"""
+    selection_to_export = {S3ObjectKey(project_id) for project_id in {Path(p).parents[-2] for p in paths_for_export}}
+    async with ProgressBarData(num_steps=1, description="data export") as progress_bar:
+        included_file_id = await simcore_s3_dsm.create_s3_export(
+            user_id,
+            product_name,
+            selection_to_export,
+            progress_bar=progress_bar,
+        )
+    _, excluded_file_id = await upload_file(file_size, "some_regular_file.dat")
+
+    found_file_ids = {
+        fmd.file_id
+        async for fmd in FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(
+            file_id_prefix=f"{EXPORTS_S3_PREFIX}/"
+        )
+    }
+    assert included_file_id in found_file_ids
+    assert excluded_file_id not in found_file_ids
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_list_fmds_filters_by_created_before(
+    sqlalchemy_async_engine: AsyncEngine,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """an entry created before the threshold must be included, one created after it must be excluded"""
+    now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+    threshold = now - datetime.timedelta(days=30)
+
+    _, included_file_id = await upload_file(file_size, "old_file.dat")
+    await _set_created_at(sqlalchemy_async_engine, included_file_id, now - datetime.timedelta(days=40))
+
+    _, excluded_file_id = await upload_file(file_size, "recent_file.dat")
+    await _set_created_at(sqlalchemy_async_engine, excluded_file_id, now - datetime.timedelta(days=5))
+
+    found_file_ids = {
+        fmd.file_id
+        async for fmd in FileMetaDataRepository.instance(sqlalchemy_async_engine).list_fmds(created_before=threshold)
+    }
+    assert included_file_id in found_file_ids
+    assert excluded_file_id not in found_file_ids
 
 
 @pytest.mark.parametrize(
