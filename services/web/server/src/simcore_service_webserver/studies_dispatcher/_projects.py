@@ -8,15 +8,17 @@ Keeps functionality that couples with the following app modules
 
 import logging
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from common_library.json_serialization import json_loads
+from models_library.api_schemas_webserver.projects_nodes_ui import NodeUI
 from models_library.products import ProductName
 from models_library.projects import DateTimeStr, Project, ProjectID, ProjectType
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
+from models_library.projects_nodes_layout import Position
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
@@ -37,8 +39,8 @@ _FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python("simcore/
 _FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python("1.0.0")
 
 # Default node positions on the workbench canvas
-_DEFAULT_FILE_PICKER_POSITION: dict = {"position": {"x": 305, "y": 229}}
-_DEFAULT_SERVICE_NODE_POSITION: dict = {"position": {"x": 633, "y": 229}}
+_DEFAULT_FILE_PICKER_POSITION: dict[str, Any] = NodeUI(position=Position(x=305, y=229)).model_dump(mode="json")
+_DEFAULT_SERVICE_NODE_POSITION: dict[str, Any] = NodeUI(position=Position(x=633, y=229)).model_dump(mode="json")
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
