@@ -17,7 +17,6 @@ Therefore,
 
 import contextlib
 import logging
-from datetime import timedelta
 from typing import Annotated, Any, Final, cast
 
 import networkx as nx
@@ -91,8 +90,6 @@ from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
-
-_PIPELINE_ABORT_TIMEOUT_S: Final[timedelta] = timedelta(seconds=30)
 
 _logger = logging.getLogger(__name__)
 
@@ -612,7 +609,7 @@ async def delete_computation(
             return retry_state.outcome.result()
 
         @retry(
-            stop=stop_after_delay(_PIPELINE_ABORT_TIMEOUT_S.total_seconds()),
+            stop=stop_after_delay(computation_stop.wait_for),
             wait=wait_random(0, 2),
             retry_error_callback=return_last_value,
             retry=retry_if_result(lambda result: result is False),
@@ -629,7 +626,7 @@ async def delete_computation(
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Pipeline {project_id} could not be stopped properly "
-                f"after {_PIPELINE_ABORT_TIMEOUT_S.total_seconds()}s. "
+                f"after {computation_stop.wait_for.total_seconds()}s. "
                 "It will be marked for deletion and retried by the system.",
             )
 
