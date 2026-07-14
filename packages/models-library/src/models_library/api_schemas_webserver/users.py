@@ -6,6 +6,7 @@ from typing import Annotated, Any, ClassVar, Literal, Self
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
+from common_library.gettext_support import SupportedLocale
 from common_library.users_enums import AccountRequestStatus, UserStatus
 from pydantic import (
     AfterValidator,
@@ -100,6 +101,10 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
     phone: str | None = None
+    language: Annotated[
+        SupportedLocale | None,
+        Field(description="Persisted UI/communications language. None means no persisted choice."),
+    ] = None
 
     role: Literal[
         "ANONYMOUS",
@@ -202,6 +207,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
                     "email",
                     "role",
                     "phone",
+                    "language",
                     "privacy",
                     "expiration_date",
                 },
@@ -238,6 +244,10 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     last_name: LastNameSafeStr | None = None
     user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     # NOTE: phone is updated via a dedicated endpoint!
+    language: Annotated[
+        SupportedLocale | None,
+        Field(description="Persisted UI/communications language. The user owns and can edit it directly."),
+    ] = None
 
     privacy: MyProfilePrivacyPatch | None = None
     contact: Annotated[
