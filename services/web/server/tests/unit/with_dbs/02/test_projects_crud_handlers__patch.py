@@ -86,14 +86,14 @@ async def test_patch_project(
     await assert_status(resp, expected)
 
     # UI
-    _patch_ui_2 = {
+    _patch_ui = {
         "ui": {
             "mode": "workbench",
             "slideshow": {},
             "currentNodeId": "d03d2752-e970-42cd-9483-69440ab9e4b7",
         }
     }
-    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui_2))
+    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui))
     await assert_status(resp, expected)
     # quality
     _patch_quality = {
