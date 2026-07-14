@@ -61,9 +61,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -112,9 +110,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -182,9 +178,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -253,9 +247,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -359,9 +351,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -445,9 +435,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -512,9 +500,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -634,9 +620,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -686,9 +670,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -738,9 +720,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -816,9 +796,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -867,9 +845,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -929,9 +905,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -1044,9 +1018,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -1096,9 +1068,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -1148,9 +1118,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -1201,9 +1169,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -2093,14 +2059,12 @@
           "user_id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_UserIDInt"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "User Id"
+            ]
           },
           "user_name": {
             "anyOf": [
@@ -2547,6 +2511,10 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     }
   }

@@ -3245,8 +3245,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "minimum": 0
+                  "$ref": "#/components/schemas/ClusterID"
                 },
                 {
                   "type": "null"
@@ -5597,8 +5596,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "minimum": 0
+                  "$ref": "#/components/schemas/ClusterID"
                 },
                 {
                   "type": "null"
@@ -9457,6 +9455,10 @@
         ],
         "title": "ClientFileUploadData"
       },
+      "ClusterID": {
+        "type": "integer",
+        "minimum": 0
+      },
       "CreateResponseRequest": {
         "properties": {
           "background": {
@@ -9792,10 +9794,6 @@
           "minPaymentAmountUsd"
         ],
         "title": "GetCreditPriceLegacy"
-      },
-      "GroupID": {
-        "type": "integer",
-        "exclusiveMinimum": 0
       },
       "Groups": {
         "properties": {
@@ -10356,14 +10354,10 @@
             "title": "Version"
           },
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Wallet Id"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "product_name": {
             "type": "string",
@@ -11694,9 +11688,7 @@
             "description": "Persisted UI/communications language. None means no persisted choice."
           },
           "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "login": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -13903,9 +13895,7 @@
       "WalletGetWithAvailableCreditsLegacy": {
         "properties": {
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "name": {
             "type": "string",
@@ -13925,7 +13915,7 @@
             "title": "Description"
           },
           "owner": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "thumbnail": {
             "anyOf": [
@@ -13976,6 +13966,18 @@
           "INACTIVE"
         ],
         "title": "WalletStatus"
+      },
+      "_GroupIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_WalletIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     },
     "securitySchemes": {
