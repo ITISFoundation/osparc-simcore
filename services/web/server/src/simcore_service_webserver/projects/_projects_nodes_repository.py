@@ -11,6 +11,7 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from simcore_postgres_database.webserver_models import projects_nodes
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
@@ -177,6 +178,13 @@ async def update(
     partial_node: PartialNode,
 ) -> Node:
     values = _node_dump_for_db(partial_node, exclude_unset=True)
+
+    # `ui` is a compound JSONB object (e.g. {position, marker}); merge it with the
+    # stored value instead of replacing it, so a partial patch (e.g. only `position`)
+    # preserves sibling keys (e.g. `marker`). `||` is a shallow merge, which is enough
+    # because each sub-object (position/marker) is always patched as a whole.
+    if "ui" in values:
+        values["ui"] = projects_nodes.c.ui.concat(sa.type_coerce(values["ui"], postgresql.JSONB))
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(

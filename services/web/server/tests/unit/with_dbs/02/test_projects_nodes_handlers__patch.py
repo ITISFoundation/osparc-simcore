@@ -179,6 +179,14 @@ async def test_patch_project_node(
         data=json.dumps(_patch_ui),
     )
     await assert_status(resp, expected)
+    # ui partial patch: only `position` is sent, the previously set `marker` must be preserved (merge semantics)
+    _patch_ui_position = {"ui": {"position": {"x": 33, "y": 44}}}
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_ui_position),
+    )
+    await assert_status(resp, expected)
+    _expected_ui = {"position": {"x": 33, "y": 44}, "marker": {"color": "#123456"}}
 
     # Get project
     get_url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
@@ -194,7 +202,7 @@ async def test_patch_project_node(
     assert _tested_node["inputNodes"] == _patch_input_nodes["inputNodes"]
     assert _tested_node["bootOptions"] == _patch_boot_options["bootOptions"]
     assert _tested_node["outputs"] == _patch_outputs["outputs"]
-    assert not DeepDiff(_tested_node["ui"], _patch_ui["ui"])
+    assert not DeepDiff(_tested_node["ui"], _expected_ui)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
