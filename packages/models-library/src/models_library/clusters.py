@@ -1,6 +1,6 @@
 from enum import auto
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from pydantic.config import JsonDict
@@ -54,7 +54,11 @@ class TLSAuthentication(_AuthenticationBase):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-type ClusterAuthentication = NoAuthentication | TLSAuthentication
+# NOTE: kept as a legacy `TypeAlias` (not PEP 695 `type` statement) on purpose: pydantic-settings
+# fails to detect PEP 695 `type` aliases (`TypeAliasType`) as "complex" fields, so env vars for
+# settings fields typed with this alias (e.g. director-v2/autoscaling/clusters-keeper
+# `*_CLUSTER_AUTH`) never get JSON-decoded and validation crashes.
+ClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication  # noqa: UP040
 
 
 class BaseCluster(BaseModel):
