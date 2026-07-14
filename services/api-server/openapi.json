@@ -7263,8 +7263,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -7381,8 +7380,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -7522,8 +7520,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
