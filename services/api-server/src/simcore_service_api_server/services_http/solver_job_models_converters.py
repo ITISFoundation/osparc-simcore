@@ -12,7 +12,7 @@ import arrow
 from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_nodes_ui import NodeUI
-from models_library.api_schemas_webserver.projects_ui import ProductUI
+from models_library.api_schemas_webserver.projects_ui import ProjectUI
 from models_library.basic_types import KeyIDStr, VersionStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
@@ -191,7 +191,7 @@ def create_new_project_for_job(
         description=description or f"Study associated to solver/study/program job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
         workbench={solver_id: solver_service},
-        ui=ProductUI(
+        ui=ProjectUI(
             slideshow={},
             current_node_id=solver_id,  # type: ignore[arg-type]
             annotations={},

@@ -50,7 +50,7 @@ from ..utils.common_validators import (
 from ..workspaces import WorkspaceID
 from ._base import EmptyModel, InputSchema, OutputSchema
 from .permalinks import ProjectPermalink
-from .projects_ui import ProductUI
+from .projects_ui import ProjectUI
 
 
 class ProjectCreateNew(InputSchema):
@@ -68,7 +68,7 @@ class ProjectCreateNew(InputSchema):
     tags: Annotated[list[int], Field(default_factory=list)] = DEFAULT_FACTORY
     classifiers: Annotated[list[ClassifierID], Field(default_factory=list)] = DEFAULT_FACTORY
 
-    ui: ProductUI | None = None
+    ui: ProjectUI | None = None
 
     workspace_id: WorkspaceID | None = None
     folder_id: FolderID | None = None
@@ -148,7 +148,7 @@ class ProjectGet(OutputSchema):
     quality: Annotated[dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})] = DEFAULT_FACTORY
 
     # front-end
-    ui: EmptyModel | ProductUI | None = None
+    ui: EmptyModel | ProjectUI | None = None
     dev: dict | None
 
     permalink: ProjectPermalink | None = None
@@ -232,7 +232,7 @@ class ProjectReplace(InputSchema):
         Field(default_factory=list, json_schema_extra={"default": []}),
     ] = DEFAULT_FACTORY
 
-    ui: ProductUI | None = None
+    ui: ProjectUI | None = None
 
     quality: Annotated[dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})] = DEFAULT_FACTORY
 
@@ -249,7 +249,7 @@ class ProjectPatch(InputSchema):
     classifiers: list[ClassifierID] | None = None
     dev: dict | None = None
     ui: Annotated[
-        ProductUI | None,
+        ProjectUI | None,
         BeforeValidator(empty_str_to_none_pre_validator),
         PlainSerializer(
             lambda obj: jsonable_encoder(
@@ -276,7 +276,7 @@ class ProjectDocument(OutputSchema):
     dev: dict | None
     quality: dict[str, Any]
     workbench: NodesDict
-    ui: ProductUI | None
+    ui: ProjectUI | None
     type: ProjectType
     template_type: ProjectTemplateType | None
 
