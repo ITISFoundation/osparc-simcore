@@ -42,7 +42,7 @@ from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import copy_data_folders_from_project, get_project_total_size_simcore_s3
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
-from . import _folders_repository, _projects_repository, _projects_service
+from . import _folders_repository, _projects_repository, _projects_service, _trash_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
 from ._projects_repository_legacy import ProjectDBAPI
@@ -71,16 +71,14 @@ async def _cleanup_failed_project(
     app: web.Application,
     project_uuid: ProjectID,
     user_id: UserID,
-    simcore_user_agent: str,
     product_name: ProductName,
 ) -> None:
     with log_catch(_logger), log_context(_logger, logging.INFO, f"cleaning up failed project {project_uuid=}"):
-        await _projects_service.submit_delete_project_task(
-            app=app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            simcore_user_agent=simcore_user_agent,
+        await _trash_service.mark_for_immediate_deletion(
+            app,
             product_name=product_name,
+            user_id=user_id,
+            project_id=project_uuid,
         )
 
 
@@ -97,7 +95,6 @@ async def _cleanup_project_on_error(
     app: web.Application,
     *,
     user_id: UserID,
-    simcore_user_agent: str,
     product_name: ProductName,
 ) -> AsyncIterator[_ProjectCleanupContext]:
     """Cleans up the project if the wrapped block raises *after* the project
@@ -108,11 +105,11 @@ async def _cleanup_project_on_error(
         yield ctx
     except asyncio.CancelledError:
         if ctx.project_uuid is not None:
-            await _cleanup_failed_project(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
+            await _cleanup_failed_project(app, ctx.project_uuid, user_id, product_name)
         raise
     except Exception:
         if ctx.project_uuid is not None:
-            await _cleanup_failed_project(app, ctx.project_uuid, user_id, simcore_user_agent, product_name)
+            await _cleanup_failed_project(app, ctx.project_uuid, user_id, product_name)
         raise
 
 
@@ -310,11 +307,11 @@ async def _compose_project_data(
 
         project_nodes = {}
         for node_id, node_data in predefined_project.get("workbench", {}).items():
-            create_kwargs = {
+            create_kwargs: dict[str, Any] = {
                 WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
                 for k, v in node_data.items()
                 if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
-            }
+            }  # type: ignore
             create_kwargs["required_resources"] = jsonable_encoder(
                 await catalog_service.get_service_resources(
                     app, user_id, node_data["key"], node_data["version"], product_name
@@ -341,7 +338,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     product_name: str,
     product_api_base_url: str,
     predefined_project: ProjectDict | None,
-    simcore_user_agent: str,
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
 ) -> web.HTTPCreated:
@@ -383,7 +379,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     async with _cleanup_project_on_error(
         app,
         user_id=user_id,
-        simcore_user_agent=simcore_user_agent,
         product_name=product_name,
     ) as cleanup_ctx:
         try:

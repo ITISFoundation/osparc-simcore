@@ -1,20 +1,19 @@
 import asyncio
 import itertools
 import logging
+from collections.abc import Coroutine
+from typing import Any
 
 import asyncpg.exceptions
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID, UserNameID
 from redis.asyncio import Redis
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.users import UserRole
 
+from ..projects import _projects_service_delete
 from ..projects._projects_repository_legacy import ProjectDBAPI
-from ..projects._projects_service import (
-    get_project_for_user,
-    submit_delete_project_task,
-)
+from ..projects._projects_service import get_project_for_user
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
 from ..resource_manager.resource_manager_service import RedisResourceRegistry
@@ -64,7 +63,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: UserID) -
         f"{user_project_uuids=}",
     )
 
-    delete_tasks: list[asyncio.Task] = []
+    delete_coros: list[Coroutine[Any, Any, None]] = []
 
     for project_uuid in user_project_uuids:
         try:
@@ -95,26 +94,19 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: UserID) -
         if new_project_owner_gid is None:
             # when no new owner is found just remove the project
             try:
-                _logger.debug(
-                    "Removing project %s from user with %s",
-                    f"{project_uuid=}",
-                    f"{user_id=}",
-                )
+                _logger.debug("Removing %s from %s", f"{project_uuid=}", f"{user_id=}")
                 project_id = ProjectID(project_uuid)
 
                 product_name = await try_get_product_name(app, project_id)
                 if product_name is None:
                     raise ProjectNotFoundError(project_uuid=project_id)  # noqa: TRY301
 
-                task = await submit_delete_project_task(
+                task = _projects_service_delete.delete_project_as_admin(
                     app,
-                    project_id,
-                    user_id,
-                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    project_uuid=project_id,
                     product_name=product_name,
                 )
-                assert task  # nosec
-                delete_tasks.append(task)
+                delete_coros.append(task)
 
             except ProjectNotFoundError:
                 logging.warning(
@@ -138,9 +130,9 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: UserID) -
                 project=project,
             )
 
-    # NOTE: ensures all delete_task tasks complete or fails fast
+    # NOTE: ensures all delete_project_as_admin coros complete or fails fast
     # can raise ProjectDeleteError, CancellationError
-    await asyncio.gather(*delete_tasks)
+    await asyncio.gather(*delete_coros)
 
 
 async def remove_guest_user_with_all_its_resources(app: web.Application, user_id: UserID) -> None:

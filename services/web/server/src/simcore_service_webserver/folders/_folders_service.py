@@ -12,7 +12,7 @@ from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 
-from ..projects.api import delete_project_by_user
+from ..projects import projects_trash_service
 from ..users import users_service
 from ..workspaces import workspaces_service
 from ..workspaces.errors import (
@@ -337,11 +337,11 @@ async def delete_folder_with_all_content(
     )
 
     for project_id in project_id_list:
-        await delete_project_by_user(
+        await projects_trash_service.mark_for_immediate_deletion(
             app,
-            project_uuid=project_id,
-            user_id=user_id,
             product_name=product_name,
+            user_id=user_id,
+            project_id=project_id,
         )
 
     # 1.2 Delete all child folders

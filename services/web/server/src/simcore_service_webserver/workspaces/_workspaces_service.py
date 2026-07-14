@@ -18,7 +18,8 @@ from models_library.workspaces import (
 )
 
 from ..folders.folders_service import delete_folder_with_all_content, list_folders
-from ..projects.api import delete_project_by_user, list_projects
+from ..projects import projects_trash_service
+from ..projects.api import list_projects
 from ..projects.models import ProjectTypeAPI
 from ..users import users_service
 from . import _workspaces_repository as db
@@ -121,7 +122,9 @@ async def delete_workspace_with_all_content(
 
         # Delete projects properly
         for project_uuid in workspace_root_projects:
-            await delete_project_by_user(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name)
+            await projects_trash_service.mark_for_immediate_deletion(
+                app, product_name=product_name, user_id=user_id, project_id=project_uuid
+            )
 
     # Get all root folders
     for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
