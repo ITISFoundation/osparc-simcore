@@ -2,7 +2,7 @@ from typing import cast
 
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
-from models_library.groups import GroupAtDB
+from models_library.groups import GroupAtDB, GroupID
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
@@ -34,17 +34,17 @@ class GroupsRepository(BaseRepository):
             raise UninitializedGroupError(group=GroupType.EVERYONE, repo_cls=GroupsRepository)
         return GroupAtDB.model_validate(row)
 
-    async def get_user_gid_from_email(self, user_email: LowerCaseEmailStr) -> PositiveInt | None:
+    async def get_user_gid_from_email(self, user_email: LowerCaseEmailStr) -> GroupID | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                PositiveInt | None,
+                GroupID | None,
                 await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email)),
             )
 
-    async def get_gid_from_affiliation(self, affiliation: str) -> PositiveInt | None:
+    async def get_gid_from_affiliation(self, affiliation: str) -> GroupID | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                PositiveInt | None,
+                GroupID | None,
                 await conn.scalar(sa.select(groups.c.gid).where(groups.c.name == affiliation)),
             )
 

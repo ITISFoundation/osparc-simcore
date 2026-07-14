@@ -1,13 +1,14 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import auto
-from typing import TypeAlias
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
+from .groups import GroupID
 from .utils.enums import StrAutoEnum
 
-WalletID: TypeAlias = PositiveInt
+type WalletID = PositiveInt
 
 
 class WalletStatus(StrAutoEnum):
@@ -44,10 +45,12 @@ class WalletDB(BaseModel):
     wallet_id: WalletID
     name: str
     description: str | None
-    owner: PositiveInt = Field(
-        ...,
-        description="GID of the group that owns this wallet",
-    )
+    owner: Annotated[
+        GroupID,
+        Field(
+            description="GID of the group that owns this wallet",
+        ),
+    ]
     thumbnail: str | None
     status: WalletStatus = Field(
         ...,
