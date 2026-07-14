@@ -56,7 +56,7 @@ def downgrade():
             """
             UPDATE projects p
             SET ui = jsonb_set(
-                p.ui,
+                COALESCE(p.ui, '{}'::jsonb),
                 '{workbench}',
                 (
                     SELECT jsonb_object_agg(pn.node_id, pn.ui)
