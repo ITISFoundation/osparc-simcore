@@ -22,3 +22,13 @@ class NodeUI(BaseModel):
     marker: MarkerUI | None = None
 
     model_config = ConfigDict(extra="forbid")
+
+
+class NodeUIPatch(BaseModel):
+    position: Annotated[
+        PositionUI | None,
+        Field(description="The node position in the workbench"),
+    ] = None
+    marker: MarkerUI | None = None
+
+    model_config = ConfigDict(extra="forbid")
