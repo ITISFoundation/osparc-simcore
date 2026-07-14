@@ -9346,25 +9346,23 @@
           "title": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ShortTruncatedStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Title",
             "empty": true
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/LongTruncatedStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description",
             "empty": true
           }
         },
@@ -9846,7 +9844,6 @@
             "enum": [
               "user",
               "assistant",
-              "system",
               "developer"
             ],
             "title": "Role"
@@ -9856,6 +9853,12 @@
             "maxLength": 100000,
             "minLength": 1,
             "title": "Content"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name",
+            "default": ""
           }
         },
         "type": "object",
@@ -10721,6 +10724,9 @@
         "title": "LogLink"
       },
       "LogMessageStr": {
+        "type": "string"
+      },
+      "LongTruncatedStr": {
         "type": "string"
       },
       "LowerCaseEmailStr": {
@@ -13124,6 +13130,9 @@
           "pricingUnits"
         ],
         "title": "ServicePricingPlanGetLegacy"
+      },
+      "ShortTruncatedStr": {
+        "type": "string"
       },
       "Solver": {
         "properties": {

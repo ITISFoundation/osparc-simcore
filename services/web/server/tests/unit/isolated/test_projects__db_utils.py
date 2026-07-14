@@ -6,22 +6,16 @@ import datetime
 import json
 import re
 from copy import deepcopy
-from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from faker import Faker
-from models_library.groups import GroupID
 from simcore_service_webserver.projects._projects_repository_legacy import (
-    ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
-    create_project_access_rights,
 )
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
-    assemble_array_groups,
 )
 
 
@@ -109,29 +103,3 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
     db_entries = convert_to_schema_names(fake_db_dict, fake_email)
     assert "prjOwner" in db_entries
     assert db_entries["prjOwner"] == fake_email
-
-
-@pytest.fixture
-def group_id(faker: Faker) -> GroupID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.mark.parametrize("project_access_rights", ProjectAccessRights.all())
-def test_project_access_rights_creation(group_id: int, project_access_rights: ProjectAccessRights):
-    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
-    assert str(group_id) in git_to_access_rights
-    assert git_to_access_rights[str(group_id)] == project_access_rights.value
-
-
-def test_assemble_array_groups_empty_user_groups():
-    assert assemble_array_groups([]) == "array[]::text[]"
-
-
-@dataclass
-class FakeUserGroup:
-    gid: int
-
-
-def test_assemble_array_groups():
-    fake_user_groups = [FakeUserGroup(gid=n) for n in range(5)]
-    assert assemble_array_groups(fake_user_groups) == "array['0', '1', '2', '3', '4']"  # type: ignore

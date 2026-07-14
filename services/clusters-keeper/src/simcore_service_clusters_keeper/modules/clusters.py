@@ -18,11 +18,10 @@ from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 
+from ..constants import EC2_NAME_TAG_KEY, HEARTBEAT_TAG_KEY
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..utils.clusters import create_startup_script
 from ..utils.ec2 import (
-    EC2_NAME_TAG_KEY,
-    HEARTBEAT_TAG_KEY,
     all_created_ec2_instances_filter,
     creation_ec2_tags,
     ec2_instances_for_user_wallet_filter,
