@@ -22,7 +22,7 @@ from models_library.string_types import validate_input_xss_safety
 from .emails import LowerCaseEmailStr
 
 type _UserNameID = Annotated[str, StringConstraints(strip_whitespace=True, min_length=4, max_length=100)]
-# NOTE: in the next iteratino this will be replace by a NewType
+# NOTE: in the next iteration this type will be replace by a NewType (see follow up section in the PR description)
 UserID = PositiveInt
 
 UserNameID = NewType("UserNameID", _UserNameID)

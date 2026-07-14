@@ -1,9 +1,10 @@
 import contextlib
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 import sqlalchemy as sa
 from aiohttp import web
+from annotated_types import doc
 from common_library.gettext_support import SupportedLocale
 from common_library.users_enums import UserRole
 from models_library.groups import GroupID
@@ -175,8 +176,10 @@ async def get_user_language(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-) -> SupportedLocale | None:
-    """Returns the user's persisted language, or None if never set."""
+) -> Annotated[
+    SupportedLocale | None,
+    doc("The user's persisted language, or None if never set"),
+]:
     async with pass_or_acquire_connection(engine, connection) as conn:
         return await conn.scalar(
             sa.select(
@@ -248,8 +251,10 @@ async def get_user_email_legacy(engine: AsyncEngine, *, user_id: UserID | None) 
 
 
 async def get_user_fullname(app: web.Application, *, user_id: UserID) -> FullNameDict:
-    """
-    :raises UserNotFoundError:
+    """Returns first and last name values for a user.
+
+    Raises:
+        UserNotFoundError: If the user does not exist.
     """
     user_id = _parse_as_user(user_id)
 
@@ -287,8 +292,10 @@ async def get_guest_user_ids_and_names(
 
 
 async def get_user_role(app: web.Application, *, user_id: UserID) -> UserRole:
-    """
-    :raises UserNotFoundError:
+    """Returns the role for a user.
+
+    Raises:
+        UserNotFoundError: If the user does not exist.
     """
     user_id = _parse_as_user(user_id)
 
@@ -369,9 +376,7 @@ async def get_user_products(
     *,
     user_id: UserID,
 ) -> list[Row]:
-    """Returns the products the user is part of, i.e.
-    the user is registered and assigned to the product's group
-    """
+    """Returns products whose group includes the user."""
     async with pass_or_acquire_connection(engine, connection) as conn:
         product_name_subq = (
             sa.select(
@@ -407,10 +412,10 @@ async def get_user_billing_details(
     *,
     user_id: UserID,
 ) -> UserBillingDetails:
-    """
-    Returns UserBillingDetails for the given user, if it has a billing address on file
+    """Returns billing details for a user.
+
     Raises:
-        BillingDetailsNotFoundError
+        BillingDetailsNotFoundError: If billing details are missing.
     """
     row = await UsersRepo(engine).get_billing_details(connection, user_id=user_id)
     if not row:
@@ -423,7 +428,10 @@ async def update_user_billing_details(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    updates: dict[str, Any],
+    updates: Annotated[
+        dict[str, Any],
+        doc("Fields to upsert in the user's billing details"),
+    ],
 ) -> None:
     """Creates or updates (upsert) the user's billing address"""
     await UsersRepo(engine).update_billing_details(connection, user_id=user_id, updates=updates)
@@ -521,10 +529,10 @@ async def update_user_profile(
     user_id: UserID,
     updated_values: dict[str, Any],
 ) -> None:
-    """
+    """Updates fields in a user's profile.
+
     Raises:
-        UserNotFoundError
-        UserNameAlreadyExistsError
+        UserNameDuplicateError: If updating the name causes a uniqueness conflict.
     """
     if updated_values:
         user_id = _parse_as_user(user_id)
