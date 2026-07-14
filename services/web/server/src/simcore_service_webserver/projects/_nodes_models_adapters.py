@@ -52,6 +52,10 @@ def project_node_create_from_node(node: Node, node_id: UUID) -> ProjectNodeCreat
     Adapter: Converts a Node model and node_id to a ProjectNodeCreate instance.
     """
     node_data: dict[str, Any] = node.model_dump(by_alias=False, mode="json")
+    # projects_nodes.ui is NOT NULL (defaults to {}) while domain Node.ui uses None for "no UI":
+    # drop None so the column default applies and it round-trips back to None.
+    if node_data.get("ui") is None:
+        node_data.pop("ui", None)
     return ProjectNodeCreate(node_id=node_id, **node_data)
 
 
@@ -60,6 +64,10 @@ def project_node_from_node(node: Node, node_id: UUID, created: datetime, modifie
     Adapter: Converts a Node model, node_id, created, and modified to a ProjectNode instance.
     """
     node_data: dict[str, Any] = node.model_dump(by_alias=False, mode="json")
+    # projects_nodes.ui is NOT NULL (defaults to {}) while domain Node.ui uses None for "no UI":
+    # drop None so the column default applies and it round-trips back to None.
+    if node_data.get("ui") is None:
+        node_data.pop("ui", None)
     return ProjectNode(
         node_id=node_id,
         created=created,

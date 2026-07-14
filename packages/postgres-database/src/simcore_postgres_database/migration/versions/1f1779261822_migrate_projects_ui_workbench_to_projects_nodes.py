@@ -20,7 +20,12 @@ depends_on = None
 def upgrade():
     op.add_column(
         "projects_nodes",
-        sa.Column("ui", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
+        sa.Column(
+            "ui",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
+            nullable=False,
+        ),
     )
 
     # Copy each per-node object from projects.ui.workbench into the matching projects_nodes.ui
