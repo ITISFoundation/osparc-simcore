@@ -38,6 +38,7 @@ def upgrade():
             WHERE pn.project_uuid = p.uuid
               AND jsonb_typeof(p.ui -> 'workbench') = 'object'
               AND (p.ui -> 'workbench') ? pn.node_id
+              AND jsonb_typeof(p.ui -> 'workbench' -> pn.node_id) = 'object'
             """
         )
     )

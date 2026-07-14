@@ -68,7 +68,10 @@ class NodePatch(InputSchemaWithoutCamelCase):
     boot_options: Annotated[BootOptions | None, Field(alias="bootOptions")] = None
     outputs: dict[str, Any] | None = None  # NOTE: it is used by frontend for File Picker
 
-    ui: NodeUIPatch | None = None
+    ui: Annotated[
+        NodeUIPatch,
+        Field(default_factory=NodeUIPatch, json_schema_extra={"default": {}}),
+    ]
 
     def to_domain_model(self) -> PartialNode:
         data = self.model_dump(
