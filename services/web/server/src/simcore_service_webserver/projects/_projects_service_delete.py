@@ -20,7 +20,7 @@ async def batch_stop_services_in_project(
     app: web.Application, *, user_id: UserID, project_uuid: ProjectID, product_name: ProductName
 ) -> None:
     await asyncio.gather(
-        director_v2_service.delete_pipeline(app, user_id=user_id, project_id=project_uuid, force=True),
+        director_v2_service.stop_pipeline(app, user_id=user_id, project_id=project_uuid),
         _projects_service.remove_project_dynamic_services(
             user_id=user_id,
             project_uuid=project_uuid,
@@ -54,6 +54,7 @@ async def delete_project_as_admin(
             )
 
         with log_context(_logger, logging.INFO, "delete project data"):
+            await director_v2_service.delete_pipeline(app, user_id=project.prj_owner, project_id=project_uuid)
             await delete_data_folders_of_project(app, project_uuid, project.prj_owner)
 
         with log_context(_logger, logging.INFO, "delete project"):
