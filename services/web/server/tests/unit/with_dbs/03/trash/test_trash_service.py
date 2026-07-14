@@ -54,6 +54,7 @@ async def test_trash_service__delete_expired_trash(
     mocked_catalog: None,
     mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocked_storage: None,
 ):
     assert client.app
     assert logged_user["id"] != other_user["id"]
@@ -106,6 +107,7 @@ async def test_trash_service__delete_expired_trash_for_nested_folders_and_projec
     mocked_catalog: None,
     mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocked_storage: None,
 ):
     assert client.app
     assert logged_user["id"] != other_user["id"]
@@ -186,7 +188,7 @@ async def test_trash_service__delete_expired_trash_for_nested_folders_and_projec
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
-async def test_trash_service__delete_expired_trash_for_workspace(
+async def test_trash_service__delete_expired_trash_for_workspace(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
