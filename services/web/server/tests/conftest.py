@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 
 import pytest
 import simcore_service_webserver
-import tenacity
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
@@ -39,11 +39,13 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
 from servicelib.long_running_tasks.models import TaskStatus
+from simcore_postgres_database.models.projects import projects as projects_table
 from simcore_service_webserver.application_settings_utils import (
     AppConfigDict,
     convert_to_environ_vars,
 )
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
@@ -52,6 +54,7 @@ from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.trash import trash_service
 from simcore_service_webserver.utils import to_datetime
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -472,36 +475,32 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
 
     # cleanup projects
     for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
-        # NOTE: delete does not wait for completion
+        # NOTE: delete only marks the project for immediate deletion (hidden=True, trashed=epoch);
+        # actual removal happens exclusively via the periodic trash-pruning GC, so we trigger it
+        # explicitly here to ensure proper test isolation (no leftover projects between tests).
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
         resp = await client.delete(url.path)
 
         if resp.ok:
-            # NOTE: If deleted OK, then let's wait until project is really gone
-            url = client.app.router["get_project"].url_for(project_id=project_uuid)
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(0.1),
-                stop=stop_after_delay(10),
-                reraise=True,
-                retry=retry_if_exception_type(tenacity.TryAgain),
-            ):
-                with attempt:
-                    logging.info(
-                        "--> waiting for deletion %s...",
-                        attempt.retry_state.attempt_number,
+            # Verify the project was properly marked for trashing
+            engine = get_asyncpg_engine(client.app)
+            async with engine.connect() as conn:
+                result = await conn.execute(
+                    sa.select(projects_table.c.hidden, projects_table.c.trashed).where(
+                        projects_table.c.uuid == f"{project_uuid}"
                     )
-                    resp = await client.get(url.path)
-                    if resp.status in {
-                        status.HTTP_200_OK,
-                        status.HTTP_403_FORBIDDEN,
-                    }:
-                        raise tenacity.TryAgain
+                )
+                row = result.one_or_none()
+                assert row is not None, f"Project {project_uuid} unexpectedly missing right after delete"
+                assert row.hidden is True, f"Project {project_uuid} was not hidden after delete"
+                assert row.trashed is not None, f"Project {project_uuid} was not marked as trashed after delete"
 
-                    await assert_status(resp, status.HTTP_404_NOT_FOUND)
-                    logging.info(
-                        "-- project deletion completed: %s",
-                        json.dumps(attempt.retry_state.retry_object.statistics, indent=2),
-                    )
+            # Ensure the project is actually cleaned away (deletion is now GC-driven, not synchronous)
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+            url = client.app.router["get_project"].url_for(project_id=project_uuid)
+            resp = await client.get(url.path)
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
 @pytest.fixture

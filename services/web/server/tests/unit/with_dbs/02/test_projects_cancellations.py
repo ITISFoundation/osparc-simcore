@@ -33,6 +33,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.trash import trash_service
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -135,9 +136,13 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     # now abort the copy
     resp = await client.delete(urlparse(abort_url).path)
     await assert_status(resp, expected.no_content)
-    # wait to check that the call to storage is "done"
+    # NOTE: aborting only requests cancellation; the actual task cancellation happens
+    # asynchronously via a periodic background task, which then marks the project for
+    # immediate deletion. Actual removal (incl. storage cleanup) happens via the periodic
+    # trash-pruning GC. Poll both until convergence.
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)):
         with attempt:
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
@@ -179,9 +184,13 @@ async def test_copying_large_project_and_retrieving_copy_task(
     # now abort the copy
     resp = await client.delete(urlparse(created_copy_task.abort_href).path)
     await assert_status(resp, expected.no_content)
-    # wait to check that the call to storage is "done"
+    # NOTE: aborting only requests cancellation; the actual task cancellation happens
+    # asynchronously via a periodic background task, which then marks the project for
+    # immediate deletion. Actual removal (incl. storage cleanup) happens via the periodic
+    # trash-pruning GC. Poll both until convergence.
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)):
         with attempt:
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
