@@ -31,6 +31,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_service import ProjectGroupGet
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.trash import trash_service
+from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 from yarl import URL
 
 
@@ -1087,21 +1088,23 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(  # noqa: P
     resp = await client.post("/v0/trash:empty")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # NOTE: delete only marks the project for immediate deletion; actual removal happens
-    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
-    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+    # wait for deletion
+    async for attempt in AsyncRetrying(stop=stop_after_attempt(10), wait=wait_fixed(1), reraise=True):
+        with attempt:
+            # NOTE: delete only marks the project for immediate deletion; actual removal happens
+            # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
+            # GET trashed parent folder
+            resp = await client.get(f"/v0/folders/{parent_folder.folder_id}")
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-    # GET trashed parent folder
-    resp = await client.get(f"/v0/folders/{parent_folder.folder_id}")
-    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+            # GET trashed subfolder
+            resp = await client.get(f"/v0/folders/{sub_folder.folder_id}")
+            await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-    # GET trashed subfolder
-    resp = await client.get(f"/v0/folders/{sub_folder.folder_id}")
-    await assert_status(resp, status.HTTP_403_FORBIDDEN)
-
-    # GET trashed project
-    resp = await client.get(f"/v0/projects/{project_uuid}")
-    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+            # GET trashed project
+            resp = await client.get(f"/v0/projects/{project_uuid}")
+            await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
     # CHECK BIN
     # LIST trashed (will show only explicit)
