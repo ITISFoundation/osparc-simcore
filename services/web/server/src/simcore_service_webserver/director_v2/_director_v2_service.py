@@ -128,7 +128,10 @@ def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
     reason="silence in case the pipeline does not exist",
     predicate=_skip_if_pipeline_not_found,
 )
-async def stop_pipeline(app: web.Application, *, user_id: UserID, project_id: ProjectID):
+async def stop_pipeline(app: web.Application, *, user_id: UserID, project_id: ProjectID) -> None:
+    """
+    raises DirectorV2ServiceError
+    """
     await DirectorV2RestClient(app).stop_computation(project_id=project_id, user_id=user_id)
 
 
@@ -140,6 +143,9 @@ async def delete_pipeline(
     *,
     force: bool = True,
 ) -> None:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
 
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -166,6 +172,9 @@ async def get_batch_tasks_outputs(
     project_id: ProjectID,
     selection: TasksSelection,
 ) -> TasksOutputs:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
     response_payload, _ = await request_director_v2(
