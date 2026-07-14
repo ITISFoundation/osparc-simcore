@@ -1,7 +1,7 @@
 """Migrate projects UI workbench to projects_nodes
 
 Revision ID: 1f1779261822
-Revises: d90899964ae0
+Revises: 66969aad0315
 Create Date: 2026-07-07 06:57:25.548358+00:00
 
 """
