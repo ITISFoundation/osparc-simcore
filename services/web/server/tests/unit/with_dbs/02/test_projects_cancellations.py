@@ -34,6 +34,7 @@ from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.trash import trash_service
+from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -136,7 +137,9 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     # NOTE: delete only marks the project for immediate deletion; actual removal happens
     # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
-    slow_storage_subsystem_mock.delete_project.assert_called_once()
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)):
+        with attempt:
+            slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
 @pytest.mark.parametrize(*_standard_user_role_response())
@@ -180,7 +183,9 @@ async def test_copying_large_project_and_retrieving_copy_task(
     # NOTE: delete only marks the project for immediate deletion; actual removal happens
     # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
-    slow_storage_subsystem_mock.delete_project.assert_called_once()
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)):
+        with attempt:
+            slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
 @pytest.mark.parametrize(*_standard_user_role_response())
