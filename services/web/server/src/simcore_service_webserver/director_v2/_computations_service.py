@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Final
 
 from aiohttp import web
 from models_library.api_schemas_directorv2.comp_runs import (
@@ -46,6 +47,8 @@ from ..projects.projects_metadata_service import (
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ._comp_runs_collections_service import get_comp_run_collection_or_none_by_id
+
+_UNKNOWN_LABEL: Final[str] = "Unknown"
 
 
 async def _get_projects_metadata(
@@ -262,7 +265,7 @@ async def list_computations_latest_iteration_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            node_name=projects_to_nodes[item.project_uuid][item.node_id].label or "Unknown",
+            node_name=projects_to_nodes[item.project_uuid][item.node_id].label or _UNKNOWN_LABEL,
             osparc_credits=credits_or_none,
         )
         for item, credits_or_none in zip(_tasks_get.items, _service_run_osparc_credits, strict=True)
