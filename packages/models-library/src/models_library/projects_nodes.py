@@ -362,7 +362,7 @@ class Node(BaseModel):
         if isinstance(data, dict):
             cleaned = dict(data)
             # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
-            for key in ("outputNode", "outputNodes", "parent"):
+            for key in ("outputNode", "outputNodes", "parent", "position"):
                 cleaned.pop(key, None)
             return cleaned
         return data
