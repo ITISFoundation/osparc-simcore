@@ -74,7 +74,7 @@ locale_middleware.__middleware_name__ = (  # type: ignore[attr-defined]
 async def get_user_locale(
     app: web.Application,
     *,
-    user_id: int,
+    user_id: UserID,
 ) -> SupportedLocale:
     """Look up the user's persisted ``users.language`` and return the locale string.
 

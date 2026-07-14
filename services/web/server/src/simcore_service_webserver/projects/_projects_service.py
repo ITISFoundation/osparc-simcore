@@ -1916,7 +1916,7 @@ async def close_project_for_user(
 
 
 async def _get_project_share_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
 ) -> ProjectShareState:
@@ -2033,7 +2033,7 @@ async def _get_project_share_state(
 
 async def add_project_states_for_user(
     *,
-    user_id: int,
+    user_id: UserID,
     project: ProjectDict,
     app: web.Application,
 ) -> ProjectDict:
@@ -2400,7 +2400,7 @@ async def notify_project_node_update(
 
 
 async def retrieve_and_notify_project_locked_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
     *,

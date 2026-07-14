@@ -20,6 +20,7 @@ from uuid import UUID, uuid5
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 from models_library.projects import ProjectID
+from models_library.users import UserID
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -70,7 +71,7 @@ async def _clone_study_with_gc_lock(
     template_project: dict,
     project_uuid: str,
     template_parameters: dict[str, str],
-    user_id: int,
+    user_id: UserID,
     product_name: str,
     product_api_base_url: str,
 ) -> None:
@@ -107,7 +108,7 @@ async def dispatch_study(  # pylint: disable=too-many-arguments
     *,
     app: web.Application,
     study_id: str,
-    user_id: int,
+    user_id: UserID,
     product_name: str,
     template_parameters: dict[str, str],
     product_api_base_url: str,

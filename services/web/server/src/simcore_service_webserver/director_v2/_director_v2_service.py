@@ -85,7 +85,7 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=_logger)
-async def is_pipeline_running(app: web.Application, user_id: PositiveInt, project_id: UUID) -> bool | None:
+async def is_pipeline_running(app: web.Application, user_id: UserID, project_id: UUID) -> bool | None:
     # NOTE: possibility to make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
@@ -129,7 +129,7 @@ def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
     reason="silence in case the pipeline does not exist",
     predicate=_skip_if_pipeline_not_found,
 )
-async def stop_pipeline(app: web.Application, *, user_id: PositiveInt, project_id: ProjectID):
+async def stop_pipeline(app: web.Application, *, user_id: UserID, project_id: ProjectID):
     await DirectorV2RestClient(app).stop_computation(project_id=project_id, user_id=user_id)
 
 

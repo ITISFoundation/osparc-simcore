@@ -609,7 +609,7 @@ async def get_user_in_group(
     *,
     caller_id: UserID,
     group_id: GroupID,
-    the_user_id_in_group: int,
+    the_user_id_in_group: UserID,
 ) -> GroupMember:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists

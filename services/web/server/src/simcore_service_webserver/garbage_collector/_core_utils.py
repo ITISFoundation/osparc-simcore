@@ -50,7 +50,7 @@ async def try_get_product_name(app: web.Application, project_id: ProjectID) -> P
 
 async def _fetch_new_project_owner_from_groups(
     app: web.Application, standard_groups: dict, user_id: UserID
-) -> UserID | None:
+) -> GroupID | None:
     """Iterate over all the users in a group and if the users exists in the db
     return its gid
     """
