@@ -148,7 +148,7 @@ projects_nodes = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="UI components. Schema in models_library.projects_nodes_ui",
+        doc="UI components. Schema in models_library.api_schemas_webserver.projects_nodes_ui.NodeUI",
     ),
     sa.UniqueConstraint("project_uuid", "node_id"),
 )

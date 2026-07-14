@@ -95,7 +95,6 @@ class ProductUI(OutputSchema):
         schema.update(
             {
                 "examples": [
-                    {"workbench": {"801407c9-abb1-400d-ac49-35b0b2334a34": {"position": {"x": 250, "y": 100}}}},
                     {
                         "mode": "app",
                         "slideshow": {
@@ -107,10 +106,6 @@ class ProductUI(OutputSchema):
                                 "position": 0,
                                 "instructions": None,
                             },
-                        },
-                        "workbench": {
-                            "4b3345e5-861f-47b0-8b52-a4508449be79": {"position": {"x": 460, "y": 260}},
-                            "eaeee3dc-9ae1-4bf6-827e-798fd7cad848": {"position": {"x": 220, "y": 600}},
                         },
                         "annotations": {
                             "4375ae62-76ce-42a4-9cea-608a2ba74762": {

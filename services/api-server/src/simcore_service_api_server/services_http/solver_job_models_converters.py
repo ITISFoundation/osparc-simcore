@@ -11,11 +11,13 @@ from functools import lru_cache
 import arrow
 from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.projects_nodes_ui import NodeUI
 from models_library.api_schemas_webserver.projects_ui import ProductUI
 from models_library.basic_types import KeyIDStr, VersionStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_layout import Position
 from pydantic import TypeAdapter
 
 from simcore_service_api_server.models.api_resources import JobLinks
@@ -37,6 +39,9 @@ from .director_v2 import ComputationTaskGet
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
+
+# Default position of the solver node on the workbench canvas
+_DEFAULT_SOLVER_NODE_POSITION = Position(x=633, y=229)
 
 
 @lru_cache
@@ -174,6 +179,7 @@ def create_new_project_for_job(
         label=solver_or_program.title,
         inputs=solver_inputs,
         inputs_units={},
+        ui=NodeUI(position=_DEFAULT_SOLVER_NODE_POSITION).model_dump(mode="json"),
     )
 
     # Ensembles project model so it can be used as input for create_project

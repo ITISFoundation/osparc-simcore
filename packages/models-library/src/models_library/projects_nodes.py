@@ -329,7 +329,7 @@ class Node(BaseModel):
         Position | None,
         Field(
             deprecated=True,
-            description="Use projects_ui.WorkbenchUI.position instead",
+            description="Use models_library.api_schemas_webserver.projects_nodes_ui.NodeUI.position instead",
         ),
     ] = None
 
@@ -340,7 +340,7 @@ class Node(BaseModel):
 
     ui: Annotated[
         dict[str, Any] | None,
-        Field(description="UI components. Schema in models_library.projects_nodes_ui"),
+        Field(description="UI components. Schema in models_library.api_schemas_webserver.projects_nodes_ui.NodeUI"),
     ] = None
 
     boot_options: Annotated[
