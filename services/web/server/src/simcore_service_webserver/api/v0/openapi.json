@@ -23115,18 +23115,6 @@
             ],
             "description": "values of output properties"
           },
-          "position": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Position"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Use models_library.api_schemas_webserver.projects_nodes_ui.NodeUI.position instead",
-            "deprecated": true
-          },
           "state": {
             "anyOf": [
               {
@@ -23326,18 +23314,6 @@
               }
             ],
             "description": "values of output properties"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Position"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Use models_library.api_schemas_webserver.projects_nodes_ui.NodeUI.position instead",
-            "deprecated": true
           },
           "state": {
             "anyOf": [
@@ -25074,27 +25050,6 @@
         ],
         "title": "PortLink",
         "description": "I/O port type to reference to an output port of another node in the same project"
-      },
-      "Position": {
-        "properties": {
-          "x": {
-            "type": "integer",
-            "title": "X",
-            "description": "The x position"
-          },
-          "y": {
-            "type": "integer",
-            "title": "Y",
-            "description": "The y position"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "x",
-          "y"
-        ],
-        "title": "Position"
       },
       "PositionUI": {
         "properties": {
