@@ -105,9 +105,7 @@ async def _cleanup_project_on_error(
         yield ctx
     except asyncio.CancelledError:
         if ctx.project_uuid is not None:
-            # NOTE: shielded so that a repeated/pending cancellation on this task does not
-            # interrupt the cleanup coroutine before the DB mark (hidden+trashed) commits.
-            await asyncio.shield(_cleanup_failed_project(app, ctx.project_uuid, user_id, product_name))
+            await _cleanup_failed_project(app, ctx.project_uuid, user_id, product_name)
         raise
     except Exception:
         if ctx.project_uuid is not None:
