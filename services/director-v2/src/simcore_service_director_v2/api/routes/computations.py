@@ -573,6 +573,7 @@ async def stop_computation(
     description="Deletes a computation pipeline",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={status.HTTP_409_CONFLICT: {"description": "Pipeline could not be stopped in time"}},
 )
 async def delete_computation(
     computation_stop: ComputationDelete,
@@ -601,11 +602,10 @@ async def delete_computation(
         try:
             await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
         except ComputationalSchedulerError as e:
-            _logger.warning(
-                "Project %s could not be stopped properly.\n reason: %s",
-                project_id,
-                e,
-            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Pipeline {project_id} could not be stopped: {e}",
+            ) from e
 
         def return_last_value(retry_state: Any) -> Any:
             """return the result of the last call attempt"""
@@ -626,10 +626,11 @@ async def delete_computation(
 
         # wait for the pipeline to be stopped
         if not await check_pipeline_stopped():
-            _logger.error(
-                "pipeline %s could not be stopped properly after %s",
-                project_id,
-                _PIPELINE_ABORT_TIMEOUT_S,
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Pipeline {project_id} could not be stopped properly "
+                f"after {_PIPELINE_ABORT_TIMEOUT_S.total_seconds()}s. "
+                "It will be marked for deletion and retried by the system.",
             )
 
     # delete the pipeline now
