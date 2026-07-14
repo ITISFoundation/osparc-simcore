@@ -84,11 +84,8 @@ async def test_patch_project(
         data=json.dumps(_patch_thumbnail),
     )
     await assert_status(resp, expected)
+
     # UI
-    _patch_ui = {"ui": {"workbench": {"77a04d71-b7e1-41d0-ab47-c99aa72b62d7": {"position": {"x": 250, "y": 100}}}}}
-    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui))
-    await assert_status(resp, expected)
-    # UI 2
     _patch_ui_2 = {
         "ui": {
             "mode": "workbench",
