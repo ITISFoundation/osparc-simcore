@@ -321,6 +321,129 @@ async def test_profile_workflow(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_update_profile_contact_address(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    """The billing address is a property of the user: it can be created/edited
+    directly via PATCH /me, independently of any pre-registration.
+    """
+    assert client.app
+
+    # GET: no billing address on file yet
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data.get("contact") is None
+
+    # PATCH: create the address
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "contact": {
+                "institution": "ACME",
+                "address": "1 Main St",
+                "city": "Zurich",
+                "state": "ZH",
+                "postalCode": "8000",
+                "country": "CH",
+            }
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # GET: address now present
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["contact"] == {
+        "institution": "ACME",
+        "address": "1 Main St",
+        "city": "Zurich",
+        "state": "ZH",
+        "postalCode": "8000",
+        "country": "Switzerland",  # NOTE: normalized from "CH" via pycountry
+    }
+
+    # PATCH: partial update only changes the given field
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(f"{url}", json={"contact": {"city": "Geneva"}})
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["contact"]["city"] == "Geneva"
+    assert data["contact"]["institution"] == "ACME"  # unaffected
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_update_profile_contact_empty_patch_does_not_delete_it(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    """An empty `contact` object (i.e. `{"contact": {}}`) must be a no-op:
+    the billing address cannot be deleted via PATCH /me, only updated.
+    """
+    assert client.app
+
+    # PATCH: create the address
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={"contact": {"institution": "ACME", "city": "Zurich", "country": "CH"}},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # PATCH: empty contact object should NOT delete/reset the billing address
+    resp = await client.patch(f"{url}", json={"contact": {}})
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["contact"]["institution"] == "ACME"
+    assert data["contact"]["city"] == "Zurich"
+    assert data["contact"]["country"] == "Switzerland"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_update_profile_and_contact_in_same_request(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    """A single PATCH /me can update both plain profile fields (e.g. last_name)
+    and the billing address (`contact`) at once. This exercises the controller's
+    splitting of the request body into `updated_values` (users table) and
+    `updated_contact` (users_billing_details table).
+    """
+    assert client.app
+
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "last_name": "Foo",
+            "contact": {"institution": "ACME", "city": "Zurich", "country": "CH"},
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert data["last_name"] == "Foo"
+    assert data["contact"]["institution"] == "ACME"
+    assert data["contact"]["city"] == "Zurich"
+    assert data["contact"]["country"] == "Switzerland"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize("invalid_username", ["", "_foo", "superadmin", "foo..-123"])
 async def test_update_wrong_user_name(
     user_role: UserRole,
@@ -477,7 +600,11 @@ async def test_get_profile_user_with_pre_registration(
     product: Product,
     user_pre_registration: int,
 ):
-    """Test getting profile of a user that has pre-registration data"""
+    """A pre-registration created for an *already registered* user (e.g.
+    self-registering interest in a different product) must NOT auto-populate
+    the profile's billing address: the address is seeded once, only at
+    account-creation time. The user must set it explicitly (see PATCH /me).
+    """
     assert client.app
 
     url = client.app.router["get_my_profile"].url_for()
@@ -501,14 +628,9 @@ async def test_get_profile_user_with_pre_registration(
     assert got_profile_groups["me"] == primary_group
     assert got_profile_groups["all"] == all_group
 
-    # Verify contact information from pre-registration is populated
-    assert profile.contact is not None
-    assert profile.contact.institution == "Test University"
-    assert profile.contact.address == "123 Test Street"
-    assert profile.contact.city == "Test City"
-    assert profile.contact.state == "Test State"
-    assert profile.contact.postal_code == "12345"
-    assert profile.contact.country == "US"
+    # The pre-registration was created AFTER the account already existed,
+    # so it must not affect the user's billing address
+    assert profile.contact is None
 
     # Verify preferences are still working
     assert profile.preferences == await get_frontend_user_preferences_aggregation(

@@ -2,8 +2,10 @@ import contextlib
 import datetime
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Annotated
 
 import sqlalchemy as sa
+from annotated_types import doc
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -357,10 +359,24 @@ class FileMetaDataRepository(BaseRepository):
         self,
         *,
         connection: AsyncConnection | None = None,
-        file_ids: list[SimcoreS3FileID],
+        file_ids: Annotated[list[SimcoreS3FileID], doc("file IDs to delete")],
+        recursive: Annotated[bool, doc("if True, deletes all files that are children of the given file_ids")],
     ) -> None:
+        """Delete the files with `file_ids`."""
         async with transaction_context(self.db_engine, connection) as conn:
-            await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
+            if not recursive:
+                await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
+                return
+
+            conditions = [
+                sa.or_(
+                    file_meta_data.c.file_id == file_id,
+                    file_meta_data.c.file_id.startswith(f"{file_id}/"),
+                )
+                for file_id in file_ids
+            ]
+
+            await conn.execute(file_meta_data.delete().where(sa.or_(*conditions)))
 
     async def delete_all_from_project(
         self, *, connection: AsyncConnection | None = None, project_id: ProjectID
