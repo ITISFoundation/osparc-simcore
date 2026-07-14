@@ -30,6 +30,7 @@ from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_service import ProjectGroupGet
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.trash import trash_service
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 from yarl import URL
 
@@ -314,7 +315,7 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
 
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/pull/6642")
-async def test_trash_folder_with_content(
+async def test_trash_folder_with_content(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -551,7 +552,7 @@ async def test_trash_empty_workspace(
 
 
 @pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/issues/7034")
-async def test_trash_workspace(
+async def test_trash_workspace(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     workspace: WorkspaceGet,
@@ -586,7 +587,7 @@ async def test_trash_workspace(
     # CREATE a project **in workspace**
     project_data = deepcopy(fake_project)
     project_data["workspace_id"] = f"{workspace.workspace_id}"
-    created_project = await create_project(
+    await create_project(
         client.app,
         project_data,
         user_id=logged_user["id"],
@@ -1003,6 +1004,10 @@ async def test_trash_project_explicitly_and_empty_trash_bin(
     # waits for deletion
     async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(1), reraise=True):
         with attempt:
+            # NOTE: emptying trash only marks projects for immediate deletion; actual removal
+            # happens exclusively via the periodic trash-pruning GC, so trigger it here.
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
             # LIST trashed projects again
             resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
             await assert_status(resp, status.HTTP_200_OK)
@@ -1014,7 +1019,7 @@ async def test_trash_project_explicitly_and_empty_trash_bin(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
-async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
+async def test_trash_folder_with_subfolder_and_project_and_empty_bin(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -1089,6 +1094,10 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
     # waits for deletion
     async for attempt in AsyncRetrying(stop=stop_after_attempt(10), wait=wait_fixed(1), reraise=True):
         with attempt:
+            # NOTE: emptying trash only marks contained projects for immediate deletion; actual
+            # removal happens exclusively via the periodic trash-pruning GC, so trigger it here.
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
             # GET trashed parent folder
             resp = await client.get(f"/v0/folders/{parent_folder.folder_id}")
             await assert_status(resp, status.HTTP_403_FORBIDDEN)
