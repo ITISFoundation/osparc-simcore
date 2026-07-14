@@ -105,6 +105,7 @@ def _create_project(
         creation_date=DateTimeStr(now_str()),
         last_change_date=DateTimeStr(now_str()),
         workbench=workbench,
+        ui={},
         product_name=product_name,
     )
 
