@@ -170,6 +170,20 @@ async def register(request: web.Request):
             # NOTE: expires_at is currently set as offset-naive
             expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
 
+    # A consumed invitation is bound to this exact e-mail (see `check_and_consume_invitation`),
+    # so it already proves the guest owns the address. When configured, skip the extra
+    # REGISTRATION confirmation e-mail for these users.
+    # NOTE: never skip while 2FA is required. Email-ownership (invitation) and phone-ownership
+    # (2FA) are orthogonal proofs, but the "confirmation disabled" branch below grants login
+    # directly (`_security_service.login_granted_response`), bypassing the phone/SMS
+    # verification that normally gates login in `auth.py::login`. Until that branch becomes
+    # 2FA-aware, confirmation must stay required so login (and thus 2FA) goes through the
+    # regular `auth_login` flow.
+    skip_confirmation_via_invitation = (
+        invitation is not None and settings.LOGIN_INVITATION_CONFIRMS_EMAIL and not settings.LOGIN_2FA_REQUIRED
+    )
+    confirmation_required = settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED and not skip_confirmation_via_invitation
+
     #  get authorized user or create new
     user = await _auth_service.get_user_or_none(request.app, email=registration.email)
     if user:
@@ -184,11 +198,7 @@ async def register(request: web.Request):
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),
-            status_upon_creation=(
-                UserStatus.CONFIRMATION_PENDING
-                if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
-                else UserStatus.ACTIVE
-            ),
+            status_upon_creation=(UserStatus.CONFIRMATION_PENDING if confirmation_required else UserStatus.ACTIVE),
             expires_at=expires_at,
         )
 
@@ -206,7 +216,7 @@ async def register(request: web.Request):
         product_name=product.name,
     )
 
-    if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
+    if confirmation_required:
         # Confirmation required: send confirmation email
         confirmation_service = get_confirmation_service(request.app)
         _confirmation: Confirmation = await confirmation_service.create_confirmation(
@@ -270,8 +280,9 @@ async def register(request: web.Request):
             "INFO",
         )
 
-    # NOTE: Here confirmation is disabled
-    assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
+    # NOTE: Here confirmation is disabled (either by product settings or by
+    # `skip_confirmation_via_invitation` above)
+    assert confirmation_required is False  # nosec
     assert (  # nosec
         product.name == invitation.product if invitation and invitation.product else True
     )
@@ -284,7 +295,7 @@ async def register(request: web.Request):
     )
 
     # No confirmation required: authorize login
-    assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
+    assert not confirmation_required  # nosec
     assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
     return await _security_service.login_granted_response(request=request, user=user)

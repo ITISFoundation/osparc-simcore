@@ -358,6 +358,60 @@ async def test_registration_with_confirmation(
     assert user["status"] == UserStatus.ACTIVE.name
 
 
+async def test_registration_skips_confirmation_when_invitation_confirms_email(
+    client: TestClient,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
+    mocker: MockerFixture,
+    user_email: str,
+    user_password: str,
+    cleanup_db_tables: None,
+):
+    # A consumed invitation is bound to a fixed e-mail, so with LOGIN_INVITATION_CONFIRMS_EMAIL=True
+    # the extra REGISTRATION confirmation e-mail is skipped and the user is granted login right away.
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
+        autospec=True,
+        return_value=LoginSettingsForProduct(
+            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
+            LOGIN_INVITATION_CONFIRMS_EMAIL=True,
+            LOGIN_TWILIO=None,
+            LOGIN_2FA_REQUIRED=False,
+            LOGIN_PASSWORD_MIN_LENGTH=12,
+        ),
+    )
+
+    async with NewInvitation(client) as f:
+        confirmation = f.confirmation
+        assert confirmation
+
+        url = client.app.router["auth_register"].url_for()
+        response = await client.post(
+            url.path,
+            json={
+                "email": user_email,
+                "password": user_password,
+                "confirm": user_password,
+                "invitation": confirmation["code"],
+            },
+        )
+
+    data, error = unwrap_envelope(await response.json())
+    assert response.status == 200, (data, error)
+    assert MSG_LOGGED_IN in data["message"]
+
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
+    assert user["status"] == UserStatus.ACTIVE.name, (
+        "Not anymore CONFIRMATION_PENDING because invitation confirms e-mail"
+    )
+
+    # no confirmation e-mail was ever sent
+    mocked_notifications_service_send_message_from_template.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "is_invitation_required,has_valid_invitation,expected_response",
     [

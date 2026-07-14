@@ -123,6 +123,7 @@ class ProductLoginSettingsDict(TypedDict):
 
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: NotRequired[bool]
     LOGIN_REGISTRATION_INVITATION_REQUIRED: NotRequired[bool]
+    LOGIN_INVITATION_CONFIRMS_EMAIL: NotRequired[bool]
     LOGIN_2FA_REQUIRED: NotRequired[bool]  # previously 'two_factor_enabled'
 
 

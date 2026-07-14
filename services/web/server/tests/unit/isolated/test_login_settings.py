@@ -112,3 +112,22 @@ def test_product_login_settings_in_plugin_settings():
     settings_attributes = set(LoginSettingsForProduct.model_fields.keys())
 
     assert customizable_attributes.issubset(settings_attributes)
+
+
+def test_login_invitation_confirms_email_needs_invitation_required(monkeypatch: pytest.MonkeyPatch):
+    # cannot skip email confirmation via invitation w/o requiring an invitation
+    monkeypatch.setenv("LOGIN_REGISTRATION_INVITATION_REQUIRED", "0")
+
+    with pytest.raises(ValidationError) as exc_info:
+        LoginSettings.create_from_envs(LOGIN_INVITATION_CONFIRMS_EMAIL=1)
+
+    errors = exc_info.value.errors()
+    assert len(errors) == 1
+    assert errors[0]["loc"] == ("LOGIN_INVITATION_CONFIRMS_EMAIL",)
+
+
+def test_login_invitation_confirms_email_ok_with_invitation_required(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LOGIN_REGISTRATION_INVITATION_REQUIRED", "1")
+
+    settings = LoginSettings.create_from_envs(LOGIN_INVITATION_CONFIRMS_EMAIL=1)
+    assert settings.LOGIN_INVITATION_CONFIRMS_EMAIL is True

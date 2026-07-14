@@ -37,6 +37,19 @@ class LoginSettings(BaseCustomSettings):
         ...,
     )
 
+    LOGIN_INVITATION_CONFIRMS_EMAIL: bool = Field(
+        default=False,
+        description=(
+            "If true, a successfully consumed registration invitation is accepted as proof "
+            "that the guest owns the invited email address, so the extra REGISTRATION "
+            "confirmation e-mail (and its click-through link) is skipped for that user "
+            "(the account is created directly with the status it would have had after "
+            "confirming). Has no effect if LOGIN_2FA_REQUIRED is set (2FA still requires "
+            "the confirmation step) or if LOGIN_REGISTRATION_INVITATION_REQUIRED is false "
+            "(there is no invitation to vouch for the email)."
+        ),
+    )
+
     LOGIN_TWILIO: TwilioSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
         description="Twilio service settings. Used to send SMS for 2FA",
@@ -71,6 +84,14 @@ class LoginSettings(BaseCustomSettings):
     def _login_2fa_needs_sms_service(cls, v, info: ValidationInfo):
         if v and info.data.get("LOGIN_TWILIO") is None:
             msg = "Cannot enable 2FA w/o twilio settings which is used to send SMS"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("LOGIN_INVITATION_CONFIRMS_EMAIL")
+    @classmethod
+    def _login_invitation_confirms_email_needs_invitation(cls, v, info: ValidationInfo):
+        if v and not info.data.get("LOGIN_REGISTRATION_INVITATION_REQUIRED", False):
+            msg = "Cannot skip e-mail confirmation via invitation w/o requiring an invitation"
             raise ValueError(msg)
         return v
 
