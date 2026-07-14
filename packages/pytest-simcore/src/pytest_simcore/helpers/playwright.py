@@ -40,6 +40,7 @@ _logger = logging.getLogger(__name__)
 SECOND: Final[int] = 1000
 MINUTE: Final[int] = 60 * SECOND
 NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/projects/[^/]+/nodes/[^:]+:start")
+_APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
 @unique
@@ -643,12 +644,22 @@ def wait_for_service_running(
 
 
 def app_mode_trigger_next_app(page: Page) -> None:
-    with (
-        log_context(logging.INFO, msg="triggering next app"),
-        page.expect_request(_node_started_predicate),
-    ):
-        # Move to next step (this auto starts the next service)
-        page.get_by_test_id("AppMode_NextBtn").click()
+    """NOTE: the frontend only issues a node `:start` request if the next
+    service is not already running (see `Node.canNodeStart()` in the
+    frontend). If the next service was already started, clicking "Next"
+    will not fire that request, so we tolerate the timeout here and let the
+    caller's websocket-based waiters handle the already-running case.
+    """
+    with log_context(logging.INFO, msg="triggering next app") as ctx:
+        try:
+            with page.expect_request(_node_started_predicate, timeout=_APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT):
+                # Move to next step (this auto starts the next service)
+                page.get_by_test_id("AppMode_NextBtn").click()
+        except (PlaywrightTimeoutError, TimeoutError):
+            ctx.logger.info(
+                "⚠️ no start request detected within %s ms: the next service was likely already started ⚠️",
+                _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT,
+            )
 
 
 def wait_for_label_text(page: Page, locator: str, substring: str, timeout: int = 10000) -> Locator:
