@@ -1,12 +1,11 @@
 from enum import auto
 from pathlib import Path
-from typing import Literal, TypeAlias
+from typing import Literal
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import NonNegativeInt
 
-from .groups import GroupID
 from .utils.common_validators import create_enums_pre_validator
 from .utils.enums import StrAutoEnum
 
@@ -55,13 +54,12 @@ class TLSAuthentication(_AuthenticationBase):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-ClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
+type ClusterAuthentication = NoAuthentication | TLSAuthentication
 
 
 class BaseCluster(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
     type: ClusterTypeInModel
-    owner: GroupID
     thumbnail: HttpUrl | None = Field(
         default=None,
         description="url to the image describing this cluster",
@@ -80,7 +78,6 @@ class BaseCluster(BaseModel):
                     {
                         "name": "My awesome cluster",
                         "type": ClusterTypeInModel.ON_PREMISE,
-                        "owner": 12,
                         "endpoint": "https://registry.osparc-development.fake.dev",
                         "authentication": {
                             "type": "tls",
@@ -92,7 +89,6 @@ class BaseCluster(BaseModel):
                     {
                         "name": "My AWS cluster",
                         "type": ClusterTypeInModel.AWS,
-                        "owner": 154,
                         "endpoint": "https://registry.osparc-development.fake.dev",
                         "authentication": {
                             "type": "tls",
@@ -108,4 +104,4 @@ class BaseCluster(BaseModel):
     model_config = ConfigDict(use_enum_values=True, json_schema_extra=_update_json_schema_extra)
 
 
-ClusterID: TypeAlias = NonNegativeInt
+type ClusterID = NonNegativeInt
