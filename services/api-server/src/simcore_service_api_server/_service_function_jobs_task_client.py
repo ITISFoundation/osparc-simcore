@@ -332,6 +332,7 @@ class FunctionJobTaskClientService:
                 product_name=user_identity.product_name,
                 owner=APP_NAME,
             )
+            batch_size = len(pre_registered_function_job_data_list)
             task_uuids = await logged_gather(
                 *(
                     self._celery_task_manager.submit_task(
@@ -348,6 +349,7 @@ class FunctionJobTaskClientService:
                         job_links=job_links,
                         x_simcore_parent_project_uuid=parent_project_uuid,
                         x_simcore_parent_node_id=parent_node_id,
+                        batch_size=batch_size,
                     )
                     for pre_registered_function_job_data in pre_registered_function_job_data_list
                 ),

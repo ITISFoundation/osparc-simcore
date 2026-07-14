@@ -1,6 +1,4 @@
-from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
-    Task,
-)
+from celery import Task  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
 from celery_library.worker.app_server import get_app_server
 from fastapi import FastAPI
 from models_library.celery import TaskKey
@@ -22,10 +20,7 @@ from ....api.dependencies.services import (
     get_solver_service,
     get_storage_service,
 )
-from ....api.dependencies.webserver_http import (
-    get_session_cookie,
-    get_webserver_session,
-)
+from ....api.dependencies.webserver_http import get_session_cookie, get_webserver_session
 from ....api.dependencies.webserver_rpc import get_wb_api_rpc_client
 from ....models.api_resources import JobLinks
 from ....models.domain.functions import PreRegisteredFunctionJobData
@@ -114,6 +109,7 @@ async def run_function(
     job_links: JobLinks,
     x_simcore_parent_project_uuid: ProjectID | None,
     x_simcore_parent_node_id: NodeID | None,
+    batch_size: int = 1,
 ) -> RegisteredFunctionJob:
     assert task_key  # nosec
     app = get_app_server(task.app).app
@@ -126,4 +122,5 @@ async def run_function(
         job_links=job_links,
         x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
         x_simcore_parent_node_id=x_simcore_parent_node_id,
+        batch_size=batch_size,
     )

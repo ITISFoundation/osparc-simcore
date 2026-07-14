@@ -58,7 +58,14 @@ def join_inputs(
 
 # a randomized delay (jitter) to avoid hit director-v2/dask at
 # the same instant when calling map()
-_START_JOB_JITTER_MAX_SECONDS: Final[float] = 5.0
+_JITTER_SECONDS_PER_JOB: Final[float] = 0.25
+_MAX_JITTER_CAP_SECONDS: Final[float] = 30.0
+
+
+def _compute_start_jitter_seconds(*, batch_size: int) -> float:
+    if batch_size <= 1:
+        return 0
+    return min(_MAX_JITTER_CAP_SECONDS, batch_size * _JITTER_SECONDS_PER_JOB)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -255,8 +262,10 @@ class FunctionJobService:
         job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
         x_simcore_parent_node_id: NodeID | None,
+        batch_size: int = 1,
     ) -> RegisteredFunctionJob:
         """N.B. this function does not check access rights. Use get_cached_function_job for that"""
+        start_jitter_seconds = _compute_start_jitter_seconds(batch_size=batch_size)
 
         if function.function_class == FunctionClass.PROJECT:
             study_job = await self._job_service.create_studies_job(
@@ -267,7 +276,7 @@ class FunctionJobService:
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )
-            await asyncio.sleep(random.uniform(0, _START_JOB_JITTER_MAX_SECONDS))  # noqa: S311
+            await asyncio.sleep(random.uniform(0, start_jitter_seconds))  # noqa: S311
             await self._job_service.start_study_job(
                 study_id=function.project_id,
                 job_id=study_job.id,
@@ -299,7 +308,7 @@ class FunctionJobService:
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )
-            await asyncio.sleep(random.uniform(0, _START_JOB_JITTER_MAX_SECONDS))  # noqa: S311
+            await asyncio.sleep(random.uniform(0, start_jitter_seconds))  # noqa: S311
             await self._job_service.start_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,

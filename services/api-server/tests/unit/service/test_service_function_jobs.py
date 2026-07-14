@@ -16,7 +16,7 @@ from models_library.functions import RegisteredFunction
 from models_library.products import ProductName
 from models_library.users import UserID
 from pytest_mock import MockerFixture
-from simcore_service_api_server._service_function_jobs import _START_JOB_JITTER_MAX_SECONDS, FunctionJobService
+from simcore_service_api_server._service_function_jobs import FunctionJobService, _compute_start_jitter_seconds
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server.models.api_resources import JobLinks
@@ -125,13 +125,47 @@ async def test_run_function_start_is_jittered(
             job_links=fake_job_links,
             x_simcore_parent_project_uuid=None,
             x_simcore_parent_node_id=None,
+            batch_size=num_jobs,
         )
 
     await asyncio.gather(*map(_run_function, pre_registered_jobs))
 
     assert len(start_times) == num_jobs
     spread = max(start_times) - min(start_times)
-    assert spread > _START_JOB_JITTER_MAX_SECONDS * 0.3, (
+    expected_jitter_max = _compute_start_jitter_seconds(batch_size=num_jobs)
+    assert spread > expected_jitter_max * 0.3, (
         f"Expected start_study_job calls to be spread out by jitter, but spread was only {spread}s "
-        f"(jitter max is {_START_JOB_JITTER_MAX_SECONDS}s)"
+        f"(jitter max is {expected_jitter_max}s)"
     )
+
+
+async def test_run_function_isolated_call_has_no_jitter(
+    function_job_service: FunctionJobService,
+    registered_project_function: RegisteredFunction,
+    fake_job_links: JobLinks,
+    mocker: MockerFixture,
+):
+    """An isolated run_function call (batch_size=1, the default) must not incur
+    any jitter delay, since there is no burst of sibling jobs to desynchronize.
+    """
+    fake_job = mocker.Mock(id=uuid4())
+    function_job_service._job_service.create_studies_job = mocker.AsyncMock(return_value=fake_job)  # noqa: SLF001
+    function_job_service._web_rpc_client.patch_registered_function_job = mocker.AsyncMock(  # noqa: SLF001
+        return_value=mocker.Mock()
+    )
+    function_job_service._job_service.start_study_job = mocker.AsyncMock()  # noqa: SLF001
+
+    data = PreRegisteredFunctionJobData(function_job_id=uuid4(), job_inputs=JobInputs(values={}))
+
+    start = asyncio.get_running_loop().time()
+    await function_job_service.run_function(
+        function=registered_project_function,
+        pre_registered_function_job_data=data,
+        pricing_spec=None,
+        job_links=fake_job_links,
+        x_simcore_parent_project_uuid=None,
+        x_simcore_parent_node_id=None,
+    )
+    elapsed = asyncio.get_running_loop().time() - start
+
+    assert elapsed < 0.1

@@ -53,36 +53,17 @@ from models_library.users import UserID
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
-from servicelib.common_headers import (
-    X_SIMCORE_PARENT_NODE_ID,
-    X_SIMCORE_PARENT_PROJECT_UUID,
-)
+from servicelib.common_headers import X_SIMCORE_PARENT_NODE_ID, X_SIMCORE_PARENT_PROJECT_UUID
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
-from simcore_service_api_server.api.dependencies.celery import (
-    get_task_manager,
-)
+from simcore_service_api_server.api.dependencies.celery import get_task_manager
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
-from simcore_service_api_server.models.domain.celery_models import (
-    ApiServerOwnerMetadata,
-)
-from simcore_service_api_server.models.domain.functions import (
-    PreRegisteredFunctionJobData,
-)
-from simcore_service_api_server.models.schemas.jobs import (
-    JobPricingSpecification,
-    NodeID,
-)
-from simcore_service_api_server.modules.celery.worker._functions_tasks import (
-    run_function as run_function_task,
-)
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    stop_after_delay,
-    wait_fixed,
-)
+from simcore_service_api_server.models.domain.celery_models import ApiServerOwnerMetadata
+from simcore_service_api_server.models.domain.functions import PreRegisteredFunctionJobData
+from simcore_service_api_server.models.schemas.jobs import JobPricingSpecification, NodeID
+from simcore_service_api_server.modules.celery.worker._functions_tasks import run_function as run_function_task
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -130,6 +111,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
         job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
         x_simcore_parent_node_id: NodeID | None,
+        batch_size: int = 1,
     ) -> RegisteredFunctionJob:
         return RegisteredProjectFunctionJob(
             title=_faker.sentence(),
