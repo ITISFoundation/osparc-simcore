@@ -4,6 +4,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
+from common_library.gettext_support import SupportedLocale
 from common_library.users_enums import UserRole
 from models_library.groups import GroupID
 from models_library.products import ProductName
@@ -167,6 +168,21 @@ async def get_user_primary_group_id(
         if primary_gid is None:
             raise UserNotFoundError(user_id=user_id)
         return primary_gid
+
+
+async def get_user_language(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+) -> SupportedLocale | None:
+    """Returns the user's persisted language, or None if never set."""
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        return await conn.scalar(
+            sa.select(
+                users.c.language,
+            ).where(users.c.id == user_id)
+        )
 
 
 async def get_users_ids_in_group(
@@ -471,6 +487,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 users.c.email,
                 users.c.role,
                 users.c.phone,
+                users.c.language,
                 sa.func.json_build_object(
                     "hide_username",
                     users.c.privacy_hide_username,

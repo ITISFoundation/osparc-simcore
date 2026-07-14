@@ -3,6 +3,7 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
+from common_library.gettext_support import SupportedLocale
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
@@ -74,6 +75,11 @@ async def get_user_email_legacy(app: web.Application, user_id: UserID | None) ->
 
 async def get_user_primary_group_id(app: web.Application, user_id: UserID) -> GroupID:
     return await _users_repository.get_user_primary_group_id(engine=get_asyncpg_engine(app), user_id=user_id)
+
+
+async def get_user_language(app: web.Application, *, user_id: UserID) -> SupportedLocale | None:
+    """Returns the user's persisted language, or None if never set."""
+    return await _users_repository.get_user_language(get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> UserID:
