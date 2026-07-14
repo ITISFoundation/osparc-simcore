@@ -20750,6 +20750,10 @@
         ],
         "title": "FileUploadSchema"
       },
+      "FirstNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "FolderCreateBodyParams": {
         "properties": {
           "name": {
@@ -21224,15 +21228,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/UserNameSafeID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Username"
+            ]
           },
           "email": {
             "anyOf": [
@@ -21268,15 +21269,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username",
             "description": "None if private"
           },
           "gid": {
@@ -21752,6 +21750,10 @@
           "root_key"
         ],
         "title": "JobEncryptionContextMetadata"
+      },
+      "LastNameStr": {
+        "type": "string",
+        "maxLength": 255
       },
       "LicensedItemPurchaseGet": {
         "properties": {
@@ -22711,26 +22713,22 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Last Name"
+            ]
           },
           "login": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -22841,39 +22839,32 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Last Name"
+            ]
           },
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/UserNameSafeID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Username"
+            ]
           },
           "language": {
             "anyOf": [
@@ -29821,15 +29812,12 @@
           "invitedBy": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Invitedby"
+            ]
           },
           "accountRequestStatus": {
             "anyOf": [
@@ -29844,15 +29832,12 @@
           "accountRequestReviewedBy": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Accountrequestreviewedby"
+            ]
           },
           "accountRequestReviewedAt": {
             "anyOf": [
@@ -29911,15 +29896,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username",
             "description": "Username of the user if an account was created"
           },
           "groupId": {
@@ -30110,14 +30092,10 @@
       "UserAccountRestPreRegister": {
         "properties": {
           "firstName": {
-            "type": "string",
-            "maxLength": 255,
-            "title": "Firstname"
+            "$ref": "#/components/schemas/FirstNameStr"
           },
           "lastName": {
-            "type": "string",
-            "maxLength": 255,
-            "title": "Lastname"
+            "$ref": "#/components/schemas/LastNameStr"
           },
           "email": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -30198,15 +30176,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Username"
+            ]
           },
           "firstName": {
             "anyOf": [
@@ -30249,6 +30224,9 @@
           "groupId"
         ],
         "title": "UserGet"
+      },
+      "UserNameSafeID": {
+        "$ref": "#/components/schemas/_UserNameID"
       },
       "UserNotification": {
         "properties": {
@@ -31254,6 +31232,11 @@
           "node_id"
         ],
         "title": "_ProjectNodePreview"
+      },
+      "_UserNameID": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 4
       },
       "_WalletsGroupsBodyParams": {
         "properties": {
