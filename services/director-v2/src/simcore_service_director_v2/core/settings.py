@@ -17,6 +17,7 @@ from models_library.clusters import (
     ClusterTypeInModel,
     NoAuthentication,
 )
+from models_library.groups import EVERYONE_GROUP_ID, GroupID
 from pydantic import (
     AliasChoices,
     AnyUrl,
@@ -121,7 +122,9 @@ class ComputationalBackendSettings(BaseCustomSettings):
             name="Default cluster",
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
-            owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
+            owner=GroupID(
+                EVERYONE_GROUP_ID
+            ),  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
             type=ClusterTypeInModel.ON_PREMISE,
         )
 

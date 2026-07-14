@@ -11,8 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletID, WalletInfo
-from pydantic import TypeAdapter
+from models_library.wallets import WalletIDAdapter, WalletInfo
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.exception_utils import suppress_exceptions
@@ -212,7 +211,7 @@ async def get_wallet_info(
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)
-        project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+        project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
         await projects_wallets_service.connect_wallet_to_project(
             app,
             product_name=product_name,

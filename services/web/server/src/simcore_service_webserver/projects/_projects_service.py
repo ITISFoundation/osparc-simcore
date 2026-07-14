@@ -79,7 +79,7 @@ from models_library.services_resources import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, PositiveInt, TypeAdapter
 from servicelib.common_headers import (
@@ -1026,7 +1026,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)
-                project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+                project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
                 await _wallets_service.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,

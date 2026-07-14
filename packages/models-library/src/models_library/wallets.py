@@ -1,14 +1,17 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import auto
-from typing import Annotated
+from typing import Annotated, Final, NewType
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, TypeAdapter
 
 from .groups import GroupID
 from .utils.enums import StrAutoEnum
 
-type WalletID = PositiveInt
+type _WalletIDInt = PositiveInt
+
+WalletID = NewType("WalletID", _WalletIDInt)
+WalletIDAdapter: Final[TypeAdapter[WalletID]] = TypeAdapter(WalletID)
 
 
 class WalletStatus(StrAutoEnum):
