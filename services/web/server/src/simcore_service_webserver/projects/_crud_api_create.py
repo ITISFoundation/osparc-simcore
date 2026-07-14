@@ -311,7 +311,7 @@ async def _compose_project_data(
                 WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
                 for k, v in node_data.items()
                 if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
-            }  # type: ignore
+            }  # pyright: ignore[reportAssignmentType]
             create_kwargs["required_resources"] = jsonable_encoder(
                 await catalog_service.get_service_resources(
                     app, user_id, node_data["key"], node_data["version"], product_name
