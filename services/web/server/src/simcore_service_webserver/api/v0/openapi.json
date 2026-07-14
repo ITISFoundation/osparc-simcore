@@ -3498,7 +3498,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3527,7 +3527,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3569,7 +3569,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3657,7 +3657,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3697,7 +3697,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3732,7 +3732,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3763,7 +3763,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3799,7 +3799,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3830,7 +3830,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3870,7 +3870,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3905,7 +3905,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3957,7 +3957,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3986,7 +3986,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -4028,7 +4028,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -4076,7 +4076,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -4124,7 +4124,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -4157,7 +4157,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -7120,7 +7120,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -7297,7 +7297,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -11032,7 +11032,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -11073,7 +11073,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -11174,7 +11174,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/WalletID"
+                  "$ref": "#/components/schemas/_WalletIDInt"
                 },
                 {
                   "type": "null"
@@ -11286,7 +11286,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WalletID"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -11332,7 +11332,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/WalletID"
+                  "$ref": "#/components/schemas/_WalletIDInt"
                 },
                 {
                   "type": "null"
@@ -21722,7 +21722,7 @@
             "title": "Version"
           },
           "walletId": {
-            "$ref": "#/components/schemas/WalletID"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "pricingUnitCostId": {
             "type": "integer",
@@ -21887,7 +21887,7 @@
       "LicensedItemsBodyParams": {
         "properties": {
           "wallet_id": {
-            "$ref": "#/components/schemas/WalletID"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "pricing_plan_id": {
             "type": "integer",
@@ -24652,7 +24652,7 @@
             "title": "Idr"
           },
           "walletId": {
-            "$ref": "#/components/schemas/WalletID"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "cardHolderName": {
             "anyOf": [
@@ -24732,7 +24732,7 @@
       "PaymentMethodInitiated": {
         "properties": {
           "walletId": {
-            "$ref": "#/components/schemas/WalletID"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "paymentMethodId": {
             "type": "string",
@@ -24770,7 +24770,7 @@
             "title": "Pricedollars"
           },
           "walletId": {
-            "$ref": "#/components/schemas/WalletID"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "osparcCredits": {
             "type": "string",
@@ -28049,7 +28049,7 @@
           "wallet_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/WalletID"
+                "$ref": "#/components/schemas/_WalletIDInt"
               },
               {
                 "type": "null"
@@ -30378,7 +30378,7 @@
       "WalletGet": {
         "properties": {
           "walletId": {
-            "$ref": "#/components/schemas/WalletID"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "name": {
             "type": "string",
@@ -30439,7 +30439,7 @@
       "WalletGetWithAvailableCredits": {
         "properties": {
           "walletId": {
-            "$ref": "#/components/schemas/WalletID"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "name": {
             "type": "string",
@@ -30540,10 +30540,6 @@
           "modified"
         ],
         "title": "WalletGroupGet"
-      },
-      "WalletID": {
-        "type": "integer",
-        "exclusiveMinimum": 0
       },
       "WalletPaymentInitiated": {
         "properties": {
@@ -31150,6 +31146,10 @@
         "type": "string",
         "maxLength": 100,
         "minLength": 4
+      },
+      "_WalletIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "_WalletsGroupsBodyParams": {
         "properties": {

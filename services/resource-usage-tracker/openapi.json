@@ -67,9 +67,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -274,18 +272,14 @@
             "title": "Product Name"
           },
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Wallet Id"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "wallet_name": {
             "type": "string",
             "title": "Wallet Name"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "user_email": {
             "type": "string",
@@ -567,9 +561,7 @@
       "WalletTotalCredits": {
         "properties": {
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Wallet Id"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "available_osparc_credits": {
             "type": "number",
@@ -608,6 +600,14 @@
           "docs_url"
         ],
         "title": "_Meta"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_WalletIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     }
   }
