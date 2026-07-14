@@ -6,7 +6,7 @@
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import httpx
@@ -32,10 +32,7 @@ from models_library.functions import (
     RegisteredProjectFunctionJobPatch,
     RegisteredSolverFunctionJobPatch,
 )
-from models_library.functions_errors import (
-    FunctionIDNotFoundError,
-    FunctionReadAccessDeniedError,
-)
+from models_library.functions_errors import FunctionIDNotFoundError, FunctionReadAccessDeniedError
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
@@ -44,17 +41,12 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
 from servicelib.celery.app_server import BaseAppServer
-from servicelib.common_headers import (
-    X_SIMCORE_PARENT_NODE_ID,
-    X_SIMCORE_PARENT_PROJECT_UUID,
-)
+from servicelib.common_headers import X_SIMCORE_PARENT_NODE_ID, X_SIMCORE_PARENT_PROJECT_UUID
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.models.api_resources import JobLinks
-from simcore_service_api_server.models.domain.functions import (
-    PreRegisteredFunctionJobData,
-)
+from simcore_service_api_server.models.domain.functions import PreRegisteredFunctionJobData
 from simcore_service_api_server.models.schemas.jobs import JobInputs
 from simcore_service_api_server.modules.celery.worker import _functions_tasks
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
@@ -394,6 +386,9 @@ async def test_run_project_function(
         return app_server
 
     mocker.patch.object(_functions_tasks, "get_app_server", _get_app_server)
+
+    # avoid actually waiting for the pre-start jitter delay in this test
+    mocker.patch("simcore_service_api_server._service_function_jobs.asyncio.sleep", new_callable=AsyncMock)
 
     def _get_task_manager(app: FastAPI) -> CeleryTaskManager:
         return mock_dependency_get_celery_task_manager

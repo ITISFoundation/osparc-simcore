@@ -1,4 +1,7 @@
+import asyncio
+import random
 from dataclasses import dataclass
+from typing import Final
 
 import jsonschema
 from common_library.exclude import as_dict_exclude_none
@@ -51,6 +54,11 @@ def join_inputs(
 
     # last dict will override defaults
     return {**default_inputs, **function_inputs}
+
+
+# a randomized delay (jitter) to avoid hit director-v2/dask at
+# the same instant when calling map()
+_START_JOB_JITTER_MAX_SECONDS: Final[float] = 5.0
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -259,6 +267,7 @@ class FunctionJobService:
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )
+            await asyncio.sleep(random.uniform(0, _START_JOB_JITTER_MAX_SECONDS))  # noqa: S311
             await self._job_service.start_study_job(
                 study_id=function.project_id,
                 job_id=study_job.id,
@@ -290,6 +299,7 @@ class FunctionJobService:
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )
+            await asyncio.sleep(random.uniform(0, _START_JOB_JITTER_MAX_SECONDS))  # noqa: S311
             await self._job_service.start_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,
