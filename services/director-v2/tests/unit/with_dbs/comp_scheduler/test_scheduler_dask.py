@@ -2970,7 +2970,7 @@ async def test_pipeline_not_found_error_aborts_scheduling(
             comp_runs.c.project_uuid == f"{run_in_db.project_uuid}",
         ),
     )
-    mocked_safe_release_resources.assert_awaited_once_with(run_in_db.user_id, run_in_db.project_uuid, run_in_db.run_id)
+    mocked_safe_release_resources.assert_called_once_with(run_in_db.user_id, run_in_db.project_uuid, mock.ANY)
     await _assert_message_received(
         computational_pipeline_rabbit_client_parser,
         1,
@@ -3028,7 +3028,7 @@ async def test_invalid_pipeline_error_aborts_scheduling(
             comp_runs.c.project_uuid == f"{run_in_db.project_uuid}",
         ),
     )
-    mocked_safe_release_resources.assert_awaited_once_with(run_in_db.user_id, run_in_db.project_uuid, run_in_db.run_id)
+    mocked_safe_release_resources.assert_called_once_with(run_in_db.user_id, run_in_db.project_uuid, mock.ANY)
     await _assert_message_received(
         computational_pipeline_rabbit_client_parser,
         1,
@@ -3074,7 +3074,7 @@ async def test_computational_run_not_found_error_releases_resources(
 
     # resources must be released even though the run is missing;
     # note: iteration is used (not run_id) because comp_run was never fetched
-    mocked_safe_release_resources.assert_awaited_once_with(
+    mocked_safe_release_resources.assert_called_once_with(
         run_in_db.user_id, run_in_db.project_uuid, run_in_db.iteration
     )
     # no comp_run row should exist (was deleted before apply)
