@@ -164,7 +164,7 @@ async def test_patch_project(
     assert data["description"] == "testing-description"
     assert data["thumbnail"] == _patch_thumbnail["thumbnail"]
     assert data["classifiers"] == _patch_classifiers["classifiers"]
-    assert data["ui"] == _patch_ui_2["ui"]
+    assert data["ui"] == _patch_ui["ui"]
     assert data["quality"] == _patch_quality["quality"]
     assert data["dev"] == _patch_dev["dev"]
 
