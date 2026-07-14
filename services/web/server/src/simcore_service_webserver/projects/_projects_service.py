@@ -1378,6 +1378,11 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
     return await db_legacy.is_hidden(project_id)
 
 
+# Node fields that only affect the UI and therefore do not require syncing
+# the computational pipeline (director-v2 / comp_* DB tables) on patch.
+_NODE_UI_ONLY_PATCH_KEYS: Final[frozenset[str]] = frozenset({"position", "ui"})
+
+
 async def patch_project_node(
     app: web.Application,
     *,
@@ -1436,16 +1441,20 @@ async def patch_project_node(
         client_session_id=client_session_id,
     )
 
-    # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
-    await director_v2_service.create_or_update_pipeline(
-        app,
-        user_id,
-        project_id,
-        product_name=product_name,
-        product_api_base_url=product_api_base_url,
-    )
-    if _node_patch_exclude_unset.get("label"):
-        await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
+    # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables).
+    # NOTE: UI-only patches (e.g. node position) do not affect the computational
+    # pipeline, so we skip these calls to avoid unnecessary computations.
+    _patches_only_ui = _node_patch_exclude_unset.keys() <= _NODE_UI_ONLY_PATCH_KEYS
+    if not _patches_only_ui:
+        await director_v2_service.create_or_update_pipeline(
+            app,
+            user_id,
+            project_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+        )
+        if _node_patch_exclude_unset.get("label"):
+            await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 
     updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
         app, project_uuid=project_id

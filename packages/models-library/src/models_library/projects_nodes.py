@@ -325,14 +325,6 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    position: Annotated[
-        Position | None,
-        Field(
-            deprecated=True,
-            description="Use models_library.api_schemas_webserver.projects_nodes_ui.NodeUI.position instead",
-        ),
-    ] = None
-
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
