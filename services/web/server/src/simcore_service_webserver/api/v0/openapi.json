@@ -21210,7 +21210,7 @@
           "userName": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/_UserNameID"
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
@@ -29733,7 +29733,7 @@
           "invitedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/_UserNameID"
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
@@ -29753,7 +29753,7 @@
           "accountRequestReviewedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/_UserNameID"
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
@@ -29815,7 +29815,7 @@
           "userName": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/_UserNameID"
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
@@ -30093,7 +30093,7 @@
           "userName": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/_UserNameID"
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
@@ -30143,7 +30143,7 @@
         "title": "UserGet"
       },
       "UserNameSafeID": {
-        "$ref": "#/components/schemas/_UserNameID"
+        "$ref": "#/components/schemas/_UserNameIDStr"
       },
       "UserNotification": {
         "properties": {
@@ -31142,7 +31142,11 @@
         ],
         "title": "_ProjectNodePreview"
       },
-      "_UserNameID": {
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_UserNameIDStr": {
         "type": "string",
         "maxLength": 100,
         "minLength": 4
