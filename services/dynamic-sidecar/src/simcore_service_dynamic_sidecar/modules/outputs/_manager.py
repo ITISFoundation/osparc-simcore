@@ -129,29 +129,30 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     progress_report_cb=self.task_progress_cb,
                     description="uploading ports",
                 ) as root_progress:
-                    await upload_outputs(
-                        outputs_path=self.outputs_context.outputs_path,
-                        port_keys=port_keys,
-                        io_log_redirect_cb=self.io_log_redirect_cb,
-                        progress_bar=root_progress,
-                        port_notifier=self.port_notifier,
-                    )
+                    with log_catch(_logger, reraise=False):
+                        await upload_outputs(
+                            outputs_path=self.outputs_context.outputs_path,
+                            port_keys=port_keys,
+                            io_log_redirect_cb=self.io_log_redirect_cb,
+                            progress_bar=root_progress,
+                            port_notifier=self.port_notifier,
+                        )
 
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
         self._task_uploading = create_task(_upload_ports(), name=task_name)
 
         def _remove_downloads(future: Future) -> None:
             # pylint: disable=protected-access
-            if future._exception is not None:
+            if future._exception is not None:  # noqa: SLF001
                 formatted_traceback = (
-                    "\n" + "".join(traceback.format_exception(future._exception))
-                    if future._exception.__traceback__
+                    "\n" + "".join(traceback.format_exception(future._exception))  # noqa: SLF001
+                    if future._exception.__traceback__  # noqa: SLF001
                     else ""
                 )
                 _logger.warning(
                     "%s ended with exception: %s%s",
                     task_name,
-                    future._exception,
+                    future._exception,  # noqa: SLF001
                     formatted_traceback,
                 )
 
@@ -236,7 +237,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 await self.port_key_content_changed(file_port_key)
 
         _logger.info("Port status before waiting %s", f"{self._port_key_tracker}")
-        while not await self._port_key_tracker.no_tracked_ports():
+        while not await self._port_key_tracker.no_tracked_ports():  # noqa: ASYNC110
             await asyncio.sleep(self.task_monitor_interval_s)
         _logger.info("Port status after waiting %s", f"{self._port_key_tracker}")
 
