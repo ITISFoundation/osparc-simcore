@@ -7,24 +7,28 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..errors import UninitializedGroupError
 from ._base import BaseRepository
 
 
 class GroupsRepository(BaseRepository):
-    async def list_user_groups(self, user_id: int) -> list[GroupAtDB]:
-        async with self.db_engine.connect() as conn:
-            return [
-                GroupAtDB.model_validate(row)
-                async for row in await conn.stream(
-                    sa.select(groups)
-                    .select_from(
-                        user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
-                    )
-                    .where(user_to_groups.c.uid == user_id)
+    async def list_user_groups(
+        self,
+        user_id: int,
+        connection: AsyncConnection | None = None,
+    ) -> list[GroupAtDB]:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(groups)
+                .select_from(
+                    user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
                 )
-            ]
+                .where(user_to_groups.c.uid == user_id)
+            )
+            return TypeAdapter(list[GroupAtDB]).validate_python(result.mappings().all())
 
     async def get_everyone_group(self) -> GroupAtDB:
         async with self.db_engine.connect() as conn:
