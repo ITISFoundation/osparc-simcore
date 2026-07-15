@@ -39,7 +39,7 @@ qx.Class.define("osparc.io.rest.Resource", {
         value: osparc.utils.Utils.getClientSessionID()
       }, {
         key: "X-Simcore-Language",
-        value: osparc.utils.LanguageManager.getUserLocale()
+        value: osparc.utils.LanguageManager.getBackendLocale()
       }];
 
       headers.forEach(item => request.setRequestHeader(item.key, item.value));

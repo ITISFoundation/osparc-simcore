@@ -78,6 +78,14 @@ qx.Class.define("osparc.utils.LanguageManager", {
       return qx.locale.Manager.getInstance().getLocale();
     },
 
+    /**
+     * Returns the current locale in the backend's SupportedLocale form (for API headers/requests).
+     * @return {String} e.g. "en", "zh_CN"
+     */
+    getBackendLocale: function() {
+      return this.__toBackendLocale(this.getUserLocale());
+    },
+
     patchLocale: function(localeCode) {
       const params = {
         data: {
