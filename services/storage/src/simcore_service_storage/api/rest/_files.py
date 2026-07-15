@@ -359,7 +359,8 @@ async def is_completed_upload_file(
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
 
-        if not (new_fmd.is_directory and file_id == new_fmd.file_id):
+        is_directory_root = new_fmd.is_directory and file_id == new_fmd.file_id
+        if not is_directory_root:
             await post_file_notification(
                 request.app,
                 event_type=FileNotificationEventType.FILE_UPLOADED,
