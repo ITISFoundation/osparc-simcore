@@ -16,6 +16,7 @@ from models_library.conversations import (
     ConversationType,
     ConversationUserType,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -110,7 +111,7 @@ async def get_conversation_for_user(
     app: web.Application,
     *,
     conversation_id: ConversationID,
-    user_group_id: UserID,
+    user_group_id: GroupID,
 ) -> ConversationGetDB:
     return await _conversation_repository.get_for_user(
         app,

@@ -4,7 +4,8 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import BaseModel, PositiveInt
+from models_library.users import UserID
+from pydantic import BaseModel
 
 from ...repository.api_keys import ApiKeysRepository, UserAndProductTuple
 from ...repository.users import UsersRepository
@@ -15,7 +16,7 @@ basic_scheme = HTTPBasic()
 
 
 class Identity(BaseModel):
-    user_id: PositiveInt
+    user_id: UserID
     product_name: ProductName
     email: LowerCaseEmailStr
 
@@ -55,7 +56,7 @@ async def get_current_identity(
 
 async def get_current_user_id(
     identity: Annotated[Identity, Depends(get_current_identity)],
-) -> PositiveInt:
+) -> UserID:
     return identity.user_id
 
 
