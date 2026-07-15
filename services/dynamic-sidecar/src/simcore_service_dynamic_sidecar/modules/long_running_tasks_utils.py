@@ -50,6 +50,7 @@ async def ensure_read_permissions_on_user_service_data(
     mounted_volumes: MountedVolumes,
 ) -> None:
     # Makes sure sidecar has access to all files in the user services.
+    # The user could have removed read permissions form a file, which will cause an error.
 
     # NOTE: command runs inside self container since the user service container might not always be running
     self_container = os.environ["HOSTNAME"]
