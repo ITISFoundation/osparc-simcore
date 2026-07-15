@@ -201,7 +201,11 @@ async def update(
         )
         for key, value in ui_patch.items():
             if value is None:
-                ui_expr = ui_expr.op("-")(sa.cast(key, sa.String))
+                # NOTE: `self_group()` forces parentheses around the merge expression.
+                # In Postgres the binary `-` operator binds tighter than `||`, so without
+                # grouping `a || b - key` would parse as `a || (b - key)` and never delete
+                # the key from the merged result.
+                ui_expr = ui_expr.self_group().op("-")(sa.cast(key, sa.String))
         values["ui"] = ui_expr
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
