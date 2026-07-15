@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from functools import lru_cache
+from typing import Final
 
 import arrow
 from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
@@ -40,8 +41,7 @@ from .director_v2 import ComputationTaskGet
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
 
-# Default position of the solver node on the workbench canvas
-_DEFAULT_SOLVER_NODE_POSITION = Position(x=633, y=229)
+_DEFAULT_SOLVER_NODE_POSITION: Final[Position] = Position(x=633, y=229)
 
 
 @lru_cache
