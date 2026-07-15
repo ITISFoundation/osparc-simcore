@@ -20,7 +20,6 @@ qx.Class.define("osparc.utils.LanguageManager", {
       "zh": "中文 [Chinese]",
     },
 
-
     /**
      * Returns the locales for which translations were compiled (see compile.json).
      * @return {String[]} e.g. ["en_US", "es_ES"]
