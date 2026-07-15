@@ -30,39 +30,48 @@ class GroupsRepository(BaseRepository):
             )
             return TypeAdapter(list[GroupAtDB]).validate_python(result.mappings().all())
 
-    async def get_everyone_group(self) -> GroupAtDB:
-        async with self.db_engine.connect() as conn:
+    async def get_everyone_group(
+        self,
+        connection: AsyncConnection | None = None,
+    ) -> GroupAtDB:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(sa.select(groups).where(groups.c.type == GroupType.EVERYONE))
             row = result.first()
         if not row:
             raise UninitializedGroupError(group=GroupType.EVERYONE, repo_cls=GroupsRepository)
         return GroupAtDB.model_validate(row)
 
-    async def get_user_gid_from_email(self, user_email: LowerCaseEmailStr) -> PositiveInt | None:
-        async with self.db_engine.connect() as conn:
+    async def get_user_gid_from_email(
+        self,
+        user_email: LowerCaseEmailStr,
+        connection: AsyncConnection | None = None,
+    ) -> PositiveInt | None:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             return cast(
                 PositiveInt | None,
                 await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email)),
             )
 
-    async def get_gid_from_affiliation(self, affiliation: str) -> PositiveInt | None:
-        async with self.db_engine.connect() as conn:
-            return cast(
-                PositiveInt | None,
-                await conn.scalar(sa.select(groups.c.gid).where(groups.c.name == affiliation)),
-            )
+    async def get_user_email_from_gid(
+        self,
+        gid: PositiveInt,
+        connection: AsyncConnection | None = None,
+    ) -> LowerCaseEmailStr | None:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            result = await conn.scalar(sa.select(users.c.email).where(users.c.primary_gid == gid))
+            return TypeAdapter(LowerCaseEmailStr).validate_python(result) if result else None
 
-    async def get_user_email_from_gid(self, gid: PositiveInt) -> LowerCaseEmailStr | None:
-        async with self.db_engine.connect() as conn:
-            email = await conn.scalar(sa.select(users.c.email).where(users.c.primary_gid == gid))
-            return email or None
-
-    async def list_user_emails_from_gids(self, gids: set[PositiveInt]) -> dict[PositiveInt, LowerCaseEmailStr | None]:
+    async def list_user_emails_from_gids(
+        self,
+        gids: set[PositiveInt],
+        connection: AsyncConnection | None = None,
+    ) -> dict[PositiveInt, LowerCaseEmailStr | None]:
         service_owners: dict[PositiveInt, LowerCaseEmailStr | None] = {}
-        async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            result = await conn.execute(
                 sa.select(users.c.primary_gid, users.c.email).where(users.c.primary_gid.in_(gids))
-            ):
+            )
+            for row in result:
                 service_owners[row.primary_gid] = (
                     TypeAdapter(LowerCaseEmailStr).validate_python(row.email) if row.email else None
                 )
