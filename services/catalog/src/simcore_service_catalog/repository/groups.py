@@ -1,5 +1,3 @@
-from typing import cast
-
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupAtDB
@@ -47,10 +45,8 @@ class GroupsRepository(BaseRepository):
         connection: AsyncConnection | None = None,
     ) -> PositiveInt | None:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return cast(
-                PositiveInt | None,
-                await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email)),
-            )
+            result = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email))
+            return TypeAdapter(PositiveInt).validate_python(result) if result else None
 
     async def get_user_email_from_gid(
         self,
