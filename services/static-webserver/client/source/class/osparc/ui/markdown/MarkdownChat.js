@@ -114,7 +114,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
         // With this, a single line break (Enter) in your Markdown input will render as a <br> in HTML.
         marked.setOptions({ breaks: true });
 
-        const html = marked.parse(value);
+        const html = marked.parse(value == null ? "" : String(value));
 
         const safeHtml = osparc.wrapper.DOMPurify.sanitize(html);
 
