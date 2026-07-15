@@ -46,12 +46,10 @@ async def run_before_shutdown_actions(shared_store: SharedStore, before_shutdown
                 )
 
 
-async def ensure_permissions_on_user_service_data(
+async def ensure_read_permissions_on_user_service_data(
     mounted_volumes: MountedVolumes,
 ) -> None:
     # Makes sure sidecar has access to all files in the user services.
-    # The user could have removed read/write permissions from a file or directory,
-    # which will cause an error while uploading or cleaning up the data.
 
     # NOTE: command runs inside self container since the user service container might not always be running
     self_container = os.environ["HOSTNAME"]
@@ -61,6 +59,6 @@ async def ensure_permissions_on_user_service_data(
     ):
         await run_command_in_container(
             self_container,
-            command=f"chmod -R o+rwX '{path_to_store}'",
+            command=f"chmod -R o+rX '{path_to_store}'",
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )

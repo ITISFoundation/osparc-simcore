@@ -564,7 +564,7 @@ async def test_same_task_id_is_returned_if_task_exists(
 
 
 async def test_containers_down_after_starting(
-    mock_ensure_permissions_on_user_service_data: None,
+    mock_ensure_read_permissions_on_user_service_data: None,
     httpx_async_client: AsyncClient,
     http_client: HttpClient,
     app: FastAPI,
@@ -700,7 +700,7 @@ async def test_container_push_output_ports_missing_node(
     mock_port_keys: list[str] | None,
     missing_node_uuid: str,
     mock_node_missing: None,
-    mock_ensure_permissions_on_user_service_data: None,
+    mock_ensure_read_permissions_on_user_service_data: None,
     outputs_manager: OutputsManager,
 ):
     for port_key in mock_port_keys if mock_port_keys else []:

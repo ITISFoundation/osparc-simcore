@@ -62,7 +62,7 @@ from ..modules.outputs import (
 )
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 from .long_running_tasks_utils import (
-    ensure_permissions_on_user_service_data,
+    ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
 )
 from .resource_tracking import send_service_started, send_service_stopped
@@ -292,7 +292,7 @@ async def remove_user_services(
         raise
     finally:
         with log_context(_logger, logging.INFO, "ensure permissions"):
-            await ensure_permissions_on_user_service_data(mounted_volumes)
+            await ensure_read_permissions_on_user_service_data(mounted_volumes)
 
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 
