@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Final
 
-from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -58,7 +57,6 @@ from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import (
     OutputsManager,
-    UploadPortsFailedError,
     event_propagation_disabled,
 )
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
@@ -561,26 +559,7 @@ async def push_user_services_output_ports(
         log_level=logging.INFO,
     )
 
-    try:
-        await outputs_manager.wait_for_all_uploads_to_finish()
-    except UploadPortsFailedError as err:
-        _logger.warning(
-            **create_troubleshooting_log_kwargs(
-                "Pushing output ports failed, fixing permissions and retrying",
-                error=err,
-                error_context={"file_type_port_keys": outputs_manager.outputs_context.file_type_port_keys},
-                tip=(
-                    "Sometimes user services can remove permissions required for uploading files."
-                    "Below will raise if it's a different type of error"
-                ),
-            )
-        )
-        with log_context(_logger, logging.INFO, "ensure permissions"):
-            mounted_volumes: MountedVolumes = app.state.mounted_volumes
-            await ensure_permissions_on_user_service_data(mounted_volumes)
-
-        outputs_manager.set_all_ports_for_upload()
-        await outputs_manager.wait_for_all_uploads_to_finish()
+    await outputs_manager.wait_for_all_uploads_to_finish()
 
     await post_sidecar_log_message(app, "finished outputs pushing", log_level=logging.INFO)
     await progress.update(message="finished outputs pushing", percent=0.99)
