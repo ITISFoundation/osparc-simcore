@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Final
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -562,13 +563,18 @@ async def push_user_services_output_ports(
 
     try:
         await outputs_manager.wait_for_all_uploads_to_finish()
-    except UploadPortsFailedError:
-        # An upload failed, most likely because the user service created output
-        # files the sidecar cannot read. Permissions are ONLY adjusted here, as
-        # part of the closing sequence, to avoid revoking the user's access to
-        # their files while the service is still running. After fixing the
-        # permissions all ports are rescheduled and re-uploaded.
-        _logger.warning("Pushing output ports failed, fixing permissions and retrying")
+    except UploadPortsFailedError as err:
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                "Pushing output ports failed, fixing permissions and retrying",
+                error=err,
+                error_context={"file_type_port_keys": outputs_manager.outputs_context.file_type_port_keys},
+                tip=(
+                    "Sometimes user services can remove permissions required for uploading files."
+                    "Below will raise if it's a different type of error"
+                ),
+            )
+        )
         with log_context(_logger, logging.INFO, "ensure permissions"):
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
             await ensure_permissions_on_user_service_data(mounted_volumes)
