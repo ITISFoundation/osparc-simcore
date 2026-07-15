@@ -183,8 +183,18 @@ async def update(
     # stored value instead of replacing it, so a partial patch (e.g. only `position`)
     # preserves sibling keys (e.g. `marker`). `||` is a shallow merge, which is enough
     # because each sub-object (position/marker) is always patched as a whole.
+    # The stored value may be SQL NULL or JSON `null`; only merge when it is actually
+    # an object, otherwise Postgres wraps mismatched operands into a JSON array
+    # (e.g. `'null'::jsonb || '{...}'::jsonb` -> `[null, {...}]`).
     if "ui" in values:
-        values["ui"] = projects_nodes.c.ui.concat(sa.type_coerce(values["ui"], postgresql.JSONB))
+        current_ui = sa.case(
+            (
+                sa.func.jsonb_typeof(projects_nodes.c.ui) == "object",
+                projects_nodes.c.ui,
+            ),
+            else_=sa.type_coerce({}, postgresql.JSONB),
+        )
+        values["ui"] = current_ui.concat(sa.type_coerce(values["ui"], postgresql.JSONB))
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
