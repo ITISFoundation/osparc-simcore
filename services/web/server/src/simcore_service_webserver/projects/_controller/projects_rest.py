@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.generics import Envelope
 from models_library.rest_ordering import OrderBy
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
@@ -345,7 +346,7 @@ async def delete_project(request: web.Request):
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
-    project_users: set[int] = set()
+    project_users: set[UserID] = set()
     with managed_resource(req_ctx.user_id, None, request.app) as user_session:
         project_users = {
             s.user_id

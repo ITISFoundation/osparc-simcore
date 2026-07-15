@@ -22,7 +22,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.clusters import (
     get_or_create_cluster,
 )
-from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
+from simcore_service_clusters_keeper.constants import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
 pytest_simcore_core_services_selection = [

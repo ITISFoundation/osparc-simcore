@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
-from models_library.groups import GroupAtDB
+from models_library.groups import GroupAtDB, GroupID, GroupIDAdapter
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
@@ -39,14 +39,10 @@ class GroupsRepository(BaseRepository):
             raise UninitializedGroupError(group=GroupType.EVERYONE, repo_cls=GroupsRepository)
         return GroupAtDB.model_validate(row)
 
-    async def get_user_gid_from_email(
-        self,
-        user_email: LowerCaseEmailStr,
-        connection: AsyncConnection | None = None,
-    ) -> PositiveInt | None:
-        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            result = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email))
-            return TypeAdapter(PositiveInt).validate_python(result) if result else None
+    async def get_user_gid_from_email(self, user_email: LowerCaseEmailStr) -> GroupID | None:
+        async with self.db_engine.connect() as conn:
+            gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.email == user_email))
+            return GroupIDAdapter.validate_python(gid) if gid is not None else None
 
     async def get_user_email_from_gid(
         self,

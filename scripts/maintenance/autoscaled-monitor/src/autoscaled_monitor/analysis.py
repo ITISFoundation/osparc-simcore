@@ -7,7 +7,7 @@ from pathlib import Path
 import asyncssh
 import parse
 import rich
-from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
+from mypy_boto3_ec2.service_resource import Instance
 from rich.console import Console
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -212,7 +212,7 @@ async def analyze_computational_instances(
 
 async def parse_computational_clusters(
     state: AppState,
-    instances: ServiceResourceInstancesCollection,
+    instances: list[Instance],
     ssh_key_path: Path | None,
     user_id: int | None,
     wallet_id: int | None,
@@ -230,7 +230,7 @@ async def parse_computational_clusters(
 
 async def parse_dynamic_instances(
     state: AppState,
-    instances: ServiceResourceInstancesCollection,
+    instances: list[Instance],
     ssh_key_path: Path | None,
     user_id: int | None,
     wallet_id: int | None,  # noqa: ARG001

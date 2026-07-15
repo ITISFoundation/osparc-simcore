@@ -151,7 +151,6 @@ async def login(request: web.Request):
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=user["first_name"] or user["name"],
-            product_name=product.name,
             user_id=user["id"],
             locale=get_locale_or_none(request),
         )
