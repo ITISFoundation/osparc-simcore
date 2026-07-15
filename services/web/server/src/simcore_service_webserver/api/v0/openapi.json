@@ -25689,7 +25689,7 @@
           "ui": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ProjectUI-Input"
+                "$ref": "#/components/schemas/StudyUI-Input"
               },
               {
                 "type": "null"
@@ -25933,7 +25933,7 @@
                 "$ref": "#/components/schemas/EmptyModel"
               },
               {
-                "$ref": "#/components/schemas/ProjectUI-Output"
+                "$ref": "#/components/schemas/StudyUI-Output"
               },
               {
                 "type": "null"
@@ -26224,7 +26224,7 @@
                 "$ref": "#/components/schemas/EmptyModel"
               },
               {
-                "$ref": "#/components/schemas/ProjectUI-Output"
+                "$ref": "#/components/schemas/StudyUI-Output"
               },
               {
                 "type": "null"
@@ -26528,7 +26528,7 @@
           "ui": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ProjectUI-Input"
+                "$ref": "#/components/schemas/StudyUI-Input"
               },
               {
                 "type": "null"
@@ -26748,146 +26748,6 @@
           "user"
         ],
         "title": "ProjectTypeAPI"
-      },
-      "ProjectUI-Input": {
-        "properties": {
-          "slideshow": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/SlideshowUI"
-                },
-                "propertyNames": {
-                  "format": "uuid"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Slideshow"
-          },
-          "currentNodeId": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Currentnodeid"
-          },
-          "annotations": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/AnnotationUI-Input"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/AnnotationID"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Annotations"
-          },
-          "mode": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "workbench",
-                  "app",
-                  "guided",
-                  "standalone",
-                  "pipeline"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mode"
-          }
-        },
-        "type": "object",
-        "title": "ProjectUI"
-      },
-      "ProjectUI-Output": {
-        "properties": {
-          "slideshow": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/SlideshowUI"
-                },
-                "propertyNames": {
-                  "format": "uuid"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Slideshow"
-          },
-          "currentNodeId": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Currentnodeid"
-          },
-          "annotations": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/AnnotationUI-Output"
-                },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/AnnotationID"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Annotations"
-          },
-          "mode": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "workbench",
-                  "app",
-                  "guided",
-                  "standalone",
-                  "pipeline"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Mode"
-          }
-        },
-        "type": "object",
-        "title": "ProjectUI"
       },
       "ProjectsGroupsBodyParams": {
         "properties": {
@@ -28889,6 +28749,146 @@
           "label"
         ],
         "title": "Structure"
+      },
+      "StudyUI-Input": {
+        "properties": {
+          "slideshow": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SlideshowUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow"
+          },
+          "currentNodeId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentnodeid"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AnnotationUI-Input"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/AnnotationID"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotations"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "workbench",
+                  "app",
+                  "guided",
+                  "standalone",
+                  "pipeline"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "title": "StudyUI"
+      },
+      "StudyUI-Output": {
+        "properties": {
+          "slideshow": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SlideshowUI"
+                },
+                "propertyNames": {
+                  "format": "uuid"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow"
+          },
+          "currentNodeId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentnodeid"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/AnnotationUI-Output"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/AnnotationID"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotations"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "workbench",
+                  "app",
+                  "guided",
+                  "standalone",
+                  "pipeline"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "title": "StudyUI"
       },
       "SupportedLocale": {
         "type": "string",

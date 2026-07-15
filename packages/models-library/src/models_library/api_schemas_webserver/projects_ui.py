@@ -80,7 +80,7 @@ class AnnotationUI(BaseModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)
 
 
-class ProjectUI(OutputSchema):
+class StudyUI(OutputSchema):
     # Model fully controlled by the UI and stored under `projects.ui`
 
     slideshow: dict[NodeID, SlideshowUI] | None = None
