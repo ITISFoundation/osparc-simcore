@@ -12,8 +12,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
-from pydantic import TypeAdapter
+from models_library.users import UserID, UserIDAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects, users
@@ -33,7 +32,7 @@ async def _user_context(sqlalchemy_async_engine: AsyncEngine, *, name: str) -> A
     # in time, the webserver service would bring more dependencies to other services
     # which would turn this test too complex.
     async with insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, name=name) as user:
-        yield TypeAdapter(UserID).validate_python(user["id"])
+        yield UserIDAdapter.validate_python(user["id"])
 
 
 @pytest.fixture
@@ -179,7 +178,7 @@ async def collaborator_id(
     sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[UserID]:
     async with _user_context(sqlalchemy_async_engine, name="collaborator") as new_user_id:
-        yield TypeAdapter(UserID).validate_python(new_user_id)
+        yield UserIDAdapter.validate_python(new_user_id)
 
 
 @pytest.fixture

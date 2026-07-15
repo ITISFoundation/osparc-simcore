@@ -1125,7 +1125,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             yield processed_page
 
     async def create_soft_link(
-        self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID
+        self, user_id: UserID, target_file_id: StorageFileID, link_file_id: StorageFileID
     ) -> FileMetaData:
         file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
         if await file_meta_data_repo.exists(file_id=TypeAdapter(SimcoreS3FileID).validate_python(link_file_id)):

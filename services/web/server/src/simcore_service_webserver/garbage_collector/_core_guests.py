@@ -30,7 +30,7 @@ from .settings import GUEST_USER_RC_LOCK_FORMAT
 _logger = logging.getLogger(__name__)
 
 
-async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> None:
+async def _delete_all_projects_for_user(app: web.Application, user_id: UserID) -> None:
     """
     Goes through all the projects and will try to remove them but first it will check if
     the project is shared with others.
@@ -143,7 +143,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     await asyncio.gather(*delete_tasks)
 
 
-async def remove_guest_user_with_all_its_resources(app: web.Application, user_id: int) -> None:
+async def remove_guest_user_with_all_its_resources(app: web.Application, user_id: UserID) -> None:
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
 
     try:
