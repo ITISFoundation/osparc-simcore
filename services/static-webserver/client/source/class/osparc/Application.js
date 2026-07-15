@@ -60,8 +60,12 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
       this.__setupScrollbarColors();
       this.__updateTabName();
+      if (osparc.product.Utils.isLocaleEnabled()) {
+        // No user profile yet: apply the browser locale so the login flow respects the browser language
+        // Overridden with the profile's language once the user logs in
+        osparc.utils.LanguageManager.applyUsersLocale();
+      }
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        osparc.utils.LanguageManager.applyStoredLocale();
         this.__updateMetaTags();
         this.__setDeviceSpecificIcons();
       }
@@ -530,6 +534,11 @@ qx.Class.define("osparc.Application", {
                     }
                 }
               });
+            }
+
+            if (osparc.product.Utils.isLocaleEnabled()) {
+              // applyUsersLocale falls back to the browser locale when the profile has no persisted language
+              osparc.utils.LanguageManager.applyUsersLocale(profile["language"]);
             }
 
             if (loadAfterLogin) {
