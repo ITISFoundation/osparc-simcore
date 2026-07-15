@@ -331,9 +331,6 @@ class Node(BaseModel):
 
     ui: Annotated[
         dict[str, Any] | None,
-        # NOTE: typed loosely as a JSON blob on purpose: the `NodeUI` schema lives in
-        # `api_schemas_webserver` and importing it here would invert the domain -> api-schema
-        # dependency. Validation is enforced at the API boundary (NodeUI/NodeUIPatch).
         Field(description="UI components. Schema in models_library.api_schemas_webserver.projects_nodes_ui.NodeUI"),
     ] = None
 
