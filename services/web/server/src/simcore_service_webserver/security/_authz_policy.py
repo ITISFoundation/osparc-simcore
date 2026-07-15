@@ -13,6 +13,7 @@ from aiohttp_security.abc import (
 )
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.users_enums import UserRole
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
@@ -98,7 +99,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         namespace=__name__,
         key_builder=lambda f, *_, **kw: f"{f.__name__}/{kw['user_id']}/{kw['group_id']}",
     )
-    async def _is_user_in_group(self, *, user_id: UserID, group_id: int) -> bool:
+    async def _is_user_in_group(self, *, user_id: UserID, group_id: GroupID) -> bool:
         """
         Raises:
             web.HTTPServiceUnavailable: if database raises an exception

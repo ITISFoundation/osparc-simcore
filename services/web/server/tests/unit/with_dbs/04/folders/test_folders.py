@@ -11,7 +11,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
-from pydantic import TypeAdapter
+from models_library.groups import GroupIDAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
@@ -22,7 +22,6 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_repository import (
-    GroupID,
     update_or_insert_project_group,
 )
 from simcore_service_webserver.projects.models import ProjectDict
@@ -299,7 +298,7 @@ async def test_project_listing_inside_of_private_folder(
         await update_or_insert_project_group(
             client.app,
             project_id=user_project["uuid"],
-            group_id=TypeAdapter(GroupID).validate_python(new_logged_user["primary_gid"]),
+            group_id=GroupIDAdapter.validate_python(new_logged_user["primary_gid"]),
             read=True,
             write=True,
             delete=False,

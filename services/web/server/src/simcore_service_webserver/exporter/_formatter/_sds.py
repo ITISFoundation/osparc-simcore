@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from aiohttp import web
+from models_library.users import UserID
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog import catalog_service
@@ -135,7 +136,7 @@ async def create_sds_directory(
     app: web.Application,
     base_path: Path,
     project_id: str,
-    user_id: int,
+    user_id: UserID,
     product_name: str,
 ) -> None:
     try:

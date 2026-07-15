@@ -13,8 +13,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceKey, ServiceVersion
-from models_library.users import UserID
-from pydantic import TypeAdapter
+from models_library.users import UserID, UserIDAdapter
 
 
 @pytest.fixture(params=["simcore/service/comp/some/fake/service/key", "dockerhub-style/service_key"])
@@ -29,7 +28,7 @@ def service_version() -> str:
 
 @pytest.fixture
 def user_id(faker: Faker) -> UserID:
-    return TypeAdapter(UserID).validate_python(faker.pyint(min_value=1))
+    return UserIDAdapter.validate_python(faker.pyint(min_value=1))
 
 
 @pytest.fixture
