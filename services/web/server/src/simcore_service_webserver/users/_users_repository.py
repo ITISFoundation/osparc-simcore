@@ -13,6 +13,7 @@ from models_library.users import (
     MyProfile,
     UserBillingDetails,
     UserID,
+    UserIDAdapter,
     UserNameID,
     UserPermission,
 )
@@ -52,7 +53,7 @@ _logger = logging.getLogger(__name__)
 
 def _parse_as_user(user_id: Any) -> UserID:
     try:
-        return TypeAdapter(UserID).validate_python(user_id)
+        return UserIDAdapter.validate_python(user_id)
     except ValidationError as err:
         raise UserNotFoundError(user_id=user_id) from err
 
