@@ -61,7 +61,6 @@ qx.Class.define("osparc.Application", {
       this.__setupScrollbarColors();
       this.__updateTabName();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        osparc.utils.LanguageManager.applyStoredLocale();
         this.__updateMetaTags();
         this.__setDeviceSpecificIcons();
       }
@@ -530,6 +529,11 @@ qx.Class.define("osparc.Application", {
                     }
                 }
               });
+            }
+
+            if ("language" in profile && osparc.product.Utils.isLocaleEnabled()) {
+              const language = profile["language"];
+              osparc.utils.LanguageManager.applyUsersLocale(language);
             }
 
             if (loadAfterLogin) {
