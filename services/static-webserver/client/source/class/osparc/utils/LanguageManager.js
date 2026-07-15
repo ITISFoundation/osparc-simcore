@@ -60,12 +60,18 @@ qx.Class.define("osparc.utils.LanguageManager", {
       return this.getAvailableLocales().length > 1;
     },
 
+    /**
+     * Activates a locale and broadcasts the change.
+     * @return {Boolean} true if the locale was available and applied, false otherwise.
+     */
     setLocale: function(localeCode) {
       if (!this.getAvailableLocales().includes(localeCode)) {
-        return;
+        console.warn(`Locale "${localeCode}" is not available; keeping current locale.`);
+        return false;
       }
       qx.locale.Manager.getInstance().setLocale(localeCode);
       qx.event.message.Bus.getInstance().dispatchByName("localeSwitch", localeCode);
+      return true;
     },
 
     getUserLocale: function() {
@@ -84,12 +90,15 @@ qx.Class.define("osparc.utils.LanguageManager", {
 
     /**
      * Applies the user's locale (if any and still available).
-     * @param {String} [userLocale] backend SupportedLocale (e.g. "en", "zh_CN"); falls back to the browser locale when empty.
+     * @param {String} [userLocale] backend SupportedLocale (e.g. "en", "zh_CN"); falls back to the browser locale when empty or unresolvable.
      * Meant to be called early during application startup.
      */
     applyUsersLocale: function(userLocale) {
-      const frontendLocale = userLocale ? this.__toFrontendLocale(userLocale) : this.__getBrowserLocale();
-      this.setLocale(frontendLocale);
+      const frontendLocale = userLocale ? this.__toFrontendLocale(userLocale) : null;
+      // fall back to the browser locale when there is no persisted choice or it cannot be applied
+      if (!frontendLocale || !this.setLocale(frontendLocale)) {
+        this.setLocale(this.__getBrowserLocale());
+      }
     },
 
     /**
