@@ -2,8 +2,10 @@ import contextlib
 import datetime
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Annotated
 
 import sqlalchemy as sa
+from annotated_types import doc
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -317,21 +319,29 @@ class FileMetaDataRepository(BaseRepository):
         self,
         *,
         connection: AsyncConnection | None = None,
-        user_id: UserID | None = None,
         project_ids: list[ProjectID] | None = None,
-        file_ids: list[SimcoreS3FileID] | None = None,
         expired_after: datetime.datetime | None = None,
-    ) -> list[FileMetaDataAtDB]:
+        file_id_prefix: str | None = None,
+        created_before: datetime.datetime | None = None,
+    ) -> AsyncGenerator[FileMetaDataAtDB]:
         stmt = sa.select(file_meta_data).where(
             and_(
-                (file_meta_data.c.user_id == f"{user_id}") if user_id else sa.true(),
                 ((file_meta_data.c.project_id.in_([f"{p}" for p in project_ids])) if project_ids else sa.true()),
-                (file_meta_data.c.file_id.in_(file_ids)) if file_ids else sa.true(),
                 ((file_meta_data.c.upload_expires_at < expired_after) if expired_after else sa.true()),
+                (file_meta_data.c.file_id.startswith(file_id_prefix) if file_id_prefix else sa.true()),
+                (
+                    (
+                        file_meta_data.c.created_at
+                        < created_before.astimezone(datetime.UTC).replace(tzinfo=None).isoformat()
+                    )
+                    if created_before
+                    else sa.true()
+                ),
             )
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return [FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)]
+            async for row in await conn.stream(stmt):
+                yield FileMetaDataAtDB.model_validate(row)
 
     async def total(self, *, connection: AsyncConnection | None = None) -> int:
         """returns the number of uploaded file entries"""
@@ -357,10 +367,24 @@ class FileMetaDataRepository(BaseRepository):
         self,
         *,
         connection: AsyncConnection | None = None,
-        file_ids: list[SimcoreS3FileID],
+        file_ids: Annotated[list[SimcoreS3FileID], doc("file IDs to delete")],
+        recursive: Annotated[bool, doc("if True, deletes all files that are children of the given file_ids")],
     ) -> None:
+        """Delete the files with `file_ids`."""
         async with transaction_context(self.db_engine, connection) as conn:
-            await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
+            if not recursive:
+                await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
+                return
+
+            conditions = [
+                sa.or_(
+                    file_meta_data.c.file_id == file_id,
+                    file_meta_data.c.file_id.startswith(f"{file_id}/"),
+                )
+                for file_id in file_ids
+            ]
+
+            await conn.execute(file_meta_data.delete().where(sa.or_(*conditions)))
 
     async def delete_all_from_project(
         self, *, connection: AsyncConnection | None = None, project_id: ProjectID

@@ -19,6 +19,7 @@ from models_library.wallets import WalletID
 from parse import Result, search
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_clusters_keeper._meta import VERSION as APP_VERSION
+from simcore_service_clusters_keeper.constants import CLUSTER_NAME_PREFIX, HEARTBEAT_TAG_KEY
 from simcore_service_clusters_keeper.core.settings import (
     ApplicationSettings,
     get_application_settings,
@@ -29,11 +30,6 @@ from simcore_service_clusters_keeper.modules.clusters import (
     delete_clusters,
     get_cluster,
     get_cluster_workers,
-)
-from simcore_service_clusters_keeper.utils.ec2 import (
-    _APPLICATION_TAG_KEY,
-    _CLUSTER_NAME_PREFIX,
-    HEARTBEAT_TAG_KEY,
 )
 from types_aiobotocore_ec2 import EC2Client
 
@@ -73,18 +69,18 @@ async def _assert_cluster_instance_created(
     assert all("Value" in x for x in instance_ec2_tags)
 
     _EXPECTED_TAGS: dict[str, str] = {
-        f"{_APPLICATION_TAG_KEY}.deploy": (
+        "io.simcore.clusters-keeper.deploy": (
             f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}"
         ),
-        f"{_APPLICATION_TAG_KEY}.version": f"{APP_VERSION}",
+        "io.simcore.clusters-keeper.version": f"{APP_VERSION}",
         "Name": (
-            f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}manager-"
+            f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{CLUSTER_NAME_PREFIX}manager-"
             f"{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
         ),
         "io.simcore.product_name": f"{product_name}",
-        "user_id": f"{user_id}",
-        "wallet_id": f"{wallet_id}",
-        "role": "manager",
+        "io.simcore.user_id": f"{user_id}",
+        "io.simcore.wallet_id": f"{wallet_id}",
+        "io.simcore.clusters-keeper.role": "manager",
         "osparc-tag": "the pytest tag is here",
     }
     for tag in instances["Reservations"][0]["Instances"][0]["Tags"]:

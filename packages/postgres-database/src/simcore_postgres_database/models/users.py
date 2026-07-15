@@ -66,6 +66,13 @@ users = sa.Table(
         doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication."
         "NOTE: new policy (NK) is that the same phone can be reused therefore it does not has to be unique",
     ),
+    sa.Column(
+        "language",
+        sa.String(),
+        nullable=True,
+        doc="Persisted UI/communications language (e.g. 'en', 'es_ES', 'zh_CN')."
+        "NULL means no persisted choice: resolve from request headers / default EN.",
+    ),
     #
     # User Account ------------------
     #
@@ -172,7 +179,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';
-"""
+"""  # noqa: E501
 )
 
 sa.event.listen(

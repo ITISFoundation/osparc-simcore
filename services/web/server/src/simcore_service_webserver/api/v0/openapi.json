@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.87.0"
+    "version": "0.89.0"
   },
   "servers": [
     {
@@ -3125,10 +3125,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 200,
-                  "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+                  "$ref": "#/components/schemas/GlobPatternSafeStr"
                 },
                 {
                   "type": "null"
@@ -3160,10 +3157,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 200,
-                  "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+                  "$ref": "#/components/schemas/GlobPatternSafeStr"
                 },
                 {
                   "type": "null"
@@ -8033,16 +8027,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8052,6 +8036,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8259,16 +8253,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8278,6 +8262,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8361,16 +8355,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8380,6 +8364,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8464,16 +8458,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8483,6 +8467,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8568,16 +8562,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8587,6 +8571,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8662,16 +8656,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8681,6 +8665,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8765,16 +8759,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8784,6 +8768,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8965,16 +8959,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8984,6 +8968,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -9068,16 +9062,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -9087,6 +9071,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -12886,8 +12880,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad Request",
+          "402": {
+            "description": "Payment Required",
             "content": {
               "application/json": {
                 "schema": {
@@ -12896,8 +12890,8 @@
               }
             }
           },
-          "402": {
-            "description": "Payment Required",
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
@@ -12993,16 +12987,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13012,6 +12996,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13090,16 +13084,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13109,6 +13093,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13176,16 +13170,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13195,6 +13179,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13273,16 +13267,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13292,6 +13276,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13359,16 +13353,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13378,6 +13362,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13456,16 +13450,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13475,6 +13459,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -14501,6 +14495,11 @@
           "limits"
         ],
         "title": "Activity"
+      },
+      "AddressLineSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1
       },
       "AnnotationID": {
         "type": "string",
@@ -15754,6 +15753,10 @@
         ],
         "title": "CodePageParams"
       },
+      "ColorStr": {
+        "type": "string",
+        "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+      },
       "Compatibility": {
         "properties": {
           "canUpdateTo": {
@@ -16586,6 +16589,9 @@
         ],
         "title": "CountryInfoDict"
       },
+      "CountryNameStr": {
+        "type": "string"
+      },
       "CreatePricingPlanBodyParams": {
         "properties": {
           "displayName": {
@@ -17027,6 +17033,16 @@
           "dataset_id": "N:id-aaaa",
           "display_name": "simcore-testing"
         }
+      },
+      "DescriptionSafeStr": {
+        "type": "string",
+        "maxLength": 5000,
+        "minLength": 3
+      },
+      "DisplaySafeStr": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
       },
       "DownloadLink": {
         "properties": {
@@ -20734,13 +20750,14 @@
         ],
         "title": "FileUploadSchema"
       },
+      "FirstNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "FolderCreateBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Name"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "parentFolderId": {
             "anyOf": [
@@ -20866,10 +20883,7 @@
       "FolderReplaceBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Name"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "parentFolderId": {
             "anyOf": [
@@ -21007,6 +21021,12 @@
         ],
         "title": "GetWalletAutoRecharge"
       },
+      "GlobPatternSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 3,
+        "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+      },
       "GroupAccessRights": {
         "properties": {
           "read": {
@@ -21034,17 +21054,10 @@
       "GroupCreate": {
         "properties": {
           "label": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._-]+$",
-            "title": "Label"
+            "$ref": "#/components/schemas/NameSafeStr"
           },
           "description": {
-            "type": "string",
-            "maxLength": 5000,
-            "minLength": 3,
-            "title": "Description"
+            "$ref": "#/components/schemas/DescriptionSafeStr"
           },
           "thumbnail": {
             "anyOf": [
@@ -21164,29 +21177,22 @@
           "label": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
-                "pattern": "^[A-Za-z0-9 ._-]+$"
+                "$ref": "#/components/schemas/NameSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Label"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "thumbnail": {
             "anyOf": [
@@ -21222,15 +21228,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/UserNameSafeID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Username"
+            ]
           },
           "email": {
             "anyOf": [
@@ -21266,15 +21269,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username",
             "description": "None if private"
           },
           "gid": {
@@ -21751,6 +21751,10 @@
         ],
         "title": "JobEncryptionContextMetadata"
       },
+      "LastNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "LicensedItemPurchaseGet": {
         "properties": {
           "licensedItemPurchaseId": {
@@ -22174,6 +22178,9 @@
         "type": "object",
         "title": "LogoutBody"
       },
+      "LongTruncatedStr": {
+        "type": "string"
+      },
       "LowerCaseEmailStr": {
         "type": "string",
         "format": "email"
@@ -22561,6 +22568,72 @@
         "title": "MyProfileAddressGet",
         "description": "Details provided upon registration and used e.g. for invoicing"
       },
+      "MyProfileAddressRestPatch": {
+        "properties": {
+          "institution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AddressLineSafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "city": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "postalCode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PostalCodeSafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CountryNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "MyProfileAddressRestPatch"
+      },
       "MyProfilePrivacyGet": {
         "properties": {
           "hideUsername": {
@@ -22640,26 +22713,22 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Last Name"
+            ]
           },
           "login": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -22674,6 +22743,17 @@
               }
             ],
             "title": "Phone"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Persisted UI/communications language. None means no persisted choice."
           },
           "role": {
             "type": "string",
@@ -22759,44 +22839,58 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Last Name"
+            ]
           },
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/UserNameSafeID"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username"
+            "description": "Persisted UI/communications language. The user owns and can edit it directly."
           },
           "privacy": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/MyProfilePrivacyPatch"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MyProfileAddressRestPatch"
               },
               {
                 "type": "null"
@@ -22873,6 +22967,12 @@
           "token_key"
         ],
         "title": "MyTokenGet"
+      },
+      "NameSafeStr": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 ._-]+$"
       },
       "Node-Input": {
         "properties": {
@@ -24951,6 +25051,12 @@
         ],
         "title": "Position"
       },
+      "PostalCodeSafeStr": {
+        "type": "string",
+        "maxLength": 20,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 \\-]+$"
+      },
       "Preference": {
         "properties": {
           "defaultValue": {
@@ -26328,24 +26434,22 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ShortTruncatedStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/LongTruncatedStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "thumbnail": {
             "anyOf": [
@@ -27440,6 +27544,12 @@
         ],
         "title": "SearchFilters"
       },
+      "SearchPatternSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 ._@-]*$"
+      },
       "SearchTimerangeFilter": {
         "properties": {
           "from": {
@@ -28207,6 +28317,9 @@
         ],
         "title": "ServicesAggregatedUsagesType"
       },
+      "ShortTruncatedStr": {
+        "type": "string"
+      },
       "SimCoreFileLink-Input": {
         "properties": {
           "store": {
@@ -28777,6 +28890,14 @@
         "type": "object",
         "title": "StudyUI"
       },
+      "SupportedLocale": {
+        "type": "string",
+        "enum": [
+          "en",
+          "es_ES",
+          "zh_CN"
+        ]
+      },
       "TagAccessRights": {
         "properties": {
           "read": {
@@ -28803,29 +28924,20 @@
       "TagCreate": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._-]+$",
-            "title": "Name"
+            "$ref": "#/components/schemas/NameSafeStr"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "color": {
-            "type": "string",
-            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-            "title": "Color"
+            "$ref": "#/components/schemas/ColorStr"
           },
           "priority": {
             "anyOf": [
@@ -28940,41 +29052,32 @@
           "name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
-                "pattern": "^[A-Za-z0-9 ._-]+$"
+                "$ref": "#/components/schemas/NameSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "color": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+                "$ref": "#/components/schemas/ColorStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Color"
+            ]
           },
           "priority": {
             "anyOf": [
@@ -29709,15 +29812,12 @@
           "invitedBy": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Invitedby"
+            ]
           },
           "accountRequestStatus": {
             "anyOf": [
@@ -29732,15 +29832,12 @@
           "accountRequestReviewedBy": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Accountrequestreviewedby"
+            ]
           },
           "accountRequestReviewedAt": {
             "anyOf": [
@@ -29799,15 +29896,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username",
             "description": "Username of the user if an account was created"
           },
           "groupId": {
@@ -29998,12 +30092,10 @@
       "UserAccountRestPreRegister": {
         "properties": {
           "firstName": {
-            "type": "string",
-            "title": "Firstname"
+            "$ref": "#/components/schemas/FirstNameStr"
           },
           "lastName": {
-            "type": "string",
-            "title": "Lastname"
+            "$ref": "#/components/schemas/LastNameStr"
           },
           "email": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -30011,13 +30103,12 @@
           "institution": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Institution",
             "description": "company, university, ..."
           },
           "phone": {
@@ -30031,31 +30122,26 @@
             ]
           },
           "address": {
-            "type": "string",
-            "title": "Address"
+            "$ref": "#/components/schemas/AddressLineSafeStr"
           },
           "city": {
-            "type": "string",
-            "title": "City"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "state": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "State"
+            ]
           },
           "postalCode": {
-            "type": "string",
-            "title": "Postalcode"
+            "$ref": "#/components/schemas/PostalCodeSafeStr"
           },
           "country": {
-            "type": "string",
-            "title": "Country"
+            "$ref": "#/components/schemas/CountryNameStr"
           },
           "extras": {
             "additionalProperties": true,
@@ -30090,15 +30176,12 @@
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Username"
+            ]
           },
           "firstName": {
             "anyOf": [
@@ -30141,6 +30224,9 @@
           "groupId"
         ],
         "title": "UserGet"
+      },
+      "UserNameSafeID": {
+        "$ref": "#/components/schemas/_UserNameID"
       },
       "UserNotification": {
         "properties": {
@@ -30333,11 +30419,7 @@
       "UsersSearch": {
         "properties": {
           "match": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._@-]*$",
-            "title": "Match",
+            "$ref": "#/components/schemas/SearchPatternSafeStr",
             "description": "Search string to match with usernames and public profiles (e.g. emails, first/last name)"
           },
           "limit": {
@@ -31150,6 +31232,11 @@
           "node_id"
         ],
         "title": "_ProjectNodePreview"
+      },
+      "_UserNameID": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 4
       },
       "_WalletsGroupsBodyParams": {
         "properties": {

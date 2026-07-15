@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.14.0"
+    "version": "0.15.0"
   },
   "paths": {
     "/v0/meta": {
@@ -9346,25 +9346,23 @@
           "title": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ShortTruncatedStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Title",
             "empty": true
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/LongTruncatedStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description",
             "empty": true
           }
         },
@@ -9694,6 +9692,10 @@
           "links"
         ],
         "title": "FileUploadData"
+      },
+      "FirstNameStr": {
+        "type": "string",
+        "maxLength": 255
       },
       "FunctionJobCollection": {
         "properties": {
@@ -10309,6 +10311,10 @@
         },
         "type": "object"
       },
+      "LastNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "LicensedItemCheckoutData": {
         "properties": {
           "number_of_seats": {
@@ -10726,6 +10732,9 @@
         "title": "LogLink"
       },
       "LogMessageStr": {
+        "type": "string"
+      },
+      "LongTruncatedStr": {
         "type": "string"
       },
       "LowerCaseEmailStr": {
@@ -11656,26 +11665,33 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Last Name"
+            "description": "Persisted UI/communications language. None means no persisted choice."
           },
           "id": {
             "type": "integer",
@@ -11746,26 +11762,33 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Last Name"
+            "description": "Persisted UI/communications language. None means no persisted choice."
           }
         },
         "type": "object",
@@ -13130,6 +13153,9 @@
         ],
         "title": "ServicePricingPlanGetLegacy"
       },
+      "ShortTruncatedStr": {
+        "type": "string"
+      },
       "Solver": {
         "properties": {
           "id": {
@@ -13506,6 +13532,14 @@
           "key": "f763658f-a89a-4a90-ace4-c44631290f12",
           "kind": "input"
         }
+      },
+      "SupportedLocale": {
+        "type": "string",
+        "enum": [
+          "en",
+          "es_ES",
+          "zh_CN"
+        ]
       },
       "TaskGet": {
         "properties": {
