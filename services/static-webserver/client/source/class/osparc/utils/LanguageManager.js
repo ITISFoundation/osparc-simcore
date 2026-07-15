@@ -66,10 +66,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
       if (!userLocale) {
         userLocale = this.__getBrowserLocale();
       }
-
-      if (this.getAvailableLocales().includes(userLocale)) {
-        qx.locale.Manager.getInstance().setLocale(userLocale);
-      }
+      this.setLocale(userLocale);
     },
 
     /**
