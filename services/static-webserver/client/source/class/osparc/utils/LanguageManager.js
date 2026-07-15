@@ -20,11 +20,28 @@ qx.Class.define("osparc.utils.LanguageManager", {
       "zh": "中文 [Chinese]",
     },
 
-    // the backend supports the following locales
+    // maps qooxdoo compiler locales (keys) to backend SupportedLocale values
     __localeMapping: {
       "en_US": "en",
       "es_ES": "es_ES",
       "zh": "zh_CN",
+    },
+
+    /**
+     * Maps a qooxdoo (frontend) locale to the backend's SupportedLocale.
+     * @return {String} e.g. "en_US" -> "en"
+     */
+    __toBackendLocale: function(frontendLocale) {
+      return this.__localeMapping[frontendLocale] || frontendLocale;
+    },
+
+    /**
+     * Maps a backend SupportedLocale to the qooxdoo (frontend) locale.
+     * @return {String} e.g. "en" -> "en_US"
+     */
+    __toFrontendLocale: function(backendLocale) {
+      const frontendLocale = Object.keys(this.__localeMapping).find(feLocale => this.__localeMapping[feLocale] === backendLocale);
+      return frontendLocale || backendLocale;
     },
 
     /**
@@ -58,7 +75,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
     patchLocale: function(localeCode) {
       const params = {
         data: {
-          "language": this.__localeMapping[localeCode],
+          "language": this.__toBackendLocale(localeCode),
         },
       };
       return osparc.data.Resources.fetch("profile", "patch", params)
@@ -67,13 +84,12 @@ qx.Class.define("osparc.utils.LanguageManager", {
 
     /**
      * Applies the user's locale (if any and still available).
+     * @param {String} [userLocale] backend SupportedLocale (e.g. "en", "zh_CN"); falls back to the browser locale when empty.
      * Meant to be called early during application startup.
      */
     applyUsersLocale: function(userLocale) {
-      if (!userLocale) {
-        userLocale = this.__getBrowserLocale();
-      }
-      this.setLocale(userLocale);
+      const frontendLocale = userLocale ? this.__toFrontendLocale(userLocale) : this.__getBrowserLocale();
+      this.setLocale(frontendLocale);
     },
 
     /**
