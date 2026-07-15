@@ -41,6 +41,7 @@ class PaymentsUsersRepo(BaseRepository):
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
+                users.c.language,
             )
             .select_from(
                 sa.join(
