@@ -176,7 +176,7 @@ class ProductRepository(BaseRepository):
         for product_name in product_names:
             # NOTE: transaction is per product. fail-fast!
             async with transaction_context(self.engine, connection) as conn:
-                product_group_id: GroupID = await get_or_create_product_group(conn, product_name)
+                product_group_id: GroupID = GroupID(await get_or_create_product_group(conn, product_name))
                 product_groups_map[product_name] = product_group_id
 
         return product_groups_map

@@ -9,7 +9,8 @@ from fastapi_pagination.api import create_page
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import HttpUrl, PositiveInt
+from models_library.users import UserID
+from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
 from ..._service_jobs import JobService, compose_study_job_resource_name
@@ -240,7 +241,7 @@ async def start_study_job(
 async def stop_study_job(
     study_id: StudyID,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     job_name = compose_study_job_resource_name(study_id, job_id)
@@ -287,7 +288,7 @@ async def get_study_job_outputs(
 async def get_study_job_output_logfile(
     study_id: StudyID,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     with log_context(

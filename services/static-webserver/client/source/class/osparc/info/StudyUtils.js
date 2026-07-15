@@ -192,7 +192,7 @@ qx.Class.define("osparc.info.StudyUtils", {
     createDescription: function(study, maxHeight) {
       const description = new osparc.ui.markdown.Markdown();
       study.bind("description", description, "value", {
-        converter: desc => desc ? desc : "No description"
+        converter: desc => desc ? desc : qx.locale.Manager.tr("No description")
       });
       const scrollContainer = new qx.ui.container.Scroll();
       if (maxHeight) {

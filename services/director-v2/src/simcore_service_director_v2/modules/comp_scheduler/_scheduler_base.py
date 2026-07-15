@@ -44,6 +44,7 @@ from ...core.errors import (
     ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
+    ComputationalRunNotFoundError,
     ComputationalSchedulerChangedError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
@@ -551,7 +552,7 @@ class BaseCompScheduler(ABC):
         """process executing tasks from the 3rd party backend"""
 
     @abstractmethod
-    async def _release_resources(self, comp_run: CompRunsAtDB) -> None:
+    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: Iteration) -> None:
         """release resources used by the scheduler for a given user and project"""
 
     async def apply(
@@ -616,13 +617,28 @@ class BaseCompScheduler(ABC):
 
                 # 7. Are we done scheduling that pipeline?
                 if not dag.nodes() or pipeline_result in COMPLETED_STATES:
-                    await self._release_resources(comp_run)
+                    await self._safe_release_resources(comp_run.user_id, comp_run.project_uuid, comp_run.run_id)
                     # there is nothing left, the run is completed, we're done here
                     _logger.info(
                         "pipeline %s scheduling completed with result %s",
                         f"{project_id=}",
                         f"{pipeline_result=}",
                     )
+            except ComputationalRunNotFoundError as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        f"pipeline {project_id} is missing from `comp_runs` DB table, "
+                        "something is corrupted. Aborting scheduling",
+                        error=exc,
+                        error_context={
+                            "user_id": f"{user_id}",
+                            "project_id": f"{project_id}",
+                            "iteration": f"{iteration}",
+                        },
+                        tip="Check that the project still exists",
+                    )
+                )
+                await self._safe_release_resources(user_id, project_id, iteration)
             except PipelineNotFoundError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
@@ -639,6 +655,7 @@ class BaseCompScheduler(ABC):
                 )
 
                 # NOTE: no need to update task states here as pipeline is already broken
+                await self._safe_release_resources(user_id, project_id, iteration)
                 await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except InvalidPipelineError as exc:
                 _logger.exception(
@@ -654,6 +671,7 @@ class BaseCompScheduler(ABC):
                     ),
                 )
                 # NOTE: no need to update task states here as pipeline is already broken
+                await self._safe_release_resources(user_id, project_id, iteration)
                 await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except ComputationalSchedulerChangedError as exc:
                 _logger.exception(

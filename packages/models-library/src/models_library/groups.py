@@ -2,12 +2,13 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
     Annotated,
     Final,
     NamedTuple,
+    NewType,
     TypedDict,
 )
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.groups_enums import GroupType
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, TypeAdapter, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
 
@@ -16,7 +17,11 @@ from .utils.common_validators import create_enums_pre_validator
 
 EVERYONE_GROUP_ID: Final[int] = 1
 
-type GroupID = PositiveInt
+type _GroupIDInt = PositiveInt
+
+GroupID = NewType("GroupID", _GroupIDInt)
+GroupIDAdapter: Final[TypeAdapter[GroupID]] = TypeAdapter(GroupID)
+
 type PrimaryGroupID = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
 type StandardGroupID = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
 

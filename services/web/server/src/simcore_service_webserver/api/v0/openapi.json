@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.87.0"
+    "version": "0.89.1"
   },
   "servers": [
     {
@@ -1343,7 +1343,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -1373,7 +1373,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -1413,7 +1413,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -1439,7 +1439,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -1470,7 +1470,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -1506,7 +1506,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           },
           {
@@ -1514,9 +1514,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Uid"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -1547,7 +1545,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           },
           {
@@ -1555,9 +1553,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Uid"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -1598,7 +1594,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           },
           {
@@ -1606,9 +1602,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Uid"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -1632,7 +1626,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           },
           {
@@ -1952,7 +1946,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -2023,7 +2017,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -2094,7 +2088,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -3125,10 +3119,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 200,
-                  "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+                  "$ref": "#/components/schemas/GlobPatternSafeStr"
                 },
                 {
                   "type": "null"
@@ -3144,7 +3135,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 {
                   "type": "null"
@@ -3160,10 +3151,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "minLength": 3,
-                  "maxLength": 200,
-                  "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+                  "$ref": "#/components/schemas/GlobPatternSafeStr"
                 },
                 {
                   "type": "null"
@@ -3510,9 +3498,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3541,9 +3527,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3585,9 +3569,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3675,9 +3657,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3717,9 +3697,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3754,9 +3732,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3787,9 +3763,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3825,9 +3799,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -3858,9 +3830,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3900,9 +3870,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3937,9 +3905,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -3991,9 +3957,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -4022,9 +3986,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -4066,9 +4028,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -4076,7 +4036,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -4116,9 +4076,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -4126,7 +4084,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -4166,9 +4124,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -4176,7 +4132,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -4201,9 +4157,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -6412,7 +6366,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_GroupID__FunctionGroupAccessRightsGet__"
+                  "$ref": "#/components/schemas/Envelope_dict_NewType__FunctionGroupAccessRightsGet__"
                 }
               }
             }
@@ -6443,7 +6397,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -6492,7 +6446,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -7166,9 +7120,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -7345,9 +7297,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -8033,16 +7983,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8052,6 +7992,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8259,16 +8209,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8278,6 +8218,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8361,16 +8311,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8380,6 +8320,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8464,16 +8414,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8483,6 +8423,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8568,16 +8518,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8587,6 +8527,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       },
@@ -8662,16 +8612,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8681,6 +8621,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8765,16 +8715,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8784,6 +8724,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -8965,16 +8915,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -8984,6 +8924,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -9068,16 +9018,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -9087,6 +9027,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -9159,7 +9109,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -9209,7 +9159,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -9259,7 +9209,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -10437,7 +10387,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -11082,9 +11032,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -11125,9 +11073,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -11228,8 +11174,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/components/schemas/_WalletIDInt"
                 },
                 {
                   "type": "null"
@@ -11341,8 +11286,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -11388,8 +11332,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/components/schemas/_WalletIDInt"
                 },
                 {
                   "type": "null"
@@ -12886,8 +12829,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad Request",
+          "402": {
+            "description": "Payment Required",
             "content": {
               "application/json": {
                 "schema": {
@@ -12896,8 +12839,8 @@
               }
             }
           },
-          "402": {
-            "description": "Payment Required",
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
@@ -12993,16 +12936,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13012,6 +12945,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13090,16 +13033,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13109,6 +13042,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13176,16 +13119,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13195,6 +13128,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13273,16 +13216,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13292,6 +13225,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13359,16 +13302,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13378,6 +13311,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13456,16 +13399,6 @@
             },
             "description": "Unprocessable Content"
           },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
           "402": {
             "content": {
               "application/json": {
@@ -13475,6 +13408,16 @@
               }
             },
             "description": "Payment Required"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Bad Request"
           }
         }
       }
@@ -13903,7 +13846,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -13993,7 +13936,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -14083,7 +14026,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             }
           }
         ],
@@ -14501,6 +14444,11 @@
           "limits"
         ],
         "title": "Activity"
+      },
+      "AddressLineSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1
       },
       "AnnotationID": {
         "type": "string",
@@ -15038,7 +14986,7 @@
                   "$ref": "#/components/schemas/ServiceGroupAccessRightsV2"
                 },
                 "propertyNames": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "object"
               },
@@ -15374,7 +15322,7 @@
                   "$ref": "#/components/schemas/ServiceGroupAccessRightsV2"
                 },
                 "propertyNames": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "object"
               },
@@ -15652,7 +15600,7 @@
                   "$ref": "#/components/schemas/ServiceGroupAccessRightsV2"
                 },
                 "propertyNames": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "object"
               },
@@ -15753,6 +15701,10 @@
           "message"
         ],
         "title": "CodePageParams"
+      },
+      "ColorStr": {
+        "type": "string",
+        "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
       },
       "Compatibility": {
         "properties": {
@@ -16342,7 +16294,7 @@
             "$ref": "#/components/schemas/ConversationID"
           },
           "userGroupId": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "content": {
             "type": "string",
@@ -16481,7 +16433,7 @@
             "title": "Projectuuid"
           },
           "userGroupId": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "type": {
             "$ref": "#/components/schemas/ConversationType"
@@ -16585,6 +16537,9 @@
           "alpha2"
         ],
         "title": "CountryInfoDict"
+      },
+      "CountryNameStr": {
+        "type": "string"
       },
       "CreatePricingPlanBodyParams": {
         "properties": {
@@ -17027,6 +16982,16 @@
           "dataset_id": "N:id-aaaa",
           "display_name": "simcore-testing"
         }
+      },
+      "DescriptionSafeStr": {
+        "type": "string",
+        "maxLength": 5000,
+        "minLength": 3
+      },
+      "DisplaySafeStr": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
       },
       "DownloadLink": {
         "properties": {
@@ -18968,7 +18933,7 @@
         "type": "object",
         "title": "Envelope[dict[Annotated[str, StringConstraints], ImageResources]]"
       },
-      "Envelope_dict_GroupID__FunctionGroupAccessRightsGet__": {
+      "Envelope_dict_NewType__FunctionGroupAccessRightsGet__": {
         "properties": {
           "data": {
             "anyOf": [
@@ -18977,7 +18942,7 @@
                   "$ref": "#/components/schemas/FunctionGroupAccessRightsGet"
                 },
                 "propertyNames": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "object"
               },
@@ -18998,7 +18963,7 @@
           }
         },
         "type": "object",
-        "title": "Envelope[dict[GroupID, FunctionGroupAccessRightsGet]]"
+        "title": "Envelope[dict[NewType, FunctionGroupAccessRightsGet]]"
       },
       "Envelope_dict_UUID__Activity__": {
         "properties": {
@@ -20734,13 +20699,14 @@
         ],
         "title": "FileUploadSchema"
       },
+      "FirstNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "FolderCreateBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Name"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "parentFolderId": {
             "anyOf": [
@@ -20822,7 +20788,7 @@
           "trashedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GroupID"
+                "$ref": "#/components/schemas/_GroupIDInt"
               },
               {
                 "type": "null"
@@ -20831,7 +20797,7 @@
             "description": "The primary gid of the user who trashed"
           },
           "owner": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "workspaceId": {
             "anyOf": [
@@ -20866,10 +20832,7 @@
       "FolderReplaceBodyParams": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Name"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "parentFolderId": {
             "anyOf": [
@@ -21007,6 +20970,12 @@
         ],
         "title": "GetWalletAutoRecharge"
       },
+      "GlobPatternSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 3,
+        "pattern": "^[A-Za-z0-9 ._\\*@-]*$"
+      },
       "GroupAccessRights": {
         "properties": {
           "read": {
@@ -21034,17 +21003,10 @@
       "GroupCreate": {
         "properties": {
           "label": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._-]+$",
-            "title": "Label"
+            "$ref": "#/components/schemas/NameSafeStr"
           },
           "description": {
-            "type": "string",
-            "maxLength": 5000,
-            "minLength": 3,
-            "title": "Description"
+            "$ref": "#/components/schemas/DescriptionSafeStr"
           },
           "thumbnail": {
             "anyOf": [
@@ -21070,7 +21032,7 @@
       "GroupGet": {
         "properties": {
           "gid": {
-            "$ref": "#/components/schemas/GroupID",
+            "$ref": "#/components/schemas/_GroupIDInt",
             "description": "the group's unique ID"
           },
           "label": {
@@ -21120,7 +21082,7 @@
       "GroupGetBase": {
         "properties": {
           "gid": {
-            "$ref": "#/components/schemas/GroupID",
+            "$ref": "#/components/schemas/_GroupIDInt",
             "description": "the group's unique ID"
           },
           "label": {
@@ -21155,38 +21117,27 @@
         ],
         "title": "GroupGetBase"
       },
-      "GroupID": {
-        "type": "integer",
-        "exclusiveMinimum": 0
-      },
       "GroupUpdate": {
         "properties": {
           "label": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
-                "pattern": "^[A-Za-z0-9 ._-]+$"
+                "$ref": "#/components/schemas/NameSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Label"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "thumbnail": {
             "anyOf": [
@@ -21210,27 +21161,22 @@
           "uid": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_UserIDInt"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Uid"
+            ]
           },
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/UserNameSafeID"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Username"
+            ]
           },
           "email": {
             "anyOf": [
@@ -21253,34 +21199,29 @@
           "id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_UserIDInt"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Id",
             "description": "the user's id"
           },
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username",
             "description": "None if private"
           },
           "gid": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GroupID"
+                "$ref": "#/components/schemas/_GroupIDInt"
               },
               {
                 "type": "null"
@@ -21751,6 +21692,10 @@
         ],
         "title": "JobEncryptionContextMetadata"
       },
+      "LastNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "LicensedItemPurchaseGet": {
         "properties": {
           "licensedItemPurchaseId": {
@@ -21777,9 +21722,7 @@
             "title": "Version"
           },
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "pricingUnitCostId": {
             "type": "integer",
@@ -21805,9 +21748,7 @@
             "title": "Numofseats"
           },
           "purchasedByUser": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Purchasedbyuser"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "userEmail": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -21946,9 +21887,7 @@
       "LicensedItemsBodyParams": {
         "properties": {
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Wallet Id"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "pricing_plan_id": {
             "type": "integer",
@@ -22174,6 +22113,9 @@
         "type": "object",
         "title": "LogoutBody"
       },
+      "LongTruncatedStr": {
+        "type": "string"
+      },
       "LowerCaseEmailStr": {
         "type": "string",
         "format": "email"
@@ -22202,7 +22144,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "array"
               },
@@ -22561,6 +22503,72 @@
         "title": "MyProfileAddressGet",
         "description": "Details provided upon registration and used e.g. for invoicing"
       },
+      "MyProfileAddressRestPatch": {
+        "properties": {
+          "institution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AddressLineSafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "city": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "postalCode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PostalCodeSafeStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CountryNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "MyProfileAddressRestPatch"
+      },
       "MyProfilePrivacyGet": {
         "properties": {
           "hideUsername": {
@@ -22626,9 +22634,7 @@
       "MyProfileRestGet": {
         "properties": {
           "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "userName": {
             "type": "string",
@@ -22640,26 +22646,22 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Last Name"
+            ]
           },
           "login": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -22674,6 +22676,17 @@
               }
             ],
             "title": "Phone"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Persisted UI/communications language. None means no persisted choice."
           },
           "role": {
             "type": "string",
@@ -22759,44 +22772,58 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Last Name"
+            ]
           },
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/UserNameSafeID"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username"
+            "description": "Persisted UI/communications language. The user owns and can edit it directly."
           },
           "privacy": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/MyProfilePrivacyPatch"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MyProfileAddressRestPatch"
               },
               {
                 "type": "null"
@@ -22873,6 +22900,12 @@
           "token_key"
         ],
         "title": "MyTokenGet"
+      },
+      "NameSafeStr": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 ._-]+$"
       },
       "Node-Input": {
         "properties": {
@@ -23690,7 +23723,7 @@
           "owner": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GroupID"
+                "$ref": "#/components/schemas/_GroupIDInt"
               },
               {
                 "type": "null"
@@ -23722,7 +23755,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "array"
               },
@@ -24619,9 +24652,7 @@
             "title": "Idr"
           },
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "cardHolderName": {
             "anyOf": [
@@ -24701,9 +24732,7 @@
       "PaymentMethodInitiated": {
         "properties": {
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "paymentMethodId": {
             "type": "string",
@@ -24741,9 +24770,7 @@
             "title": "Pricedollars"
           },
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "osparcCredits": {
             "type": "string",
@@ -24950,6 +24977,12 @@
           "y"
         ],
         "title": "Position"
+      },
+      "PostalCodeSafeStr": {
+        "type": "string",
+        "maxLength": 20,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 \\-]+$"
       },
       "Preference": {
         "properties": {
@@ -25758,7 +25791,7 @@
           "trashedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GroupID"
+                "$ref": "#/components/schemas/_GroupIDInt"
               },
               {
                 "type": "null"
@@ -25872,7 +25905,7 @@
       "ProjectGroupGet": {
         "properties": {
           "gid": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "read": {
             "type": "boolean",
@@ -26049,7 +26082,7 @@
           "trashedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GroupID"
+                "$ref": "#/components/schemas/_GroupIDInt"
               },
               {
                 "type": "null"
@@ -26328,24 +26361,22 @@
           "name": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/ShortTruncatedStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/LongTruncatedStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "thumbnail": {
             "anyOf": [
@@ -26540,7 +26571,7 @@
           },
           "currentUserGroupids": {
             "items": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             },
             "type": "array",
             "title": "Currentusergroupids",
@@ -26894,7 +26925,7 @@
               "$ref": "#/components/schemas/FunctionGroupAccessRightsGet"
             },
             "propertyNames": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             },
             "type": "object",
             "title": "Accessrights"
@@ -27015,7 +27046,7 @@
               "$ref": "#/components/schemas/FunctionGroupAccessRightsGet"
             },
             "propertyNames": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             },
             "type": "object",
             "title": "Accessrights"
@@ -27259,9 +27290,7 @@
             "description": "semantic version number of the node"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "project_id": {
             "type": "string",
@@ -27439,6 +27468,12 @@
           "namePattern"
         ],
         "title": "SearchFilters"
+      },
+      "SearchPatternSafeStr": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9 ._@-]*$"
       },
       "SearchTimerangeFilter": {
         "properties": {
@@ -28014,14 +28049,12 @@
           "wallet_id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_WalletIDInt"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Wallet Id"
+            ]
           },
           "wallet_name": {
             "anyOf": [
@@ -28035,9 +28068,7 @@
             "title": "Wallet Name"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "user_email": {
             "type": "string",
@@ -28206,6 +28237,9 @@
           "services"
         ],
         "title": "ServicesAggregatedUsagesType"
+      },
+      "ShortTruncatedStr": {
+        "type": "string"
       },
       "SimCoreFileLink-Input": {
         "properties": {
@@ -28777,6 +28811,14 @@
         "type": "object",
         "title": "StudyUI"
       },
+      "SupportedLocale": {
+        "type": "string",
+        "enum": [
+          "en",
+          "es_ES",
+          "zh_CN"
+        ]
+      },
       "TagAccessRights": {
         "properties": {
           "read": {
@@ -28803,29 +28845,20 @@
       "TagCreate": {
         "properties": {
           "name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._-]+$",
-            "title": "Name"
+            "$ref": "#/components/schemas/NameSafeStr"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "color": {
-            "type": "string",
-            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-            "title": "Color"
+            "$ref": "#/components/schemas/ColorStr"
           },
           "priority": {
             "anyOf": [
@@ -28911,7 +28944,7 @@
       "TagGroupGet": {
         "properties": {
           "gid": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "read": {
             "type": "boolean",
@@ -28940,41 +28973,32 @@
           "name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 1,
-                "pattern": "^[A-Za-z0-9 ._-]+$"
+                "$ref": "#/components/schemas/NameSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Name"
+            ]
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 5000,
-                "minLength": 3
+                "$ref": "#/components/schemas/DescriptionSafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Description"
+            ]
           },
           "color": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+                "$ref": "#/components/schemas/ColorStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Color"
+            ]
           },
           "priority": {
             "anyOf": [
@@ -29709,15 +29733,12 @@
           "invitedBy": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Invitedby"
+            ]
           },
           "accountRequestStatus": {
             "anyOf": [
@@ -29732,15 +29753,12 @@
           "accountRequestReviewedBy": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Accountrequestreviewedby"
+            ]
           },
           "accountRequestReviewedAt": {
             "anyOf": [
@@ -29786,28 +29804,23 @@
           "userId": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_UserIDInt"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Userid",
             "description": "Unique identifier of the user if an account was created"
           },
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Username",
             "description": "Username of the user if an account was created"
           },
           "groupId": {
@@ -29998,12 +30011,10 @@
       "UserAccountRestPreRegister": {
         "properties": {
           "firstName": {
-            "type": "string",
-            "title": "Firstname"
+            "$ref": "#/components/schemas/FirstNameStr"
           },
           "lastName": {
-            "type": "string",
-            "title": "Lastname"
+            "$ref": "#/components/schemas/LastNameStr"
           },
           "email": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -30011,13 +30022,12 @@
           "institution": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Institution",
             "description": "company, university, ..."
           },
           "phone": {
@@ -30031,31 +30041,26 @@
             ]
           },
           "address": {
-            "type": "string",
-            "title": "Address"
+            "$ref": "#/components/schemas/AddressLineSafeStr"
           },
           "city": {
-            "type": "string",
-            "title": "City"
+            "$ref": "#/components/schemas/DisplaySafeStr"
           },
           "state": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/DisplaySafeStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "State"
+            ]
           },
           "postalCode": {
-            "type": "string",
-            "title": "Postalcode"
+            "$ref": "#/components/schemas/PostalCodeSafeStr"
           },
           "country": {
-            "type": "string",
-            "title": "Country"
+            "$ref": "#/components/schemas/CountryNameStr"
           },
           "extras": {
             "additionalProperties": true,
@@ -30080,25 +30085,20 @@
       "UserGet": {
         "properties": {
           "userId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Userid"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "groupId": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "userName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100,
-                "minLength": 4
+                "$ref": "#/components/schemas/_UserNameIDStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Username"
+            ]
           },
           "firstName": {
             "anyOf": [
@@ -30142,12 +30142,13 @@
         ],
         "title": "UserGet"
       },
+      "UserNameSafeID": {
+        "$ref": "#/components/schemas/_UserNameIDStr"
+      },
       "UserNotification": {
         "properties": {
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "category": {
             "$ref": "#/components/schemas/NotificationCategory"
@@ -30198,14 +30199,12 @@
           "user_from_id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_UserIDInt"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "User From Id"
+            ]
           },
           "id": {
             "type": "string",
@@ -30232,9 +30231,7 @@
       "UserNotificationCreate": {
         "properties": {
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "category": {
             "$ref": "#/components/schemas/NotificationCategory"
@@ -30285,14 +30282,12 @@
           "user_from_id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_UserIDInt"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "User From Id"
+            ]
           }
         },
         "type": "object",
@@ -30333,11 +30328,7 @@
       "UsersSearch": {
         "properties": {
           "match": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9 ._@-]*$",
-            "title": "Match",
+            "$ref": "#/components/schemas/SearchPatternSafeStr",
             "description": "Search string to match with usernames and public profiles (e.g. emails, first/last name)"
           },
           "limit": {
@@ -30387,9 +30378,7 @@
       "WalletGet": {
         "properties": {
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "name": {
             "type": "string",
@@ -30409,7 +30398,7 @@
             "title": "Description"
           },
           "owner": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "thumbnail": {
             "anyOf": [
@@ -30450,9 +30439,7 @@
       "WalletGetWithAvailableCredits": {
         "properties": {
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "name": {
             "type": "string",
@@ -30472,7 +30459,7 @@
             "title": "Description"
           },
           "owner": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "thumbnail": {
             "anyOf": [
@@ -30518,7 +30505,7 @@
       "WalletGroupGet": {
         "properties": {
           "gid": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "read": {
             "type": "boolean",
@@ -30755,7 +30742,7 @@
           "trashedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/GroupID"
+                "$ref": "#/components/schemas/_GroupIDInt"
               },
               {
                 "type": "null"
@@ -30771,7 +30758,7 @@
               "$ref": "#/components/schemas/AccessRights"
             },
             "propertyNames": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             },
             "type": "object",
             "title": "Accessrights"
@@ -30795,7 +30782,7 @@
       "WorkspaceGroupGet": {
         "properties": {
           "gid": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "read": {
             "type": "boolean",
@@ -30944,6 +30931,10 @@
           "type"
         ],
         "title": "_ConversationsCreateBodyParams"
+      },
+      "_GroupIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "_InvitationDetails": {
         "properties": {
@@ -31096,7 +31087,7 @@
       "_ProjectGroupAccess": {
         "properties": {
           "gid": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "accessible": {
             "type": "boolean",
@@ -31150,6 +31141,19 @@
           "node_id"
         ],
         "title": "_ProjectNodePreview"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_UserNameIDStr": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 4
+      },
+      "_WalletIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "_WalletsGroupsBodyParams": {
         "properties": {

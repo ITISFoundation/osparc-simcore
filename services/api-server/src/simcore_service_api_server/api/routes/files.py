@@ -14,7 +14,8 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import NodeID
-from pydantic import PositiveInt, ValidationError
+from models_library.users import UserID
+from pydantic import ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -76,7 +77,7 @@ async def _get_file(
     *,
     file_id: UUID,
     storage_client: StorageApi,
-    user_id: int,
+    user_id: UserID,
 ) -> DomainFile:
     """Gets metadata for a given file resource"""
 
@@ -145,7 +146,7 @@ async def _create_domain_file(
 )
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     """Lists all files stored in the system
 
@@ -183,7 +184,7 @@ async def list_files(
 )
 async def get_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
 ):
     assert storage_client  # nosec
@@ -209,7 +210,7 @@ def _get_spooled_file_size(file_io: IO) -> int:
 async def upload_file(
     request: Request,
     file: Annotated[UploadFile, FileParam(...)],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     content_length: str | None = Header(None),
 ):
     """Uploads a single file to the system"""
@@ -276,7 +277,7 @@ async def upload_files(files: Annotated[list[UploadFile], FileParam(...)]):
 async def get_upload_links(
     request: Request,
     client_file: UserFileToProgramJob | UserFile,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
@@ -307,7 +308,7 @@ async def get_upload_links(
 async def get_file(
     file_id: UUID,
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     """Gets metadata for a given file resource"""
 
@@ -325,7 +326,7 @@ async def get_file(
 )
 async def search_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     page_params: Annotated[PaginationParams, Depends()],
     sha256_checksum: SHA256Str | None = None,
     file_id: UUID | None = None,
@@ -355,7 +356,7 @@ async def search_files_page(
 )
 async def delete_file(
     file_id: UUID,
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
     file = await _get_file(
@@ -375,7 +376,7 @@ async def abort_multipart_upload(
     file_id: UUID,
     client_file: Annotated[UserFileToProgramJob | UserFile, Body(..., embed=True)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     assert file_id  # nosec
@@ -397,7 +398,7 @@ async def complete_multipart_upload(
     client_file: Annotated[UserFileToProgramJob | UserFile, Body(...)],
     uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     assert file_id  # nosec
@@ -428,7 +429,7 @@ async def complete_multipart_upload(
 async def download_file(
     file_id: UUID,
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
