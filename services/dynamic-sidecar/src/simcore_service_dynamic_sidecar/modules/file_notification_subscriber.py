@@ -155,7 +155,7 @@ async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
 
     if not _get_file_notification_state(app).can_process_notifications():
         _logger.debug(
-            "notiications processing is not enabled. Skipping notification: %s for file_id=%s",
+            "notifications processing is not enabled. Skipping notification: %s for file_id=%s",
             message.event_type,
             message.file_id,
         )

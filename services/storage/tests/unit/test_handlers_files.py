@@ -1605,7 +1605,7 @@ async def mock_task_manager(
     """Replaces the Celery task manager FastAPI dependency with a MagicMock.
 
     Yields the mock so tests can configure return values on get_status / get_result
-    and inspect calls. The dependency override is cleaned up automatically.
+    and inspect calls.
     """
     mock = MagicMock()
     mock.get_status = AsyncMock()
