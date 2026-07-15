@@ -243,7 +243,7 @@ async def _start_mount_if_required(
     if not requires_data_mounting:
         return
 
-    async with progress_bar.sub_progress(steps=3, description=f"starting mount of {destination_path.name}") as sub_prog:
+    async with progress_bar.sub_progress(steps=2, description=f"starting mount of {destination_path.name}") as sub_prog:
         s3_object = __create_s3_object_key(project_id, node_id, destination_path)
 
         mount_s3_link = await filemanager.get_directory_mount_s3_link(
@@ -259,7 +259,6 @@ async def _start_mount_if_required(
             remote_path=s3_object,
             mount_s3_link=mount_s3_link,
         )
-        await sub_prog.update(1)
 
 
 async def pull(  # pylint: disable=too-many-arguments
