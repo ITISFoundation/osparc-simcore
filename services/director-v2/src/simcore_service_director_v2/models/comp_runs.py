@@ -10,6 +10,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
@@ -40,7 +41,7 @@ class RunMetadataDict(TypedDict, total=False):
     product_api_base_url: str
     simcore_user_agent: str
     user_email: str
-    wallet_id: int | None
+    wallet_id: WalletID | None
     wallet_name: str | None
     project_metadata: ProjectMetadataDict
     encryption: JobEncryptionRunMetadataDict

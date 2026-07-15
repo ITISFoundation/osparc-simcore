@@ -77,9 +77,9 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.socketio import SocketMessageDict
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, PositiveInt, TypeAdapter
 from servicelib.common_headers import (
@@ -1026,7 +1026,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)
-                project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+                project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
                 await _wallets_service.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
@@ -1575,9 +1575,7 @@ async def _get_node_share_state(
             return NodeShareState(
                 locked=not is_collaborative_service,
                 current_user_groupids=[
-                    await users_service.get_user_primary_group_id(
-                        app, TypeAdapter(UserID).validate_python(service.user_id)
-                    )
+                    await users_service.get_user_primary_group_id(app, UserIDAdapter.validate_python(service.user_id))
                 ],
                 status=NodeShareStatus.OPENED,
             )
@@ -1916,7 +1914,7 @@ async def close_project_for_user(
 
 
 async def _get_project_share_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
 ) -> ProjectShareState:
@@ -2033,7 +2031,7 @@ async def _get_project_share_state(
 
 async def add_project_states_for_user(
     *,
-    user_id: int,
+    user_id: UserID,
     project: ProjectDict,
     app: web.Application,
 ) -> ProjectDict:
@@ -2400,7 +2398,7 @@ async def notify_project_node_update(
 
 
 async def retrieve_and_notify_project_locked_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
     *,

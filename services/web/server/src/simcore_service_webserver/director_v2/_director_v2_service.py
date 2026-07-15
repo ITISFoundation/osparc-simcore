@@ -11,8 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletID, WalletInfo
-from pydantic import TypeAdapter
+from models_library.wallets import WalletIDAdapter, WalletInfo
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.exception_utils import suppress_exceptions
@@ -85,7 +84,7 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=_logger)
-async def is_pipeline_running(app: web.Application, user_id: PositiveInt, project_id: UUID) -> bool | None:
+async def is_pipeline_running(app: web.Application, user_id: UserID, project_id: UUID) -> bool | None:
     # NOTE: possibility to make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
@@ -129,7 +128,7 @@ def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
     reason="silence in case the pipeline does not exist",
     predicate=_skip_if_pipeline_not_found,
 )
-async def stop_pipeline(app: web.Application, *, user_id: PositiveInt, project_id: ProjectID):
+async def stop_pipeline(app: web.Application, *, user_id: UserID, project_id: ProjectID):
     await DirectorV2RestClient(app).stop_computation(project_id=project_id, user_id=user_id)
 
 
@@ -212,7 +211,7 @@ async def get_wallet_info(
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)
-        project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+        project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
         await projects_wallets_service.connect_wallet_to_project(
             app,
             product_name=product_name,

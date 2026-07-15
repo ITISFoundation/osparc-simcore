@@ -4,8 +4,7 @@ from uuid import uuid4
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceKey, ServiceVersion
-from models_library.users import UserID
-from pydantic import TypeAdapter
+from models_library.users import UserID, UserIDAdapter
 
 from ..models import DaskJobID
 
@@ -38,7 +37,7 @@ def parse_dask_job_id(
     return (
         parts[0],
         parts[1],
-        TypeAdapter(UserID).validate_python(parts[2][len("userid_") :]),
+        UserIDAdapter.validate_python(parts[2][len("userid_") :]),
         ProjectID(parts[3][len("projectid_") :]),
         NodeID(parts[4][len("nodeid_") :]),
     )
