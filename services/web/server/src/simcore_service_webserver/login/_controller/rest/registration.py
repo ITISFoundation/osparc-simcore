@@ -347,7 +347,6 @@ async def register_phone(request: web.Request):
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=_registration_service.get_user_name_from_email(registration.email),
-            product_name=product.name,
             locale=get_locale_or_none(request),
         )
 

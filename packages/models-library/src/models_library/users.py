@@ -1,10 +1,11 @@
 import datetime
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     Annotated,
-    TypeAlias,
+    NewType,
     TypedDict,
 )
 
+from common_library.gettext_support import SupportedLocale
 from common_library.users_enums import UserRole
 from pydantic import (
     AfterValidator,
@@ -20,14 +21,15 @@ from models_library.string_types import validate_input_xss_safety
 
 from .emails import LowerCaseEmailStr
 
-UserID: TypeAlias = PositiveInt
-UserNameID: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=4, max_length=100)]
-UserNameSafeID: TypeAlias = Annotated[UserNameID, AfterValidator(validate_input_xss_safety)]
+type _UserNameID = Annotated[str, StringConstraints(strip_whitespace=True, min_length=4, max_length=100)]
+# NOTE: in the next iteration this type will be replace by a NewType (see follow up section in the PR description)
+UserID = PositiveInt
 
+UserNameID = NewType("UserNameID", _UserNameID)
 
-FirstNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
-
-LastNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
+type UserNameSafeID = Annotated[UserNameID, AfterValidator(validate_input_xss_safety)]
+type FirstNameStr = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
+type LastNameStr = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
 
 
 class PrivacyDict(TypedDict):
@@ -45,6 +47,7 @@ class MyProfile(BaseModel):
     role: UserRole
     privacy: PrivacyDict
     phone: str | None
+    language: SupportedLocale | None = None
     expiration_date: datetime.date | None = None
 
     @staticmethod

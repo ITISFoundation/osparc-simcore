@@ -19,7 +19,6 @@ from simcore_service_webserver.locale import (
     resolve_effective_locale,
     translate_message,
 )
-from simcore_service_webserver.user_preferences._models import LocaleUserPreference
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -98,43 +97,29 @@ async def test_locale_middleware_default_when_i18n_disabled(
 # ---------------------------------------------------------------------------
 
 
-async def test_get_user_locale_returns_stored_preference():
-    """Returns the persisted locale preference when available."""
+async def test_get_user_locale_returns_stored_language():
+    """Returns the persisted user language when available."""
     mock_app = MagicMock()
-    mock_pref = LocaleUserPreference(value="es_ES")
 
     with patch(
-        "simcore_service_webserver.locale.get_frontend_user_preference",
+        "simcore_service_webserver.locale.users_service.get_user_language",
         new_callable=AsyncMock,
-        return_value=mock_pref,
+        return_value="es_ES",
     ):
-        locale = await get_user_locale(mock_app, user_id=1, product_name="osparc")
+        locale = await get_user_locale(mock_app, user_id=1)
         assert locale == "es_ES"
 
 
-async def test_get_user_locale_fallback_when_no_preference():
-    """Falls back to default locale when preference is absent."""
+async def test_get_user_locale_fallback_when_no_language():
+    """Falls back to default locale when the user never set a language."""
     mock_app = MagicMock()
 
     with patch(
-        "simcore_service_webserver.locale.get_frontend_user_preference",
+        "simcore_service_webserver.locale.users_service.get_user_language",
         new_callable=AsyncMock,
         return_value=None,
     ):
-        locale = await get_user_locale(mock_app, user_id=1, product_name="osparc")
-        assert locale == DEFAULT_LOCALE
-
-
-async def test_get_user_locale_fallback_when_preference_value_is_none():
-    """Falls back to default locale when stored value is null."""
-    mock_app = MagicMock()
-
-    with patch(
-        "simcore_service_webserver.locale.get_frontend_user_preference",
-        new_callable=AsyncMock,
-        return_value=LocaleUserPreference(value=None),
-    ):
-        locale = await get_user_locale(mock_app, user_id=1, product_name="osparc")
+        locale = await get_user_locale(mock_app, user_id=1)
         assert locale == DEFAULT_LOCALE
 
 
@@ -146,33 +131,33 @@ async def test_get_user_locale_fallback_when_preference_value_is_none():
 async def test_resolve_effective_locale_uses_explicit_locale():
     """Explicit locale takes precedence over everything else."""
     mock_app = MagicMock()
-    locale = await resolve_effective_locale(mock_app, user_id=1, product_name="osparc", locale="es_ES")
+    locale = await resolve_effective_locale(mock_app, user_id=1, locale="es_ES")
     assert locale == "es_ES"
 
 
-async def test_resolve_effective_locale_falls_back_to_user_preference():
-    """Falls back to the DB-stored user preference when no explicit locale is given."""
+async def test_resolve_effective_locale_falls_back_to_user_language():
+    """Falls back to the DB-stored user language when no explicit locale is given."""
     mock_app = MagicMock()
     with patch(
-        "simcore_service_webserver.locale.get_frontend_user_preference",
+        "simcore_service_webserver.locale.users_service.get_user_language",
         new_callable=AsyncMock,
-        return_value=LocaleUserPreference(value="zh_CN"),
+        return_value="zh_CN",
     ):
-        locale = await resolve_effective_locale(mock_app, user_id=1, product_name="osparc", locale=None)
+        locale = await resolve_effective_locale(mock_app, user_id=1, locale=None)
         assert locale == "zh_CN"
 
 
 async def test_resolve_effective_locale_default_when_no_user_id():
     """Falls back to DEFAULT_LOCALE when there's no user_id to look up."""
     mock_app = MagicMock()
-    locale = await resolve_effective_locale(mock_app, user_id=None, product_name="osparc", locale=None)
+    locale = await resolve_effective_locale(mock_app, user_id=None, locale=None)
     assert locale == DEFAULT_LOCALE
 
 
 async def test_resolve_effective_locale_default_for_multi_recipient_sends():
     """Falls back to DEFAULT_LOCALE for group sends even when user_id is given."""
     mock_app = MagicMock()
-    locale = await resolve_effective_locale(mock_app, user_id=1, product_name="osparc", locale=None, group_ids=[10])
+    locale = await resolve_effective_locale(mock_app, user_id=1, locale=None, group_ids=[10])
     assert locale == DEFAULT_LOCALE
 
 

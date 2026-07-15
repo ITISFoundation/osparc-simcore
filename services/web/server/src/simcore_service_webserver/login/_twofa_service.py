@@ -103,7 +103,6 @@ async def send_sms_code(
     twilio_messaging_sid: str,
     twilio_alpha_numeric_sender: str,
     first_name: str,
-    product_name: ProductName,
     user_id: UserID | None = None,
     locale: SupportedLocale | None = None,
 ):
@@ -111,7 +110,6 @@ async def send_sms_code(
         resolved_locale = await resolve_effective_locale(
             app,
             user_id=user_id,
-            product_name=product_name,
             locale=locale,
         )
         translator = get_translator(resolved_locale)

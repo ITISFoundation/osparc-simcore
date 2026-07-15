@@ -128,9 +128,7 @@ async def _notify_support_reply(
             )
             # NOTE: user_id below is the sender (for task/owner attribution), not the recipient,
             # so the recipient's locale must be resolved explicitly rather than deduced from user_id.
-            recipient_locale = await get_user_locale(
-                app, user_id=conversation_creator_user_id, product_name=product_name
-            )
+            recipient_locale = await get_user_locale(app, user_id=conversation_creator_user_id)
 
             await notifications_service.send_message_from_template(
                 app,
