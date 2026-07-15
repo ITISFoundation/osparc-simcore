@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         languageSB.add(lItem);
       });
 
-      const currentLocale = qx.locale.Manager.getInstance().getLocale();
+      const currentLocale = osparc.utils.LanguageManager.getUserLocale();
       languageSB.getSelectables().forEach(selectable => {
         if (selectable.getModel() === currentLocale) {
           languageSB.setSelection([selectable]);
