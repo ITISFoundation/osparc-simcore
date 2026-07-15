@@ -791,6 +791,23 @@ qx.Class.define("osparc.data.model.Workbench", {
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
+            // Send only the changed sub-keys instead of the whole `ui` object. A sub-key that was
+            // removed (e.g. marker) must be sent explicitly as null so the backend merge clears it.
+            if (changedFieldKey === "ui") {
+              const serializedUI = nodeData["ui"] || {};
+              const uiPatch = {};
+              Object.keys(workbenchDiffs[nodeId]["ui"]).forEach(uiKey => {
+                if (uiKey === "_t") {
+                  // jsondiffpatch array type marker, not a real key
+                  return;
+                }
+                uiPatch[uiKey] = uiKey in serializedUI ? serializedUI[uiKey] : null;
+              });
+              if (Object.keys(uiPatch).length) {
+                patchData["ui"] = uiPatch;
+              }
+              return;
+            }
             // do not patch if it's undefined
             if (nodeData[changedFieldKey] === undefined) {
               // a field that is in the diff but missing from the serialized node was reset to its default.

@@ -206,6 +206,39 @@ async def test_patch_project_node(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+async def test_patch_project_node_ui_remove_marker(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_rpc_check_for_service: None,
+):
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+
+    # set both position and marker
+    _patch_ui = {"ui": {"position": {"x": 10, "y": 20}, "marker": {"color": "#123456"}}}
+    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui))
+    await assert_status(resp, expected)
+
+    # remove the marker by sending `marker: null`, `position` must be preserved (merge semantics)
+    _patch_remove_marker = {"ui": {"marker": None}}
+    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_remove_marker))
+    await assert_status(resp, expected)
+
+    get_url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.get(f"{get_url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    _tested_node_ui = data["workbench"][node_id]["ui"]
+
+    assert _tested_node_ui["position"] == {"x": 10, "y": 20}
+    assert _tested_node_ui.get("marker") is None
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_notifies(
     mocker: MockerFixture,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
