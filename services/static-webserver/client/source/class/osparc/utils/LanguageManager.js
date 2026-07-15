@@ -87,6 +87,9 @@ qx.Class.define("osparc.utils.LanguageManager", {
     },
 
     patchLocale: function(localeCode) {
+      if (!osparc.data.Permissions.getInstance().canDo("user.user.update", true)) {
+        return Promise.resolve();
+      }
       const params = {
         data: {
           "language": this.__toBackendLocale(localeCode),

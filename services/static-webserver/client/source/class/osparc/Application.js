@@ -536,9 +536,9 @@ qx.Class.define("osparc.Application", {
               });
             }
 
-            if ("language" in profile && osparc.product.Utils.isLocaleEnabled()) {
-              const language = profile["language"];
-              osparc.utils.LanguageManager.applyUsersLocale(language);
+            if (osparc.product.Utils.isLocaleEnabled()) {
+              // applyUsersLocale falls back to the browser locale when the profile has no persisted language
+              osparc.utils.LanguageManager.applyUsersLocale(profile["language"]);
             }
 
             if (loadAfterLogin) {
