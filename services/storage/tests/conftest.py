@@ -874,7 +874,7 @@ async def project_with_seeded_files_factory(  # noqa: C901
                     upload_expires_at=None,
                     is_directory=False,
                 )
-                db_entries.append(jsonable_encoder(FileMetaDataAtDB.model_validate(db_fmd)))
+                db_entries.append(FileMetaDataAtDB.from_api_model(db_fmd).model_dump())
 
         async with sqlalchemy_async_engine.begin() as connection:
             await connection.execute(file_meta_data.insert(), db_entries)
@@ -921,7 +921,7 @@ async def output_file(
     async with sqlalchemy_async_engine.begin() as conn:
         stmt = (
             file_meta_data.insert()
-            .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
+            .values(**FileMetaDataAtDB.from_api_model(file).model_dump())
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)

@@ -285,7 +285,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
 
     # check the entries were reverted
     reverted_fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=file_id)
-    assert original_fmd.model_dump(exclude={"created_at"}) == reverted_fmd.model_dump(exclude={"created_at"})
+    assert original_fmd.model_dump(exclude={"created"}) == reverted_fmd.model_dump(exclude={"created"})
     # check the S3 content is the old file
     s3_meta_data = await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=file_id)
     assert s3_meta_data.size == file_size

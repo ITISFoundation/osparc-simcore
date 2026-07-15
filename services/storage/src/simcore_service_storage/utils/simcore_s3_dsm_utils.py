@@ -76,14 +76,14 @@ async def expand_directory(
                 object_name=x.object_key,
                 user_id=fmd.user_id,
                 # NOTE: to ensure users have a consistent experience the
-                # `created_at` field is inherited from the last_modified
+                # `created` field is inherited from the last_modified
                 # coming from S3. This way if a file is created 1 month after the
                 # creation of the directory, the file's creation date
                 # will not be 1 month in the passed.
-                created_at=x.last_modified,
+                created=x.last_modified,
                 file_id=x.object_key,
                 file_size=TypeAdapter(ByteSize).validate_python(x.size),
-                last_modified=x.last_modified,
+                modified=x.last_modified,
                 entity_tag=x.e_tag,
                 is_soft_link=False,
                 is_directory=False,
