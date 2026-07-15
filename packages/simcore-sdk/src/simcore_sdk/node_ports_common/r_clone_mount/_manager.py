@@ -193,10 +193,7 @@ class RCloneMountManager:
         ):
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
-                _logger.warning(
-                    "Mount for '%s' is already started, skipping duplicate ensure_mounted call",
-                    local_mount_path,
-                )
+                _logger.warning("Mount for '%s' is already started", local_mount_path)
                 return
 
             tracked_mount = _TrackedMount(
