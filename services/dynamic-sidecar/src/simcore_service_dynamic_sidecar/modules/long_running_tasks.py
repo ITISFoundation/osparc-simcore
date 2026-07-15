@@ -291,7 +291,7 @@ async def remove_user_services(
         await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
         raise
     finally:
-        with log_context(_logger, logging.INFO, "ensure permissions"):
+        with log_context(_logger, logging.INFO, "ensure read permissions"):
             await ensure_read_permissions_on_user_service_data(mounted_volumes)
 
     await _send_resource_tracking_stop(SimcorePlatformStatus.OK)

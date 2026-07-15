@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from ._context import OutputsContext, setup_outputs_context
-from ._manager import OutputsManager, UploadPortsFailedError, setup_outputs_manager
+from ._manager import OutputsManager, setup_outputs_manager
 from ._watcher import (
     disable_event_propagation,
     enable_event_propagation,
@@ -19,7 +19,6 @@ def setup_outputs(app: FastAPI) -> None:
 __all__: tuple[str, ...] = (
     "OutputsContext",
     "OutputsManager",
-    "UploadPortsFailedError",
     "disable_event_propagation",
     "enable_event_propagation",
     "event_propagation_disabled",
