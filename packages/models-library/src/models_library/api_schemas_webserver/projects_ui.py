@@ -81,7 +81,7 @@ class AnnotationUI(BaseModel):
 
 
 class StudyUI(OutputSchema):
-    # Model fully controlled by the UI and stored under `projects.ui`
+    # Model fully controlled by the UI and stored under `projects_nodes.ui`
 
     slideshow: dict[NodeID, SlideshowUI] | None = None
     current_node_id: NodeID | None = None
