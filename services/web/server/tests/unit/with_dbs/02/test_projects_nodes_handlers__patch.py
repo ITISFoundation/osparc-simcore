@@ -235,7 +235,8 @@ async def test_patch_project_node_ui_remove_marker(
     _tested_node_ui = data["workbench"][node_id]["ui"]
 
     assert _tested_node_ui["position"] == {"x": 10, "y": 20}
-    assert _tested_node_ui.get("marker") is None
+    # the marker key must be removed from the stored ui, not persisted as null
+    assert "marker" not in _tested_node_ui
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])

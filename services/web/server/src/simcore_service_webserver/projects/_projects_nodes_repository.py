@@ -49,12 +49,10 @@ _ALIAS_TO_COLUMN: dict[str, str] = {
 
 
 # Columns that actually exist in `projects_nodes` and are writable
-_WRITABLE_COLUMNS: frozenset[str] = frozenset(c.name for c in projects_nodes.columns) - frozenset(
-    {
-        "created",
-        "modified",
-    }
-)
+_WRITABLE_COLUMNS: frozenset[str] = frozenset(c.name for c in projects_nodes.columns) - frozenset({
+    "created",
+    "modified",
+})
 
 
 def _node_dump_for_db(node_model: Node | PartialNode, *, exclude_unset: bool) -> dict[str, Any]:
@@ -179,14 +177,17 @@ async def update(
 ) -> Node:
     values = _node_dump_for_db(partial_node, exclude_unset=True)
 
-    # `ui` is a compound JSONB object (e.g. {position, marker}); merge it with the
+    # NOTE: `ui` is a compound JSONB object (e.g. {position, marker}); merge it with the
     # stored value instead of replacing it, so a partial patch (e.g. only `position`)
     # preserves sibling keys (e.g. `marker`). `||` is a shallow merge, which is enough
     # because each sub-object (position/marker) is always patched as a whole.
     # The stored value may be SQL NULL or JSON `null`; only merge when it is actually
     # an object, otherwise Postgres wraps mismatched operands into a JSON array
     # (e.g. `'null'::jsonb || '{...}'::jsonb` -> `[null, {...}]`).
+    # A sub-key sent as null (e.g. a removed marker) is deleted from the stored JSONB
+    # with the `-` operator instead of being persisted as JSON `null`.
     if "ui" in values:
+        ui_patch: dict[str, Any] = values["ui"]
         current_ui = sa.case(
             (
                 sa.func.jsonb_typeof(projects_nodes.c.ui) == "object",
@@ -194,11 +195,19 @@ async def update(
             ),
             else_=sa.type_coerce({}, postgresql.JSONB),
         )
-        values["ui"] = current_ui.concat(sa.type_coerce(values["ui"], postgresql.JSONB))
+        # merge non-null keys; delete keys sent as null
+        ui_expr = current_ui.concat(
+            sa.type_coerce({k: v for k, v in ui_patch.items() if v is not None}, postgresql.JSONB)
+        )
+        for key, value in ui_patch.items():
+            if value is None:
+                ui_expr = ui_expr.op("-")(sa.cast(key, sa.String))
+        values["ui"] = ui_expr
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
-            projects_nodes.update()
+            projects_nodes
+            .update()
             .values(**values)
             .where((projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}"))
             .returning(*_SELECTION_PROJECTS_NODES_DB_ARGS)
