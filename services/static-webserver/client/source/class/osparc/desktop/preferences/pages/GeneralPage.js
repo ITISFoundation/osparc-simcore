@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         if (selectable) {
           const localeCode = selectable.getModel();
           osparc.utils.LanguageManager.setLocale(localeCode);
-          this.__persistLocale(localeCode);
+          this.__patchLocale(localeCode);
         }
       });
       form.add(languageSB, this.tr("Language"));
@@ -90,7 +90,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this._add(box);
     },
 
-    __persistLocale: function(localeCode) {
+    __patchLocale: function(localeCode) {
       const params = {
         data: {
           "language": localeCode,
