@@ -48,6 +48,16 @@ qx.Class.define("osparc.utils.LanguageManager", {
       return qx.locale.Manager.getInstance().getLocale();
     },
 
+    patchLocale: function(localeCode) {
+      const params = {
+        data: {
+          "language": localeCode,
+        },
+      };
+      return osparc.data.Resources.fetch("profile", "patch", params)
+        .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("Unsuccessful language update")));
+    },
+
     /**
      * Applies the user's locale (if any and still available).
      * Meant to be called early during application startup.
@@ -57,7 +67,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
         userLocale = this.__getBrowserLocale();
       }
 
-      if (userLocale && this.getAvailableLocales().includes(userLocale)) {
+      if (this.getAvailableLocales().includes(userLocale)) {
         qx.locale.Manager.getInstance().setLocale(userLocale);
       }
     },

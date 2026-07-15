@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         if (selectable) {
           const localeCode = selectable.getModel();
           osparc.utils.LanguageManager.setLocale(localeCode);
-          this.__patchLocale(localeCode);
+          osparc.utils.LanguageManager.patchLocale(localeCode);
         }
       });
       form.add(languageSB, this.tr("Language"));
@@ -88,16 +88,6 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       box.add(new qx.ui.form.renderer.Single(form));
 
       this._add(box);
-    },
-
-    __patchLocale: function(localeCode) {
-      const params = {
-        data: {
-          "language": localeCode,
-        },
-      };
-      osparc.data.Resources.fetch("profile", "patch", params)
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful language update")));
     },
 
     __addCreditsIndicatorSettings: function() {
