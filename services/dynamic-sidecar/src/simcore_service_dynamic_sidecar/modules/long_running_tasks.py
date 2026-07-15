@@ -52,6 +52,7 @@ from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
+from ..modules.file_notification_subscriber import set_allow_to_process_notifications
 from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
@@ -401,6 +402,9 @@ async def restore_user_services_state_paths(
     await post_sidecar_log_message(app, "Finished state downloading", log_level=logging.INFO)
 
     size = await _get_state_folders_size_async(state_paths)
+
+    set_allow_to_process_notifications(app)
+
     await progress.update(message="state restored", percent=0.99)
     return size
 
