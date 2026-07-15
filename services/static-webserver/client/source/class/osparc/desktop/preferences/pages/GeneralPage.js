@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.utils.LanguageManager.isSwitchUseful()) {
+    if (osparc.product.Utils.isLocaleEnabled() && osparc.utils.LanguageManager.isSwitchUseful()) {
       this.__addLanguageSetting();
     }
 
@@ -78,7 +78,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       languageSB.addListener("changeValue", e => {
         const selectable = e.getData();
         if (selectable) {
-          osparc.utils.LanguageManager.setLocale(selectable.getModel());
+          const localeCode = selectable.getModel();
+          osparc.utils.LanguageManager.setLocale(localeCode);
+          this.__persistLocale(localeCode);
         }
       });
       form.add(languageSB, this.tr("Language"));
@@ -86,6 +88,16 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       box.add(new qx.ui.form.renderer.Single(form));
 
       this._add(box);
+    },
+
+    __persistLocale: function(localeCode) {
+      const params = {
+        data: {
+          "language": localeCode,
+        },
+      };
+      osparc.data.Resources.fetch("profile", "patch", params)
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Unsuccessful language update")));
     },
 
     __addCreditsIndicatorSettings: function() {
