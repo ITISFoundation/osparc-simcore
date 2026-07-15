@@ -20,6 +20,13 @@ qx.Class.define("osparc.utils.LanguageManager", {
       "zh": "中文 [Chinese]",
     },
 
+    // the backend supports the following locales
+    __localeMapping: {
+      "en_US": "en",
+      "es_ES": "es_ES",
+      "zh": "zh_CN",
+    },
+
     /**
      * Returns the locales for which translations were compiled (see compile.json).
      * @return {String[]} e.g. ["en_US", "es_ES"]
@@ -51,7 +58,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
     patchLocale: function(localeCode) {
       const params = {
         data: {
-          "language": localeCode,
+          "language": this.__localeMapping[localeCode],
         },
       };
       return osparc.data.Resources.fetch("profile", "patch", params)
@@ -82,8 +89,8 @@ qx.Class.define("osparc.utils.LanguageManager", {
       if (!language) {
         return fallback;
       }
-      const variant = qx.bom.client.Locale.getVariant(); // e.g. "ES"
-      const full = variant ? `${language}_${variant}` : language; // e.g. "es_ES"
+      const region = qx.bom.client.Locale.getVariant(); // e.g. "ES"
+      const full = region ? `${language}_${region}` : language; // e.g. "es_ES"
       // exact match (e.g. "es_ES") or language-only match (e.g. "zh")
       if (available.includes(full)) {
         return full;
