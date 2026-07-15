@@ -795,8 +795,15 @@ qx.Class.define("osparc.data.model.Workbench", {
             // removed (e.g. marker) must be sent explicitly as null so the backend merge clears it.
             if (changedFieldKey === "ui") {
               const serializedUI = nodeData["ui"] || {};
+              const uiDiff = workbenchDiffs[nodeId]["ui"];
+              if (uiDiff instanceof Array) {
+                // jsondiffpatch represents an added/modified/removed value as an array.
+                // The whole `ui` object changed, so send the full serialized `ui`.
+                patchData["ui"] = serializedUI;
+                return;
+              }
               const uiPatch = {};
-              Object.keys(workbenchDiffs[nodeId]["ui"]).forEach(uiKey => {
+              Object.keys(uiDiff).forEach(uiKey => {
                 if (uiKey === "_t") {
                   // jsondiffpatch array type marker, not a real key
                   return;
