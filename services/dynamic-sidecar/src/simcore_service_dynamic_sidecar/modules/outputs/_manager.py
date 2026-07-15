@@ -129,14 +129,13 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     progress_report_cb=self.task_progress_cb,
                     description="uploading ports",
                 ) as root_progress:
-                    with log_catch(_logger, reraise=False):
-                        await upload_outputs(
-                            outputs_path=self.outputs_context.outputs_path,
-                            port_keys=port_keys,
-                            io_log_redirect_cb=self.io_log_redirect_cb,
-                            progress_bar=root_progress,
-                            port_notifier=self.port_notifier,
-                        )
+                    await upload_outputs(
+                        outputs_path=self.outputs_context.outputs_path,
+                        port_keys=port_keys,
+                        io_log_redirect_cb=self.io_log_redirect_cb,
+                        progress_bar=root_progress,
+                        port_notifier=self.port_notifier,
+                    )
 
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
         self._task_uploading = create_task(_upload_ports(), name=task_name)
