@@ -20,7 +20,9 @@
 #   make frontend-plan      # dry-run: log the LLM prompts that WOULD be sent (no call, no save)
 #   make frontend-translate # msgmerge + AI translate frontend catalogs from frontend.pot
 #
-# Translation model is selected via MODEL (default openai/gpt-4o).
+# Translation model is selected via MODEL (default: a local Ollama model, see the
+# "Ollama integration" section below for the ollama-status/serve/stop/pull/ensure
+# targets that make it work out of the box).
 
 REPO_ROOT      := $(shell git rev-parse --show-toplevel)
 I18N_TOOLS     := $(REPO_ROOT)/scripts/i18n/tools
@@ -33,7 +35,7 @@ LANGS            ?= zh_CN es_ES               ## Backend target locales (space-s
 POT              := $(LOCALE_OUT_DIR)/messages.pot
 PO_FILES         := $(foreach lang,$(LANGS),$(LOCALE_OUT_DIR)/$(lang)/LC_MESSAGES/messages.po)
 MO_FILES         := $(PO_FILES:.po=.mo)
-MODEL            ?= openai/gpt-4o             ## LLM model id (provider/model) used for translation
+MODEL            ?= ollama/translategemma:4b  ## LLM model id (provider/model); default runs locally via Ollama
 BASE_URL         ?=                           ## Custom OpenAI-compatible API base URL (empty = provider default)
 PARALLEL         ?= false                     ## Translate entries in parallel
 PROGRESS         ?= true                      ## Show progress bar during translation
@@ -41,6 +43,23 @@ INCREMENTAL_SAVE ?= true                      ## Save .po incrementally as entri
 USE_GIT          ?= true                      ## Use git blame for source-context enrichment
 MAX_WORKERS      ?= 4                         ## Max parallel workers when PARALLEL=true
 TRANSLATE_TS     := $(shell date +%Y%m%dT%H%M%S)
+
+# --- Ollama integration ---
+# MODEL's litellm prefix (e.g. "ollama" in "ollama/translategemma:4b") selects the
+# provider. OLLAMA_MODEL is derived from MODEL (stripping the "ollama/" prefix) so
+# `ollama-pull`/`ollama-ensure` always target the SAME tag MODEL points to -- override
+# OLLAMA_MODEL explicitly if you need to pull a different tag than the one translating.
+# When MODEL targets Ollama, backend-translate/frontend-translate depend on
+# ollama-ensure so the local daemon is started and the model pulled automatically;
+# non-Ollama providers (openai/*, anthropic/*, ...) skip this entirely.
+MODEL_PROVIDER   := $(firstword $(subst /, ,$(MODEL)))
+OLLAMA_MODEL     := $(patsubst ollama/%,%,$(MODEL))
+include $(REPO_ROOT)/scripts/makefiles/ollama.mk
+ifeq ($(MODEL_PROVIDER),ollama)
+  TRANSLATE_DEPS := ollama-ensure
+else
+  TRANSLATE_DEPS :=
+endif
 
 # --- Services/packages containing user_message() calls ---
 # To rediscover: grep -r 'user_message(' $(REPO_ROOT)/services $(REPO_ROOT)/packages \
@@ -193,7 +212,7 @@ backend-plan:  ## Dry-run backend: log LLM prompts that WOULD be sent (no call, 
 # ---------------------------------------------------------------------------
 backend-translate: $(PO_FILES)  ## AI translate stale backend entries for all LANGS
 
-$(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT)
+$(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT) | $(TRANSLATE_DEPS)
 	@mkdir -p $(@D)
 	@if [ -f "$@" ]; then \
 	  msgmerge --update --backup=none "$@" "$(POT)"; \
@@ -290,7 +309,7 @@ frontend-plan:  ## Dry-run frontend: log LLM prompts that WOULD be sent (no call
 # the enriched CTX-SNIPPET/CTX-SNIPPET-VERSION into the .po so the translator can
 # skip already-fresh entries (git-blame staleness) instead of re-spending tokens.
 # ---------------------------------------------------------------------------
-frontend-translate:  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS) from frontend.pot
+frontend-translate: $(TRANSLATE_DEPS)  ## msgmerge + AI translate frontend .po files (CLIENT_LANGS) from frontend.pot
 	@for lang in $(CLIENT_LANGS); do \
 	  case $$lang in \
 	    zh_CN) out_lang=zh ;; \
