@@ -607,31 +607,32 @@ def log_context(
         kwargs["extra"] = extra
 
     started_time = datetime.datetime.now(tz=datetime.UTC)
+    starting_log_msg = f"{_STARTING_PREFIX}{msg}{_STARTING_SUFFIX}"
+
     try:
         logger.log(
             level,
-            "%s",
-            f"{_STARTING_PREFIX}{msg}{_STARTING_SUFFIX}",
+            starting_log_msg,
             *args,
             **kwargs,
             stacklevel=_STACK_LEVEL_OFFSET,
         )
         yield
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+        finished_log_msg = f"{_DONE_PREFIX}{msg}{_DONE_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})"
         logger.log(
             level,
-            "%s",
-            f"{_DONE_PREFIX}{msg}{_DONE_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})",
+            finished_log_msg,
             *args,
             **kwargs,
             stacklevel=_STACK_LEVEL_OFFSET,
         )
     except:
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+        raised_log_msg = f"{_RAISED_PREFIX}{msg}{_RAISED_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})"
         logger.log(
             level,
-            "%s",
-            f"{_RAISED_PREFIX}{msg}{_RAISED_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})",
+            raised_log_msg,
             *args,
             **kwargs,
             stacklevel=_STACK_LEVEL_OFFSET,
