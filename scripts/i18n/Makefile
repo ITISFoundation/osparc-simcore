@@ -137,7 +137,7 @@ STEP = printf '\033[1;33m[%s]\033[0m %s\n' "$(1)" "$(2)"
 .DEFAULT_GOAL := help
 
 .PHONY: backend-all backend-extract backend-plan backend-translate backend-compile \
-        frontend-all frontend-extract frontend-plan frontend-translate \
+        frontend-all frontend-extract frontend-plan frontend-translate frontend-tools-install \
         check-i18n-style clean vars
 
 # ===========================================================================
@@ -230,18 +230,29 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.mo: $(LOCALE_OUT_DIR)/%/LC_MESSAGES/mes
 frontend-all: frontend-extract frontend-translate  ## Frontend catalog: extract -> translate
 
 # ---------------------------------------------------------------------------
-# frontend-extract — gather this.tr() (qooxdoo JS) + guided-tours JSON values
-# into per-source _partials/*.pot, msgcat them into the frontend-owned
-# frontend.pot, then enrich with source context. Kept strictly separate from
-# the backend `messages` catalog (see header note).
+# frontend-tools-install — one-time (per node_modules wipe) install of the
+# `typescript` package that TypeScriptAstExtractor's --node-cwd requires to
+# parse qooxdoo's .js sources (this.tr()/qx.locale.Manager.tr() calls) via the
+# real TypeScript compiler API. Neither the client dir nor the repo root ships
+# a local `typescript`, so this tool keeps its own dedicated package.json.
 # ---------------------------------------------------------------------------
-frontend-extract:  ## Extract frontend this.tr() + guided-tours JSON -> frontend.pot (+enrich)
+frontend-tools-install:  ## Install the `typescript` dep needed by --node-cwd (idempotent)
+	@cd $(I18N_TOOLS) && npm install --no-audit --no-fund
+
+# ---------------------------------------------------------------------------
+# frontend-extract — gather this.tr()/qx.locale.Manager.tr() (qooxdoo JS) +
+# guided-tours JSON values into per-source _partials/*.pot, msgcat them into
+# the frontend-owned frontend.pot, then enrich with source context. Kept
+# strictly separate from the backend `messages` catalog (see header note).
+# ---------------------------------------------------------------------------
+frontend-extract: frontend-tools-install  ## Extract frontend this.tr() + guided-tours JSON -> frontend.pot (+enrich)
 	@mkdir -p $(FRONTEND_PARTIALS_DIR)
 	@$(call STEP,EXTRACT,frontend JS -> $(FRONTEND_PARTIALS_DIR)/frontend-js.pot)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) xgettext \
 	  --src $(CLIENT_SRC_REL) \
 	  --out $(FRONTEND_PARTIALS_DIR)/frontend-js.pot \
-	  --langs javascript
+	  --langs javascript \
+	  --node-cwd $(I18N_TOOLS)
 	@$(call STEP,EXTRACT,guided tours JSON -> $(FRONTEND_PARTIALS_DIR)/frontend-tours.pot)
 	@cd $(REPO_ROOT) && $(EXTRACTOR) json \
 	  --src $(TOURS_DIR_REL) \
