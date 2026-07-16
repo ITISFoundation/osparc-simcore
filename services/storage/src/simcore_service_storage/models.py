@@ -150,13 +150,7 @@ class FileMetaData(FileMetaDataGet):
 
     @classmethod
     def from_db_model(cls, x: FileMetaDataAtDB) -> "FileMetaData":
-        return cls.model_validate(
-            x.model_dump(exclude={"created", "modified"})
-            | {
-                "file_uuid": x.file_id,
-                "file_name": x.file_id.split("/")[-1],
-            }
-        )
+        return cls.model_validate(x.model_dump() | {"file_uuid": x.file_id, "file_name": x.file_id.split("/")[-1]})
 
     @classmethod
     def from_s3_object_in_dir(cls, x: S3MetaData, dir_fmd: "FileMetaData") -> "FileMetaData":
