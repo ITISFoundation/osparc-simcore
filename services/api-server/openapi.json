@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.14.0"
+    "version": "0.15.0"
   },
   "paths": {
     "/v0/meta": {
@@ -3245,8 +3245,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "minimum": 0
+                  "$ref": "#/components/schemas/ClusterID"
                 },
                 {
                   "type": "null"
@@ -5597,8 +5596,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "minimum": 0
+                  "$ref": "#/components/schemas/ClusterID"
                 },
                 {
                   "type": "null"
@@ -7265,8 +7263,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           }
         ],
@@ -7383,8 +7380,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -7524,8 +7520,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "title": "Wallet Id"
+              "$ref": "#/components/schemas/_WalletIDInt"
             }
           },
           {
@@ -9457,6 +9452,10 @@
         ],
         "title": "ClientFileUploadData"
       },
+      "ClusterID": {
+        "type": "integer",
+        "minimum": 0
+      },
       "CreateResponseRequest": {
         "properties": {
           "background": {
@@ -9693,6 +9692,10 @@
         ],
         "title": "FileUploadData"
       },
+      "FirstNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "FunctionJobCollection": {
         "properties": {
           "title": {
@@ -9788,10 +9791,6 @@
           "minPaymentAmountUsd"
         ],
         "title": "GetCreditPriceLegacy"
-      },
-      "GroupID": {
-        "type": "integer",
-        "exclusiveMinimum": 0
       },
       "Groups": {
         "properties": {
@@ -10307,6 +10306,10 @@
         },
         "type": "object"
       },
+      "LastNameStr": {
+        "type": "string",
+        "maxLength": 255
+      },
       "LicensedItemCheckoutData": {
         "properties": {
           "number_of_seats": {
@@ -10348,14 +10351,10 @@
             "title": "Version"
           },
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Wallet Id"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "product_name": {
             "type": "string",
@@ -11657,31 +11656,36 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Last Name"
+            "description": "Persisted UI/communications language. None means no persisted choice."
           },
           "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "login": {
             "$ref": "#/components/schemas/LowerCaseEmailStr"
@@ -11747,26 +11751,33 @@
           "first_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/FirstNameStr"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "First Name"
+            ]
           },
           "last_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "$ref": "#/components/schemas/LastNameStr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupportedLocale"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Last Name"
+            "description": "Persisted UI/communications language. None means no persisted choice."
           }
         },
         "type": "object",
@@ -13511,6 +13522,14 @@
           "kind": "input"
         }
       },
+      "SupportedLocale": {
+        "type": "string",
+        "enum": [
+          "en",
+          "es_ES",
+          "zh_CN"
+        ]
+      },
       "TaskGet": {
         "properties": {
           "task_id": {
@@ -13873,9 +13892,7 @@
       "WalletGetWithAvailableCreditsLegacy": {
         "properties": {
           "walletId": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Walletid"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "name": {
             "type": "string",
@@ -13895,7 +13912,7 @@
             "title": "Description"
           },
           "owner": {
-            "$ref": "#/components/schemas/GroupID"
+            "$ref": "#/components/schemas/_GroupIDInt"
           },
           "thumbnail": {
             "anyOf": [
@@ -13946,6 +13963,18 @@
           "INACTIVE"
         ],
         "title": "WalletStatus"
+      },
+      "_GroupIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_WalletIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     },
     "securitySchemes": {

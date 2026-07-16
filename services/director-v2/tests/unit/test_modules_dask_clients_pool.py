@@ -84,7 +84,6 @@ def fake_clusters(faker: Faker) -> Callable[[int], list[BaseCluster]]:
                     "id": faker.pyint(),
                     "name": faker.name(),
                     "type": ClusterTypeInModel.ON_PREMISE,
-                    "owner": faker.pyint(),
                     "endpoint": faker.uri(),
                     "authentication": choice(  # noqa: S311
                         [
@@ -239,7 +238,7 @@ async def test_acquire_default_cluster(
 
         assert (
             dask_client.tasks_file_link_type
-            == the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
+            == the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE  # noqa: E501
         )
         future = dask_client.backend.client.submit(just_a_quick_fct, 12, 23)
         assert future

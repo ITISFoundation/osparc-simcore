@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic.types import PositiveInt
+from models_library.users import UserID
 
 from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ...exceptions.backend_errors import (
@@ -241,7 +241,7 @@ async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     job_name = compose_solver_job_resource_name(solver_key, version, job_id)

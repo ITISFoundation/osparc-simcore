@@ -43,12 +43,13 @@ from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import ensure_ends_with, limited_gather
-from simcore_postgres_database.utils_repos import transaction_context
-from sqlalchemy.ext.asyncio import AsyncEngine
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .constants import (
     DATCORE_ID,
     EXPAND_DIR_MAX_ITEM_COUNT,
+    EXPORTS_S3_PREFIX,
     MAX_CONCURRENT_S3_TASKS,
     MAX_LINK_CHUNK_BYTE_SIZE,
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
@@ -664,6 +665,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         file_id: StorageFileID,
         *,
         enforce_access_rights: bool = True,
+        connection: AsyncConnection | None = None,
     ):
         #   _   _  ___ _____ _____
         #  | \ | |/ _ \_   _| ____|
@@ -694,10 +696,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 # we still need to clean up the database entry (it exists)
                 # and to invalidate the size of the parent directory
 
-            async with transaction_context(get_db_engine(self.app)) as connection:
+            async with transaction_context(get_db_engine(self.app), connection) as conn:
                 file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
                 await file_meta_data_repo.delete(
-                    connection=connection,
+                    connection=conn,
                     file_ids=[file_id],
                     recursive=True,
                 )
@@ -705,7 +707,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
                 if is_nested_level_file_id(file_id) and (
                     parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
-                        connection=connection,
+                        connection=conn,
                         user_or_project_filter=UserOrProjectFilter(user_id=user_id, project_ids=[]),
                         file_id_prefix=compute_file_id_prefix(file_id, 2),
                         partial_file_id=None,
@@ -715,7 +717,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 ):
                     parent_dir_fmd = max(parent_dir_fmds, key=lambda fmd: len(fmd.file_id))
                     parent_dir_fmd.file_size = UNDEFINED_SIZE
-                    await file_meta_data_repo.upsert(connection=connection, fmd=parent_dir_fmd)
+                    await file_meta_data_repo.upsert(connection=conn, fmd=parent_dir_fmd)
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
@@ -776,9 +778,12 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         ):
             task_progress.description = f"Collecting files of '{src_project['name']}'..."
 
-            src_project_files = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
-                project_ids=[src_project_uuid]
-            )
+            src_project_files = [
+                fmd
+                async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
+                    project_ids=[src_project_uuid]
+                )
+            ]
 
             with log_context(
                 _logger,
@@ -1120,7 +1125,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             yield processed_page
 
     async def create_soft_link(
-        self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID
+        self, user_id: UserID, target_file_id: StorageFileID, link_file_id: StorageFileID
     ) -> FileMetaData:
         file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
         if await file_meta_data_repo.exists(file_id=TypeAdapter(SimcoreS3FileID).validate_python(link_file_id)):
@@ -1152,17 +1157,24 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     upload_id=fmd.upload_id,
                 )
 
-    async def _clean_expired_uploads(self) -> None:
-        """this method will check for all incomplete updates by checking
-        the upload_expires_at entry in file_meta_data table.
-        1. will try to update the entry from S3 backend if exists
-        2. will delete the entry if nothing exists in S3 backend.
+    async def clean_expired_uploads(self) -> None:
+        """Removes uploads that never completed.
+
+        Rationale: an upload starts by creating a file metadata entry with an
+        expiration timestamp and handing the client an upload link. Once the
+        client notifies completion, that entry's expiration is cleared.
+        Any entry whose expiration is set and in the past means the client
+        never completed (or notified) the upload. For each such entry, this method:
+        1. tries to recover it by refreshing its metadata from S3 (the upload might have
+           actually finished and the client just forgot to notify us);
+        2. if nothing exists in S3, deletes the file metadata entry and aborts the multipart
+           upload, if any.
         """
         now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
 
-        list_of_expired_uploads = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
-            expired_after=now
-        )
+        list_of_expired_uploads = [
+            fmd async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(expired_after=now)
+        ]
 
         if not list_of_expired_uploads:
             return
@@ -1227,8 +1239,30 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
 
-    async def clean_expired_uploads(self) -> None:
-        await self._clean_expired_uploads()
+    async def clean_expired_exports(self) -> None:
+        """Removes exported archives that have outlived their retention.
+
+        Rationale: exported archives get removed automatically from the bucket after 30 days.
+        The file_meta_data row is then orphaned and shall be removed.
+        This method looks up files under the `exports/` S3 prefix whose `created_at` is
+        older than `STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL` and removes them, S3 object first then the
+        file_meta_data entry.
+        """
+        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        retention = get_application_settings(self.app).STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL
+        threshold = now - retention
+
+        async with pass_or_acquire_connection(get_db_engine(self.app)) as conn:
+            expired_exports = [
+                fmd
+                async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
+                    file_id_prefix=f"{EXPORTS_S3_PREFIX}/",
+                    created_before=threshold,
+                )
+            ]
+            for fmd in expired_exports:
+                with log_context(_logger, logging.INFO, f"removing {fmd.file_id}"):
+                    await self.delete_file(fmd.user_id, fmd.file_id, enforce_access_rights=False, connection=conn)
 
     async def _update_fmd_from_other(
         self,
