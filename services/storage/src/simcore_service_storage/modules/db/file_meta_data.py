@@ -11,6 +11,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_postgres_database.utils_repos import (
@@ -106,7 +107,7 @@ def _list_filter_with_partial_file_id_stmt(
     return (
         sa.select(file_meta_data)
         .where(sa.and_(*conditions))
-        .order_by(file_meta_data.c.created.asc())  # sorted as oldest first
+        .order_by(file_meta_data.c.created_at.asc())  # sorted as oldest first
         .offset(offset)
         .limit(limit)
     )
@@ -130,7 +131,7 @@ class FileMetaDataRepository(BaseRepository):
     ) -> FileMetaDataAtDB:
         # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
         # so we get the correct time stamps
-        fmd_db = FileMetaDataAtDB.from_api_model(fmd) if isinstance(fmd, FileMetaData) else fmd
+        fmd_db = FileMetaDataAtDB.model_validate(fmd) if isinstance(fmd, FileMetaData) else fmd
         async with transaction_context(self.db_engine, connection) as conn:
             return FileMetaDataAtDB.model_validate(
                 (
@@ -144,12 +145,12 @@ class FileMetaDataRepository(BaseRepository):
             )
 
     async def insert(self, *, connection: AsyncConnection | None = None, fmd: FileMetaData) -> FileMetaDataAtDB:
-        fmd_db = FileMetaDataAtDB.from_api_model(fmd)
+        fmd_db = FileMetaDataAtDB.model_validate(fmd)
         async with transaction_context(self.db_engine, connection) as conn:
             return FileMetaDataAtDB.model_validate(
                 (
                     await conn.execute(
-                        file_meta_data.insert().values(**fmd_db.model_dump()).returning(literal_column("*"))
+                        file_meta_data.insert().values(jsonable_encoder(fmd_db)).returning(literal_column("*"))
                     )
                 ).one()
             )
@@ -291,8 +292,8 @@ class FileMetaDataRepository(BaseRepository):
                         project_id=row.project_id,
                         node_id=row.node_id,
                         user_id=row.user_id,
-                        created_at=row.created,
-                        last_modified=row.modified,
+                        created_at=row.created_at,
+                        last_modified=row.last_modified,
                         file_meta_data=(
                             FileMetaData.from_db_model(FileMetaDataAtDB.model_validate(row))
                             if row.file_id == row.path and not row.is_directory
@@ -328,7 +329,14 @@ class FileMetaDataRepository(BaseRepository):
                 ((file_meta_data.c.project_id.in_([f"{p}" for p in project_ids])) if project_ids else sa.true()),
                 ((file_meta_data.c.upload_expires_at < expired_after) if expired_after else sa.true()),
                 (file_meta_data.c.file_id.startswith(file_id_prefix) if file_id_prefix else sa.true()),
-                ((file_meta_data.c.created < created_before) if created_before else sa.true()),
+                (
+                    (
+                        file_meta_data.c.created_at
+                        < created_before.astimezone(datetime.UTC).replace(tzinfo=None).isoformat()
+                    )
+                    if created_before
+                    else sa.true()
+                ),
             )
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
