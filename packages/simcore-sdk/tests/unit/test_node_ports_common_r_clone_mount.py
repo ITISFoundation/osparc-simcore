@@ -35,8 +35,8 @@ from settings_library.basic_types import PortInt
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings
 from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
+    InvalidContainerLabelsError,
     InvalidRemotePathError,
-    MissingContainerLabelsError,
     MountActivity,
     MountPathConflictError,
     MountRemoteType,
@@ -851,7 +851,7 @@ async def rclone_container_without_labels(container_config: dict, node_id: NodeI
                 "ExposedPorts": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: {}},
                 "HostConfig": {"PortBindings": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: [{"HostPort": "0"}]}},
             },
-            MissingContainerLabelsError,
+            InvalidContainerLabelsError,
             id="with_port_no_labels",
         ),
     ],

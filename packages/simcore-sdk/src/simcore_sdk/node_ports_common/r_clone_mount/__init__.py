@@ -1,7 +1,7 @@
 from ._config_provider import MountRemoteType
 from ._errors import (
+    InvalidContainerLabelsError,
     InvalidRemotePathError,
-    MissingContainerLabelsError,
     MountPathConflictError,
     NoMountFoundForRemotePathError,
 )
@@ -11,8 +11,8 @@ from ._models import DelegateInterface, FilesInTransfer, MountActivity
 __all__: tuple[str, ...] = (
     "DelegateInterface",
     "FilesInTransfer",
+    "InvalidContainerLabelsError",
     "InvalidRemotePathError",
-    "MissingContainerLabelsError",
     "MountActivity",
     "MountPathConflictError",
     "MountRemoteType",

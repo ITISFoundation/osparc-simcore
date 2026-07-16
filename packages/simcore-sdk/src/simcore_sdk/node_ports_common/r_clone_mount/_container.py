@@ -28,7 +28,7 @@ from . import _docker_utils
 from ._config_provider import CONFIG_KEY
 from ._docker_utils import RC_PORT
 from ._errors import (
-    MissingContainerLabelsError,
+    InvalidContainerLabelsError,
     RefreshMountError,
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
@@ -59,8 +59,8 @@ class _RCloneContainerLabels(BaseModel):
         try:
             return cls.model_validate(labels)
         except ValidationError as exc:
-            missing = sorted({str(e["loc"][0]) for e in exc.errors()})
-            raise MissingContainerLabelsError(container_name=container_name, missing_labels=missing) from exc
+            errors = sorted({str(e["loc"][0]) for e in exc.errors()})
+            raise InvalidContainerLabelsError(container_name=container_name, errors=errors) from exc
 
 
 _MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
