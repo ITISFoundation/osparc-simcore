@@ -83,7 +83,9 @@ async def test_configure_rabbitmq_client_publishes_client_in_app_state(
         startup_timeout=None if is_pdb_enabled else 10,
         shutdown_timeout=None if is_pdb_enabled else 10,
     ):
-        mock_rabbitmq_connection.assert_called_once_with(settings.RABBITMQ.dsn)
+        mock_rabbitmq_connection.assert_called_once_with(
+            settings.RABBITMQ.dsn  # pylint: disable=no-member
+        )
         mock_rabbitmq_client_class.assert_called_once_with(
             client_name="test_rabbit_client",
             settings=settings.RABBITMQ,
@@ -120,7 +122,9 @@ async def test_configure_rabbitmq_rpc_client_publishes_rpc_client_in_app_state(
         startup_timeout=None if is_pdb_enabled else 10,
         shutdown_timeout=None if is_pdb_enabled else 10,
     ):
-        mock_rabbitmq_connection.assert_called_once_with(settings.RABBITMQ.dsn)
+        mock_rabbitmq_connection.assert_called_once_with(
+            settings.RABBITMQ.dsn  # pylint: disable=no-member
+        )
         mock_rabbitmq_rpc_client_create.assert_called_once_with(
             client_name="test_rabbit_rpc_client",
             settings=settings.RABBITMQ,

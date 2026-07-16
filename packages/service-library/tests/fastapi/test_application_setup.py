@@ -41,7 +41,7 @@ def test_ensure_single_setup_passes_arguments():
     received: list[tuple[str, int]] = []
 
     @ensure_single_setup
-    def setup_func(app: FastAPI, vtag: str, *, retries: int = 0) -> None:
+    def setup_func(_app: FastAPI, vtag: str, *, retries: int = 0) -> None:
         received.append((vtag, retries))
 
     setup_func(FastAPI(), "v0", retries=3)
@@ -53,7 +53,7 @@ def test_ensure_single_setup_does_not_retry_after_failure():
     call_count = 0
 
     @ensure_single_setup
-    def setup_func(app: FastAPI) -> None:
+    def setup_func(_app: FastAPI) -> None:
         nonlocal call_count
         call_count += 1
         msg = "boom"
@@ -75,7 +75,7 @@ def test_ensure_single_setup_does_not_retry_after_failure():
 
 def test_ensure_single_setup_success_after_other_app_failed():
     @ensure_single_setup
-    def setup_func(app: FastAPI, *, should_fail: bool) -> None:
+    def setup_func(_app: FastAPI, *, should_fail: bool) -> None:
         if should_fail:
             msg = "boom"
             raise ValueError(msg)
