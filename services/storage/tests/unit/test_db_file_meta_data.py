@@ -35,7 +35,7 @@ def test_building_sql_statements(faker: Faker):
         sha256_checksum=None,
         is_directory=False,
     )
-    # WHERE file_meta_data.is_directory IS false ORDER BY file_meta_data.created ASC
+    # WHERE file_meta_data.is_directory IS false ORDER BY file_meta_data.created_at ASC
 
     _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
@@ -45,7 +45,7 @@ def test_building_sql_statements(faker: Faker):
         sha256_checksum=None,
         is_directory=False,
     )
-    # WHERE file_meta_data.user_id = '42' AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created ASC
+    # WHERE file_meta_data.user_id = '42' AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created_at ASC
 
     _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
@@ -55,7 +55,7 @@ def test_building_sql_statements(faker: Faker):
         sha256_checksum=None,
         is_directory=False,
     )
-    # WHERE (file_meta_data.user_id = '42' OR file_meta_data.project_id IN ('18d5'..., )) AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created ASC
+    # WHERE (file_meta_data.user_id = '42' OR file_meta_data.project_id IN ('18d5'..., )) AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created_at ASC
 
     _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
@@ -67,7 +67,7 @@ def test_building_sql_statements(faker: Faker):
         limit=10,
         offset=1,
     )
-    # (file_meta_data.user_id = '42' OR file_meta_data.project_id IN ('3cd9704db' ...)) AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created ASC LIMIT 10 OFFSET 1
+    # (file_meta_data.user_id = '42' OR file_meta_data.project_id IN ('3cd9704db' ...)) AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created_at ASC LIMIT 10 OFFSET 1
 
     # As used in SimcoreS3DataManager.list_files
     _get_sql_stmt_string(
