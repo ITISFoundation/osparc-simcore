@@ -452,6 +452,10 @@ qx.Class.define("osparc.product.Utils", {
       return osparc.utils.Utils.isDevelopmentPlatform();
     },
 
+    isLocaleEnabled: function() {
+      return osparc.utils.Utils.isDevelopmentPlatform();
+    },
+
     getOsparcOImageSource: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");

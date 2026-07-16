@@ -63,7 +63,7 @@ async def _run(  # noqa: PLR0915
 
         # Set heartbeat tag to trigger clusters-keeper termination
         new_heartbeat_tag: TagTypeDef = {
-            "Key": "last_heartbeat",
+            "Key": "io.simcore.clusters-keeper.last_heartbeat",
             "Value": f"{arrow.utcnow().datetime - datetime.timedelta(hours=1)}",
         }
         the_cluster.primary.ec2_instance.create_tags(Tags=[new_heartbeat_tag])

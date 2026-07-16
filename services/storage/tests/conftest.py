@@ -47,7 +47,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ByteSize, TypeAdapter
@@ -862,7 +862,7 @@ async def project_with_seeded_files_factory(  # noqa: C901
                 files_by_node[node_id][file_id] = FileIDDict(path=local_file, sha256_checksum=file_checksum)
 
                 db_fmd = FileMetaData.from_simcore_node(
-                    user_id=TypeAdapter(UserID).validate_python(project["prj_owner"]),
+                    user_id=UserIDAdapter.validate_python(project["prj_owner"]),
                     file_id=file_id,
                     bucket=storage_s3_bucket,
                     location_id=location_id,

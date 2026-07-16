@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
+from models_library.users import UserID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import handle_aiohttp_web_http_error
 
@@ -51,7 +52,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 async def _try_show_login_fallbacks_on_wrong_password(
-    app: web.Application, *, user_id: int, product_name: str
+    app: web.Application, *, user_id: UserID, product_name: str
 ) -> str | None:
     """Returns the suggested product display name when a login tip should be shown.
 

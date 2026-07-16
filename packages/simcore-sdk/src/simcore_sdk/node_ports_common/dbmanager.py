@@ -3,8 +3,7 @@ import logging
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.projects import ProjectID
-from models_library.users import UserID
-from pydantic import TypeAdapter
+from models_library.users import UserID, UserIDAdapter
 from servicelib.db_asyncpg_utils import create_async_engine_and_database_ready
 from settings_library.node_ports import NodePortsSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
@@ -167,4 +166,4 @@ class DBManager:
             )
             if prj_owner is None:
                 raise ProjectNotFoundError(project_id)
-        return TypeAdapter(UserID).validate_python(prj_owner)
+        return UserIDAdapter.validate_python(prj_owner)

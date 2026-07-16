@@ -13,7 +13,6 @@ from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
-from pydantic.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api._dependencies.director import get_director_client
@@ -96,7 +95,7 @@ async def evaluate_default_service_ownership_and_rights(
 
     groups_repo = GroupsRepository(db_engine)
     owner_gid = None
-    group_ids: list[PositiveInt] = []
+    group_ids: list[GroupID] = []
 
     # 1. If service is old or frontend, we add the everyone group
     if _is_frontend_service(service) or await _is_old_service(app, service):
@@ -236,8 +235,6 @@ def reduce_access_rights(
     By default, the reduction is OR (i.e. preserves True flags)
 
     """
-    # TODO: probably a lot of room to optimize
-    # helper functions to simplify operation of access rights
 
     def _get_target(access: ServiceAccessRightsDB) -> tuple[str | int, ...]:
         """Hashable identifier of the resource the access rights apply to"""
@@ -266,7 +263,7 @@ def reduce_access_rights(
         ServiceAccessRightsDB(
             key=ServiceKey(f"{target[0]}"),
             version=ServiceVersion(f"{target[1]}"),
-            gid=int(target[2]),
+            gid=GroupID(int(target[2])),
             product_name=f"{target[3]}",
             **access_flags_map[target],
         )
