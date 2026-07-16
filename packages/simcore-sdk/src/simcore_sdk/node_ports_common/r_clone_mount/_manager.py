@@ -6,7 +6,6 @@ from typing import Final
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
-from httpx import HTTPError
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.background_task import create_periodic_task
@@ -133,13 +132,8 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         reconnected = await self._create_or_reconnect_container()
         try:
             await self._rc_client.wait_for_interface_to_be_ready()
-        except HTTPError:
-            # NOTE: in the case of a reconnection it is possible for the HTTP interface to not be working
-            # (eg: container was stopped but not removed)
-            # Remove the container and try again
+        except Exception:
             if reconnected:
-                await self.delegate.remove_container(self._container_manager.r_clone_container_name)
-
                 await self._create_or_reconnect_container()
                 await self._rc_client.wait_for_interface_to_be_ready()
 
