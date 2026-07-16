@@ -48,7 +48,12 @@ _REACT_BLUR_SETTLE_MS: Final[int] = 500
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
-_SAMPLING_TIMEOUT: Final[int] = 20 * MINUTE
+
+# Heuristically 10 minutes is enough for these jobs to run
+# However, when the dv2 / dask restarts during the run, things get delayed
+# Add factor 2 to handle this case
+_SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
+
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
 _NUM_SAMPLING_POINTS: Final[int] = 40
