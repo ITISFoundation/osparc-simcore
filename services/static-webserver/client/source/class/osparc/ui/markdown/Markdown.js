@@ -76,9 +76,11 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
   properties: {
     /**
      * Holds the raw markdown text and updates the label's {@link #value} whenever new markdown arrives.
+     * Accepts a plain String or a qx.locale.LocalizedString (from tr()); normalized to a plain string in __applyMarkdown.
      */
     value: {
-      check: "String",
+      check: value => typeof value === "string" || value instanceof qx.locale.LocalizedString,
+      nullable: true,
       apply: "__applyMarkdown"
     },
 
@@ -156,7 +158,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         // With this, a single line break (Enter) in your Markdown input will render as a <br> in HTML.
         marked.setOptions({ breaks: true }); //
 
-        const html = marked.parse(value);
+        const html = marked.parse(value == null ? "" : String(value));
 
         const safeHtml = osparc.wrapper.DOMPurify.sanitize(html);
         this.setHtml(safeHtml);
