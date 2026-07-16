@@ -1,12 +1,11 @@
-from functools import cache
-
 from fastapi import APIRouter, FastAPI
+from servicelib.fastapi.application_setup import ensure_single_setup
 
 from .._meta import API_VTAG
 from . import health
 
 
-@cache
+@ensure_single_setup
 def setup_api_routes(app: FastAPI):
     """
     Composes resources/sub-resources routers
