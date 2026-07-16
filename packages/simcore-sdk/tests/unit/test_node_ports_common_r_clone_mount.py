@@ -33,11 +33,15 @@ from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings
 from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
     InvalidRemotePathError,
+    MissingContainerLabelsError,
     MountActivity,
     MountRemoteType,
     NoMountFoundForRemotePathError,
     RCloneMountManager,
 )
+from simcore_sdk.node_ports_common.r_clone_mount._container import ContainerManager
+from simcore_sdk.node_ports_common.r_clone_mount._docker_utils import _DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY
+from simcore_sdk.node_ports_common.r_clone_mount._errors import PortNotAssignedError
 from simcore_sdk.node_ports_common.r_clone_mount._manager import (
     _TrackedMount,
 )
@@ -749,3 +753,126 @@ async def test_is_healthy(
         mock_is_responsive.return_value = is_resp
         result = await mount.is_healthy()
         assert result is expected, f"Step {i}: is_responsive={is_resp}, expected is_healthy={expected}, got {result}"
+
+
+async def test_reconnects_to_existing_rclone_container_after_sidecar_restart(
+    docker_swarm: None,
+    moto_server: None,
+    r_clone_mount_manager: RCloneMountManager,
+    r_clone_settings: RCloneSettings,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    local_mount_path: Path,
+    index: int,
+):
+    # === First sidecar session (via fixture) ===
+    await r_clone_mount_manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_link=mount_s3_link_from_remote(remote_path),
+        node_id=node_id,
+        index=index,
+    )
+
+    mount_id = get_mount_id(local_mount_path, index)
+    first_tracked = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
+    assert first_tracked._rc_http_client is not None  # noqa: SLF001
+    original_port = first_tracked._rc_http_client.rc_port  # noqa: SLF001
+
+    # Simulate sidecar crash: cancel background tasks and drop in-memory state,
+    # leaving the rclone container running.
+    if r_clone_mount_manager._task_ensure_mounts_working is not None:  # noqa: SLF001
+        r_clone_mount_manager._task_ensure_mounts_working.cancel()  # noqa: SLF001
+        await asyncio.gather(r_clone_mount_manager._task_ensure_mounts_working, return_exceptions=True)  # noqa: SLF001
+    r_clone_mount_manager._tracked_mounts.clear()  # noqa: SLF001
+    r_clone_mount_manager._reverse_path_search.clear()  # noqa: SLF001
+
+    # === Second sidecar session (restart): fresh manager, same delegate ===
+    second_manager = RCloneMountManager(
+        r_clone_settings,
+        requires_data_mounting=True,
+        delegate=r_clone_mount_manager.delegate,
+    )
+    await second_manager.setup()
+    await second_manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_link=mount_s3_link_from_remote(remote_path),
+        node_id=node_id,
+        index=index,
+    )
+
+    reconnected = second_manager._tracked_mounts[mount_id]  # noqa: SLF001
+    assert reconnected._rc_http_client is not None  # noqa: SLF001
+    assert reconnected._rc_http_client.rc_port == original_port, (  # noqa: SLF001
+        "Reconnect must reuse the same running container (same port)"
+    )
+
+    await second_manager.teardown()
+
+
+@pytest.fixture
+async def rclone_container_without_labels(container_config: dict, node_id: NodeID, index: int) -> AsyncIterator[str]:
+    container_name = f"test-no-labels-{node_id}-{index}"
+    async with aiodocker.Docker() as client:
+        await client.containers.run(config=container_config, name=container_name)
+    try:
+        yield container_name
+    finally:
+        async with aiodocker.Docker() as client:
+            try:
+                c = await client.containers.get(container_name)
+                await c.delete(force=True)
+            except aiodocker.exceptions.DockerError:
+                pass
+
+
+@pytest.mark.parametrize(
+    "container_config, expected_error",
+    [
+        pytest.param(
+            {"Image": "rclone/rclone:latest", "Cmd": ["version"]},
+            PortNotAssignedError,
+            id="no_port_no_labels",
+        ),
+        pytest.param(
+            {
+                "Image": "rclone/rclone:latest",
+                "Cmd": ["version"],
+                "ExposedPorts": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: {}},
+                "HostConfig": {"PortBindings": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: [{"HostPort": "0"}]}},
+            },
+            MissingContainerLabelsError,
+            id="with_port_no_labels",
+        ),
+    ],
+)
+async def test_create_raises_for_container_without_labels(
+    docker_swarm: None,
+    r_clone_settings: RCloneSettings,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    node_id: NodeID,
+    local_mount_path: Path,
+    index: int,
+    rclone_container_without_labels: str,
+    expected_error: type[Exception],
+):
+    manager = ContainerManager(
+        r_clone_settings=r_clone_settings,
+        node_id=node_id,
+        local_mount_path=local_mount_path,
+        index=index,
+        r_clone_config_content="[s3]\ntype = s3",
+        remote_path="project/node/data",
+        rc_user="u",
+        rc_password="p",  # nosec  # noqa: S106
+        delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown),
+    )
+    manager.__dict__["_r_clone_container_name"] = rclone_container_without_labels
+
+    with pytest.raises(expected_error):
+        await manager.create()

@@ -104,6 +104,10 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
 
     async def start_mount(self) -> None:
         assigned_port = await self._container_manager.create()
+        # Credentials may have been updated from container labels when reconnecting
+        # to an existing container after a sidecar restart.
+        self._rc_user = self._container_manager.rc_user
+        self._rc_password = self._container_manager.rc_password
         self._vfs_write_back_s = self._container_manager.vfs_write_back_s
         node_address = await self.delegate.get_node_address()
 
@@ -193,7 +197,7 @@ class RCloneMountManager:
         ):
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
-                _logger.warning("Mount for '%s' is already started", local_mount_path)
+                _logger.debug("Mount for '%s' is already started", local_mount_path)
                 return
 
             tracked_mount = _TrackedMount(

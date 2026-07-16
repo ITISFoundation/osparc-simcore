@@ -1,6 +1,7 @@
 from ._config_provider import MountRemoteType
 from ._errors import (
     InvalidRemotePathError,
+    MissingContainerLabelsError,
     NoMountFoundForRemotePathError,
 )
 from ._manager import RCloneMountManager
@@ -10,6 +11,7 @@ __all__: tuple[str, ...] = (
     "DelegateInterface",
     "FilesInTransfer",
     "InvalidRemotePathError",
+    "MissingContainerLabelsError",
     "MountActivity",
     "MountRemoteType",
     "NoMountFoundForRemotePathError",

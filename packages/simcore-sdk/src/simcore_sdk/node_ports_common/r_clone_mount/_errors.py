@@ -25,5 +25,9 @@ class InvalidRemotePathError(_BaseRcloneMountError):
     msg_template: str = "Invalid remote_path '{remote_path}'. Expected '{{project_id}}/{{node_id}}/DIRECTORY_PATH'"
 
 
+class MissingContainerLabelsError(_BaseRcloneMountError):
+    msg_template: str = "Container '{container_name}' is missing required rclone labels: {missing_labels}"
+
+
 class PortNotAssignedError(_BaseRcloneMountError):
     msg_template: str = "Container '{container_name}' has no published port for {target_port}. Ports={ports}"

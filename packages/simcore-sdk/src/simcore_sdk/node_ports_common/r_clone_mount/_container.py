@@ -4,14 +4,14 @@ from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
 from textwrap import dedent
-from typing import Final
+from typing import Final, Self
 
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
-from pydantic import NonNegativeInt
+from pydantic import BaseModel, ConfigDict, NonNegativeInt, ValidationError
 from servicelib.file_utils import disk_usage
 from servicelib.r_clone_utils import get_r_clone_version
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
@@ -28,6 +28,7 @@ from . import _docker_utils
 from ._config_provider import CONFIG_KEY
 from ._docker_utils import RC_PORT
 from ._errors import (
+    MissingContainerLabelsError,
     RefreshMountError,
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
@@ -36,6 +37,30 @@ from ._models import DelegateInterface, MountActivity
 from ._utils import get_mount_id
 
 _logger = logging.getLogger(__name__)
+
+
+class _RCloneContainerLabels(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    rc_user: str
+    rc_password: str  # nosec
+    vfs_write_back_s: NonNegativeInt
+
+    def to_docker_labels(self) -> dict[str, str]:
+        return {
+            "rc_user": self.rc_user,
+            "rc_password": self.rc_password,
+            "vfs_write_back_s": str(self.vfs_write_back_s),
+        }
+
+    @classmethod
+    def from_docker_labels(cls, container_name: str, labels: dict[str, str]) -> Self:
+        """raises MissingContainerLabelsError if data is not valid"""
+        try:
+            return cls.model_validate(labels)
+        except ValidationError as exc:
+            missing = sorted({str(e["loc"][0]) for e in exc.errors()})
+            raise MissingContainerLabelsError(container_name=container_name, missing_labels=missing) from exc
 
 
 _MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
@@ -214,7 +239,23 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         return f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{self.node_id}-{mount_id}"[:63]
 
     async def create(self) -> PortInt:
-        # ensure nothing was left from previous runs
+        # If an existing container is found, reconnect to it instead of recreating.
+        # This handles sidecar restarts where the rclone container survived.
+        result = await _docker_utils.try_inspect_r_clone_container(self.delegate, self._r_clone_container_name)
+        if result is not None:
+            port, labels = result
+
+            from_labels = _RCloneContainerLabels.from_docker_labels(self._r_clone_container_name, labels)
+            self.rc_user = from_labels.rc_user
+            self.rc_password = from_labels.rc_password
+            self.vfs_write_back_s = from_labels.vfs_write_back_s
+            _logger.info(
+                "Reconnecting to existing rclone container '%s' on port %s", self._r_clone_container_name, port
+            )
+
+            return port
+
+        # No existing container — create fresh
         await self.delegate.remove_container(self._r_clone_container_name)
 
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
@@ -236,6 +277,11 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
             nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
+            labels=_RCloneContainerLabels(
+                rc_user=self.rc_user,
+                rc_password=self.rc_password,
+                vfs_write_back_s=vfs_write_back_s,
+            ).to_docker_labels(),
         )
         self.vfs_write_back_s = vfs_write_back_s
         return assigned_port
