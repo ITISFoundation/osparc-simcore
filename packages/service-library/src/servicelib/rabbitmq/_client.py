@@ -2,11 +2,12 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Final
+from typing import Annotated, Final
 from uuid import uuid4
 
 import aio_pika
 from aiormq import ChannelInvalidStateError
+from annotated_types import doc
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import NonNegativeInt
 
@@ -119,7 +120,8 @@ async def _on_message(
                             "Unhandled exception raised in message handler or when nacking message",
                             error=exc,
                             error_context=log_error_context,
-                            tip="This could indicate an error in the message handler, please check the message handler code",
+                            tip="This could indicate an error in the message handler, "
+                            "please check the message handler code",
                         )
                     )
                     with log_catch(_logger, reraise=False):
@@ -192,48 +194,59 @@ class RabbitMQClient(RabbitMQClientBase):
     async def subscribe(
         self,
         exchange_name: ExchangeName,
-        message_handler: MessageHandler,
+        message_handler: Annotated[
+            MessageHandler,
+            doc(
+                "Called with the raw message body for every incoming message. "
+                "Return `True` if the message was handled successfully (it is acked). "
+                "Return `False`, or let an exception propagate, to signal a failure: "
+                "the message is nacked and redelivered (via the delayed/dead-letter exchange) "
+                "up to `unexpected_error_max_attempts` times, waiting `unexpected_error_retry_delay_s` "
+                "between attempts, after which it is dropped. A raised exception is additionally "
+                "logged as an unhandled error, whereas returning `False` is treated as an expected retry signal"
+            ),
+        ],
         *,
-        exclusive_queue: bool = True,
-        non_exclusive_queue_name: str | None = None,
-        topics: list[str] | None = None,
-        message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
-        unexpected_error_retry_delay_s: float = _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
-        unexpected_error_max_attempts: int = _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
-    ) -> tuple[QueueName, ConsumerTag]:
-        """subscribe to exchange_name calling ``message_handler`` for every incoming message
-        - exclusive_queue: True means that every instance of this application will
-            receive the incoming messages
-        - exclusive_queue: False means that only one instance of this application will
-            reveice the incoming message
-        - non_exclusive_queue_name: if exclusive_queue is False, then this name will be used. If None
-            it will use the exchange_name.
-
-        NOTE: ``message_ttl` is also a soft timeout: if the handler does not finish processing
-        the message before this is reached the message will be redelivered!
-
-        specifying a topic will make the client declare a TOPIC type of RabbitMQ Exchange
-        instead of FANOUT
-        - a FANOUT exchange transmit messages to any connected queue regardless of
-            the routing key
-        - a TOPIC exchange transmit messages to any connected queue provided it is
-            bound with the message routing key
-          - topic = BIND_TO_ALL_TOPICS ("#") is equivalent to the FANOUT effect
-          - a queue bound with topic "director-v2.*" will receive any message that
-            uses a routing key such as "director-v2.event.service_started"
-          - a queue bound with topic "director-v2.event.specific_event" will only
-            receive messages with that exact routing key (same as DIRECT exchanges behavior)
-
-        ``unexpected_error_max_attempts`` is the maximum amount of retries when the ``message_handler``
-            raised an unexpected error or it returns `False`
-        ``unexpected_error_retry_delay_s`` time to wait between each retry when the ``message_handler``
-            raised an unexpected error or it returns `False`
+        exclusive_queue: Annotated[
+            bool,
+            doc(
+                "True: every instance of this application receives the incoming messages. "
+                "False: only one instance of this application receives each message"
+            ),
+        ] = True,
+        non_exclusive_queue_name: Annotated[
+            str | None,
+            doc("Queue name used when `exclusive_queue` is False. Defaults to `exchange_name` when None"),
+        ] = None,
+        topics: Annotated[
+            list[str] | None,
+            doc(
+                "Declares a TOPIC exchange instead of FANOUT when provided. FANOUT transmits messages "
+                "to any bound queue regardless of routing key. TOPIC transmits messages only to queues "
+                "bound with a matching routing key: BIND_TO_ALL_TOPICS ('#') behaves like FANOUT; "
+                "'director-v2.*' matches routing keys such as 'director-v2.event.service_started'; "
+                "'director-v2.event.specific_event' matches only that exact routing key"
+            ),
+        ] = None,
+        message_ttl: Annotated[
+            NonNegativeInt,
+            doc(
+                "Also acts as a soft timeout: if `message_handler` does not finish processing "
+                "the message before this is reached, the message will be redelivered"
+            ),
+        ] = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
+        unexpected_error_retry_delay_s: Annotated[
+            float, doc("Time to wait between each retry when `message_handler` raised or returned `False`")
+        ] = _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
+        unexpected_error_max_attempts: Annotated[
+            int, doc("Maximum amount of retries when `message_handler` raised or returned `False`")
+        ] = _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+    ) -> Annotated[tuple[QueueName, ConsumerTag], doc("(queue name, consumer tag) of the subscription")]:
+        """Subscribes to `exchange_name`, calling `message_handler` for every incoming message.
 
         Raises:
             aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with
-            different type is used
-        Returns:
-            tuple of queue name and consumer tag mapping
+                different type is used
         """
 
         assert self._channel_pool  # nosec

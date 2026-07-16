@@ -43,43 +43,47 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
             rabbit_message.node_id,
             rabbit_message.user_id,
         )
-        return True
+    else:
+        size = await efs_manager.get_project_node_data_size(rabbit_message.project_id, node_id=rabbit_message.node_id)
+        _logger.debug(
+            "Current directory size: %s, project ID: %s node ID: %s, current user: %s",
+            size,
+            rabbit_message.project_id,
+            rabbit_message.node_id,
+            rabbit_message.user_id,
+        )
 
-    size = await efs_manager.get_project_node_data_size(rabbit_message.project_id, node_id=rabbit_message.node_id)
-    _logger.debug(
-        "Current directory size: %s, project ID: %s node ID: %s, current user: %s",
-        size,
-        rabbit_message.project_id,
-        rabbit_message.node_id,
-        rabbit_message.user_id,
-    )
+        project_node_state_names = await efs_manager.list_project_node_state_names(
+            rabbit_message.project_id, node_id=rabbit_message.node_id
+        )
+        rpc_client: RabbitMQRPCClient = get_rabbitmq_rpc_client(app)
+        _used = min(size, settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
+        usage: dict[str, DiskUsage] = {}
+        for name in project_node_state_names:
+            usage[name] = DiskUsage.from_efs_guardian(used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
 
-    project_node_state_names = await efs_manager.list_project_node_state_names(
-        rabbit_message.project_id, node_id=rabbit_message.node_id
-    )
-    rpc_client: RabbitMQRPCClient = get_rabbitmq_rpc_client(app)
-    _used = min(size, settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
-    usage: dict[str, DiskUsage] = {}
-    for name in project_node_state_names:
-        usage[name] = DiskUsage.from_efs_guardian(used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
+        fire_and_forget_task(
+            update_disk_usage(rpc_client, node_id=rabbit_message.node_id, usage=usage),
+            task_suffix_name=f"update_disk_usage_efs_user_id{rabbit_message.user_id}_node_id{rabbit_message.node_id}",
+            fire_and_forget_tasks_collection=app.state.efs_guardian_fire_and_forget_tasks,
+        )
 
-    fire_and_forget_task(
-        update_disk_usage(rpc_client, node_id=rabbit_message.node_id, usage=usage),
-        task_suffix_name=f"update_disk_usage_efs_user_id{rabbit_message.user_id}_node_id{rabbit_message.node_id}",
-        fire_and_forget_tasks_collection=app.state.efs_guardian_fire_and_forget_tasks,
-    )
-
-    if size > settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES:
-        msg = f"Removing write permissions inside of EFS starts for project ID: {rabbit_message.project_id}, node ID: {rabbit_message.node_id}, current user: {rabbit_message.user_id}, size: {size}, upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"
-        with log_context(_logger, logging.WARNING, msg=msg):
-            redis = get_redis_lock_client(app)
-            await exclusive(
-                redis,
-                lock_key=f"efs_remove_write_permissions-{rabbit_message.project_id=}-{rabbit_message.node_id=}",
-                blocking=True,
-                blocking_timeout=datetime.timedelta(seconds=10),
-            )(efs_manager.remove_project_node_data_write_permissions)(
-                project_id=rabbit_message.project_id, node_id=rabbit_message.node_id
+        if size > settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES:
+            msg = (
+                f"Removing write permissions inside of EFS starts for project ID: "
+                f"{rabbit_message.project_id}, node ID: {rabbit_message.node_id}, "
+                f"current user: {rabbit_message.user_id}, size: {size}, "
+                f"upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"
             )
+            with log_context(_logger, logging.WARNING, msg=msg):
+                redis = get_redis_lock_client(app)
+                await exclusive(
+                    redis,
+                    lock_key=f"efs_remove_write_permissions-{rabbit_message.project_id=}-{rabbit_message.node_id=}",
+                    blocking=True,
+                    blocking_timeout=datetime.timedelta(seconds=10),
+                )(efs_manager.remove_project_node_data_write_permissions)(
+                    project_id=rabbit_message.project_id, node_id=rabbit_message.node_id
+                )
 
     return True
