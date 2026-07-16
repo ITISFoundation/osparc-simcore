@@ -626,8 +626,7 @@ async def delete_computation(
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Pipeline {project_id} could not be stopped properly "
-                f"after {computation_stop.wait_for.total_seconds()}s. "
-                "It will be marked for deletion and retried by the system.",
+                f"after {computation_stop.wait_for.total_seconds()}s. ",
             )
 
     # delete the pipeline now
