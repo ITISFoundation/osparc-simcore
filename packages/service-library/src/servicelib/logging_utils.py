@@ -14,7 +14,7 @@ import queue
 import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from inspect import getframeinfo, stack
 from pathlib import Path
@@ -30,7 +30,7 @@ from common_library.logging.logging_utils_filtering import (
     MessageSubstring,
 )
 
-from .tracing import TracingConfig, setup_log_tracing
+from .tracing import TracingConfig, get_current_tracing_config, setup_log_tracing, traced_operation
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -589,6 +589,16 @@ _STACK_LEVEL_OFFSET: Final[int] = 3  # 1 => log_context, 2 => contextlib, 3 => c
 _CONTEXT_ID_LEN: Final[int] = 8
 
 
+def _default_operation_name() -> str:
+    # NOTE: this is a helper called from within `log_context`'s body, which itself adds one frame
+    # on top of the `stacklevel=_STACK_LEVEL_OFFSET` frame-chain used below for `logger.log()`
+    # (0 => this helper, 1 => log_context, 2 => contextlib, 3 => caller). Uses `sys._getframe()`
+    # (O(1), single frame) rather than `inspect.stack()` (O(stack depth), reads source lines for
+    # every frame) since this runs on every traced `log_context` call.
+    frame = sys._getframe(_STACK_LEVEL_OFFSET)  # noqa: SLF001
+    return f"{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name}"
+
+
 @contextmanager
 def log_context(
     logger: logging.Logger,
@@ -596,6 +606,7 @@ def log_context(
     msg: LogMessageStr,
     *args,
     extra: LogExtra | None = None,
+    operation_name: str | None = None,
 ) -> Iterator[None]:
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
 
@@ -608,6 +619,21 @@ def log_context(
 
     started_time = datetime.datetime.now(tz=datetime.UTC)
     starting_log_msg = f"{_STARTING_PREFIX}{msg}"
+
+    tracing_config = get_current_tracing_config()
+
+    with ExitStack() as stack_mgr:
+        if tracing_config is not None and tracing_config.tracing_enabled:
+            # NOTE: mirrors `logging.LogRecord.getMessage()` (only applies `%` formatting when
+            # `args` is truthy) so this matches exactly what ends up in the actual log line.
+            rendered_msg = msg % args if args else msg
+            stack_mgr.enter_context(
+                traced_operation(
+                    operation_name or _default_operation_name(),
+                    tracing_config=tracing_config,
+                    attributes={"log.message": rendered_msg},
+                )
+            )
 
     try:
         logger.log(

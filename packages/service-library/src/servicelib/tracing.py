@@ -3,7 +3,7 @@ import inspect
 import logging
 from collections.abc import Callable, Coroutine
 from contextlib import contextmanager, suppress
-from contextvars import Token
+from contextvars import ContextVar, Token
 from enum import auto
 from typing import Any, Final, Self, overload
 
@@ -34,6 +34,11 @@ from .utils import get_callable_namespaced_name
 type TracingContext = otcontext.Context | None
 
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
+
+# NOTE: holds the TracingConfig set up for this process/context so that utilities such as
+# `log_context` can automatically create spans without threading `TracingConfig` through every
+# call site. Set once by `setup_log_tracing()` (see `logging_utils.setup_loggers`/`async_loggers`).
+_current_tracing_config: ContextVar["TracingConfig | None"] = ContextVar("current_tracing_config", default=None)
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
 _OTEL_NAMESPACE: Final[str] = "simcore"
@@ -104,7 +109,17 @@ def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: Tra
     HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
+def get_current_tracing_config() -> TracingConfig | None:
+    """Returns the `TracingConfig` set by the last call to `setup_log_tracing()`, if any.
+
+    Used by `log_context()` to automatically create spans without requiring every call site to
+    explicitly pass a `TracingConfig`.
+    """
+    return _current_tracing_config.get()
+
+
 def setup_log_tracing(tracing_config: TracingConfig):
+    _current_tracing_config.set(tracing_config)
     if tracing_config.tracing_enabled:
         LoggingInstrumentor().instrument(
             set_logging_format=True,
