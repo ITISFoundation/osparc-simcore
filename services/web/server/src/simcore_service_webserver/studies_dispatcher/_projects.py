@@ -38,7 +38,6 @@ _logger = logging.getLogger(__name__)
 _FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python("simcore/services/frontend/file-picker")
 _FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python("1.0.0")
 
-# Default node positions on the workbench canvas
 _DEFAULT_FILE_PICKER_POSITION: dict[str, Any] = NodeUI(position=Position(x=305, y=229)).model_dump(mode="json")
 _DEFAULT_SERVICE_NODE_POSITION: dict[str, Any] = NodeUI(position=Position(x=633, y=229)).model_dump(mode="json")
 
