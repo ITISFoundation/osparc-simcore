@@ -33,7 +33,7 @@ from ._errors import (
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
 )
-from ._models import DelegateInterface, MountActivity
+from ._models import ContainerCreateResult, DelegateInterface, MountActivity
 from ._utils import get_mount_id
 
 _logger = logging.getLogger(__name__)
@@ -234,29 +234,32 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         self.vfs_write_back_s: NonNegativeInt = 0
 
     @cached_property
-    def _r_clone_container_name(self) -> str:
+    def r_clone_container_name(self) -> str:
         mount_id = get_mount_id(self.local_mount_path, self.index)
         return f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{self.node_id}-{mount_id}"[:63]
 
-    async def create(self) -> PortInt:
+    async def create(self) -> ContainerCreateResult:
         # If an existing container is found, reconnect to it instead of recreating.
         # This handles sidecar restarts where the rclone container survived.
-        result = await _docker_utils.try_inspect_r_clone_container(self.delegate, self._r_clone_container_name)
+        result = await _docker_utils.try_inspect_r_clone_container(self.delegate, self.r_clone_container_name)
         if result is not None:
-            port, labels = result
+            assigned_port, labels = result
 
-            from_labels = _RCloneContainerLabels.from_docker_labels(self._r_clone_container_name, labels)
+            from_labels = _RCloneContainerLabels.from_docker_labels(self.r_clone_container_name, labels)
             self.rc_user = from_labels.rc_user
             self.rc_password = from_labels.rc_password
             self.vfs_write_back_s = from_labels.vfs_write_back_s
-            _logger.info(
-                "Reconnecting to existing rclone container '%s' on port %s", self._r_clone_container_name, port
+
+            return ContainerCreateResult(
+                rc_user=self.rc_user,
+                rc_password=self.rc_password,
+                vfs_write_back_s=self.vfs_write_back_s,
+                assigned_port=assigned_port,
+                recoonected=True,
             )
 
-            return port
-
         # No existing container — create fresh
-        await self.delegate.remove_container(self._r_clone_container_name)
+        await self.delegate.remove_container(self.r_clone_container_name)
 
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
         command, vfs_write_back_s = await _get_rclone_mount_command(
@@ -271,7 +274,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         )
         assigned_port = await _docker_utils.create_r_clone_container(
             self.delegate,
-            self._r_clone_container_name,
+            self.r_clone_container_name,
             command=command,
             r_clone_version=await get_r_clone_version(),
             local_mount_path=self.local_mount_path,
@@ -284,10 +287,17 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             ).to_docker_labels(),
         )
         self.vfs_write_back_s = vfs_write_back_s
-        return assigned_port
+
+        return ContainerCreateResult(
+            rc_user=self.rc_user,
+            rc_password=self.rc_password,
+            vfs_write_back_s=self.vfs_write_back_s,
+            assigned_port=assigned_port,
+            recoonected=False,
+        )
 
     async def remove(self):
-        await self.delegate.remove_container(self._r_clone_container_name)
+        await self.delegate.remove_container(self.r_clone_container_name)
 
 
 class RemoteControlHttpClient:

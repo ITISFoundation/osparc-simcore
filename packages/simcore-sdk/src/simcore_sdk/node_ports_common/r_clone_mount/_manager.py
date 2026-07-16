@@ -104,17 +104,24 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             await self._update_and_notify_mount_activity(mount_activity)
 
     async def start_mount(self) -> None:
-        assigned_port = await self._container_manager.create()
-        # Credentials may have been updated from container labels when reconnecting
-        # to an existing container after a sidecar restart.
-        self._rc_user = self._container_manager.rc_user
-        self._rc_password = self._container_manager.rc_password
-        self._vfs_write_back_s = self._container_manager.vfs_write_back_s
+        create_result = await self._container_manager.create()
+
+        if create_result.recoonected:
+            self._rc_user = create_result.rc_user
+            self._rc_password = create_result.rc_password
+            self._vfs_write_back_s = create_result.vfs_write_back_s
+
+            _logger.info(
+                "Reconnected to existing container '%s' on port='%s'",
+                self._container_manager.r_clone_container_name,
+                create_result.assigned_port,
+            )
+
         node_address = await self.delegate.get_node_address()
 
         self._rc_http_client = RemoteControlHttpClient(
             rc_host=node_address,
-            rc_port=assigned_port,
+            rc_port=create_result.assigned_port,
             rc_user=self._rc_user,
             rc_password=self._rc_password,
             transfers_completed_timeout=self._transfers_completed_timeout,

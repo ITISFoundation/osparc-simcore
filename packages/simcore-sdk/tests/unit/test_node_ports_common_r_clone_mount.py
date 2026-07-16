@@ -414,7 +414,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
     mount_id = get_mount_id(local_mount_path, index)
     tracked_mount = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
     container_name = (
-        tracked_mount._container_manager._r_clone_container_name  # noqa: SLF001
+        tracked_mount._container_manager.r_clone_container_name  # noqa: SLF001
     )
 
     # Shutdown the container to trigger the shutdown handler
