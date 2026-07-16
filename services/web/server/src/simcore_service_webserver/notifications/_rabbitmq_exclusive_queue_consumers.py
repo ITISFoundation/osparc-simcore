@@ -115,7 +115,7 @@ async def _computational_pipeline_status_message_parser(app: web.Application, da
             )
         await _projects_service.notify_project_state_update(app, project)
 
-    return True
+    return True  # ACK message processed
 
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
