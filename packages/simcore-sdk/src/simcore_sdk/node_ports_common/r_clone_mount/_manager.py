@@ -101,16 +101,18 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
     async def _worker_mount_activity(self) -> None:
         with log_catch(logger=_logger, reraise=False):
             mount_activity = await self._rc_client.get_mount_activity()
-            mount_activity.vfs_write_back_s = self._vfs_write_back_s
+            mount_activity.vfs_write_back_s = self._vfs_write_back_s  # required by frontend
             await self._update_and_notify_mount_activity(mount_activity)
 
     async def _create_or_reconnect_container(self) -> bool:
         create_result = await self._container_manager.create()
+        # always set since it's required for frontend
+        self._vfs_write_back_s = create_result.vfs_write_back_s
 
         if create_result.reconnected:
+            # recover old values
             self._rc_user = create_result.rc_user
             self._rc_password = create_result.rc_password
-            self._vfs_write_back_s = create_result.vfs_write_back_s
 
             _logger.info(
                 "Reconnected to existing container '%s' on port='%s'",
@@ -221,7 +223,7 @@ class RCloneMountManager:
         ):
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
-                _logger.debug("Mount for '%s' is already started", local_mount_path)
+                _logger.debug("Mount for '%s' at index '%s' is already started", local_mount_path, index)
                 existing_remote_path = self._reverse_path_search[mount_id]
                 if existing_remote_path != remote_path:
                     raise MountPathConflictError(
