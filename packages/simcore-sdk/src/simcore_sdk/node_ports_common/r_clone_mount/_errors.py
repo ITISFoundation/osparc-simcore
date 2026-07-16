@@ -29,5 +29,12 @@ class MissingContainerLabelsError(_BaseRcloneMountError):
     msg_template: str = "Container '{container_name}' is missing required rclone labels: {missing_labels}"
 
 
+class MountPathConflictError(_BaseRcloneMountError):
+    msg_template: str = (
+        "Mount for '{local_mount_path}' is already tracked with remote_path='{existing_remote_path}'"
+        " but was called again with a different remote_path='{new_remote_path}'"
+    )
+
+
 class PortNotAssignedError(_BaseRcloneMountError):
     msg_template: str = "Container '{container_name}' has no published port for {target_port}. Ports={ports}"

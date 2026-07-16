@@ -2,6 +2,7 @@ from ._config_provider import MountRemoteType
 from ._errors import (
     InvalidRemotePathError,
     MissingContainerLabelsError,
+    MountPathConflictError,
     NoMountFoundForRemotePathError,
 )
 from ._manager import RCloneMountManager
@@ -13,6 +14,7 @@ __all__: tuple[str, ...] = (
     "InvalidRemotePathError",
     "MissingContainerLabelsError",
     "MountActivity",
+    "MountPathConflictError",
     "MountRemoteType",
     "NoMountFoundForRemotePathError",
     "RCloneMountManager",

@@ -16,6 +16,7 @@ from ._config_provider import MountRemoteType, get_config_content
 from ._container import ContainerManager, RemoteControlHttpClient
 from ._errors import (
     InvalidRemotePathError,
+    MountPathConflictError,
     NoMountFoundForRemotePathError,
 )
 from ._models import DelegateInterface, MountActivity, MountId
@@ -198,6 +199,13 @@ class RCloneMountManager:
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
                 _logger.debug("Mount for '%s' is already started", local_mount_path)
+                existing_remote_path = self._reverse_path_search[mount_id]
+                if existing_remote_path != remote_path:
+                    raise MountPathConflictError(
+                        local_mount_path=local_mount_path,
+                        existing_remote_path=existing_remote_path,
+                        new_remote_path=remote_path,
+                    )
                 return
 
             tracked_mount = _TrackedMount(

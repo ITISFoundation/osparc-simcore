@@ -35,6 +35,7 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     InvalidRemotePathError,
     MissingContainerLabelsError,
     MountActivity,
+    MountPathConflictError,
     MountRemoteType,
     NoMountFoundForRemotePathError,
     RCloneMountManager,
@@ -876,3 +877,50 @@ async def test_create_raises_for_container_without_labels(
 
     with pytest.raises(expected_error):
         await manager.create()
+
+
+async def test_ensure_mounted_raises_on_remote_path_conflict(
+    monkeypatch: pytest.MonkeyPatch,
+    r_clone_settings: RCloneSettings,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    local_mount_path: Path,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    fake_remote_path: Callable[[], StorageFileID],
+    index: int,
+):
+    """Calling ensure_mounted twice with the same path but a different remote_path must raise."""
+
+    async def _fake_start_mount(self: _TrackedMount) -> None:
+        return
+
+    monkeypatch.setattr(_TrackedMount, "start_mount", _fake_start_mount)
+
+    manager = RCloneMountManager(
+        r_clone_settings, requires_data_mounting=True, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown)
+    )
+
+    await manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_link=mount_s3_link_from_remote(remote_path),
+        node_id=node_id,
+        index=index,
+    )
+
+    different_remote_path = fake_remote_path()
+    with pytest.raises(MountPathConflictError):
+        await manager.ensure_mounted(
+            local_mount_path=local_mount_path,
+            remote_type=MountRemoteType.S3,
+            remote_path=different_remote_path,
+            mount_s3_link=mount_s3_link_from_remote(different_remote_path),
+            node_id=node_id,
+            index=index,
+        )
+
+    manager._tracked_mounts.clear()  # noqa: SLF001
+    manager._reverse_path_search.clear()  # noqa: SLF001
