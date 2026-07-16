@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import RefActions, column_created_datetime, column_modified_datetime
+from ._common import RefActions
 from .base import metadata
 
 file_meta_data = sa.Table(
@@ -36,8 +36,24 @@ file_meta_data = sa.Table(
         doc="The user id with which the run entry is associated",
     ),
     sa.Column("file_id", sa.String(), primary_key=True),
-    column_created_datetime(timezone=True),
-    column_modified_datetime(timezone=True),
+    sa.Column(
+        "created_at",
+        sa.DateTime(timezone=True),
+        key="created",
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
+    sa.Column(
+        "last_modified",
+        sa.DateTime(timezone=True),
+        key="modified",
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        onupdate=sa.sql.func.now(),
+        doc="Timestamp with last row update. NOTE: set explicitly by the storage "
+        "service from S3's `last_modified` metadata, no DB-side auto-update trigger",
+    ),
     sa.Column("file_size", sa.BigInteger()),
     sa.Column(
         "entity_tag",

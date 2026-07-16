@@ -17,41 +17,34 @@ depends_on = None
 
 
 def upgrade():
-    # new timestamp columns (nullable for now, backfilled below)
-    op.add_column("file_meta_data", sa.Column("created", sa.DateTime(timezone=True), nullable=True))
-    op.add_column("file_meta_data", sa.Column("modified", sa.DateTime(timezone=True), nullable=True))
-
-    # backfill from the legacy string columns, falling back to now() for null/empty values
+    # reuse the existing columns in place: convert the type, keep the column names
     op.execute(
         """
-        UPDATE file_meta_data
-        SET created = COALESCE(NULLIF(created_at, '')::timestamptz, now()),
-            modified = COALESCE(NULLIF(last_modified, '')::timestamptz, now())
+        ALTER TABLE file_meta_data
+        ALTER COLUMN created_at TYPE timestamptz USING COALESCE(NULLIF(created_at, '')::timestamptz, now()),
+        ALTER COLUMN last_modified TYPE timestamptz USING COALESCE(NULLIF(last_modified, '')::timestamptz, now())
         """
     )
 
     # enforce not-null + default now(), matching column_created_datetime/column_modified_datetime
-    op.alter_column("file_meta_data", "created", nullable=False, server_default=sa.text("now()"))
-    op.alter_column("file_meta_data", "modified", nullable=False, server_default=sa.text("now()"))
+    op.alter_column("file_meta_data", "created_at", nullable=False, server_default=sa.text("now()"))
+    op.alter_column("file_meta_data", "last_modified", nullable=False, server_default=sa.text("now()"))
 
-    op.drop_column("file_meta_data", "created_at")
-    op.drop_column("file_meta_data", "last_modified")
-
-    # NOTE: no auto-update trigger on `modified` here: the storage service sets it
+    # NOTE: no auto-update trigger on `last_modified` here: the storage service sets it
     # explicitly from S3's `last_modified` metadata, so it must not be overwritten.
 
 
 def downgrade():
-    op.add_column("file_meta_data", sa.Column("last_modified", sa.String(), nullable=True))
-    op.add_column("file_meta_data", sa.Column("created_at", sa.String(), nullable=True))
+    op.alter_column("file_meta_data", "created_at", server_default=None)
+    op.alter_column("file_meta_data", "last_modified", server_default=None)
 
     op.execute(
         """
-        UPDATE file_meta_data
-        SET created_at = to_char(created, 'YYYY-MM-DD"T"HH24:MI:SS.US'),
-            last_modified = to_char(modified, 'YYYY-MM-DD"T"HH24:MI:SS.US')
+        ALTER TABLE file_meta_data
+        ALTER COLUMN created_at TYPE character varying USING to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.US'),
+        ALTER COLUMN last_modified TYPE character varying USING to_char(last_modified, 'YYYY-MM-DD"T"HH24:MI:SS.US')
         """
     )
 
-    op.drop_column("file_meta_data", "modified")
-    op.drop_column("file_meta_data", "created")
+    op.alter_column("file_meta_data", "created_at", nullable=True)
+    op.alter_column("file_meta_data", "last_modified", nullable=True)
