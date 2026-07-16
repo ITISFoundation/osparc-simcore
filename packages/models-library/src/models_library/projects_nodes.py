@@ -252,8 +252,6 @@ class Node(BaseModel):
             ge=0,
             le=100,
             description="the node progress value",
-            deprecated=True,  # NOTE: still used in the File Picker (frontend nodes) and must be removed first from there before retiring it here
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
