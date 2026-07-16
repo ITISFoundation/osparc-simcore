@@ -25,6 +25,9 @@ def ensure_single_setup[F: _SetupFunc](setup_func: F) -> F:
     retried: further calls raise `SetupAlreadyFailedError` instead of
     re-running `setup_func` (which may have non-idempotent side effects,
     e.g. `app.include_router`).
+
+    Raises:
+        SetupAlreadyFailedError: if called a second time after `setup_func` raised
     """
     flag_name = f"_setup_state__{setup_func.__qualname__}"
 
