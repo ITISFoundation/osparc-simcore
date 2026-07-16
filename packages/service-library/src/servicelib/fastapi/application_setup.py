@@ -8,13 +8,18 @@ accidental second call.
 """
 
 import functools
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol
 
 from fastapi import FastAPI
 
 
-def ensure_single_setup[F: Callable[..., None]](setup_func: F) -> F:
+class _SetupFunc(Protocol):
+    __qualname__: str
+
+    def __call__(self, app: FastAPI, *args: Any, **kwargs: Any) -> None: ...
+
+
+def ensure_single_setup[F: _SetupFunc](setup_func: F) -> F:
     flag_name = f"_setup_done__{setup_func.__qualname__}"
 
     @functools.wraps(setup_func)
