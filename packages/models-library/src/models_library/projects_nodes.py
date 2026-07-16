@@ -32,7 +32,6 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .projects_nodes_layout import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
@@ -314,14 +313,6 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    position: Annotated[
-        Position | None,
-        Field(
-            deprecated=True,
-            description="Use projects_ui.WorkbenchUI.position instead",
-        ),
-    ] = None
-
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
@@ -338,17 +329,6 @@ class Node(BaseModel):
             ),
         ),
     ] = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def _strip_deprecated_fields(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            cleaned = dict(data)
-            # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
-            for key in ("outputNode", "outputNodes", "parent"):
-                cleaned.pop(key, None)
-            return cleaned
-        return data
 
     @field_validator("state", mode="before")
     @classmethod
@@ -445,7 +425,6 @@ class Node(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="forbid",
         validate_by_name=True,
         validate_by_alias=True,
         json_schema_extra=_update_json_schema_extra,
