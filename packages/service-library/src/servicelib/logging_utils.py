@@ -603,7 +603,7 @@ def log_context(
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
 
     context_id = uuid4().hex[:_CONTEXT_ID_LEN]
-    msg = f"{_un_capitalize(msg.strip())} [{context_id}]"
+    msg = f"[{context_id}] {_un_capitalize(msg.strip())}"
 
     kwargs: dict[str, Any] = {}
     if extra:
@@ -622,7 +622,7 @@ def log_context(
         )
         yield
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        finished_log_msg = f"{_DONE_PREFIX}{msg}{_DONE_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})"
+        finished_log_msg = f"{_DONE_PREFIX}{msg}{_DONE_SUFFIX} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
         logger.log(
             level,
             finished_log_msg,
@@ -632,7 +632,7 @@ def log_context(
         )
     except:
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        raised_log_msg = f"{_RAISED_PREFIX}{msg}{_RAISED_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})"
+        raised_log_msg = f"{_RAISED_PREFIX}{msg}{_RAISED_SUFFIX} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
         logger.log(
             level,
             raised_log_msg,
