@@ -30,7 +30,9 @@ async def login_granted_response(request: web.Request, *, user: UserInfoDict) ->
     with log_context(
         _logger,
         logging.INFO,
-        f"login of {user_id=} with {email=}",
+        "login of user_id=%s with %s",
+        f"{user_id}",
+        f"{email=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(translate_message(MSG_LOGGED_IN, request), "INFO")
