@@ -1,12 +1,11 @@
 import sqlalchemy as sa
 
-from simcore_postgres_database.models._common import (
+from ._common import (
     RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
 )
-
 from .base import metadata
 
 file_meta_data = sa.Table(
