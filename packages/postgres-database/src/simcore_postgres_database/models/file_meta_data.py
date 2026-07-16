@@ -39,13 +39,11 @@ file_meta_data = sa.Table(
     sa.Column(
         "created_at",
         sa.DateTime(timezone=True),
-        key="created",
         nullable=False,
     ),
     sa.Column(
         "last_modified",
         sa.DateTime(timezone=True),
-        key="modified",
         nullable=False,
     ),
     sa.Column("file_size", sa.BigInteger()),
