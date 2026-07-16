@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, Final, TypedDict, TypeVar
+from uuid import uuid4
 
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import LogExtra
@@ -588,6 +589,7 @@ _DONE_SUFFIX: Final[str] = " ✅"
 _RAISED_PREFIX: Final[str] = "❌❌❌ Error raised: "
 _RAISED_SUFFIX: Final[str] = " ❌❌❌"
 _STACK_LEVEL_OFFSET: Final[int] = 3  # 1 => log_context, 2 => contextlib, 3 => caller
+_CONTEXT_ID_LEN: Final[int] = 8
 
 
 @contextmanager
@@ -600,7 +602,8 @@ def log_context(
 ) -> Iterator[None]:
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
 
-    msg = _un_capitalize(msg.strip())
+    context_id = uuid4().hex[:_CONTEXT_ID_LEN]
+    msg = f"{_un_capitalize(msg.strip())} [{context_id}]"
 
     kwargs: dict[str, Any] = {}
     if extra:
