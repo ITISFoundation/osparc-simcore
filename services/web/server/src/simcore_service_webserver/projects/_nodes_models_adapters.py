@@ -51,26 +51,16 @@ def project_node_create_from_node(node: Node, node_id: UUID) -> ProjectNodeCreat
     """
     Adapter: Converts a Node model and node_id to a ProjectNodeCreate instance.
     """
-    node_data: dict[str, Any] = node.model_dump(by_alias=False, mode="json")
-    # projects_nodes.ui is NOT NULL (defaults to {}) while domain Node.ui uses None for "no UI":
-    # drop None so the column default ({}) applies instead of trying to store NULL.
-    if node_data.get("ui") is None:
-        node_data.pop("ui", None)
-    return ProjectNodeCreate(node_id=node_id, **node_data)
+    return ProjectNodeCreate(node_id=node_id, **node.model_dump(by_alias=False, mode="json"))
 
 
 def project_node_from_node(node: Node, node_id: UUID, created: datetime, modified: datetime) -> ProjectNode:
     """
     Adapter: Converts a Node model, node_id, created, and modified to a ProjectNode instance.
     """
-    node_data: dict[str, Any] = node.model_dump(by_alias=False, mode="json")
-    # projects_nodes.ui is NOT NULL (defaults to {}) while domain Node.ui uses None for "no UI":
-    # drop None so the column default ({}) applies instead of trying to store NULL.
-    if node_data.get("ui") is None:
-        node_data.pop("ui", None)
     return ProjectNode(
         node_id=node_id,
         created=created,
         modified=modified,
-        **node_data,
+        **node.model_dump(by_alias=False, mode="json"),
     )
