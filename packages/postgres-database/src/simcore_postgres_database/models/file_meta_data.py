@@ -41,18 +41,12 @@ file_meta_data = sa.Table(
         sa.DateTime(timezone=True),
         key="created",
         nullable=False,
-        server_default=sa.sql.func.now(),
-        doc="Timestamp auto-generated upon creation",
     ),
     sa.Column(
         "last_modified",
         sa.DateTime(timezone=True),
         key="modified",
         nullable=False,
-        server_default=sa.sql.func.now(),
-        onupdate=sa.sql.func.now(),
-        doc="Timestamp with last row update. NOTE: set explicitly by the storage "
-        "service from S3's `last_modified` metadata, no DB-side auto-update trigger",
     ),
     sa.Column("file_size", sa.BigInteger()),
     sa.Column(
