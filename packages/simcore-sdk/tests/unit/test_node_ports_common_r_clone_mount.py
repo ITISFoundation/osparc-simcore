@@ -878,7 +878,7 @@ async def test_create_raises_for_container_without_labels(
         rc_password="p",  # nosec  # noqa: S106
         delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown),
     )
-    manager.__dict__["_r_clone_container_name"] = rclone_container_without_labels
+    manager.__dict__["r_clone_container_name"] = rclone_container_without_labels
 
     with pytest.raises(expected_error):
         await manager.create()
