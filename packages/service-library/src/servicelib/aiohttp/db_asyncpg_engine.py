@@ -46,8 +46,7 @@ async def connect_to_db(
     with log_context(
         _logger,
         logging.INFO,
-        "Connecting app[APP_DB_ASYNC_ENGINE_KEY] to postgres with %s",
-        f"{settings=}",
+        f"Connecting app[APP_DB_ASYNC_ENGINE_KEY] to postgres with {settings=}",
     ):
         engine = await create_async_engine_and_database_ready(
             settings,
