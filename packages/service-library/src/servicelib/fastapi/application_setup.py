@@ -1,16 +1,15 @@
-"""Minimal decorator to make a FastAPI app "setup" function idempotent.
-
-Unlike ``functools.cache``, the "already-setup" flag is stored on the
-``FastAPI`` app's own ``state`` instead of in the decorator's cache. This
-avoids keeping a strong reference to the app (no memory growth or cross-talk
-between app instances, e.g. in tests) while still safely no-op'ing on an
-accidental second call.
-"""
-
 import functools
 from typing import Any, Protocol
 
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
+
+
+class SetupError(OsparcErrorMixin, RuntimeError): ...
+
+
+class SetupAlreadyFailedError(SetupError):
+    msg_template = "Setup '{name}' already failed previously and cannot be retried"
 
 
 class _SetupFunc(Protocol):
@@ -20,13 +19,28 @@ class _SetupFunc(Protocol):
 
 
 def ensure_single_setup[F: _SetupFunc](setup_func: F) -> F:
-    flag_name = f"_setup_done__{setup_func.__qualname__}"
+    """Makes `setup_func(app, ...)` run at most once per FastAPI app instance.
+
+    If it succeeds, further calls are no-ops. If it fails, it is never
+    retried: further calls raise `SetupAlreadyFailedError` instead of
+    re-running `setup_func` (which may have non-idempotent side effects,
+    e.g. `app.include_router`).
+    """
+    flag_name = f"_setup_state__{setup_func.__qualname__}"
 
     @functools.wraps(setup_func)
     def _wrapper(app: FastAPI, *args: Any, **kwargs: Any) -> None:
-        if getattr(app.state, flag_name, False):
+        state = getattr(app.state, flag_name, None)
+        if state is True:
             return
-        setup_func(app, *args, **kwargs)
+        if isinstance(state, BaseException):
+            raise SetupAlreadyFailedError(name=setup_func.__qualname__) from state
+
+        try:
+            setup_func(app, *args, **kwargs)
+        except Exception as exc:
+            setattr(app.state, flag_name, exc)
+            raise
         setattr(app.state, flag_name, True)
 
     return _wrapper  # type: ignore[return-value]
