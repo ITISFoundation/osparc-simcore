@@ -32,7 +32,6 @@ from models_library.users import UserID
 from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
-from pydantic.types import PositiveInt
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -628,7 +627,7 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         *,
         product_name: ProductName,
-        user_id: PositiveInt,
+        user_id: UserID,
         # hierarchy filters
         workspace_query: WorkspaceQuery,
         folder_query: FolderQuery,

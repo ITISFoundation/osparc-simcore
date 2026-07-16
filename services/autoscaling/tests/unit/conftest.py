@@ -69,7 +69,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 from servicelib.tracing import TracingConfig
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
-from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
+from simcore_service_autoscaling.constants import INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
@@ -1307,7 +1307,7 @@ async def create_buffer_machines(
         if pre_pull_images is not None and instance_state_name == "stopped":
             resource_tags.append(
                 {
-                    "Key": PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                    "Key": INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY,
                     "Value": f"{json_dumps(pre_pull_images)}",
                 }
             )

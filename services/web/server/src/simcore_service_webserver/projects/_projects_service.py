@@ -77,9 +77,9 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.socketio import SocketMessageDict
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, PositiveInt, TypeAdapter
 from servicelib.common_headers import (
@@ -902,13 +902,11 @@ async def _check_project_node_has_all_required_inputs(  # noqa: C901
         permission="read",
     )
 
-    nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
+    project_nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
 
-    nodes_map = dict(nodes)
-
-    if node_id not in nodes_map:
+    if node_id not in project_nodes:
         raise NodeNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_id}")
-    node = nodes_map[node_id]
+    node = project_nodes[node_id]
 
     unset_required_inputs: list[str] = []
     unset_outputs_in_upstream: list[tuple[str, str]] = []
@@ -926,7 +924,7 @@ async def _check_project_node_has_all_required_inputs(  # noqa: C901
         source_node_id = input_entry.node_uuid
         source_output_key = input_entry.output
 
-        source_node = nodes_map[source_node_id]
+        source_node = project_nodes[source_node_id]
 
         output_entry = None
         if source_node.outputs:
@@ -1028,7 +1026,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)
-                project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+                project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
                 await _wallets_service.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
@@ -1577,9 +1575,7 @@ async def _get_node_share_state(
             return NodeShareState(
                 locked=not is_collaborative_service,
                 current_user_groupids=[
-                    await users_service.get_user_primary_group_id(
-                        app, TypeAdapter(UserID).validate_python(service.user_id)
-                    )
+                    await users_service.get_user_primary_group_id(app, UserIDAdapter.validate_python(service.user_id))
                 ],
                 status=NodeShareStatus.OPENED,
             )
@@ -1918,7 +1914,7 @@ async def close_project_for_user(
 
 
 async def _get_project_share_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
 ) -> ProjectShareState:
@@ -2035,7 +2031,7 @@ async def _get_project_share_state(
 
 async def add_project_states_for_user(
     *,
-    user_id: int,
+    user_id: UserID,
     project: ProjectDict,
     app: web.Application,
 ) -> ProjectDict:
@@ -2402,7 +2398,7 @@ async def notify_project_node_update(
 
 
 async def retrieve_and_notify_project_locked_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
     *,

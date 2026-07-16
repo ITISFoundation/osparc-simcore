@@ -1,7 +1,6 @@
 from typing import Final
 
 from aiohttp import web
-from common_library.gettext_support import SupportedLocale
 from models_library.authentication import TwoFactorAuthenticationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
@@ -108,13 +107,6 @@ class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference
     value: list[int] | None = None
 
 
-class LocaleUserPreference(FrontendUserPreference):
-    """Persisted user locale (BCP-47-inspired tag, e.g. 'en', 'es_ES', 'zh_CN')."""
-
-    preference_identifier: PreferenceIdentifier = "userLocale"
-    value: SupportedLocale | None = None  # None → resolve from request headers / default EN
-
-
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
@@ -135,7 +127,6 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
     TwoFAFrontendUserPreference,
     BillingCenterUsageColumnOrderFrontendUserPreference,
-    LocaleUserPreference,
 ]
 
 _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {

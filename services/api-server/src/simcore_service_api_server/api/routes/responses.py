@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
+from models_library.users import UserID
 from servicelib.celery.task_manager import TaskManager
 
 from simcore_service_api_server.models.domain.chatbot import CreateChatCompletionResponse
@@ -57,7 +58,7 @@ _TASK_NAME = "run_chat_completion"
 )
 async def create_response(
     body: CreateResponseRequest,
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     task_manager: Annotated[TaskManager, Depends(get_task_manager)],
@@ -104,7 +105,7 @@ async def create_response(
 )
 async def get_response(
     response_id: str,
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     async_jobs_client: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ) -> ResponseObject:
