@@ -15,10 +15,7 @@ class MarkerUI(BaseModel):
 
 
 class NodeUI(BaseModel):
-    position: Annotated[
-        PositionUI,
-        Field(description="The node position in the workbench"),
-    ]
+    position: PositionUI
     marker: MarkerUI | None = None
 
     model_config = ConfigDict(extra="forbid")
