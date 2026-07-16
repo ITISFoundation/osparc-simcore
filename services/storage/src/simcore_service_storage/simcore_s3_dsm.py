@@ -1275,7 +1275,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 bucket=fmd.bucket_name, object_key=fmd.object_name
             )
             fmd.file_size = TypeAdapter(ByteSize).validate_python(s3_metadata.size)
-            fmd.modified = s3_metadata.last_modified
+            fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
         else:
             # we spare calling get_directory_metadata as it is not needed now and is costly
@@ -1302,7 +1302,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         if not fmd.is_directory:
             assert isinstance(s3_metadata, S3MetaData)  # nosec
             fmd.file_size = TypeAdapter(ByteSize).validate_python(s3_metadata.size)
-            fmd.modified = s3_metadata.last_modified
+            fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
         elif fmd.is_directory:
             assert isinstance(s3_metadata, S3DirectoryMetaData)  # nosec
