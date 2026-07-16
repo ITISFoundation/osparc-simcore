@@ -23082,8 +23082,7 @@
                 "type": "null"
               }
             ],
-            "title": "Ui",
-            "description": "UI components. Schema in models_library.api_schemas_webserver.projects_nodes_ui.NodeUI"
+            "title": "Ui"
           },
           "bootOptions": {
             "anyOf": [
@@ -23282,8 +23281,7 @@
                 "type": "null"
               }
             ],
-            "title": "Ui",
-            "description": "UI components. Schema in models_library.api_schemas_webserver.projects_nodes_ui.NodeUI"
+            "title": "Ui"
           },
           "bootOptions": {
             "anyOf": [
