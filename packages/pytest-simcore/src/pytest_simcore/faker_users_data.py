@@ -13,7 +13,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.basic_types import IDStr
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from pydantic import EmailStr, TypeAdapter
 
 from .helpers.faker_factories import (
@@ -62,7 +62,7 @@ def pytest_addoption(parser: pytest.Parser):
 
 @pytest.fixture
 def user_id(faker: Faker, request: pytest.FixtureRequest) -> UserID:
-    return TypeAdapter(UserID).validate_python(
+    return UserIDAdapter.validate_python(
         request.config.getoption("--faker-user-id", default=None) or faker.pyint(),
     )
 

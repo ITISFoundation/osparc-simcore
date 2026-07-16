@@ -1,10 +1,19 @@
-from typing import Annotated, Self
+from datetime import timedelta
+from typing import Annotated
 
+from annotated_types import Gt
 from celery_library.basic_types import BootServerMode
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
-from pydantic import AliasChoices, Field, PositiveInt, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    PositiveInt,
+    field_validator,
+    model_validator,
+)
 from settings_library.application import BaseApplicationSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
@@ -15,6 +24,41 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from ..modules.datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
+
+PositiveTimedelta = Annotated[timedelta, Gt(timedelta(0))]
+
+
+class DsmCleanerSettings(BaseCustomSettings):
+    STORAGE_CLEANER_EXPIRED_UPLOADS_INTERVAL: Annotated[
+        PositiveTimedelta,
+        Field(description=("How often the task that removes incomplete uploads runs. ")),
+    ] = timedelta(minutes=15)
+
+    STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL: Annotated[
+        PositiveTimedelta,
+        Field(
+            description=(
+                "How often the task that removes orphaned export entries runs. "
+                "Must be strictly less than STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL so each "
+                "retention window is checked at least once before an export expires."
+            ),
+        ),
+    ] = timedelta(hours=6)
+
+    STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL: Annotated[
+        PositiveTimedelta,
+        Field(description=("How long an exported archive (exports/ S3 prefix) is kept before being removed.")),
+    ] = timedelta(days=15)
+
+    @model_validator(mode="after")
+    def _exports_interval_lt_retention(self) -> "DsmCleanerSettings":
+        if self.STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL >= self.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL:
+            msg = (
+                "STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL must be strictly less than "
+                "STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL"
+            )
+            raise ValueError(msg)
+        return self
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -57,15 +101,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(3600, description="Default expiration time in seconds for presigned links"),
     ]
 
-    STORAGE_CLEANER_INTERVAL_S: Annotated[
-        int | None,
-        Field(
-            30,
-            description=(
-                "Interval in seconds when task cleaning pending uploads runs. setting to NULL disables the cleaner."
-            ),
-        ),
-    ]
+    STORAGE_CLEANER: Annotated[DsmCleanerSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[
         int,
@@ -112,13 +148,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def _validate_loglevel(cls, value: str) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
-
-    @model_validator(mode="after")
-    def _ensure_settings_consistency(self) -> Self:
-        if self.STORAGE_CLEANER_INTERVAL_S is not None and not self.STORAGE_REDIS:
-            msg = "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! Please correct settings."
-            raise ValueError(msg)
-        return self
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:

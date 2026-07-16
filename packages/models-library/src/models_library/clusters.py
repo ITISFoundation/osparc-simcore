@@ -6,7 +6,6 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, Field, HttpUrl, field_valida
 from pydantic.config import JsonDict
 from pydantic.types import NonNegativeInt
 
-from .groups import GroupID
 from .utils.common_validators import create_enums_pre_validator
 from .utils.enums import StrAutoEnum
 
@@ -55,13 +54,16 @@ class TLSAuthentication(_AuthenticationBase):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-ClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
+# NOTE: kept as a legacy `TypeAlias` (not PEP 695 `type` statement) on purpose: pydantic-settings
+# fails to detect PEP 695 `type` aliases (`TypeAliasType`) as "complex" fields, so env vars for
+# settings fields typed with this alias (e.g. director-v2/autoscaling/clusters-keeper
+# `*_CLUSTER_AUTH`) never get JSON-decoded and validation crashes.
+ClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication  # noqa: UP040
 
 
 class BaseCluster(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
     type: ClusterTypeInModel
-    owner: GroupID
     thumbnail: HttpUrl | None = Field(
         default=None,
         description="url to the image describing this cluster",
@@ -80,7 +82,6 @@ class BaseCluster(BaseModel):
                     {
                         "name": "My awesome cluster",
                         "type": ClusterTypeInModel.ON_PREMISE,
-                        "owner": 12,
                         "endpoint": "https://registry.osparc-development.fake.dev",
                         "authentication": {
                             "type": "tls",
@@ -92,7 +93,6 @@ class BaseCluster(BaseModel):
                     {
                         "name": "My AWS cluster",
                         "type": ClusterTypeInModel.AWS,
-                        "owner": 154,
                         "endpoint": "https://registry.osparc-development.fake.dev",
                         "authentication": {
                             "type": "tls",
@@ -108,4 +108,4 @@ class BaseCluster(BaseModel):
     model_config = ConfigDict(use_enum_values=True, json_schema_extra=_update_json_schema_extra)
 
 
-ClusterID: TypeAlias = NonNegativeInt
+type ClusterID = NonNegativeInt

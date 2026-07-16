@@ -5,28 +5,27 @@ Locale precedence (highest → lowest):
     2. ``Accept-Language`` header (first tag, normalised to gettext form).
     3. ``"en"`` — hard default.
 
-The DB-stored ``LocaleUserPreference`` is NOT read inside the middleware to
-avoid an async DB call on every request.  Code paths that need the persisted
-preference (e.g. email rendering) should call ``get_user_locale`` directly.
+The DB-stored ``users.language`` (a per-user profile field, not a per-product
+preference) is NOT read inside the middleware to avoid an async DB call on
+every request.  Code paths that need the persisted language (e.g. email
+rendering) should call ``get_user_locale`` directly.
 
 The middleware is gated on ``WEBSERVER_LOCALIZED_MESSAGES_ENABLED``.  When the flag is off the key
 is still written (as DEFAULT_LOCALE) so downstream code never needs to guard
 against a missing ``RQ_LOCALE_KEY``.
 """
 
-from typing import Final, cast
+from typing import Final
 
 from aiohttp import web
 from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale, get_translator, normalize_locale
 from models_library.groups import GroupID
-from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import X_SIMCORE_LANGUAGE
 
 from .application_keys import APP_SETTINGS_APPKEY
-from .user_preferences._models import LocaleUserPreference
-from .user_preferences.user_preferences_service import get_frontend_user_preference
+from .users import users_service
 
 RQ_LOCALE_KEY: Final[str] = f"{__name__}.locale"
 
@@ -46,7 +45,7 @@ def get_locale_or_none(request: web.Request) -> SupportedLocale | None:
 
     Useful for passing an optional override (e.g. to
     ``notifications_service.send_message_from_template``) that should defer to the recipient's
-    DB-stored preference (see ``get_user_locale``) when no request-resolved locale is available.
+    DB-stored language (see ``get_user_locale``) when no request-resolved locale is available.
     """
     return request.get(RQ_LOCALE_KEY)
 
@@ -75,44 +74,32 @@ locale_middleware.__middleware_name__ = (  # type: ignore[attr-defined]
 async def get_user_locale(
     app: web.Application,
     *,
-    user_id: int,
-    product_name: str,
+    user_id: UserID,
 ) -> SupportedLocale:
-    """Look up the user's persisted ``LocaleUserPreference`` and return the locale string.
+    """Look up the user's persisted ``users.language`` and return the locale string.
 
-    Falls back to ``DEFAULT_LOCALE`` when no preference has been saved.
+    Falls back to ``DEFAULT_LOCALE`` when no language has been saved.
     Intended for use in background / non-request code (e.g. email dispatch).
     """
-    pref = cast(
-        LocaleUserPreference | None,
-        await get_frontend_user_preference(
-            app,
-            user_id=user_id,
-            product_name=product_name,
-            preference_class=LocaleUserPreference,
-        ),
-    )
-    if pref is not None and pref.value:
-        return pref.value
-    return DEFAULT_LOCALE
+    language = await users_service.get_user_language(app, user_id=user_id)
+    return language or DEFAULT_LOCALE
 
 
 async def resolve_effective_locale(
     app: web.Application,
     *,
     user_id: UserID | None,
-    product_name: ProductName,
     locale: SupportedLocale | None,
     group_ids: list[GroupID] | None = None,
 ) -> SupportedLocale:
     """Resolves the effective locale to render user-facing content in.
 
-    Precedence: explicit ``locale`` argument > DB-stored user preference > ``DEFAULT_LOCALE``.
+    Precedence: explicit ``locale`` argument > DB-stored user language > ``DEFAULT_LOCALE``.
     For multi-recipient sends (``group_ids``) always falls back to ``DEFAULT_LOCALE`` since each
-    recipient may have a different preference; per-recipient rendering is a future enhancement.
+    recipient may have a different language; per-recipient rendering is a future enhancement.
     """
     if locale is not None:
         return locale
     if user_id is not None and not group_ids:
-        return await get_user_locale(app, user_id=user_id, product_name=product_name)
+        return await get_user_locale(app, user_id=user_id)
     return DEFAULT_LOCALE

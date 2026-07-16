@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import functools
+import warnings
 from collections.abc import Awaitable, Callable
 from typing import ParamSpec, TypeVar
 
@@ -34,6 +35,16 @@ def get_last_heartbeat(instance: Instance) -> datetime.datetime | None:
     for tag in instance.tags:
         assert "Key" in tag  # nosec
         if tag["Key"] == "last_heartbeat":
+            warnings.warn(
+                "The tag 'last_heartbeat' is deprecated and will be removed in the future. "
+                "Please use 'io.simcore.clusters-keeper.last_heartbeat' "
+                "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            assert "Value" in tag  # nosec
+            return arrow.get(tag["Value"]).datetime
+        if tag["Key"] == "io.simcore.clusters-keeper.last_heartbeat":
             assert "Value" in tag  # nosec
             return arrow.get(tag["Value"]).datetime
     return None
@@ -43,7 +54,17 @@ def get_warm_buffer_tag(instance: Instance) -> bool:
     """Returns True if the instance is a warm buffer, False otherwise."""
     for tag in instance.tags:
         assert "Key" in tag  # nosec
+        if tag["Key"] == "io.simcore.autoscaling.warm_buffer_machine":
+            value = tag.get("Value", "false")
+            return value.lower() == "true"
         if tag["Key"] == "io.simcore.autoscaling.buffer_machine":
+            warnings.warn(
+                "The tag 'io.simcore.autoscaling.buffer_machine' is deprecated and will be removed in the future. "
+                "Please use 'io.simcore.autoscaling.warm_buffer_machine' "
+                "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             value = tag.get("Value", "false")
             return value.lower() == "true"
     return False

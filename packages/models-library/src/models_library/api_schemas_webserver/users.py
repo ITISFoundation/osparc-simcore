@@ -6,6 +6,7 @@ from typing import Annotated, Any, ClassVar, Literal, Self
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
+from common_library.gettext_support import SupportedLocale
 from common_library.users_enums import AccountRequestStatus, UserStatus
 from pydantic import (
     AfterValidator,
@@ -82,6 +83,17 @@ class MyProfileAddressGet(OutputSchema):
     country: str | None
 
 
+class MyProfileAddressPatch(InputSchema):
+    """Billing address: a property of the user, editable independently of pre-registration"""
+
+    institution: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")] = None
+    postal_code: str | None = None
+    country: str | None = None
+
+
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[IDStr, Field(description="Unique username identifier", alias="userName")]
@@ -89,6 +101,10 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
     phone: str | None = None
+    language: Annotated[
+        SupportedLocale | None,
+        Field(description="Persisted UI/communications language. None means no persisted choice."),
+    ] = None
 
     role: Literal[
         "ANONYMOUS",
@@ -191,6 +207,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
                     "email",
                     "role",
                     "phone",
+                    "language",
                     "privacy",
                     "expiration_date",
                 },
@@ -227,8 +244,16 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     last_name: LastNameSafeStr | None = None
     user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     # NOTE: phone is updated via a dedicated endpoint!
+    language: Annotated[
+        SupportedLocale | None,
+        Field(description="Persisted UI/communications language. The user owns and can edit it directly."),
+    ] = None
 
     privacy: MyProfilePrivacyPatch | None = None
+    contact: Annotated[
+        MyProfileAddressPatch | None,
+        Field(description="Billing address. The user owns and can edit it directly."),
+    ] = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

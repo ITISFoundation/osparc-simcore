@@ -74,7 +74,7 @@ async def test_one_time_payment_workflow(
     mocker: MockerFixture,
     faker: Faker,
     mock_rpc_payments_service_api: dict[str, MagicMock],
-    setup_user_pre_registration_details_db: None,
+    setup_user_billing_details_db: None,
     amount_usd: int,
     expected_status: int,
 ):
@@ -162,7 +162,7 @@ async def test_multiple_payments(
     mocker: MockerFixture,
     faker: Faker,
     mock_rpc_payments_service_api: dict[str, MagicMock],
-    setup_user_pre_registration_details_db: None,
+    setup_user_billing_details_db: None,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -257,7 +257,7 @@ async def test_complete_payment_errors(
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
     mock_rpc_payments_service_api: dict[str, MagicMock],
-    setup_user_pre_registration_details_db: None,
+    setup_user_billing_details_db: None,
 ):
     assert client.app
     send_message = mocker.patch(
@@ -310,7 +310,7 @@ async def test_billing_info_missing_error(
     client: TestClient,
     logged_user_wallet: WalletGet,
 ):
-    # NOTE: setup_user_pre_registration_details_db is not setup to emulate missing pre-registration
+    # NOTE: setup_user_billing_details_db is not setup to emulate missing billing details
 
     assert client.app
     wallet = logged_user_wallet

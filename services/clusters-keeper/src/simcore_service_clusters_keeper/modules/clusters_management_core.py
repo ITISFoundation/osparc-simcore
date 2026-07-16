@@ -15,6 +15,7 @@ from servicelib.utils import limited_gather
 from ..constants import (
     DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY,
     DOCKER_STACK_DEPLOY_COMMAND_NAME,
+    HEARTBEAT_TAG_KEY,
     PRODUCT_NAME_TAG_KEY,
     ROLE_TAG_KEY,
     USER_ID_TAG_KEY,
@@ -31,7 +32,6 @@ from ..modules.clusters import (
 from ..utils.clusters import create_deploy_cluster_stack_script
 from ..utils.dask import get_scheduler_auth, get_scheduler_url
 from ..utils.ec2 import (
-    HEARTBEAT_TAG_KEY,
     get_cluster_name,
     user_id_from_instance_tags,
     wallet_id_from_instance_tags,
@@ -46,9 +46,13 @@ _logger = logging.getLogger(__name__)
 def _log_instance(instance: EC2InstanceData) -> str:
     """Consistent instance identifier for log messages with enough info
     to locate the instance in AWS and in our logging facilities."""
-    user_id = instance.tags.get("user_id", "N/A")
-    wallet_id = instance.tags.get("wallet_id", "N/A")
-    return f"[id={instance.id} dns={instance.aws_private_dns} user_id={user_id} wallet_id={wallet_id}]"
+    user_id = instance.tags.get(USER_ID_TAG_KEY, "N/A")
+    wallet_id = instance.tags.get(WALLET_ID_TAG_KEY, "N/A")
+    product_name = instance.tags.get(PRODUCT_NAME_TAG_KEY, "N/A")
+    return (
+        f"[id={instance.id} dns={instance.aws_private_dns} user_id={user_id} "
+        f"wallet_id={wallet_id} product_name={product_name}]"
+    )
 
 
 def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime | None:
