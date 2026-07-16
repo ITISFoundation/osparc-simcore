@@ -94,25 +94,26 @@ async def _computational_pipeline_status_message_parser(app: web.Application, da
             include_state=True,
         )
     except ProjectNotFoundError:
+        # NOTE: the project is gone (e.g. deleted by the user): nothing to notify,
+        # so the message is still considered as processed (acked, not retried)
         _logger.warning(
             "Cannot notify user %s about project %s status: project not found",
             rabbit_message.user_id,
             rabbit_message.project_id,
         )
-        return True  # <-- telling RabbitMQ that message was processed
-
-    if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
-        # the pipeline finished, the frontend needs to update all computational nodes
-        computational_node_ids = (
-            n.node_id
-            for n in await _nodes_service.get_project_nodes(app, project_uuid=project["uuid"])
-            if _is_computational_node(n.key)
-        )
-        await limited_gather(
-            *[_projects_service.notify_project_node_update(app, project, n_id) for n_id in computational_node_ids],
-            limit=10,  # notify 10 nodes at a time
-        )
-    await _projects_service.notify_project_state_update(app, project)
+    else:
+        if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
+            # the pipeline finished, the frontend needs to update all computational nodes
+            computational_node_ids = (
+                n.node_id
+                for n in await _nodes_service.get_project_nodes(app, project_uuid=project["uuid"])
+                if _is_computational_node(n.key)
+            )
+            await limited_gather(
+                *[_projects_service.notify_project_node_update(app, project, n_id) for n_id in computational_node_ids],
+                limit=10,  # notify 10 nodes at a time
+            )
+        await _projects_service.notify_project_state_update(app, project)
 
     return True
 
