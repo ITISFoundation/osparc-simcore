@@ -74,10 +74,10 @@ class FileMetaDataAtDB(BaseModel):
         PlainSerializer(lambda x: f"{x}" if x is not None else None, return_type=str | None),
     ] = None
     user_id: UserID
-    created: datetime.datetime
+    created_at: datetime.datetime
     file_id: SimcoreS3FileID
     file_size: UNDEFINED_SIZE_TYPE | ByteSize
-    modified: datetime.datetime
+    last_modified: datetime.datetime
     entity_tag: ETag | None = None
     is_soft_link: bool
     upload_id: UploadID | None = None
