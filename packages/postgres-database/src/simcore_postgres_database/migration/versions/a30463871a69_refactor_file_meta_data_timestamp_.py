@@ -1,7 +1,7 @@
 """refactor file_meta_data timestamp columns
 
 Revision ID: a30463871a69
-Revises: 066e6a93b741
+Revises: 5f9749ff9007
 Create Date: 2026-07-15 20:31:47.043304+00:00
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "a30463871a69"
-down_revision = "066e6a93b741"
+down_revision = "5f9749ff9007"
 branch_labels = None
 depends_on = None
 
