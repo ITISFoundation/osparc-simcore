@@ -9,7 +9,7 @@ import tempfile
 from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterator
 from pathlib import Path
 from typing import Any, cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import aioboto3
 import aiodocker
@@ -20,7 +20,9 @@ from aiobotocore.session import ClientCreatorContext
 from aiodocker import Docker
 from aiodocker.types import JSONObject
 from botocore.client import Config
+from common_library.async_tools import cancel_wait_task
 from faker import Faker
+from httpx import HTTPError
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
@@ -29,6 +31,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
+from settings_library.basic_types import PortInt
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings
 from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
@@ -44,8 +47,10 @@ from simcore_sdk.node_ports_common.r_clone_mount._container import ContainerMana
 from simcore_sdk.node_ports_common.r_clone_mount._docker_utils import _DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY
 from simcore_sdk.node_ports_common.r_clone_mount._errors import PortNotAssignedError
 from simcore_sdk.node_ports_common.r_clone_mount._manager import (
+    RemoteControlHttpClient,
     _TrackedMount,
 )
+from simcore_sdk.node_ports_common.r_clone_mount._models import ContainerCreateResult
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
     AsyncRetrying,
@@ -922,3 +927,126 @@ async def test_ensure_mounted_raises_on_remote_path_conflict(
             node_id=node_id,
             index=index,
         )
+
+
+@pytest.fixture
+def remove_container_call_count() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def mocked_delegate(
+    monkeypatch: pytest.MonkeyPatch,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    remove_container_call_count: Mock,
+) -> _TestingDelegate:
+    delegate = _TestingDelegate(vfs_cache_path, mocked_shutdown)
+
+    async def _mock_remove_container(container_name: str) -> None:
+        remove_container_call_count()
+
+    monkeypatch.setattr(delegate, "remove_container", _mock_remove_container)
+    monkeypatch.setattr(delegate, "get_node_address", AsyncMock(return_value="127.0.0.1"))
+
+    return delegate
+
+
+@pytest.fixture
+def wait_ready_call_count() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def mocked_remote_control_http_client(monkeypatch: pytest.MonkeyPatch, wait_ready_call_count: Mock) -> None:
+    async def _mock_wait_for_interface_to_be_ready(self: RemoteControlHttpClient) -> None:
+        wait_ready_call_count()
+        if wait_ready_call_count.call_count == 1:
+            msg = "stale container not responding"
+            raise HTTPError(msg)
+
+    monkeypatch.setattr(RemoteControlHttpClient, "wait_for_interface_to_be_ready", _mock_wait_for_interface_to_be_ready)
+
+
+@pytest.fixture
+def create_call_count() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def stale_port() -> PortInt:
+    return 12345
+
+
+@pytest.fixture
+def fresh_port() -> PortInt:
+    return 54321
+
+
+@pytest.fixture
+async def mocked_tracked_mount(
+    monkeypatch: pytest.MonkeyPatch,
+    r_clone_settings: RCloneSettings,
+    local_mount_path: Path,
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    index: int,
+    mocked_delegate: _TestingDelegate,
+    create_call_count: Mock,
+    fresh_port: PortInt,
+    stale_port: PortInt,
+) -> AsyncIterable[_TrackedMount]:
+    tracked_mount = _TrackedMount(
+        node_id,
+        r_clone_settings,
+        MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_path="bucket/proj/node",
+        local_mount_path=local_mount_path,
+        index=index,
+        delegate=mocked_delegate,
+    )
+
+    async def _mock_create() -> ContainerCreateResult:
+        create_call_count()
+        reconnected = create_call_count.call_count == 1  # first call is a "reconnect"
+        port = stale_port if reconnected else fresh_port
+        return ContainerCreateResult(
+            rc_user="u",
+            rc_password="p",  # nosec  # noqa: S106
+            vfs_write_back_s=30,
+            assigned_port=port,
+            reconnected=reconnected,
+        )
+
+    monkeypatch.setattr(tracked_mount._container_manager, "create", _mock_create)  # noqa: SLF001
+
+    yield tracked_mount
+
+    if tracked_mount._task_mount_activity:  # noqa: SLF001
+        await cancel_wait_task(tracked_mount._task_mount_activity)  # noqa: SLF001
+
+
+async def test_start_mount_recreates_stale_reconnected_container(
+    mocked_remote_control_http_client: None,
+    wait_ready_call_count: Mock,
+    mocked_tracked_mount: _TrackedMount,
+    remove_container_call_count: Mock,
+    create_call_count: Mock,
+    fresh_port: PortInt,
+):
+    """Scenario: sidecar reboot finds a stale (stopped) rclone container.
+
+    After reconnecting, wait_for_interface_to_be_ready fails because rclone is
+    not running inside the stopped container.  start_mount must:
+    1. detect it was a reconnect (not a fresh create)
+    2. remove the stale container
+    3. create a fresh container
+    4. succeed on the second wait_for_interface_to_be_ready
+    """
+    await mocked_tracked_mount.start_mount()
+
+    assert create_call_count.call_count == 2, "create() must be called twice: stale reconnect then fresh container"
+    assert remove_container_call_count.call_count == 1, "stale container must be removed exactly once"
+    assert wait_ready_call_count.call_count == 2, "interface readiness must be checked for both attempts"
+    assert mocked_tracked_mount._rc_client.rc_port == fresh_port, "new container uses the fresh port"  # noqa: SLF001
