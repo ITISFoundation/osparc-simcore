@@ -366,7 +366,7 @@ async def delete_project(request: web.Request):
     ):
         raise web.HTTPConflict(text=f"Project {path_params.project_id} is locked: {project_locked_state=}")
 
-    await projects_trash_service.mark_for_immediate_deletion(
+    await projects_trash_service.trash_project_for_immediate_deletion(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,

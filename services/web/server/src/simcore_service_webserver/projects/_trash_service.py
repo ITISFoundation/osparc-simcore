@@ -1,5 +1,6 @@
 import logging
 from datetime import UTC, datetime
+from typing import Final
 
 import arrow
 from aiohttp import web
@@ -110,7 +111,10 @@ async def untrash_project(
     )
 
 
-async def mark_for_immediate_deletion(
+_IMMEDIATE_TRASH_EPOCH: Final[datetime] = datetime(1970, 1, 1, tzinfo=UTC)
+
+
+async def trash_project_for_immediate_deletion(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -146,7 +150,7 @@ async def mark_for_immediate_deletion(
         project_uuid=project_id,
         new_partial_project_data={
             "hidden": True,
-            "trashed": datetime(1970, 1, 1, tzinfo=UTC),
+            "trashed": _IMMEDIATE_TRASH_EPOCH,
             "trashed_explicitly": True,
             "trashed_by": user_id,
         },
@@ -251,7 +255,7 @@ async def delete_explicitly_trashed_project(
             details="Cannot delete trashed project since it does not fit current criteria",
         )
 
-    await mark_for_immediate_deletion(
+    await trash_project_for_immediate_deletion(
         app,
         product_name=product_name,
         user_id=user_id,

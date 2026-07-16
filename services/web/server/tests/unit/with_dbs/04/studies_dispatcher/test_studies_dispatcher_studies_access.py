@@ -473,7 +473,7 @@ async def test_access_cookie_of_expired_user(
 
         prj_id = projects[0]["uuid"]
 
-        await projects_trash_service.mark_for_immediate_deletion(
+        await projects_trash_service.trash_project_for_immediate_deletion(
             app, product_name="osparc", user_id=uid, project_id=prj_id
         )
         # NOTE: actual removal now happens exclusively via the periodic trash-pruning GC

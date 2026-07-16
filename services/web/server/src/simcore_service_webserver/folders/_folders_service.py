@@ -337,7 +337,7 @@ async def delete_folder_with_all_content(
     )
 
     for project_id in project_id_list:
-        await projects_trash_service.mark_for_immediate_deletion(
+        await projects_trash_service.trash_project_for_immediate_deletion(
             app,
             product_name=product_name,
             user_id=user_id,

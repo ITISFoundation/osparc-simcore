@@ -122,7 +122,7 @@ async def delete_workspace_with_all_content(
 
         # Delete projects properly
         for project_uuid in workspace_root_projects:
-            await projects_trash_service.mark_for_immediate_deletion(
+            await projects_trash_service.trash_project_for_immediate_deletion(
                 app, product_name=product_name, user_id=user_id, project_id=project_uuid
             )
 

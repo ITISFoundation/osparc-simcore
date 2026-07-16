@@ -74,7 +74,7 @@ async def _cleanup_failed_project(
     product_name: ProductName,
 ) -> None:
     with log_catch(_logger), log_context(_logger, logging.INFO, f"cleaning up failed project {project_uuid=}"):
-        await _trash_service.mark_for_immediate_deletion(
+        await _trash_service.trash_project_for_immediate_deletion(
             app,
             product_name=product_name,
             user_id=user_id,

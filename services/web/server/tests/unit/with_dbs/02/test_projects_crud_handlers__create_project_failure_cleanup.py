@@ -168,7 +168,7 @@ async def test_create_project_cleans_up_on_unexpected_exception(
 
     # Spy on the cleanup function to verify it gets called
     delete_spy = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create._trash_service.mark_for_immediate_deletion",
+        "simcore_service_webserver.projects._crud_api_create._trash_service.trash_project_for_immediate_deletion",
         new_callable=AsyncMock,  # don't call original (would fail since patch_project is mocked)
     )
 
@@ -200,7 +200,7 @@ async def test_create_project_cleans_up_on_unexpected_exception(
     assert result.status >= 400
 
     # CRITICAL: verify cleanup was attempted
-    assert delete_spy.called, "mark_for_immediate_deletion was not called on failure"
+    assert delete_spy.called, "trash_project_for_immediate_deletion was not called on failure"
 
 
 @pytest.mark.parametrize(*_standard_user_role_response())
@@ -230,7 +230,7 @@ async def test_create_project_cleans_up_on_product_name_mismatch(
 
     # Spy on the cleanup function — it SHOULD be called for post-insertion HTTP errors
     delete_spy = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create._trash_service.mark_for_immediate_deletion",
+        "simcore_service_webserver.projects._crud_api_create._trash_service.trash_project_for_immediate_deletion",
         new_callable=AsyncMock,
     )
 
@@ -262,10 +262,10 @@ async def test_create_project_cleans_up_on_product_name_mismatch(
     assert result.status == status.HTTP_400_BAD_REQUEST
 
     # CRITICAL: verify cleanup WAS attempted — post-insertion HTTP errors handle their own cleanup
-    assert delete_spy.called, "mark_for_immediate_deletion was not called for product-name mismatch"
+    assert delete_spy.called, "trash_project_for_immediate_deletion was not called for product-name mismatch"
 
     # NOTE: The project still exists because the spy mock prevents actual deletion.
-    # The key assertion above verifies mark_for_immediate_deletion WAS called.
+    # The key assertion above verifies trash_project_for_immediate_deletion WAS called.
     remaining_projects = await _get_all_projects_in_db(client)
     user_project_uuids = [p["uuid"] for p in remaining_projects if p["uuid"] != template_project["uuid"]]
     assert len(user_project_uuids) == 1, f"Expected project to still exist (mocked deletion): {remaining_projects}"
