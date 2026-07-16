@@ -15,7 +15,6 @@ _NODE_COLUMNS: Final = (
     projects_nodes.c.version,
     projects_nodes.c.label,
     projects_nodes.c.progress,
-    projects_nodes.c.thumbnail,
     projects_nodes.c.input_access,
     projects_nodes.c.input_nodes,
     projects_nodes.c.inputs,

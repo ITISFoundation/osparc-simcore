@@ -26,6 +26,7 @@ _ALL_NODE_COLUMNS = _migration._ALL_NODE_COLUMNS
 _JSONB_COLUMNS = _migration._JSONB_COLUMNS
 _SCALAR_COLUMNS = _migration._SCALAR_COLUMNS
 _ALIAS_TO_COLUMN = _migration._ALIAS_TO_COLUMN
+_DROPPED_BY_LATER_MIGRATIONS: frozenset[str] = frozenset({"thumbnail"})
 
 
 _PROJECT = "00000000-0000-0000-0000-000000000001"
@@ -51,7 +52,7 @@ def test_migration_column_set_matches_live_model():
         "modified",
         "required_resources",
     }
-    assert live_data_columns == _ALL_NODE_COLUMNS
+    assert live_data_columns == _ALL_NODE_COLUMNS - _DROPPED_BY_LATER_MIGRATIONS
 
 
 # --- happy paths -------------------------------------------------------------
