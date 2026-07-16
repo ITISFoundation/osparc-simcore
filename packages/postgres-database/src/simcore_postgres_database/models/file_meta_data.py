@@ -1,11 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import (
-    RefActions,
-    column_created_datetime,
-    column_modified_datetime,
-    register_modified_datetime_auto_update_trigger,
-)
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 file_meta_data = sa.Table(
@@ -82,5 +77,3 @@ file_meta_data = sa.Table(
         index=True,
     ),
 )
-
-register_modified_datetime_auto_update_trigger(file_meta_data)
