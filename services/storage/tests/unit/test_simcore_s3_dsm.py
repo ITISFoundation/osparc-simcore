@@ -504,7 +504,15 @@ async def _set_created_at(
 ) -> None:
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
-            file_meta_data_table.update().where(file_meta_data_table.c.file_id == file_id).values(created=created_at)
+            file_meta_data_table.update()
+            .where(file_meta_data_table.c.file_id == file_id)
+            .values(
+                created_at=(
+                    created_at.astimezone(datetime.UTC).replace(tzinfo=None)
+                    if created_at.tzinfo
+                    else created_at.replace(tzinfo=None)
+                ).isoformat()
+            )
         )
 
 
