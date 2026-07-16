@@ -6,6 +6,7 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 """
 
 import asyncio
+import datetime
 import functools
 import logging
 import logging.handlers
@@ -14,7 +15,6 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, Final, TypedDict, TypeVar
@@ -559,34 +559,84 @@ def _un_capitalize(s: str) -> str:
     return s[:1].lower() + s[1:] if s else ""
 
 
+def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
+    total_seconds = delta.total_seconds()
+    minutes, rem_seconds = divmod(abs(total_seconds), 60)
+    seconds, milliseconds = divmod(rem_seconds, 1)
+    result = ""
+
+    if int(minutes) != 0:
+        result += f"{int(minutes)}m "
+
+    if int(seconds) != 0:
+        result += f"{int(seconds)}s "
+
+    if int(milliseconds * 1000) != 0:
+        result += f"{int(milliseconds * 1000)}ms"
+    if not result:
+        result = "<1ms"
+
+    sign = "-" if total_seconds < 0 else ""
+
+    return f"{sign}{result.strip()}"
+
+
+_STARTING_PREFIX: Final[str] = "Starting "
+_STARTING_SUFFIX: Final[str] = "..."
+_DONE_PREFIX: Final[str] = "Finished "
+_DONE_SUFFIX: Final[str] = " ✅"
+_RAISED_PREFIX: Final[str] = "❌❌❌ Error raised: "
+_RAISED_SUFFIX: Final[str] = " ❌❌❌"
+_STACK_LEVEL_OFFSET: Final[int] = 3  # 1 => log_context, 2 => contextlib, 3 => caller
+
+
 @contextmanager
 def log_context(
     logger: logging.Logger,
     level: LogLevelInt,
     msg: LogMessageStr,
     *args,
-    log_duration: bool = False,
     extra: LogExtra | None = None,
-):
+) -> Iterator[None]:
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
-    start = datetime.now()  # noqa: DTZ005
+
     msg = _un_capitalize(msg.strip())
 
     kwargs: dict[str, Any] = {}
     if extra:
         kwargs["extra"] = extra
-    log_msg = f"Starting {msg} ..."
 
-    stackelvel = 3  # NOTE: 1 => log_context, 2 => contextlib, 3 => caller
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
-    yield
-    duration = (
-        f" in {(datetime.now() - start).total_seconds()}s"  # noqa: DTZ005
-        if log_duration
-        else ""
-    )
-    log_msg = f"Finished {msg}{duration}"
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
+    started_time = datetime.datetime.now(tz=datetime.UTC)
+    try:
+        logger.log(
+            level,
+            "%s",
+            f"{_STARTING_PREFIX}{msg}{_STARTING_SUFFIX}",
+            *args,
+            **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
+        )
+        yield
+        elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+        logger.log(
+            level,
+            "%s",
+            f"{_DONE_PREFIX}{msg}{_DONE_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})",
+            *args,
+            **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
+        )
+    except:
+        elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+        logger.log(
+            level,
+            "%s",
+            f"{_RAISED_PREFIX}{msg}{_RAISED_SUFFIX} - (⏳ {_timedelta_as_minute_second_ms(elapsed_time)})",
+            *args,
+            **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
+        )
+        raise
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:
