@@ -19,7 +19,7 @@ class ContainerCreateResult(BaseModel):
     rc_password: str
     vfs_write_back_s: NonNegativeInt
     assigned_port: PortInt
-    recoonected: bool
+    reconnected: bool
 
 
 class MountActivity(BaseModel):

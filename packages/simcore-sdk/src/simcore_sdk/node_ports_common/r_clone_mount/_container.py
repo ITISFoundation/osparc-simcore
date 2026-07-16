@@ -255,7 +255,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                 rc_password=self.rc_password,
                 vfs_write_back_s=self.vfs_write_back_s,
                 assigned_port=assigned_port,
-                recoonected=True,
+                reconnected=True,
             )
 
         # No existing container — create fresh
@@ -293,7 +293,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             rc_password=self.rc_password,
             vfs_write_back_s=self.vfs_write_back_s,
             assigned_port=assigned_port,
-            recoonected=False,
+            reconnected=False,
         )
 
     async def remove(self):
