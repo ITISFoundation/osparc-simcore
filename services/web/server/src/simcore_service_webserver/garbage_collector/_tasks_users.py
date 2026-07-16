@@ -29,7 +29,7 @@ async def notify_user_logout_all_sessions(app: web.Application, user_id: UserID)
         logging.INFO,
         "Forcing logout of %s from all sessions",
         f"{user_id=}",
-        get_log_record_extra(user_id=user_id),
+        extra=get_log_record_extra(user_id=user_id),
     ):
         try:
             await login_service.notify_user_logout(app, user_id, client_session_id=None)

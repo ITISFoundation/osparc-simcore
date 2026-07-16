@@ -190,7 +190,6 @@ class RCloneMountManager:
             _logger,
             logging.INFO,
             f"mounting {local_mount_path=} from {remote_path=}",
-            log_duration=True,
         ):
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
