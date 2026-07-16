@@ -350,17 +350,6 @@ class Node(BaseModel):
             return None
         return v
 
-    @model_validator(mode="before")
-    @classmethod
-    def _strip_deprecated_fields(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            cleaned = dict(data)
-            # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
-            for key in ("outputNode", "outputNodes", "parent", "position"):
-                cleaned.pop(key, None)
-            return cleaned
-        return data
-
     @field_validator("state", mode="before")
     @classmethod
     def _convert_from_enum(cls, v):
@@ -456,7 +445,6 @@ class Node(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="forbid",
         validate_by_name=True,
         validate_by_alias=True,
         json_schema_extra=_update_json_schema_extra,
