@@ -9,7 +9,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_context
 
 from ..director_v2 import director_v2_service
-from ..storage.api import delete_data_folders_of_project
+from ..storage import api as storage_service
 from . import _projects_repository, _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
@@ -55,7 +55,7 @@ async def delete_project_as_admin(
 
         with log_context(_logger, logging.INFO, "delete project data"):
             await director_v2_service.delete_pipeline(app, user_id=project.prj_owner, project_id=project_uuid)
-            await delete_data_folders_of_project(app, project_uuid, project.prj_owner)
+            await storage_service.delete_data_folders_of_project(app, project_uuid, project.prj_owner)
 
         with log_context(_logger, logging.INFO, "delete project"):
             await _projects_repository.delete_project(app, project_uuid=project_uuid)
