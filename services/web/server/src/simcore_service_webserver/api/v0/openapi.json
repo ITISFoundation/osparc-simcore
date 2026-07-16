@@ -22938,8 +22938,7 @@
               }
             ],
             "title": "Progress",
-            "description": "the node progress value",
-            "deprecated": true
+            "description": "the node progress value"
           },
           "runHash": {
             "anyOf": [
@@ -23042,18 +23041,6 @@
             ],
             "description": "values of output properties"
           },
-          "position": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Position"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Use projects_ui.WorkbenchUI.position instead",
-            "deprecated": true
-          },
           "state": {
             "anyOf": [
               {
@@ -23078,7 +23065,6 @@
             "description": "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults."
           }
         },
-        "additionalProperties": false,
         "type": "object",
         "required": [
           "key",
@@ -23118,8 +23104,7 @@
               }
             ],
             "title": "Progress",
-            "description": "the node progress value",
-            "deprecated": true
+            "description": "the node progress value"
           },
           "runHash": {
             "anyOf": [
@@ -23222,18 +23207,6 @@
             ],
             "description": "values of output properties"
           },
-          "position": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Position"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Use projects_ui.WorkbenchUI.position instead",
-            "deprecated": true
-          },
           "state": {
             "anyOf": [
               {
@@ -23258,7 +23231,6 @@
             "description": "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults."
           }
         },
-        "additionalProperties": false,
         "type": "object",
         "required": [
           "key",
