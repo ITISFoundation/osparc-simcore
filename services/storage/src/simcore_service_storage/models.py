@@ -87,13 +87,6 @@ class FileMetaDataAtDB(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
-    @classmethod
-    def from_api_model(cls, x: "FileMetaData") -> "FileMetaDataAtDB":
-        excluded = {"file_uuid", "project_name", "node_name", "file_name", "created_at", "last_modified"}
-        return cls.model_validate(
-            x.model_dump(exclude=excluded) | {"created": x.created_at, "modified": x.last_modified}
-        )
-
 
 class FileMetaData(FileMetaDataGet):
     upload_id: UploadID | None = None
@@ -162,8 +155,6 @@ class FileMetaData(FileMetaDataGet):
             | {
                 "file_uuid": x.file_id,
                 "file_name": x.file_id.split("/")[-1],
-                "created_at": x.created,
-                "last_modified": x.modified,
             }
         )
 

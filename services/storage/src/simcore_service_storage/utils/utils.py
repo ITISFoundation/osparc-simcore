@@ -18,8 +18,6 @@ def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
         | {
             "file_uuid": x.file_id,
             "file_name": x.file_id.split("/")[-1],
-            "created_at": x.created,
-            "last_modified": x.modified,
         }
     )
     return model
