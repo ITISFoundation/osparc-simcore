@@ -1394,7 +1394,7 @@ async def patch_project_node(
     partial_node: PartialNode,
     client_session_id: ClientSessionID | None,
 ) -> None:
-    _node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(mode="json", exclude_unset=True, by_alias=True)
+    node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(mode="json", exclude_unset=True, by_alias=True)
 
     # 1. Check user permissions
     await check_user_project_permission(
@@ -1406,23 +1406,20 @@ async def patch_project_node(
     )
 
     # 2. If patching service key or version make sure it's valid
-    if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project_node = await _projects_nodes_repository.get(
+    if node_patch_exclude_unset.get("key") or node_patch_exclude_unset.get("version"):
+        project_node = await _projects_nodes_repository.get(
             app,
             project_id=project_id,
             node_id=node_id,
         )
-
-        _service_key = _node_patch_exclude_unset.get("key", _project_node.key)
-        _service_version = _node_patch_exclude_unset.get("version", _project_node.version)
 
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
         await catalog_rpc.check_for_service(
             rabbitmq_rpc_client,
             product_name=product_name,
             user_id=user_id,
-            service_key=_service_key,
-            service_version=_service_version,
+            service_key=node_patch_exclude_unset.get("key", project_node.key),
+            service_version=node_patch_exclude_unset.get("version", project_node.version),
         )
 
     # 3. Patch the project node
@@ -1441,11 +1438,9 @@ async def patch_project_node(
         client_session_id=client_session_id,
     )
 
-    # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables).
-    # NOTE: UI-only patches (e.g. node position) do not affect the computational
-    # pipeline, so we skip these calls to avoid unnecessary computations.
-    _patches_only_ui = _node_patch_exclude_unset.keys() <= _NODE_UI_ONLY_PATCH_KEYS
-    if not _patches_only_ui:
+    # 4. Make calls to director-v2 to keep data in sync (if pipeline changed).
+    is_ui_only_patch = node_patch_exclude_unset.keys() <= _NODE_UI_ONLY_PATCH_KEYS
+    if not is_ui_only_patch:
         await director_v2_service.create_or_update_pipeline(
             app,
             user_id,
@@ -1453,7 +1448,7 @@ async def patch_project_node(
             product_name=product_name,
             product_api_base_url=product_api_base_url,
         )
-        if _node_patch_exclude_unset.get("label"):
+        if node_patch_exclude_unset.get("label"):
             await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 
     updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
@@ -1464,7 +1459,7 @@ async def patch_project_node(
         user_id=user_id, project=updated_project.model_dump(mode="json", by_alias=True), app=app
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
-    if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
+    if {"inputs", "outputs"} & node_patch_exclude_unset.keys():
         for node_uuid in updated_project_with_states["workbench"]:
             await notify_project_node_update(app, updated_project_with_states, node_uuid)
         return
