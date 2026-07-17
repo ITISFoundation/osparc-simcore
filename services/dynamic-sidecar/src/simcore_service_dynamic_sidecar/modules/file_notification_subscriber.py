@@ -26,15 +26,9 @@ _logger = logging.getLogger(__name__)
 
 
 @dataclass
-class FileNotificationState:
+class _FileNotificationState:
     queue_name: QueueName
-    _process_notifications: bool = field(default=False, init=False)
-
-    def mark_allow_to_process(self) -> None:
-        self._process_notifications = True
-
-    def can_process_notifications(self) -> bool:
-        return self._process_notifications
+    can_process: bool = field(default=False, init=False)
 
 
 _MIN_STORAGE_PATH_PARTS: Final[int] = 3
@@ -150,10 +144,15 @@ async def _notify_path_change(
                 _logger.warning("Received unsupported event type '%s' for path '%s'", event_type, path)
 
 
+def _get_file_notification_state(app: FastAPI) -> _FileNotificationState:
+    state: _FileNotificationState = app.state.file_notification_state
+    return state
+
+
 async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
     message = FileNotificationMessage.model_validate_json(data)
 
-    if not _get_file_notification_state(app).can_process_notifications():
+    if not _get_file_notification_state(app).can_process:
         _logger.debug(
             "notifications processing is not enabled. Skipping notification: %s for file_id=%s",
             message.event_type,
@@ -166,11 +165,6 @@ async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
         await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
 
     return True
-
-
-def _get_file_notification_state(app: FastAPI) -> FileNotificationState:
-    state: FileNotificationState = app.state.file_notification_state
-    return state
 
 
 def setup_file_notification_subscriber(app: FastAPI) -> None:
@@ -186,7 +180,7 @@ def setup_file_notification_subscriber(app: FastAPI) -> None:
                 exclusive_queue=True,
                 topics=[topic],
             )
-            app.state.file_notification_state = FileNotificationState(queue_name=subscribed_queue)
+            app.state.file_notification_state = _FileNotificationState(queue_name=subscribed_queue)
 
     async def _stop() -> None:
         queue_name = _get_file_notification_state(app).queue_name
@@ -198,6 +192,5 @@ def setup_file_notification_subscriber(app: FastAPI) -> None:
     app.add_event_handler("shutdown", _stop)
 
 
-def set_allow_to_process_notifications(app: FastAPI) -> None:
-    """Before the states are restored sidecar is not allowed to process file notifications"""
-    _get_file_notification_state(app).mark_allow_to_process()
+def enable_notifications_processing(app: FastAPI) -> None:
+    _get_file_notification_state(app).can_process = True
