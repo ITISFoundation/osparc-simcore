@@ -182,12 +182,11 @@ async def register(request: web.Request):
         )
 
     assert user is not None  # nosec
-
-    # setup user groups
     assert (  # nosec
         product.name == invitation.product if invitation and invitation.product else True
     )
 
+    # setup user groups
     await auto_add_user_to_groups(app=request.app, user_id=user["id"])
     await auto_add_user_to_product_group(
         app=request.app,
@@ -202,7 +201,8 @@ async def register(request: web.Request):
         extra_credits_in_usd=invitation.extra_credits_in_usd if invitation else None,
     )
 
-    # Account is created directly (no confirmation step): authorize login
+    # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
+    # It is already authorized
     return await _security_service.login_granted_response(request=request, user=user)
 
 
