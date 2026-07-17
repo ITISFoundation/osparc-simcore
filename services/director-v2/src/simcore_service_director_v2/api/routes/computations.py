@@ -52,7 +52,6 @@ from ...core.errors import (
     ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
-    ComputationalSchedulerError,
     ConfigurationError,
     EC2InstanceTypeNotFoundError,
     PipelineTaskMissingError,
@@ -517,7 +516,6 @@ async def stop_computation(
     computation_stop: ComputationStop,
     project_id: ProjectID,
     request: Request,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
@@ -528,8 +526,6 @@ async def stop_computation(
         project_id,
     )
     try:
-        # check the project exists
-        await project_repo.get(project_id)
         # get the project pipeline
         pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
         pipeline_dag = pipeline_at_db.get_graph()
@@ -538,13 +534,10 @@ async def stop_computation(
         # create the complete DAG graph
         complete_dag = create_complete_dag_from_tasks(tasks)
         # stop the pipeline if it is running
-        last_run: CompRunsAtDB | None = None
-        pipeline_state = RunningState.UNKNOWN
-        with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-            pipeline_state = last_run.result
-            if utils.is_pipeline_running(last_run.result):
-                await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+        pipeline_state = last_run.result
+        if utils.is_pipeline_running(last_run.result):
+            await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
 
         return ComputationGet(
             id=project_id,
@@ -559,9 +552,7 @@ async def stop_computation(
             submitted=last_run.created if last_run else None,
         )
 
-    except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ComputationalSchedulerError as e:
+    except (ProjectNotFoundError, ComputationalRunNotFoundError) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
@@ -576,13 +567,16 @@ async def delete_computation(
     computation_stop: ComputationDelete,
     project_id: ProjectID,
     request: Request,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
 ) -> None:
-    # get the project
-    project = await project_repo.get(project_id)
+    """Deletes a computation pipeline if it is not running, otherwise stops it first
+        and waits for it to stop before deleting it.
+        Calling this endpoint multiple times is idempotent, it will not raise an error
+        if the pipeline is already stopped or deleted.
+    Raises:
+        HTTPException: if the pipeline could not be stopped in time"""
     # check if current state allow to stop the computation
     pipeline_state = RunningState.UNKNOWN
     with contextlib.suppress(ComputationalRunNotFoundError):
@@ -596,13 +590,7 @@ async def delete_computation(
                 f"current state is {pipeline_state}",
             )
         # abort the pipeline first
-        try:
-            await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
-        except ComputationalSchedulerError as e:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Pipeline {project_id} could not be stopped: {e}",
-            ) from e
+        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
 
         def return_last_value(retry_state: Any) -> Any:
             """return the result of the last call attempt"""
@@ -630,5 +618,5 @@ async def delete_computation(
             )
 
     # delete the pipeline now
-    await comp_tasks_repo.delete_tasks_from_project(project.uuid)
+    await comp_tasks_repo.delete_tasks_from_project(project_id)
     await comp_pipelines_repo.delete_pipeline(project_id)
