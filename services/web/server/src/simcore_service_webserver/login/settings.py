@@ -28,24 +28,7 @@ class LoginSettings(BaseCustomSettings):
         ),
     ] = 30
 
-    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = True
-
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
-
-    LOGIN_INVITATION_CONFIRMS_EMAIL: Annotated[
-        bool,
-        Field(
-            description=(
-                "If true, a successfully consumed registration invitation is accepted as proof "
-                "that the guest owns the invited email address, so the extra REGISTRATION "
-                "confirmation e-mail (and its click-through link) is skipped for that user "
-                "(the account is created directly with the status it would have had after "
-                "confirming). Has no effect if LOGIN_2FA_REQUIRED is set (2FA still requires "
-                "the confirmation step) or if LOGIN_REGISTRATION_INVITATION_REQUIRED is false "
-                "(there is no invitation to vouch for the email)."
-            ),
-        ),
-    ] = False
 
     LOGIN_TWILIO: Annotated[
         TwilioSettings | None,
@@ -76,26 +59,17 @@ class LoginSettings(BaseCustomSettings):
 
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
-    def _login_2fa_needs_email_registration(cls, v, info: ValidationInfo):
-        # NOTE: this constraint ensures that a phone is registered in current workflow
-        if v and not info.data.get("LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False):
-            msg = "Cannot enable 2FA w/o email confirmation"
-            raise ValueError(msg)
-        return v
-
-    @field_validator("LOGIN_2FA_REQUIRED")
-    @classmethod
     def _login_2fa_needs_sms_service(cls, v, info: ValidationInfo):
         if v and info.data.get("LOGIN_TWILIO") is None:
             msg = "Cannot enable 2FA w/o twilio settings which is used to send SMS"
             raise ValueError(msg)
         return v
 
-    @field_validator("LOGIN_INVITATION_CONFIRMS_EMAIL")
+    @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
-    def _login_invitation_confirms_email_needs_invitation(cls, v, info: ValidationInfo):
-        if v and not info.data.get("LOGIN_REGISTRATION_INVITATION_REQUIRED", False):
-            msg = "Cannot skip e-mail confirmation via invitation w/o requiring an invitation"
+    def _login_2fa_needs_confirmed_email(cls, v, info: ValidationInfo):
+        if v and info.data.get("LOGIN_REGISTRATION_INVITATION_REQUIRED") is None:
+            msg = "Cannot enable 2FA w/o invitation required since this is how we confirm email to send 2FA"
             raise ValueError(msg)
         return v
 

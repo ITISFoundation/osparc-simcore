@@ -25,7 +25,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     envs_login = setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },

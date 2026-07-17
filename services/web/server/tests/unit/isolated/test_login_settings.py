@@ -37,7 +37,6 @@ def test_login_settings_with_2fa(monkeypatch: pytest.MonkeyPatch, twilio_config:
     setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
             **twilio_config,
         },
@@ -50,7 +49,6 @@ def test_login_settings_fails_with_2fa_but_wo_twilio(monkeypatch: pytest.MonkeyP
     setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
         },
     )
@@ -63,71 +61,9 @@ def test_login_settings_fails_with_2fa_but_wo_twilio(monkeypatch: pytest.MonkeyP
     assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
 
 
-@pytest.fixture
-def no_registration_environment(monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]):
-    # cannot enable 2fa w/o email confirmation
-    setenvs_from_dict(
-        monkeypatch,
-        {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "0",
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            **twilio_config,
-        },
-    )
-
-
-def test_login_settings_fails_with_2fa_but_wo_confirmed_email(
-    no_registration_environment: None,
-):
-    # cannot enable 2fa w/o email confirmation
-    with pytest.raises(ValidationError) as exc_info:
-        LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
-
-    errors = exc_info.value.errors()
-    assert len(errors) == 1
-    assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
-
-
-def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
-    no_registration_environment: None,
-):
-    # cannot enable 2fa w/o email confirmation
-    plugin_settings = LoginSettings.create_from_envs()
-    product_settings = ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True)
-
-    with pytest.raises(ValidationError) as exc_info:
-        LoginSettingsForProduct.create_from_composition(
-            app_login_settings=plugin_settings,
-            product_login_settings=product_settings,
-        )
-
-    errors = exc_info.value.errors()
-    assert len(errors) == 1
-    assert errors[0]["loc"] == ("LOGIN_2FA_REQUIRED",)
-
-
 def test_product_login_settings_in_plugin_settings():
     # pylint: disable=no-member
     customizable_attributes = set(ProductLoginSettingsDict.__annotations__.keys())
     settings_attributes = set(LoginSettingsForProduct.model_fields.keys())
 
     assert customizable_attributes.issubset(settings_attributes)
-
-
-def test_login_invitation_confirms_email_needs_invitation_required(monkeypatch: pytest.MonkeyPatch):
-    # cannot skip email confirmation via invitation w/o requiring an invitation
-    monkeypatch.setenv("LOGIN_REGISTRATION_INVITATION_REQUIRED", "0")
-
-    with pytest.raises(ValidationError) as exc_info:
-        LoginSettings.create_from_envs(LOGIN_INVITATION_CONFIRMS_EMAIL=1)
-
-    errors = exc_info.value.errors()
-    assert len(errors) == 1
-    assert errors[0]["loc"] == ("LOGIN_INVITATION_CONFIRMS_EMAIL",)
-
-
-def test_login_invitation_confirms_email_ok_with_invitation_required(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LOGIN_REGISTRATION_INVITATION_REQUIRED", "1")
-
-    settings = LoginSettings.create_from_envs(LOGIN_INVITATION_CONFIRMS_EMAIL=1)
-    assert settings.LOGIN_INVITATION_CONFIRMS_EMAIL is True

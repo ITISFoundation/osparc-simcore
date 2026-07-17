@@ -23,9 +23,6 @@ from simcore_postgres_database.models.products import ProductLoginSettingsDict, 
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
-from simcore_service_webserver.login._confirmation_repository import (
-    ConfirmationRepository,
-)
 from simcore_service_webserver.login._twofa_service import (
     _do_create_2fa_code,
     create_2fa_code,
@@ -45,7 +42,6 @@ from simcore_service_webserver.user_preferences.models import (
     TwoFAFrontendUserPreference,
 )
 from twilio.base.exceptions import TwilioRestException
-from yarl import URL
 
 
 @pytest.fixture
@@ -53,7 +49,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     envs_login = setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
@@ -125,7 +120,6 @@ async def test_2fa_code_operations(client: TestClient):
 async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     client: TestClient,
     mocked_notifications_service_send_message_from_template: AsyncMock,
-    confirmation_repository: ConfirmationRepository,
     user_email: str,
     user_password: str,
     user_phone_number: str,
@@ -136,7 +130,8 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
 
     # register email+password -----------------------
 
-    # 1. submit
+    # 1. submit: account is created directly and login is granted right away
+    # (no e-mail confirmation step)
     url = client.app.router["auth_register"].url_for()
     response = await client.post(
         f"{url}",
@@ -146,20 +141,11 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
             "confirm": user_password,
         },
     )
-    await assert_status(response, status.HTTP_200_OK)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    assert MSG_LOGGED_IN in data["message"]
 
-    # retrieves sent link from notification service mock
-    mocked_notifications_service_send_message_from_template.assert_called_once()
-    notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
-    assert notification_context["link"] is not None
-    confirmation_url = URL(notification_context["link"]).path
-    assert "/auth/confirmation/" in f"{confirmation_url}"
-
-    url = confirmation_url
-
-    # 2. confirmation
-    response = await client.get(f"{url}")
-    assert response.status == status.HTTP_200_OK
+    # no confirmation e-mail is ever sent
+    mocked_notifications_service_send_message_from_template.assert_not_called()
 
     # check email+password registered
     user = await _auth_service.get_user_or_none(client.app, email=user_email)

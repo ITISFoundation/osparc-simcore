@@ -6,7 +6,6 @@ from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
-from models_library.notifications import Channel
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
@@ -17,9 +16,7 @@ from ....groups.groups_service import (
     auto_add_user_to_product_group,
 )
 from ....invitations.api import is_service_invitation_code
-from ....locale import get_locale_or_none, translate_message
-from ....notifications import notifications_service
-from ....notifications.models import EmailContact
+from ....locale import get_locale_or_none
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import (
@@ -30,10 +27,9 @@ from ....utils import MINUTE
 from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_requests_validation import parse_request_body_as
-from ....web_utils import envelope_response, flash_response
+from ....web_utils import envelope_response
 from ... import (
     _auth_service,
-    _confirmation_web,
     _registration_service,
     _security_service,
     _twofa_service,
@@ -47,14 +43,11 @@ from ..._invitations_service import (
 from ..._login_service import (
     notify_user_confirmation,
 )
-from ..._models import Confirmation
 from ...constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
-    MSG_CANT_SEND_MAIL,
-    MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
@@ -62,7 +55,6 @@ from ...settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
-from ._rest_dependencies import get_confirmation_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from .registration_schemas import (
     InvitationCheck,
@@ -115,7 +107,7 @@ async def register(request: web.Request):
     Starts user's registration by providing an email, password and
     invitation code (required by configuration).
 
-    An email with a link to 'email_confirmation' is sent to complete registration
+    Creates the account directly (no e-mail confirmation step) and grants login.
     """
     product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
@@ -171,20 +163,6 @@ async def register(request: web.Request):
             # NOTE: expires_at is currently set as offset-naive
             account_expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
 
-    # A consumed invitation is bound to this exact e-mail (see `check_and_consume_invitation`),
-    # so it already proves the guest owns the address. When configured, skip the extra
-    # REGISTRATION confirmation e-mail for these users.
-    # NOTE: never skip while 2FA is required. Email-ownership (invitation) and phone-ownership
-    # (2FA) are orthogonal proofs, but the "confirmation disabled" branch below grants login
-    # directly (`_security_service.login_granted_response`), bypassing the phone/SMS
-    # verification that normally gates login in `auth.py::login`. Until that branch becomes
-    # 2FA-aware, confirmation must stay required so login (and thus 2FA) goes through the
-    # regular `auth_login` flow.
-    skip_confirmation_via_invitation = (
-        invitation is not None and settings.LOGIN_INVITATION_CONFIRMS_EMAIL and not settings.LOGIN_2FA_REQUIRED
-    )
-    confirmation_required = settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED and not skip_confirmation_via_invitation
-
     #  get authorized user or create new
     user = await _auth_service.get_user_or_none(request.app, email=registration.email)
     if user:
@@ -199,7 +177,7 @@ async def register(request: web.Request):
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),
-            status_upon_creation=(UserStatus.CONFIRMATION_PENDING if confirmation_required else UserStatus.ACTIVE),
+            status_upon_creation=UserStatus.ACTIVE,
             expires_at=account_expires_at,
         )
 
@@ -217,77 +195,6 @@ async def register(request: web.Request):
         product_name=product.name,
     )
 
-    if confirmation_required:
-        # Confirmation required: send confirmation email
-        confirmation_service = get_confirmation_service(request.app)
-        _confirmation: Confirmation = await confirmation_service.create_confirmation(
-            user_id=user["id"],
-            action="REGISTRATION",
-            data=invitation.model_dump_json() if invitation else None,
-        )
-
-        email_confirmation_url = _confirmation_web.make_confirmation_link(request, _confirmation.code)
-
-        try:
-            await notifications_service.send_message_from_template(
-                request.app,
-                user_id=user["id"],
-                product_name=product.name,
-                channel=Channel.email,
-                group_ids=None,
-                external_contacts=[
-                    EmailContact(
-                        name=user.get("first_name") or user["name"],
-                        email=registration.email,
-                    )
-                ],
-                template_name="registered",
-                context={
-                    "host": request.host,
-                    "link": email_confirmation_url,
-                    "user": {
-                        "first_name": user.get("first_name"),
-                        "user_name": user.get("name"),
-                    },
-                },
-                locale=get_locale_or_none(request),
-            )
-        except Exception as err:  # pylint: disable=broad-except
-            error_code = create_error_code(err)
-            user_error_msg = MSG_CANT_SEND_MAIL
-
-            _logger.exception(
-                **create_troubleshooting_log_kwargs(
-                    user_error_msg,
-                    error=err,
-                    error_code=error_code,
-                    error_context={
-                        "request": request,
-                        "registration": registration,
-                        "user_id": user.get("id"),
-                        "user": user,
-                        "confirmation": _confirmation,
-                    },
-                    tip="Failed while sending confirmation email",
-                )
-            )
-
-            await confirmation_service.delete_confirmation_and_user(user_id=user["id"], confirmation=_confirmation)
-
-            raise web.HTTPServiceUnavailable(text=user_error_msg) from err
-
-        return flash_response(
-            translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
-            "INFO",
-        )
-
-    # NOTE: Here confirmation is disabled (either by product settings or by
-    # `skip_confirmation_via_invitation` above)
-    assert confirmation_required is False  # nosec
-    assert (  # nosec
-        product.name == invitation.product if invitation and invitation.product else True
-    )
-
     await notify_user_confirmation(
         request.app,
         user_id=user["id"],
@@ -295,10 +202,7 @@ async def register(request: web.Request):
         extra_credits_in_usd=invitation.extra_credits_in_usd if invitation else None,
     )
 
-    # No confirmation required: authorize login
-    assert not confirmation_required  # nosec
-    assert not settings.LOGIN_2FA_REQUIRED  # nosec
-
+    # Account is created directly (no confirmation step): authorize login
     return await _security_service.login_granted_response(request=request, user=user)
 
 
