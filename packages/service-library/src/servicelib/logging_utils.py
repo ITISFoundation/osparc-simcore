@@ -11,6 +11,7 @@ import functools
 import logging
 import logging.handlers
 import queue
+import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -583,11 +584,7 @@ def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
 
 
 _STARTING_PREFIX: Final[str] = "Starting "
-_STARTING_SUFFIX: Final[str] = "..."
 _DONE_PREFIX: Final[str] = "Finished "
-_DONE_SUFFIX: Final[str] = " ✅"
-_RAISED_PREFIX: Final[str] = "❌❌❌ Error raised: "
-_RAISED_SUFFIX: Final[str] = " ❌❌❌"
 _STACK_LEVEL_OFFSET: Final[int] = 3  # 1 => log_context, 2 => contextlib, 3 => caller
 _CONTEXT_ID_LEN: Final[int] = 8
 
@@ -610,7 +607,7 @@ def log_context(
         kwargs["extra"] = extra
 
     started_time = datetime.datetime.now(tz=datetime.UTC)
-    starting_log_msg = f"{_STARTING_PREFIX}{msg}{_STARTING_SUFFIX}"
+    starting_log_msg = f"{_STARTING_PREFIX}{msg}"
 
     try:
         logger.log(
@@ -621,8 +618,13 @@ def log_context(
             stacklevel=_STACK_LEVEL_OFFSET,
         )
         yield
+    finally:
+        potential_exception = sys.exception()
+        additional_info_message = f" (raised exception {potential_exception})" if potential_exception else ""
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        finished_log_msg = f"{_DONE_PREFIX}{msg}{_DONE_SUFFIX} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
+        finished_log_msg = (
+            f"{_DONE_PREFIX}{msg}{additional_info_message} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
+        )
         logger.log(
             level,
             finished_log_msg,
@@ -630,17 +632,6 @@ def log_context(
             **kwargs,
             stacklevel=_STACK_LEVEL_OFFSET,
         )
-    except:
-        elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        raised_log_msg = f"{_RAISED_PREFIX}{msg}{_RAISED_SUFFIX} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
-        logger.log(
-            level,
-            raised_log_msg,
-            *args,
-            **kwargs,
-            stacklevel=_STACK_LEVEL_OFFSET,
-        )
-        raise
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:
