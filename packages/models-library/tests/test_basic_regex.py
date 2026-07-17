@@ -175,7 +175,7 @@ class webserver_timedate_utils:
 
     @classmethod
     def now(cls) -> datetime:
-        return datetime.now(tz=UTC)
+        return datetime.now(tz=UTC).replace(tzinfo=None)
 
     @classmethod
     def format_datetime(cls, snapshot: datetime) -> str:
