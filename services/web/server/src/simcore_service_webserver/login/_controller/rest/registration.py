@@ -206,20 +206,26 @@ async def register(request: web.Request):
 
     # Send welcome email
     try:
-        first_name = user.get("first_name") or ""
+        user_name = user.get("name") or registration.email.split("@")[0]
+        first_name = user.get("first_name") or user_name
         await notifications_service.send_message_from_template(
             request.app,
             user_id=user["id"],
             product_name=product.name,
             channel=Channel.email,
             group_ids=None,
-            external_contacts=[EmailContact(name=first_name, email=registration.email)],
+            external_contacts=[
+                EmailContact(
+                    name=first_name,
+                    email=registration.email,
+                ),
+            ],
             template_name="registered",
             context={
-                "host": request.url.host or "osparc.io",
+                "host": request.host or "osparc.io",
                 "user": {
                     "first_name": first_name,
-                    "user_name": registration.email.split("@")[0],
+                    "user_name": user_name,
                 },
             },
             locale=get_locale_or_none(request),

@@ -68,7 +68,7 @@ class LoginSettings(BaseCustomSettings):
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
     def _login_2fa_needs_confirmed_email(cls, v, info: ValidationInfo):
-        if v and info.data.get("LOGIN_REGISTRATION_INVITATION_REQUIRED") is None:
+        if v and not info.data.get("LOGIN_REGISTRATION_INVITATION_REQUIRED"):
             msg = "Cannot enable 2FA w/o invitation required since this is how we confirm email to send 2FA"
             raise ValueError(msg)
         return v
