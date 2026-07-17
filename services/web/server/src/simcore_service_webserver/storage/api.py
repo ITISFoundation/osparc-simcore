@@ -31,7 +31,7 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.celery.async_jobs.storage.paths import DELETE_PATHS_TASK_NAME
+from servicelib.celery.async_jobs.storage.paths import DELETE_PATHS_TASK_NAME, submit_delete_paths_task
 from servicelib.logging_utils import log_context
 from yarl import URL
 
@@ -145,6 +145,7 @@ async def submit_delete_paths(
                 product_name=product_name,
             ).model_dump()
         ),
+        product_name=product_name,
         user_id=user_id,
         location_id=location_id,
         paths=paths,
@@ -156,22 +157,24 @@ async def delete_project_data_folders(
 ) -> None:
     """Deletes all data folders of a project in the storage service and waits for completion"""
     with log_context(_logger, logging.INFO, f"deleting project {project_id} data folders"):
-        delete_job = await submit_delete_paths(
-            app,
-            product_name=product_name,
+        owner_metadata = OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=user_id,
+                product_name=product_name,
+            ).model_dump()
+        )
+        job_id, *_ = await submit_delete_paths_task(
+            get_task_manager(app),
+            owner_metadata=owner_metadata,
             user_id=user_id,
+            product_name=product_name,
             location_id=_SIMCORE_LOCATION,
             paths={Path(f"{project_id}")},
         )
         async for _ in wait_and_get_job_result(
             get_task_manager(app),
-            owner_metadata=OwnerMetadata.model_validate(
-                WebServerOwnerMetadata(
-                    user_id=user_id,
-                    product_name=product_name,
-                ).model_dump()
-            ),
-            job_id=delete_job.job_id,
+            owner_metadata=owner_metadata,
+            job_id=job_id,
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
             _logger.info("waiting for deletion of project %s data folders to complete", f"{project_id=}")
@@ -187,22 +190,24 @@ async def delete_project_node_data_folders(
 ) -> None:
     """Deletes all data folders of a project node in the storage service and waits for completion"""
     with log_context(_logger, logging.INFO, f"deleting project {project_id} node {node_id} data folders"):
-        delete_job = await submit_delete_paths(
-            app,
-            product_name=product_name,
+        owner_metadata = OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=user_id,
+                product_name=product_name,
+            ).model_dump()
+        )
+        job_id, *_ = await submit_delete_paths_task(
+            get_task_manager(app),
+            owner_metadata=owner_metadata,
             user_id=user_id,
+            product_name=product_name,
             location_id=_SIMCORE_LOCATION,
             paths={Path(f"{project_id}/{node_id}")},
         )
         async for _ in wait_and_get_job_result(
             get_task_manager(app),
-            owner_metadata=OwnerMetadata.model_validate(
-                WebServerOwnerMetadata(
-                    user_id=user_id,
-                    product_name=product_name,
-                ).model_dump()
-            ),
-            job_id=delete_job.job_id,
+            owner_metadata=owner_metadata,
+            job_id=job_id,
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
             _logger.info(
