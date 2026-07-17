@@ -245,7 +245,7 @@ class RabbitMQClient(RabbitMQClientBase):
         ] = _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
     ) -> Annotated[
         tuple[QueueName, ConsumerTag],
-        doc("(queue name, consumer tag) of the subscription"),
+        doc("Returns the queue name and consumer tag of the subscription"),
     ]:
         """Subscribes to `exchange_name`, calling `message_handler` for every incoming message.
 
