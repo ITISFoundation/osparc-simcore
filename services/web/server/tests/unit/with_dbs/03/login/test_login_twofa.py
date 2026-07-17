@@ -19,6 +19,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_login import NewUser
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
@@ -145,6 +146,9 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
 
+    # registration grants login right away: the response carries the session identity cookie
+    assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
+
     # welcome e-mail is sent
     mocked_notifications_service_send_message_from_template.assert_called_once()
     call_kwargs = mocked_notifications_service_send_message_from_template.call_args.kwargs
@@ -158,7 +162,8 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
-    # 0. login first (since there is no phone -> register)
+    # 0. login first: still required to grant session access to the 2FA phone
+    # registration step (independent from the login cookie set above)
     url = client.app.router["auth_login"].url_for()
     response = await client.post(
         f"{url}",

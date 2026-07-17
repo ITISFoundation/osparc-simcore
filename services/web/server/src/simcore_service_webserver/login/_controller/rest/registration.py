@@ -30,10 +30,11 @@ from ....utils import MINUTE
 from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_requests_validation import parse_request_body_as
-from ....web_utils import envelope_response, flash_response
+from ....web_utils import envelope_response
 from ... import (
     _auth_service,
     _registration_service,
+    _security_service,
     _twofa_service,
 )
 from ..._invitations_service import (
@@ -241,9 +242,10 @@ async def register(request: web.Request):
         # Don't fail registration if email fails to send
 
     # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
-    return flash_response(
-        translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
-        "INFO",
+    return await _security_service.login_granted_response(
+        request,
+        user=user,
+        message=translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
     )
 
 

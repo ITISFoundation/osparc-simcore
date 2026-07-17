@@ -18,6 +18,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.login import _auth_service
@@ -73,6 +74,9 @@ async def test_register_entrypoint(
 
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
+
+    # registration grants login right away: the response carries the session identity cookie
+    assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
 
     # welcome e-mail is sent: the account is created directly
     mocked_notifications_service_send_message_from_template.assert_called_once()
@@ -300,6 +304,9 @@ async def test_registration_without_confirmation(
 
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
+
+    # registration grants login right away: the response carries the session identity cookie
+    assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
 
     user = await _auth_service.get_user_or_none(client.app, email=user_email)
     assert user
