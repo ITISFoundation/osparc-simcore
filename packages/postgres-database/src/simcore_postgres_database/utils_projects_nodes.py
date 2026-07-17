@@ -57,6 +57,7 @@ class ProjectNodeCreate(BaseModel):
     run_hash: str | None = None
     state: dict[str, Any] | None = None
     boot_options: dict[str, Any] | None = None
+    ui: dict[str, Any] | None = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:

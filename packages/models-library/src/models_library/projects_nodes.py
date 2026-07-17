@@ -316,6 +316,8 @@ class Node(BaseModel):
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
 
+    ui: dict[str, Any] | None = None
+
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
         Field(
