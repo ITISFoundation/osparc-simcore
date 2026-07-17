@@ -5,6 +5,7 @@ from typing import Final
 from aiodocker import DockerError
 from aiodocker.types import JSONObject
 from models_library.basic_types import PortInt
+from models_library.docker import DockerLabelKey
 from pydantic import ByteSize, NonNegativeInt
 
 from ._errors import PortNotAssignedError
@@ -26,7 +27,7 @@ async def _get_config(
     local_mount_path: Path,
     memory_limit: ByteSize,
     nano_cpus: NonNegativeInt,
-    labels: dict[str, str],
+    labels: dict[DockerLabelKey, str],
 ) -> JSONObject:
     return {
         "Image": f"rclone/rclone:{r_clone_version}",
@@ -90,7 +91,7 @@ async def create_r_clone_container(
 async def try_inspect_r_clone_container(
     delegate: DelegateInterface,
     container_name: str,
-) -> tuple[PortInt, dict[str, str]] | None:
+) -> tuple[PortInt, dict[DockerLabelKey, str]] | None:
     """Inspects an existing rclone container and returns its host port and labels.
 
     Returns None if the container does not exist (HTTP 404).
@@ -113,5 +114,5 @@ async def try_inspect_r_clone_container(
             ports=ports,
         )
 
-    labels: dict[str, str] = (existing.get("Config") or {}).get("Labels") or {}
+    labels: dict[DockerLabelKey, str] = (existing.get("Config") or {}).get("Labels") or {}
     return int(host_port), labels

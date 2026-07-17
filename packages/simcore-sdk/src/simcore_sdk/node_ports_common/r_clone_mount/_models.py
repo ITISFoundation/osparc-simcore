@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, NonNegativeInt
 
@@ -14,18 +13,10 @@ type FileName = str
 type FilesInTransfer = dict[FileName, ProgressReport]
 
 
-class ContainerCreateResult(BaseModel):
-    rc_user: str
-    rc_password: str
-    vfs_write_back_s: NonNegativeInt
-    assigned_port: PortInt
-    reconnected: bool
-
-
 class MountActivity(BaseModel):
     in_transfer: FilesInTransfer
     queued: list[FileName]
-    vfs_write_back_s: int = 0
+    vfs_write_back_s: NonNegativeInt = 0
 
 
 class DelegateInterface(ABC):

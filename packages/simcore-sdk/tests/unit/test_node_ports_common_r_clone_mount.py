@@ -43,14 +43,13 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     NoMountFoundForRemotePathError,
     RCloneMountManager,
 )
-from simcore_sdk.node_ports_common.r_clone_mount._container import ContainerManager
+from simcore_sdk.node_ports_common.r_clone_mount._container import ContainerManager, _ContainerCreateResult
 from simcore_sdk.node_ports_common.r_clone_mount._docker_utils import _DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY
 from simcore_sdk.node_ports_common.r_clone_mount._errors import PortNotAssignedError
 from simcore_sdk.node_ports_common.r_clone_mount._manager import (
     RemoteControlHttpClient,
     _TrackedMount,
 )
-from simcore_sdk.node_ports_common.r_clone_mount._models import ContainerCreateResult
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
     AsyncRetrying,
@@ -1007,11 +1006,11 @@ async def mocked_tracked_mount(
         delegate=mocked_delegate,
     )
 
-    async def _mock_create() -> ContainerCreateResult:
+    async def _mock_create() -> _ContainerCreateResult:
         create_call_count()
         reconnected = create_call_count.call_count == 1  # first call is a "reconnect"
         port = stale_port if reconnected else fresh_port
-        return ContainerCreateResult(
+        return _ContainerCreateResult(
             rc_user="u",
             rc_password="p",  # nosec  # noqa: S106
             vfs_write_back_s=30,
