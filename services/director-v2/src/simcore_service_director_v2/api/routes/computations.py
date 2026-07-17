@@ -49,7 +49,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
-    ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
     ConfigurationError,
@@ -418,8 +417,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         )
 
     except (
-        ProjectNotFoundError,
-        ClusterNotFoundError,
         PricingPlanUnitNotFoundError,
         EC2InstanceTypeNotFoundError,
     ) as e:
@@ -525,35 +522,31 @@ async def stop_computation(
         computation_stop.user_id,
         project_id,
     )
-    try:
-        # get the project pipeline
-        pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
-        pipeline_dag = pipeline_at_db.get_graph()
-        # get the project task states
-        tasks = await comp_tasks_repo.list_tasks(project_id)
-        # create the complete DAG graph
-        complete_dag = create_complete_dag_from_tasks(tasks)
-        # stop the pipeline if it is running
-        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-        pipeline_state = last_run.result
-        if utils.is_pipeline_running(last_run.result):
-            await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+    # get the project pipeline
+    pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
+    pipeline_dag = pipeline_at_db.get_graph()
+    # get the project task states
+    tasks = await comp_tasks_repo.list_tasks(project_id)
+    # create the complete DAG graph
+    complete_dag = create_complete_dag_from_tasks(tasks)
+    # stop the pipeline if it is running
+    last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+    pipeline_state = last_run.result
+    if utils.is_pipeline_running(last_run.result):
+        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
 
-        return ComputationGet(
-            id=project_id,
-            state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag, tasks),
-            url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
-            stop_url=None,
-            iteration=last_run.iteration if last_run else None,
-            result=None,
-            started=last_run.started if last_run else None,
-            stopped=last_run.ended if last_run else None,
-            submitted=last_run.created if last_run else None,
-        )
-
-    except (ProjectNotFoundError, ComputationalRunNotFoundError) as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    return ComputationGet(
+        id=project_id,
+        state=pipeline_state,
+        pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag, tasks),
+        url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
+        stop_url=None,
+        iteration=last_run.iteration if last_run else None,
+        result=None,
+        started=last_run.started if last_run else None,
+        stopped=last_run.ended if last_run else None,
+        submitted=last_run.created if last_run else None,
+    )
 
 
 @router.delete(
