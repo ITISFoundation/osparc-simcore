@@ -69,7 +69,7 @@ qx.Class.define("osparc.study.Utils", {
               return;
             }
             osparc.study.Utils.createStudyAndPoll(minStudyData)
-              .then(studyData => resolve(studyData["uuid"]))
+              .then(studyData => resolve(studyData))
               .catch(err => reject(err));
           })
           .catch(err => osparc.FlashMessenger.logError(err));

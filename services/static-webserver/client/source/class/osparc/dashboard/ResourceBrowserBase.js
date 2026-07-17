@@ -1001,7 +1001,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._showLoadingPage(this.tr("Creating ") + studyAlias);
 
       osparc.study.Utils.createStudyFromService(key, version)
-        .then(studyId => {
+        .then(studyData => {
+          const studyId = studyData["uuid"];
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
             this._hideLoadingPage();
