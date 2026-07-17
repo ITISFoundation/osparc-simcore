@@ -236,12 +236,17 @@ class RabbitMQClient(RabbitMQClientBase):
             ),
         ] = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
         unexpected_error_retry_delay_s: Annotated[
-            float, doc("Time to wait between each retry when `message_handler` raised or returned `False`")
+            float,
+            doc("Time to wait between each retry when `message_handler` raised or returned `False`"),
         ] = _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
         unexpected_error_max_attempts: Annotated[
-            int, doc("Maximum amount of retries when `message_handler` raised or returned `False`")
+            int,
+            doc("Maximum amount of retries when `message_handler` raised or returned `False`"),
         ] = _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
-    ) -> Annotated[tuple[QueueName, ConsumerTag], doc("(queue name, consumer tag) of the subscription")]:
+    ) -> Annotated[
+        tuple[QueueName, ConsumerTag],
+        doc("(queue name, consumer tag) of the subscription"),
+    ]:
         """Subscribes to `exchange_name`, calling `message_handler` for every incoming message.
 
         Raises:
