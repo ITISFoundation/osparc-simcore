@@ -20,55 +20,59 @@ class LoginSettings(BaseCustomSettings):
     LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: Annotated[
         PositiveInt,
         Field(
-            default=30,
             description=(
                 "Retention time (in days) of all the data after a user has "
                 "requested the deletion of their account. "
                 "NOTE: exposed to the front-end as `to_client_statics`"
             ),
         ),
+    ] = 30
+
+    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = True
+
+    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
+
+    LOGIN_INVITATION_CONFIRMS_EMAIL: Annotated[
+        bool,
+        Field(
+            description=(
+                "If true, a successfully consumed registration invitation is accepted as proof "
+                "that the guest owns the invited email address, so the extra REGISTRATION "
+                "confirmation e-mail (and its click-through link) is skipped for that user "
+                "(the account is created directly with the status it would have had after "
+                "confirming). Has no effect if LOGIN_2FA_REQUIRED is set (2FA still requires "
+                "the confirmation step) or if LOGIN_REGISTRATION_INVITATION_REQUIRED is false "
+                "(there is no invitation to vouch for the email)."
+            ),
+        ),
+    ] = False
+
+    LOGIN_TWILIO: Annotated[
+        TwilioSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="Twilio service settings. Used to send SMS for 2FA",
+        ),
     ]
 
-    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
-        default=True,
-    )
-
-    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool = Field(
-        ...,
-    )
-
-    LOGIN_INVITATION_CONFIRMS_EMAIL: bool = Field(
-        default=False,
-        description=(
-            "If true, a successfully consumed registration invitation is accepted as proof "
-            "that the guest owns the invited email address, so the extra REGISTRATION "
-            "confirmation e-mail (and its click-through link) is skipped for that user "
-            "(the account is created directly with the status it would have had after "
-            "confirming). Has no effect if LOGIN_2FA_REQUIRED is set (2FA still requires "
-            "the confirmation step) or if LOGIN_REGISTRATION_INVITATION_REQUIRED is false "
-            "(there is no invitation to vouch for the email)."
-        ),
-    )
-
-    LOGIN_TWILIO: TwilioSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True},
-        description="Twilio service settings. Used to send SMS for 2FA",
-    )
-
-    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(default=120, description="Expiration time for code [sec]")
+    LOGIN_2FA_CODE_EXPIRATION_SEC: Annotated[
+        PositiveInt,
+        Field(description="Expiration time for code [sec]"),
+    ] = 120
 
     LOGIN_2FA_REQUIRED: Annotated[
         bool,
         Field(
-            default=False,
             description="If true, it enables two-factor authentication (2FA)",
         ),
-    ]
+    ] = False
 
-    LOGIN_PASSWORD_MIN_LENGTH: PositiveInt = Field(
-        default=12,
-        description="Minimum length of password",
-    )
+    LOGIN_PASSWORD_MIN_LENGTH: Annotated[
+        PositiveInt,
+        Field(
+            description="Minimum length of password",
+        ),
+    ] = 12
 
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
