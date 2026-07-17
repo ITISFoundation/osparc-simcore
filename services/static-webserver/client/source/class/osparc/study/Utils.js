@@ -23,6 +23,50 @@ qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
+    /**
+     * Single entry point to create a study from any source.
+     * @param {Object} options
+     * @param {String} [options.resourceType="study"] "study" (empty), "service", "template", "tutorial" or "hypertool"
+     * @param {Object} [options.templateData] template/tutorial/hypertool data (template based flows)
+     * @param {String} [options.serviceKey] service key (service based flow)
+     * @param {String} [options.serviceVersion] service version (service based flow)
+     * @param {String} [options.name] desired study name
+     * @param {Array} [options.existingStudies] used to compute a unique name
+     * @param {Object} [options.contextProps] {workspaceId, folderId}, otherwise it lands in the personal root folder
+     * @param {osparc.ui.message.Loading} [options.loadingPage] to display the creation progress
+     * @return {Promise} resolves with the created studyData
+     */
+    createStudy: function(options = {}) {
+      const {
+        resourceType = "study",
+        templateData = null,
+        serviceKey = null,
+        serviceVersion = null,
+        name = null,
+        existingStudies = null,
+        contextProps = {},
+        loadingPage = null,
+      } = options;
+
+      switch (resourceType) {
+        case "service":
+          return osparc.study.Utils.createStudyFromService(serviceKey, serviceVersion, existingStudies, name, contextProps);
+        case "template":
+        case "tutorial":
+        case "hypertool":
+          return osparc.study.Utils.createStudyFromTemplate(templateData, loadingPage, contextProps);
+        default:
+          return osparc.study.Utils.createEmptyStudy(name, existingStudies, contextProps);
+      }
+    },
+
+    createEmptyStudy: function(newStudyLabel, existingStudies, contextProps = {}) {
+      // context props, otherwise Study will be created in the root folder of my personal workspace
+      const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
+      minStudyData["name"] = osparc.study.Utils.__computeStudyName(newStudyLabel, existingStudies);
+      return osparc.study.Utils.createStudyAndPoll(minStudyData);
+    },
+
     createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
         osparc.store.Services.getService(key, version)
@@ -33,13 +77,7 @@ qx.Class.define("osparc.study.Utils", {
             if (newStudyLabel === undefined) {
               newStudyLabel = metadata["name"];
             }
-            if (existingStudies) {
-              const existingNames = existingStudies.map(study => study["name"]);
-              const title = osparc.utils.Utils.getUniqueName(newStudyLabel, existingNames);
-              minStudyData["name"] = title;
-            } else {
-              minStudyData["name"] = newStudyLabel;
-            }
+            minStudyData["name"] = osparc.study.Utils.__computeStudyName(newStudyLabel, existingStudies);
             if (metadata["thumbnail"]) {
               minStudyData["thumbnail"] = metadata["thumbnail"];
             }
@@ -72,28 +110,13 @@ qx.Class.define("osparc.study.Utils", {
               .then(studyData => resolve(studyData))
               .catch(err => reject(err));
           })
-          .catch(err => osparc.FlashMessenger.logError(err));
+          .catch(err => reject(err));
       });
     },
 
     createStudyAndPoll: function(studyData) {
-      return new Promise((resolve, reject) => {
-        const pollPromise = osparc.store.Study.getInstance().createStudy(studyData);
-        const pollTasks = osparc.store.PollTasks.getInstance();
-        const interval = 1000;
-        pollTasks.createPollingTask(pollPromise, interval)
-          .then(task => {
-            task.addListener("resultReceived", e => {
-              const resultData = e.getData();
-              resolve(resultData);
-            });
-            task.addListener("pollingError", e => {
-              const err = e.getData();
-              reject(err);
-            });
-          })
-          .catch(err => reject(err));
-      });
+      const pollPromise = osparc.store.Study.getInstance().createStudy(studyData);
+      return osparc.study.Utils.__pollCreationTask(pollPromise);
     },
 
     createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
@@ -114,27 +137,35 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["description"] = templateData["description"];
             minStudyData["thumbnail"] = templateData["thumbnail"];
             const pollPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
-            const pollTasks = osparc.store.PollTasks.getInstance();
-            const interval = 1000;
-            pollTasks.createPollingTask(pollPromise, interval)
-              .then(task => {
-                const progressSequence = osparc.widget.ProgressSequence.createCreatingStudyProgress(loadingPage);
-                task.addListener("updateReceived", e => {
-                  if (loadingPage) {
-                    progressSequence.applyPollTaskUpdate(e.getData());
-                  }
-                }, this);
-                task.addListener("resultReceived", e => {
-                  const studyData = e.getData();
-                  resolve(studyData);
-                }, this);
-                task.addListener("pollingError", e => {
-                  const err = e.getData();
-                  reject(err);
-                }, this);
-              })
+            osparc.study.Utils.__pollCreationTask(pollPromise, loadingPage)
+              .then(studyData => resolve(studyData))
               .catch(err => reject(err));
           });
+      });
+    },
+
+    __computeStudyName: function(newStudyLabel, existingStudies) {
+      if (existingStudies) {
+        const existingNames = existingStudies.map(study => study["name"]);
+        return osparc.utils.Utils.getUniqueName(newStudyLabel, existingNames);
+      }
+      return newStudyLabel;
+    },
+
+    __pollCreationTask: function(pollPromise, loadingPage = null) {
+      return new Promise((resolve, reject) => {
+        const pollTasks = osparc.store.PollTasks.getInstance();
+        const interval = 1000;
+        pollTasks.createPollingTask(pollPromise, interval)
+          .then(task => {
+            if (loadingPage) {
+              const progressSequence = osparc.widget.ProgressSequence.createCreatingStudyProgress(loadingPage);
+              task.addListener("updateReceived", e => progressSequence.applyPollTaskUpdate(e.getData()), this);
+            }
+            task.addListener("resultReceived", e => resolve(e.getData()), this);
+            task.addListener("pollingError", e => reject(e.getData()), this);
+          })
+          .catch(err => reject(err));
       });
     },
 
