@@ -38,7 +38,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectStateOutputSchema,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
-from models_library.groups import GroupID
+from models_library.groups import GroupIDAdapter
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_state import (
@@ -53,7 +53,6 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -1416,7 +1415,7 @@ async def test_open_shared_project_multiple_users(
                     status=ProjectStatus.OPENED,
                     current_user_groupids=[
                         *opened_project_state.share_state.current_user_groupids,
-                        TypeAdapter(GroupID).validate_python(user_i["primary_gid"]),
+                        GroupIDAdapter.validate_python(user_i["primary_gid"]),
                     ],
                 ),
             }
@@ -1472,7 +1471,7 @@ async def test_open_shared_project_multiple_users(
                 current_user_groupids=[
                     gid
                     for gid in opened_project_state.share_state.current_user_groupids
-                    if gid != TypeAdapter(GroupID).validate_python(logged_user["primary_gid"])
+                    if gid != GroupIDAdapter.validate_python(logged_user["primary_gid"])
                 ],
             ),
         }

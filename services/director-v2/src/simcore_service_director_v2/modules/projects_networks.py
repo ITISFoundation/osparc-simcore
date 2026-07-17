@@ -58,7 +58,7 @@ async def requires_dynamic_sidecar(
 
     # check the type of service, if not dynamic do
     # not fetch the labels
-    # (simcore)/(services)/(comp|dynamic|frontend)
+    # NOTE: (simcore)/(services)/(comp|dynamic|frontend)
     service_type = decoded_service_key.split("/")[2]
     if service_type != "dynamic":
         return False
@@ -71,7 +71,7 @@ async def requires_dynamic_sidecar(
     return requires_dynamic_sidecar_
 
 
-async def _send_network_configuration_to_dynamic_sidecar(
+async def _send_network_configuration_to_dynamic_sidecar(  # noqa: C901
     scheduler: DynamicSidecarsScheduler,
     project_id: ProjectID,
     new_networks_with_aliases: NetworksWithAliases,
@@ -253,7 +253,7 @@ async def update_from_workbench(
     assert project.prj_owner  # nosec
     new_networks_with_aliases = await _get_networks_with_aliases_for_default_network(
         project_id=project_id,
-        user_id=project.prj_owner,
+        user_id=UserID(project.prj_owner),
         new_workbench=await projects_nodes_repository.get_all(project_id),
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,

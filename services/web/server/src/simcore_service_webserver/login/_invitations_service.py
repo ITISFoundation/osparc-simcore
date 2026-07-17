@@ -12,9 +12,9 @@ from datetime import datetime
 from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
-from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
+from models_library.users import UserID
 from pydantic import (
     BaseModel,
     Field,
@@ -161,7 +161,7 @@ async def check_other_registrations(
 async def create_invitation_token(
     app: web.Application,
     *,
-    user_id: IdInt,
+    user_id: UserID,
     user_email: LowerCaseEmailStr | None = None,
     tag: str | None = None,
     trial_days: PositiveInt | None = None,

@@ -276,8 +276,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/components/schemas/_UserIDInt"
                 },
                 {
                   "type": "null"
@@ -339,9 +338,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -651,6 +648,10 @@
           "message"
         ],
         "title": "_ErrorMessage"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     }
   }

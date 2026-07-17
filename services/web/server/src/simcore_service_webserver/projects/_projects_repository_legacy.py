@@ -32,7 +32,6 @@ from models_library.users import UserID
 from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
-from pydantic.types import PositiveInt
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -79,7 +78,6 @@ from ._projects_repository_legacy_utils import (
     ProjectAccessRights,
     convert_to_db_names,
     convert_to_schema_names,
-    create_project_access_rights,
     get_projects_workbenches,
 )
 from .exceptions import (
@@ -202,6 +200,23 @@ class ProjectDBAPI(BaseProjectDB):
                             await ProjectNodesRepo(project_uuid=project_uuid).add(
                                 conn, nodes=list(project_nodes.values())
                             )
+
+                        access_rights_result = await conn.execute(
+                            sa.select(
+                                project_to_groups.c.gid,
+                                project_to_groups.c.read,
+                                project_to_groups.c.write,
+                                project_to_groups.c.delete,
+                            ).where(project_to_groups.c.project_uuid == f"{project_uuid}")
+                        )
+                        selected_values["access_rights"] = {
+                            f"{row.gid}": {
+                                "read": row.read,
+                                "write": row.write,
+                                "delete": row.delete,
+                            }
+                            for row in access_rights_result
+                        }
         return selected_values
 
     async def insert_project(
@@ -244,12 +259,10 @@ class ProjectDBAPI(BaseProjectDB):
             }
         )
 
-        # validate access_rights. are the gids valid? also ensure prj_owner is in there
+        # ensure the owner user is registered (raises UserNotFoundError otherwise)
         if user_id:
             async with self.engine.connect() as conn:
-                primary_gid = await self._get_user_primary_group_gid(conn, user_id=user_id)
-            insert_values.setdefault("access_rights", {})
-            insert_values["access_rights"].update(create_project_access_rights(primary_gid, ProjectAccessRights.OWNER))
+                await self._get_user_primary_group_gid(conn, user_id=user_id)
 
         # ensure we have the minimal amount of data here
         # All non-default in projects table
@@ -270,6 +283,7 @@ class ProjectDBAPI(BaseProjectDB):
         # extract workbench nodes
         workbench: dict[str, Any] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
+        insert_values.pop("access_rights", None)
 
         valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
@@ -613,7 +627,7 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         *,
         product_name: ProductName,
-        user_id: PositiveInt,
+        user_id: UserID,
         # hierarchy filters
         workspace_query: WorkspaceQuery,
         folder_query: FolderQuery,
@@ -853,7 +867,6 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectIDStr,
         *,
         new_project_owner: UserID,
-        new_project_access_rights: dict,
     ) -> None:
         """The garbage collector needs to alter the row without passing through the
         permissions layer (sic)."""
@@ -863,7 +876,6 @@ class ProjectDBAPI(BaseProjectDB):
                 projects.update()
                 .values(
                     prj_owner=new_project_owner,
-                    access_rights=new_project_access_rights,
                     last_change_date=now(),
                 )
                 .where(projects.c.uuid == project_uuid)

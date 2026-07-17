@@ -11,7 +11,6 @@ from models_library.api_schemas_webserver.users import (
     MyFunctionPermissionsGet,
     MyPermissionGet,
     MyProfileRestGet,
-    MyProfileRestPatch,
     MyTokenCreate,
     MyTokenGet,
     TokenPathParams,
@@ -34,6 +33,7 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
     MyPhoneConfirm,
     MyPhoneRegister,
 )
+from simcore_service_webserver.users.schemas import MyProfileRestPatch
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 

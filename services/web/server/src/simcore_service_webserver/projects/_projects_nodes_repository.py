@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 import sqlalchemy as sa
@@ -6,7 +5,9 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_repos import (
+    merge_jsonb_patch_expression,
     pass_or_acquire_connection,
     transaction_context,
 )
@@ -15,9 +16,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import NodeNotFoundError
-
-_logger = logging.getLogger(__name__)
-
 
 _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.node_id,
@@ -28,7 +26,6 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.created,
     projects_nodes.c.modified,
     projects_nodes.c.progress,
-    projects_nodes.c.thumbnail,
     projects_nodes.c.input_access,
     projects_nodes.c.input_nodes,
     projects_nodes.c.inputs,
@@ -38,7 +35,9 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.run_hash,
     projects_nodes.c.state,
     projects_nodes.c.boot_options,
+    projects_nodes.c.ui,
 ]
+
 
 # Mapping from Node model alias (camelCase) to DB column name (snake_case)
 _ALIAS_TO_COLUMN: dict[str, str] = {
@@ -112,16 +111,16 @@ async def get(
     node_id: NodeID,
 ) -> Node:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        get_stmt = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
+        result = await conn.execute(
+            sa.select(
+                *_SELECTION_PROJECTS_NODES_DB_ARGS,
+            ).where((projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}"))
         )
-
-        result = await conn.execute(get_stmt)
-        assert result  # nosec
-
         row = result.one_or_none()
+
         if row is None:
             raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
+
         assert row  # nosec
         return Node.model_validate(row, from_attributes=True)
 
@@ -131,41 +130,40 @@ async def get_by_project(
     connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
-) -> list[tuple[NodeID, Node]]:
+) -> dict[NodeID, Node]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(projects_nodes.c.project_uuid == f"{project_id}")
+        result = await conn.execute(
+            sa.select(
+                *_SELECTION_PROJECTS_NODES_DB_ARGS,
+            ).where(projects_nodes.c.project_uuid == f"{project_id}")
+        )
+        rows = result.all()
 
-        stream = await conn.stream(query)
-        assert stream  # nosec
-
-        result: list[tuple[NodeID, Node]] = []
-        async for row in stream:
-            result.append((NodeID(row.node_id), Node.model_validate(row, from_attributes=True)))
-
-        return result
+        nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
+        return {NodeID(row.node_id): node for row, node in zip(rows, nodes, strict=True)}
 
 
 async def get_by_projects(
     app: web.Application,
-    project_ids: set[ProjectID],
     connection: AsyncConnection | None = None,
-) -> dict[ProjectID, list[tuple[NodeID, Node]]]:
+    *,
+    project_ids: set[ProjectID],
+) -> dict[ProjectID, dict[NodeID, Node]]:
     if not project_ids:
         return {}
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
-            projects_nodes.c.project_uuid.in_([f"{pid}" for pid in project_ids])
+        result = await conn.execute(
+            sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
+                projects_nodes.c.project_uuid.in_([f"{pid}" for pid in project_ids])
+            )
         )
+        rows = result.all()
+        nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
 
-        stream = await conn.stream(query)
-        assert stream  # nosec
-
-        projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {pid: [] for pid in project_ids}
-
-        async for row in stream:
-            node = Node.model_validate(row, from_attributes=True)
-            projects_to_nodes[ProjectID(row.project_uuid)].append((NodeID(row.node_id), node))
+        projects_to_nodes: dict[ProjectID, dict[NodeID, Node]] = {project_id: {} for project_id in project_ids}
+        for row, node in zip(rows, nodes, strict=True):
+            projects_to_nodes[ProjectID(row.project_uuid)][NodeID(row.node_id)] = node
 
         return projects_to_nodes
 
@@ -179,6 +177,9 @@ async def update(
     partial_node: PartialNode,
 ) -> Node:
     values = _node_dump_for_db(partial_node, exclude_unset=True)
+
+    if "ui" in values:
+        values["ui"] = merge_jsonb_patch_expression(projects_nodes.c.ui, values["ui"])
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(

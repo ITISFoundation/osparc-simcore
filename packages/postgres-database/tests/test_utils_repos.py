@@ -10,9 +10,11 @@ import pytest
 import sqlalchemy as sa
 from simcore_postgres_database.models.tags import tags
 from simcore_postgres_database.utils_repos import (
+    merge_jsonb_patch_expression,
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -193,3 +195,79 @@ async def test_transaction_context(asyncpg_engine: AsyncEngine):
             _something_raises_here()
 
     assert (await tags_repo.get_page(limit=10, offset=0)).total_count == 3
+
+
+# Stored JSONB values used as the starting point for the merge
+_STORED_SQL_NULL = sa.cast(sa.null(), JSONB)
+_STORED_JSON_NULL = sa.cast(sa.literal("null"), JSONB)
+_STORED_OBJECT = sa.type_coerce({"position": {"x": 1, "y": 1}, "marker": {"color": "red"}}, JSONB)
+
+
+async def _eval_merge(conn: AsyncConnection, *, stored: sa.ColumnElement, patch: dict[str, Any]) -> Any:
+    # wraps `stored` as a column so the expression can be evaluated without a real table
+    stored_column = sa.select(stored.label("value")).subquery()
+    expr = merge_jsonb_patch_expression(stored_column.c.value, patch)
+    result = await conn.execute(sa.select(expr))
+    return result.scalar()
+
+
+async def test_merge_jsonb_patch_sets_and_preserves_sibling_keys(
+    asyncpg_engine: AsyncEngine,
+):
+    async with asyncpg_engine.connect() as conn:
+        merged = await _eval_merge(conn, stored=_STORED_OBJECT, patch={"position": {"x": 9, "y": 9}})
+
+    # patched key is overwritten, untouched sibling is preserved
+    assert merged == {"position": {"x": 9, "y": 9}, "marker": {"color": "red"}}
+
+
+async def test_merge_jsonb_patch_deletes_keys_mapped_to_none(
+    asyncpg_engine: AsyncEngine,
+):
+    async with asyncpg_engine.connect() as conn:
+        merged = await _eval_merge(conn, stored=_STORED_OBJECT, patch={"marker": None})
+
+    assert merged == {"position": {"x": 1, "y": 1}}
+
+
+async def test_merge_jsonb_patch_sets_and_deletes_in_one_patch(
+    asyncpg_engine: AsyncEngine,
+):
+    async with asyncpg_engine.connect() as conn:
+        merged = await _eval_merge(
+            conn,
+            stored=_STORED_OBJECT,
+            patch={"position": {"x": 2, "y": 2}, "marker": None},
+        )
+
+    assert merged == {"position": {"x": 2, "y": 2}}
+
+
+async def test_merge_jsonb_patch_deleting_absent_key_is_noop(
+    asyncpg_engine: AsyncEngine,
+):
+    async with asyncpg_engine.connect() as conn:
+        merged = await _eval_merge(conn, stored=_STORED_OBJECT, patch={"absent": None})
+
+    assert merged == {"position": {"x": 1, "y": 1}, "marker": {"color": "red"}}
+
+
+@pytest.mark.parametrize(
+    "stored",
+    [_STORED_SQL_NULL, _STORED_JSON_NULL],
+    ids=["sql_null", "json_null"],
+)
+async def test_merge_jsonb_patch_treats_null_as_empty_object(asyncpg_engine: AsyncEngine, stored: sa.ColumnElement):
+    async with asyncpg_engine.connect() as conn:
+        merged = await _eval_merge(conn, stored=stored, patch={"position": {"x": 1, "y": 1}})
+
+    assert merged == {"position": {"x": 1, "y": 1}}
+
+
+async def test_merge_jsonb_patch_with_empty_patch_keeps_stored_value(
+    asyncpg_engine: AsyncEngine,
+):
+    async with asyncpg_engine.connect() as conn:
+        merged = await _eval_merge(conn, stored=_STORED_OBJECT, patch={})
+
+    assert merged == {"position": {"x": 1, "y": 1}, "marker": {"color": "red"}}

@@ -35,7 +35,7 @@ async def check_user_authorized(request: web.Request) -> UserID:
         raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED) from err
     if user_id <= 0:
         raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED)
-    return user_id
+    return UserID(user_id)
 
 
 async def check_user_permission(request: web.Request, permission: str, *, context: OptionalContext = None) -> None:

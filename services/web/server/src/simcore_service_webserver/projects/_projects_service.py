@@ -77,9 +77,9 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.socketio import SocketMessageDict
-from models_library.users import UserID
+from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
+from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, PositiveInt, TypeAdapter
 from servicelib.common_headers import (
@@ -173,12 +173,10 @@ from .exceptions import (
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
-    ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
-    ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
@@ -559,13 +557,15 @@ async def clone_project_data(
         }
 
     db = ProjectDBAPI.get_from_app_context(app)
-    await db.insert_project(
+    inserted_project = await db.insert_project(
         new_project,
         user_id,
         product_name=product_name,
         force_project_uuid=forced_copy_project_id is not None,
         project_nodes=project_nodes,
     )
+
+    new_project["accessRights"] = inserted_project["accessRights"]
 
     needs_lock_source_project = (
         await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))
@@ -662,7 +662,7 @@ async def patch_project_for_user(
     project_db = await db_legacy.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
-    _user_project_access_rights = await check_user_project_permission(
+    await check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
@@ -670,33 +670,15 @@ async def patch_project_for_user(
         permission="write",
     )
 
-    # 3. If patching access rights
-    if new_prj_access_rights := patch_project_data.get("access_rights"):
-        # 3.1 Check if user is Owner and therefore can modify access rights
-        if not _user_project_access_rights.delete:
-            raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
-        # 3.2 Ensure the prj owner is always in the access rights
-        _prj_required_permissions = {
-            "read": True,
-            "write": True,
-            "delete": True,
-        }
-        prj_owner_user: dict = await users_service.get_user(app, project_db.prj_owner)
-        _prj_owner_primary_group = f"{prj_owner_user['primary_gid']}"
-        if _prj_owner_primary_group not in new_prj_access_rights:
-            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
-        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
-            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
-
-    # 4. Get user primary group ID
+    # 3. Get user primary group ID
     current_user: dict = await users_service.get_user(app, user_id)
 
-    # 5. If patching template type
+    # 4. If patching template type
     if new_template_type := patch_project_data.get("template_type"):
-        # 5.1 Check if user is a tester
+        # 4.1 Check if user is a tester
         if UserRole(current_user["role"]) < UserRole.TESTER:
             raise InsufficientRoleForProjectTemplateTypeUpdateError
-        # 5.2 Check the compatibility of the template type with the project
+        # 4.2 Check the compatibility of the template type with the project
         if project_db.type == ProjectType.STANDARD and new_template_type is not None:
             raise ProjectTypeAndTemplateIncompatibilityError(
                 project_uuid=project_uuid,
@@ -710,7 +692,7 @@ async def patch_project_for_user(
                 project_template=new_template_type,
             )
 
-    # 6. Patch the project & Notify users involved in the project
+    # 5. Patch the project & Notify users involved in the project
     await patch_project_and_notify_users(
         app,
         project_uuid=project_uuid,
@@ -920,13 +902,11 @@ async def _check_project_node_has_all_required_inputs(  # noqa: C901
         permission="read",
     )
 
-    nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
+    project_nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_uuid)
 
-    nodes_map = dict(nodes)
-
-    if node_id not in nodes_map:
+    if node_id not in project_nodes:
         raise NodeNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_id}")
-    node = nodes_map[node_id]
+    node = project_nodes[node_id]
 
     unset_required_inputs: list[str] = []
     unset_outputs_in_upstream: list[tuple[str, str]] = []
@@ -944,7 +924,7 @@ async def _check_project_node_has_all_required_inputs(  # noqa: C901
         source_node_id = input_entry.node_uuid
         source_output_key = input_entry.output
 
-        source_node = nodes_map[source_node_id]
+        source_node = project_nodes[source_node_id]
 
         output_entry = None
         if source_node.outputs:
@@ -1046,7 +1026,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)
-                project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+                project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
                 await _wallets_service.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
@@ -1398,6 +1378,11 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
     return await db_legacy.is_hidden(project_id)
 
 
+# Node fields that only affect the UI and therefore do not require syncing
+# the computational pipeline (director-v2 / comp_* DB tables) on patch.
+_NODE_UI_KEYS: Final[frozenset[str]] = frozenset({"ui"})
+
+
 async def patch_project_node(
     app: web.Application,
     *,
@@ -1409,7 +1394,7 @@ async def patch_project_node(
     partial_node: PartialNode,
     client_session_id: ClientSessionID | None,
 ) -> None:
-    _node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(mode="json", exclude_unset=True, by_alias=True)
+    node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(mode="json", exclude_unset=True, by_alias=True)
 
     # 1. Check user permissions
     await check_user_project_permission(
@@ -1421,23 +1406,20 @@ async def patch_project_node(
     )
 
     # 2. If patching service key or version make sure it's valid
-    if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project_node = await _projects_nodes_repository.get(
+    if node_patch_exclude_unset.get("key") or node_patch_exclude_unset.get("version"):
+        project_node = await _projects_nodes_repository.get(
             app,
             project_id=project_id,
             node_id=node_id,
         )
-
-        _service_key = _node_patch_exclude_unset.get("key", _project_node.key)
-        _service_version = _node_patch_exclude_unset.get("version", _project_node.version)
 
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
         await catalog_rpc.check_for_service(
             rabbitmq_rpc_client,
             product_name=product_name,
             user_id=user_id,
-            service_key=_service_key,
-            service_version=_service_version,
+            service_key=node_patch_exclude_unset.get("key", project_node.key),
+            service_version=node_patch_exclude_unset.get("version", project_node.version),
         )
 
     # 3. Patch the project node
@@ -1456,16 +1438,18 @@ async def patch_project_node(
         client_session_id=client_session_id,
     )
 
-    # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
-    await director_v2_service.create_or_update_pipeline(
-        app,
-        user_id,
-        project_id,
-        product_name=product_name,
-        product_api_base_url=product_api_base_url,
-    )
-    if _node_patch_exclude_unset.get("label"):
-        await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
+    # 4. Make calls to director-v2 to keep data in sync (if pipeline changed).
+    is_ui_only_patch = node_patch_exclude_unset.keys() <= _NODE_UI_KEYS
+    if not is_ui_only_patch:
+        await director_v2_service.create_or_update_pipeline(
+            app,
+            user_id,
+            project_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+        )
+        if node_patch_exclude_unset.get("label"):
+            await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 
     updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
         app, project_uuid=project_id
@@ -1475,7 +1459,7 @@ async def patch_project_node(
         user_id=user_id, project=updated_project.model_dump(mode="json", by_alias=True), app=app
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
-    if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
+    if {"inputs", "outputs"} & node_patch_exclude_unset.keys():
         for node_uuid in updated_project_with_states["workbench"]:
             await notify_project_node_update(app, updated_project_with_states, node_uuid)
         return
@@ -1595,9 +1579,7 @@ async def _get_node_share_state(
             return NodeShareState(
                 locked=not is_collaborative_service,
                 current_user_groupids=[
-                    await users_service.get_user_primary_group_id(
-                        app, TypeAdapter(UserID).validate_python(service.user_id)
-                    )
+                    await users_service.get_user_primary_group_id(app, UserIDAdapter.validate_python(service.user_id))
                 ],
                 status=NodeShareStatus.OPENED,
             )
@@ -1936,7 +1918,7 @@ async def close_project_for_user(
 
 
 async def _get_project_share_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
 ) -> ProjectShareState:
@@ -2053,7 +2035,7 @@ async def _get_project_share_state(
 
 async def add_project_states_for_user(
     *,
-    user_id: int,
+    user_id: UserID,
     project: ProjectDict,
     app: web.Application,
 ) -> ProjectDict:
@@ -2424,7 +2406,7 @@ async def notify_project_node_update(
 
 
 async def retrieve_and_notify_project_locked_state(
-    user_id: int,
+    user_id: UserID,
     project_uuid: str,
     app: web.Application,
     *,
