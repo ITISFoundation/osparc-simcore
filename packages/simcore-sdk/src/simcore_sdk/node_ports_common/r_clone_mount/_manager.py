@@ -190,7 +190,6 @@ class RCloneMountManager:
             _logger,
             logging.INFO,
             f"mounting {local_mount_path=} from {remote_path=}",
-            log_duration=True,
         ):
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
@@ -218,7 +217,7 @@ class RCloneMountManager:
         return mount_id in self._tracked_mounts
 
     async def ensure_unmounted(self, local_mount_path: Path, index: NonNegativeInt) -> None:
-        with log_context(_logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True):
+        with log_context(_logger, logging.INFO, f"unmounting {local_mount_path=}"):
             mount_id = get_mount_id(local_mount_path, index)
             tracked_mount = self._tracked_mounts.pop(mount_id)
             self._reverse_path_search.pop(mount_id)
@@ -235,7 +234,7 @@ class RCloneMountManager:
         if len(remote_path_parts) < _MIN_PATH_PARTS or any(not p for p in remote_path_parts[:_MIN_PATH_PARTS]):
             raise InvalidRemotePathError(remote_path=remote_path)
 
-        with log_context(_logger, logging.INFO, f"refreshing mount for {remote_path=}", log_duration=True):
+        with log_context(_logger, logging.INFO, f"refreshing mount for {remote_path=}"):
             base_s3_path = "/".join(remote_path_parts[:_MIN_PATH_PARTS])
             tracked_mount: _TrackedMount | None = None
 
