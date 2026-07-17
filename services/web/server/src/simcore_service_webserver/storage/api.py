@@ -177,7 +177,7 @@ async def delete_project_data_folders(
             job_id=job_id,
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
-            _logger.info("waiting for deletion of project %s data folders to complete", f"{project_id=}")
+            _logger.info("waiting for deletion of project %s data folders to complete", project_id)
 
 
 async def delete_project_node_data_folders(
@@ -210,9 +210,7 @@ async def delete_project_node_data_folders(
             job_id=job_id,
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
-            _logger.info(
-                "waiting for deletion of project %s node %s data folders to complete", f"{project_id=}", f"{node_id=}"
-            )
+            _logger.info("waiting for deletion of project %s node %s data folders to complete", project_id, node_id)
 
 
 async def is_healthy(app: web.Application) -> bool:
