@@ -94,7 +94,7 @@ async def delete_project_as_admin(
             )
 
         with log_context(_logger, logging.INFO, "stop project services"):
-            asyncio.gather(
+            await asyncio.gather(
                 _stop_and_wait_for_pipeline_to_stop(app, user_id=project.prj_owner, project_uuid=project_uuid),
                 _projects_service.remove_project_dynamic_services(
                     user_id=project.prj_owner,
