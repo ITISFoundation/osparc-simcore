@@ -789,7 +789,6 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 _logger,
                 logging.INFO,
                 f"{src_project_uuid} -> {dst_project_uuid}: get total file size for {len(src_project_files)} files",
-                log_duration=True,
             ):
                 sizes_and_num_files: list[tuple[ByteSize | UNDEFINED_SIZE_TYPE, int]] = await limited_gather(
                     *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
