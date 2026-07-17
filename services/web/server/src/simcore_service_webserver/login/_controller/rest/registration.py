@@ -5,6 +5,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.user_messages import user_message
 from models_library.notifications import Channel
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -133,7 +134,7 @@ async def register(request: web.Request):
         )
 
     # INVITATIONS
-    expires_at: datetime | None = None  # = does not expire
+    account_expires_at: datetime | None = None  # = does not expire
     invitation: ConfirmedInvitationData | None = None
     # There are 3 possible states for an invitation:
     # 1. Invitation is not required (i.e. the app has disabled invitations)
@@ -141,7 +142,7 @@ async def register(request: web.Request):
     # 3. Invitation is valid
     #
     # For those states the `invitation` variable get the following values
-    # 1. `None
+    # 1. `None`
     # 2. no value, it raises and exception
     # 3. gets `InvitationData`
     # `
@@ -156,7 +157,7 @@ async def register(request: web.Request):
         invitation_code = registration.invitation
         if invitation_code is None:
             raise web.HTTPBadRequest(
-                text="invitation field is required",
+                text=user_message("Registration requires a valid invitation code."),
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
@@ -168,7 +169,7 @@ async def register(request: web.Request):
         )
         if invitation.trial_account_days:
             # NOTE: expires_at is currently set as offset-naive
-            expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
+            account_expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
 
     # A consumed invitation is bound to this exact e-mail (see `check_and_consume_invitation`),
     # so it already proves the guest owns the address. When configured, skip the extra
@@ -199,7 +200,7 @@ async def register(request: web.Request):
             email=registration.email,
             password=registration.password.get_secret_value(),
             status_upon_creation=(UserStatus.CONFIRMATION_PENDING if confirmation_required else UserStatus.ACTIVE),
-            expires_at=expires_at,
+            expires_at=account_expires_at,
         )
 
     assert user is not None  # nosec
