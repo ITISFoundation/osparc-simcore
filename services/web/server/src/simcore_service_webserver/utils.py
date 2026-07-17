@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 import tracemalloc
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
@@ -24,7 +24,7 @@ DAY: int = 24 * HOUR  # sec
 
 
 def now() -> datetime:
-    utc_now = datetime.utcnow()
+    utc_now = datetime.now(tz=UTC)
     # Truncate to millisecond precision to match format_datetime's timespec="milliseconds"
     return utc_now.replace(microsecond=utc_now.microsecond // 1000 * 1000)
 
