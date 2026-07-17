@@ -29,7 +29,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   const workbench = new osparc.data.model.Workbench(study.workbench, study.workbenchUI)
+ *   const workbench = new osparc.data.model.Workbench(study.workbench)
  *   study.setWorkbench(workbench);
  *   workbench.initWorkbench();
  * </pre>
@@ -40,13 +40,11 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   /**
     * @param workbenchData {Object} Object containing the workbench raw data
-    * @param workbenchUIData {Object} Object containing the workbenchUI raw data
     */
-  construct: function(workbenchData, workbenchUIData = null) {
+  construct: function(workbenchData) {
     this.base(arguments);
 
     this.__workbenchInitData = workbenchData;
-    this.__workbenchUIInitData = workbenchUIData;
   },
 
   events: {
@@ -94,7 +92,6 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   members: {
     __workbenchInitData: null,
-    __workbenchUIInitData: null,
     __nodes: null,
     __edges: null,
 
@@ -106,20 +103,18 @@ qx.Class.define("osparc.data.model.Workbench", {
     buildWorkbench: function() {
       this.__nodes = {};
       this.__edges = {};
-      this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
+      this.__deserialize(this.__workbenchInitData);
       this.__workbenchInitData = null;
-      this.__workbenchUIInitData = null;
     },
 
-    __deserialize: function(workbenchInitData, uiData = {}) {
+    __deserialize: function(workbenchInitData) {
       const nodesData = {};
       const nodesUiData = {};
       for (const nodeId in workbenchInitData) {
         const nodeData = workbenchInitData[nodeId];
         nodesData[nodeId] = nodeData;
-        if (uiData["workbench"] && nodeId in uiData["workbench"]) {
-          nodesUiData[nodeId] = uiData["workbench"][nodeId];
-        }
+        // node ui (position, marker) is stored per-node under workbench[nodeId].ui
+        nodesUiData[nodeId] = nodeData["ui"] || {};
       }
       this.__deserializeNodes(nodesData, nodesUiData)
         .then(() => {
@@ -764,22 +759,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       return workbench;
     },
 
-    serializeUI: function() {
-      if (this.__workbenchUIInitData !== null) {
-        // workbenchUI is not initialized
-        return this.__workbenchUIInitData;
-      }
-      const workbenchUI = {};
-      const nodes = Object.values(this.getNodes());
-      for (const node of nodes) {
-        const data = node.serializeUI();
-        if (data) {
-          workbenchUI[node.getNodeId()] = data;
-        }
-      }
-      return workbenchUI;
-    },
-
     /**
      * Call patch Node, but the changes were already applied on the frontend
      * @param workbenchDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
@@ -812,6 +791,30 @@ qx.Class.define("osparc.data.model.Workbench", {
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
+            // Send only the changed sub-keys instead of the whole `ui` object. A sub-key that was
+            // removed (e.g. marker) must be sent explicitly as null so the backend merge clears it.
+            if (changedFieldKey === "ui") {
+              const serializedUI = nodeData["ui"] || {};
+              const uiDiff = workbenchDiffs[nodeId]["ui"];
+              if (uiDiff instanceof Array) {
+                // jsondiffpatch represents an added/modified/removed value as an array.
+                // The whole `ui` object changed, so send the full serialized `ui`.
+                patchData["ui"] = serializedUI;
+                return;
+              }
+              const uiPatch = {};
+              Object.keys(uiDiff).forEach(uiKey => {
+                if (uiKey === "_t") {
+                  // jsondiffpatch array type marker, not a real key
+                  return;
+                }
+                uiPatch[uiKey] = uiKey in serializedUI ? serializedUI[uiKey] : null;
+              });
+              if (Object.keys(uiPatch).length) {
+                patchData["ui"] = uiPatch;
+              }
+              return;
+            }
             // do not patch if it's undefined
             if (nodeData[changedFieldKey] === undefined) {
               // a field that is in the diff but missing from the serialized node was reset to its default.
@@ -851,14 +854,12 @@ qx.Class.define("osparc.data.model.Workbench", {
     /**
      * Update the workbench from the given patches.
      * @param workbenchPatches {Array} Array of workbench patches.
-     * @param uiPatches {Array} Array of UI patches. They might contain info (position) about new nodes.
      */
-    updateWorkbenchFromPatches: function(workbenchPatches, uiPatches) {
+    updateWorkbenchFromPatches: function(workbenchPatches) {
       // group the patches by nodeId
       const nodesAdded = [];
       const nodesRemoved = [];
       const workbenchPatchesByNode = {};
-      const workbenchUiPatchesByNode = {};
       workbenchPatches.forEach(workbenchPatch => {
         const nodeId = workbenchPatch.path.split("/")[2];
 
@@ -887,16 +888,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       // second, add nodes if any
       if (nodesAdded.length) {
         // this will call update nodes once finished
-        nodesAdded.forEach(nodeId => {
-          const uiPatchFound = uiPatches.find(uiPatch => {
-            const pathParts = uiPatch.path.split("/");
-            return uiPatch.op === "add" && pathParts.length === 4 && pathParts[3] === nodeId;
-          });
-          if (uiPatchFound) {
-            workbenchUiPatchesByNode[nodeId] = uiPatchFound;
-          }
-        });
-        this.__addNodesFromPatches(nodesAdded, workbenchPatchesByNode, workbenchUiPatchesByNode);
+        this.__addNodesFromPatches(nodesAdded, workbenchPatchesByNode);
       }
 
       // update existing nodes (patches for nodes that were not just added)
@@ -943,7 +935,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       });
     },
 
-    __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode, workbenchUiPatchesByNode = {}) {
+    __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode) {
       nodesAdded.forEach(nodeId => {
         const addNodePatch = workbenchPatchesByNode[nodeId].find(workbenchPatch => {
           const pathParts = workbenchPatch.path.split("/");
@@ -956,7 +948,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           workbenchPatchesByNode[nodeId].splice(index, 1);
         }
 
-        const nodeUiData = workbenchUiPatchesByNode[nodeId] && workbenchUiPatchesByNode[nodeId]["value"] ? workbenchUiPatchesByNode[nodeId]["value"] : {};
+        const nodeUiData = nodeData["ui"] || {};
 
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
         node.fetchMetadataAndPopulate(nodeData, nodeUiData)

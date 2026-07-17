@@ -46,20 +46,17 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["workbench"][newUuid] = {
               "key": metadata["key"],
               "version": metadata["version"],
-              "label": metadata["name"]
+              "label": metadata["name"],
+              "ui": {
+                "position": {
+                  "x": 250,
+                  "y": 100
+                }
+              }
             };
             if (!("ui" in minStudyData)) {
               minStudyData["ui"] = {};
             }
-            if (!("workbench" in minStudyData["ui"])) {
-              minStudyData["ui"]["workbench"] = {};
-            }
-            minStudyData["ui"]["workbench"][newUuid] = {
-              "position": {
-                "x": 250,
-                "y": 100
-              }
-            };
             if (!("mode" in minStudyData["ui"])) {
               minStudyData["ui"]["mode"] = metadata["type"] && metadata["type"] === "dynamic" ? "standalone" : "pipeline";
             }

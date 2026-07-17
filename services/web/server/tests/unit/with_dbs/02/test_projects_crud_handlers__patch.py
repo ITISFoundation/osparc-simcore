@@ -84,20 +84,16 @@ async def test_patch_project(
         data=json.dumps(_patch_thumbnail),
     )
     await assert_status(resp, expected)
+
     # UI
-    _patch_ui = {"ui": {"workbench": {"77a04d71-b7e1-41d0-ab47-c99aa72b62d7": {"position": {"x": 250, "y": 100}}}}}
-    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui))
-    await assert_status(resp, expected)
-    # UI 2
-    _patch_ui_2 = {
+    _patch_ui = {
         "ui": {
             "mode": "workbench",
             "slideshow": {},
-            "workbench": {"d03d2752-e970-42cd-9483-69440ab9e4b7": {"position": {"x": 250, "y": 100}}},
             "currentNodeId": "d03d2752-e970-42cd-9483-69440ab9e4b7",
         }
     }
-    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui_2))
+    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui))
     await assert_status(resp, expected)
     # quality
     _patch_quality = {
@@ -168,7 +164,7 @@ async def test_patch_project(
     assert data["description"] == "testing-description"
     assert data["thumbnail"] == _patch_thumbnail["thumbnail"]
     assert data["classifiers"] == _patch_classifiers["classifiers"]
-    assert data["ui"] == _patch_ui_2["ui"]
+    assert data["ui"] == _patch_ui["ui"]
     assert data["quality"] == _patch_quality["quality"]
     assert data["dev"] == _patch_dev["dev"]
 
