@@ -25,7 +25,7 @@ from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.login.constants import MSG_LOGGED_IN, MSG_LOGGED_OUT
+from simcore_service_webserver.login.constants import MSG_LOGGED_OUT, MSG_REGISTRATION_SUCCESS
 from simcore_service_webserver.models import PhoneNumberStr
 
 
@@ -206,7 +206,8 @@ async def test_pre_registration_and_invitation_workflow(
     )
     # NOTE: registration grants login directly (no e-mail confirmation step), so
     # the client is now logged in as the guest
-    await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
+    # NOTE: Using the first part of the message for comparison since email is appended
+    await assert_status(response, status.HTTP_200_OK, MSG_REGISTRATION_SUCCESS.split(".")[0])
 
     # switch back to the PRODUCT_OWNER session to perform the final admin search
     async with switch_client_session_to(client, logged_user):

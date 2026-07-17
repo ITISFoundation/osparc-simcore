@@ -6,6 +6,7 @@ from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
+from models_library.notifications import Channel
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
@@ -16,7 +17,9 @@ from ....groups.groups_service import (
     auto_add_user_to_product_group,
 )
 from ....invitations.api import is_service_invitation_code
-from ....locale import get_locale_or_none
+from ....locale import get_locale_or_none, translate_message
+from ....notifications import notifications_service
+from ....notifications._models import EmailContact
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import (
@@ -27,11 +30,10 @@ from ....utils import MINUTE
 from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_requests_validation import parse_request_body_as
-from ....web_utils import envelope_response
+from ....web_utils import envelope_response, flash_response
 from ... import (
     _auth_service,
     _registration_service,
-    _security_service,
     _twofa_service,
 )
 from ..._invitations_service import (
@@ -48,6 +50,7 @@ from ...constants import (
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
+    MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
 )
@@ -201,9 +204,41 @@ async def register(request: web.Request):
         extra_credits_in_usd=invitation.extra_credits_in_usd if invitation else None,
     )
 
+    # Send welcome email
+    try:
+        first_name = user.get("first_name") or ""
+        await notifications_service.send_message_from_template(
+            request.app,
+            user_id=user["id"],
+            product_name=product.name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[EmailContact(name=first_name, email=registration.email)],
+            template_name="registered",
+            context={
+                "host": request.url.host or "osparc.io",
+                "user": {
+                    "first_name": first_name,
+                    "user_name": registration.email.split("@")[0],
+                },
+            },
+            locale=get_locale_or_none(request),
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                f"Failed to send 'registered' email to {registration.email}",
+                error=exc,
+                error_context={"user_id": user["id"], "email": registration.email},
+            )
+        )
+        # Don't fail registration if email fails to send
+
     # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
-    # It is already authorized
-    return await _security_service.login_granted_response(request=request, user=user)
+    return flash_response(
+        translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
+        "INFO",
+    )
 
 
 @routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")

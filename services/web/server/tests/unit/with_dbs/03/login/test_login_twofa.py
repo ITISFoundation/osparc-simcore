@@ -36,6 +36,7 @@ from simcore_service_webserver.login.constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_UNAVAILABLE,
     MSG_LOGGED_IN,
+    MSG_REGISTRATION_SUCCESS,
 )
 from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import (
@@ -142,10 +143,14 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
         },
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    assert MSG_LOGGED_IN in data["message"]
+    assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
 
-    # no confirmation e-mail is ever sent
-    mocked_notifications_service_send_message_from_template.assert_not_called()
+    # welcome e-mail is sent
+    mocked_notifications_service_send_message_from_template.assert_called_once()
+    call_kwargs = mocked_notifications_service_send_message_from_template.call_args.kwargs
+    assert call_kwargs["template_name"] == "registered"
+    assert call_kwargs["external_contacts"][0].email == user_email
+    mocked_notifications_service_send_message_from_template.reset_mock()
 
     # check email+password registered
     user = await _auth_service.get_user_or_none(client.app, email=user_email)
