@@ -134,11 +134,14 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     # now abort the copy
     resp = await client.delete(urlparse(abort_url).path)
     await assert_status(resp, expected.no_content)
-    # NOTE: delete only marks the project for immediate deletion; actual removal happens
-    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
-    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+    # NOTE: The abort only marks the asyncio task for removal; the actual task cancellation
+    # happens in the periodic `_cancelled_tasks_removal` background task (every 5 s).
+    # Once cancelled, `_cleanup_project_on_error` trashes the project so the GC can delete it.
+    # We therefore call `safe_delete_expired_trash_as_admin` inside the retry loop so that
+    # it runs AFTER the project has been trashed.
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)):
         with attempt:
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
@@ -180,11 +183,14 @@ async def test_copying_large_project_and_retrieving_copy_task(
     # now abort the copy
     resp = await client.delete(urlparse(created_copy_task.abort_href).path)
     await assert_status(resp, expected.no_content)
-    # NOTE: delete only marks the project for immediate deletion; actual removal happens
-    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
-    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+    # NOTE: The abort only marks the asyncio task for removal; the actual task cancellation
+    # happens in the periodic `_cancelled_tasks_removal` background task (every 5 s).
+    # Once cancelled, `_cleanup_project_on_error` trashes the project so the GC can delete it.
+    # We therefore call `safe_delete_expired_trash_as_admin` inside the retry loop so that
+    # it runs AFTER the project has been trashed.
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)):
         with attempt:
+            await trash_service.safe_delete_expired_trash_as_admin(client.app)
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
