@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import choice
 from typing import Any, Literal
-from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import httpx
@@ -37,9 +36,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
     SoftCopyBody,
 )
-from models_library.celery import TaskState, TaskStatus, TaskUUID
 from models_library.products import ProductName
-from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -56,9 +53,8 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
 from servicelib.aiohttp import status
-from simcore_service_storage.api.rest.dependencies.celery import get_task_manager
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
-from simcore_service_storage.models import FileDownloadResponse, FileMetaData, S3BucketName, UploadID
+from simcore_service_storage.models import FileDownloadResponse, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
@@ -1596,100 +1592,3 @@ async def test_listing_with_project_id_filter(
         assert project_file_name == list_of_files[0].file_name
     else:
         assert project_files_in_db == {file.file_uuid for file in list_of_files}
-
-
-@pytest.fixture
-async def mock_task_manager(
-    initialized_app: FastAPI,
-) -> AsyncIterator[MagicMock]:
-    """Replaces the Celery task manager FastAPI dependency with a MagicMock.
-
-    Yields the mock so tests can configure return values on get_status / get_result
-    and inspect calls.
-    """
-    mock = MagicMock()
-    mock.get_status = AsyncMock()
-    mock.get_result = AsyncMock()
-    initialized_app.dependency_overrides[get_task_manager] = lambda: mock
-    yield mock
-    del initialized_app.dependency_overrides[get_task_manager]
-
-
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
-    "is_directory, expect_notification",
-    [
-        pytest.param(True, False, id="directory_root_no_notification"),
-        pytest.param(False, True, id="regular_file_fires_notification"),
-    ],
-)
-async def test_is_completed_upload_file_notification_logic(
-    initialized_app: FastAPI,
-    client: httpx.AsyncClient,
-    location_id: LocationID,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-    storage_s3_bucket: S3BucketName,
-    faker: Faker,
-    mocker: MockerFixture,
-    mock_task_manager: MagicMock,
-    is_directory: bool,
-    expect_notification: bool,
-):
-    """Directly tests the is_completed_upload_file handler notification guard.
-
-    Mocks the task manager so no real upload or Celery worker is needed.
-    Covers:
-    - directory-root fmd → notification suppressed
-    - regular file fmd  → notification fires with the correct file_id
-    """
-    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{project_id}/{node_id}/{faker.file_name()}")
-    future_id = uuid4()
-
-    fmd = FileMetaData.from_simcore_node(
-        user_id=user_id,
-        file_id=file_id,
-        bucket=storage_s3_bucket,
-        location_id=location_id,
-        location_name=SimcoreS3DataManager.get_location_name(),
-        sha256_checksum=None,
-        is_directory=is_directory,
-        entity_tag=None,
-    )
-    mock_task_manager.get_status.return_value = TaskStatus(
-        task_uuid=TypeAdapter(TaskUUID).validate_python(str(future_id)),
-        task_state=TaskState.SUCCESS,
-        progress_report=ProgressReport(actual_value=1.0, total=1.0),
-    )
-    mock_task_manager.get_result.return_value = fmd.model_dump()
-
-    mock_notify = mocker.patch(
-        "simcore_service_storage.api.rest._files.post_file_notification",
-        autospec=True,
-    )
-
-    state_url = url_from_operation_id(
-        client,
-        initialized_app,
-        "is_completed_upload_file",
-        location_id=f"{location_id}",
-        file_id=file_id,
-        future_id=str(future_id),
-    ).with_query(user_id=user_id)
-
-    response = await client.post(f"{state_url}")
-    future_resp, _ = assert_status(response, status.HTTP_200_OK, FileUploadCompleteFutureResponse)
-    assert future_resp
-    assert future_resp.state == FileUploadCompleteState.OK
-
-    if expect_notification:
-        mock_notify.assert_called_once()
-        assert mock_notify.call_args.kwargs["file_id"] == file_id
-    else:
-        mock_notify.assert_not_called()

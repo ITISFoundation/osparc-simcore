@@ -1,7 +1,9 @@
 # pylint:disable=redefined-outer-name
 
+import logging
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
 from faker import Faker
@@ -49,11 +51,14 @@ def mock_notify_path_change(mocker: MockerFixture) -> AsyncMock:
     )
 
 
-@pytest.mark.parametrize(
-    "event_type",
-    list(FileNotificationEventType),
-)
-async def test_handle_file_notification_calls_notify_path_change(
+def _make_app_mock(*, can_process: bool) -> MagicMock:
+    app = MagicMock()
+    app.state.file_notification_state.can_process = can_process
+    return app
+
+
+@pytest.mark.parametrize("event_type", list(FileNotificationEventType))
+async def test__handle_file_notification_calls_notify_path_change(
     mock_notify_path_change: AsyncMock,
     event_type: FileNotificationEventType,
     user_id: UserID,
@@ -67,37 +72,127 @@ async def test_handle_file_notification_calls_notify_path_change(
         file_id=file_id,
         project_id=project_id,
         node_id=node_id,
+        is_directory=False,
     )
     data = message.body()
 
-    result = await _handle_file_notification(None, data)
+    app = _make_app_mock(can_process=True)
+
+    result = await _handle_file_notification(app, data)
 
     assert result is True
-    mock_notify_path_change.assert_awaited_once_with(app=None, event_type=event_type, path=file_id, recursive=False)
+    mock_notify_path_change.assert_awaited_once_with(app=app, event_type=event_type, path=file_id, recursive=False)
 
 
-async def test_handle_file_notification_with_optional_ids(
+@pytest.mark.parametrize("event_type", list(FileNotificationEventType))
+async def test__handle_file_notification_with_optional_ids(
     mock_notify_path_change: AsyncMock,
+    event_type: FileNotificationEventType,
     file_id: str,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
 ):
     message = FileNotificationMessage(
-        event_type=FileNotificationEventType.FILE_UPLOADED,
+        event_type=event_type,
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
         file_id=file_id,
+        is_directory=False,
     )
     data = message.body()
 
-    result = await _handle_file_notification(None, data)
+    app = _make_app_mock(can_process=True)
+
+    result = await _handle_file_notification(app, data)
 
     assert result is True
-    mock_notify_path_change.assert_awaited_once_with(
-        app=None, event_type=FileNotificationEventType.FILE_UPLOADED, path=file_id, recursive=False
+    mock_notify_path_change.assert_awaited_once_with(app=app, event_type=event_type, path=file_id, recursive=False)
+
+
+@pytest.mark.parametrize("event_type", list(FileNotificationEventType))
+async def test__handle_file_notification_skipped_cannot_process(
+    mock_notify_path_change: AsyncMock,
+    event_type: FileNotificationEventType,
+    file_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    caplog: pytest.LogCaptureFixture,
+):
+    message = FileNotificationMessage(
+        event_type=event_type,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        file_id=file_id,
+        is_directory=False,
     )
+    data = message.body()
+
+    app = _make_app_mock(can_process=False)
+
+    caplog.set_level(logging.DEBUG)
+    caplog.clear()
+
+    result = await _handle_file_notification(app, data)
+
+    assert result is True
+
+    assert "processing is not enabled" in caplog.text
+
+    mock_notify_path_change.assert_not_called()
+    mock_notify_path_change.assert_not_awaited()
+
+
+@pytest.mark.parametrize("event_type", list(FileNotificationEventType))
+@pytest.mark.parametrize(
+    "mocked_file_id, skipped",
+    [
+        pytest.param(f"{uuid4()}/{uuid4()}/path", True),
+        pytest.param(f"{uuid4()}/{uuid4()}/path-with.dot", True),
+        pytest.param(f"{uuid4()}/{uuid4()}/path/another-path", False),
+    ],
+)
+async def test__handle_file_notification_skipped_ignored_root_directory(
+    mock_notify_path_change: AsyncMock,
+    event_type: FileNotificationEventType,
+    mocked_file_id: str,
+    skipped: bool,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    caplog: pytest.LogCaptureFixture,
+):
+    message = FileNotificationMessage(
+        event_type=event_type,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        file_id=mocked_file_id,
+        is_directory=True,
+    )
+    data = message.body()
+
+    app = _make_app_mock(can_process=True)
+
+    caplog.set_level(logging.DEBUG)
+    caplog.clear()
+
+    result = await _handle_file_notification(app, data)
+
+    assert result is True
+
+    if skipped:
+        assert "ignored for root directory" in caplog.text
+
+        mock_notify_path_change.assert_not_called()
+        mock_notify_path_change.assert_not_awaited()
+    else:
+        mock_notify_path_change.assert_awaited_once_with(
+            app=app, event_type=event_type, path=mocked_file_id, recursive=False
+        )
 
 
 _INPUTS_PATH = Path("/inputs")

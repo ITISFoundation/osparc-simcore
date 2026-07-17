@@ -160,6 +160,15 @@ async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
         )
         return True
 
+    is_root_directory = len(message.file_id.split("/")) == _MIN_STORAGE_PATH_PARTS
+    if message.is_directory and is_root_directory:
+        _logger.debug(
+            "notification processing ignored for root directory. Skipping notification: %s for file_id=%s",
+            message.event_type,
+            message.file_id,
+        )
+        return True
+
     _logger.debug("Received file notification: %s for file_id=%s", message.event_type, message.file_id)
     with log_catch(_logger, reraise=False):
         await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)

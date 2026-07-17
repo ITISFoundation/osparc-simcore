@@ -49,7 +49,7 @@ def _is_datcore_file_id(file_id: StorageFileID) -> bool:
 
 
 async def post_file_notification(
-    app: FastAPI, *, event_type: FileNotificationEventType, user_id: UserID, file_id: StorageFileID
+    app: FastAPI, *, event_type: FileNotificationEventType, user_id: UserID, file_id: StorageFileID, is_directory: bool
 ) -> None:
     if _is_datcore_file_id(file_id):
         _logger.debug("Skip notification for DatCore file_id=%s", file_id)
@@ -89,5 +89,6 @@ async def post_file_notification(
             project_id=project_id,
             node_id=node_id,
             file_id=file_id,
+            is_directory=is_directory,
         )
         await get_rabbitmq_client(app).publish(message.channel_name, message)

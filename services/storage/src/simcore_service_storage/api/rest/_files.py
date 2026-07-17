@@ -359,14 +359,13 @@ async def is_completed_upload_file(
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
 
-        is_directory_root = new_fmd.is_directory and file_id == new_fmd.file_id
-        if not is_directory_root:
-            await post_file_notification(
-                request.app,
-                event_type=FileNotificationEventType.FILE_UPLOADED,
-                user_id=query_params.user_id,
-                file_id=file_id,
-            )
+        await post_file_notification(
+            request.app,
+            event_type=FileNotificationEventType.FILE_UPLOADED,
+            user_id=query_params.user_id,
+            file_id=file_id,
+            is_directory=new_fmd.is_directory,
+        )
         response = FileUploadCompleteFutureResponse(
             state=FileUploadCompleteState.OK,
             e_tag=new_fmd.entity_tag,
@@ -396,6 +395,7 @@ async def delete_file(
             event_type=FileNotificationEventType.FILE_DELETED,
             user_id=query_params.user_id,
             file_id=file_id,
+            is_directory=False,
         )
 
 
@@ -416,5 +416,6 @@ async def copy_as_soft_link(
         event_type=FileNotificationEventType.FILE_UPLOADED,
         user_id=query_params.user_id,
         file_id=file_link.file_id,
+        is_directory=False,
     )
     return Envelope[FileMetaDataGet](data=FileMetaDataGet(**file_link.model_dump()))

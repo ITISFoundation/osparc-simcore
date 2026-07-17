@@ -64,6 +64,7 @@ async def delete_paths(
                     event_type=FileNotificationEventType.FILE_DELETED,
                     user_id=user_id,
                     file_id=file_id,
+                    is_directory=False,
                 )
                 for file_id in files_ids
             ],
