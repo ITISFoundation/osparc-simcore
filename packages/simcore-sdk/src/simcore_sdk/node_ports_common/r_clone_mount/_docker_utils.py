@@ -63,7 +63,7 @@ async def create_r_clone_container(
     local_mount_path: Path,
     memory_limit: ByteSize,
     nano_cpus: NonNegativeInt,
-    labels: dict[str, str],
+    labels: dict[DockerLabelKey, str],
 ) -> PortInt:
     container_config = await _get_config(
         delegate, command, r_clone_version, local_mount_path, memory_limit, nano_cpus, labels
