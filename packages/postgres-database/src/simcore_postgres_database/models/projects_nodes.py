@@ -136,6 +136,14 @@ projects_nodes = sa.Table(
         comment="Some services provide alternative parameters to be injected at boot time."
         "The user selection should be stored here, and it will overwrite the services's defaults",
     ),
+    # FRONT-END ----------------------------
+    sa.Column(
+        "ui",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="UI components",
+    ),
     sa.UniqueConstraint("project_uuid", "node_id"),
 )
 
