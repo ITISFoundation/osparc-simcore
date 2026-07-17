@@ -1249,7 +1249,7 @@ async def _remove_service_and_its_data_folders(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    node_uuid: NodeIDStr,
+    node_uuid: NodeID,
     user_agent: str,
     product_name: ProductName,
     stop_service: bool,
@@ -1261,7 +1261,7 @@ async def _remove_service_and_its_data_folders(
             dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=project_uuid,
-                node_id=NodeID(node_uuid),
+                node_id=node_uuid,
                 simcore_user_agent=user_agent,
                 product_name=product_name,
                 save_state=False,
@@ -1269,14 +1269,16 @@ async def _remove_service_and_its_data_folders(
         )
 
     # remove the node's data if any
-    await storage_service.delete_data_folders_of_project_node(app, f"{project_uuid}", node_uuid, user_id)
+    await storage_service.delete_project_node_data_folders(
+        app, product_name=product_name, project_id=project_uuid, node_id=node_uuid, user_id=user_id
+    )
 
 
 async def delete_project_node(
     request: web.Request,
     project_uuid: ProjectID,
     user_id: UserID,
-    node_uuid: NodeIDStr,
+    node_uuid: NodeID,
     product_name: ProductName,
     product_api_base_url: str,
     client_session_id: ClientSessionID | None,
@@ -1314,7 +1316,7 @@ async def delete_project_node(
     await _projects_nodes_repository.delete(
         request.app,
         project_id=project_uuid,
-        node_id=NodeID(node_uuid),
+        node_id=node_uuid,
     )
 
     await create_project_document_and_notify(
