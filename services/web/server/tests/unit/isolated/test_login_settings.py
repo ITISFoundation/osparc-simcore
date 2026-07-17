@@ -37,7 +37,7 @@ def test_login_settings_with_2fa(monkeypatch: pytest.MonkeyPatch, twilio_config:
     setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",
             **twilio_config,
         },
     )

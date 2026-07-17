@@ -16,7 +16,7 @@ from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser
+from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -51,7 +51,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     envs_login = setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
@@ -134,15 +134,22 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
 
     # 1. submit: account is created directly and login is granted right away
     # (no e-mail confirmation step)
-    url = client.app.router["auth_register"].url_for()
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": user_email,
-            "password": user_password,
-            "confirm": user_password,
-        },
-    )
+    # NOTE: since LOGIN_2FA_REQUIRED implies LOGIN_REGISTRATION_INVITATION_REQUIRED
+    # (2FA assumes the invitation is what confirms the e-mail), registration
+    # here requires a valid invitation code
+    async with NewInvitation(client, guest_email=user_email) as invitation:
+        assert invitation.confirmation
+
+        url = client.app.router["auth_register"].url_for()
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": user_email,
+                "password": user_password,
+                "confirm": user_password,
+                "invitation": invitation.confirmation["code"],
+            },
+        )
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
 
