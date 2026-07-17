@@ -48,7 +48,12 @@ _REACT_BLUR_SETTLE_MS: Final[int] = 500
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
-_SAMPLING_TIMEOUT: Final[int] = 10 * MINUTE
+
+# Heuristically 10 minutes is enough for these jobs to run
+# However, when the dv2 / dask restarts during the run, things get delayed
+# Add factor 2 to handle this case
+_SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
+
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
 _NUM_SAMPLING_POINTS: Final[int] = 40
@@ -107,6 +112,13 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
 
 class _TeardownDeleteError(Exception):
     """Raised when a resource DELETE request fails (non-ok, non-404 status)."""
+
+
+class _SamplingFailedError(Exception):
+    """Raised when a sampling job reaches a terminal failed state.
+
+    Raise an exception that is not an assert to let tenacity stop polling
+    """
 
 
 @retry(
@@ -373,7 +385,9 @@ def _assert_sampling_completed(
     check_sampling_status: Callable[[Any, Page], str],
 ) -> None:
     status = check_sampling_status(service_iframe, page)
-    assert status != "failed", "Sampling job failed! Check the deployment logs."
+    if status == "failed":
+        msg = "Sampling job failed! Check the deployment logs."
+        raise _SamplingFailedError(msg)
     assert status == "complete", "Sampling is still running"
 
 
