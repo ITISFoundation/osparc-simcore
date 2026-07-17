@@ -35,6 +35,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.celery.plugin import setup_celery
 from simcore_service_webserver.db.models import projects, users
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
@@ -69,11 +70,12 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
-    "migration",  # NOTE: rebuild!
+    "migration",
     "postgres",
     "rabbit",
     "redis",
-    "storage",  # NOTE: rebuild!
+    "storage",
+    "sto-worker",
 ]
 pytest_simcore_ops_services_selection = [
     "minio",
@@ -186,6 +188,7 @@ async def client(
     setup_socketio(app)
     setup_projects(app)
     setup_director_v2(app)
+    setup_celery(app)
 
     assert setup_resource_manager(app)
 
