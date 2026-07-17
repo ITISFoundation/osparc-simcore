@@ -162,7 +162,7 @@ async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table:
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
     # creates trial user
-    client_now = datetime.now(tz=UTC)
+    client_now = datetime.now(tz=UTC).replace(tzinfo=None)
     async with transaction_context(asyncpg_engine) as connection:
         user_id: int | None = await connection.scalar(
             users.insert()
