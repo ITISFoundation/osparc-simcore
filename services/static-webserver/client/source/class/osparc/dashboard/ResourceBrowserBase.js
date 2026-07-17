@@ -893,6 +893,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || studyAlias));
 
       if (osparc.store.StaticInfo.isBillableProduct()) {
+        // On billable products the wallet/tier must be chosen BEFORE the study is created.
+        // Pop up the StudyOptions first (gather mode) and only then create + patch the study.
         const studyOptions = new osparc.study.StudyOptions();
         // they will be patched once the study is created
         studyOptions.setPatchStudy(false);
@@ -915,7 +917,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           win.close();
 
           this._showLoadingPage(this.tr("Creating ") + (newName || studyAlias));
-          osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+          osparc.study.Utils.createStudy({
+            resourceType: templateData["resourceType"] || "template",
+            templateData,
+            loadingPage: this._loadingPage,
+            contextProps: this._getContextProps(),
+          })
             .then(newStudyData => {
               const studyId = newStudyData["uuid"];
               const openCB = () => {
@@ -989,6 +996,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             });
         });
       } else {
+        // On non-billable products there are no options to gather, so create the
+        // study directly and open it.
         osparc.study.Utils.createStudy({
           resourceType: templateData["resourceType"] || "template",
           templateData,
