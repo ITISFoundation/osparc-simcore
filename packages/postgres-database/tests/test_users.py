@@ -135,7 +135,7 @@ async def test_new_user(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_d
         "email": faker.email(),
         "password_hash": "foo",
         "status": UserStatus.ACTIVE,
-        "expires_at": datetime.now(tz=UTC),
+        "expires_at": datetime.now(tz=UTC).replace(tzinfo=None),
     }
     repo = UsersRepo(asyncpg_engine)
     new_user = await repo.new_user(**data)
