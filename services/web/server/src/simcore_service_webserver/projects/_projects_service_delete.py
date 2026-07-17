@@ -7,11 +7,14 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_context
 from tenacity import before_sleep_log, retry, retry_if_result, stop_after_delay, wait_fixed
 
 from ..director_v2 import director_v2_service
+from ..director_v2.exceptions import DirectorV2ServiceError
 from ..storage import api as storage_service
 from . import _projects_repository, _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
@@ -49,6 +52,23 @@ async def _wait_for_pipeline_to_stop(app: web.Application, *, user_id: UserID, p
     return await director_v2_service.is_pipeline_running(app, user_id=user_id, project_id=project_uuid) is False
 
 
+def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
+    assert isinstance(exception, DirectorV2ServiceError)  # nosec
+    return exception.status == status.HTTP_404_NOT_FOUND
+
+
+@suppress_exceptions(
+    (DirectorV2ServiceError,),
+    reason="Pipeline not found or already stopped or partially deleted",
+    predicate=_skip_if_pipeline_not_found,
+)
+async def _stop_and_wait_for_pipeline_to_stop(
+    app: web.Application, *, user_id: UserID, project_uuid: ProjectID
+) -> None:
+    await director_v2_service.stop_pipeline(app, user_id=user_id, project_id=project_uuid)
+    await _wait_for_pipeline_to_stop(app, user_id=user_id, project_uuid=project_uuid)
+
+
 async def delete_project_as_admin(
     app: web.Application,
     *,
@@ -74,12 +94,17 @@ async def delete_project_as_admin(
             )
 
         with log_context(_logger, logging.INFO, "stop project services"):
-            await batch_stop_services_in_project(
-                app, user_id=project.prj_owner, project_uuid=project_uuid, product_name=product_name
+            asyncio.gather(
+                _stop_and_wait_for_pipeline_to_stop(app, user_id=project.prj_owner, project_uuid=project_uuid),
+                _projects_service.remove_project_dynamic_services(
+                    user_id=project.prj_owner,
+                    project_uuid=project_uuid,
+                    app=app,
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    product_name=product_name,
+                    notify_users=False,
+                ),
             )
-
-        with log_context(_logger, logging.INFO, "wait for computational pipeline to stop"):
-            await _wait_for_pipeline_to_stop(app, user_id=project.prj_owner, project_uuid=project_uuid)
 
         with log_context(_logger, logging.INFO, "delete project data"):
             # NOTE: this is required as comp_pipelines/comp_tasks are not using Foreign keys and are not deleted automatically when the project is deleted
