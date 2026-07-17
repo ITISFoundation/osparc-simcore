@@ -49,7 +49,7 @@ def test_time_utils():
     now1 = to_datetime(snapshot1)
     assert now0 < now1
 
-    # tests biyective
+    # tests bijective
     now_time = datetime.now(tz=UTC).replace(tzinfo=None)
     snapshot = now_time.strftime(DATETIME_FORMAT)
     assert now_time == datetime.strptime(snapshot, DATETIME_FORMAT)
