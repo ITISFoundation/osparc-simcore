@@ -3,13 +3,11 @@ api app module
 """
 
 from fastapi import APIRouter, FastAPI
-from servicelib.fastapi.application_setup import ensure_single_setup
 
 from .._meta import API_VTAG
 from .rest import datasets, files, health, user
 
 
-@ensure_single_setup
 def setup_rest_api_routes(app: FastAPI) -> None:
     router = APIRouter(prefix=f"/{API_VTAG}")
 

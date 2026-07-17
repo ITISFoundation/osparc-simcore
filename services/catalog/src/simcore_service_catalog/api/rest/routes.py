@@ -1,7 +1,6 @@
 from enum import Enum
 
 from fastapi import APIRouter, FastAPI
-from servicelib.fastapi.application_setup import ensure_single_setup
 
 from ..._meta import (
     API_VTAG,
@@ -24,7 +23,6 @@ _SERVICE_TAGS: list[str | Enum] = [
 ]
 
 
-@ensure_single_setup
 def setup_rest_api_routes(app: FastAPI) -> None:
     # healthcheck at / and at /v0/
     health_router = _health.router

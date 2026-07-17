@@ -1,10 +1,8 @@
 from fastapi import APIRouter, FastAPI
-from servicelib.fastapi.application_setup import ensure_single_setup
 
 from . import _datasets, _files, _health, _locations, _paths, _simcore_s3
 
 
-@ensure_single_setup
 def setup_rest_api_routes(app: FastAPI, vtag: str) -> None:
     # healthcheck at / and at /v0/
     app.include_router(_health.router)
