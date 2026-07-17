@@ -1818,7 +1818,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       minStudyData["folderId"] = this.getCurrentFolderId();
       this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
       osparc.study.Utils.createStudyAndPoll(minStudyData)
-        .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
+        .then(studyData => this._startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.logError(err);
@@ -1837,7 +1837,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         folderId: this.getCurrentFolderId(),
       };
       osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage, contextProps)
-        .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
+        .then(studyData => this._startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.logError(err);
@@ -1851,21 +1851,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         folderId: this.getCurrentFolderId(),
       };
       osparc.study.Utils.createStudyFromService(key, version, this._resourcesList, newStudyLabel, contextProps)
-        .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
+        .then(studyData => this._startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.logError(err);
         });
-    },
-
-    __startStudyAfterCreating: function(studyId) {
-      const openCB = () => this._hideLoadingPage();
-      const cancelCB = () => {
-        this._hideLoadingPage();
-        osparc.store.Study.getInstance().deleteStudy(studyId);
-      };
-      const isStudyCreation = true;
-      this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
     _updateStudyData: function(studyData) {

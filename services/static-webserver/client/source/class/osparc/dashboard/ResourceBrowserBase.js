@@ -869,6 +869,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
+    _startStudyAfterCreating: function(studyId) {
+      const openCB = () => this._hideLoadingPage();
+      const cancelCB = () => {
+        this._hideLoadingPage();
+        osparc.store.Study.getInstance().deleteStudy(studyId);
+      };
+      const isStudyCreation = true;
+      this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+    },
+
     _createStudyFromTemplate: function(templateData) {
       if (!this._checkLoggedIn()) {
         return;
@@ -975,16 +985,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         });
       } else {
         osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
-          .then(newStudyData => {
-            const studyId = newStudyData["uuid"];
-            const openCB = () => this._hideLoadingPage();
-            const cancelCB = () => {
-              this._hideLoadingPage();
-              osparc.store.Study.getInstance().deleteStudy(studyId);
-            };
-            const isStudyCreation = true;
-            this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-          })
+          .then(newStudyData => this._startStudyAfterCreating(newStudyData["uuid"]))
           .catch(err => {
             this._hideLoadingPage();
             osparc.FlashMessenger.logError(err);
@@ -1001,16 +1002,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._showLoadingPage(this.tr("Creating ") + studyAlias);
 
       osparc.study.Utils.createStudyFromService(key, version)
-        .then(studyData => {
-          const studyId = studyData["uuid"];
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            osparc.store.Study.getInstance().deleteStudy(studyId);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-        })
+        .then(studyData => this._startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.logError(err);
