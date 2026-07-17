@@ -165,8 +165,7 @@ def log_context(
             yield SimpleNamespace(logger=logger, messages=ctx_msg)
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
         done_message = (
-            f"{_resolve(ctx_msg.done, _DONE_PREFIX, _DONE_SUFFIX)} "
-            f"(total time spent: {timedelta_as_minute_second_ms(elapsed_time)})"
+            f"{_resolve(ctx_msg.done, _DONE_PREFIX, _DONE_SUFFIX)} (⏳ {timedelta_as_minute_second_ms(elapsed_time)})"
         )
         logger.log(
             level,
@@ -180,7 +179,7 @@ def log_context(
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
         error_message = (
             f"{_resolve(ctx_msg.raised, _RAISED_PREFIX, _RAISED_SUFFIX)} "
-            f"(total time spent: {timedelta_as_minute_second_ms(elapsed_time)})"
+            f"(⏳ {timedelta_as_minute_second_ms(elapsed_time)})"
         )
         logger.exception(
             error_message,
