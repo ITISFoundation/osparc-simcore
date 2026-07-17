@@ -109,7 +109,10 @@ async def delete_project_as_admin(
         with log_context(_logger, logging.INFO, "delete project data"):
             # NOTE: this is required as comp_pipelines/comp_tasks are not using Foreign keys and are not deleted automatically when the project is deleted
             await director_v2_service.delete_pipeline(app, user_id=project.prj_owner, project_id=project_uuid)
-            await storage_service.delete_data_folders_of_project(app, project_uuid, project.prj_owner)
+
+            await storage_service.delete_project_data_folders(
+                app, product_name=product_name, user_id=project.prj_owner, project_id=project_uuid
+            )
 
         with log_context(_logger, logging.INFO, "delete project"):
             await _projects_repository.delete_project(app, project_uuid=project_uuid)
