@@ -48,7 +48,6 @@ class ProjectNodeCreate(BaseModel):
     version: str
     label: str
     progress: float | None = None
-    thumbnail: str | None = None
     input_access: dict[str, Any] | None = None
     input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None

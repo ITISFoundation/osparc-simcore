@@ -26,7 +26,6 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.created,
     projects_nodes.c.modified,
     projects_nodes.c.progress,
-    projects_nodes.c.thumbnail,
     projects_nodes.c.input_access,
     projects_nodes.c.input_nodes,
     projects_nodes.c.inputs,

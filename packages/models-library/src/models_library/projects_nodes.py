@@ -10,7 +10,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
@@ -253,18 +252,6 @@ class Node(BaseModel):
             ge=0,
             le=100,
             description="the node progress value",
-            deprecated=True,  # NOTE: still used in the File Picker (frontend nodes) and must be removed first from there before retiring it here
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    thumbnail: Annotated[
-        str | HttpUrl | None,
-        Field(
-            description="url of the latest screenshot of the node",
-            examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
@@ -342,13 +329,6 @@ class Node(BaseModel):
             ),
         ),
     ] = None
-
-    @field_validator("thumbnail", mode="before")
-    @classmethod
-    def _convert_empty_str_to_none(cls, v: Any) -> Any:
-        if isinstance(v, str) and not v:
-            return None
-        return v
 
     @field_validator("state", mode="before")
     @classmethod

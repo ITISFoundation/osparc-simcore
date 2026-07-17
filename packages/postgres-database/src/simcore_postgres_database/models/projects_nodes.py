@@ -82,12 +82,6 @@ projects_nodes = sa.Table(
         comment="Progress value (0-100)",
     ),
     sa.Column(
-        "thumbnail",
-        sa.String,
-        nullable=True,
-        comment="Url of the latest screenshot",
-    ),
-    sa.Column(
         "input_access",
         JSONB,
         nullable=True,

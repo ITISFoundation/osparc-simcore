@@ -22938,27 +22938,7 @@
               }
             ],
             "title": "Progress",
-            "description": "the node progress value",
-            "deprecated": true
-          },
-          "thumbnail": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Thumbnail",
-            "description": "url of the latest screenshot of the node",
-            "deprecated": true
+            "description": "the node progress value"
           },
           "runHash": {
             "anyOf": [
@@ -23136,27 +23116,7 @@
               }
             ],
             "title": "Progress",
-            "description": "the node progress value",
-            "deprecated": true
-          },
-          "thumbnail": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Thumbnail",
-            "description": "url of the latest screenshot of the node",
-            "deprecated": true
+            "description": "the node progress value"
           },
           "runHash": {
             "anyOf": [
