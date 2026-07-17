@@ -879,6 +879,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
+    // to be overridden by browsers that live in a workspace/folder context (e.g. StudyBrowser)
+    _getContextProps: function() {
+      return {};
+    },
+
     _createStudyFromTemplate: function(templateData) {
       if (!this._checkLoggedIn()) {
         return;
@@ -984,7 +989,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             });
         });
       } else {
-        osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+        osparc.study.Utils.createStudy({
+          resourceType: templateData["resourceType"] || "template",
+          templateData,
+          loadingPage: this._loadingPage,
+          contextProps: this._getContextProps(),
+        })
           .then(newStudyData => this._startStudyAfterCreating(newStudyData["uuid"]))
           .catch(err => {
             this._hideLoadingPage();
@@ -1001,7 +1011,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       this._showLoadingPage(this.tr("Creating ") + studyAlias);
 
-      osparc.study.Utils.createStudyFromService(key, version)
+      osparc.study.Utils.createStudy({
+        resourceType: "service",
+        serviceKey: key,
+        serviceVersion: version,
+        contextProps: this._getContextProps(),
+      })
         .then(studyData => this._startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
