@@ -23,19 +23,8 @@ from pydantic_extra_types.color import Color
 from ..projects_nodes_io import NodeID
 from ..utils.common_validators import empty_str_to_none_pre_validator
 from ._base import OutputSchema
-from .projects_nodes_ui import MarkerUI, PositionUI
 
 type AnnotationID = UUID
-
-
-class WorkbenchUI(BaseModel):
-    position: Annotated[
-        PositionUI,
-        Field(description="The node position in the workbench"),
-    ]
-    marker: MarkerUI | None = None
-
-    model_config = ConfigDict(extra="forbid")
 
 
 class SlideshowUI(TypedDict):
@@ -92,9 +81,6 @@ class AnnotationUI(BaseModel):
 
 
 class StudyUI(OutputSchema):
-    # Model fully controlled by the UI and stored under `projects.ui`
-
-    workbench: dict[NodeID, WorkbenchUI] | None = None
     slideshow: dict[NodeID, SlideshowUI] | None = None
     current_node_id: NodeID | None = None
     annotations: dict[AnnotationID, AnnotationUI] | None = None
@@ -107,7 +93,6 @@ class StudyUI(OutputSchema):
         schema.update(
             {
                 "examples": [
-                    {"workbench": {"801407c9-abb1-400d-ac49-35b0b2334a34": {"position": {"x": 250, "y": 100}}}},
                     {
                         "mode": "app",
                         "slideshow": {
@@ -119,10 +104,6 @@ class StudyUI(OutputSchema):
                                 "position": 0,
                                 "instructions": None,
                             },
-                        },
-                        "workbench": {
-                            "4b3345e5-861f-47b0-8b52-a4508449be79": {"position": {"x": 460, "y": 260}},
-                            "eaeee3dc-9ae1-4bf6-827e-798fd7cad848": {"position": {"x": 220, "y": 600}},
                         },
                         "annotations": {
                             "4375ae62-76ce-42a4-9cea-608a2ba74762": {

@@ -48,7 +48,6 @@ class ProjectNodeCreate(BaseModel):
     version: str
     label: str
     progress: float | None = None
-    thumbnail: str | None = None
     input_access: dict[str, Any] | None = None
     input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None
@@ -58,6 +57,7 @@ class ProjectNodeCreate(BaseModel):
     run_hash: str | None = None
     state: dict[str, Any] | None = None
     boot_options: dict[str, Any] | None = None
+    ui: dict[str, Any] | None = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
