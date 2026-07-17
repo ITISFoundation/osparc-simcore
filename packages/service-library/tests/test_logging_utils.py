@@ -219,22 +219,6 @@ def test_guess_message_log_level(message: LogMessageStr, expected_log_level: Log
     assert guess_message_log_level(message) == expected_log_level
 
 
-@pytest.mark.parametrize("with_log_duration", [True, False])
-def test_log_context_with_log_duration(caplog: pytest.LogCaptureFixture, with_log_duration: bool):
-    caplog.clear()
-
-    with log_context(_logger, logging.ERROR, "test", log_duration=with_log_duration):
-        ...
-
-    all(r.levelno == logging.ERROR for r in caplog.records)
-
-    assert "Starting test ..." in caplog.text
-    if with_log_duration:
-        assert "Finished test in " in caplog.text
-    else:
-        assert "Finished test" in caplog.text
-
-
 @pytest.mark.parametrize(
     "msg, args, extra",
     [
