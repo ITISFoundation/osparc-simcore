@@ -12,7 +12,7 @@ from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLON
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, NonNegativeInt, TypeAdapter, ValidationError
 from servicelib.file_utils import disk_usage
 from servicelib.r_clone_utils import get_r_clone_version
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
@@ -53,8 +53,6 @@ class _RCloneContainerLabels(BaseModel):
     rc_user: Annotated[str, Field(alias="rc-user")]
     rc_password: Annotated[str, Field(alias="rc-password")]
     vfs_write_back_s: Annotated[NonNegativeInt, Field(alias="vfs-write-back-s")]
-
-    model_config = ConfigDict(extra="ignore")
 
     def to_docker_labels(self) -> dict[str, str]:
         return {k: f"{v}" for k, v in self.model_dump(by_alias=True).items()}
