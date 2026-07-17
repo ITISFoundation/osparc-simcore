@@ -74,7 +74,7 @@ qx.Class.define("osparc.study.Utils", {
             const newUuid = osparc.utils.Utils.uuidV4();
             // context props, otherwise Study will be created in the root folder of my personal workspace
             const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
-            if (newStudyLabel === undefined) {
+            if (!newStudyLabel) {
               newStudyLabel = metadata["name"];
             }
             minStudyData["name"] = this.__computeStudyName(newStudyLabel, existingStudies);
