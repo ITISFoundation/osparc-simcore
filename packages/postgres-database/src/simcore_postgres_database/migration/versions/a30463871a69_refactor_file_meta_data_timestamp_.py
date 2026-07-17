@@ -6,7 +6,6 @@ Create Date: 2026-07-15 20:31:47.043304+00:00
 
 """
 
-import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -26,18 +25,8 @@ def upgrade():
         """
     )
 
-    # enforce not-null + default now(), matching column_created_datetime/column_modified_datetime
-    op.alter_column("file_meta_data", "created_at", nullable=False, server_default=sa.text("now()"))
-    op.alter_column("file_meta_data", "last_modified", nullable=False, server_default=sa.text("now()"))
-
-    # NOTE: no auto-update trigger on `last_modified` here: the storage service sets it
-    # explicitly from S3's `last_modified` metadata, so it must not be overwritten.
-
 
 def downgrade():
-    op.alter_column("file_meta_data", "created_at", server_default=None)
-    op.alter_column("file_meta_data", "last_modified", server_default=None)
-
     op.execute(
         """
         ALTER TABLE file_meta_data
@@ -45,6 +34,3 @@ def downgrade():
         ALTER COLUMN last_modified TYPE character varying USING to_char(last_modified, 'YYYY-MM-DD"T"HH24:MI:SS.US')
         """
     )
-
-    op.alter_column("file_meta_data", "created_at", nullable=True)
-    op.alter_column("file_meta_data", "last_modified", nullable=True)
