@@ -8,6 +8,7 @@ from functools import partial
 
 from common_library.async_tools import cancel_wait_task
 from common_library.errors_classes import OsparcErrorMixin
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
@@ -141,18 +142,20 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_uploading = create_task(_upload_ports(), name=task_name)
 
         def _remove_downloads(future: Future) -> None:
-            # pylint: disable=protected-access
-            if future._exception is not None:  # noqa: SLF001
+            exception = future._exception  # noqa: SLF001 # pylint: disable=protected-access
+            if exception is not None:
                 formatted_traceback = (
-                    "\n" + "".join(traceback.format_exception(future._exception))  # noqa: SLF001
-                    if future._exception.__traceback__  # noqa: SLF001
-                    else ""
+                    "\n" + "".join(traceback.format_exception(exception)) if exception.__traceback__ else ""
                 )
                 _logger.warning(
-                    "%s ended with exception: %s%s",
-                    task_name,
-                    future._exception,  # noqa: SLF001
-                    formatted_traceback,
+                    **create_troubleshooting_log_kwargs(
+                        f"{task_name} ended with exception: {exception}{formatted_traceback}",
+                        error=exception,
+                        error_context={
+                            "port_keys": port_keys,
+                            "outputs_path": self.outputs_context.outputs_path,
+                        },
+                    )
                 )
 
             # keep track of the last result for each port
