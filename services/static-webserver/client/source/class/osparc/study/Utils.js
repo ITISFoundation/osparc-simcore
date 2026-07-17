@@ -50,21 +50,21 @@ qx.Class.define("osparc.study.Utils", {
 
       switch (resourceType) {
         case "service":
-          return osparc.study.Utils.createStudyFromService(serviceKey, serviceVersion, existingStudies, name, contextProps);
+          return this.createStudyFromService(serviceKey, serviceVersion, existingStudies, name, contextProps);
         case "template":
         case "tutorial":
         case "hypertool":
-          return osparc.study.Utils.createStudyFromTemplate(templateData, loadingPage, contextProps);
+          return this.createStudyFromTemplate(templateData, loadingPage, contextProps);
         default:
-          return osparc.study.Utils.createEmptyStudy(name, existingStudies, contextProps);
+          return this.createEmptyStudy(name, existingStudies, contextProps);
       }
     },
 
     createEmptyStudy: function(newStudyLabel, existingStudies, contextProps = {}) {
       // context props, otherwise Study will be created in the root folder of my personal workspace
       const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
-      minStudyData["name"] = osparc.study.Utils.__computeStudyName(newStudyLabel, existingStudies);
-      return osparc.study.Utils.createStudyAndPoll(minStudyData);
+      minStudyData["name"] = this.__computeStudyName(newStudyLabel, existingStudies);
+      return this.createStudyAndPoll(minStudyData);
     },
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
@@ -77,7 +77,7 @@ qx.Class.define("osparc.study.Utils", {
             if (newStudyLabel === undefined) {
               newStudyLabel = metadata["name"];
             }
-            minStudyData["name"] = osparc.study.Utils.__computeStudyName(newStudyLabel, existingStudies);
+            minStudyData["name"] = this.__computeStudyName(newStudyLabel, existingStudies);
             if (metadata["thumbnail"]) {
               minStudyData["thumbnail"] = metadata["thumbnail"];
             }
@@ -106,7 +106,7 @@ qx.Class.define("osparc.study.Utils", {
               });
               return;
             }
-            osparc.study.Utils.createStudyAndPoll(minStudyData)
+            this.createStudyAndPoll(minStudyData)
               .then(studyData => resolve(studyData))
               .catch(err => reject(err));
           })
@@ -116,7 +116,7 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyAndPoll: function(studyData) {
       const pollPromise = osparc.store.Study.getInstance().createStudy(studyData);
-      return osparc.study.Utils.__pollCreationTask(pollPromise);
+      return this.__pollCreationTask(pollPromise);
     },
 
     createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
@@ -137,7 +137,7 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["description"] = templateData["description"];
             minStudyData["thumbnail"] = templateData["thumbnail"];
             const pollPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
-            osparc.study.Utils.__pollCreationTask(pollPromise, loadingPage)
+            this.__pollCreationTask(pollPromise, loadingPage)
               .then(studyData => resolve(studyData))
               .catch(err => reject(err));
           });
@@ -428,7 +428,7 @@ qx.Class.define("osparc.study.Utils", {
       if (studyData["services"] === null) {
         return "UNKNOWN_SERVICES";
       } else if (studyData["services"]) {
-        const cantReadServices = osparc.study.Utils.getCantReadServices(studyData["services"]);
+        const cantReadServices = this.getCantReadServices(studyData["services"]);
         const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
         if (cantReadServices.length || inaccessibleServices.length) {
           return "UNKNOWN_SERVICES";
