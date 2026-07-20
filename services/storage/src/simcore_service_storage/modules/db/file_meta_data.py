@@ -329,14 +329,7 @@ class FileMetaDataRepository(BaseRepository):
                 ((file_meta_data.c.project_id.in_([f"{p}" for p in project_ids])) if project_ids else sa.true()),
                 ((file_meta_data.c.upload_expires_at < expired_after) if expired_after else sa.true()),
                 (file_meta_data.c.file_id.startswith(file_id_prefix) if file_id_prefix else sa.true()),
-                (
-                    (
-                        file_meta_data.c.created_at
-                        < created_before.astimezone(datetime.UTC).replace(tzinfo=None).isoformat()
-                    )
-                    if created_before
-                    else sa.true()
-                ),
+                (file_meta_data.c.created_at < created_before if created_before else sa.true()),
             )
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
