@@ -723,7 +723,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     )
                 ):
                     parent_dir_fmd = max(parent_dir_fmds, key=lambda fmd: len(fmd.file_id))
-                    parent_dir_fmd.file_size = UNDEFINED_SIZE  # set t this value and will be updated later
+                    parent_dir_fmd.file_size = UNDEFINED_SIZE  # triggers an file size update in the future
                     await file_meta_data_repo.upsert(connection=conn, fmd=parent_dir_fmd)
 
             for fmd in deleted_fmds:
