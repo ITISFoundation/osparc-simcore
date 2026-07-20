@@ -32,7 +32,7 @@ async def _get_config(
     return {
         "Image": f"rclone/rclone:{r_clone_version}",
         "Entrypoint": ["/bin/sh", "-c", f"{command}"],
-        "Labels": labels,
+        "Labels": labels,  # type: ignore[dict-item]
         "Env": [
             # GOMEMLIMIT sets a soft memory limit for the Go runtime garbage collector.
             # This causes more aggressive GC before hitting the container's hard memory limit.

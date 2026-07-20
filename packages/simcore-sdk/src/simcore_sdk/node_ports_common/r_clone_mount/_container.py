@@ -10,6 +10,7 @@ from attr import dataclass
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX
 from models_library.basic_types import PortInt
+from models_library.docker import DockerLabelKey
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import BaseModel, Field, NonNegativeInt, TypeAdapter, ValidationError
@@ -54,8 +55,10 @@ class _RCloneContainerLabels(BaseModel):
     rc_password: Annotated[str, Field(alias="rc-password")]
     vfs_write_back_s: Annotated[NonNegativeInt, Field(alias="vfs-write-back-s")]
 
-    def to_docker_labels(self) -> dict[str, str]:
-        return {k: f"{v}" for k, v in self.model_dump(by_alias=True).items()}
+    def to_docker_labels(self) -> dict[DockerLabelKey, str]:
+        return {
+            TypeAdapter(DockerLabelKey).validate_python(k): f"{v}" for k, v in self.model_dump(by_alias=True).items()
+        }
 
     @classmethod
     def from_rc_credentials(cls, *, rc_user: str, rc_password: str, vfs_write_back_s: int) -> Self:
@@ -64,7 +67,7 @@ class _RCloneContainerLabels(BaseModel):
         )
 
     @classmethod
-    def from_docker_labels(cls, container_name: str, labels: dict[str, str]) -> Self:
+    def from_docker_labels(cls, container_name: str, labels: dict[DockerLabelKey, str]) -> Self:
         """raises MissingContainerLabelsError if data is not valid"""
         try:
             return cls.model_validate(labels)
