@@ -4,14 +4,16 @@ from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
 from textwrap import dedent
-from typing import Final
+from typing import Annotated, Final, Self
 
+from attr import dataclass
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX
 from models_library.basic_types import PortInt
+from models_library.docker import DockerLabelKey
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
-from pydantic import NonNegativeInt
+from pydantic import BaseModel, Field, NonNegativeInt, TypeAdapter, ValidationError
 from servicelib.file_utils import disk_usage
 from servicelib.r_clone_utils import get_r_clone_version
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
@@ -28,6 +30,7 @@ from . import _docker_utils
 from ._config_provider import CONFIG_KEY
 from ._docker_utils import RC_PORT
 from ._errors import (
+    InvalidContainerLabelsError,
     RefreshMountError,
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
@@ -38,8 +41,42 @@ from ._utils import get_mount_id
 _logger = logging.getLogger(__name__)
 
 
+@dataclass
+class _ContainerCreateResult:
+    rc_user: str
+    rc_password: str
+    vfs_write_back_s: NonNegativeInt
+    assigned_port: PortInt
+    reconnected: bool
+
+
+class _RCloneContainerLabels(BaseModel):
+    rc_user: Annotated[str, Field(alias="rc-user")]
+    rc_password: Annotated[str, Field(alias="rc-password")]
+    vfs_write_back_s: Annotated[NonNegativeInt, Field(alias="vfs-write-back-s")]
+
+    def to_docker_labels(self) -> dict[DockerLabelKey, str]:
+        return {
+            TypeAdapter(DockerLabelKey).validate_python(k): f"{v}" for k, v in self.model_dump(by_alias=True).items()
+        }
+
+    @classmethod
+    def from_rc_credentials(cls, *, rc_user: str, rc_password: str, vfs_write_back_s: int) -> Self:
+        return TypeAdapter(cls).validate_python(
+            {"rc-user": rc_user, "rc-password": rc_password, "vfs-write-back-s": vfs_write_back_s}
+        )
+
+    @classmethod
+    def from_docker_labels(cls, container_name: str, labels: dict[DockerLabelKey, str]) -> Self:
+        """raises MissingContainerLabelsError if data is not valid"""
+        try:
+            return cls.model_validate(labels)
+        except ValidationError as exc:
+            errors = sorted({str(e["loc"][0]) for e in exc.errors()})
+            raise InvalidContainerLabelsError(container_name=container_name, errors=errors) from exc
+
+
 _MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
-_DEFAULT_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
 
@@ -209,13 +246,32 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         self.vfs_write_back_s: NonNegativeInt = 0
 
     @cached_property
-    def _r_clone_container_name(self) -> str:
+    def r_clone_container_name(self) -> str:
         mount_id = get_mount_id(self.local_mount_path, self.index)
         return f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{self.node_id}-{mount_id}"[:63]
 
-    async def create(self) -> PortInt:
-        # ensure nothing was left from previous runs
-        await self.delegate.remove_container(self._r_clone_container_name)
+    async def create(self) -> _ContainerCreateResult:
+        # If an existing container is found, reconnect to it instead of recreating.
+        # This handles sidecar restarts where the rclone container survived.
+        result = await _docker_utils.try_inspect_r_clone_container(self.delegate, self.r_clone_container_name)
+        if result is not None:
+            assigned_port, labels = result
+
+            from_labels = _RCloneContainerLabels.from_docker_labels(self.r_clone_container_name, labels)
+            self.rc_user = from_labels.rc_user
+            self.rc_password = from_labels.rc_password
+            self.vfs_write_back_s = from_labels.vfs_write_back_s
+
+            return _ContainerCreateResult(
+                rc_user=self.rc_user,
+                rc_password=self.rc_password,
+                vfs_write_back_s=self.vfs_write_back_s,
+                assigned_port=assigned_port,
+                reconnected=True,
+            )
+
+        # No existing container — create fresh
+        await self.delegate.remove_container(self.r_clone_container_name)
 
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
         command, vfs_write_back_s = await _get_rclone_mount_command(
@@ -230,18 +286,30 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         )
         assigned_port = await _docker_utils.create_r_clone_container(
             self.delegate,
-            self._r_clone_container_name,
+            self.r_clone_container_name,
             command=command,
             r_clone_version=await get_r_clone_version(),
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
             nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
+            labels=_RCloneContainerLabels.from_rc_credentials(
+                rc_user=self.rc_user,
+                rc_password=self.rc_password,
+                vfs_write_back_s=vfs_write_back_s,
+            ).to_docker_labels(),
         )
         self.vfs_write_back_s = vfs_write_back_s
-        return assigned_port
+
+        return _ContainerCreateResult(
+            rc_user=self.rc_user,
+            rc_password=self.rc_password,
+            vfs_write_back_s=self.vfs_write_back_s,
+            assigned_port=assigned_port,
+            reconnected=False,
+        )
 
     async def remove(self):
-        await self.delegate.remove_container(self._r_clone_container_name)
+        await self.delegate.remove_container(self.r_clone_container_name)
 
 
 class RemoteControlHttpClient:
