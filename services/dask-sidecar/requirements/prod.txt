@@ -10,6 +10,7 @@
 --requirement _base.txt
 
 # installs this repo's packages
+simcore-aws-library @ ../../packages/aws-library/
 simcore-dask-task-models-library @ ../../packages/dask-task-models-library/
 simcore-models-library @ ../../packages/models-library/
 simcore-common-library @ ../../packages/common-library/
