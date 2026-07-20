@@ -26,6 +26,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 
@@ -96,7 +97,7 @@ class Notifier(SingletonInAppStateMixin):
         node_id: NodeID,
         status: MountActivityStatus,
         *,
-        vfs_write_back_s: int,
+        vfs_write_back_s: NonNegativeInt,
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_STATE_PATHS_EVENT,
