@@ -1562,12 +1562,11 @@ async def _get_node_share_state(
     *,
     project_uuid: ProjectID,
     node_id: NodeID,
+    node_key: str,
     computational_pipeline_running: bool | None,
     user_primrary_groupid: GroupID,
 ) -> NodeShareState:
-    node = await _projects_nodes_repository.get(app, project_id=project_uuid, node_id=node_id)
-
-    if _is_node_dynamic(node.key):
+    if _is_node_dynamic(node_key):
         # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(app, node_id=node_id)
 
@@ -2068,6 +2067,7 @@ async def add_project_states_for_user(
                 app,
                 project_uuid=project["uuid"],
                 node_id=NodeID(node_uuid),
+                node_key=node["key"],
                 computational_pipeline_running=is_pipeline_running,
                 user_primrary_groupid=user_primary_group_id,
             )
