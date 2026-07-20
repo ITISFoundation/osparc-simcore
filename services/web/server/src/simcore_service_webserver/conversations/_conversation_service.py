@@ -205,6 +205,7 @@ async def _get_validated_support_conversation(
     app: web.Application, *, product_name: ProductName, conversation_id: ConversationID
 ) -> ConversationGetDB:
     conversation = await get_conversation(app, conversation_id=conversation_id)
+    # NOTE: Intentionally validate product ownership before type to avoid cross-product information leaks (IDOR).
     if conversation.product_name != product_name:
         raise ConversationErrorNotFoundError(conversation_id=conversation_id)
     if conversation.type.is_support_type() is False:
