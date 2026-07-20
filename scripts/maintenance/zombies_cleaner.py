@@ -26,7 +26,7 @@ import asyncio
 import contextlib
 import csv
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import quote
@@ -44,6 +44,7 @@ from pydantic import AnyHttpUrl, BaseModel, ByteSize, ConfigDict, SecretStr
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
+from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -69,6 +70,7 @@ class PrefixReport(BaseModel):
 
 
 _COMP_PIPELINE_ORPHAN = "comp_pipeline_orphan"
+_FILE_METADATA_ORPHAN = "file_meta_data_orphan"
 _STORAGE_ORPHAN = "storage_orphan"
 
 
@@ -313,44 +315,122 @@ async def fetch_orphan_pipelines(engine: AsyncEngine, limit: int | None) -> list
     return [PipelineRow(project_id=r["project_id"]) for r in rows]
 
 
-def list_top_level_project_ids(client, bucket: str) -> list[UUID]:
-    # NOTE: only consider first-level "folders" shaped like a project_id UUID, i.e. entries of
-    # the form {project_id}/{node_id}/... . Anything else (e.g. "api/") is ignored.
+def iter_bucket_objects(client, bucket: str) -> Iterator[tuple[UUID | None, int]]:
+    # NOTE: generator that streams (project_id, size) for every object in the bucket, in a single
+    # paginated pass, instead of materializing all keys/prefixes in memory upfront. project_id is
+    # None when the object's first path segment is not a UUID (e.g. "api/..."), i.e. it's not
+    # shaped like {project_id}/{node_id}/... .
     paginator = client.get_paginator("list_objects_v2")
-    project_ids: list[UUID] = []
-    for page in paginator.paginate(Bucket=bucket, Delimiter="/"):
-        for common_prefix in page.get("CommonPrefixes", []):
-            candidate = common_prefix.get("Prefix", "").rstrip("/")
+    for page in paginator.paginate(Bucket=bucket):
+        for obj in page.get("Contents", []):
+            top_level = obj["Key"].split("/", 1)[0]
             try:
-                project_ids.append(UUID(candidate))
+                project_id = UUID(top_level)
             except ValueError:
-                continue
-    return project_ids
+                project_id = None
+            yield project_id, int(obj.get("Size", 0))
+
+
+def aggregate_bucket_projects(client, bucket: str) -> dict[UUID, tuple[int, int]]:
+    """Single pass over the whole bucket: returns {project_id: (object_count, total_size)} for
+    every top-level UUID-shaped prefix. This avoids one extra S3 listing call per candidate
+    project on top of the initial top-level listing.
+    """
+    stats: dict[UUID, list[int]] = {}
+    scanned_objects = 0
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        # NOTE: total is unknown upfront (S3 doesn't report the object count before listing), so
+        # this stays a spinner, but we still report live running counts every page (~1000 objs).
+        task_id = progress.add_task("Scanning S3 bucket... 0 objects, 0 candidate projects", total=None)
+        for project_id, size in iter_bucket_objects(client, bucket):
+            scanned_objects += 1
+            if project_id is not None:
+                counters = stats.setdefault(project_id, [0, 0])
+                counters[0] += 1
+                counters[1] += size
+            if scanned_objects % 1000 == 0:
+                progress.update(
+                    task_id,
+                    description=f"Scanning S3 bucket... {scanned_objects} objects, {len(stats)} candidate projects",
+                )
+        progress.update(
+            task_id,
+            description=f"Scanning S3 bucket... {scanned_objects} objects, {len(stats)} candidate projects",
+        )
+    return {project_id: (count, size) for project_id, (count, size) in stats.items()}
+
+
+_DB_IN_CLAUSE_CHUNK_SIZE = 5_000  # keep well under psycopg's 65535 bind-parameters-per-query limit
+
+
+def _chunked(items: list[str], size: int) -> Iterator[list[str]]:
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
+
+
+def _num_chunks(count: int, size: int) -> int:
+    return (count + size - 1) // size if count else 0
+
+
+async def _existing_ids(conn, column: sa.Column, ids: list[str], progress: Progress, task_id) -> set[str]:
+    existing: set[str] = set()
+    for batch in _chunked(ids, _DB_IN_CLAUSE_CHUNK_SIZE):
+        # NOTE: a single IN clause with all ids can exceed the DB driver's bind-parameter limit
+        # when the bucket has tens of thousands of top-level prefixes, so query in chunks.
+        result = await conn.execute(sa.select(column).where(column.in_(batch)).distinct())
+        existing.update(str(v) for v in result.scalars().all())
+        progress.advance(task_id)
+    return existing
 
 
 async def classify_bucket_projects(engine: AsyncEngine, project_ids: list[UUID]) -> dict[UUID, str]:
     """Returns {project_id: classification} for S3 top-level ids that have no matching row in
-    `projects`. `comp_pipeline_orphan` also has a matching orphan row in `comp_pipeline`;
-    `storage_orphan` has no trace in the DB at all (just leftover S3 data).
+    `projects`:
+    - `comp_pipeline_orphan`: has a matching orphan row in `comp_pipeline`.
+    - `file_meta_data_orphan`: no `comp_pipeline` row, but has `file_meta_data` entries.
+    - `storage_orphan`: no trace in the DB at all (just leftover S3 data).
     """
     if not project_ids:
         return {}
     str_ids = [str(p) for p in project_ids]
     async with engine.connect() as conn:
-        existing_projects = await conn.execute(sa.select(projects.c.uuid).where(projects.c.uuid.in_(str_ids)))
-        existing_project_ids = {str(u) for u in existing_projects.scalars().all()}
+        with _make_progress() as progress:
+            task_id = progress.add_task(
+                "Checking projects table...", total=_num_chunks(len(str_ids), _DB_IN_CLAUSE_CHUNK_SIZE)
+            )
+            existing_project_ids = await _existing_ids(conn, projects.c.uuid, str_ids, progress, task_id)
 
-        existing_comp_pipelines = await conn.execute(
-            sa.select(comp_pipeline.c.project_id).where(comp_pipeline.c.project_id.in_(str_ids))
-        )
-        comp_pipeline_ids = {str(u) for u in existing_comp_pipelines.scalars().all()}
+            remaining = [i for i in str_ids if i not in existing_project_ids]
+            task_id = progress.add_task(
+                "Checking comp_pipeline table...", total=_num_chunks(len(remaining), _DB_IN_CLAUSE_CHUNK_SIZE)
+            )
+            comp_pipeline_ids = await _existing_ids(conn, comp_pipeline.c.project_id, remaining, progress, task_id)
+
+            remaining_for_files = [i for i in remaining if i not in comp_pipeline_ids]
+            task_id = progress.add_task(
+                "Checking file_meta_data table...",
+                total=_num_chunks(len(remaining_for_files), _DB_IN_CLAUSE_CHUNK_SIZE),
+            )
+            file_meta_data_ids = await _existing_ids(
+                conn, file_meta_data.c.project_id, remaining_for_files, progress, task_id
+            )
 
     classification: dict[UUID, str] = {}
     for project_id in project_ids:
         key = str(project_id)
         if key in existing_project_ids:
             continue
-        classification[project_id] = _COMP_PIPELINE_ORPHAN if key in comp_pipeline_ids else _STORAGE_ORPHAN
+        if key in comp_pipeline_ids:
+            classification[project_id] = _COMP_PIPELINE_ORPHAN
+        elif key in file_meta_data_ids:
+            classification[project_id] = _FILE_METADATA_ORPHAN
+        else:
+            classification[project_id] = _STORAGE_ORPHAN
     return classification
 
 
@@ -582,8 +662,12 @@ def scan_bucket(
     report_csv: str = typer.Option("s3_bucket_orphans_report.csv", help="CSV output path"),
 ):
     """Scan the S3 bucket's top-level {project_id}/ prefixes and report the ones with no matching
-    row in `projects`, classified as comp_pipeline_orphan (also orphaned in comp_pipeline) or
+    row in `projects`, classified as comp_pipeline_orphan (also orphaned in comp_pipeline),
+    file_meta_data_orphan (no comp_pipeline row, but has file_meta_data entries), or
     storage_orphan (no DB trace at all).
+
+    NOTE: this is independent from `inspect`/`cleanup` (it does not call or reuse their DB-driven
+    comp_pipeline scan) -- it works the other way around, starting from S3 and checking the DB.
     """
     asyncio.run(_scan_bucket_async(deploy_config, report_csv))
 
@@ -597,40 +681,52 @@ async def _scan_bucket_async(deploy_config: Path, report_csv: str) -> None:
     ssh_key_path = _find_ssh_key(deploy_config) if bastion is not None else None
 
     client = s3_client(s3cfg)
-    console.print("[bold]Listing top-level S3 prefixes...[/bold]")
-    project_ids = list_top_level_project_ids(client, s3cfg.bucket)
+    project_stats = aggregate_bucket_projects(client, s3cfg.bucket)
+    project_ids = list(project_stats.keys())
     console.print(f"[bold]Candidate project prefixes found in S3:[/bold] {len(project_ids)}")
 
     async with db_engine(dbcfg, bastion, ssh_key_path) as engine:
         classification = await classify_bucket_projects(engine, project_ids)
     console.print(f"[bold]Orphaned prefixes (no matching project):[/bold] {len(classification)}")
 
-    reports: list[BucketOrphanReport] = []
-    with _make_progress() as progress:
-        task_id = progress.add_task("Inspecting orphaned S3 prefixes...", total=len(classification))
-        for project_id, kind in classification.items():
-            prefix_report = inspect_prefix(client, s3cfg.bucket, f"{project_id}/", project_id)
-            reports.append(
-                BucketOrphanReport(
-                    project_id=project_id,
-                    classification=kind,
-                    object_count=prefix_report.object_count,
-                    total_size=prefix_report.total_size,
-                )
-            )
-            progress.advance(task_id)
-
+    reports = [
+        BucketOrphanReport(
+            project_id=project_id,
+            classification=kind,
+            object_count=project_stats[project_id][0],
+            total_size=project_stats[project_id][1],
+        )
+        for project_id, kind in classification.items()
+    ]
     write_bucket_orphans_report(report_csv, reports)
 
+    def _size_human(group: list[BucketOrphanReport]) -> str:
+        return ByteSize(sum(int(r.total_size) for r in group)).human_readable()
+
     comp_pipeline_orphans = [r for r in reports if r.classification == _COMP_PIPELINE_ORPHAN]
+    file_meta_data_orphans = [r for r in reports if r.classification == _FILE_METADATA_ORPHAN]
     storage_orphans = [r for r in reports if r.classification == _STORAGE_ORPHAN]
+
+    console.print(
+        f"[bold]comp_pipeline_orphan:[/bold] {len(comp_pipeline_orphans)} ({_size_human(comp_pipeline_orphans)})"
+    )
+    console.print(
+        f"[bold]file_meta_data_orphan:[/bold] {len(file_meta_data_orphans)} ({_size_human(file_meta_data_orphans)})"
+    )
+    console.print(f"[bold]storage_orphan:[/bold] {len(storage_orphans)} ({_size_human(storage_orphans)})")
+
     summary = {
         "candidate_prefixes": len(project_ids),
         "orphaned_prefixes": len(reports),
         "comp_pipeline_orphans": len(comp_pipeline_orphans),
         "comp_pipeline_orphans_size_bytes": sum(int(r.total_size) for r in comp_pipeline_orphans),
+        "comp_pipeline_orphans_size_human": _size_human(comp_pipeline_orphans),
+        "file_meta_data_orphans": len(file_meta_data_orphans),
+        "file_meta_data_orphans_size_bytes": sum(int(r.total_size) for r in file_meta_data_orphans),
+        "file_meta_data_orphans_size_human": _size_human(file_meta_data_orphans),
         "storage_orphans": len(storage_orphans),
         "storage_orphans_size_bytes": sum(int(r.total_size) for r in storage_orphans),
+        "storage_orphans_size_human": _size_human(storage_orphans),
     }
     typer.echo(json.dumps(summary, indent=2))
     typer.echo(f"Report written to {report_csv}")
