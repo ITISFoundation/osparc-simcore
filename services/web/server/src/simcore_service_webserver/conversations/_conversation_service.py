@@ -258,7 +258,6 @@ async def get_owned_support_conversation(
     user_id: UserID,
     conversation_id: ConversationID,
 ) -> ConversationGetDB:
-    # Single fetch: validates existence (404), support type (400), then ownership (404)
     conversation = await _get_validated_support_conversation(app, conversation_id=conversation_id)
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
