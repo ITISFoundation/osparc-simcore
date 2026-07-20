@@ -204,7 +204,6 @@ async def list_project_conversations(
 async def _get_validated_support_conversation(
     app: web.Application, *, product_name: ProductName, conversation_id: ConversationID
 ) -> ConversationGetDB:
-    # Fetch once; validate product ownership (404), then support type (400)
     conversation = await get_conversation(app, conversation_id=conversation_id)
     if conversation.product_name != product_name:
         raise ConversationErrorNotFoundError(conversation_id=conversation_id)
