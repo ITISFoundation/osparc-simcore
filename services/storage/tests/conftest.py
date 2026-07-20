@@ -874,7 +874,7 @@ async def project_with_seeded_files_factory(  # noqa: C901
                     upload_expires_at=None,
                     is_directory=False,
                 )
-                db_entries.append(jsonable_encoder(FileMetaDataAtDB.model_validate(db_fmd)))
+                db_entries.append(FileMetaDataAtDB.model_validate(db_fmd).model_dump())
 
         async with sqlalchemy_async_engine.begin() as connection:
             await connection.execute(file_meta_data.insert(), db_entries)
