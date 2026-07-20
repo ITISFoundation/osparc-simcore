@@ -253,7 +253,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = False
 
-    DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS: Annotated[
+    DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS: Annotated[
         HelperContainersResourceSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 

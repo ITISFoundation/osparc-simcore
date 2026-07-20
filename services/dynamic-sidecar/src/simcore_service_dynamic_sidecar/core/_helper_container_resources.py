@@ -177,7 +177,7 @@ def _compute_helper_containers_footprint(
         rclone_cpu = mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS / 1e9
         rclone_ram = int(mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT)
         max_rclone_fraction = (
-            settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS.DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION
+            settings.DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS.DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION
         )
         rclone_cpu = min(rclone_cpu, biggest_service_resources.cpu * max_rclone_fraction)
         rclone_ram = min(rclone_ram, int(biggest_service_resources.ram * max_rclone_fraction))
@@ -220,7 +220,7 @@ def _deduct_helper_containers_resources(
     """
     spec_services = parsed_compose_spec["services"]
 
-    resource_settings = settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS
+    resource_settings = settings.DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS
 
     remaining = _Resources(
         cpu=biggest_service_resources.cpu - helpers_resources.cpu,

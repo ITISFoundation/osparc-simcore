@@ -35,8 +35,8 @@ def envoy_proxy_settings() -> EgressProxySettings:
 @pytest.fixture
 def mocked_settings() -> MagicMock:
     settings = MagicMock()
-    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
-        DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION=0.48,
+    settings.DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
+        DY_SIDECAR_HELEPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION=0.48,
         DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=0.10,
     )
     return settings
@@ -190,7 +190,7 @@ def _make_settings(
     settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG = tracing_cfg
     settings.DY_SIDECAR_R_CLONE_SETTINGS = rclone_settings
     settings.DY_SIDECAR_EGRESS_PROXY_SETTINGS = egress
-    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
+    settings.DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
         DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=1.0,  # no cap in unit tests
     )
     return settings
@@ -253,7 +253,7 @@ def test_footprint_rclone_capped_by_service_fraction(envoy_proxy_settings: Egres
     max_fraction = 0.10
     service = _Resources(cpu=4.0, ram=8192 * _MiB)
     settings = _make_settings(envoy_proxy_settings, rclone_cpu_nano=int(4e9), rclone_ram_mib=8192)
-    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
+    settings.DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
         DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=max_fraction,
     )
     r, _ = _compute_helper_containers_footprint(
@@ -292,13 +292,13 @@ def test_deduct_subtracts_from_biggest(mocked_settings: MagicMock):
         }
     )
     name, resources = _get_biggest_user_service(compose)
-    extra = _Resources(cpu=1.0, ram=1024 * _MiB)
+    helpers_resources = _Resources(cpu=1.0, ram=1024 * _MiB)
     _deduct_helper_containers_resources(
         mocked_settings,
         compose,
         biggest_service_name=name,
         biggest_service_resources=resources,
-        extra=extra,
+        helpers_resources=helpers_resources,
         helpers_desc="test",
     )
 
@@ -325,13 +325,13 @@ def test_deduct_clamps_reservations(mocked_settings: MagicMock):
         }
     )
     name, resources = _get_biggest_user_service(compose)
-    extra = _Resources(cpu=1.0, ram=1024 * _MiB)
+    helpers_resources = _Resources(cpu=1.0, ram=1024 * _MiB)
     _deduct_helper_containers_resources(
         mocked_settings,
         compose,
         biggest_service_name=name,
         biggest_service_resources=resources,
-        extra=extra,
+        helpers_resources=helpers_resources,
         helpers_desc="test",
     )
 
@@ -357,14 +357,14 @@ def test_raises_when_no_user_services(mocked_settings: MagicMock):
 
 
 @pytest.mark.parametrize(
-    "extra",
+    "helpers_resources",
     [
         pytest.param(_Resources(cpu=5.0, ram=512 * _MiB), id="cpu_exceeds_limit"),
         pytest.param(_Resources(cpu=1.0, ram=10 * _GiB), id="ram_exceeds_limit"),
         pytest.param(_Resources(cpu=4.0, ram=8192 * _MiB), id="both_exactly_zero"),
     ],
 )
-def test_deduct_raises_hard_floor(extra: _Resources, mocked_settings: MagicMock):
+def test_deduct_raises_hard_floor(helpers_resources: _Resources, mocked_settings: MagicMock):
     compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
     name, resources = _get_biggest_user_service(compose)
     with pytest.raises(NotEnoughResourcesForHelperContainersError):
@@ -373,7 +373,7 @@ def test_deduct_raises_hard_floor(extra: _Resources, mocked_settings: MagicMock)
             compose,
             biggest_service_name=name,
             biggest_service_resources=resources,
-            extra=extra,
+            helpers_resources=helpers_resources,
             helpers_desc="test",
         )
 
@@ -382,7 +382,7 @@ def test_deduct_raises_hard_floor(extra: _Resources, mocked_settings: MagicMock)
 
 
 @pytest.mark.parametrize(
-    "extra",
+    "helpers_resources",
     [
         # leaves only 40% CPU (< 48%)
         pytest.param(_Resources(cpu=2.4, ram=100 * _MiB), id="cpu_below_48pct"),
@@ -390,7 +390,7 @@ def test_deduct_raises_hard_floor(extra: _Resources, mocked_settings: MagicMock)
         pytest.param(_Resources(cpu=0.1, ram=int(8192 * _MiB * 0.61)), id="ram_below_48pct"),
     ],
 )
-def test_deduct_raises_soft_floor(extra: _Resources, mocked_settings: MagicMock):
+def test_deduct_raises_soft_floor(helpers_resources: _Resources, mocked_settings: MagicMock):
     compose = _compose({"svc": _service(cpu=4.0, ram_mib=8192, inject_resource_limit_envs=True)})
     name, resources = _get_biggest_user_service(compose)
     with pytest.raises(NotEnoughResourcesForHelperContainersError):
@@ -399,19 +399,19 @@ def test_deduct_raises_soft_floor(extra: _Resources, mocked_settings: MagicMock)
             compose,
             biggest_service_name=name,
             biggest_service_resources=resources,
-            extra=extra,
+            helpers_resources=helpers_resources,
             helpers_desc="test",
         )
 
 
 def test_deduct_exactly_at_48pct_passes(mocked_settings: MagicMock):
     """A remaining fraction exactly equal to the configured minimum must NOT raise."""
-    resource_settings = mocked_settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS
-    min_fraction = resource_settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
+    resource_settings = mocked_settings.DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS
+    min_fraction = resource_settings.DY_SIDECAR_HELPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
     original_cpu = 4.0
     original_ram = 8192 * _MiB
     # subtract exactly (1 - min_fraction) so that min_fraction remains
-    extra = _Resources(cpu=original_cpu * (1 - min_fraction), ram=int(original_ram * (1 - min_fraction)))
+    helpers_resources = _Resources(cpu=original_cpu * (1 - min_fraction), ram=int(original_ram * (1 - min_fraction)))
     compose = _compose({"svc": _service(cpu=original_cpu, ram_mib=8192, inject_resource_limit_envs=True)})
     name, resources = _get_biggest_user_service(compose)
     _deduct_helper_containers_resources(
@@ -419,7 +419,7 @@ def test_deduct_exactly_at_48pct_passes(mocked_settings: MagicMock):
         compose,
         biggest_service_name=name,
         biggest_service_resources=resources,
-        extra=extra,
+        helpers_resources=helpers_resources,
         helpers_desc="test",
     )
     r = _read_limits(compose["services"]["svc"])
