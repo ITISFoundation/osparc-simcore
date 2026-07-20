@@ -17,7 +17,6 @@ Therefore,
 
 import contextlib
 import logging
-from datetime import timedelta
 from typing import Annotated, Any, Final, cast
 
 import networkx as nx
@@ -50,10 +49,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
-    ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
-    ComputationalSchedulerError,
     ConfigurationError,
     EC2InstanceTypeNotFoundError,
     PipelineTaskMissingError,
@@ -91,8 +88,6 @@ from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
-
-_PIPELINE_ABORT_TIMEOUT_S: Final[timedelta] = timedelta(seconds=30)
 
 _logger = logging.getLogger(__name__)
 
@@ -422,8 +417,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         )
 
     except (
-        ProjectNotFoundError,
-        ClusterNotFoundError,
         PricingPlanUnitNotFoundError,
         EC2InstanceTypeNotFoundError,
     ) as e:
@@ -520,7 +513,6 @@ async def stop_computation(
     computation_stop: ComputationStop,
     project_id: ProjectID,
     request: Request,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
@@ -530,42 +522,31 @@ async def stop_computation(
         computation_stop.user_id,
         project_id,
     )
-    try:
-        # check the project exists
-        await project_repo.get(project_id)
-        # get the project pipeline
-        pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
-        pipeline_dag = pipeline_at_db.get_graph()
-        # get the project task states
-        tasks = await comp_tasks_repo.list_tasks(project_id)
-        # create the complete DAG graph
-        complete_dag = create_complete_dag_from_tasks(tasks)
-        # stop the pipeline if it is running
-        last_run: CompRunsAtDB | None = None
-        pipeline_state = RunningState.UNKNOWN
-        with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-            pipeline_state = last_run.result
-            if utils.is_pipeline_running(last_run.result):
-                await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+    # get the project pipeline
+    pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
+    pipeline_dag = pipeline_at_db.get_graph()
+    # get the project task states
+    tasks = await comp_tasks_repo.list_tasks(project_id)
+    # create the complete DAG graph
+    complete_dag = create_complete_dag_from_tasks(tasks)
+    # stop the pipeline if it is running
+    last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+    pipeline_state = last_run.result
+    if utils.is_pipeline_running(last_run.result):
+        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
 
-        return ComputationGet(
-            id=project_id,
-            state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag, tasks),
-            url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
-            stop_url=None,
-            iteration=last_run.iteration if last_run else None,
-            result=None,
-            started=last_run.started if last_run else None,
-            stopped=last_run.ended if last_run else None,
-            submitted=last_run.created if last_run else None,
-        )
-
-    except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ComputationalSchedulerError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    return ComputationGet(
+        id=project_id,
+        state=pipeline_state,
+        pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag, tasks),
+        url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
+        stop_url=None,
+        iteration=last_run.iteration if last_run else None,
+        result=None,
+        started=last_run.started if last_run else None,
+        stopped=last_run.ended if last_run else None,
+        submitted=last_run.created if last_run else None,
+    )
 
 
 @router.delete(
@@ -573,69 +554,62 @@ async def stop_computation(
     description="Deletes a computation pipeline",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={status.HTTP_409_CONFLICT: {"description": "Pipeline could not be stopped in time"}},
 )
 async def delete_computation(
     computation_stop: ComputationDelete,
     project_id: ProjectID,
     request: Request,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
 ) -> None:
-    try:
-        # get the project
-        project = await project_repo.get(project_id)
-        # check if current state allow to stop the computation
-        pipeline_state = RunningState.UNKNOWN
-        with contextlib.suppress(ComputationalRunNotFoundError):
+    """Deletes a computation pipeline if it is not running, otherwise stops it first
+        and waits for it to stop before deleting it.
+        Calling this endpoint multiple times is idempotent, it will not raise an error
+        if the pipeline is already stopped or deleted.
+    Raises:
+        HTTPException: if the pipeline could not be stopped in time"""
+    # check if current state allow to stop the computation
+    pipeline_state = RunningState.UNKNOWN
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+        pipeline_state = last_run.result
+    if utils.is_pipeline_running(pipeline_state):
+        if not computation_stop.force:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Project {project_id} is currently running and cannot be deleted, "
+                f"current state is {pipeline_state}",
+            )
+        # abort the pipeline first
+        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+
+        def return_last_value(retry_state: Any) -> Any:
+            """return the result of the last call attempt"""
+            return retry_state.outcome.result()
+
+        @retry(
+            stop=stop_after_delay(computation_stop.wait_for),
+            wait=wait_random(0, 2),
+            retry_error_callback=return_last_value,
+            retry=retry_if_result(lambda result: result is False),
+            reraise=False,
+            before_sleep=before_sleep_log(_logger, logging.INFO),
+        )
+        async def check_pipeline_stopped() -> bool:
             last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
             pipeline_state = last_run.result
-        if utils.is_pipeline_running(pipeline_state):
-            if not computation_stop.force:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Project {project_id} is currently running and cannot be deleted, "
-                    f"current state is {pipeline_state}",
-                )
-            # abort the pipeline first
-            try:
-                await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
-            except ComputationalSchedulerError as e:
-                _logger.warning(
-                    "Project %s could not be stopped properly.\n reason: %s",
-                    project_id,
-                    e,
-                )
+            return utils.is_pipeline_stopped(pipeline_state)
 
-            def return_last_value(retry_state: Any) -> Any:
-                """return the result of the last call attempt"""
-                return retry_state.outcome.result()
-
-            @retry(
-                stop=stop_after_delay(_PIPELINE_ABORT_TIMEOUT_S.total_seconds()),
-                wait=wait_random(0, 2),
-                retry_error_callback=return_last_value,
-                retry=retry_if_result(lambda result: result is False),
-                reraise=False,
-                before_sleep=before_sleep_log(_logger, logging.INFO),
+        # wait for the pipeline to be stopped
+        if not await check_pipeline_stopped():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Pipeline {project_id} could not be stopped properly "
+                f"after {computation_stop.wait_for.total_seconds()}s. ",
             )
-            async def check_pipeline_stopped() -> bool:
-                last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-                pipeline_state = last_run.result
-                return utils.is_pipeline_stopped(pipeline_state)
 
-            # wait for the pipeline to be stopped
-            if not await check_pipeline_stopped():
-                _logger.error(
-                    "pipeline %s could not be stopped properly after %s",
-                    project_id,
-                    _PIPELINE_ABORT_TIMEOUT_S,
-                )
-
-        # delete the pipeline now
-        await comp_tasks_repo.delete_tasks_from_project(project.uuid)
-        await comp_pipelines_repo.delete_pipeline(project_id)
-
-    except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    # delete the pipeline now
+    await comp_tasks_repo.delete_tasks_from_project(project_id)
+    await comp_pipelines_repo.delete_pipeline(project_id)
