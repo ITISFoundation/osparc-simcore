@@ -207,7 +207,7 @@ def _deduct_helper_containers_resources(
     *,
     biggest_service_name: str,
     biggest_service_resources: _Resources,
-    extra: _Resources,
+    helpers_resources: _Resources,
     helpers_desc: str,
 ) -> None:
     """Subtracts the combined helper-container footprint from ``biggest`` user service.
@@ -222,7 +222,10 @@ def _deduct_helper_containers_resources(
 
     resource_settings = settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS
 
-    remaining = _Resources(cpu=biggest_service_resources.cpu - extra.cpu, ram=biggest_service_resources.ram - extra.ram)
+    remaining = _Resources(
+        cpu=biggest_service_resources.cpu - helpers_resources.cpu,
+        ram=biggest_service_resources.ram - helpers_resources.ram,
+    )
 
     min_fraction = resource_settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
     hard_fail = remaining.cpu <= 0 or remaining.ram <= 0
@@ -235,11 +238,11 @@ def _deduct_helper_containers_resources(
         raise NotEnoughResourcesForHelperContainersError(
             service_name=biggest_service_name,
             helpers_desc=helpers_desc,
-            helpers_cpu=extra.cpu,
-            helpers_cpu_pct=extra.cpu / (biggest_service_resources.cpu + _EPS),
-            helpers_ram=extra.ram,
-            helpers_ram_hr=ByteSize(extra.ram).human_readable(),
-            helpers_ram_pct=extra.ram / (biggest_service_resources.ram + _EPS),
+            helpers_cpu=helpers_resources.cpu,
+            helpers_cpu_pct=helpers_resources.cpu / (biggest_service_resources.cpu + _EPS),
+            helpers_ram=helpers_resources.ram,
+            helpers_ram_hr=ByteSize(helpers_resources.ram).human_readable(),
+            helpers_ram_pct=helpers_resources.ram / (biggest_service_resources.ram + _EPS),
             remaining_cpu=remaining.cpu,
             remaining_cpu_pct=remaining.cpu / (biggest_service_resources.cpu + _EPS),
             remaining_ram=remaining.ram,
@@ -259,14 +262,14 @@ def _deduct_helper_containers_resources(
         "ram removed %s of %s (-%.2f%%), remaining %s (%.2f%%)",
         biggest_service_name,
         helpers_desc,
-        extra.cpu,
+        helpers_resources.cpu,
         biggest_service_resources.cpu,
-        extra.cpu / (biggest_service_resources.cpu + _EPS) * 100,
+        helpers_resources.cpu / (biggest_service_resources.cpu + _EPS) * 100,
         remaining.cpu,
         remaining.cpu / (biggest_service_resources.cpu + _EPS) * 100,
-        ByteSize(extra.ram).human_readable(),
+        ByteSize(helpers_resources.ram).human_readable(),
         ByteSize(biggest_service_resources.ram).human_readable(),
-        extra.ram / (biggest_service_resources.ram + _EPS) * 100,
+        helpers_resources.ram / (biggest_service_resources.ram + _EPS) * 100,
         ByteSize(remaining.ram).human_readable(),
         remaining.ram / (biggest_service_resources.ram + _EPS) * 100,
     )
@@ -302,6 +305,6 @@ def remove_helper_containers_resources(
         parsed_compose_spec,
         biggest_service_name=name,
         biggest_service_resources=resources,
-        extra=helpers,
+        helpers_resources=helpers,
         helpers_desc=helpers_desc,
     )
