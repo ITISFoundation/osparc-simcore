@@ -13,12 +13,16 @@ from types import SimpleNamespace
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.conversations import ConversationRestGet
+from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.conversations import conversations
+from simcore_postgres_database.utils_repos import transaction_context
 from simcore_service_webserver.conversations import _conversation_service
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -343,6 +347,46 @@ async def test_conversations_access_control(
         delete_url = client.app.router["delete_conversation"].url_for(conversation_id=conversation_id)
         resp = await client.delete(f"{delete_url}?type=SUPPORT")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_conversations_cannot_be_accessed_from_another_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    app_products_names: list[ProductName],
+):
+    """A support conversation belonging to another product must not be reachable
+    through the current product's endpoints (cross-product access guard)."""
+    assert client.app
+    base_url = client.app.router["list_conversations"].url_for()
+
+    # Create a support conversation (belongs to the request's product)
+    body = {"name": "User Support Request", "type": "SUPPORT"}
+    resp = await client.post(f"{base_url}", json=body)
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    conversation_id = data["conversationId"]
+
+    # Reassign the conversation to a different product directly in the DB
+    other_product = next(name for name in app_products_names if name != "osparc")
+    async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+        await conn.execute(
+            conversations.update()
+            .where(conversations.c.conversation_id == conversation_id)
+            .values(product_name=other_product)
+        )
+
+    # Even the creator can no longer access it through the current product context
+    get_url = client.app.router["get_conversation"].url_for(conversation_id=conversation_id)
+    resp = await client.get(f"{get_url}?type=SUPPORT")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    update_url = client.app.router["update_conversation"].url_for(conversation_id=conversation_id)
+    resp = await client.patch(f"{update_url}?type=SUPPORT", json={"name": "Cross-product update attempt"})
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    delete_url = client.app.router["delete_conversation"].url_for(conversation_id=conversation_id)
+    resp = await client.delete(f"{delete_url}?type=SUPPORT")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
