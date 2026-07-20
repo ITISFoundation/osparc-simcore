@@ -921,7 +921,7 @@ async def output_file(
     async with sqlalchemy_async_engine.begin() as conn:
         stmt = (
             file_meta_data.insert()
-            .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
+            .values(**FileMetaDataAtDB.model_validate(file).model_dump())
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)
