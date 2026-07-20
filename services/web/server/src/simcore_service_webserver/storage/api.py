@@ -4,14 +4,18 @@ import datetime
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator
+from pathlib import Path
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
+    submit_job,
     submit_job_and_wait,
+    wait_and_get_job_result,
 )
 from common_library.logging.logging_base import get_log_record_extra
+from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileLocationArray,
@@ -27,6 +31,7 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.celery.async_jobs.storage.paths import DELETE_PATHS_TASK_NAME, submit_delete_paths_task
 from servicelib.logging_utils import log_context
 from yarl import URL
 
@@ -38,7 +43,7 @@ from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
-
+_PROJECT_DELETION_MAX_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(minutes=30)
 _TOTAL_TIMEOUT_TO_COPY_DATA_SECS: Final[int] = 60 * 60
 _SIMCORE_LOCATION: Final[LocationID] = 0
 
@@ -126,29 +131,86 @@ async def copy_data_folders_from_project(
             yield job_composed_result
 
 
-async def _delete(session, target_url):
-    async with session.delete(target_url, ssl=False) as resp:
-        _logger.info(
-            "delete_data_folders_of_project request responded with status %s",
-            resp.status,
+async def submit_delete_paths(
+    app: web.Application, product_name: ProductName, user_id: UserID, location_id: LocationID, paths: set[Path]
+) -> AsyncJobGet:
+    return await submit_job(
+        get_task_manager(app),
+        execution_metadata=TaskExecutionMetadata(
+            name=DELETE_PATHS_TASK_NAME,
+        ),
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=user_id,
+                product_name=product_name,
+            ).model_dump()
+        ),
+        product_name=product_name,
+        user_id=user_id,
+        location_id=location_id,
+        paths=paths,
+    )
+
+
+async def delete_project_data_folders(
+    app: web.Application, *, product_name: ProductName, user_id: UserID, project_id: ProjectID
+) -> None:
+    """Deletes all data folders of a project in the storage service and waits for completion"""
+    with log_context(_logger, logging.INFO, f"deleting project {project_id} data folders"):
+        owner_metadata = OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=user_id,
+                product_name=product_name,
+            ).model_dump()
         )
-        # NOTE: context will automatically close connection
+        job_id, *_ = await submit_delete_paths_task(
+            get_task_manager(app),
+            owner_metadata=owner_metadata,
+            user_id=user_id,
+            product_name=product_name,
+            location_id=_SIMCORE_LOCATION,
+            paths={Path(f"{project_id}")},
+        )
+        async for _ in wait_and_get_job_result(
+            get_task_manager(app),
+            owner_metadata=owner_metadata,
+            job_id=job_id,
+            stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
+        ):
+            _logger.info("waiting for deletion of project %s data folders to complete", project_id)
 
 
-async def delete_data_folders_of_project(app, project_id, user_id):
-    # SEE api/specs/storage/v0/openapi.json
-    session, api_endpoint = _get_storage_client(app)
-    url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id)
-
-    await _delete(session, url)
-
-
-async def delete_data_folders_of_project_node(app, project_id: str, node_id: str, user_id: UserID):
-    # SEE api/specs/storage/v0/openapi.json
-    session, api_endpoint = _get_storage_client(app)
-    url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(user_id=user_id, node_id=node_id)
-
-    await _delete(session, url)
+async def delete_project_node_data_folders(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> None:
+    """Deletes all data folders of a project node in the storage service and waits for completion"""
+    with log_context(_logger, logging.INFO, f"deleting project {project_id} node {node_id} data folders"):
+        owner_metadata = OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=user_id,
+                product_name=product_name,
+            ).model_dump()
+        )
+        job_id, *_ = await submit_delete_paths_task(
+            get_task_manager(app),
+            owner_metadata=owner_metadata,
+            user_id=user_id,
+            product_name=product_name,
+            location_id=_SIMCORE_LOCATION,
+            paths={Path(f"{project_id}/{node_id}")},
+        )
+        async for _ in wait_and_get_job_result(
+            get_task_manager(app),
+            owner_metadata=owner_metadata,
+            job_id=job_id,
+            stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
+        ):
+            _logger.info("waiting for deletion of project %s node %s data folders to complete", project_id, node_id)
 
 
 async def is_healthy(app: web.Application) -> bool:
