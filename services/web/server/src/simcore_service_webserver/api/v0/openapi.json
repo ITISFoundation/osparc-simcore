@@ -17029,6 +17029,12 @@
         "type": "object",
         "title": "EmptyModel"
       },
+      "EncryptedRootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded AWS KMS ciphertext blob wrapping the job's AES-256 root key",
+        "writeOnly": true
+      },
       "Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
         "properties": {
           "data": {
@@ -21668,8 +21674,8 @@
       },
       "JobEncryptionContextMetadata": {
         "properties": {
-          "root_key": {
-            "$ref": "#/components/schemas/RootKeyStr"
+          "encrypted_root_key": {
+            "$ref": "#/components/schemas/EncryptedRootKeyStr"
           },
           "input_port_to_file_id": {
             "additionalProperties": {
@@ -21688,7 +21694,7 @@
         },
         "type": "object",
         "required": [
-          "root_key"
+          "encrypted_root_key"
         ],
         "title": "JobEncryptionContextMetadata"
       },
@@ -27258,12 +27264,6 @@
           "reservation"
         ],
         "title": "ResourceValue"
-      },
-      "RootKeyStr": {
-        "type": "string",
-        "format": "password",
-        "description": "base64-encoded 32-byte root key shared by all tasks of the job",
-        "writeOnly": true
       },
       "RunningDynamicServiceDetails": {
         "properties": {
