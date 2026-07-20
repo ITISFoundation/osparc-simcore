@@ -9,6 +9,7 @@
 from collections.abc import Callable, Iterable
 from http import HTTPStatus
 from types import SimpleNamespace
+from uuid import UUID
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -371,7 +372,7 @@ async def test_conversations_cannot_be_accessed_from_another_product(
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(
             conversations.update()
-            .where(conversations.c.conversation_id == conversation_id)
+            .where(conversations.c.conversation_id == UUID(conversation_id))
             .values(product_name=other_product)
         )
 
