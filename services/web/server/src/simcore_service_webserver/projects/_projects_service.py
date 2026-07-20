@@ -149,7 +149,6 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from ..wallets.wallets_service import get_wallet_with_available_credits_by_user_and_wallet
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
 from . import (
-    _crud_api_delete,
     _groups_service,
     _nodes_service,
     _projects_nodes_repository,
@@ -700,70 +699,6 @@ async def patch_project_for_user(
         user_primary_gid=current_user["primary_gid"],
         client_session_id=client_session_id,
     )
-
-
-async def delete_project_by_user(
-    app: web.Application,
-    *,
-    project_uuid: ProjectID,
-    user_id: UserID,
-    simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-    product_name: ProductName,
-    wait_until_completed: bool = True,
-) -> None:
-    task = await submit_delete_project_task(
-        app,
-        project_uuid=project_uuid,
-        user_id=user_id,
-        simcore_user_agent=simcore_user_agent,
-        product_name=product_name,
-    )
-    if wait_until_completed:
-        await task
-
-
-def _get_delete_project_task(project_uuid: ProjectID, user_id: UserID) -> asyncio.Task | None:
-    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
-        assert len(tasks) == 1, f"{tasks=}"  # nosec
-        return tasks[0]
-    return None
-
-
-async def submit_delete_project_task(
-    app: web.Application,
-    project_uuid: ProjectID,
-    user_id: UserID,
-    simcore_user_agent: str,
-    product_name: ProductName,
-) -> asyncio.Task:
-    """
-    Marks a project as deleted and schedules a task to perform the entire removal workflow
-    using user_id's permissions.
-
-    If this task is already scheduled, it returns it otherwise it creates a new one.
-
-    The returned task can be ignored to implement a fire&forget or
-    followed up with add_done_callback.
-
-    raises ProjectDeleteError
-    raises ProjectInvalidRightsError
-    raises ProjectNotFoundError
-    """
-    await _crud_api_delete.mark_project_as_deleted(app, project_uuid, user_id)
-
-    # Ensures ONE delete task per (project,user) pair
-    task = _get_delete_project_task(project_uuid, user_id)
-    if not task:
-        task = _crud_api_delete.schedule_task(
-            app,
-            project_uuid,
-            user_id,
-            simcore_user_agent,
-            product_name,
-            remove_project_dynamic_services,
-            _logger,
-        )
-    return task
 
 
 async def _get_default_pricing_and_hardware_info(

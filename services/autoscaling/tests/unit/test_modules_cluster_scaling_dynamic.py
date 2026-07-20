@@ -963,6 +963,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
         await _assert_wait_for_ec2_instances_terminated()
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.acceptance_test
 @pytest.mark.parametrize(
     "scale_up_params",

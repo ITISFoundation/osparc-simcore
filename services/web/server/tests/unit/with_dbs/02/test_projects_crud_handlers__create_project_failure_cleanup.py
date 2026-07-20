@@ -38,6 +38,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.director_v2.exceptions import DirectorV2ServiceError
+from simcore_service_webserver.trash import trash_service
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -132,20 +133,13 @@ async def test_create_project_cleans_up_on_director_v2_pipeline_failure(
     result = await client.get(urlparse(result_url).path)
     assert result.status >= 400
 
-    # CRITICAL: verify no orphan project remains in the DB.
-    # Cleanup is scheduled asynchronously; retry until the orphan project disappears.
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(10),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            remaining_projects = await _get_all_projects_in_db(client)
-            user_project_uuids = [p["uuid"] for p in remaining_projects if p["uuid"] != template_project["uuid"]]
-            assert user_project_uuids == [], (
-                f"Orphan project(s) left behind after pipeline failure: {user_project_uuids}"
-            )
+    # NOTE: delete only marks the project for immediate deletion; actual removal happens
+    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    remaining_projects = await _get_all_projects_in_db(client)
+    user_project_uuids = [p["uuid"] for p in remaining_projects if p["uuid"] != template_project["uuid"]]
+    assert user_project_uuids == [], f"Orphan project(s) left behind after pipeline failure: {user_project_uuids}"
 
 
 @pytest.mark.parametrize(*_standard_user_role_response())
@@ -174,7 +168,7 @@ async def test_create_project_cleans_up_on_unexpected_exception(
 
     # Spy on the cleanup function to verify it gets called
     delete_spy = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create._projects_service.submit_delete_project_task",
+        "simcore_service_webserver.projects._crud_api_create._trash_service.trash_project_for_immediate_deletion",
         new_callable=AsyncMock,  # don't call original (would fail since patch_project is mocked)
     )
 
@@ -206,7 +200,7 @@ async def test_create_project_cleans_up_on_unexpected_exception(
     assert result.status >= 400
 
     # CRITICAL: verify cleanup was attempted
-    assert delete_spy.called, "submit_delete_project_task was not called on failure"
+    assert delete_spy.called, "trash_project_for_immediate_deletion was not called on failure"
 
 
 @pytest.mark.parametrize(*_standard_user_role_response())
@@ -236,7 +230,7 @@ async def test_create_project_cleans_up_on_product_name_mismatch(
 
     # Spy on the cleanup function — it SHOULD be called for post-insertion HTTP errors
     delete_spy = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_create._projects_service.submit_delete_project_task",
+        "simcore_service_webserver.projects._crud_api_create._trash_service.trash_project_for_immediate_deletion",
         new_callable=AsyncMock,
     )
 
@@ -268,10 +262,10 @@ async def test_create_project_cleans_up_on_product_name_mismatch(
     assert result.status == status.HTTP_400_BAD_REQUEST
 
     # CRITICAL: verify cleanup WAS attempted — post-insertion HTTP errors handle their own cleanup
-    assert delete_spy.called, "submit_delete_project_task was not called for product-name mismatch"
+    assert delete_spy.called, "trash_project_for_immediate_deletion was not called for product-name mismatch"
 
     # NOTE: The project still exists because the spy mock prevents actual deletion.
-    # The key assertion above verifies submit_delete_project_task WAS called.
+    # The key assertion above verifies trash_project_for_immediate_deletion WAS called.
     remaining_projects = await _get_all_projects_in_db(client)
     user_project_uuids = [p["uuid"] for p in remaining_projects if p["uuid"] != template_project["uuid"]]
     assert len(user_project_uuids) == 1, f"Expected project to still exist (mocked deletion): {remaining_projects}"
