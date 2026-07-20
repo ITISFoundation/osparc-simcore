@@ -220,7 +220,6 @@ async def get_support_conversation_for_user(
     product_name: ProductName,
     conversation_id: ConversationID,
 ) -> tuple[ConversationGetDB, ConversationUserType]:
-    # Single fetch: validates product ownership (404) and support type (400) before authorization
     conversation = await _get_validated_support_conversation(
         app, product_name=product_name, conversation_id=conversation_id
     )
