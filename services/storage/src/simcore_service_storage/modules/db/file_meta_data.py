@@ -11,7 +11,6 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_postgres_database.utils_repos import (
@@ -150,7 +149,7 @@ class FileMetaDataRepository(BaseRepository):
             return FileMetaDataAtDB.model_validate(
                 (
                     await conn.execute(
-                        file_meta_data.insert().values(jsonable_encoder(fmd_db)).returning(literal_column("*"))
+                        file_meta_data.insert().values(**fmd_db.model_dump()).returning(literal_column("*"))
                     )
                 ).one()
             )
