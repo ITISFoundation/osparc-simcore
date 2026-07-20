@@ -380,8 +380,18 @@ def async_loggers(
     ):
         _apply_logging_configuration(queue_handler, logger_filter_mapping)
 
-        with log_context(_logger, logging.INFO, "Asynchronous logging"):
+        # NOTE: this context is held for the entire application lifetime (i.e. until the
+        # process shuts down). Do NOT use `log_context` here: since `log_context` now creates
+        # a tracing span whenever tracing is enabled, wrapping the whole app runtime in it
+        # would create a span that never ends. Such a span never gets exported (span
+        # processors export on `on_end`), yet it would remain the ambient "current span" for
+        # everything created during the app's lifetime, so every one of its direct children
+        # would reference an unresolvable parent span ID.
+        _logger.info("Starting asynchronous logging")
+        try:
             yield
+        finally:
+            _logger.info("Finished asynchronous logging")
 
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
@@ -592,7 +602,13 @@ _CONTEXT_ID_LEN: Final[int] = 8
 def _default_operation_name() -> str:
     """returns a default operation name made of the filename and function name of the caller of `log_context()`"""
     frame = sys._getframe(_STACK_LEVEL_OFFSET)  # noqa: SLF001
-    return f"{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name}"
+    return f"log_context:{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name}"
+
+
+def _caller_lineno() -> int:
+    """returns the line number, within the caller's function, of the `with log_context(...):` call"""
+    frame = sys._getframe(_STACK_LEVEL_OFFSET)  # noqa: SLF001
+    return frame.f_lineno
 
 
 @contextmanager
@@ -627,7 +643,10 @@ def log_context(
                 traced_operation(
                     operation_name or _default_operation_name(),
                     tracing_config=tracing_config,
-                    attributes={"log.message": rendered_msg},
+                    attributes={
+                        "log.message": rendered_msg,
+                        "code.lineno": str(_caller_lineno()),
+                    },
                 )
             )
 

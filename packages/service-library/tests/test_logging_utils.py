@@ -6,6 +6,7 @@ import logging
 import re
 from collections.abc import Iterable
 from contextlib import suppress
+from inspect import currentframe, getframeinfo
 from pathlib import Path
 from typing import Any
 
@@ -331,7 +332,7 @@ def test_log_context_creates_span_automatically(
 
     spans = memory_exporter.get_finished_spans()
     assert len(spans) == 1
-    assert spans[0].name == f"{Path(__file__).stem}:test_log_context_creates_span_automatically"
+    assert spans[0].name == f"log_context:{Path(__file__).stem}:test_log_context_creates_span_automatically"
 
 
 def test_log_context_operation_name_overrides_default_span_name(
@@ -386,7 +387,7 @@ def test_log_context_span_has_log_message_attribute(
     assert isinstance(log_message, str)
     assert "doing something important" in log_message
     # span name stays stable/low-cardinality, unaffected by the free-form message
-    assert spans[0].name == f"{Path(__file__).stem}:test_log_context_span_has_log_message_attribute"
+    assert spans[0].name == f"log_context:{Path(__file__).stem}:test_log_context_span_has_log_message_attribute"
 
 
 def test_log_context_span_log_message_attribute_substitutes_args(
@@ -404,6 +405,20 @@ def test_log_context_span_log_message_attribute_substitutes_args(
     assert isinstance(log_message, str)
     assert "item-123" in log_message
     assert "%s" not in log_message
+
+
+def test_log_context_span_has_code_lineno_attribute(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+):
+    _tracing_config, memory_exporter = tracing_config_enabled
+
+    with log_context(_logger, logging.INFO, "doing something"):  # <-- this line's number is expected below
+        expected_lineno = getframeinfo(currentframe()).lineno - 1
+
+    spans = memory_exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].attributes is not None
+    assert spans[0].attributes["code.lineno"] == str(expected_lineno)
 
 
 @pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)

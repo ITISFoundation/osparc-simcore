@@ -238,12 +238,30 @@ def traced_operation(
     # Only use provided links at root level; child spans inherit parent context automatically
     current_span = trace.get_current_span()
     is_root_span = not current_span.is_recording()
-    span_links = links if is_root_span else []
+    span_links = list(links) if links else []
+
+    # NOTE: a non-recording "current" span is not necessarily *absent* from the ambient
+    # context (e.g. a long-lived asyncio.Task - such as a periodic background task -
+    # copies the context once at creation time; the span it captured back then keeps
+    # being reported as "current" forever, even long after it ended). If we let
+    # `start_as_current_span` use that ambient context as-is, every single execution
+    # would be chained as a child of that same, already-finished span/trace, which
+    # eventually breaks clock-skew adjustment in the tracing backend once that old
+    # trace is no longer retrievable. So for root spans we explicitly detach from the
+    # ambient context and, if that stale span had a valid context, keep a `Link` to it
+    # instead so it remains navigable without corrupting the parent/child relationship.
+    start_context: otcontext.Context | None = None
+    if is_root_span:
+        stale_span_context = current_span.get_span_context()
+        if stale_span_context.is_valid:
+            span_links.append(Link(stale_span_context))
+        start_context = otcontext.Context()
 
     # Create a span with proper attributes and links
     # If tracing is disabled, this creates a no-op span
     with tracer.start_as_current_span(
         operation_name,
+        context=start_context,
         links=span_links,
         attributes=span_attributes,
     ) as span:
