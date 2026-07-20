@@ -50,24 +50,24 @@ qx.Class.define("osparc.study.Utils", {
 
       switch (resourceType) {
         case "service":
-          return this.createStudyFromService(serviceKey, serviceVersion, existingStudies, name, contextProps);
+          return this.__createStudyFromService(serviceKey, serviceVersion, existingStudies, name, contextProps);
         case "template":
         case "tutorial":
         case "hypertool":
-          return this.createStudyFromTemplate(templateData, loadingPage, contextProps);
+          return this.__createStudyFromTemplate(templateData, loadingPage, contextProps);
         default:
-          return this.createEmptyStudy(name, existingStudies, contextProps);
+          return this.__createEmptyStudy(name, existingStudies, contextProps);
       }
     },
 
-    createEmptyStudy: function(newStudyLabel, existingStudies, contextProps = {}) {
+    __createEmptyStudy: function(newStudyLabel, existingStudies, contextProps = {}) {
       // context props, otherwise Study will be created in the root folder of my personal workspace
       const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
       minStudyData["name"] = this.__computeStudyName(newStudyLabel, existingStudies);
-      return this.createStudyAndPoll(minStudyData);
+      return this.__createStudyAndPoll(minStudyData);
     },
 
-    createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
+    __createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
         osparc.store.Services.getService(key, version)
           .then(metadata => {
@@ -106,7 +106,7 @@ qx.Class.define("osparc.study.Utils", {
               });
               return;
             }
-            this.createStudyAndPoll(minStudyData)
+            this.__createStudyAndPoll(minStudyData)
               .then(studyData => resolve(studyData))
               .catch(err => reject(err));
           })
@@ -114,12 +114,12 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    createStudyAndPoll: function(studyData) {
+    __createStudyAndPoll: function(studyData) {
       const pollPromise = osparc.store.Study.getInstance().createStudy(studyData);
       return this.__pollCreationTask(pollPromise);
     },
 
-    createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
+    __createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
       return new Promise((resolve, reject) => {
         osparc.store.Services.getStudyServicesMetadata(templateData)
           .finally(() => {
