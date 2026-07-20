@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
+#   "ansible>=10.7.0",
+#   "asyncssh>=2.14",
 #   "boto3>=1.34",
 #   "psycopg[binary]>=3.2",
 #   "pydantic>=2.9",
@@ -20,25 +22,31 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import csv
 import json
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import quote
 from uuid import UUID
 
+import asyncssh
 import boto3
 import sqlalchemy as sa
 import typer
+from ansible.inventory.manager import InventoryManager
+from ansible.parsing.dataloader import DataLoader
 from botocore.config import Config
 from dotenv import dotenv_values
-from pydantic import AnyHttpUrl, BaseModel, ByteSize, ConfigDict, PostgresDsn, SecretStr
+from pydantic import AnyHttpUrl, BaseModel, ByteSize, ConfigDict, SecretStr
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.projects import projects
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.engine import Engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 app = typer.Typer(help="Inspect and clean orphan comp_pipeline entries and their S3 objects.")
 console = Console()
@@ -63,7 +71,20 @@ class PrefixReport(BaseModel):
 class DbConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    dsn: PostgresDsn
+    host: str
+    port: int
+    external_host: str
+    external_port: int
+    user: str
+    password: SecretStr
+    dbname: str
+
+
+class BastionHost(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    ip: str
+    user_name: str
 
 
 class S3Config(BaseModel):
@@ -93,23 +114,72 @@ def _load_repo_config(deploy_config: Path) -> dict[str, str | None]:
 
 
 def _db_config_from_env(environment: dict[str, str | None]) -> DbConfig:
-    host = environment.get("POSTGRES_EXTERNAL_HOST") or environment.get("POSTGRES_HOST")
-    port = environment.get("POSTGRES_EXTERNAL_PORT") or environment.get("POSTGRES_PORT")
+    # NOTE: connect the same way autoscaled-monitor does: POSTGRES_HOST/PORT are only reachable
+    # from inside the deployment's network, so they must be tunnelled through the bastion host
+    # when one is configured. Some deployments have no bastion at all, in which case we connect
+    # directly using POSTGRES_EXTERNAL_HOST/PORT (falling back to POSTGRES_HOST/PORT).
+    host = environment.get("POSTGRES_HOST")
+    port = environment.get("POSTGRES_PORT")
+    external_host = environment.get("POSTGRES_EXTERNAL_HOST") or host
+    external_port = environment.get("POSTGRES_EXTERNAL_PORT") or port
     user = environment.get("POSTGRES_USER")
     password = environment.get("POSTGRES_PASSWORD")
     dbname = environment.get("POSTGRES_DB")
-    if not all([host, port, user, password, dbname]):
-        console.print(
-            "[red]repo.config is missing POSTGRES_(EXTERNAL_HOST|HOST)/(EXTERNAL_PORT|PORT)/USER/PASSWORD/DB[/red]"
-        )
+    if not all([host, port, external_host, external_port, user, password, dbname]):
+        console.print("[red]repo.config is missing POSTGRES_HOST/PORT/USER/PASSWORD/DB[/red]")
         raise typer.Exit(1)
     assert host  # nosec
     assert port  # nosec
+    assert external_host  # nosec
+    assert external_port  # nosec
     assert user  # nosec
     assert password  # nosec
     assert dbname  # nosec
-    dsn = f"postgresql://{quote(user, safe='')}:{quote(password, safe='')}@{host}:{port}/{dbname}"
-    return DbConfig(dsn=dsn)
+    return DbConfig(
+        host=host,
+        port=int(port),
+        external_host=external_host,
+        external_port=int(external_port),
+        user=user,
+        password=password,
+        dbname=dbname,
+    )
+
+
+def _parse_inventory(deploy_config: Path) -> BastionHost | None:
+    # NOTE: mirrors autoscaled-monitor's main.py::_parse_inventory, but the bastion is optional:
+    # some deployments have no bastion at all and are reachable directly.
+    inventory_path = deploy_config / "ansible" / "inventory.ini"
+    if not inventory_path.exists():
+        console.print(f"[dim]No {inventory_path}, connecting to the database directly (no bastion)[/dim]")
+        return None
+
+    loader = DataLoader()
+    inventory = InventoryManager(loader=loader, sources=[f"{inventory_path}"])
+    try:
+        return BastionHost(
+            ip=inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_ip"],
+            user_name=inventory.groups["CAULDRON_UNIX"].get_vars()["bastion_user"],
+        )
+    except KeyError:
+        console.print(f"[dim]No bastion_ip/bastion_user in {inventory_path}, connecting to the database directly[/dim]")
+        return None
+
+
+_EXCLUDED_SSH_KEY_MARKERS = ("dask", "license", "pkcs8")
+
+
+def _find_ssh_key(deploy_config: Path) -> Path:
+    # NOTE: mirrors autoscaled-monitor's main.py ssh key discovery. Only needed when a bastion
+    # was found by _parse_inventory.
+    for file_path in sorted(deploy_config.glob("**/*.pem")):
+        if any(marker in file_path.name for marker in _EXCLUDED_SSH_KEY_MARKERS):
+            continue
+        return file_path
+    console.print(
+        f"[red]Could not find an SSH key (*.pem) in {deploy_config}! Please run OPS code to generate it[/red]"
+    )
+    raise typer.Exit(1)
 
 
 def _s3_config_from_env(environment: dict[str, str | None], prefix_template: str) -> S3Config:
@@ -136,10 +206,49 @@ def render_prefix(template: str, project_id: UUID) -> str:
     return prefix if prefix.endswith("/") else f"{prefix}/"
 
 
-def create_db_engine(cfg: DbConfig) -> Engine:
-    # NOTE: force the psycopg (v3) driver regardless of the scheme provided in the DSN
-    url = sa.engine.make_url(str(cfg.dsn)).set(drivername="postgresql+psycopg")
-    return sa.create_engine(url)
+@contextlib.asynccontextmanager
+async def db_engine(
+    cfg: DbConfig, bastion: BastionHost | None, ssh_key_path: Path | None
+) -> AsyncIterator[AsyncEngine]:
+    # NOTE: mirrors autoscaled-monitor's db.py::db_engine: tunnels POSTGRES_HOST/PORT through the
+    # bastion host via an asyncssh port-forward when one is configured, otherwise connects
+    # directly using POSTGRES_EXTERNAL_HOST/PORT.
+    if bastion is None:
+        console.print(f"[dim]Connecting directly to {cfg.external_host}:{cfg.external_port}...[/dim]")
+        dsn = (
+            f"postgresql+psycopg://{quote(cfg.user, safe='')}:{quote(cfg.password.get_secret_value(), safe='')}"
+            f"@{cfg.external_host}:{cfg.external_port}/{cfg.dbname}"
+        )
+        engine = create_async_engine(dsn)
+        try:
+            yield engine
+        finally:
+            await engine.dispose()
+        return
+
+    assert ssh_key_path is not None  # nosec
+    console.print(f"[dim]Opening SSH tunnel to {cfg.host}:{cfg.port} via bastion {bastion.ip}...[/dim]")
+    async with asyncssh.connect(
+        bastion.ip,
+        port=22,
+        username=bastion.user_name,
+        client_keys=[str(ssh_key_path)],
+        known_hosts=None,
+    ) as ssh_conn:
+        listener = await ssh_conn.forward_local_port("127.0.0.1", 0, cfg.host, cfg.port)
+        try:
+            dsn = (
+                f"postgresql+psycopg://{quote(cfg.user, safe='')}:{quote(cfg.password.get_secret_value(), safe='')}"
+                f"@127.0.0.1:{listener.get_port()}/{cfg.dbname}"
+            )
+            engine = create_async_engine(dsn)
+            try:
+                yield engine
+            finally:
+                await engine.dispose()
+        finally:
+            listener.close()
+            await listener.wait_closed()
 
 
 def _orphan_pipelines_query(limit: int | None) -> sa.Select:
@@ -155,10 +264,11 @@ def _orphan_pipelines_query(limit: int | None) -> sa.Select:
     return query
 
 
-def count_total_pipelines(engine: Engine) -> int:
+async def count_total_pipelines(engine: AsyncEngine) -> int:
     query = sa.select(sa.func.count()).select_from(comp_pipeline)
-    with engine.connect() as conn:
-        return conn.execute(query).scalar_one()
+    async with engine.connect() as conn:
+        result = await conn.execute(query)
+        return result.scalar_one()
 
 
 def _make_progress() -> Progress:
@@ -183,9 +293,10 @@ def s3_client(cfg: S3Config):
     )
 
 
-def fetch_orphan_pipelines(engine: Engine, limit: int | None) -> list[PipelineRow]:
-    with engine.connect() as conn:
-        rows = conn.execute(_orphan_pipelines_query(limit)).mappings().all()
+async def fetch_orphan_pipelines(engine: AsyncEngine, limit: int | None) -> list[PipelineRow]:
+    async with engine.connect() as conn:
+        result = await conn.execute(_orphan_pipelines_query(limit))
+        rows = result.mappings().all()
     return [PipelineRow(project_id=r["project_id"]) for r in rows]
 
 
@@ -243,12 +354,12 @@ def delete_s3_prefix(client, bucket: str, prefix: str) -> tuple[int, int]:
     return deleted_objects, deleted_bytes
 
 
-def delete_db_rows(engine: Engine, project_ids: list[UUID]) -> int:
+async def delete_db_rows(engine: AsyncEngine, project_ids: list[UUID]) -> int:
     if not project_ids:
         return 0
     query = sa.delete(comp_pipeline).where(comp_pipeline.c.project_id.in_([str(p) for p in project_ids]))
-    with engine.begin() as conn:
-        result = conn.execute(query)
+    async with engine.begin() as conn:
+        result = await conn.execute(query)
         return result.rowcount
 
 
@@ -280,16 +391,22 @@ def inspect(
     limit: int | None = typer.Option(None, help="Optional max number of orphan rows to inspect"),
     report_csv: str = typer.Option("comp_pipeline_cleanup_report.csv", help="CSV output path"),
 ):
-    environment = _load_repo_config(deploy_config.expanduser())
+    asyncio.run(_inspect_async(deploy_config, s3_prefix_template, limit, report_csv))
+
+
+async def _inspect_async(deploy_config: Path, s3_prefix_template: str, limit: int | None, report_csv: str) -> None:
+    deploy_config = deploy_config.expanduser()
+    environment = _load_repo_config(deploy_config)
     dbcfg = _db_config_from_env(environment)
     s3cfg = _s3_config_from_env(environment, s3_prefix_template)
+    bastion = _parse_inventory(deploy_config)
+    ssh_key_path = _find_ssh_key(deploy_config) if bastion is not None else None
 
-    engine = create_db_engine(dbcfg)
-
-    total_pipelines = count_total_pipelines(engine)
-    rows = fetch_orphan_pipelines(engine, limit)
-    console.print(f"[bold]Total comp_pipeline entries in DB:[/bold] {total_pipelines}")
-    console.print(f"[bold]Orphan entries to inspect:[/bold] {len(rows)}")
+    async with db_engine(dbcfg, bastion, ssh_key_path) as engine:
+        total_pipelines = await count_total_pipelines(engine)
+        rows = await fetch_orphan_pipelines(engine, limit)
+        console.print(f"[bold]Total comp_pipeline entries in DB:[/bold] {total_pipelines}")
+        console.print(f"[bold]Orphan entries to inspect:[/bold] {len(rows)}")
 
     reports = inspect_all(rows, s3cfg)
     write_report(report_csv, reports)
@@ -318,47 +435,54 @@ def cleanup(
     limit: int | None = typer.Option(None, help="Optional max number of orphan rows to clean"),
     yes: bool = typer.Option(False, "--yes", help="Skip confirmation prompt"),  # noqa: FBT001, FBT003
 ):
-    environment = _load_repo_config(deploy_config.expanduser())
+    asyncio.run(_cleanup_async(deploy_config, s3_prefix_template, limit, yes=yes))
+
+
+async def _cleanup_async(deploy_config: Path, s3_prefix_template: str, limit: int | None, *, yes: bool) -> None:
+    deploy_config = deploy_config.expanduser()
+    environment = _load_repo_config(deploy_config)
     dbcfg = _db_config_from_env(environment)
     s3cfg = _s3_config_from_env(environment, s3_prefix_template)
     client = s3_client(s3cfg)
-    engine = create_db_engine(dbcfg)
+    bastion = _parse_inventory(deploy_config)
+    ssh_key_path = _find_ssh_key(deploy_config) if bastion is not None else None
 
-    total_pipelines = count_total_pipelines(engine)
-    rows = fetch_orphan_pipelines(engine, limit)
-    console.print(f"[bold]Total comp_pipeline entries in DB:[/bold] {total_pipelines}")
-    console.print(f"[bold]Orphan entries to clean:[/bold] {len(rows)}")
+    async with db_engine(dbcfg, bastion, ssh_key_path) as engine:
+        total_pipelines = await count_total_pipelines(engine)
+        rows = await fetch_orphan_pipelines(engine, limit)
+        console.print(f"[bold]Total comp_pipeline entries in DB:[/bold] {total_pipelines}")
+        console.print(f"[bold]Orphan entries to clean:[/bold] {len(rows)}")
 
-    reports = inspect_all(rows, s3cfg)
-    summary = summarize(reports)
+        reports = inspect_all(rows, s3cfg)
+        summary = summarize(reports)
 
-    console.print(
-        f"[bold]Total S3 size for orphan prefixes:[/bold] {summary['total_size_human']} "
-        f"({summary['objects_found']} objects)"
-    )
-    typer.echo(json.dumps(summary, indent=2))
-    if not yes:
-        confirmed = typer.confirm(
-            "Delete the listed S3 objects and then remove the matching comp_pipeline rows?", abort=False
+        console.print(
+            f"[bold]Total S3 size for orphan prefixes:[/bold] {summary['total_size_human']} "
+            f"({summary['objects_found']} objects)"
         )
-        if not confirmed:
-            typer.echo("Aborted.")
-            raise typer.Exit(code=0)
+        typer.echo(json.dumps(summary, indent=2))
+        if not yes:
+            confirmed = typer.confirm(
+                "Delete the listed S3 objects and then remove the matching comp_pipeline rows?", abort=False
+            )
+            if not confirmed:
+                typer.echo("Aborted.")
+                raise typer.Exit(code=0)
 
-    deleted_objects = 0
-    deleted_bytes = 0
-    project_ids: list[UUID] = []
-    with _make_progress() as progress:
-        task_id = progress.add_task("Deleting orphan S3 prefixes...", total=len(reports))
-        for report in reports:
-            if report.exists:
-                obj_count, size_count = delete_s3_prefix(client, s3cfg.bucket, report.prefix)
-                deleted_objects += obj_count
-                deleted_bytes += size_count
-            project_ids.append(report.project_id)
-            progress.advance(task_id)
+        deleted_objects = 0
+        deleted_bytes = 0
+        project_ids: list[UUID] = []
+        with _make_progress() as progress:
+            task_id = progress.add_task("Deleting orphan S3 prefixes...", total=len(reports))
+            for report in reports:
+                if report.exists:
+                    obj_count, size_count = delete_s3_prefix(client, s3cfg.bucket, report.prefix)
+                    deleted_objects += obj_count
+                    deleted_bytes += size_count
+                project_ids.append(report.project_id)
+                progress.advance(task_id)
 
-    deleted_rows = delete_db_rows(engine, project_ids)
+        deleted_rows = await delete_db_rows(engine, project_ids)
 
     typer.echo(
         json.dumps(
