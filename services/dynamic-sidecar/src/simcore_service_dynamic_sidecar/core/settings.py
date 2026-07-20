@@ -57,8 +57,8 @@ class SystemMonitorSettings(BaseApplicationSettings):
     ] = False
 
 
-class ExtraContainersResourceSettings(BaseApplicationSettings):
-    DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION: Annotated[
+class HelperContainersResourceSettings(BaseApplicationSettings):
+    DY_SIDECAR_HELPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION: Annotated[
         float,
         Field(
             ge=0.0,
@@ -254,7 +254,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = False
 
     DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS: Annotated[
-        ExtraContainersResourceSettings, Field(json_schema_extra={"auto_default_from_env": True})
+        HelperContainersResourceSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 
     @property

@@ -20,7 +20,7 @@ from simcore_service_dynamic_sidecar.core._helper_container_resources import (
     _write_limits,
     remove_helper_containers_resources,
 )
-from simcore_service_dynamic_sidecar.core.settings import ExtraContainersResourceSettings
+from simcore_service_dynamic_sidecar.core.settings import HelperContainersResourceSettings
 
 _MiB = TypeAdapter(ByteSize).validate_python("1MiB")
 _GiB = TypeAdapter(ByteSize).validate_python("1GiB")
@@ -35,7 +35,7 @@ def envoy_proxy_settings() -> EgressProxySettings:
 @pytest.fixture
 def mocked_settings() -> MagicMock:
     settings = MagicMock()
-    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = ExtraContainersResourceSettings(
+    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
         DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION=0.48,
         DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=0.10,
     )
@@ -190,7 +190,7 @@ def _make_settings(
     settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG = tracing_cfg
     settings.DY_SIDECAR_R_CLONE_SETTINGS = rclone_settings
     settings.DY_SIDECAR_EGRESS_PROXY_SETTINGS = egress
-    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = ExtraContainersResourceSettings(
+    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
         DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=1.0,  # no cap in unit tests
     )
     return settings
@@ -253,7 +253,7 @@ def test_footprint_rclone_capped_by_service_fraction(envoy_proxy_settings: Egres
     max_fraction = 0.10
     service = _Resources(cpu=4.0, ram=8192 * _MiB)
     settings = _make_settings(envoy_proxy_settings, rclone_cpu_nano=int(4e9), rclone_ram_mib=8192)
-    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = ExtraContainersResourceSettings(
+    settings.DY_SIDECAR_EXTRA_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
         DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=max_fraction,
     )
     r, _ = _compute_helper_containers_footprint(
