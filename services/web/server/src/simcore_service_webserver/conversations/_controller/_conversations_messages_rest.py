@@ -30,7 +30,7 @@ from ...web_requests_validation import (
     parse_request_query_parameters_as,
 )
 from .. import _conversation_message_service, _conversation_service
-from ._common import ConversationPathParams, raise_unsupported_type
+from ._common import ConversationPathParams
 from ._rest_exceptions import _handle_exceptions
 
 _logger = logging.getLogger(__name__)
@@ -65,14 +65,8 @@ async def create_conversation_message(request: web.Request):
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     body_params = await parse_request_body_as(_ConversationMessageCreateBodyParams, request)
 
-    _conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if _conversation.type.is_support_type() is False:
-        raise_unsupported_type(_conversation.type)
-
     # This function takes care of granting support user access to the message
-    _, conversation_user_type = await _conversation_service.get_support_conversation_for_user(
+    _conversation, conversation_user_type = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -104,12 +98,6 @@ async def list_conversation_messages(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     query_params = parse_request_query_parameters_as(_ListConversationMessageQueryParams, request)
-
-    _conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if _conversation.type.is_support_type() is False:
-        raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
     await _conversation_service.get_support_conversation_for_user(
@@ -152,12 +140,6 @@ async def get_conversation_message(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
 
-    _conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if _conversation.type.is_support_type() is False:
-        raise_unsupported_type(_conversation.type)
-
     # This function takes care of granting support user access to the message
     await _conversation_service.get_support_conversation_for_user(
         app=request.app,
@@ -187,12 +169,6 @@ async def update_conversation_message(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
     body_params = await parse_request_body_as(ConversationMessagePatch, request)
-
-    _conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if _conversation.type.is_support_type() is False:
-        raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
     await _conversation_service.get_support_conversation_for_user(
@@ -226,12 +202,6 @@ async def delete_conversation_message(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
 
-    _conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if _conversation.type.is_support_type() is False:
-        raise_unsupported_type(_conversation.type)
-
     # This function takes care of granting support user access to the message
     await _conversation_service.get_support_conversation_for_user(
         app=request.app,
@@ -261,12 +231,6 @@ async def delete_conversation_message(request: web.Request):
 async def trigger_chatbot_processing(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
-
-    _conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if _conversation.type.is_support_type() is False:
-        raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
     conversation_db, conversation_user_type = await _conversation_service.get_support_conversation_for_user(
