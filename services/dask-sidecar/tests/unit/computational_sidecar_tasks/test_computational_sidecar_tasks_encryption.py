@@ -4,14 +4,16 @@
 # pylint: disable=no-member
 # pylint: disable=too-many-arguments
 
+import base64
 import io
 from collections.abc import Callable
-from typing import Literal
+from typing import Final, Literal
 from unittest import mock
 
 import distributed
 import fsspec
 import pytest
+from aws_library.kms import SimcoreKMSAPI
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
 from dask_task_models_library.container_tasks.errors import ServiceEncryptionError
@@ -25,12 +27,14 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
     TaskOwner,
 )
+from models_library.projects import ProjectID
 from models_library.services_resources import BootMode
-from pydantic import AnyUrl, SecretBytes, SecretStr, TypeAdapter
+from pydantic import AnyUrl, SecretStr, TypeAdapter
 from pytest_simcore.helpers.dask_sidecar_tasks import (
     assert_expected_logs_published_to_rabbit,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.kms import KMSSettings
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.utils.aes_gcm import (
     FORMAT_MAGIC,
@@ -47,6 +51,9 @@ from simcore_service_dask_sidecar.worker import run_computational_sidecar
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
+
+_SIDECAR_LOGS_FILE_ID: Final[str] = "service-logs"  # NOTE: mirrors the private constant in
+# dask_task_models_library.container_tasks.encryption used by transfer_settings_for_logs()
 
 
 def _encrypt_to_bytes(plaintext: bytes, *, root_key: bytes, file_id: str) -> bytes:
@@ -71,16 +78,40 @@ def _decrypt_to_bytes(ciphertext: bytes, *, root_key: bytes, file_id: str) -> by
     return decrypted.getvalue()
 
 
+async def _build_job_encryption_context(
+    kms_settings: KMSSettings,
+    *,
+    root_key: bytes,
+    input_port_to_file_id: dict[str, str],
+    project_id: ProjectID,
+) -> JobEncryptionContext:
+    """Emulates what the api-server does at job-start time: encrypt the client-supplied root key
+    via AWS KMS, bound to the job's project_id (the same value the dask-sidecar worker will use
+    as encryption_context when it decrypts, see simcore_service_dask_sidecar.worker._resolve_encryption).
+    """
+    kms_client = await SimcoreKMSAPI.create(kms_settings)
+    try:
+        ciphertext = await kms_client.encrypt(root_key, encryption_context={"project_id": f"{project_id}"})
+    finally:
+        await kms_client.close()
+    return JobEncryptionContext(
+        encrypted_root_key=TypeAdapter(SecretStr).validate_python(base64.b64encode(ciphertext).decode("ascii")),
+        input_port_to_file_id=input_port_to_file_id,
+    )
+
+
 @pytest.mark.parametrize(
     "integration_version, task_owner",
     [("1.0.0", "no_parent_node")],
     indirect=True,
 )
 async def test_run_computational_sidecar_with_encryption(
-    app_environment: EnvVarsDict,
+    app_environment_with_kms: EnvVarsDict,
+    kms_settings: KMSSettings,
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
     s3_remote_file_url: Callable[..., AnyUrl],
+    project_id: ProjectID,
     task_owner: TaskOwner,
     log_rabbit_client_parser: mock.AsyncMock,
     dask_client: distributed.Client,
@@ -90,11 +121,13 @@ async def test_run_computational_sidecar_with_encryption(
     # the client encrypts with its own file_id, which deliberately differs from the port key
     client_input_file_id = "client-side-input-id-1"
 
-    job_encryption_context = JobEncryptionContext(
-        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
+    root_key = generate_key()
+    job_encryption_context = await _build_job_encryption_context(
+        kms_settings,
+        root_key=root_key,
         input_port_to_file_id={input_port_key: client_input_file_id},
+        project_id=project_id,
     )
-    root_key = job_encryption_context.root_key.get_secret_value()
 
     plaintext = b"this is the very secret payload that must travel encrypted\nline 2\n"
     computation_marker = "this was added during computation"
@@ -116,8 +149,6 @@ async def test_run_computational_sidecar_with_encryption(
 
     output_url = s3_remote_file_url(file_path="encrypted_output.dat")
     log_file_url = s3_remote_file_url(file_path="log.dat")
-    log_transfer_settings = job_encryption_context.transfer_settings_for_logs()
-    assert log_transfer_settings is not None
 
     # 2. run a task (through the dask subsystem) that copies the decrypted input to its
     #    output, appends some text and logs a marker line, with encryption enabled
@@ -212,7 +243,7 @@ async def test_run_computational_sidecar_with_encryption(
     decrypted_log = _decrypt_to_bytes(
         encrypted_log,
         root_key=root_key,
-        file_id=log_transfer_settings.file_id,
+        file_id=_SIDECAR_LOGS_FILE_ID,
     )
     assert computation_marker.encode() in decrypted_log
 
@@ -221,7 +252,7 @@ async def test_run_computational_sidecar_with_encryption(
         _decrypt_to_bytes(
             encrypted_log,
             root_key=generate_key(),
-            file_id=log_transfer_settings.file_id,
+            file_id=_SIDECAR_LOGS_FILE_ID,
         )
 
 
@@ -236,19 +267,24 @@ async def test_run_computational_sidecar_with_encryption(
 )
 async def test_run_computational_sidecar_with_wrong_encryption_context_raises(
     wrong_field: Literal["root_key", "file_id"],
-    app_environment: EnvVarsDict,
+    app_environment_with_kms: EnvVarsDict,
+    kms_settings: KMSSettings,
     mocked_get_image_labels: mock.Mock,
     s3_settings: S3Settings,
     s3_remote_file_url: Callable[..., AnyUrl],
+    project_id: ProjectID,
     task_owner: TaskOwner,
     log_rabbit_client_parser: mock.AsyncMock,
     dask_client: distributed.Client,
 ):
     # the context the task will decrypt the input with
     input_port_key = "input_file_1"
-    job_encryption_context = JobEncryptionContext(
-        root_key=TypeAdapter(SecretBytes).validate_python(generate_key()),
+    root_key = generate_key()
+    job_encryption_context = await _build_job_encryption_context(
+        kms_settings,
+        root_key=root_key,
         input_port_to_file_id={input_port_key: input_port_key},
+        project_id=project_id,
     )
     plaintext = b"this is the very secret payload that must travel encrypted\n"
 
@@ -256,7 +292,7 @@ async def test_run_computational_sidecar_with_wrong_encryption_context_raises(
     # the per-file key derived by the task (HKDF over root_key/file_id)
     # no longer matches and AES-GCM authentication must fail.
     encrypt_params: dict[str, str | bytes] = {
-        "root_key": job_encryption_context.root_key.get_secret_value(),
+        "root_key": root_key,
         "file_id": input_port_key,
     }
     if wrong_field == "root_key":

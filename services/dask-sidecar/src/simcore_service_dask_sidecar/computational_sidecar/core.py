@@ -14,7 +14,7 @@ from aiodocker import Docker
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.encryption import (
-    JobEncryptionContext,
+    ResolvedJobEncryptionContext,
 )
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
@@ -65,7 +65,7 @@ class ComputationalSidecar:
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
-    encryption: JobEncryptionContext | None
+    encryption: ResolvedJobEncryptionContext | None
 
     def _create_file_download_task(
         self,

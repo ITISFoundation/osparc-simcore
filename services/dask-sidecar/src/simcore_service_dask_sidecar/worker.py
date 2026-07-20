@@ -5,8 +5,12 @@ import threading
 from pprint import pformat
 
 import distributed
+from aws_library.kms import SimcoreKMSAPI
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
+from dask_task_models_library.container_tasks.encryption import (
+    JobEncryptionContext,
+    ResolvedJobEncryptionContext,
+)
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
@@ -20,6 +24,7 @@ from settings_library.s3 import S3Settings
 
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
+from .errors import ConfigurationError
 from .rabbitmq_worker_plugin import RabbitMQPlugin
 from .settings import ApplicationSettings
 from .utils.dask import (
@@ -93,6 +98,33 @@ async def dask_teardown(worker: distributed.Worker) -> None:
         ...
 
 
+async def _resolve_encryption(
+    encryption: JobEncryptionContext | None,
+    task_parameters: ContainerTaskParameters,
+) -> ResolvedJobEncryptionContext | None:
+    """Decrypts the job's KMS-wrapped root key, if any, right before it is needed.
+
+    NOTE: this is the ONLY place in the whole platform where the root key is ever turned into
+    plaintext - it must stay inside this (ephemeral, per-task) dask-sidecar worker process.
+    """
+    if encryption is None:
+        return None
+
+    settings = ApplicationSettings.create_from_envs()
+    if settings.DASK_SIDECAR_KMS is None:
+        msg = "job requires decryption but DASK_SIDECAR_KMS is not configured"
+        raise ConfigurationError(msg=msg)
+
+    kms_client = await SimcoreKMSAPI.create(settings.DASK_SIDECAR_KMS)
+    try:
+        return await encryption.resolve(
+            kms_client,
+            encryption_context={"project_id": f"{task_parameters.task_owner.project_id}"},
+        )
+    finally:
+        await kms_client.close()
+
+
 @sanitize_exceptions_across_dask_boundary
 async def _run_computational_sidecar_async(
     *,
@@ -112,12 +144,13 @@ async def _run_computational_sidecar_async(
     assert current_task  # nosec
     async with monitor_task_abortion(task_name=current_task.get_name(), task_publishers=task_publishers):
         task_max_resources = get_current_task_resources()
+        resolved_encryption = await _resolve_encryption(encryption, task_parameters)
         async with ComputationalSidecar(
             task_parameters=task_parameters,
             docker_auth=docker_auth,
             log_file_url=log_file_url,
             s3_settings=s3_settings,
-            encryption=encryption,
+            encryption=resolved_encryption,
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
         ) as sidecar:
