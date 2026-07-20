@@ -17,7 +17,7 @@ from servicelib.utils import fire_and_forget_task
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
-from ..storage.api import delete_data_folders_of_project
+from ..storage import api as storage_service
 from ..users.errors import UserNotFoundError
 from . import _access_rights_service, _projects_repository
 from ._projects_repository_legacy import ProjectDBAPI
@@ -115,7 +115,9 @@ async def delete_project(
         await director_v2_service.delete_pipeline(app, user_id, project_uuid)
 
         # rm data from storage
-        await delete_data_folders_of_project(app, project_uuid, user_id)
+        await storage_service.delete_project_data_folders(
+            app, product_name=product_name, user_id=user_id, project_id=project_uuid
+        )
 
         # rm project from database
         await db.delete_project(user_id, f"{project_uuid}")
