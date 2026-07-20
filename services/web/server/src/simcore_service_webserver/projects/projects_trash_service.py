@@ -1,3 +1,4 @@
+from ._projects_service_delete import delete_project_as_admin
 from ._trash_service import (
     batch_delete_trashed_projects_as_admin,
     delete_explicitly_trashed_project,
@@ -10,6 +11,7 @@ from ._trash_service import (
 __all__: tuple[str, ...] = (
     "batch_delete_trashed_projects_as_admin",
     "delete_explicitly_trashed_project",
+    "delete_project_as_admin",
     "list_explicitly_trashed_projects",
     "trash_project",
     "trash_project_for_immediate_deletion",

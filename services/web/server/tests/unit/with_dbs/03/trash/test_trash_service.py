@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+from copy import deepcopy
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,7 +21,9 @@ from pytest_simcore.helpers.webserver_login import (
     UserInfoDict,
     switch_client_session_to,
 )
+from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.workspaces import workspaces as workspaces_table
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.models import projects as projects_table
 from simcore_service_webserver.projects import _projects_service_delete, _trash_service
@@ -435,3 +438,108 @@ async def test_trash_service__delete_expired_trash_for_workspace(  # noqa: PLR09
 
         resp = await client.get(f"/v0/projects/{other_user_project['uuid']}")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+
+async def test_trash_service__delete_expired_trash_for_workspace_retries_across_gc_cycles_when_one_project_fails(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_catalog: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocker: MockerFixture,
+    asyncpg_engine: AsyncEngine,
+    fake_project: ProjectDict,
+):
+    """Regression test for the per-workspace guard in
+    `workspaces._trash_service.batch_delete_trashed_workspaces_as_admin`: if one trashed
+    workspace's project deletion fails, that workspace (and its still-undeleted project) must
+    survive - NOT be hard-deleted via `ON DELETE CASCADE` - while OTHER trashed workspaces in the
+    same GC batch must still be deleted normally (best-effort, matches outer `fail_fast=False`).
+    A later GC cycle -once the fault is fixed- must complete the deletion of the previously-stuck
+    workspace.
+    """
+    assert client.app
+
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
+        autospec=True,
+        return_value=False,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
+        autospec=True,
+    )
+
+    # CREATE workspace A (its project will fail to delete) with one project
+    resp = await client.post("/v0/workspaces", json={"name": "Workspace A (will fail)"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    workspace_a = data
+    project_a_data = deepcopy(fake_project)
+    project_a_data["workspace_id"] = f"{workspace_a['workspaceId']}"
+    project_a = await create_project(client.app, project_a_data, user_id=logged_user["id"], product_name="osparc")
+
+    # CREATE workspace B (will succeed normally) with one project
+    resp = await client.post("/v0/workspaces", json={"name": "Workspace B (will succeed)"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    workspace_b = data
+    project_b_data = deepcopy(fake_project)
+    project_b_data["workspace_id"] = f"{workspace_b['workspaceId']}"
+    project_b = await create_project(client.app, project_b_data, user_id=logged_user["id"], product_name="osparc")
+
+    # storage deletion fails only for project A
+    async def _delete_project_data_folders_side_effect(_app, *, project_id, **_kwargs):
+        if f"{project_id}" == project_a["uuid"]:
+            msg = "simulated storage failure for project A"
+            raise RuntimeError(msg)
+
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.storage_service.delete_project_data_folders",
+        side_effect=_delete_project_data_folders_side_effect,
+    )
+
+    # TRASH both workspaces
+    resp = await client.post(f"/v0/workspaces/{workspace_a['workspaceId']}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    resp = await client.post(f"/v0/workspaces/{workspace_b['workspaceId']}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    async def _workspace_exists_in_db(workspace_id) -> bool:
+        async with asyncpg_engine.connect() as conn:
+            result = await conn.execute(
+                sa.select(workspaces_table.c.workspace_id).where(workspaces_table.c.workspace_id == int(workspace_id))
+            )
+            return result.one_or_none() is not None
+
+    async def _project_exists_in_db(project_uuid) -> bool:
+        async with asyncpg_engine.connect() as conn:
+            result = await conn.execute(sa.select(projects_table.c.uuid).where(projects_table.c.uuid == project_uuid))
+            return result.one_or_none() is not None
+
+    # CYCLE 1: workspace A's project fails to delete -> workspace A (and project A) must survive;
+    # workspace B must still be fully deleted in the SAME cycle (best-effort across workspaces)
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    assert await _workspace_exists_in_db(workspace_a["workspaceId"])
+    assert await _project_exists_in_db(project_a["uuid"])
+
+    assert not await _workspace_exists_in_db(workspace_b["workspaceId"])
+    assert not await _project_exists_in_db(project_b["uuid"])
+
+    # fix the fault
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.storage_service.delete_project_data_folders",
+        return_value=None,
+    )
+
+    # CYCLE 2: workspace A is retried and now succeeds
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    assert not await _workspace_exists_in_db(workspace_a["workspaceId"])
+    assert not await _project_exists_in_db(project_a["uuid"])

@@ -120,10 +120,15 @@ async def delete_workspace_with_all_content(
 
         workspace_root_projects: list[ProjectID] = [Project(**project).uuid for project in projects]
 
-        # Delete projects properly
+        # Delete projects properly (stop pipeline, delete storage data, delete DB row)
+        # *before* the workspace row itself is removed. NOTE: `projects.workspace_id` has
+        # `ON DELETE CASCADE`, so deleting the workspace first would cascade-remove the
+        # project rows before their data is cleaned up, orphaning storage/pipeline data.
+        # If a project fails to delete, this raises immediately (fail fast) so
+        # `db.delete_workspace` below is never reached - no cascade, caller can retry.
         for project_uuid in workspace_root_projects:
-            await projects_trash_service.trash_project_for_immediate_deletion(
-                app, product_name=product_name, user_id=user_id, project_id=project_uuid
+            await projects_trash_service.delete_project_as_admin(
+                app, project_uuid=project_uuid, product_name=product_name
             )
 
     # Get all root folders
