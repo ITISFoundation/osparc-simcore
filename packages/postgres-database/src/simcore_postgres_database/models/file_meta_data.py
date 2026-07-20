@@ -36,8 +36,8 @@ file_meta_data = sa.Table(
         doc="The user id with which the run entry is associated",
     ),
     sa.Column("file_id", sa.String(), primary_key=True),
-    sa.Column("created_at", sa.DateTime(timezone=True)),
-    sa.Column("last_modified", sa.DateTime(timezone=True)),
+    sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("last_modified", sa.DateTime(timezone=True), nullable=False),
     sa.Column("file_size", sa.BigInteger()),
     sa.Column(
         "entity_tag",
