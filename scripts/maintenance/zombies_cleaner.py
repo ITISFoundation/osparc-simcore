@@ -68,6 +68,19 @@ class PrefixReport(BaseModel):
     total_size: ByteSize
 
 
+_COMP_PIPELINE_ORPHAN = "comp_pipeline_orphan"
+_STORAGE_ORPHAN = "storage_orphan"
+
+
+class BucketOrphanReport(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    project_id: UUID
+    classification: str
+    object_count: int
+    total_size: ByteSize
+
+
 class DbConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -300,6 +313,47 @@ async def fetch_orphan_pipelines(engine: AsyncEngine, limit: int | None) -> list
     return [PipelineRow(project_id=r["project_id"]) for r in rows]
 
 
+def list_top_level_project_ids(client, bucket: str) -> list[UUID]:
+    # NOTE: only consider first-level "folders" shaped like a project_id UUID, i.e. entries of
+    # the form {project_id}/{node_id}/... . Anything else (e.g. "api/") is ignored.
+    paginator = client.get_paginator("list_objects_v2")
+    project_ids: list[UUID] = []
+    for page in paginator.paginate(Bucket=bucket, Delimiter="/"):
+        for common_prefix in page.get("CommonPrefixes", []):
+            candidate = common_prefix.get("Prefix", "").rstrip("/")
+            try:
+                project_ids.append(UUID(candidate))
+            except ValueError:
+                continue
+    return project_ids
+
+
+async def classify_bucket_projects(engine: AsyncEngine, project_ids: list[UUID]) -> dict[UUID, str]:
+    """Returns {project_id: classification} for S3 top-level ids that have no matching row in
+    `projects`. `comp_pipeline_orphan` also has a matching orphan row in `comp_pipeline`;
+    `storage_orphan` has no trace in the DB at all (just leftover S3 data).
+    """
+    if not project_ids:
+        return {}
+    str_ids = [str(p) for p in project_ids]
+    async with engine.connect() as conn:
+        existing_projects = await conn.execute(sa.select(projects.c.uuid).where(projects.c.uuid.in_(str_ids)))
+        existing_project_ids = {str(u) for u in existing_projects.scalars().all()}
+
+        existing_comp_pipelines = await conn.execute(
+            sa.select(comp_pipeline.c.project_id).where(comp_pipeline.c.project_id.in_(str_ids))
+        )
+        comp_pipeline_ids = {str(u) for u in existing_comp_pipelines.scalars().all()}
+
+    classification: dict[UUID, str] = {}
+    for project_id in project_ids:
+        key = str(project_id)
+        if key in existing_project_ids:
+            continue
+        classification[project_id] = _COMP_PIPELINE_ORPHAN if key in comp_pipeline_ids else _STORAGE_ORPHAN
+    return classification
+
+
 def inspect_prefix(client, bucket: str, prefix: str, project_id: UUID) -> PrefixReport:
     paginator = client.get_paginator("list_objects_v2")
     object_count = 0
@@ -337,6 +391,14 @@ def write_report(path: str, reports: list[PrefixReport]) -> None:
         writer.writerow(["project_id", "prefix", "exists", "object_count", "total_size_bytes"])
         for r in reports:
             writer.writerow([r.project_id, r.prefix, r.exists, r.object_count, int(r.total_size)])
+
+
+def write_bucket_orphans_report(path: str, reports: list[BucketOrphanReport]) -> None:
+    with Path(path).open("w", newline="") as fp:
+        writer = csv.writer(fp)
+        writer.writerow(["project_id", "classification", "object_count", "total_size_bytes"])
+        for r in sorted(reports, key=lambda r: (r.classification, str(r.project_id))):
+            writer.writerow([r.project_id, r.classification, r.object_count, int(r.total_size)])
 
 
 def delete_s3_prefix(client, bucket: str, prefix: str) -> tuple[int, int]:
@@ -504,6 +566,74 @@ def sql(
     query = _orphan_pipelines_query(limit)
     compiled = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
     typer.echo(f"{compiled};")
+
+
+@app.command("scan-bucket")
+def scan_bucket(
+    deploy_config: Annotated[
+        Path,
+        typer.Option(
+            exists=True,
+            file_okay=False,
+            dir_okay=True,
+            help="Path to the deployment configuration directory (must contain a repo.config file)",
+        ),
+    ],
+    report_csv: str = typer.Option("s3_bucket_orphans_report.csv", help="CSV output path"),
+):
+    """Scan the S3 bucket's top-level {project_id}/ prefixes and report the ones with no matching
+    row in `projects`, classified as comp_pipeline_orphan (also orphaned in comp_pipeline) or
+    storage_orphan (no DB trace at all).
+    """
+    asyncio.run(_scan_bucket_async(deploy_config, report_csv))
+
+
+async def _scan_bucket_async(deploy_config: Path, report_csv: str) -> None:
+    deploy_config = deploy_config.expanduser()
+    environment = _load_repo_config(deploy_config)
+    dbcfg = _db_config_from_env(environment)
+    s3cfg = _s3_config_from_env(environment, "{project_id}/")
+    bastion = _parse_inventory(deploy_config)
+    ssh_key_path = _find_ssh_key(deploy_config) if bastion is not None else None
+
+    client = s3_client(s3cfg)
+    console.print("[bold]Listing top-level S3 prefixes...[/bold]")
+    project_ids = list_top_level_project_ids(client, s3cfg.bucket)
+    console.print(f"[bold]Candidate project prefixes found in S3:[/bold] {len(project_ids)}")
+
+    async with db_engine(dbcfg, bastion, ssh_key_path) as engine:
+        classification = await classify_bucket_projects(engine, project_ids)
+    console.print(f"[bold]Orphaned prefixes (no matching project):[/bold] {len(classification)}")
+
+    reports: list[BucketOrphanReport] = []
+    with _make_progress() as progress:
+        task_id = progress.add_task("Inspecting orphaned S3 prefixes...", total=len(classification))
+        for project_id, kind in classification.items():
+            prefix_report = inspect_prefix(client, s3cfg.bucket, f"{project_id}/", project_id)
+            reports.append(
+                BucketOrphanReport(
+                    project_id=project_id,
+                    classification=kind,
+                    object_count=prefix_report.object_count,
+                    total_size=prefix_report.total_size,
+                )
+            )
+            progress.advance(task_id)
+
+    write_bucket_orphans_report(report_csv, reports)
+
+    comp_pipeline_orphans = [r for r in reports if r.classification == _COMP_PIPELINE_ORPHAN]
+    storage_orphans = [r for r in reports if r.classification == _STORAGE_ORPHAN]
+    summary = {
+        "candidate_prefixes": len(project_ids),
+        "orphaned_prefixes": len(reports),
+        "comp_pipeline_orphans": len(comp_pipeline_orphans),
+        "comp_pipeline_orphans_size_bytes": sum(int(r.total_size) for r in comp_pipeline_orphans),
+        "storage_orphans": len(storage_orphans),
+        "storage_orphans_size_bytes": sum(int(r.total_size) for r in storage_orphans),
+    }
+    typer.echo(json.dumps(summary, indent=2))
+    typer.echo(f"Report written to {report_csv}")
 
 
 if __name__ == "__main__":
