@@ -354,6 +354,7 @@ async def test_conversations_access_control(
 async def test_conversations_cannot_be_accessed_from_another_product(
     client: TestClient,
     logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
     app_products_names: list[ProductName],
 ):
     """A support conversation belonging to another product must not be reachable
@@ -368,7 +369,9 @@ async def test_conversations_cannot_be_accessed_from_another_product(
     conversation_id = data["conversationId"]
 
     # Reassign the conversation to a different product directly in the DB
-    other_product = next(name for name in app_products_names if name != "osparc")
+    other_products = [name for name in app_products_names if name != osparc_product_name]
+    assert other_products, "Test requires at least one product besides the default"
+    other_product = other_products[0]
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
         await conn.execute(
             conversations.update()
