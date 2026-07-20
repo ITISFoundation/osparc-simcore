@@ -2,21 +2,26 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import Final
+
 import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
+from pydantic import TypeAdapter
 from simcore_service_api_server.core.settings import ChatbotSettings
 from simcore_service_api_server.models.domain.chatbot import (
     ChatCompletionRequestMessage,
     CreateChatCompletionResponse,
-    RoleEnum,
 )
+from simcore_service_api_server.models.schemas.responses import InputMessage
 from simcore_service_api_server.services_http.chatbot import ChatbotApi, ChatbotSession
 
-_CHATBOT_BASE_URL = "http://chatbot:8000"
-_GRAPH_NAME = "simple_rag"
+_chat_message_adapter: Final = TypeAdapter(ChatCompletionRequestMessage)
+
+_CHATBOT_BASE_URL: Final[str] = "http://chatbot:8000"
+_GRAPH_NAME: Final[str] = "simple_rag"
 
 
 @pytest.fixture
@@ -68,7 +73,7 @@ async def test_create_chat_completion(
 
     result = await chatbot_session.create_chat_completion(
         messages=[
-            ChatCompletionRequestMessage(role=RoleEnum.USER, content=user_message),
+            _chat_message_adapter.validate_python({"role": "user", "content": user_message}),
         ],
         model="gpt-4o-mini",
         metadata={},
@@ -107,8 +112,8 @@ async def test_create_chat_completion_with_multiple_messages(
 
     result = await chatbot_session.create_chat_completion(
         messages=[
-            ChatCompletionRequestMessage(role=RoleEnum.DEVELOPER, content=developer_message),
-            ChatCompletionRequestMessage(role=RoleEnum.USER, content=user_message),
+            _chat_message_adapter.validate_python({"role": "developer", "content": developer_message}),
+            _chat_message_adapter.validate_python({"role": "user", "content": user_message}),
         ],
         model="gpt-4o-mini",
         metadata={"session": faker.word()},
@@ -133,8 +138,19 @@ async def test_create_chat_completion_raises_on_error(
     with pytest.raises(Exception):  # noqa: B017, PT011
         await chatbot_session.create_chat_completion(
             messages=[
-                ChatCompletionRequestMessage(role=RoleEnum.USER, content=faker.sentence()),
+                _chat_message_adapter.validate_python({"role": "user", "content": faker.sentence()}),
             ],
             model="gpt-4o-mini",
             metadata={},
         )
+
+
+@pytest.mark.parametrize("role", ["user", "assistant", "developer"])
+def test_input_message_to_domain_model(faker: Faker, role: str):
+    msg = InputMessage(role=role, content=faker.sentence(), name=faker.first_name())
+    domain_msg = msg.to_domain_model()
+
+    assert domain_msg.role == role
+    assert domain_msg.content == msg.content
+    if hasattr(domain_msg, "name"):
+        assert domain_msg.name == msg.name

@@ -6,18 +6,20 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 """
 
 import asyncio
+import datetime
 import functools
 import logging
 import logging.handlers
 import queue
+import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, Final, TypedDict, TypeVar
+from uuid import uuid4
 
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import LogExtra
@@ -102,7 +104,7 @@ _DEFAULT_FORMATTING: Final[str] = " | ".join(
     [
         "log_level=%(levelname)s",
         "log_timestamp=%(asctime)s",
-        "log_source=%(name)s:%(funcName)s(%(lineno)d)",
+        "log_source=%(name)s:%(funcName)s(%(lineno)d)[%(processName)s/%(threadName)s]",
         "log_uid=%(log_uid)s",
         "log_oec=%(log_oec)s",
         "log_trace_id=%(otelTraceID)s",
@@ -559,34 +561,79 @@ def _un_capitalize(s: str) -> str:
     return s[:1].lower() + s[1:] if s else ""
 
 
+def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
+    total_seconds = delta.total_seconds()
+    minutes, rem_seconds = divmod(abs(total_seconds), 60)
+    seconds, milliseconds = divmod(rem_seconds, 1)
+    result = ""
+
+    if int(minutes) != 0:
+        result += f"{int(minutes)}m "
+
+    if int(seconds) != 0:
+        result += f"{int(seconds)}s "
+
+    if int(milliseconds * 1000) != 0:
+        result += f"{int(milliseconds * 1000)}ms"
+    if not result:
+        result = "<1ms"
+
+    sign = "-" if total_seconds < 0 else ""
+
+    return f"{sign}{result.strip()}"
+
+
+_STARTING_PREFIX: Final[str] = "Starting "
+_DONE_PREFIX: Final[str] = "Finished "
+_STACK_LEVEL_OFFSET: Final[int] = 3  # 1 => log_context, 2 => contextlib, 3 => caller
+_CONTEXT_ID_LEN: Final[int] = 8
+
+
 @contextmanager
 def log_context(
     logger: logging.Logger,
     level: LogLevelInt,
     msg: LogMessageStr,
     *args,
-    log_duration: bool = False,
     extra: LogExtra | None = None,
-):
+) -> Iterator[None]:
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
-    start = datetime.now()  # noqa: DTZ005
-    msg = _un_capitalize(msg.strip())
+
+    context_id = uuid4().hex[:_CONTEXT_ID_LEN]
+    msg = f"[{context_id}] {_un_capitalize(msg.strip())}"
 
     kwargs: dict[str, Any] = {}
     if extra:
         kwargs["extra"] = extra
-    log_msg = f"Starting {msg} ..."
 
-    stackelvel = 3  # NOTE: 1 => log_context, 2 => contextlib, 3 => caller
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
-    yield
-    duration = (
-        f" in {(datetime.now() - start).total_seconds()}s"  # noqa: DTZ005
-        if log_duration
-        else ""
-    )
-    log_msg = f"Finished {msg}{duration}"
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
+    started_time = datetime.datetime.now(tz=datetime.UTC)
+    starting_log_msg = f"{_STARTING_PREFIX}{msg}"
+
+    try:
+        logger.log(
+            level,
+            starting_log_msg,
+            *args,
+            **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
+        )
+        yield
+    finally:
+        potential_exception = sys.exception()
+        additional_info_message = (
+            f" (raised exception {type(potential_exception).__name__})" if potential_exception else ""
+        )
+        elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+        finished_log_msg = (
+            f"{_DONE_PREFIX}{msg}{additional_info_message} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
+        )
+        logger.log(
+            level,
+            finished_log_msg,
+            *args,
+            **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
+        )
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:

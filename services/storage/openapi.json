@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-storage",
     "description": "Service that manages osparc storage backend",
-    "version": "0.7.1"
+    "version": "0.8.0"
   },
   "paths": {
     "/v0/": {
@@ -61,9 +61,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -112,9 +110,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -182,9 +178,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -253,9 +247,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -359,9 +351,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -445,9 +435,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -512,9 +500,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -634,9 +620,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -686,9 +670,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -738,9 +720,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -816,9 +796,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -867,9 +845,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -929,9 +905,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -1044,9 +1018,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -1096,9 +1068,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -1126,68 +1096,6 @@
         }
       }
     },
-    "/v0/simcore-s3/folders/{folder_id}": {
-      "delete": {
-        "tags": [
-          "simcore-s3"
-        ],
-        "summary": "Delete Folders Of Project",
-        "operationId": "delete_folders_of_project_v0_simcore_s3_folders__folder_id__delete",
-        "parameters": [
-          {
-            "name": "folder_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Folder Id"
-            }
-          },
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
-            }
-          },
-          {
-            "name": "node_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Node Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/simcore-s3/files/metadata:search": {
       "post": {
         "tags": [
@@ -1201,9 +1109,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -2093,14 +1999,12 @@
           "user_id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_UserIDInt"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "User Id"
+            ]
           },
           "user_name": {
             "anyOf": [
@@ -2547,6 +2451,10 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     }
   }

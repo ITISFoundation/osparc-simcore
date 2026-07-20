@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.utils.LanguageManager.isSwitchUseful()) {
+    if (osparc.product.Utils.isLocaleEnabled() && osparc.utils.LanguageManager.isSwitchUseful()) {
       this.__addLanguageSetting();
     }
 
@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         languageSB.add(lItem);
       });
 
-      const currentLocale = qx.locale.Manager.getInstance().getLocale();
+      const currentLocale = osparc.utils.LanguageManager.getUserLocale();
       languageSB.getSelectables().forEach(selectable => {
         if (selectable.getModel() === currentLocale) {
           languageSB.setSelection([selectable]);
@@ -78,7 +78,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       languageSB.addListener("changeValue", e => {
         const selectable = e.getData();
         if (selectable) {
-          osparc.utils.LanguageManager.setLocale(selectable.getModel());
+          const localeCode = selectable.getModel();
+          osparc.utils.LanguageManager.setLocale(localeCode);
+          osparc.utils.LanguageManager.patchLocale(localeCode);
         }
       });
       form.add(languageSB, this.tr("Language"));
@@ -101,10 +103,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       walletIndicatorVisibilitySB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "always",
-        label: "Always"
+        label: this.tr("Always")
       }, {
         id: "warning",
-        label: "Warning"
+        label: this.tr("Warning")
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
         walletIndicatorVisibilitySB.add(lItem);

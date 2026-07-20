@@ -86,7 +86,7 @@ def _log_volume_not_found(volume_name: str) -> Iterator[None]:
 async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> None:
     """Backs up only volumes which require a backup"""
     if _does_volume_require_backup(volume_name):
-        with log_context(_logger, logging.INFO, f"backup '{volume_name}'", log_duration=True):
+        with log_context(_logger, logging.INFO, f"backup '{volume_name}'"):
             volume_details = await get_volume_details(docker, volume_name=volume_name)
             settings: ApplicationSettings = app.state.settings
             get_instrumentation(app).agent_metrics.backedup_volumes(settings.AGENT_DOCKER_NODE_ID)
@@ -98,7 +98,7 @@ async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> N
 async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool) -> None:
     """Removes a volume and backs data up if required"""
     with (
-        log_context(_logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True),
+        log_context(_logger, logging.DEBUG, f"removing '{volume_name}'"),
         log_catch(_logger, reraise=False),
         _log_volume_not_found(volume_name),
     ):
@@ -141,7 +141,6 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
                     _logger,
                     logging.INFO,
                     f"lazy unmount of stale mountpoint '{mountpoint}' for volume '{volume_name}'",
-                    log_duration=True,
                 ):
                     await _try_lazy_unmount(docker, mountpoint)
 
@@ -216,7 +215,7 @@ async def remove_container_forcefully(docker: Docker, container_id: str, *, stop
         if stop_before_removal:
             with (
                 suppress(DockerError),
-                log_context(_logger, logging.DEBUG, f"stopping container '{container_id}'", log_duration=True),
+                log_context(_logger, logging.DEBUG, f"stopping container '{container_id}'"),
             ):
                 await container.stop()
 

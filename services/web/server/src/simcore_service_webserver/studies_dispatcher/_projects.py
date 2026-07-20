@@ -8,16 +8,17 @@ Keeps functionality that couples with the following app modules
 
 import logging
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from aiohttp import web
 from common_library.json_serialization import json_loads
-from models_library.api_schemas_webserver.projects_ui import StudyUI
+from models_library.api_schemas_webserver.projects_nodes_ui import NodeUI
 from models_library.products import ProductName
 from models_library.projects import DateTimeStr, Project, ProjectID, ProjectType
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
+from models_library.projects_nodes_layout import Position
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
@@ -36,6 +37,9 @@ _logger = logging.getLogger(__name__)
 
 _FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python("simcore/services/frontend/file-picker")
 _FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python("1.0.0")
+
+_DEFAULT_FILE_PICKER_POSITION: dict[str, Any] = NodeUI(position=Position(x=305, y=229)).model_dump(mode="json")
+_DEFAULT_SERVICE_NODE_POSITION: dict[str, Any] = NodeUI(position=Position(x=633, y=229)).model_dump(mode="json")
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
@@ -82,7 +86,6 @@ def _create_project(
     description: str,
     owner: UserInfo,
     workbench: dict[str, Node],
-    workbench_ui: dict[str, dict],
     product_name: ProductName,
 ) -> Project:
     # Access rights policy
@@ -103,11 +106,7 @@ def _create_project(
         creation_date=DateTimeStr(now_str()),
         last_change_date=DateTimeStr(now_str()),
         workbench=workbench,
-        ui=StudyUI.model_validate(
-            {
-                "workbench": workbench_ui,
-            }
-        ).model_dump(mode="json", exclude_unset=True),
+        ui={},
         product_name=product_name,
     )
 
@@ -124,6 +123,7 @@ def _create_project_with_service(
         version=service_info.version,
         label=service_info.label,
         inputs=None,
+        ui=_DEFAULT_SERVICE_NODE_POSITION,
     )
 
     return _create_project(
@@ -134,9 +134,6 @@ def _create_project_with_service(
         owner=owner,
         workbench={
             f"{service_id}": service,
-        },
-        workbench_ui={
-            f"{service_id}": {"position": {"x": 633, "y": 229}},
         },
         product_name=product_name,
     )
@@ -166,7 +163,10 @@ def _create_project_with_filepicker_and_service(
         input_nodes=[
             file_picker_id,
         ],
+        ui=_DEFAULT_SERVICE_NODE_POSITION,
     )
+
+    file_picker.ui = _DEFAULT_FILE_PICKER_POSITION
 
     return _create_project(
         project_id=project_id,
@@ -177,10 +177,6 @@ def _create_project_with_filepicker_and_service(
         workbench={
             f"{file_picker_id}": file_picker,
             f"{viewer_id}": viewer_service,
-        },
-        workbench_ui={
-            f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
-            f"{viewer_id}": {"position": {"x": 633, "y": 229}},
         },
         product_name=product_name,
     )
@@ -367,6 +363,7 @@ async def get_or_create_project_with_file(
     ):
         # nodes
         file_picker, _ = _create_file_picker(f"{file_params.download_link}", output_label=file_params.file_name)
+        file_picker.ui = _DEFAULT_FILE_PICKER_POSITION
 
         # project
         project = _create_project(
@@ -377,9 +374,6 @@ async def get_or_create_project_with_file(
             owner=user,
             workbench={
                 f"{file_picker_id}": file_picker,
-            },
-            workbench_ui={
-                f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
             },
             product_name=product_name,
         )

@@ -173,37 +173,37 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           application.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           [{
             id: "other",
-            label: "Other"
+            label: this.tr("Other")
           }, {
             id: "Reuse_Existing_Services_And_Models",
-            label: "Reuse Existing Services And Models"
+            label: this.tr("Reuse Existing Services And Models")
           }, {
             id: "Data_Analysis",
-            label: "Data Analysis"
+            label: this.tr("Data Analysis")
           }, {
             id: "Personalized_Medicine",
-            label: "Personalized Medicine"
+            label: this.tr("Personalized Medicine")
           }, {
             id: "Neurostimulation",
-            label: "Neurostimulation"
+            label: this.tr("Neurostimulation")
           }, {
             id: "Safety_And_Efficacy_Assessment",
-            label: "Safety & Efficacy Assessment"
+            label: this.tr("Safety & Efficacy Assessment")
           }, {
             id: "Device_Design_And_Optimization",
-            label: "Device Design & Optimization"
+            label: this.tr("Device Design & Optimization")
           }, {
             id: "Magnetic_Resonance_Imaging",
-            label: "Magnetic Resonance Imaging"
+            label: this.tr("Magnetic Resonance Imaging")
           }, {
             id: "Bioelectromagnetics",
-            label: "Bioelectromagnetics"
+            label: this.tr("Bioelectromagnetics")
           }, {
             id: "In_Silico_Trials",
-            label: "In Silico Trials"
+            label: this.tr("In Silico Trials")
           }, {
             id: "Image_based_Modeling",
-            label: "Image-based Modeling"
+            label: this.tr("Image-based Modeling")
           }].forEach(appData => {
             const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
               rich: true
@@ -232,10 +232,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           label: ""
         }, {
           id: "yes",
-          label: "Yes"
+          label: this.tr("Yes")
         }, {
           id: "no",
-          label: "No"
+          label: this.tr("No")
         }].forEach(appData => {
           const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
             rich: true
@@ -293,40 +293,40 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         case "osparc":
           hearOptions = [{
             id: "Other",
-            label: "Other"
+            label: this.tr("Other")
           }, {
             id: "SPARC_Portal_Or_Event",
-            label: "SPARC Portal Or Event"
+            label: this.tr("SPARC Portal Or Event")
           }, {
             id: "Search_Engine",
-            label: "Search Engine"
+            label: this.tr("Search Engine")
           }, {
             id: "Conference",
-            label: "Conference"
+            label: this.tr("Conference")
           }, {
             id: "Publication",
-            label: "Publication"
+            label: this.tr("Publication")
           }, {
             id: "Social_Media",
-            label: "Social Media"
+            label: this.tr("Social Media")
           }];
           break;
         default:
           hearOptions = [{
             id: "Other",
-            label: "Other"
+            label: this.tr("Other")
           }, {
             id: "Search_Engine",
-            label: "Search Engine"
+            label: this.tr("Search Engine")
           }, {
             id: "Conference",
-            label: "Conference"
+            label: this.tr("Conference")
           }, {
             id: "Publication",
-            label: "Publication"
+            label: this.tr("Publication")
           }, {
             id: "Social_Media",
-            label: "Social Media"
+            label: this.tr("Social Media")
           }];
           break;
       }

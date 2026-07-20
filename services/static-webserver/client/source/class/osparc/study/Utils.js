@@ -46,20 +46,17 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["workbench"][newUuid] = {
               "key": metadata["key"],
               "version": metadata["version"],
-              "label": metadata["name"]
+              "label": metadata["name"],
+              "ui": {
+                "position": {
+                  "x": 250,
+                  "y": 100
+                }
+              }
             };
             if (!("ui" in minStudyData)) {
               minStudyData["ui"] = {};
             }
-            if (!("workbench" in minStudyData["ui"])) {
-              minStudyData["ui"]["workbench"] = {};
-            }
-            minStudyData["ui"]["workbench"][newUuid] = {
-              "position": {
-                "x": 250,
-                "y": 100
-              }
-            };
             if (!("mode" in minStudyData["ui"])) {
               minStudyData["ui"]["mode"] = metadata["type"] && metadata["type"] === "dynamic" ? "standalone" : "pipeline";
             }
@@ -156,13 +153,13 @@ qx.Class.define("osparc.study.Utils", {
       });
       templateTypeSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       const templateTypes = [{
-        label: "Template",
+        label: qx.locale.Manager.tr("Template"),
         id: osparc.data.model.StudyUI.TEMPLATE_TYPE,
       }, {
-        label: "Tutorial",
+        label: qx.locale.Manager.tr("Tutorial"),
         id: osparc.data.model.StudyUI.TUTORIAL_TYPE,
       }, {
-        label: "Hypertool",
+        label: qx.locale.Manager.tr("Hypertool"),
         id: osparc.data.model.StudyUI.HYPERTOOL_TYPE,
       }]
       templateTypes.forEach(tempType => {

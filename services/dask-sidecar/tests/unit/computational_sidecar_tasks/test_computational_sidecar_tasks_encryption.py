@@ -34,6 +34,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.utils.aes_gcm import (
     FORMAT_MAGIC,
+    AesGcmStreamAuthError,
     decrypt_stream,
     encrypt_stream,
     generate_key,
@@ -114,6 +115,9 @@ async def test_run_computational_sidecar_with_encryption(
         )
 
     output_url = s3_remote_file_url(file_path="encrypted_output.dat")
+    log_file_url = s3_remote_file_url(file_path="log.dat")
+    log_transfer_settings = job_encryption_context.transfer_settings_for_logs()
+    assert log_transfer_settings is not None
 
     # 2. run a task (through the dask subsystem) that copies the decrypted input to its
     #    output, appends some text and logs a marker line, with encryption enabled
@@ -197,6 +201,28 @@ async def test_run_computational_sidecar_with_encryption(
         f"text added during computation '{computation_marker}' missing from decrypted output"
     )
     mocked_get_image_labels.assert_called()
+
+    # 6. check the log file on S3 is encrypted and can be decrypted with the correct key
+    with fsspec.open(f"{log_file_url}", mode="rb", **s3_storage_kwargs) as fp:
+        encrypted_log = fp.read()  # type: ignore[attr-defined]
+
+    assert encrypted_log.startswith(FORMAT_MAGIC), "log file was not encrypted on S3"
+    assert computation_marker.encode() not in encrypted_log, "log marker leaked as plaintext into the stored log file"
+
+    decrypted_log = _decrypt_to_bytes(
+        encrypted_log,
+        root_key=root_key,
+        file_id=log_transfer_settings.file_id,
+    )
+    assert computation_marker.encode() in decrypted_log
+
+    # wrong key must raise an authentication error
+    with pytest.raises(AesGcmStreamAuthError):
+        _decrypt_to_bytes(
+            encrypted_log,
+            root_key=generate_key(),
+            file_id=log_transfer_settings.file_id,
+        )
 
 
 @pytest.mark.parametrize(

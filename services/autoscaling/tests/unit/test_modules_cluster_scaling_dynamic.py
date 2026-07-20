@@ -55,10 +55,12 @@ from pytest_simcore.helpers.aws_ec2 import (
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.constants import (
-    BUFFER_MACHINE_TAG_KEY,
-    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-    MACHINE_PULLING_EC2_TAG_KEY,
-    PRE_PULLED_IMAGES_EC2_TAG_KEY,
+    APPLICATION_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
+    HOT_BUFFER_MACHINE_TAG_KEY,
+    INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY,
+    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    INSTANCE_PULLING_EC2_TAG_KEY,
+    WARM_BUFFER_MACHINE_TAG_KEY,
 )
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
@@ -83,7 +85,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from simcore_service_autoscaling.utils.utils_ec2 import (
-    _SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
     node_host_name_from_ec2_private_dns,
 )
 from types_aiobotocore_ec2.client import EC2Client
@@ -401,9 +402,9 @@ async def test_cluster_scaling_with_no_services_and_enabled_hot_buffers_starts_e
     for instance_type in hot_buffer_instance_types:
         expected_pre_pull_tag_keys = (
             [
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-                MACHINE_PULLING_EC2_TAG_KEY,
-                PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY,
             ]
             if hot_buffer_has_pre_pull(instance_type)
             else []
@@ -418,7 +419,9 @@ async def test_cluster_scaling_with_no_services_and_enabled_hot_buffers_starts_e
             expected_num_instances=expected_num_instances,
             expected_instance_type=instance_type,
             expected_instance_state="running",
-            expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+            expected_additional_tag_keys=list(
+                ec2_instance_custom_tags.keys() | {HOT_BUFFER_MACHINE_TAG_KEY, *expected_pre_pull_tag_keys}
+            ),
             expected_pre_pulled_images=expected_pre_pulled_images,
             instance_filters=instance_type_filters,
             check_instance_type=instance_type,
@@ -446,7 +449,9 @@ async def test_cluster_scaling_with_no_services_and_enabled_hot_buffers_starts_e
         await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
 
     for instance_type in hot_buffer_instance_types:
-        expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull(instance_type) else []
+        expected_pre_pull_tag_keys = (
+            [INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull(instance_type) else []
+        )
         expected_pre_pulled_images = hot_buffer_expected_pre_pulled_images(instance_type) or None
         expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
             instance_type
@@ -457,7 +462,9 @@ async def test_cluster_scaling_with_no_services_and_enabled_hot_buffers_starts_e
             expected_num_instances=expected_num_instances,
             expected_instance_type=instance_type,
             expected_instance_state="running",
-            expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+            expected_additional_tag_keys=list(
+                ec2_instance_custom_tags.keys() | {HOT_BUFFER_MACHINE_TAG_KEY, *expected_pre_pull_tag_keys}
+            ),
             expected_pre_pulled_images=expected_pre_pulled_images,
             instance_filters=instance_type_filters,
             check_instance_type=instance_type,
@@ -567,7 +574,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
                 expected_additional_tag_keys=(
                     [
                         *list(ec2_instance_custom_tags),
-                        _SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
+                        APPLICATION_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
                     ]
                     if scale_up_params.service_custom_placement_constraints
                     else list(ec2_instance_custom_tags)
@@ -698,7 +705,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
     expected_created_instances = deepcopy(created_instances)
     for instance in expected_created_instances:
         for tag_dict in instance["Tags"]:
-            if tag_dict["Key"] == _SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY:
+            if tag_dict["Key"] == APPLICATION_CUSTOM_PLACEMENT_LABELS_TAG_KEY:
                 # remove it
                 instance["Tags"].remove(tag_dict)
                 break
@@ -1953,7 +1960,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
             expected_instance_state="running",
             expected_additional_tag_keys=[
                 *list(ec2_instance_custom_tags),
-                BUFFER_MACHINE_TAG_KEY,
+                WARM_BUFFER_MACHINE_TAG_KEY,
             ],
             instance_filters=instance_type_filters,
             expected_user_data=[],
@@ -2087,7 +2094,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
 
     # there we are done pre-pulling images
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
+    expected_pre_pull_tag_keys = [INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
     expected_pre_pulled_images = hot_buffer_expected_pre_pulled_images(expected_hot_buffer_instance_type) or None
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
@@ -2095,7 +2102,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_num_instances=num_hot_buffer,
         expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | {HOT_BUFFER_MACHINE_TAG_KEY, *expected_pre_pull_tag_keys}
+        ),
         expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_type_filters,
     )
@@ -2129,7 +2138,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_num_instances=num_hot_buffer,
         expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | {HOT_BUFFER_MACHINE_TAG_KEY, *expected_pre_pull_tag_keys}
+        ),
         expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_type_filters,
     )
@@ -2166,17 +2177,32 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
 
     # this should trigger usage of the hot buffer and the warm buffers should replace the hot buffer
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=2,
-        check_reservation_index=0,
-        expected_num_instances=num_hot_buffer,
-        expected_instance_type=expected_hot_buffer_instance_type,
-        expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=expected_pre_pulled_images,
-        instance_filters=instance_type_filters,
-    )
+    # NOTE: one of the hot buffer machines was assigned the new task and got activated within
+    # this same cycle, so it already lost the HOT_BUFFER_MACHINE_TAG_KEY tag, while the others
+    # are still reserved hot buffers and keep it. The shared assertion helper expects a uniform
+    # tag set across all instances of a reservation, so this heterogeneous case is checked manually.
+    all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
+    assert len(all_instances["Reservations"]) == 2
+    hot_buffer_running_instances = all_instances["Reservations"][0]["Instances"]
+    assert len(hot_buffer_running_instances) == num_hot_buffer
+    expected_common_tag_keys = {
+        "io.simcore.autoscaling.monitored_nodes_labels",
+        "io.simcore.autoscaling.monitored_services_labels",
+        *ec2_instance_custom_tags.keys(),
+        *expected_pre_pull_tag_keys,
+        "io.simcore.autoscaling.version",
+        "Name",
+    }
+    hot_buffer_tagged_count = 0
+    for instance in hot_buffer_running_instances:
+        assert instance["InstanceType"] == expected_hot_buffer_instance_type
+        assert instance["State"]["Name"] == "running"
+        instance_tag_keys = {tag["Key"] for tag in instance.get("Tags", []) if "Key" in tag}
+        if HOT_BUFFER_MACHINE_TAG_KEY in instance_tag_keys:
+            hot_buffer_tagged_count += 1
+            instance_tag_keys = instance_tag_keys - {HOT_BUFFER_MACHINE_TAG_KEY}
+        assert instance_tag_keys == expected_common_tag_keys
+    assert hot_buffer_tagged_count == num_hot_buffer - 1
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=2,

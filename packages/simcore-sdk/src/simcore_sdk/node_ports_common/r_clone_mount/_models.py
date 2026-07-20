@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeInt
 
 if TYPE_CHECKING:
     from aiodocker.types import JSONObject
@@ -16,7 +16,7 @@ type FilesInTransfer = dict[FileName, ProgressReport]
 class MountActivity(BaseModel):
     in_transfer: FilesInTransfer
     queued: list[FileName]
-    vfs_write_back_s: int = 0
+    vfs_write_back_s: NonNegativeInt = 0
 
 
 class DelegateInterface(ABC):

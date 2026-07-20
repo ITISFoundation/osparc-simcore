@@ -36,10 +36,6 @@ class ProjectTooManyNodesError(ProjectInvalidUsageError):
         self.requested_num_nodes = requested_num_nodes
 
 
-class ProjectOwnerNotFoundInTheProjectAccessRightsError(BaseProjectError):
-    msg_template = "Project owner gid with required permissions was not found in the project access rights"
-
-
 class WrongTagIdsInQueryError(BaseProjectError):
     msg_template = "Wrong value in `tag_ids` query parameter"
 

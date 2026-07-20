@@ -21,6 +21,7 @@ from sqlalchemy.sql import Select
 from .models.groups import user_to_groups
 from .models.products import products
 from .models.users import UserRole, UserStatus, users
+from .models.users_billing_details import users_billing_details
 from .models.users_details import users_pre_registration_details
 from .models.users_secrets import users_secrets
 from .utils_repos import pass_or_acquire_connection, transaction_context
@@ -155,7 +156,10 @@ class UsersRepo:
         Links ALL pre-registrations for the given email to the user, regardless of product_name.
 
         WARNING: Use ONLY upon new user creation. It might override user_details.user_id,
-        users.first_name, users.last_name etc if already applied or changes happen in users table
+        users.first_name, users.last_name etc if already applied or changes happen in users table.
+        The user's billing address (users_billing_details) is seeded only once, from the
+        most recent pre-registration available at this point; it is never overwritten by
+        subsequent calls (e.g. a later pre-registration for a different product).
         """
         assert new_user_email  # nosec
         assert new_user_id > 0  # nosec
@@ -255,9 +259,19 @@ class UsersRepo:
                 and c.name.startswith("pre_")
             }, "Different pre-cols detected. This code might need an update update"
 
+            # Billing-address columns eligible to seed `users_billing_details` (once, below)
+            address_columns = (
+                users_pre_registration_details.c.institution,
+                users_pre_registration_details.c.address,
+                users_pre_registration_details.c.city,
+                users_pre_registration_details.c.state,
+                users_pre_registration_details.c.country,
+                users_pre_registration_details.c.postal_code,
+            )
+
             # Get the most recent pre-registration data to copy to users table
             result = await conn.execute(
-                sa.select(*pre_columns)
+                sa.select(*pre_columns, *address_columns)
                 .where(users_pre_registration_details.c.pre_email == new_user_email)
                 .order_by(users_pre_registration_details.c.created.desc())
                 .limit(1)
@@ -271,6 +285,27 @@ class UsersRepo:
                         last_name=pre_registration_details_data.pre_last_name,
                     )
                 )
+
+                # SEED-ONCE: the billing address belongs to the user, not to any
+                # single pre-registration. It is created here only if the user does
+                # not already have one (e.g. this function is re-invoked, or the
+                # user already edited/has a billing address). Later pre-registrations
+                # (e.g. requesting access to a different product) never overwrite it.
+                has_billing_details = await conn.scalar(
+                    sa.select(sa.literal(1)).where(users_billing_details.c.user_id == new_user_id).limit(1)
+                )
+                if not has_billing_details and pre_registration_details_data.country is not None:
+                    await conn.execute(
+                        users_billing_details.insert().values(
+                            user_id=new_user_id,
+                            institution=pre_registration_details_data.institution,
+                            address=pre_registration_details_data.address,
+                            city=pre_registration_details_data.city,
+                            state=pre_registration_details_data.state,
+                            country=pre_registration_details_data.country,
+                            postal_code=pre_registration_details_data.postal_code,
+                        )
+                    )
 
     async def get_role(self, connection: AsyncConnection | None = None, *, user_id: int) -> UserRole:
         value = await self._get_scalar_or_raise(
@@ -357,58 +392,63 @@ class UsersRepo:
         self,
         connection: AsyncConnection | None = None,
         *,
-        product_name: str,
         user_id: int,
     ) -> Any | None:
         """Returns billing details for the specified user.
 
-        The billing address is a property of the person, not of the product: a
-        user pre-registered on one product must still be invoiceable on any other
-        product they have access to. Therefore any pre-registration row for the
-        user is eligible, ranked by specificity:
-          1. exact match on ``product_name``
-          2. product-agnostic row (``product_name IS NULL``)
-          3. any other product
-        and, within the same rank, the most recently created row.
+        The billing address (``users_billing_details``) is a property of the
+        user: it is seeded once, at account-creation time, from the most
+        recent pre-registration available then, and is editable by the user
+        afterwards. Later pre-registrations (e.g. for a different product) do
+        not affect it.
 
-        Rows missing required billing fields (currently at least ``country``)
-        are excluded to prevent downstream validation errors.
-
-        - Returns None if the user has no pre-registration with billing details.
+        - Returns None if the user has no billing address on file.
         """
-        product_match_rank = sa.case(
-            (users_pre_registration_details.c.product_name == product_name, 0),
-            (users_pre_registration_details.c.product_name.is_(None), 1),
-            else_=2,
-        )
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
                 sa.select(
                     users.c.first_name,
                     users.c.last_name,
-                    users_pre_registration_details.c.institution,
-                    users_pre_registration_details.c.address,
-                    users_pre_registration_details.c.city,
-                    users_pre_registration_details.c.state,
-                    users_pre_registration_details.c.country,
-                    users_pre_registration_details.c.postal_code,
+                    users_billing_details.c.institution,
+                    users_billing_details.c.address,
+                    users_billing_details.c.city,
+                    users_billing_details.c.state,
+                    users_billing_details.c.country,
+                    users_billing_details.c.postal_code,
                     users.c.phone,
                 )
                 .select_from(
                     users.join(
-                        users_pre_registration_details,
-                        users.c.id == users_pre_registration_details.c.user_id,
+                        users_billing_details,
+                        users.c.id == users_billing_details.c.user_id,
                     )
                 )
-                .where((users.c.id == user_id) & users_pre_registration_details.c.country.is_not(None))
-                .order_by(
-                    product_match_rank.asc(),
-                    users_pre_registration_details.c.created.desc(),
-                )
-                .limit(1)
-                # NOTE: might want to copy billing details to users table??
+                .where(users.c.id == user_id)
             )
             return result.one_or_none()
+
+    async def update_billing_details(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        user_id: int,
+        updates: dict[str, Any],
+    ) -> None:
+        """Creates or updates (upsert) the user's billing address with the given fields.
+
+        Only the keys present in ``updates`` are set; existing values for
+        unspecified fields (or the whole row, if creating) are preserved/defaulted.
+        """
+        if not updates:
+            return
+
+        insert_stmt = postgresql.insert(users_billing_details).values(user_id=user_id, **updates)
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[users_billing_details.c.user_id],
+            set_=updates,
+        )
+        async with transaction_context(self._engine, connection) as conn:
+            await conn.execute(upsert_stmt)
 
 
 #

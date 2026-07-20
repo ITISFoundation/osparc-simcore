@@ -13,6 +13,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
@@ -21,7 +22,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.clusters import (
     get_or_create_cluster,
 )
-from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
+from simcore_service_clusters_keeper.constants import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
 pytest_simcore_core_services_selection = [
@@ -103,6 +104,7 @@ async def test_get_or_create_cluster(
     _base_configuration: None,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     use_wallet_id: bool,
@@ -112,6 +114,7 @@ async def test_get_or_create_cluster(
 
     rpc_response = await get_or_create_cluster(
         clusters_keeper_rabbitmq_rpc_client,
+        product_name=product_name,
         user_id=user_id,
         wallet_id=wallet_id if use_wallet_id else None,
     )
@@ -127,6 +130,7 @@ async def test_get_or_create_cluster(
     # calling it again returns the existing cluster
     rpc_response = await get_or_create_cluster(
         clusters_keeper_rabbitmq_rpc_client,
+        product_name=product_name,
         user_id=user_id,
         wallet_id=wallet_id if use_wallet_id else None,
     )
@@ -144,6 +148,7 @@ async def test_get_or_create_cluster_massive_calls(
     _base_configuration: None,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
     mocked_dask_ping_scheduler: MockedDaskModule,
@@ -159,6 +164,7 @@ async def test_get_or_create_cluster_massive_calls(
         *(
             get_or_create_cluster(
                 clusters_keeper_rabbitmq_rpc_client,
+                product_name=product_name,
                 user_id=user_id,
                 wallet_id=wallet_id,
             )

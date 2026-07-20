@@ -8,11 +8,12 @@
 import asyncio
 import contextlib
 import logging
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any
 from unittest import mock
 from unittest.mock import call
@@ -37,7 +38,8 @@ from models_library.api_schemas_webserver.projects import (
     ProjectStateOutputSchema,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
-from models_library.groups import GroupID
+from models_library.groups import GroupIDAdapter
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_state import (
     ProjectRunningState,
@@ -51,7 +53,6 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -62,19 +63,22 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
     standard_user_role_response,
 )
-from pytest_simcore.helpers.webserver_projects import assert_get_same_project
+from pytest_simcore.helpers.webserver_projects import NewProject, assert_get_same_project
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import (
     RetryError,
     before_sleep_log,
@@ -960,6 +964,78 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     )
 
 
+@pytest.fixture
+async def second_product_with_limit(
+    app_products_names: list[ProductName],
+    asyncpg_engine: AsyncEngine,
+    osparc_product_name: str,
+) -> AsyncIterator[ProductName]:
+    """Sets max_open_studies_per_user=1 on a second product and yields its name."""
+    second_product = next((p for p in app_products_names if p != osparc_product_name), None)
+    assert second_product is not None, "Test requires at least two products in the DB"
+    async with asyncpg_engine.begin() as conn:
+        old_value = await conn.scalar(
+            sa.select(products.c.max_open_studies_per_user).where(products.c.name == second_product)
+        )
+        await conn.execute(
+            products.update().values(max_open_studies_per_user=1).where(products.c.name == second_product)
+        )
+    yield second_product
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            products.update().values(max_open_studies_per_user=old_value).where(products.c.name == second_product)
+        )
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_open_project_limit_is_scoped_to_product(
+    app_products_names: list[ProductName],
+    one_max_open_studies_per_user: None,
+    second_product_with_limit: ProductName,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_socketio_connection_with_handlers: Callable[
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
+    ],
+    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    expected: ExpectedResponse,
+    mocked_dynamic_services_interface: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
+    mocked_notifications_plugin: dict[str, mock.Mock],
+):
+    """Opening a project in product A must not consume the open-project quota for product B."""
+    assert client.app
+    # Register the user in the second product's group so the product access check passes
+    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=second_product_with_limit)
+
+    # Open user_project in the default product (osparc, limit=1) — should succeed
+    _, client_id_1, _ = await create_socketio_connection_with_handlers(None, client)
+    await _open_project(client, client_id_1, user_project, HTTPStatus(expected.ok))
+
+    # Create a project belonging to the second product
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=second_product_with_limit,
+        tests_data_dir=tests_data_dir,
+    ) as second_product_project:
+        # Open that project as if the request came from the second product.
+        # Even though osparc already has 1 project open (its limit), the second
+        # product's limit is independent — this must succeed, not return 409.
+        _, client_id_2, _ = await create_socketio_connection_with_handlers(None, client)
+        url = client.app.router["open_project"].url_for(project_id=second_product_project["uuid"])
+        resp = await client.post(
+            f"{url}",
+            json=client_id_2,
+            headers={X_PRODUCT_NAME_HEADER: second_product_with_limit},
+        )
+        await assert_status(resp, HTTPStatus(expected.ok))
+
+
 @pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
     client: TestClient,
@@ -1149,8 +1225,8 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     faker: Faker,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
-    mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.storage_service.delete_data_folders_of_project_node",
+    mock_storage_api_delete_project_node_data_folders = mocker.patch(
+        "simcore_service_webserver.projects._projects_service.storage_service.delete_project_node_data_folders",
         return_value="",
     )
     assert client.app
@@ -1241,23 +1317,23 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     await asyncio.sleep(5)
     if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_called_once()
-        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
+        mock_storage_api_delete_project_node_data_folders.assert_called_once()
     else:
         mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
-        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
+        mock_storage_api_delete_project_node_data_folders.assert_not_called()
 
     # delete the NOT dynamic node
     mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
-    mock_storage_api_delete_data_folders_of_project_node.reset_mock()
+    mock_storage_api_delete_project_node_data_folders.reset_mock()
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=computational_node_id)
     resp = await client.delete(f"{url}")
     data, _errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
-        mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
+        mock_storage_api_delete_project_node_data_folders.assert_called_once()
     else:
         mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
-        mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
+        mock_storage_api_delete_project_node_data_folders.assert_not_called()
 
 
 @pytest.fixture
@@ -1339,7 +1415,7 @@ async def test_open_shared_project_multiple_users(
                     status=ProjectStatus.OPENED,
                     current_user_groupids=[
                         *opened_project_state.share_state.current_user_groupids,
-                        TypeAdapter(GroupID).validate_python(user_i["primary_gid"]),
+                        GroupIDAdapter.validate_python(user_i["primary_gid"]),
                     ],
                 ),
             }
@@ -1395,7 +1471,7 @@ async def test_open_shared_project_multiple_users(
                 current_user_groupids=[
                     gid
                     for gid in opened_project_state.share_state.current_user_groupids
-                    if gid != TypeAdapter(GroupID).validate_python(logged_user["primary_gid"])
+                    if gid != GroupIDAdapter.validate_python(logged_user["primary_gid"])
                 ],
             ),
         }

@@ -121,7 +121,6 @@ class ComputationalBackendSettings(BaseCustomSettings):
             name="Default cluster",
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
-            owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
             type=ClusterTypeInModel.ON_PREMISE,
         )
 

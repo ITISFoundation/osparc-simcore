@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 
 
 class UserInfo(BaseModel):
-    id: int
+    id: UserID
     name: str
     email: LowerCaseEmailStr
     primary_gid: int
@@ -125,7 +125,7 @@ async def create_temporary_guest_user(request: web.Request):
                 role=UserRole.GUEST,
                 expires_at=expires_at,
             )
-            user_id = user_row.id
+            user_id = UserID(user_row.id)
 
             user = await users_service.get_user(request.app, user_id)
             await auto_add_user_to_product_group(request.app, user_id=user_id, product_name=product_name)
