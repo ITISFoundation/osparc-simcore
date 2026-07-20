@@ -344,7 +344,7 @@ async def patch_project_and_notify_users(
 #
 
 
-def _is_node_dynamic(node_key: str) -> bool:
+def _is_node_dynamic(node_key: ServiceKey) -> bool:
     return "/dynamic/" in node_key
 
 
@@ -1562,7 +1562,7 @@ async def _get_node_share_state(
     *,
     project_uuid: ProjectID,
     node_id: NodeID,
-    node_key: str,
+    node_key: ServiceKey,
     computational_pipeline_running: bool | None,
     user_primrary_groupid: GroupID,
 ) -> NodeShareState:
