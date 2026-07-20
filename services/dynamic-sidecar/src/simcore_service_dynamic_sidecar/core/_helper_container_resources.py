@@ -227,7 +227,7 @@ def _deduct_helper_containers_resources(
         ram=biggest_service_resources.ram - helpers_resources.ram,
     )
 
-    min_fraction = resource_settings.DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
+    min_fraction = resource_settings.DY_SIDECAR_HELPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION
     hard_fail = remaining.cpu <= 0 or remaining.ram <= 0
     soft_fail = (
         remaining.cpu < biggest_service_resources.cpu * min_fraction
