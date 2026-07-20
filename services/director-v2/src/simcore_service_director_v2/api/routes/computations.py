@@ -452,9 +452,8 @@ async def get_computation(
         f"{user_id=}",
         f"{project_id=}",
     )
-
-    # check that project actually exists
-    await project_repo.get(project_id)
+    if not await project_repo.exists(project_id):
+        raise ProjectNotFoundError(project_id=project_id)
 
     try:
         pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
