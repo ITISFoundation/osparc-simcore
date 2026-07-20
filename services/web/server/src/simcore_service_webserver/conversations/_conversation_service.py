@@ -242,7 +242,7 @@ async def get_support_conversation_for_user(
                 ConversationUserType.SUPPORT_USER,
             )
 
-    # I am a regular user: only the conversation owner has access
+    # I am a regular user
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     if conversation.user_group_id != _user_group_id:
         raise ConversationErrorNotFoundError(conversation_id=conversation_id)
