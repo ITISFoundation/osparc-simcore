@@ -369,12 +369,16 @@ class FileMetaDataRepository(BaseRepository):
         connection: AsyncConnection | None = None,
         file_ids: Annotated[list[SimcoreS3FileID], doc("file IDs to delete")],
         recursive: Annotated[bool, doc("if True, deletes all files that are children of the given file_ids")],
-    ) -> None:
+    ) -> list[FileMetaDataAtDB]:
         """Delete the files with `file_ids`."""
         async with transaction_context(self.db_engine, connection) as conn:
             if not recursive:
-                await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
-                return
+                result = await conn.execute(
+                    file_meta_data.delete()
+                    .where(file_meta_data.c.file_id.in_(file_ids))
+                    .returning(sa.literal_column("*"))
+                )
+                return [FileMetaDataAtDB.model_validate(x) for x in result]
 
             conditions = [
                 sa.or_(
@@ -384,7 +388,10 @@ class FileMetaDataRepository(BaseRepository):
                 for file_id in file_ids
             ]
 
-            await conn.execute(file_meta_data.delete().where(sa.or_(*conditions)))
+            result = await conn.execute(
+                file_meta_data.delete().where(sa.or_(*conditions)).returning(sa.literal_column("*"))
+            )
+            return [FileMetaDataAtDB.model_validate(x) for x in result]
 
     async def delete_all_from_project(
         self, *, connection: AsyncConnection | None = None, project_id: ProjectID

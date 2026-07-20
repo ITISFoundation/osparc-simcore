@@ -17,8 +17,11 @@ from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
+from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
+
+from simcore_service_storage.simcore_s3_dsm import post_file_notification
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .dsm_factory import BaseDataManager
@@ -318,6 +321,14 @@ class DatCoreDataManager(BaseDataManager):
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         await datcore_adapter.delete_file(self.app, api_token, api_secret, file_id)
+
+        await post_file_notification(
+            self.app,
+            event_type=FileNotificationEventType.FILE_DELETED,
+            user_id=user_id,
+            file_id=file_id,
+            is_directory=False,
+        )
 
 
 def create_datcore_data_manager(app: FastAPI) -> DatCoreDataManager:
