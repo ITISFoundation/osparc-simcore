@@ -28,6 +28,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
         default=TypeAdapter(ByteSize).validate_python("250MiB"),
         description="memory limit for the caddy proxy container",
     )
+
     DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION: float = Field(
         default=CPU_10_PERCENT,
         description="CPU cores reservation for the caddy proxy container",
