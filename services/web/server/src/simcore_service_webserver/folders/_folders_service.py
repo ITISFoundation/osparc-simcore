@@ -337,10 +337,11 @@ async def delete_folder_with_all_content(
     )
 
     for project_id in project_id_list:
-        await projects_trash_service.delete_project_as_admin(
+        await projects_trash_service.delete_project_as_user(
             app,
             product_name=product_name,
-            project_uuid=project_id,
+            user_id=user_id,
+            project_id=project_id,
         )
 
     # 1.2 Delete all child folders

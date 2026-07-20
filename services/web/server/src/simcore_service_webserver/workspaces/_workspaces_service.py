@@ -127,8 +127,8 @@ async def delete_workspace_with_all_content(
         # If a project fails to delete, this raises immediately (fail fast) so
         # `db.delete_workspace` below is never reached - no cascade, caller can retry.
         for project_uuid in workspace_root_projects:
-            await projects_trash_service.delete_project_as_admin(
-                app, project_uuid=project_uuid, product_name=product_name
+            await projects_trash_service.delete_project_as_user(
+                app, project_id=project_uuid, user_id=user_id, product_name=product_name
             )
 
     # Get all root folders

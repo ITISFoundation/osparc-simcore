@@ -16,7 +16,7 @@ from tenacity import before_sleep_log, retry, retry_if_result, stop_after_delay,
 from ..director_v2 import director_v2_service
 from ..director_v2.exceptions import DirectorV2ServiceError
 from ..storage import api as storage_service
-from . import _projects_repository, _projects_service
+from . import _access_rights_service, _projects_repository, _projects_service
 from .exceptions import ProjectDeleteError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -128,3 +128,37 @@ async def delete_project_as_admin(
             project_uuid=project_uuid,
             details=f"Cannot delete project {project_uuid} because of unexpected error. Details: {err}",
         ) from err
+
+
+async def delete_project_as_user(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+) -> None:
+    """Checks the user has delete permission on the project and, if so, deletes it (and
+    all its data - pipeline, storage) synchronously via `delete_project_as_admin`.
+
+    Use this (instead of calling `delete_project_as_admin` directly) whenever the
+    deletion is triggered on behalf of a specific user (e.g. as part of deleting a
+    folder or workspace the user owns), so access rights are enforced per-project the
+    same way `_trash_service.trash_project_for_immediate_deletion` used to.
+
+    Raises:
+        ProjectInvalidRightsError
+        ProjectNotFoundError
+        ProjectDeleteError
+    """
+    await _access_rights_service.check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="delete",
+    )
+    await delete_project_as_admin(
+        app,
+        project_uuid=project_id,
+        product_name=product_name,
+    )
