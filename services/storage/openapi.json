@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-storage",
     "description": "Service that manages osparc storage backend",
-    "version": "0.7.1"
+    "version": "0.8.0"
   },
   "paths": {
     "/v0/": {
@@ -1082,66 +1082,6 @@
                 }
               }
             }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/simcore-s3/folders/{folder_id}": {
-      "delete": {
-        "tags": [
-          "simcore-s3"
-        ],
-        "summary": "Delete Folders Of Project",
-        "operationId": "delete_folders_of_project_v0_simcore_s3_folders__folder_id__delete",
-        "parameters": [
-          {
-            "name": "folder_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Folder Id"
-            }
-          },
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/_UserIDInt"
-            }
-          },
-          {
-            "name": "node_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Node Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
