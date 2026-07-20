@@ -194,6 +194,9 @@
           "204": {
             "description": "Successful Response"
           },
+          "409": {
+            "description": "Pipeline could not be stopped in time"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -1390,6 +1393,13 @@
             "title": "Force",
             "description": "if True then the pipeline will be removed even if it is running",
             "default": false
+          },
+          "wait_for": {
+            "type": "string",
+            "format": "duration",
+            "title": "Wait For",
+            "description": "timeout when waiting for pipeline to stop",
+            "default": "PT30S"
           }
         },
         "type": "object",

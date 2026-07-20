@@ -7,7 +7,6 @@ from packaging import version
 from pydantic import (
     BaseModel,
     ByteSize,
-    ConfigDict,
     Field,
     field_validator,
     model_validator,
@@ -35,7 +34,10 @@ class ContainerHostConfig(BaseModel):
     init: bool = Field(
         default=True,
         alias="Init",
-        description="Run an init inside the container that forwards signals and reaps processes. This field is omitted if empty, and the default (as configured on the daemon) is used",
+        description=(
+            "Run an init inside the container that forwards signals and reaps processes. "
+            "This field is omitted if empty, and the default (as configured on the daemon) is used"
+        ),
     )
     memory: ByteSize = Field(..., alias="Memory", description="Memory limit in bytes")
     memory_swap: ByteSize | None = Field(
@@ -77,7 +79,6 @@ class ImageLabels(BaseModel):
         alias="progress_regexp",
         description="regexp pattern for detecting computational service's progress",
     )
-    model_config = ConfigDict(extra="ignore")
 
     @field_validator("integration_version", mode="before")
     @classmethod

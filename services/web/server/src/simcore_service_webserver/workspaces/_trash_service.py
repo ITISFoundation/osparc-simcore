@@ -33,6 +33,7 @@ from ..projects._trash_service import (
 from ..projects.api import list_projects
 from ..projects.models import ProjectTypeAPI
 from . import _workspaces_repository, _workspaces_service, _workspaces_service_crud_read
+from ._workspaces_models import WorkspaceDBGet
 from .errors import WorkspaceBatchDeleteError, WorkspaceNotTrashedError
 
 _logger = logging.getLogger(__name__)
@@ -305,6 +306,58 @@ async def list_trashed_workspaces(
     return trashed_workspace_ids
 
 
+async def _delete_trashed_workspace_content_and_row(
+    app: web.Application,
+    *,
+    trashed_workspace: WorkspaceDBGet,
+    fail_fast: bool,
+    errors: list[tuple[WorkspaceID, Exception]],
+) -> WorkspaceID | None:
+    """Deletes one trashed workspace's content (projects, folders) and then its row.
+
+    NOTE: `projects.workspace_id` has `ON DELETE CASCADE`, so the workspace row must NOT
+    be hard-deleted unless its content was fully cleaned up first. Otherwise the cascade
+    would remove project rows before their storage/pipeline data was deleted, orphaning it.
+
+    Returns the workspace_id if it was fully deleted, or None if deletion was skipped (its
+    content could not be fully cleaned up) - it stays trashed and is retried on the next GC
+    cycle.
+    """
+    workspace_db_get = await _workspaces_repository.get_workspace_db_get(
+        app, workspace_id=trashed_workspace.workspace_id
+    )
+
+    try:
+        await batch_delete_projects_in_root_workspace_as_admin(
+            app, workspace_id=trashed_workspace.workspace_id, fail_fast=False
+        )
+        await batch_delete_folders_with_content_in_root_workspace_as_admin(
+            app,
+            workspace_id=trashed_workspace.workspace_id,
+            product_name=workspace_db_get.product_name,
+            fail_fast=False,
+        )
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        if fail_fast:
+            raise
+        errors.append((trashed_workspace.workspace_id, err))
+        return None
+
+    try:
+        await _workspaces_repository.delete_workspace(
+            app,
+            workspace_id=trashed_workspace.workspace_id,
+            product_name=workspace_db_get.product_name,
+        )
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        if fail_fast:
+            raise
+        errors.append((trashed_workspace.workspace_id, err))
+        return None
+
+    return trashed_workspace.workspace_id
+
+
 async def batch_delete_trashed_workspaces_as_admin(
     app: web.Application,
     *,
@@ -325,46 +378,19 @@ async def batch_delete_trashed_workspaces_as_admin(
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("workspace_id"), direction=OrderDirection.DESC),
         )
-        # BATCH delete
+        # BATCH delete: best-effort across workspaces (per `fail_fast=False`) - one broken
+        # workspace does not block the others in this batch from being deleted.
         for trashed_workspace in expired_trashed_workspaces:
             assert trashed_workspace.trashed  # nosec
-            deleted_workspace_ids.append(trashed_workspace.workspace_id)
 
-            workspace_db_get = await _workspaces_repository.get_workspace_db_get(
-                app, workspace_id=trashed_workspace.workspace_id
+            deleted_workspace_id = await _delete_trashed_workspace_content_and_row(
+                app,
+                trashed_workspace=trashed_workspace,
+                fail_fast=fail_fast,
+                errors=errors,
             )
-
-            try:
-                await batch_delete_projects_in_root_workspace_as_admin(
-                    app, workspace_id=trashed_workspace.workspace_id, fail_fast=False
-                )
-            except Exception as err:  # pylint: disable=broad-exception-caught
-                if fail_fast:
-                    raise
-                errors.append((trashed_workspace.workspace_id, err))
-
-            try:
-                await batch_delete_folders_with_content_in_root_workspace_as_admin(
-                    app,
-                    workspace_id=trashed_workspace.workspace_id,
-                    product_name=workspace_db_get.product_name,
-                    fail_fast=False,
-                )
-            except Exception as err:  # pylint: disable=broad-exception-caught
-                if fail_fast:
-                    raise
-                errors.append((trashed_workspace.workspace_id, err))
-
-            try:
-                await _workspaces_repository.delete_workspace(
-                    app,
-                    workspace_id=trashed_workspace.workspace_id,
-                    product_name=workspace_db_get.product_name,
-                )
-            except Exception as err:  # pylint: disable=broad-exception-caught
-                if fail_fast:
-                    raise
-                errors.append((trashed_workspace.workspace_id, err))
+            if deleted_workspace_id is not None:
+                deleted_workspace_ids.append(deleted_workspace_id)
 
     if errors:
         raise WorkspaceBatchDeleteError(

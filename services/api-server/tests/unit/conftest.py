@@ -724,6 +724,32 @@ def storage_rpc_side_effects(request) -> Any:
     return StorageSideEffects()
 
 
+@pytest.fixture
+def mocked_storage_rpc_api(
+    mocker: MockerFixture,
+    mock_dependency_get_celery_task_manager: MockType,
+) -> dict[str, MockType]:
+    """
+    Mocks the api-server's storage "RPC" client (StorageService) for testing purposes.
+
+    NOTE: unlike catalog/webserver, storage calls in the api-server are routed through
+    the celery task manager rather than RabbitMQ RPC, so here we mock the StorageService
+    methods directly instead of RabbitMQRPCClient.request.
+    """
+    from simcore_service_api_server.services_rpc.storage import (  # noqa: PLC0415
+        StorageService,
+    )
+
+    return {
+        "delete_project_s3_assets": mocker.patch.object(
+            StorageService,
+            "delete_project_s3_assets",
+            autospec=True,
+            return_value=None,
+        ),
+    }
+
+
 #
 # Other Mocks
 #

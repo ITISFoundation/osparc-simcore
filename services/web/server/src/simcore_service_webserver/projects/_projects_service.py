@@ -149,7 +149,6 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from ..wallets.wallets_service import get_wallet_with_available_credits_by_user_and_wallet
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
 from . import (
-    _crud_api_delete,
     _groups_service,
     _nodes_service,
     _projects_nodes_repository,
@@ -344,7 +343,7 @@ async def patch_project_and_notify_users(
 #
 
 
-def _is_node_dynamic(node_key: str) -> bool:
+def _is_node_dynamic(node_key: ServiceKey) -> bool:
     return "/dynamic/" in node_key
 
 
@@ -700,70 +699,6 @@ async def patch_project_for_user(
         user_primary_gid=current_user["primary_gid"],
         client_session_id=client_session_id,
     )
-
-
-async def delete_project_by_user(
-    app: web.Application,
-    *,
-    project_uuid: ProjectID,
-    user_id: UserID,
-    simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-    product_name: ProductName,
-    wait_until_completed: bool = True,
-) -> None:
-    task = await submit_delete_project_task(
-        app,
-        project_uuid=project_uuid,
-        user_id=user_id,
-        simcore_user_agent=simcore_user_agent,
-        product_name=product_name,
-    )
-    if wait_until_completed:
-        await task
-
-
-def _get_delete_project_task(project_uuid: ProjectID, user_id: UserID) -> asyncio.Task | None:
-    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
-        assert len(tasks) == 1, f"{tasks=}"  # nosec
-        return tasks[0]
-    return None
-
-
-async def submit_delete_project_task(
-    app: web.Application,
-    project_uuid: ProjectID,
-    user_id: UserID,
-    simcore_user_agent: str,
-    product_name: ProductName,
-) -> asyncio.Task:
-    """
-    Marks a project as deleted and schedules a task to perform the entire removal workflow
-    using user_id's permissions.
-
-    If this task is already scheduled, it returns it otherwise it creates a new one.
-
-    The returned task can be ignored to implement a fire&forget or
-    followed up with add_done_callback.
-
-    raises ProjectDeleteError
-    raises ProjectInvalidRightsError
-    raises ProjectNotFoundError
-    """
-    await _crud_api_delete.mark_project_as_deleted(app, project_uuid, user_id)
-
-    # Ensures ONE delete task per (project,user) pair
-    task = _get_delete_project_task(project_uuid, user_id)
-    if not task:
-        task = _crud_api_delete.schedule_task(
-            app,
-            project_uuid,
-            user_id,
-            simcore_user_agent,
-            product_name,
-            remove_project_dynamic_services,
-            _logger,
-        )
-    return task
 
 
 async def _get_default_pricing_and_hardware_info(
@@ -1249,7 +1184,7 @@ async def _remove_service_and_its_data_folders(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    node_uuid: NodeIDStr,
+    node_uuid: NodeID,
     user_agent: str,
     product_name: ProductName,
     stop_service: bool,
@@ -1261,7 +1196,7 @@ async def _remove_service_and_its_data_folders(
             dynamic_service_stop=DynamicServiceStop(
                 user_id=user_id,
                 project_id=project_uuid,
-                node_id=NodeID(node_uuid),
+                node_id=node_uuid,
                 simcore_user_agent=user_agent,
                 product_name=product_name,
                 save_state=False,
@@ -1269,14 +1204,16 @@ async def _remove_service_and_its_data_folders(
         )
 
     # remove the node's data if any
-    await storage_service.delete_data_folders_of_project_node(app, f"{project_uuid}", node_uuid, user_id)
+    await storage_service.delete_project_node_data_folders(
+        app, product_name=product_name, project_id=project_uuid, node_id=node_uuid, user_id=user_id
+    )
 
 
 async def delete_project_node(
     request: web.Request,
     project_uuid: ProjectID,
     user_id: UserID,
-    node_uuid: NodeIDStr,
+    node_uuid: NodeID,
     product_name: ProductName,
     product_api_base_url: str,
     client_session_id: ClientSessionID | None,
@@ -1305,7 +1242,7 @@ async def delete_project_node(
             node_uuid=node_uuid,
             user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
             product_name=product_name,
-            stop_service=any(f"{s.node_uuid}" == node_uuid for s in list_running_dynamic_services),
+            stop_service=any(s.node_uuid == node_uuid for s in list_running_dynamic_services),
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
@@ -1314,7 +1251,7 @@ async def delete_project_node(
     await _projects_nodes_repository.delete(
         request.app,
         project_id=project_uuid,
-        node_id=NodeID(node_uuid),
+        node_id=node_uuid,
     )
 
     await create_project_document_and_notify(
@@ -1560,12 +1497,11 @@ async def _get_node_share_state(
     *,
     project_uuid: ProjectID,
     node_id: NodeID,
+    node_key: ServiceKey,
     computational_pipeline_running: bool | None,
     user_primrary_groupid: GroupID,
 ) -> NodeShareState:
-    node = await _projects_nodes_repository.get(app, project_id=project_uuid, node_id=node_id)
-
-    if _is_node_dynamic(node.key):
+    if _is_node_dynamic(node_key):
         # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(app, node_id=node_id)
 
@@ -2066,6 +2002,7 @@ async def add_project_states_for_user(
                 app,
                 project_uuid=project["uuid"],
                 node_id=NodeID(node_uuid),
+                node_key=node["key"],
                 computational_pipeline_running=is_pipeline_running,
                 user_primrary_groupid=user_primary_group_id,
             )
