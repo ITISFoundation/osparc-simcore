@@ -11,6 +11,7 @@ def test_it(faker: Faker):
 from typing import Any
 
 from faker import Faker
+from pydantic import ByteSize
 
 _RANDOM = -1
 
@@ -56,8 +57,8 @@ def generate_fake_service_specs(faker: Faker) -> tuple[str, dict[str, Any]]:
 def inject_container_resources(
     compose_spec: dict[str, Any],
     *,
-    nano_cpus: int = int(4.0 * 1e9),
-    memory_bytes: int = 16 * 1024 * 1024 * 1024,
+    nano_cpus: int = int(1.0 * 1e9),
+    memory_bytes: int = ByteSize("1GiB"),
 ) -> dict[str, Any]:
     """Injects SIMCORE resource env vars and deploy limits into every service of a compose spec"""
     cpus_float = nano_cpus / 1e9
