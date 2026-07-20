@@ -21,8 +21,6 @@ from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
 
-from simcore_service_storage.simcore_s3_dsm import post_file_notification
-
 from .constants import DATCORE_ID, DATCORE_STR
 from .dsm_factory import BaseDataManager
 from .exceptions.errors import DatCoreCredentialsMissingError
@@ -40,6 +38,7 @@ from .modules.datcore_adapter.datcore_adapter_exceptions import (
 )
 from .modules.db import get_db_engine
 from .modules.db.tokens import TokenRepository
+from .modules.rabbitmq import post_file_notification
 
 _EXPECTED_FILE_FILTER_PARTS: Final[int] = 2
 
