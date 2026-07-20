@@ -726,14 +726,19 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     parent_dir_fmd.file_size = UNDEFINED_SIZE  # triggers an file size update in the future
                     await file_meta_data_repo.upsert(connection=conn, fmd=parent_dir_fmd)
 
-            for fmd in deleted_fmds:
-                await post_file_notification(
-                    self.app,
-                    event_type=FileNotificationEventType.FILE_DELETED,
-                    user_id=user_id,
-                    file_id=fmd.file_id,
-                    is_directory=fmd.is_directory,
-                )
+            await limited_gather(
+                *[
+                    post_file_notification(
+                        self.app,
+                        event_type=FileNotificationEventType.FILE_DELETED,
+                        user_id=user_id,
+                        file_id=fmd.file_id,
+                        is_directory=fmd.is_directory,
+                    )
+                    for fmd in deleted_fmds
+                ],
+                limit=MAX_CONCURRENT_S3_TASKS,
+            )
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
