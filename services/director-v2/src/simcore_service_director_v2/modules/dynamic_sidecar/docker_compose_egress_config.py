@@ -246,7 +246,7 @@ def _allow_outgoing_internet(service_spec: ComposeSpecLabelDict, container_name:
     service_spec["services"][container_name]["networks"] = networks
 
 
-def add_egress_configuration(  # noqa: C901
+def add_egress_configuration(  # noqa: C901 # NOSONAR
     service_spec: ComposeSpecLabelDict,
     simcore_service_labels: SimcoreServiceLabels,
     egress_proxy_settings: EgressProxySettings,
