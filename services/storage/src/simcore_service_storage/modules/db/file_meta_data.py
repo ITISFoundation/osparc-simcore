@@ -353,8 +353,7 @@ class FileMetaDataRepository(BaseRepository):
                     file_meta_data.c.upload_expires_at.is_(None)  # lgtm [py/test-equals-none]
                 )
             ):
-                fmd_at_db = FileMetaDataAtDB.model_validate(row)
-                yield fmd_at_db
+                yield FileMetaDataAtDB.model_validate(row)
 
     async def delete(
         self,
