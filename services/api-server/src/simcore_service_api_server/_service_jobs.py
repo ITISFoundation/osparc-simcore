@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
+from aws_library.kms import SimcoreKMSAPI
 from common_library.exclude import as_dict_exclude_none
 from fastapi import status
 from fastapi.exceptions import HTTPException
@@ -105,6 +106,7 @@ class JobService:
     _storage_rest_client: StorageApi
     _directorv2_rpc_client: DirectorV2Service
     _solver_service: SolverService
+    _kms_client: SimcoreKMSAPI | None
 
     user_id: UserID
     product_name: ProductName
@@ -457,6 +459,7 @@ class JobService:
             job_id=job_id,
             expected_job_name=job_name,
             encryption=encryption,
+            kms_client=self._kms_client,
             webserver_api=self._web_rest_client,
         )
         return await self.inspect_solver_job(
@@ -545,6 +548,7 @@ class JobService:
             webserver_api=self._web_rest_client,
             pricing_spec=pricing_spec,
             encryption=None,  # NOTE: study jobs (multi-node) do not support encryption
+            kms_client=self._kms_client,
         )
         return await self.inspect_study_job(
             job_id=job_id,

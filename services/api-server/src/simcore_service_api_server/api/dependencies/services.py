@@ -16,6 +16,7 @@ from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
 from ..._service_programs import ProgramService
 from ..._service_solvers import SolverService
+from ...clients.kms import SimcoreKMSAPI, get_kms_client
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.storage import StorageApi
 from ...services_http.webserver import AuthSession
@@ -121,6 +122,7 @@ def get_job_service(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    kms_client: Annotated[SimcoreKMSAPI | None, Depends(get_kms_client)],
 ) -> JobService:
     """
     "Assembles" the JobsService layer to the underlying service and client interfaces
@@ -134,6 +136,7 @@ def get_job_service(
         _director2_api=director2_api,
         _storage_rest_client=storage_api,
         _solver_service=solver_service,
+        _kms_client=kms_client,
         user_id=user_id,
         product_name=product_name,
     )

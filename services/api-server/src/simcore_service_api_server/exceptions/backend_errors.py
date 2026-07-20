@@ -36,6 +36,11 @@ class InvalidEncryptionInputsError(BaseBackEndError):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+class EncryptionNotConfiguredError(BaseBackEndError):
+    msg_template = user_message("Encryption is not available on this deployment. Please contact support.", _version=1)
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
 class ListSolversOrStudiesError(BaseBackEndError):
     msg_template = user_message("Unable to retrieve the list of solvers and projects.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
