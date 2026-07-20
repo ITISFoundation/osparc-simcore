@@ -52,17 +52,20 @@ billiard==4.2.1
     # via
     #   -c requirements/_base.txt
     #   celery
-boto3==1.42.70
+boto3==1.40.61
     # via
+    #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
-botocore==1.42.70
+botocore==1.40.61
     # via
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.42.41
-    # via types-boto3
+botocore-stubs==1.43.14
+    # via
+    #   -c requirements/_base.txt
+    #   types-boto3
 celery==5.6.3
     # via
     #   -c requirements/_base.txt
@@ -174,6 +177,7 @@ jinja2==3.1.6
     #   flask
 jmespath==1.1.0
     # via
+    #   -c requirements/_base.txt
     #   boto3
     #   botocore
 joserfc==1.5.0
@@ -397,8 +401,10 @@ tenacity==9.0.0
     #   pytest-celery
 types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
-types-awscrt==0.31.3
-    # via botocore-stubs
+types-awscrt==0.34.1
+    # via
+    #   -c requirements/_base.txt
+    #   botocore-stubs
 types-boto3==1.42.70
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20260202
