@@ -644,9 +644,7 @@ async def test_delete_node(
         await create_dynamic_service_mock(project_id=user_project["uuid"], service_uuid=service_uuid)
         for service_uuid in running_dy_services
     ]
-    # mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
-    #     {"service_uuid": service_uuid} for service_uuid in running_dy_services
-    # ]
+
     for node_id in user_project["workbench"]:
         url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.delete(url.path)
