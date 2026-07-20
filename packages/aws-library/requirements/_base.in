@@ -13,6 +13,6 @@ arrow
 fastapi
 fastapi-lifespan-manager
 pydantic[email]
-types-aiobotocore[ec2,s3,ssm]
+types-aiobotocore[ec2,kms,s3,ssm]
 opentelemetry-instrumentation-botocore
 sh
