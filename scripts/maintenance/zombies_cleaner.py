@@ -274,7 +274,9 @@ def inspect(
             help="Path to the deployment configuration directory (must contain a repo.config file)",
         ),
     ],
-    s3_prefix_template: str = typer.Option(..., help="Prefix template, e.g. storage/projects/{project_id}/"),
+    s3_prefix_template: str = typer.Option(
+        "{project_id}/", help="Prefix template, e.g. storage/projects/{project_id}/"
+    ),
     limit: int | None = typer.Option(None, help="Optional max number of orphan rows to inspect"),
     report_csv: str = typer.Option("comp_pipeline_cleanup_report.csv", help="CSV output path"),
 ):
