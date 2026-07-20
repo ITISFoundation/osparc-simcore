@@ -135,8 +135,8 @@ def get_dynamic_proxy_spec(
             product_name=scheduler_data.product_name,
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
             swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-            memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION,
-            cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
+            memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_LIMIT,
+            cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT,
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.proxy_service_name,
         "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
@@ -156,8 +156,8 @@ def get_dynamic_proxy_spec(
                     product_name=scheduler_data.product_name,
                     simcore_user_agent=scheduler_data.request_simcore_user_agent,
                     swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION,
-                    cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
+                    memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_LIMIT,
+                    cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT,
                 ).to_simcore_runtime_docker_labels(),
                 "Command": [
                     "sh",
