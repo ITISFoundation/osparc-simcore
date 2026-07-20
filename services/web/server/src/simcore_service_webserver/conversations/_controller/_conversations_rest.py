@@ -204,6 +204,7 @@ async def delete_conversation(request: web.Request):
     conversation = await _conversation_service.get_owned_support_conversation(
         app=request.app,
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
     )
 

@@ -202,10 +202,12 @@ async def list_project_conversations(
 
 
 async def _get_validated_support_conversation(
-    app: web.Application, *, conversation_id: ConversationID
+    app: web.Application, *, product_name: ProductName, conversation_id: ConversationID
 ) -> ConversationGetDB:
-    # Fetch once; validate existence (404) and support type (400)
+    # Fetch once; validate product ownership (404), then support type (400)
     conversation = await get_conversation(app, conversation_id=conversation_id)
+    if conversation.product_name != product_name:
+        raise ConversationErrorNotFoundError(conversation_id=conversation_id)
     if conversation.type.is_support_type() is False:
         raise ConversationUnsupportedTypeError(conversation_type=conversation.type)
     return conversation
@@ -218,10 +220,10 @@ async def get_support_conversation_for_user(
     product_name: ProductName,
     conversation_id: ConversationID,
 ) -> tuple[ConversationGetDB, ConversationUserType]:
-    # Single fetch: validates existence (404) and support type (400) before authorization
-    conversation = await _get_validated_support_conversation(app, conversation_id=conversation_id)
-    if conversation.product_name != product_name:
-        raise ConversationErrorNotFoundError(conversation_id=conversation_id)
+    # Single fetch: validates product ownership (404) and support type (400) before authorization
+    conversation = await _get_validated_support_conversation(
+        app, product_name=product_name, conversation_id=conversation_id
+    )
     # Check if user is part of support group (in that case he has access to all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
@@ -257,9 +259,13 @@ async def get_owned_support_conversation(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: ProductName,
     conversation_id: ConversationID,
 ) -> ConversationGetDB:
-    conversation = await _get_validated_support_conversation(app, conversation_id=conversation_id)
+    # Single fetch: validates product ownership (404), support type (400), then creator ownership (404)
+    conversation = await _get_validated_support_conversation(
+        app, product_name=product_name, conversation_id=conversation_id
+    )
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     if conversation.user_group_id != _user_group_id:
