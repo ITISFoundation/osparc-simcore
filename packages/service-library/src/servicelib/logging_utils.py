@@ -590,11 +590,7 @@ _CONTEXT_ID_LEN: Final[int] = 8
 
 
 def _default_operation_name() -> str:
-    # NOTE: this is a helper called from within `log_context`'s body, which itself adds one frame
-    # on top of the `stacklevel=_STACK_LEVEL_OFFSET` frame-chain used below for `logger.log()`
-    # (0 => this helper, 1 => log_context, 2 => contextlib, 3 => caller). Uses `sys._getframe()`
-    # (O(1), single frame) rather than `inspect.stack()` (O(stack depth), reads source lines for
-    # every frame) since this runs on every traced `log_context` call.
+    """returns a default operation name made of the filename and function name of the caller of `log_context()`"""
     frame = sys._getframe(_STACK_LEVEL_OFFSET)  # noqa: SLF001
     return f"{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name}"
 
@@ -635,31 +631,31 @@ def log_context(
                 )
             )
 
-    try:
-        logger.log(
-            level,
-            starting_log_msg,
-            *args,
-            **kwargs,
-            stacklevel=_STACK_LEVEL_OFFSET,
-        )
-        yield
-    finally:
-        potential_exception = sys.exception()
-        additional_info_message = (
-            f" (raised exception {type(potential_exception).__name__})" if potential_exception else ""
-        )
-        elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        finished_log_msg = (
-            f"{_DONE_PREFIX}{msg}{additional_info_message} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
-        )
-        logger.log(
-            level,
-            finished_log_msg,
-            *args,
-            **kwargs,
-            stacklevel=_STACK_LEVEL_OFFSET,
-        )
+        try:
+            logger.log(
+                level,
+                starting_log_msg,
+                *args,
+                **kwargs,
+                stacklevel=_STACK_LEVEL_OFFSET,
+            )
+            yield
+        finally:
+            potential_exception = sys.exception()
+            additional_info_message = (
+                f" (raised exception {type(potential_exception).__name__})" if potential_exception else ""
+            )
+            elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+            finished_log_msg = (
+                f"{_DONE_PREFIX}{msg}{additional_info_message} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
+            )
+            logger.log(
+                level,
+                finished_log_msg,
+                *args,
+                **kwargs,
+                stacklevel=_STACK_LEVEL_OFFSET,
+            )
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:
