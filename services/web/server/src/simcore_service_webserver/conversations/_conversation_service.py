@@ -220,7 +220,8 @@ async def get_support_conversation_for_user(
 ) -> tuple[ConversationGetDB, ConversationUserType]:
     # Single fetch: validates existence (404) and support type (400) before authorization
     conversation = await _get_validated_support_conversation(app, conversation_id=conversation_id)
-
+    if conversation.product_name != product_name:
+        raise ConversationErrorNotFoundError(conversation_id=conversation_id)
     # Check if user is part of support group (in that case he has access to all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
