@@ -117,11 +117,7 @@ def _write_limits(service_spec: dict[str, Any], resources: _Resources) -> None:
         environment.update(updated_env)
     else:
         assert isinstance(environment, list)  # nosec
-        environment = [
-            e
-            for e in environment
-            if not any(str(e).startswith(f"{key}=") for key in updated_env)
-        ]
+        environment = [e for e in environment if not any(str(e).startswith(f"{key}=") for key in updated_env)]
         environment.extend(f"{k}={v}" for k, v in updated_env.items())
         service_spec["environment"] = environment
 
@@ -208,8 +204,13 @@ def _is_user_service(service_spec: dict[str, Any]) -> bool:
     collector, rclone) never receive this variable, making it an image-agnostic marker
     that requires no hardcoded image names or service-name patterns.
     """
-    environment: list[str] = service_spec.get("environment", [])
-    return any(e.startswith(f"{CPU_RESOURCE_LIMIT_KEY}=") for e in environment)
+    environment = service_spec.get("environment")
+    if isinstance(environment, dict):
+        return CPU_RESOURCE_LIMIT_KEY in environment
+    if not environment:
+        return False
+    assert isinstance(environment, list)  # nosec
+    return any(str(e).startswith(f"{CPU_RESOURCE_LIMIT_KEY}=") for e in environment)
 
 
 def _deduct_helper_containers_resources(
