@@ -529,6 +529,7 @@ async def stop_computation(
     # create the complete DAG graph
     complete_dag = create_complete_dag_from_tasks(tasks)
     # stop the pipeline if it is running
+    last_run: CompRunsAtDB | None = None
     pipeline_state = RunningState.NOT_STARTED  # default state if no run exists
     with contextlib.suppress(ComputationalRunNotFoundError):
         last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
