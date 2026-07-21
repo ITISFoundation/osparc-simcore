@@ -27,6 +27,7 @@ import contextlib
 import csv
 import json
 from collections.abc import AsyncIterator, Iterator
+from itertools import islice
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import quote
@@ -44,6 +45,7 @@ from pydantic import AnyHttpUrl, BaseModel, ByteSize, ConfigDict, SecretStr
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
+from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -474,19 +476,26 @@ def write_report(path: str, reports: list[PrefixReport]) -> None:
             writer.writerow([r.project_id, r.prefix, r.exists, r.object_count, int(r.total_size)])
 
 
-def read_report(path: str) -> list[PrefixReport]:
-    with Path(path).open(newline="") as fp:
+def iter_report(path: Path) -> Iterator[PrefixReport]:
+    # NOTE: generator that streams report rows one at a time instead of loading the whole CSV
+    # into memory, so cleanup can run against arbitrarily large reports.
+    with path.open(newline="") as fp:
         reader = csv.DictReader(fp)
-        return [
-            PrefixReport(
+        for row in reader:
+            yield PrefixReport(
                 project_id=row["project_id"],
                 prefix=row["prefix"],
                 exists=row["exists"].strip().lower() == "true",
                 object_count=int(row["object_count"]),
                 total_size=int(row["total_size_bytes"]),
             )
-            for row in reader
-        ]
+
+
+def _count_csv_rows(path: Path) -> int:
+    # NOTE: cheap single pass to report a count for the confirmation prompt without
+    # materializing every row into a PrefixReport/list.
+    with path.open(newline="") as fp:
+        return sum(1 for _ in csv.reader(fp)) - 1  # exclude header
 
 
 def write_bucket_orphans_report(path: str, reports: list[BucketOrphanReport]) -> None:
@@ -526,13 +535,20 @@ def delete_s3_prefix(client, bucket: str, prefix: str) -> tuple[int, int]:
     return deleted_objects, deleted_bytes
 
 
-async def delete_db_rows(engine: AsyncEngine, project_ids: list[UUID]) -> int:
-    if not project_ids:
-        return 0
-    query = sa.delete(comp_pipeline).where(comp_pipeline.c.project_id.in_([str(p) for p in project_ids]))
-    async with engine.begin() as conn:
-        result = await conn.execute(query)
-        return result.rowcount
+async def delete_db_rows(engine: AsyncEngine, project_ids: Iterator[UUID]) -> int:
+    # NOTE: consumes project_ids lazily in bounded chunks (instead of requiring a full list
+    # upfront) so cleanup can run against arbitrarily large reports.
+    deleted_rows = 0
+    ids_it = iter(project_ids)
+    while batch := [str(p) for p in islice(ids_it, _DB_IN_CLAUSE_CHUNK_SIZE)]:
+        async with engine.begin() as conn:
+            # NOTE: comp_tasks.project_id has a FK to comp_pipeline.project_id with no
+            # ON DELETE CASCADE, so child rows must be deleted first, otherwise deleting from
+            # comp_pipeline raises psycopg.errors.ForeignKeyViolation.
+            await conn.execute(sa.delete(comp_tasks).where(comp_tasks.c.project_id.in_(batch)))
+            result = await conn.execute(sa.delete(comp_pipeline).where(comp_pipeline.c.project_id.in_(batch)))
+            deleted_rows += result.rowcount
+    return deleted_rows
 
 
 def summarize(reports: list[PrefixReport]) -> dict:
@@ -598,7 +614,7 @@ async def _inspect_comp_pipelines_async(
 
 
 @app.command()
-def cleanup(
+def cleanup_comp_pipelines(
     deploy_config: Annotated[
         Path,
         typer.Option(
@@ -634,15 +650,15 @@ async def _cleanup_async(deploy_config: Path, report_csv: Path, *, yes: bool) ->
     bastion = _parse_inventory(deploy_config)
     ssh_key_path = _find_ssh_key(deploy_config) if bastion is not None else None
 
-    reports = read_report(str(report_csv))
-    console.print(f"[bold]Loaded report:[/bold] {report_csv} ({len(reports)} entries)")
+    total_entries = _count_csv_rows(report_csv)
+    console.print(f"[bold]Loaded report:[/bold] {report_csv} ({total_entries} entries)")
     if not yes:
-        confirmed = typer.confirm(f"Delete {len(reports)} comp_pipeline rows from the DB?", abort=False)
+        confirmed = typer.confirm(f"Delete {total_entries} comp_pipeline rows from the DB?", abort=False)
         if not confirmed:
             typer.echo("Aborted.")
             raise typer.Exit(code=0)
 
-    project_ids = [r.project_id for r in reports]
+    project_ids = (r.project_id for r in iter_report(report_csv))
     async with db_engine(dbcfg, bastion, ssh_key_path) as engine:
         deleted_rows = await delete_db_rows(engine, project_ids)
 
