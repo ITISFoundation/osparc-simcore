@@ -16,8 +16,9 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from inspect import getframeinfo, stack
+from inspect import currentframe, getframeinfo, stack
 from pathlib import Path
+from types import FrameType
 from typing import Any, Final, TypedDict, TypeVar
 from uuid import uuid4
 
@@ -599,16 +600,30 @@ _STACK_LEVEL_OFFSET: Final[int] = 3  # 1 => log_context, 2 => contextlib, 3 => c
 _CONTEXT_ID_LEN: Final[int] = 8
 
 
+def _get_frame(stacklevel: int) -> FrameType | None:
+    """returns the frame `stacklevel` levels up from the *caller* of this function (i.e. behaves like
+    `sys._getframe(stacklevel)` called directly at the call site), or `None` if the stack isn't that deep
+    (or on Python implementations without frame support, per `inspect.currentframe()`)"""
+    frame = currentframe()
+    for _ in range(stacklevel + 1):  # +1 to skip this function's own frame
+        if frame is None:
+            return None
+        frame = frame.f_back
+    return frame
+
+
 def _default_operation_name() -> str:
     """returns a default operation name made of the filename and function name of the caller of `log_context()`"""
-    frame = sys._getframe(_STACK_LEVEL_OFFSET)  # noqa: SLF001
+    frame = _get_frame(_STACK_LEVEL_OFFSET)
+    if frame is None:
+        return "log_context:unknown:unknown"
     return f"log_context:{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name}"
 
 
 def _caller_lineno() -> int:
     """returns the line number, within the caller's function, of the `with log_context(...):` call"""
-    frame = sys._getframe(_STACK_LEVEL_OFFSET)  # noqa: SLF001
-    return frame.f_lineno
+    frame = _get_frame(_STACK_LEVEL_OFFSET)
+    return frame.f_lineno if frame is not None else 0
 
 
 @contextmanager

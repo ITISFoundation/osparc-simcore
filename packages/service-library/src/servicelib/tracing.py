@@ -1,7 +1,7 @@
 import functools
 import inspect
 import logging
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Iterator
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar, Token
 from enum import auto
@@ -209,7 +209,7 @@ def traced_operation(
     tracing_config: TracingConfig,
     attributes: dict[str, str] | None = None,
     links: list[Link] | None = None,
-):
+) -> Iterator[None]:
     """Generic context manager for creating traced spans.
 
     Creates a span with the given operation name and attributes. Automatically detects
