@@ -927,7 +927,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 moga_pareto_plot.wait_for(state="visible", timeout=2 * MINUTE)
 
                 moga_trace_lengths = moga_pareto_plot.evaluate(
-                    "el => (el.data || []).map(trace => (trace.x || trace.y || []).length)"
+                    "el => (el.data || []).map(trace => Math.max((trace.x || []).length, (trace.y || []).length))"
                 )
                 total_moga_points = sum(moga_trace_lengths)
                 assert total_moga_points > 0, (
