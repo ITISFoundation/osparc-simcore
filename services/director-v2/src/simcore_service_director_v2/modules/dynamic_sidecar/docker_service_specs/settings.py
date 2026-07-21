@@ -312,7 +312,7 @@ def _merge_resources_in_settings(
         # on the very node it was pinned to (e.g. 0.6 CPU on t3.large would be raised to
         # 1.0 CPU, exceeding the node's available capacity after overhead).
         empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
-            empty_resource_entry.value["Limits"]["NanoCPUs"], 1 * GIGA
+            empty_resource_entry.value["Limits"]["NanoCPUs"], int(1 * GIGA)
         )
         empty_resource_entry.value["Limits"]["MemoryBytes"] = max(
             empty_resource_entry.value["Limits"]["MemoryBytes"], MEMORY_1GB
