@@ -20,12 +20,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.client import ClientSession
-from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.aiointercept_mocker import AiointerceptMock
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
@@ -238,7 +238,7 @@ async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> N
 
 @pytest.fixture
 def common_fixtures(
-    storage_v0_service_mock: AioResponsesMock,
+    storage_v0_service_mock: AiointerceptMock,
     mock_download_file: None,
     mock_filemanager: None,
     this_node_file: Path,
