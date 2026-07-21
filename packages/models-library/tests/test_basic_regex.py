@@ -7,7 +7,7 @@
 import keyword
 import re
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 from re import Pattern
 from typing import Any
 
@@ -175,7 +175,7 @@ class webserver_timedate_utils:
 
     @classmethod
     def now(cls) -> datetime:
-        return datetime.utcnow()
+        return datetime.now(tz=UTC).replace(tzinfo=None)
 
     @classmethod
     def format_datetime(cls, snapshot: datetime) -> str:
@@ -198,7 +198,7 @@ class webserver_timedate_utils:
         ("2020-12-30T23:15:00.345Z", ("12", "30", "23", ":00", "00", ".345")),
         ("2020-12-30 23:15:00", INVALID),
         (datetime.now().isoformat(), INVALID),  # as '2020-11-29T23:09:21.859469'
-        (datetime.utcnow().isoformat(), INVALID),  # as '2020-11-29T22:09:21.859469'
+        (datetime.now(tz=UTC).replace(tzinfo=None).isoformat(), INVALID),  # as '2020-11-29T22:09:21.859469'
         (webserver_timedate_utils.now_str(), VALID),
         (
             webserver_timedate_utils.format_datetime(datetime(2020, 11, 29, 22, 13, 23, 57000)),
