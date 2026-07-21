@@ -257,7 +257,7 @@ class ProjectDBAPI(BaseProjectDB):
                 "creation_date": now(),
                 "last_change_date": now(),
                 "product_name": product_name,
-                "trashed": arrow.get(project["trashed"]).datetime if "trashed" in project else None,
+                "trashed": arrow.get(trashed_at).datetime if (trashed_at := project.get("trashed")) else None,
             }
         )
 
