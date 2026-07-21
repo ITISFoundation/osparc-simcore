@@ -204,6 +204,13 @@ async def list_project_conversations(
 async def _get_validated_support_conversation(
     app: web.Application, *, product_name: ProductName, conversation_id: ConversationID
 ) -> ConversationGetDB:
+    """Fetches a conversation once and validates it is a SUPPORT-type conversation
+    owned by ``product_name``. Raises if not found, not matching the product, or
+    not of SUPPORT type (see ``ConversationType.is_support_type``).
+
+    NOTE: only SUPPORT-type conversations are ever validated here. Project-bound
+    conversations are managed separately under ``/projects/{project_id}/conversations``.
+    """
     conversation = await get_conversation(app, conversation_id=conversation_id)
     # NOTE: Intentionally validate product ownership before type to avoid cross-product information leaks (IDOR).
     if conversation.product_name != product_name:
@@ -220,6 +227,9 @@ async def get_support_conversation_for_user(
     product_name: ProductName,
     conversation_id: ConversationID,
 ) -> tuple[ConversationGetDB, ConversationUserType]:
+    """Grants read/write access to a SUPPORT-type conversation for either a
+    chatbot, a support-group member, or the conversation's creator (regular user).
+    """
     conversation = await _get_validated_support_conversation(
         app, product_name=product_name, conversation_id=conversation_id
     )
@@ -261,7 +271,10 @@ async def get_owned_support_conversation(
     product_name: ProductName,
     conversation_id: ConversationID,
 ) -> ConversationGetDB:
-    # Single fetch: validates product ownership (404), support type (400), then creator ownership (404)
+    """Enforces the creator-only rule for a SUPPORT-type conversation (e.g. for delete).
+
+    Single fetch: validates product ownership (404), support type (400), then creator ownership (404).
+    """
     conversation = await _get_validated_support_conversation(
         app, product_name=product_name, conversation_id=conversation_id
     )

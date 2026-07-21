@@ -140,7 +140,7 @@ async def list_conversations(request: web.Request):
 @login_required
 @_handle_exceptions
 async def get_conversation(request: web.Request):
-    """Get a specific conversation"""
+    """Get a specific conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
 
@@ -162,7 +162,7 @@ async def get_conversation(request: web.Request):
 @login_required
 @_handle_exceptions
 async def update_conversation(request: web.Request):
-    """Update a conversation"""
+    """Update a conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     body_params = await parse_request_body_as(ConversationPatch, request)
@@ -196,7 +196,7 @@ async def update_conversation(request: web.Request):
 @login_required
 @_handle_exceptions
 async def delete_conversation(request: web.Request):
-    """Delete a conversation"""
+    """Delete a conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
 
