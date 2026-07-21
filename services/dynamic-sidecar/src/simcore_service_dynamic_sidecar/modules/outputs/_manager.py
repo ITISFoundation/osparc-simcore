@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
 from datetime import timedelta
@@ -8,7 +7,10 @@ from functools import partial
 
 from common_library.async_tools import cancel_wait_task
 from common_library.errors_classes import OsparcErrorMixin
-from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.logging.logging_errors import (
+    create_troubleshooting_log_kwargs,
+    format_exception_as_string,
+)
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
@@ -144,12 +146,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         def _remove_downloads(future: Future) -> None:
             exception = future._exception  # noqa: SLF001 # pylint: disable=protected-access
             if exception is not None:
-                formatted_traceback = (
-                    "\n" + "".join(traceback.format_exception(exception)) if exception.__traceback__ else ""
-                )
                 _logger.warning(
                     **create_troubleshooting_log_kwargs(
-                        f"{task_name} ended with exception: {exception}{formatted_traceback}",
+                        f"{task_name} ended with exception: {exception}\n{format_exception_as_string(exception)}",
                         error=exception,
                         error_context={
                             "port_keys": port_keys,

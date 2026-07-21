@@ -1,11 +1,11 @@
 import logging
-import traceback
 from abc import ABC, abstractmethod
 from asyncio import CancelledError, Task
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
+from common_library.logging.logging_errors import format_exception_as_string
 from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
@@ -28,24 +28,12 @@ from .ports_mapping import InputsList, OutputsList
 log = logging.getLogger(__name__)
 
 
-#  -> @GitHK this looks very dangerous, using a lot of protected stuff, just checking the number of ignores shows it's a bad idea...
-def _format_error(task: Task) -> str:
-    # pylint:disable=protected-access
-    assert task._exception  # nosec  # noqa: SLF001
-    error_list = traceback.format_exception(
-        type(task._exception),  # noqa: SLF001
-        task._exception,  # noqa: SLF001
-        task._exception.__traceback__,  # noqa: SLF001
-    )
-    return "\n".join(error_list)
-
-
 def _get_error_details(task: Task, port_key: str) -> InitErrorDetails:
     # pylint:disable=protected-access
     return InitErrorDetails(
         type="value_error",
         loc=(f"{port_key}",),
-        input=_format_error(task),
+        input=format_exception_as_string(task._exception),  # noqa: SLF001
         ctx={"error": task._exception},  # noqa: SLF001
     )
 

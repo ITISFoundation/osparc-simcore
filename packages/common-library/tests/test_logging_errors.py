@@ -8,6 +8,7 @@ from common_library.errors_classes import OsparcErrorMixin
 from common_library.logging.logging_errors import (
     create_troubleshooting_log_kwargs,
     create_troubleshooting_log_message,
+    format_exception_as_string,
 )
 
 
@@ -69,3 +70,21 @@ def test_create_troubleshooting_log_message(caplog: pytest.LogCaptureFixture):
         assert error_code in caplog.text
         assert "user_id" in caplog.text
         assert "product_name" in caplog.text
+
+
+def test_format_exception_as_string():
+    formatted = None
+    try:
+        msg = "boom"
+        raise RuntimeError(msg)  # noqa: TRY301
+    except RuntimeError as exc:
+        formatted = format_exception_as_string(exc)
+
+    assert formatted is not None
+    assert "RuntimeError" in formatted
+    assert "boom" in formatted
+    assert "Traceback" in formatted
+
+
+def test_format_exception_as_string_with_none():
+    assert format_exception_as_string(None) == ""
