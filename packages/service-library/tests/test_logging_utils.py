@@ -332,7 +332,7 @@ def test_log_context_creates_span_automatically(
 
     spans = memory_exporter.get_finished_spans()
     assert len(spans) == 1
-    assert spans[0].name == f"log_context:{Path(__file__).stem}:test_log_context_creates_span_automatically"
+    assert spans[0].name == f"{Path(__file__).stem}:test_log_context_creates_span_automatically - log_context"
 
 
 def test_log_context_operation_name_overrides_default_span_name(
@@ -387,7 +387,7 @@ def test_log_context_span_has_log_message_attribute(
     assert isinstance(log_message, str)
     assert "doing something important" in log_message
     # span name stays stable/low-cardinality, unaffected by the free-form message
-    assert spans[0].name == f"log_context:{Path(__file__).stem}:test_log_context_span_has_log_message_attribute"
+    assert spans[0].name == f"{Path(__file__).stem}:test_log_context_span_has_log_message_attribute - log_context"
 
 
 def test_log_context_span_log_message_attribute_substitutes_args(

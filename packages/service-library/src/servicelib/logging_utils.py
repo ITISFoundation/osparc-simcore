@@ -616,8 +616,8 @@ def _default_operation_name() -> str:
     """returns a default operation name made of the filename and function name of the caller of `log_context()`"""
     frame = _get_frame(_STACK_LEVEL_OFFSET)
     if frame is None:
-        return "log_context:unknown:unknown"
-    return f"log_context:{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name}"
+        return "unknown:unknown - log_context"
+    return f"{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name} - log_context"
 
 
 def _caller_lineno() -> int:
