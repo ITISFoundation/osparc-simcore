@@ -17,7 +17,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import and_, literal_column
+from sqlalchemy import CursorResult, and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -360,13 +360,9 @@ class FileMetaDataRepository(BaseRepository):
         connection: AsyncConnection | None = None,
         file_ids: Annotated[list[SimcoreS3FileID], doc("file IDs to delete")],
         recursive: Annotated[bool, doc("if True, deletes all files that are children of the given file_ids")],
-    ) -> None:
+    ) -> list[FileMetaDataAtDB]:
         """Delete the files with `file_ids`."""
-        async with transaction_context(self.db_engine, connection) as conn:
-            if not recursive:
-                await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
-                return
-
+        if recursive:
             conditions = [
                 sa.or_(
                     file_meta_data.c.file_id == file_id,
@@ -374,8 +370,13 @@ class FileMetaDataRepository(BaseRepository):
                 )
                 for file_id in file_ids
             ]
+            delete_stmt = file_meta_data.delete().where(sa.or_(*conditions))
+        else:
+            delete_stmt = file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids))
 
-            await conn.execute(file_meta_data.delete().where(sa.or_(*conditions)))
+        async with transaction_context(self.db_engine, connection) as conn:
+            deleted_rows: CursorResult = await conn.execute(delete_stmt.returning(sa.literal_column("*")))
+            return [FileMetaDataAtDB.model_validate(x) for x in deleted_rows.all()]
 
     async def delete_all_from_project(
         self, *, connection: AsyncConnection | None = None, project_id: ProjectID
