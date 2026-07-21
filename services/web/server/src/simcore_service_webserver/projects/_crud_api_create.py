@@ -156,6 +156,13 @@ async def _prepare_project_copy(
     if not as_template:
         new_project["name"] = default_copy_project_name(source_project["name"])
 
+    # A cloned project must never inherit the source's trash state (e.g. the source
+    # might have been stamped with the trash epoch sentinel for immediate deletion,
+    # see `_trash_service.trash_project_for_immediate_deletion`)
+    new_project["trashed"] = None
+    new_project["trashedBy"] = None
+    new_project["trashedExplicitly"] = False
+
     copy_project_nodes_coro = None
     if len(nodes_map) > 0:
         copy_project_nodes_coro = _copy_project_nodes_from_source_project(
