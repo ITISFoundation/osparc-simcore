@@ -25,8 +25,6 @@ DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = TypeAdapter(DockerGeneric
 MEMORY_1GB: Final[int] = TypeAdapter(ByteSize).validate_python("1gib")
 
 GIGA: Final[float] = 1e9
-CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
-CPU_100_PERCENT: Final[int] = int(1 * GIGA)
 
 
 class ResourceValue(BaseModel, validate_assignment=True):

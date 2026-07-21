@@ -15,7 +15,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import ServiceRunID
-from models_library.services_resources import GIGA, ServiceResourcesDict
+from models_library.services_resources import ServiceResourcesDict
 from pydantic import ByteSize
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -227,7 +227,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         proxy_settings: DynamicSidecarProxySettings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
         _subtract_proxy_reservation_from_service_resources(
             scheduler_data.service_resources,
-            cpu_reservation=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION / GIGA,  # nanocpus → cores
+            cpu_reservation=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
             ram_reservation=int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION),
         )
 
