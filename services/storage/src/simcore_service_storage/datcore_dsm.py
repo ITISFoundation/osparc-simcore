@@ -326,7 +326,7 @@ class DatCoreDataManager(BaseDataManager):
             event_type=FileNotificationEventType.FILE_DELETED,
             user_id=user_id,
             file_id=file_id,
-            is_directory=False,
+            fmd_is_directory=False,
         )
 
 

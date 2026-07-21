@@ -44,7 +44,7 @@ async def test_post_file_notification_standard_file_id(
         event_type=FileNotificationEventType.FILE_UPLOADED,
         user_id=42,
         file_id=file_id,
-        is_directory=is_directory,
+        fmd_is_directory=is_directory,
     )
 
     mock_client = mock_app.state.rabbitmq_client
@@ -58,7 +58,7 @@ async def test_post_file_notification_standard_file_id(
     assert message.project_id == project_id
     assert message.node_id == node_id
     assert message.file_id == file_id
-    assert message.is_directory == is_directory
+    assert message.fmd_is_directory == is_directory
 
 
 @pytest.mark.parametrize(
@@ -74,7 +74,7 @@ async def test_post_file_notification_skipped_prefixes(mock_app: AsyncMock, file
         event_type=FileNotificationEventType.FILE_DELETED,
         user_id=7,
         file_id=file_id.format(uuid=faker.uuid4()),
-        is_directory=False,
+        fmd_is_directory=False,
     )
 
     mock_client = mock_app.state.rabbitmq_client
@@ -93,7 +93,7 @@ async def test_post_file_notification_does_not_raise_on_publish_error(
         event_type=FileNotificationEventType.FILE_UPLOADED,
         user_id=1,
         file_id=file_id,
-        is_directory=False,
+        fmd_is_directory=False,
     )
 
 
@@ -115,7 +115,7 @@ async def test_post_file_notification_warn_invalid_project_id_and_node_id(
         event_type=FileNotificationEventType.FILE_DELETED,
         user_id=99,
         file_id=file_id.format(uuid=faker.uuid4()),
-        is_directory=False,
+        fmd_is_directory=False,
     )
 
     mock_client = mock_app.state.rabbitmq_client

@@ -52,7 +52,7 @@ def test_serialization_roundtrip(
         project_id=project_id,
         node_id=node_id,
         file_id=file_id,
-        is_directory=is_directory,
+        fmd_is_directory=is_directory,
     )
 
     raw = message.body()
@@ -80,7 +80,7 @@ def test_routing_key_format(
         project_id=project_id,
         node_id=node_id,
         file_id=file_id,
-        is_directory=is_directory,
+        fmd_is_directory=is_directory,
     )
 
     routing_key = message.routing_key()

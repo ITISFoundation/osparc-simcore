@@ -613,7 +613,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             event_type=FileNotificationEventType.FILE_UPLOADED,
             user_id=user_id,
             file_id=fmd.file_id,
-            is_directory=fmd.is_directory,
+            fmd_is_directory=fmd.is_directory,
         )
 
         return convert_db_to_model(fmd)
@@ -733,7 +733,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                         event_type=FileNotificationEventType.FILE_DELETED,
                         user_id=user_id,
                         file_id=fmd.file_id,
-                        is_directory=fmd.is_directory,
+                        fmd_is_directory=fmd.is_directory,
                     )
                     for fmd in deleted_fmds
                 ],

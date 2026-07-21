@@ -40,7 +40,12 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 
 
 async def post_file_notification(
-    app: FastAPI, *, event_type: FileNotificationEventType, user_id: UserID, file_id: StorageFileID, is_directory: bool
+    app: FastAPI,
+    *,
+    event_type: FileNotificationEventType,
+    user_id: UserID,
+    file_id: StorageFileID,
+    fmd_is_directory: bool,
 ) -> None:
     with (
         log_catch(_logger, reraise=False),
@@ -76,6 +81,6 @@ async def post_file_notification(
             project_id=project_id,
             node_id=node_id,
             file_id=file_id,
-            is_directory=is_directory,
+            fmd_is_directory=fmd_is_directory,
         )
         await get_rabbitmq_client(app).publish(message.channel_name, message)

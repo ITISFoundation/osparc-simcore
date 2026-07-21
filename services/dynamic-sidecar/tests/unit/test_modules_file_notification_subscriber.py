@@ -72,7 +72,7 @@ async def test__handle_file_notification_calls_notify_path_change(
         file_id=file_id,
         project_id=project_id,
         node_id=node_id,
-        is_directory=False,
+        fmd_is_directory=False,
     )
     data = message.body()
 
@@ -99,7 +99,7 @@ async def test__handle_file_notification_with_optional_ids(
         project_id=project_id,
         node_id=node_id,
         file_id=file_id,
-        is_directory=False,
+        fmd_is_directory=False,
     )
     data = message.body()
 
@@ -127,7 +127,7 @@ async def test__handle_file_notification_skipped_cannot_process(
         project_id=project_id,
         node_id=node_id,
         file_id=file_id,
-        is_directory=False,
+        fmd_is_directory=False,
     )
     data = message.body()
 
@@ -171,7 +171,7 @@ async def test__handle_file_notification_skipped_ignored_root_directory(
         project_id=project_id,
         node_id=node_id,
         file_id=mocked_file_id,
-        is_directory=True,
+        fmd_is_directory=True,
     )
     data = message.body()
 
