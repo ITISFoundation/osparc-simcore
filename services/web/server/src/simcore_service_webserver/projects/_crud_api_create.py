@@ -127,11 +127,17 @@ async def _prepare_project_copy(
     deep_copy: bool,
     task_progress: TaskProgress,
 ) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
+    """
+    Raises:
+        ProjectCopyingTrashedProjectError: if the source project is trashed
+    """
     source_project = await _projects_service.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
     )
+    _projects_service.raise_if_project_is_trashed(source_project)
+
     settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
     if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:

@@ -148,6 +148,16 @@ class ParentProjectNotFoundError(BaseProjectError):
         self.project_uuid = project_uuid
 
 
+class ProjectCopyingTrashedProjectError(BaseProjectError):
+    msg_template = (
+        "Cannot duplicate project '{project_uuid}' because it is in the trash. Restore it first and try again."
+    )
+
+    def __init__(self, *, project_uuid: str, **ctx):
+        super().__init__(**ctx)
+        self.project_uuid = project_uuid
+
+
 class ProjectStartsTooManyDynamicNodesError(BaseProjectError):
     msg_template = (
         "The maximal amount of concurrently running dynamic services was reached. "
