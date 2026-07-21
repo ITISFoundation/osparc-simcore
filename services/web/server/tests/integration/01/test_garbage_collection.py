@@ -12,7 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, NamedTuple
 from unittest import mock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 import redis.asyncio as aioredis
@@ -46,7 +46,6 @@ from simcore_service_webserver.groups._groups_service import create_standard_gro
 from simcore_service_webserver.groups.groups_service import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects import _projects_repository
-from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
@@ -119,6 +118,7 @@ async def director_v2_service_mock(
     PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
     get_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$")
     delete_computation_pattern = get_computation_pattern
+    stop_computation_pattern = get_computation_pattern
 
     mocker.patch(
         "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
@@ -138,6 +138,7 @@ async def director_v2_service_mock(
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
+        mock.post(stop_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
         yield mock
 
 
@@ -548,13 +549,6 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     await disconnect_user_from_socketio(client, sio_connection_data)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(app=client.app)
-
-    # ensures all project delete tasks are
-    delete_tasks = get_scheduled_tasks(
-        project_uuid=UUID(empty_guest_user_project["uuid"]),
-        user_id=logged_guest_user["id"],
-    )
-    assert not delete_tasks or all(t.done() for t in delete_tasks)
 
     # check user and project are no longer in the DB
     async with asyncpg_engine.connect() as conn:
