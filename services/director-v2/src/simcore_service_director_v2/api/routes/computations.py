@@ -529,12 +529,10 @@ async def stop_computation(
     # create the complete DAG graph
     complete_dag = create_complete_dag_from_tasks(tasks)
     # stop the pipeline if it is running
-    pipeline_state = RunningState.UNKNOWN
-    with contextlib.suppress(ComputationalRunNotFoundError):
-        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-        pipeline_state = last_run.result
-        if utils.is_pipeline_running(last_run.result):
-            await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+    last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+    pipeline_state = last_run.result
+    if utils.is_pipeline_running(last_run.result):
+        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
 
     return ComputationGet(
         id=project_id,
