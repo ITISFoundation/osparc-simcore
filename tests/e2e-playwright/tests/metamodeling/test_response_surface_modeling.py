@@ -920,11 +920,20 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             page.wait_for_timeout(2000)
 
         if EXPECTED_MOGA_KEY in local_service_key.lower():
-            with log_context(logging.INFO, "Verifying MOGA Pareto optimization produced a result..."):
+            with log_context(logging.INFO, "Verifying MOGA Pareto optimization produced some results..."):
                 moga_pareto_container = service_iframe.locator('[mmux-testid="moga-pareto-plot"]')
                 moga_pareto_container.wait_for(state="visible", timeout=2 * MINUTE)
                 moga_pareto_plot = moga_pareto_container.locator(".js-plotly-plot")
                 moga_pareto_plot.wait_for(state="visible", timeout=2 * MINUTE)
+
+                moga_trace_lengths = moga_pareto_plot.evaluate(
+                    "el => (el.data || []).map(trace => (trace.x || trace.y || []).length)"
+                )
+                total_moga_points = sum(moga_trace_lengths)
+                assert total_moga_points > 0, (
+                    f"MOGA Pareto plot rendered but contains no data points (traces={moga_trace_lengths})"
+                )
+                logging.info("MOGA Pareto plot traces: %s", moga_trace_lengths)
 
         with log_context(logging.INFO, f"Verifying sampling results for {local_service_key}..."):
             api_server_url = _get_api_server_url(product_url)
