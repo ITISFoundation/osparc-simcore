@@ -362,7 +362,7 @@ async def get_and_validate_compose_spec(
         allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
     )
 
-    # deduct helper-containers resource footprints from the biggest user service AFTER:
+    # Deduct helper-containers resource footprints from the biggest user service.
     remove_helper_containers_resources(
         settings,
         parsed_compose_spec,
