@@ -1137,3 +1137,35 @@ async def test_stop_computation_can_be_called_again_once_pipeline_stopped(
         json=ComputationStop(user_id=user["id"]).model_dump(mode="json"),
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+
+
+async def test_stop_computation_that_was_never_run_does_not_fail(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    async_client: httpx.AsyncClient,
+):
+    """Stopping a computation that has a pipeline but was never run (i.e. no
+    comp_run entry exists yet) must not fail (e.g. it must not raise/propagate
+    ComputationalRunNotFoundError)."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+
+    # NOTE: no comp_run is created here, simulating a pipeline that was never started
+
+    stop_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}:stop")
+    response = await async_client.post(
+        stop_computation_url,
+        json=ComputationStop(user_id=user["id"]).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    returned_computation = ComputationGet.model_validate(response.json())
+    assert returned_computation.state == RunningState.NOT_STARTED
+    assert returned_computation.iteration is None
+    assert returned_computation.started is None
+    assert returned_computation.stopped is None
+    assert returned_computation.submitted is None

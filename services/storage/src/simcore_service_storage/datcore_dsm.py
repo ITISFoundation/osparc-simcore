@@ -17,6 +17,7 @@ from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
+from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
 
@@ -37,6 +38,7 @@ from .modules.datcore_adapter.datcore_adapter_exceptions import (
 )
 from .modules.db import get_db_engine
 from .modules.db.tokens import TokenRepository
+from .modules.rabbitmq import post_file_notification
 
 _EXPECTED_FILE_FILTER_PARTS: Final[int] = 2
 
@@ -318,6 +320,14 @@ class DatCoreDataManager(BaseDataManager):
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         await datcore_adapter.delete_file(self.app, api_token, api_secret, file_id)
+
+        await post_file_notification(
+            self.app,
+            event_type=FileNotificationEventType.FILE_DELETED,
+            user_id=user_id,
+            file_id=file_id,
+            fmd_is_directory=False,
+        )
 
 
 def create_datcore_data_manager(app: FastAPI) -> DatCoreDataManager:
