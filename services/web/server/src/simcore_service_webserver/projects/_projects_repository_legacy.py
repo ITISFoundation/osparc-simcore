@@ -9,6 +9,7 @@ import logging
 from typing import Any, Final, Self, cast
 from uuid import uuid1
 
+import arrow
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.basic_types import IDStr
@@ -256,6 +257,7 @@ class ProjectDBAPI(BaseProjectDB):
                 "creation_date": now(),
                 "last_change_date": now(),
                 "product_name": product_name,
+                "trashed": arrow.get(project["trashed"]).datetime if "trashed" in project else None,
             }
         )
 
