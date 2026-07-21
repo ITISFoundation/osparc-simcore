@@ -290,10 +290,11 @@ async def test_list_dataset_files_metadata(
     logged_user: dict[str, Any],
     expected: int,
 ):
-    url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
+    dataset_id = "N:asdfsdf"
+    url = f"/v0/storage/locations/0/datasets/{quote(dataset_id, safe='')}/metadata"
     assert url.startswith(PREFIX)
     assert client.app
-    _url = client.app.router["list_dataset_files_metadata"].url_for(location_id="0", dataset_id="N:asdfsdf")
+    _url = client.app.router["list_dataset_files_metadata"].url_for(location_id="0", dataset_id=dataset_id)
 
     assert url == str(_url)
 
