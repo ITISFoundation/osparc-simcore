@@ -127,11 +127,17 @@ async def _prepare_project_copy(
     deep_copy: bool,
     task_progress: TaskProgress,
 ) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
+    """
+    Raises:
+        ProjectCopyingTrashedProjectError: if the source project is trashed
+    """
     source_project = await _projects_service.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
     )
+    _projects_service.raise_if_project_is_trashed(source_project)
+
     settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
     if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
@@ -155,13 +161,6 @@ async def _prepare_project_copy(
     new_project["accessRights"] = {}
     if not as_template:
         new_project["name"] = default_copy_project_name(source_project["name"])
-
-    # A cloned project must never inherit the source's trash state (e.g. the source
-    # might have been stamped with the trash epoch sentinel for immediate deletion,
-    # see `_trash_service.trash_project_for_immediate_deletion`)
-    new_project["trashed"] = None
-    new_project["trashedBy"] = None
-    new_project["trashedExplicitly"] = False
 
     copy_project_nodes_coro = None
     if len(nodes_map) > 0:
