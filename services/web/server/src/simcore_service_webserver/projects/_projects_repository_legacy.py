@@ -9,6 +9,7 @@ import logging
 from typing import Any, Final, Self, cast
 from uuid import uuid1
 
+import arrow
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.basic_types import IDStr
@@ -244,6 +245,7 @@ class ProjectDBAPI(BaseProjectDB):
 
         # NOTE: tags are removed in convert_to_db_names so we keep it
         project_tag_ids = TypeAdapter(list[int]).validate_python(project.get("tags", []).copy())
+        trashed_at = project.get("trashed")
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
@@ -256,6 +258,7 @@ class ProjectDBAPI(BaseProjectDB):
                 "creation_date": now(),
                 "last_change_date": now(),
                 "product_name": product_name,
+                "trashed": arrow.get(trashed_at).datetime if trashed_at else None,
             }
         )
 

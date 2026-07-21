@@ -172,6 +172,7 @@ from .exceptions import (
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
+    ProjectCopyingTrashedProjectError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
@@ -503,6 +504,16 @@ async def _clone_project_nodes(
     return result
 
 
+def raise_if_project_is_trashed(project: ProjectDict) -> None:
+    """A trashed project cannot be duplicated: the caller must untrash it first.
+
+    Raises:
+        ProjectCopyingTrashedProjectError
+    """
+    if project.get("trashed"):
+        raise ProjectCopyingTrashedProjectError(project_uuid=project["uuid"])
+
+
 async def clone_project_data(
     app: web.Application,
     *,
@@ -522,7 +533,12 @@ async def clone_project_data(
 
     NOTE: this does not handle predefined-project overrides, workspace/folder linking,
     parent-node ancestry or response building — those remain the caller's responsibility.
+
+    Raises:
+        ProjectCopyingTrashedProjectError: if `source_project` is trashed
     """
+    raise_if_project_is_trashed(source_project)
+
     new_project, nodes_map = clone_project_document(
         source_project,
         forced_copy_project_id=forced_copy_project_id,
