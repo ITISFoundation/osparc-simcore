@@ -10,7 +10,7 @@
 
 # testing
 asgi_lifespan
-aioresponses
+aiointercept
 docker
 faker
 fakeredis[lua]

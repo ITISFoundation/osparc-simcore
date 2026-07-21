@@ -11,7 +11,7 @@
 --constraint _base.txt
 
 
-aioresponses
+aiointercept
 alembic
 asgi_lifespan
 click

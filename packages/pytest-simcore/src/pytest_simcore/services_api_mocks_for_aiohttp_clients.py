@@ -8,8 +8,7 @@ from typing import Any
 from urllib.parse import urlparse, urlunparse
 
 import pytest
-from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
-from aioresponses.core import CallbackResult
+from aiointercept import CallbackResult
 from faker import Faker
 from models_library.api_schemas_directorv2.computations import (
     ComputationGet as DirectorV2ComputationGet,
@@ -32,8 +31,10 @@ from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
 
+from .aiointercept_mocker import AiointerceptMock
+
 pytest_plugins = [
-    "pytest_simcore.aioresponses_mocker",
+    "pytest_simcore.aiointercept_mocker",
 ]
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
@@ -123,7 +124,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
 
     return CallbackResult(
         status=201,
-        # NOTE: aioresponses uses json.dump which does NOT encode serialization of UUIDs
+        # NOTE: json.dump does NOT encode serialization of UUIDs
         payload=jsonable_encoder(returned_computation),
     )
 
@@ -159,8 +160,8 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
 
 @pytest.fixture
 async def director_v2_service_mock(
-    aioresponses_mocker: AioResponsesMock,
-) -> AioResponsesMock:
+    aiointercept_mocker: AiointerceptMock,
+) -> AiointerceptMock:
     """mocks responses of director-v2"""
 
     # computations
@@ -172,35 +173,35 @@ async def director_v2_service_mock(
 
     get_services_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services.*$")
 
-    aioresponses_mocker.get(get_services_pattern, status=status.HTTP_200_OK, repeat=True)
+    aiointercept_mocker.get(get_services_pattern, status=status.HTTP_200_OK, repeat=True)
 
-    aioresponses_mocker.post(
+    aiointercept_mocker.post(
         create_computation_pattern,
         callback=create_computation_cb,
         status=status.HTTP_201_CREATED,
         repeat=True,
     )
-    aioresponses_mocker.post(
+    aiointercept_mocker.post(
         stop_computation_pattern,
         status=status.HTTP_202_ACCEPTED,
         repeat=True,
     )
-    aioresponses_mocker.get(
+    aiointercept_mocker.get(
         get_computation_pattern,
         status=status.HTTP_202_ACCEPTED,
         callback=get_computation_cb,
         repeat=True,
     )
-    aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
+    aiointercept_mocker.delete(delete_computation_pattern, status=204, repeat=True)
 
-    return aioresponses_mocker
+    return aiointercept_mocker
 
 
 def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
     file_id = url.path.rsplit("/files/")[1]
-    assert "params" in kwargs
-    assert "link_type" in kwargs["params"]
-    link_type = kwargs["params"]["link_type"]
+    assert "query" in kwargs
+    assert "link_type" in kwargs["query"]
+    link_type = kwargs["query"]["link_type"][0]
     scheme = {LinkType.PRESIGNED: "http", LinkType.S3: "s3"}
     return CallbackResult(
         status=status.HTTP_200_OK,
@@ -210,12 +211,12 @@ def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
 
 def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
     file_id = url.path.rsplit("/files/")[1]
-    assert "params" in kwargs
-    assert "link_type" in kwargs["params"]
-    link_type = kwargs["params"]["link_type"]
+    assert "query" in kwargs
+    assert "link_type" in kwargs["query"]
+    link_type = kwargs["query"]["link_type"][0]
     scheme = {LinkType.PRESIGNED: "http", LinkType.S3: "s3"}
 
-    if file_size := kwargs["params"].get("file_size") is not None:
+    if file_size := kwargs["query"].get("file_size") is not None:
         assert file_size
         upload_schema = FileUploadSchema(
             chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
@@ -238,9 +239,9 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
 
 
 def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
-    assert "params" in kwargs
-    assert "user_id" in kwargs["params"]
-    assert "uuid_filter" in kwargs["params"]
+    assert "query" in kwargs
+    assert "user_id" in kwargs["query"]
+    assert "uuid_filter" in kwargs["query"]
     return CallbackResult(
         status=status.HTTP_200_OK,
         payload=jsonable_encoder(Envelope[list[FileMetaDataGet]](data=[])),
@@ -248,7 +249,7 @@ def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
 
 
 @pytest.fixture
-async def storage_v0_service_mock(aioresponses_mocker: AioResponsesMock, faker: Faker) -> AioResponsesMock:
+async def storage_v0_service_mock(aiointercept_mocker: AiointerceptMock, faker: Faker) -> AiointerceptMock:
     """mocks responses of storage API"""
 
     get_file_metadata_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$")
@@ -269,22 +270,22 @@ async def storage_v0_service_mock(aioresponses_mocker: AioResponsesMock, faker: 
 
     storage_abort_link = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+abort")
 
-    aioresponses_mocker.get(
+    aiointercept_mocker.get(
         get_file_metadata_pattern,
         status=status.HTTP_200_OK,
         payload={"data": FileMetaDataGet.model_json_schema()["examples"][0]},
         repeat=True,
     )
-    aioresponses_mocker.get(
+    aiointercept_mocker.get(
         list_file_meta_data_pattern,
         callback=list_file_meta_data_cb,
         repeat=True,
     )
-    aioresponses_mocker.get(get_download_link_pattern, callback=get_download_link_cb, repeat=True)
-    aioresponses_mocker.put(get_upload_link_pattern, callback=get_upload_link_cb, repeat=True)
-    aioresponses_mocker.delete(delete_file_pattern, status=status.HTTP_204_NO_CONTENT)
+    aiointercept_mocker.get(get_download_link_pattern, callback=get_download_link_cb, repeat=True)
+    aiointercept_mocker.put(get_upload_link_pattern, callback=get_upload_link_cb, repeat=True)
+    aiointercept_mocker.delete(delete_file_pattern, status=status.HTTP_204_NO_CONTENT)
 
-    aioresponses_mocker.get(
+    aiointercept_mocker.get(
         get_locations_link_pattern,
         status=status.HTTP_200_OK,
         payload={"data": [{"name": "simcore.s3", "id": 0}]},
@@ -305,9 +306,9 @@ async def storage_v0_service_mock(aioresponses_mocker: AioResponsesMock, faker: 
             payload=jsonable_encoder(Envelope[FileUploadCompleteResponse](data=payload)),
         )
 
-    aioresponses_mocker.post(storage_complete_link, callback=generate_future_link)
+    aiointercept_mocker.post(storage_complete_link, callback=generate_future_link)
 
-    aioresponses_mocker.post(
+    aiointercept_mocker.post(
         storage_complete_link_futures,
         status=status.HTTP_200_OK,
         payload=jsonable_encoder(
@@ -320,9 +321,9 @@ async def storage_v0_service_mock(aioresponses_mocker: AioResponsesMock, faker: 
         ),
     )
 
-    aioresponses_mocker.post(
+    aiointercept_mocker.post(
         storage_abort_link,
         status=status.HTTP_200_OK,
     )
 
-    return aioresponses_mocker
+    return aiointercept_mocker

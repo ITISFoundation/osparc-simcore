@@ -15,7 +15,7 @@ assert SERVICES_DIR.exists()
 @pytest.mark.parametrize(
     "exclude",
     [
-        "aioresponses",
+        "aiointercept",
         "coverage",
         "flaky",
         "hypothesis",
