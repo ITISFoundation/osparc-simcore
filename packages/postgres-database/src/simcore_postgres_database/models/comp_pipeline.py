@@ -5,6 +5,7 @@ import uuid
 
 import sqlalchemy as sa
 
+from ._common import RefActions
 from .base import metadata
 
 
@@ -36,6 +37,12 @@ comp_pipeline = sa.Table(
     sa.Column(
         "project_id",
         sa.String,
+        sa.ForeignKey(
+            "projects.uuid",
+            name="fk_comp_pipeline_project_id_projects",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
         primary_key=True,
         default=_new_uuid,
         doc="Project ID including this pipeline",
