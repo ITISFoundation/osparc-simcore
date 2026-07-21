@@ -8,7 +8,7 @@ from typing import Any, Final
 import pytest
 from aiohttp import ClientResponseError, ClientSession
 from aiohttp.client_exceptions import ClientConnectionError
-from aioresponses import aioresponses
+from pytest_simcore.aiointercept_mocker import AiointerceptMock
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from simcore_sdk.node_ports_common.storage_client import retry_request
 
@@ -18,8 +18,8 @@ _MOCK_RESPONSE_BODY: Final[dict[str, Any]] = {"data": "mock_body"}
 
 
 @pytest.fixture
-def mock_responses(aioresponses_mocker: aioresponses) -> None:
-    aioresponses_mocker.get(_ROUTE_ALWAYS_200_OK, status=200, payload=_MOCK_RESPONSE_BODY)
+def mock_responses(aiointercept_mocker: AiointerceptMock) -> None:
+    aiointercept_mocker.get(_ROUTE_ALWAYS_200_OK, status=200, payload=_MOCK_RESPONSE_BODY)
 
 
 @pytest.fixture
