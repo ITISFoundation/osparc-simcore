@@ -24,16 +24,17 @@ class SimcoreKMSAPI:
     @classmethod
     async def create(cls, settings: KMSSettings) -> "SimcoreKMSAPI":
         session = aioboto3.Session()
-        session_client_kwargs = {
-            "endpoint_url": settings.KMS_ENDPOINT,
-            "region_name": settings.KMS_REGION_NAME,
-        }
-        if settings.KMS_ACCESS_KEY_ID and settings.KMS_SECRET_ACCESS_KEY:
-            session_client_kwargs["aws_access_key_id"] = settings.KMS_ACCESS_KEY_ID.get_secret_value()
-            session_client_kwargs["aws_secret_access_key"] = settings.KMS_SECRET_ACCESS_KEY.get_secret_value()
         # NOTE: if no static credentials are provided, aioboto3/botocore falls back
         # to the default AWS credentials chain (e.g. EC2/ECS instance IAM role)
-        session_client = session.client("kms", **session_client_kwargs)
+        session_client = session.client(
+            "kms",
+            endpoint_url=settings.KMS_ENDPOINT,
+            aws_access_key_id=settings.KMS_ACCESS_KEY_ID.get_secret_value() if settings.KMS_ACCESS_KEY_ID else None,
+            aws_secret_access_key=settings.KMS_SECRET_ACCESS_KEY.get_secret_value()
+            if settings.KMS_SECRET_ACCESS_KEY
+            else None,
+            region_name=settings.KMS_REGION_NAME,
+        )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
         kms_client = cast(KMSClient, await exit_stack.enter_async_context(session_client))
