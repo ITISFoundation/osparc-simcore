@@ -25,7 +25,7 @@ from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.aiointercept_mocker import AiointerceptMock
+from pytest_simcore.aiointercept_mocker import AioInterceptMock
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
@@ -238,7 +238,7 @@ async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> N
 
 @pytest.fixture
 def common_fixtures(
-    storage_v0_service_mock: AiointerceptMock,
+    storage_v0_service_mock: AioInterceptMock,
     mock_download_file: None,
     mock_filemanager: None,
     this_node_file: Path,

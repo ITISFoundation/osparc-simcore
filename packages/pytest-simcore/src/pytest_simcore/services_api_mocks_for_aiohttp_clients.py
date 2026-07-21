@@ -31,7 +31,7 @@ from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
 
-from .aiointercept_mocker import AiointerceptMock
+from .aiointercept_mocker import AioInterceptMock
 
 pytest_plugins = [
     "pytest_simcore.aiointercept_mocker",
@@ -160,8 +160,8 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
 
 @pytest.fixture
 async def director_v2_service_mock(
-    aiointercept_mocker: AiointerceptMock,
-) -> AiointerceptMock:
+    aiointercept_mocker: AioInterceptMock,
+) -> AioInterceptMock:
     """mocks responses of director-v2"""
 
     # computations
@@ -249,7 +249,7 @@ def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
 
 
 @pytest.fixture
-async def storage_v0_service_mock(aiointercept_mocker: AiointerceptMock, faker: Faker) -> AiointerceptMock:
+async def storage_v0_service_mock(aiointercept_mocker: AioInterceptMock, faker: Faker) -> AioInterceptMock:
     """mocks responses of storage API"""
 
     get_file_metadata_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$")

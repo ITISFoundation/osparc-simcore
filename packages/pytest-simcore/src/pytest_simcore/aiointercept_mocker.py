@@ -6,7 +6,7 @@ from aiointercept import aiointercept
 from .helpers.host import get_localhost_ip
 
 # Type alias used across the test-suite for annotations.
-AiointerceptMock = aiointercept
+AioInterceptMock = aiointercept
 
 # WARNING: with `mock_external_urls=True` aiointercept patches the DNS resolver
 # process-wide so every aiohttp request to a *hostname* is redirected to the mock
@@ -21,7 +21,7 @@ PASSTHROUGH_REQUESTS_PREFIXES = [
 
 
 @pytest.fixture
-async def aiointercept_mocker() -> AsyncIterator[AiointerceptMock]:
+async def aiointercept_mocker() -> AsyncIterator[AioInterceptMock]:
     """Generic aiointercept mock
 
     SEE https://aiointercept.readthedocs.io
