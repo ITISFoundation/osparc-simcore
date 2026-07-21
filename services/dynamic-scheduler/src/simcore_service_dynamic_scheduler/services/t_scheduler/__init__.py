@@ -5,7 +5,7 @@ from ._lifespan import t_scheduler_lifespan_manager, t_scheduler_registry_lifesp
 from ._models import RunningWorkflowInfo, WorkflowEvent, WorkflowHistory
 from ._registry import WorkflowRegistry
 
-__all__ = [
+__all__: tuple[str, ...] = (
     "RunningWorkflowInfo",
     "TemporalHealthCheck",
     "WorkflowEngine",
@@ -17,4 +17,4 @@ __all__ = [
     "get_workflow_registry",
     "t_scheduler_lifespan_manager",
     "t_scheduler_registry_lifespan",
-]
+)
