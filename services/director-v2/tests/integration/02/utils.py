@@ -354,7 +354,7 @@ async def assert_start_service(  # pylint: disable=too-many-arguments
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
         X_SIMCORE_USER_AGENT: "",
     }
-    print(f"Remaingin resources: {data}")
+    print(f"Remaining start-service request payload: {data}")
 
     response = await director_v2_client.post(
         "/v2/dynamic_services",

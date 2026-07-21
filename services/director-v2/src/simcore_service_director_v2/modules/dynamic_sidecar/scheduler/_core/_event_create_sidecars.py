@@ -98,12 +98,13 @@ def _subtract_proxy_reservation_from_service_resources(
     if not service_resources:
         return
 
-    biggest_key = max(
-        service_resources,
-        key=lambda k: (
-            float(service_resources[k].resources["RAM"].limit) if "RAM" in service_resources[k].resources else 0.0
-        ),
-    )
+    def _score(k: str) -> tuple[float, float]:
+        res = service_resources[k].resources
+        ram = float(res["RAM"].limit) if "RAM" in res else 0.0
+        cpu = float(res["CPU"].limit) if "CPU" in res else 0.0
+        return (ram, cpu)
+
+    biggest_key = max(service_resources, key=_score)
 
     image_resources = service_resources[biggest_key].resources
 

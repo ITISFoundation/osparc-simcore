@@ -4,7 +4,7 @@ in the compose spec before starting it.
 
 Fails sidecar startup if the deduction would leave the target service with:
   - ≤ 0 CPU or ≤ 0 RAM (hard floor), or
-  - < DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION of its original CPU or RAM (soft floor).
+  - < DY_SIDECAR_HELPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION of its original CPU or RAM (soft floor).
 """
 
 import logging
@@ -215,8 +215,8 @@ def _deduct_helper_containers_resources(
     Mutates ``parsed_compose_spec`` in-place.
 
     Raises:
-        NotEnoughResourcesForExtraContainersError: if the remaining allocation would be <= 0 or
-            < DY_SIDECAR_EXTRA_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION of the service's original CPU or RAM limit
+        NotEnoughResourcesForHelperContainersError: if the remaining allocation would be <= 0 or
+             < DY_SIDECAR_HELPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION of the service's original CPU or RAM limit
     """
     spec_services = parsed_compose_spec["services"]
 
@@ -288,7 +288,7 @@ def remove_helper_containers_resources(
 
     Raises:
         NoUserServiceFoundError: if no user services exist in the spec.
-        NotEnoughResourcesForExtraContainersError: if the remaining allocation would be
+        NotEnoughResourcesForHelperContainersError: if the remaining allocation would be
         <= 0 or < a percentage of the service's original CPU or RAM limit.
     """
     name, resources = _get_biggest_user_service(parsed_compose_spec)

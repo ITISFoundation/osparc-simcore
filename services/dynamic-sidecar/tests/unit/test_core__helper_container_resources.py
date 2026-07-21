@@ -36,7 +36,7 @@ def envoy_proxy_settings() -> EgressProxySettings:
 def mocked_settings() -> MagicMock:
     settings = MagicMock()
     settings.DY_SIDECAR_HELPER_CONTAINERS_RESOURCE_SETTINGS = HelperContainersResourceSettings(
-        DY_SIDECAR_HELEPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION=0.48,
+        DY_SIDECAR_HELPER_CONTAINERS_MIN_REMAINING_RESOURCE_FRACTION=0.48,
         DY_SIDECAR_RCLONE_MAX_SERVICE_RESOURCE_FRACTION=0.10,
     )
     return settings
