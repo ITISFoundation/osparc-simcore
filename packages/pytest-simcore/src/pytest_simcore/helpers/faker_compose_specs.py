@@ -63,10 +63,23 @@ def inject_container_resources(
     """Injects SIMCORE resource env vars and deploy limits into every service of a compose spec"""
     cpus_float = nano_cpus / 1e9
     for service in compose_spec.get("services", {}).values():
-        service.setdefault("environment", [])
-        service["environment"] += [
-            f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus}",
-            f"SIMCORE_MEMORY_BYTES_LIMIT={memory_bytes}",
-        ]
-        service["deploy"] = {"resources": {"limits": {"cpus": str(cpus_float), "memory": str(memory_bytes)}}}
+        env = service.get("environment")
+        if env is None:
+            service["environment"] = env = []
+        if isinstance(env, dict):
+            env["SIMCORE_NANO_CPUS_LIMIT"] = f"{nano_cpus}"
+            env["SIMCORE_MEMORY_BYTES_LIMIT"] = f"{memory_bytes}"
+        else:
+            assert isinstance(env, list)  # nosec
+            env.extend(
+                [
+                    f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus}",
+                    f"SIMCORE_MEMORY_BYTES_LIMIT={memory_bytes}",
+                ]
+            )
+        deploy = service.setdefault("deploy", {})
+        resources = deploy.setdefault("resources", {})
+        limits = resources.setdefault("limits", {})
+        limits["cpus"] = f"{cpus_float}"
+        limits["memory"] = f"{memory_bytes}"
     return compose_spec
