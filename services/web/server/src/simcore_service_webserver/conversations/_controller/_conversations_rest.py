@@ -27,7 +27,6 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
-from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
 from ...web_requests_validation import (
     parse_request_body_as,
@@ -141,15 +140,9 @@ async def list_conversations(request: web.Request):
 @login_required
 @_handle_exceptions
 async def get_conversation(request: web.Request):
-    """Get a specific conversation"""
+    """Get a specific conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
-
-    conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if conversation.type.is_support_type() is False:
-        raise_unsupported_type(conversation.type)
 
     conversation, _ = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
@@ -169,16 +162,10 @@ async def get_conversation(request: web.Request):
 @login_required
 @_handle_exceptions
 async def update_conversation(request: web.Request):
-    """Update a conversation"""
+    """Update a conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     body_params = await parse_request_body_as(ConversationPatch, request)
-
-    conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if conversation.type.is_support_type() is False:
-        raise_unsupported_type(conversation.type)
 
     _, user_type = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
@@ -209,22 +196,16 @@ async def update_conversation(request: web.Request):
 @login_required
 @_handle_exceptions
 async def delete_conversation(request: web.Request):
-    """Delete a conversation"""
+    """Delete a conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
 
-    conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if conversation.type.is_support_type() is False:
-        raise_unsupported_type(conversation.type)
-
     # Only support conversation creator can delete conversation
-    _user_group_id = await users_service.get_user_primary_group_id(request.app, user_id=req_ctx.user_id)
-    await _conversation_service.get_conversation_for_user(
+    conversation = await _conversation_service.get_owned_support_conversation(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=_user_group_id,
     )
 
     await conversations_service.delete_conversation(
