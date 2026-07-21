@@ -109,10 +109,21 @@ def _write_limits(service_spec: dict[str, Any], resources: _Resources) -> None:
         CPU_RESOURCE_LIMIT_KEY: f"{int(resources.cpu * 10**9)}",
         MEM_RESOURCE_LIMIT_KEY: f"{resources.ram}",
     }
-    environment: list[str] = service_spec.get("environment", [])
-    environment = [e for e in environment if all(key not in e for key in updated_env)]
-    environment.extend(f"{k}={v}" for k, v in updated_env.items())
-    service_spec["environment"] = environment
+
+    environment = service_spec.get("environment")
+    if environment is None:
+        service_spec["environment"] = [f"{k}={v}" for k, v in updated_env.items()]
+    elif isinstance(environment, dict):
+        environment.update(updated_env)
+    else:
+        assert isinstance(environment, list)  # nosec
+        environment = [
+            e
+            for e in environment
+            if not any(str(e).startswith(f"{key}=") for key in updated_env)
+        ]
+        environment.extend(f"{k}={v}" for k, v in updated_env.items())
+        service_spec["environment"] = environment
 
 
 # ----- main API --------------------------------------------------------------
