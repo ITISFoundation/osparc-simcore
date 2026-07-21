@@ -144,7 +144,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
-        maximum: 2*60, // 2 hours
+        maximum: 3*60, // 3 hours
         singleStep: 1,
         allowGrowX: false
       });
