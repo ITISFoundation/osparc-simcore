@@ -339,6 +339,7 @@ class FileNotificationMessage(RabbitMessageBase):
     project_id: ProjectID
     node_id: NodeID
     file_id: StorageFileID
+    fmd_is_directory: bool
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",

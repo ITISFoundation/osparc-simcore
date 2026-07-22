@@ -221,7 +221,7 @@ def mocked_backend_services_apis_for_delete_job_assets(
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     mocked_directorv2_rest_api_base: MockRouter,
-    mocked_storage_rest_api_base: MockRouter,
+    mocked_storage_rpc_api: dict[str, MockType],
 ) -> dict[str, MockRouter | dict[str, MockType]]:
     computation_state: RunningState = request.param
 
@@ -249,19 +249,10 @@ def mocked_backend_services_apis_for_delete_job_assets(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
     ).mock(side_effect=_get_computation)
 
-    # Mock storage REST delete_project_s3_assets
-    def _delete_project_s3_assets(request: httpx.Request, **kwargs):
-        return httpx.Response(status_code=status.HTTP_204_NO_CONTENT)
-
-    mocked_storage_rest_api_base.delete(
-        path__regex=r"/simcore-s3/folders/(?P<project_id>[\w-]+)$",
-        name="delete_project_s3_assets",
-    ).mock(side_effect=_delete_project_s3_assets)
-
     return {
         "webserver_rest": mocked_webserver_rest_api,
         "webserver_rpc": mocked_webserver_rpc_api,
-        "storage_rest": mocked_storage_rest_api_base,
+        "storage_rpc": mocked_storage_rpc_api,
     }
 
 
@@ -288,8 +279,8 @@ async def test_delete_job_assets_endpoint(
     webserver_rest = mocked_backend_services_apis_for_delete_job_assets["webserver_rest"]
     assert webserver_rest["patch_project"].called
 
-    storage_rest = mocked_backend_services_apis_for_delete_job_assets["storage_rest"]
-    assert storage_rest["delete_project_s3_assets"].called
+    storage_rpc = mocked_backend_services_apis_for_delete_job_assets["storage_rpc"]
+    assert storage_rpc["delete_project_s3_assets"].called
 
     webserver_rpc = mocked_backend_services_apis_for_delete_job_assets["webserver_rpc"]
     assert webserver_rpc["mocked_rabbit_rpc_client"].request.called

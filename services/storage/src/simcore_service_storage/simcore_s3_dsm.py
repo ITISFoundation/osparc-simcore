@@ -37,6 +37,7 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
 from servicelib.fastapi.httpx_client import get_httpx_client
@@ -82,6 +83,7 @@ from .modules.db.access_layer import AccessLayerRepository
 from .modules.db.file_meta_data import FileMetaDataRepository
 from .modules.db.projects import ProjectRepository
 from .modules.db.tokens import TokenRepository
+from .modules.rabbitmq import post_file_notification
 from .modules.s3 import get_s3_client
 from .utils.s3_utils import S3TransferDataCB
 from .utils.simcore_s3_dsm_utils import (
@@ -605,6 +607,15 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             )
         fmd = await self._update_database_from_storage(fmd)
         assert fmd  # nosec
+
+        await post_file_notification(
+            self.app,
+            event_type=FileNotificationEventType.FILE_UPLOADED,
+            user_id=user_id,
+            file_id=fmd.file_id,
+            fmd_is_directory=fmd.is_directory,
+        )
+
         return convert_db_to_model(fmd)
 
     async def create_file_download_link(self, user_id: UserID, file_id: StorageFileID, link_type: LinkType) -> AnyUrl:
@@ -666,7 +677,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         *,
         enforce_access_rights: bool = True,
         connection: AsyncConnection | None = None,
-    ):
+    ) -> None:
         #   _   _  ___ _____ _____
         #  | \ | |/ _ \_   _| ____|
         #  |  \| | | | || | |  _|
@@ -698,11 +709,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
             async with transaction_context(get_db_engine(self.app), connection) as conn:
                 file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
-                await file_meta_data_repo.delete(
-                    connection=conn,
-                    file_ids=[file_id],
-                    recursive=True,
-                )
+                deleted_fmds = await file_meta_data_repo.delete(connection=conn, file_ids=[file_id], recursive=True)
 
                 # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
                 if is_nested_level_file_id(file_id) and (
@@ -716,8 +723,22 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     )
                 ):
                     parent_dir_fmd = max(parent_dir_fmds, key=lambda fmd: len(fmd.file_id))
-                    parent_dir_fmd.file_size = UNDEFINED_SIZE
+                    parent_dir_fmd.file_size = UNDEFINED_SIZE  # triggers an file size update in the future
                     await file_meta_data_repo.upsert(connection=conn, fmd=parent_dir_fmd)
+
+            await limited_gather(
+                *[
+                    post_file_notification(
+                        self.app,
+                        event_type=FileNotificationEventType.FILE_DELETED,
+                        user_id=user_id,
+                        file_id=fmd.file_id,
+                        fmd_is_directory=fmd.is_directory,
+                    )
+                    for fmd in deleted_fmds
+                ],
+                limit=MAX_CONCURRENT_S3_TASKS,
+            )
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
@@ -789,7 +810,6 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 _logger,
                 logging.INFO,
                 f"{src_project_uuid} -> {dst_project_uuid}: get total file size for {len(src_project_files)} files",
-                log_duration=True,
             ):
                 sizes_and_num_files: list[tuple[ByteSize | UNDEFINED_SIZE_TYPE, int]] = await limited_gather(
                     *[self._get_size_and_num_files(fmd) for fmd in src_project_files],

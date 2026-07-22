@@ -10,7 +10,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
@@ -33,7 +32,6 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .projects_nodes_layout import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
@@ -254,18 +252,6 @@ class Node(BaseModel):
             ge=0,
             le=100,
             description="the node progress value",
-            deprecated=True,  # NOTE: still used in the File Picker (frontend nodes) and must be removed first from there before retiring it here
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    thumbnail: Annotated[
-        str | HttpUrl | None,
-        Field(
-            description="url of the latest screenshot of the node",
-            examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
@@ -325,18 +311,12 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    position: Annotated[
-        Position | None,
-        Field(
-            deprecated=True,
-            description="Use projects_ui.WorkbenchUI.position instead",
-        ),
-    ] = None
-
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
+
+    ui: dict[str, Any] | None = None
 
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
@@ -349,24 +329,6 @@ class Node(BaseModel):
             ),
         ),
     ] = None
-
-    @field_validator("thumbnail", mode="before")
-    @classmethod
-    def _convert_empty_str_to_none(cls, v: Any) -> Any:
-        if isinstance(v, str) and not v:
-            return None
-        return v
-
-    @model_validator(mode="before")
-    @classmethod
-    def _strip_deprecated_fields(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            cleaned = dict(data)
-            # NOTE Can be removed once https://github.com/ITISFoundation/osparc-simcore/pull/8141 is resolved
-            for key in ("outputNode", "outputNodes", "parent"):
-                cleaned.pop(key, None)
-            return cleaned
-        return data
 
     @field_validator("state", mode="before")
     @classmethod
@@ -463,7 +425,6 @@ class Node(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="forbid",
         validate_by_name=True,
         validate_by_alias=True,
         json_schema_extra=_update_json_schema_extra,

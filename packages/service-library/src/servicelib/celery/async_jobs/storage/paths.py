@@ -35,7 +35,9 @@ async def submit_compute_path_size_task(
 
 async def submit_delete_paths_task(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
+    product_name: ProductName,
     user_id: UserID,
     location_id: LocationID,
     paths: set[Path],
@@ -45,6 +47,7 @@ async def submit_delete_paths_task(
             name=DELETE_PATHS_TASK_NAME,
         ),
         owner_metadata=owner_metadata,
+        product_name=product_name,
         user_id=user_id,
         location_id=location_id,
         paths=paths,

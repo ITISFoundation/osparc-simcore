@@ -7,6 +7,7 @@ from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
 from simcore_postgres_database.utils_repos import (
+    merge_jsonb_patch_expression,
     pass_or_acquire_connection,
     transaction_context,
 )
@@ -25,7 +26,6 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.created,
     projects_nodes.c.modified,
     projects_nodes.c.progress,
-    projects_nodes.c.thumbnail,
     projects_nodes.c.input_access,
     projects_nodes.c.input_nodes,
     projects_nodes.c.inputs,
@@ -35,6 +35,7 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.run_hash,
     projects_nodes.c.state,
     projects_nodes.c.boot_options,
+    projects_nodes.c.ui,
 ]
 
 
@@ -176,6 +177,9 @@ async def update(
     partial_node: PartialNode,
 ) -> Node:
     values = _node_dump_for_db(partial_node, exclude_unset=True)
+
+    if "ui" in values:
+        values["ui"] = merge_jsonb_patch_expression(projects_nodes.c.ui, values["ui"])
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(

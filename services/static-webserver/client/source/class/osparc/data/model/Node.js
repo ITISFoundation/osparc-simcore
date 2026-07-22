@@ -501,9 +501,7 @@ qx.Class.define("osparc.data.model.Node", {
         .then(serviceMetadata => {
           this.setMetadata(serviceMetadata);
           this.populateNodeData(nodeData);
-          // old place to store the position
-          this.populateNodeUIData(nodeData);
-          // new place to store the position and marker
+          // node ui (position, marker) is stored per-node under workbench[nodeId].ui
           this.populateNodeUIData(nodeUiData);
           this.listenToChanges();
         })
@@ -766,23 +764,23 @@ qx.Class.define("osparc.data.model.Node", {
       if (marker) {
         this.fireDataEvent("projectDocumentChanged", {
           "op": "add",
-          "path": `/ui/workbench/${this.getNodeId()}/marker`,
-          "value": marker.getColor(),
-          "osparc-resource": "ui",
+          "path": `/workbench/${this.getNodeId()}/ui/marker`,
+          "value": {color: marker.getColor()},
+          "osparc-resource": "node",
         });
         marker.addListener("changeColor", e => {
           this.fireDataEvent("projectDocumentChanged", {
             "op": "replace",
-            "path": `/ui/workbench/${this.getNodeId()}/marker`,
+            "path": `/workbench/${this.getNodeId()}/ui/marker/color`,
             "value": e.getData(),
-            "osparc-resource": "ui",
+            "osparc-resource": "node",
           });
         });
       } else {
         this.fireDataEvent("projectDocumentChanged", {
           "op": "remove",
-          "path": `/ui/workbench/${this.getNodeId()}/marker`,
-          "osparc-resource": "ui",
+          "path": `/workbench/${this.getNodeId()}/ui/marker`,
+          "osparc-resource": "node",
         });
       }
     },
@@ -1339,12 +1337,12 @@ qx.Class.define("osparc.data.model.Node", {
       const nodeId = this.getNodeId();
       this.fireDataEvent("projectDocumentChanged", {
         "op": "replace",
-        "path": `/ui/workbench/${nodeId}/position`,
+        "path": `/workbench/${nodeId}/ui/position`,
         "value": {
           "x": this.__posX,
           "y": this.__posY,
         },
-        "osparc-resource": "ui",
+        "osparc-resource": "node",
       });
 
       this.fireDataEvent("changePosition", {
@@ -1666,6 +1664,9 @@ qx.Class.define("osparc.data.model.Node", {
               console.warn(`Progress patches are not sent via this channel`);
             }
             break;
+          case "ui":
+            this.__updateUIFromPatch(op, path, value);
+            break;
           default:
             if (nodePropertyKeys.includes(nodeProperty)) {
               const setter = "set" + qx.lang.String.firstUp(nodeProperty);
@@ -1680,6 +1681,61 @@ qx.Class.define("osparc.data.model.Node", {
       });
     },
 
+    __updateUIFromPatch: function(op, path, value) {
+      const uiProperty = path.split("/")[4]; // /workbench/{nodeId}/ui/{uiProperty}
+      switch (uiProperty) {
+        case "position": {
+          if (op === "replace" || op === "add") {
+            const newPos = this.getPosition();
+            if (path.includes("/position/x")) {
+              newPos.x = value;
+            } else if (path.includes("/position/y")) {
+              newPos.y = value;
+            } else if (value) {
+              newPos.x = value.x;
+              newPos.y = value.y;
+            }
+            this.setPosition(newPos);
+          }
+          break;
+        }
+        case "marker": {
+          if (op === "remove" || value === null) {
+            this.setMarker(null);
+          } else if (op === "add") {
+            // value is the marker object: {color}
+            this.addMarker(value);
+          } else if (op === "replace") {
+            const color = path.includes("/color") ? value : (value ? value.color : null);
+            if (this.getMarker()) {
+              this.getMarker().setColor(color);
+            } else if (color) {
+              this.addMarker({color});
+            }
+          }
+          break;
+        }
+        default: {
+          // whole ui object replaced/added
+          if (value) {
+            if (value.position) {
+              this.setPosition(value.position);
+            }
+            if (value.marker) {
+              if (this.getMarker()) {
+                this.getMarker().setColor(value.marker.color);
+              } else {
+                this.addMarker(value.marker);
+              }
+            } else {
+              this.setMarker(null);
+            }
+          }
+          break;
+        }
+      }
+    },
+
     serialize: function() {
       // node generic
       let nodeEntry = {
@@ -1690,9 +1746,9 @@ qx.Class.define("osparc.data.model.Node", {
         inputsUnits: this.__getInputUnits(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
-        bootOptions: this.getBootOptions()
+        bootOptions: this.getBootOptions(),
+        ui: this.serializeUI(),
       };
-
       if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
