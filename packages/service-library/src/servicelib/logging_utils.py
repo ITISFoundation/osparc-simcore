@@ -13,7 +13,7 @@ import logging.handlers
 import queue
 import sys
 from asyncio import iscoroutinefunction
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from inspect import currentframe, getframeinfo, stack
@@ -634,7 +634,7 @@ def log_context(
     *args,
     extra: LogExtra | None = None,
     operation_name: str | None = None,
-) -> Iterator[None]:
+) -> Generator[None]:
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
 
     context_id = uuid4().hex[:_CONTEXT_ID_LEN]
