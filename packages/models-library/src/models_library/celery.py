@@ -235,6 +235,7 @@ class TaskStore(Protocol):
         execution_metadata: GroupExecutionMetadata,
         task_keys: list[TaskKey],
         expiry: timedelta,
+        owner_metadata: OwnerMetadata | None = None,
     ) -> None: ...
 
     async def create_task(
@@ -242,6 +243,7 @@ class TaskStore(Protocol):
         task_key: TaskKey,
         execution_metadata: TaskExecutionMetadata,
         expiry: timedelta,
+        owner_metadata: OwnerMetadata | None = None,
     ) -> None: ...
 
     async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...
@@ -252,7 +254,7 @@ class TaskStore(Protocol):
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
-    async def remove_task(self, task_key: TaskKey) -> None: ...
+    async def remove_task(self, task_key: TaskKey, owner_metadata: OwnerMetadata | None = None) -> None: ...
 
     async def set_task_progress(
         self,
