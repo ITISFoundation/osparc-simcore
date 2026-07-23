@@ -47,14 +47,6 @@ def _convert_to_versions(service_history: list[ReleaseDBGet]) -> list[Version]:
 def _latest_stable_release_by_minor(
     released_versions: list[Version],
 ) -> dict[tuple[int, int], Version]:
-    """Maps (major, minor) -> latest non-prerelease version in that series.
-
-    `released_versions` MUST be sorted latest-first so the first entry seen per
-    series is its maximum. This resolves the default compatibility policy
-    (`>X.Y.Z, ~=X.Y.Z`) in O(1) per target instead of scanning all versions
-    with a `SpecifierSet`. Prereleases are excluded to match the default
-    `SpecifierSet` semantics.
-    """
     latest_by_minor: dict[tuple[int, int], Version] = {}
     for version in released_versions:
         if version.is_prerelease:
