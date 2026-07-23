@@ -122,7 +122,6 @@ async def evaluate_service_compatibility_map(
     released_versions = _convert_to_versions(service_release_history)
     latest_stable_by_minor = _latest_stable_release_by_minor(released_versions)
 
-    # avoids re-fetching the same other-service history for custom policies
     other_service_history_cache: dict[str, list[ReleaseDBGet]] = {}
 
     for release in service_release_history:
