@@ -1,7 +1,3 @@
-"""
-Common utilities for background task management in garbage collector
-"""
-
 import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
@@ -40,28 +36,29 @@ async def periodic_task_lifespan(
     """
     assert getattr(periodic_async_func, "__exclusive_periodic__", False)  # nosec
 
-    # setup
+    task: asyncio.Task | None = None
     task_name = task_name or create_task_name(periodic_async_func)
+    try:
+        task = asyncio.create_task(
+            periodic_async_func(),
+            name=task_name,
+        )
 
-    task = asyncio.create_task(
-        periodic_async_func(),
-        name=task_name,
-    )
+        # Keeping a reference in app's state to prevent premature garbage collection of the task
+        app.setdefault(_GC_PERIODIC_TASKS_APPKEY, {})
+        if task_name in app[_GC_PERIODIC_TASKS_APPKEY]:
+            msg = f"Task {task_name} is already registered in the app state"
+            raise ValueError(msg)
 
-    # Keeping a reference in app's state to prevent premature garbage collection of the task
-    app.setdefault(_GC_PERIODIC_TASKS_APPKEY, {})
-    if task_name in app[_GC_PERIODIC_TASKS_APPKEY]:
-        msg = f"Task {task_name} is already registered in the app state"
-        raise ValueError(msg)
+        app[_GC_PERIODIC_TASKS_APPKEY][task_name] = task
 
-    app[_GC_PERIODIC_TASKS_APPKEY][task_name] = task
+        yield
 
-    yield
-
-    # tear-down
-    await cancel_wait_task(task)
-    if _GC_PERIODIC_TASKS_APPKEY in app:
-        app[_GC_PERIODIC_TASKS_APPKEY].pop(task_name, None)
+    finally:
+        if task is not None:
+            await cancel_wait_task(task)
+        if _GC_PERIODIC_TASKS_APPKEY in app:
+            app[_GC_PERIODIC_TASKS_APPKEY].pop(task_name, None)
 
 
 def get_registered_tasks(app: web.Application) -> dict[str, asyncio.Task]:
