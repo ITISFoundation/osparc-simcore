@@ -7,6 +7,7 @@ import base64
 import json
 
 import pytest
+from aws_library.kms import KMSKeyNotFoundError, KMSNotConnectedError
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from models_library.api_schemas_directorv2.encryption import (
@@ -19,7 +20,9 @@ from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLin
 from models_library.projects_nodes_io import NodeID
 from pydantic import RootModel, TypeAdapter, create_model
 from simcore_service_api_server.exceptions.backend_errors import (
+    EncryptionMisconfiguredError,
     EncryptionNotConfiguredError,
+    EncryptionServiceUnavailableError,
     InvalidEncryptionInputsError,
 )
 from simcore_service_api_server.models.api_resources import JobLinks
@@ -296,6 +299,22 @@ class _FakeKMSClient:
         return self.ciphertext
 
 
+class _RaisingFakeKMSClient:
+    """Test double simulating a KMS client whose encrypt() call fails."""
+
+    def __init__(self, exc_to_raise: Exception) -> None:
+        self._exc_to_raise = exc_to_raise
+
+    async def encrypt(
+        self,
+        plaintext: bytes,  # noqa: ARG002
+        *,
+        key_id: str | None = None,  # noqa: ARG002
+        encryption_context: dict[str, str] | None = None,  # noqa: ARG002
+    ) -> bytes:
+        raise self._exc_to_raise
+
+
 async def test_build_job_encryption_context_returns_none_when_no_encryption():
     result = await build_job_encryption_context(
         None, kms_client=_FakeKMSClient(), node_id=_NODE_ID, node_input_keys=["input_1"]
@@ -352,6 +371,36 @@ async def test_build_job_encryption_context_raises_when_kms_not_configured():
 
     with pytest.raises(EncryptionNotConfiguredError):
         await build_job_encryption_context(encryption, kms_client=None, node_id=_NODE_ID, node_input_keys=["input_1"])
+
+
+async def test_build_job_encryption_context_raises_service_unavailable_when_kms_not_connected():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"input_1": "input_1"},
+    )
+
+    with pytest.raises(EncryptionServiceUnavailableError):
+        await build_job_encryption_context(
+            encryption,
+            kms_client=_RaisingFakeKMSClient(KMSNotConnectedError()),
+            node_id=_NODE_ID,
+            node_input_keys=["input_1"],
+        )
+
+
+async def test_build_job_encryption_context_raises_misconfigured_on_kms_access_error():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"input_1": "input_1"},
+    )
+
+    with pytest.raises(EncryptionMisconfiguredError):
+        await build_job_encryption_context(
+            encryption,
+            kms_client=_RaisingFakeKMSClient(KMSKeyNotFoundError(key_id="some-key-id")),
+            node_id=_NODE_ID,
+            node_input_keys=["input_1"],
+        )
 
 
 def test_job_encryption_metadata_serialization_preserves_root_key():

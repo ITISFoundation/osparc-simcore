@@ -4,6 +4,7 @@ services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
 import base64
+import logging
 import uuid
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
@@ -11,7 +12,7 @@ from functools import lru_cache
 from typing import Final
 
 import arrow
-from aws_library.kms import SimcoreKMSAPI
+from aws_library.kms import KMSNotConnectedError, KMSRuntimeError, SimcoreKMSAPI
 from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_nodes_ui import NodeUI
@@ -25,7 +26,12 @@ from pydantic import SecretStr, TypeAdapter
 
 from simcore_service_api_server.models.api_resources import JobLinks
 
-from ..exceptions.backend_errors import EncryptionNotConfiguredError, InvalidEncryptionInputsError
+from ..exceptions.backend_errors import (
+    EncryptionMisconfiguredError,
+    EncryptionNotConfiguredError,
+    EncryptionServiceUnavailableError,
+    InvalidEncryptionInputsError,
+)
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
@@ -44,6 +50,8 @@ from .director_v2 import ComputationTaskGet
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
 
 _DEFAULT_SOLVER_NODE_POSITION: Final[Position] = Position(x=633, y=229)
+
+_logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -145,7 +153,13 @@ async def build_job_encryption_context(
         )
 
     root_key = base64.b64decode(encryption.root_key.get_secret_value())
-    ciphertext = await kms_client.encrypt(root_key, encryption_context=encryption_context)
+    try:
+        ciphertext = await kms_client.encrypt(root_key, encryption_context=encryption_context)
+    except KMSNotConnectedError as exc:
+        raise EncryptionServiceUnavailableError from exc
+    except KMSRuntimeError as exc:
+        _logger.exception("Unexpected error while encrypting job root key via KMS")
+        raise EncryptionMisconfiguredError from exc
 
     return JobEncryptionContextMetadata(
         encrypted_root_key=TypeAdapter(SecretStr).validate_python(base64.b64encode(ciphertext).decode("ascii")),
