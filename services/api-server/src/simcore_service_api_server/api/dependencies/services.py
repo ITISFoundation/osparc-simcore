@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from typing import Annotated
 
+from aws_library.kms._client import SimcoreKMSAPI
 from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -16,7 +17,7 @@ from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
 from ..._service_programs import ProgramService
 from ..._service_solvers import SolverService
-from ...clients.kms import SimcoreKMSAPI, get_kms_client
+from ...clients.kms import get_kms_client
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.storage import StorageApi
 from ...services_http.webserver import AuthSession
