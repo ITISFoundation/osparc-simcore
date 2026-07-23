@@ -114,12 +114,7 @@ async def resolve_job_encryption_context(
     key_id: str | None = None,
     encryption_context: dict[str, str] | None = None,
 ) -> ResolvedJobEncryptionContext:
-    """Decrypts the KMS ciphertext into the plaintext root key.
-
-    NOTE: this must only be called inside this dask-sidecar worker process - the resulting
-    plaintext must never leave this process (no pickling to other dask workers, no logging,
-    no persistence).
-    """
+    """Decrypts the KMS ciphertext into the plaintext root key."""
     ciphertext = base64.b64decode(context.encrypted_root_key.get_secret_value())
     plaintext = await kms_client.decrypt(ciphertext, key_id=key_id, encryption_context=encryption_context)
     return ResolvedJobEncryptionContext(
