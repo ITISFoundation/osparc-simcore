@@ -1,7 +1,11 @@
-from aws_library.kms import SimcoreKMSAPI
+import logging
+
+from aws_library.kms import KMSNotConnectedError, SimcoreKMSAPI
 from fastapi import FastAPI, Request
 
 from ..core.settings import ApplicationSettings
+
+_logger = logging.getLogger(__name__)
 
 
 def get_kms_client(request: Request) -> SimcoreKMSAPI | None:
@@ -14,8 +18,20 @@ def setup_kms(app: FastAPI) -> None:
 
     async def _on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
-        if settings.API_SERVER_KMS is not None:
-            app.state.kms_client = await SimcoreKMSAPI.create(settings.API_SERVER_KMS)
+        if settings.API_SERVER_KMS is None:
+            return
+
+        kms_client = await SimcoreKMSAPI.create(settings.API_SERVER_KMS)
+        if not await kms_client.ping():
+            await kms_client.close()
+            _logger.error(
+                "Could not reach AWS KMS with the configured API_SERVER_KMS settings "
+                "(unreachable endpoint, wrong key id, or missing permissions). "
+                "Refusing to start since encryption was requested."
+            )
+            raise KMSNotConnectedError
+
+        app.state.kms_client = kms_client
 
     async def _on_shutdown() -> None:
         if app.state.kms_client is not None:
