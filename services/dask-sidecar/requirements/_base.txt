@@ -693,7 +693,7 @@ wrapt==1.17.3
     #   opentelemetry-instrumentation-threading
 xyzservices==2025.10.0
     # via bokeh
-yarl==1.22.0
+yarl==1.24.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika

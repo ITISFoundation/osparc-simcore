@@ -1292,7 +1292,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-threading
 wsproto==1.2.0
     # via simple-websocket
-yarl==1.20.0
+yarl==1.24.5
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
