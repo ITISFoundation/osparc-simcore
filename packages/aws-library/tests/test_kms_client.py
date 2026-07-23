@@ -28,9 +28,6 @@ async def simcore_kms_api(
     await kms.close()
 
 
-async def test_kms_client_lifespan(simcore_kms_api: SimcoreKMSAPI): ...
-
-
 async def test_ping(
     mocked_aws_server: ThreadedMotoServer,
     simcore_kms_api: SimcoreKMSAPI,
