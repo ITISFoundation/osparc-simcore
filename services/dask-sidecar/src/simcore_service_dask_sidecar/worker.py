@@ -21,7 +21,7 @@ from settings_library.s3 import S3Settings
 
 from ._meta import print_dask_sidecar_banner
 from .computational_sidecar.core import ComputationalSidecar
-from .errors import ConfigurationError
+from .errors import EncryptionNotConfiguredError
 from .rabbitmq_worker_plugin import RabbitMQPlugin
 from .settings import ApplicationSettings
 from .utils.dask import (
@@ -111,7 +111,7 @@ async def _resolve_encryption(
     settings = ApplicationSettings.create_from_envs()
     if settings.DASK_SIDECAR_KMS is None:
         msg = "job requires decryption but DASK_SIDECAR_KMS is not configured"
-        raise ConfigurationError(msg=msg)
+        raise EncryptionNotConfiguredError(msg=msg)
 
     kms_client = await SimcoreKMSAPI.create(settings.DASK_SIDECAR_KMS)
     try:

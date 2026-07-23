@@ -56,3 +56,11 @@ class ServiceEncryptionError(ContainerTaskError):
         "TIP: this usually means the provided encryption key or context does not match "
         "the one used to encrypt the data."
     )
+
+
+class ServiceEncryptionUnavailableError(ContainerTaskError):
+    code = "runtime.encryption.unavailable"  # type: ignore[assignment]
+    msg_template = user_message(
+        "The service {service_key}:{service_version} requires decryption, but the encryption "
+        "service is currently unavailable: {error_message}. Please contact support if this persists."
+    )
