@@ -15,9 +15,6 @@ from unittest import mock
 
 import fsspec
 import pytest
-from dask_task_models_library.container_tasks.encryption import (
-    TransferEncryptionSettings,
-)
 from faker import Faker
 from pydantic import AnyUrl, SecretBytes, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
@@ -28,6 +25,7 @@ from simcore_service_dask_sidecar.errors import (
     HTTPDestinationEncryptionNotSupportedError,
 )
 from simcore_service_dask_sidecar.utils.aes_gcm import FORMAT_MAGIC, generate_key
+from simcore_service_dask_sidecar.utils.encryption import TransferEncryptionSettings
 from simcore_service_dask_sidecar.utils.files import (
     _s3fs_settings_from_s3_settings,
     pull_file_from_remote,

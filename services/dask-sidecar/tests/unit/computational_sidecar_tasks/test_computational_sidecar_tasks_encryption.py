@@ -53,7 +53,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 _SIDECAR_LOGS_FILE_ID: Final[str] = "service-logs"  # NOTE: mirrors the private constant in
-# dask_task_models_library.container_tasks.encryption used by transfer_settings_for_logs()
+# simcore_service_dask_sidecar.utils.encryption used by transfer_settings_for_logs()
 
 
 def _encrypt_to_bytes(plaintext: bytes, *, root_key: bytes, file_id: str) -> bytes:

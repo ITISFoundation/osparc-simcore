@@ -13,9 +13,6 @@ from uuid import uuid4
 from aiodocker import Docker
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.encryption import (
-    ResolvedJobEncryptionContext,
-)
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
     ServiceOutOfMemoryError,
@@ -35,6 +32,7 @@ from yarl import URL
 
 from ..settings import ApplicationSettings
 from ..utils.dask import TaskPublisher
+from ..utils.encryption import ResolvedJobEncryptionContext
 from ..utils.files import (
     check_need_unzipping,
     pull_file_from_remote,

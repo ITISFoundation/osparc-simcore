@@ -7,10 +7,7 @@ from pprint import pformat
 import distributed
 from aws_library.kms import SimcoreKMSAPI
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.encryption import (
-    JobEncryptionContext,
-    ResolvedJobEncryptionContext,
-)
+from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
@@ -33,6 +30,7 @@ from .utils.dask import (
     monitor_task_abortion,
     sanitize_exceptions_across_dask_boundary,
 )
+from .utils.encryption import ResolvedJobEncryptionContext, resolve_job_encryption_context
 from .utils.logs import setup_app_logging
 
 _logger = logging.getLogger(__name__)
@@ -117,7 +115,8 @@ async def _resolve_encryption(
 
     kms_client = await SimcoreKMSAPI.create(settings.DASK_SIDECAR_KMS)
     try:
-        return await encryption.resolve(
+        return await resolve_job_encryption_context(
+            encryption,
             kms_client,
             encryption_context={"project_id": f"{task_parameters.task_owner.project_id}"},
         )

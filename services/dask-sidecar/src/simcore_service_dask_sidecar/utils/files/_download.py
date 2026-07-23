@@ -7,15 +7,13 @@ from typing import Any, Final, cast
 
 import aiofiles.tempfile
 import repro_zipfile
-from dask_task_models_library.container_tasks.encryption import (
-    TransferEncryptionSettings,
-)
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 from yarl import URL
 
 from ...errors import FileTransferEncryptionError
 from ..aes_gcm import AesGcmStreamError
+from ..encryption import TransferEncryptionSettings
 from ._copy import _copy_file
 from ._progress import LogPublishingCB
 from ._s3 import S3_FILE_SYSTEM_SCHEMES, S3FsSettingsDict, _s3fs_settings_from_s3_settings
