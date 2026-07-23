@@ -40,7 +40,7 @@ from simcore_service_webserver.db.models import projects, users
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
-from simcore_service_webserver.garbage_collector._tasks_core import _GC_TASK_NAME
+from simcore_service_webserver.garbage_collector._tasks_utils import create_task_name
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
 from simcore_service_webserver.groups._groups_service import create_standard_group
 from simcore_service_webserver.groups.groups_service import add_user_in_group
@@ -1048,7 +1048,8 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     EXPECTED: the project and all the users are removed
     """
 
-    gc_task: asyncio.Task = next(task for task in asyncio.all_tasks() if task.get_name() == _GC_TASK_NAME)
+    gc_task_name = create_task_name(gc_core.collect_garbage)
+    gc_task: asyncio.Task = next(task for task in asyncio.all_tasks() if task.get_name() == gc_task_name)
     assert not gc_task.done()
 
     u1 = await login_user(client, exit_stack=exit_stack)
