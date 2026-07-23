@@ -84,7 +84,7 @@ class ResolvedJobEncryptionContext(BaseModel):
         """Returns the per-file transfer settings for an output (the file_id is the output key)."""
         return TransferEncryptionSettings(root_key=self.root_key, file_id=output_key)
 
-    def transfer_settings_for_logs(self) -> TransferEncryptionSettings | None:
+    def transfer_settings_for_logs(self) -> TransferEncryptionSettings:
         """Returns the per-file transfer settings for the logs (the file_id is fixed)."""
         return TransferEncryptionSettings(root_key=self.root_key, file_id=_SIDECAR_LOGS_FILE_ID)
 
