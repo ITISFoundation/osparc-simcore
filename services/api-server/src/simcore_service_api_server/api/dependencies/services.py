@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from aws_library.kms._client import SimcoreKMSAPI
+from aws_library.kms import SimcoreKMSAPI
 from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
