@@ -28,7 +28,8 @@ def _get_latest_compatible_version(
     compatibility_specs: SpecifierSet | None = None,
 ) -> Version | None:
     """
-    Returns latest version in history that satisfies `>X.Y.Z, ~=X.Y.Z` (default policy if compatibility_specs=None) or compatibility_specs
+    Returns latest version in history that satisfies `>X.Y.Z, ~=X.Y.Z`
+    (default policy if compatibility_specs=None) or compatibility_specs
     Returns None if no version in history satisfies specs.
     """
     compatibility_specs = compatibility_specs or _get_default_compatibility_specs(target)
@@ -43,6 +44,27 @@ def _convert_to_versions(service_history: list[ReleaseDBGet]) -> list[Version]:
     )
 
 
+def _latest_stable_release_by_minor(
+    released_versions: list[Version],
+) -> dict[tuple[int, int], Version]:
+    """Maps (major, minor) -> latest non-prerelease version in that series.
+
+    `released_versions` MUST be sorted latest-first so the first entry seen per
+    series is its maximum. This resolves the default compatibility policy
+    (`>X.Y.Z, ~=X.Y.Z`) in O(1) per target instead of scanning all versions
+    with a `SpecifierSet`. Prereleases are excluded to match the default
+    `SpecifierSet` semantics.
+    """
+    latest_by_minor: dict[tuple[int, int], Version] = {}
+    for version in released_versions:
+        if version.is_prerelease:
+            continue
+        minor_series = (version.major, version.minor)
+        if minor_series not in latest_by_minor:
+            latest_by_minor[minor_series] = version
+    return latest_by_minor
+
+
 async def _evaluate_custom_compatibility(
     repo: ServicesRepository,
     product_name: ProductName,
@@ -50,18 +72,20 @@ async def _evaluate_custom_compatibility(
     target_version: ServiceVersion,
     released_versions: list[Version],
     compatibility_policy: dict,
+    other_service_history_cache: dict[str, list[ReleaseDBGet]],
 ) -> Compatibility | None:
     other_service_key = compatibility_policy.get("other_service_key")
     other_service_versions = []
 
-    if other_service_key and (
-        other_service_history := await repo.get_service_history(
-            product_name=product_name,
-            user_id=user_id,
-            key=ServiceKey(other_service_key),
-        )
-    ):
-        other_service_versions = _convert_to_versions(other_service_history)
+    if other_service_key:
+        if other_service_key not in other_service_history_cache:
+            other_service_history_cache[other_service_key] = await repo.get_service_history(
+                product_name=product_name,
+                user_id=user_id,
+                key=ServiceKey(other_service_key),
+            )
+        if other_service_history := other_service_history_cache[other_service_key]:
+            other_service_versions = _convert_to_versions(other_service_history)
 
     versions_specifier = SpecifierSet(compatibility_policy["versions_specifier"])
     versions_to_check = other_service_versions or released_versions
@@ -83,6 +107,27 @@ async def _evaluate_custom_compatibility(
     return None
 
 
+def _evaluate_default_compatibility(
+    target: Version,
+    released_versions: list[Version],
+    latest_stable_by_minor: dict[tuple[int, int], Version],
+) -> Compatibility | None:
+    """Default policy `>X.Y.Z, ~=X.Y.Z`: latest stable patch in the same
+    (major, minor) series that is strictly newer than the target.
+    """
+    if target.is_prerelease:
+        # prereleases follow different specifier semantics: use the exact (slow) path
+        latest = _get_latest_compatible_version(target, released_versions)
+    else:
+        latest = latest_stable_by_minor.get((target.major, target.minor))
+        if latest is not None and latest <= target:
+            latest = None
+
+    if latest is not None:
+        return Compatibility(can_update_to=CompatibleService(version=f"{latest}"))
+    return None
+
+
 async def evaluate_service_compatibility_map(
     repo: ServicesRepository,
     product_name: ProductName,
@@ -96,8 +141,12 @@ async def evaluate_service_compatibility_map(
     compatibility_map: dict[ServiceVersion, Compatibility | None] = {}
 
     released_versions = _convert_to_versions(service_release_history)
+    latest_stable_by_minor = _latest_stable_release_by_minor(released_versions)
+
+    # avoids re-fetching the same other-service history for custom policies
+    other_service_history_cache: dict[str, list[ReleaseDBGet]] = {}
+
     for release in service_release_history:
-        compatibility = None
         if release.compatibility_policy:
             compatibility = await _evaluate_custom_compatibility(
                 product_name=product_name,
@@ -106,12 +155,14 @@ async def evaluate_service_compatibility_map(
                 target_version=release.version,
                 released_versions=released_versions,
                 compatibility_policy=dict(release.compatibility_policy),
+                other_service_history_cache=other_service_history_cache,
             )
-        elif latest_version := _get_latest_compatible_version(
-            release.version,
-            released_versions,
-        ):
-            compatibility = Compatibility(can_update_to=CompatibleService(version=f"{latest_version}"))
+        else:
+            compatibility = _evaluate_default_compatibility(
+                as_version(release.version),
+                released_versions,
+                latest_stable_by_minor,
+            )
         compatibility_map[release.version] = compatibility
 
     return compatibility_map
