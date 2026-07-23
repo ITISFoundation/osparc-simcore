@@ -95,12 +95,8 @@ jobs:
       - name: check api-server openai compatibility
         if: steps.changes.outputs.api-server == 'true'
         run: |
-          ./scripts/openapi-diff.bash breaking \
-            --strip-prefix-base="/v0" \
-            --fail-on ERR \
-            --flatten-allof \
-            "/specs/services/api-server/openapi-openai-compatible.json" \
-            "https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml"
+          cd services/api-server
+          make test-openai-api-compatibility
 
 
   api-server-oas-breaking:
