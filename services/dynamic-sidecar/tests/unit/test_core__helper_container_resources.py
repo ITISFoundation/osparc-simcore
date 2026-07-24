@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ByteSize, TypeAdapter
-from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 from settings_library.egress_proxy import EgressProxySettings
 from simcore_service_dynamic_sidecar.core._helper_container_resources import (
     NotEnoughResourcesForHelperContainersError,
@@ -59,8 +59,8 @@ def _service(
     if inject_resource_limit_envs:
         # mirrors what director-v2 injects: original (pre-deduction) values
         spec["environment"] = [
-            f"{CPU_RESOURCE_LIMIT_KEY}={int(cpu * _NANO)}",
-            f"{MEM_RESOURCE_LIMIT_KEY}={ram_mib * _MiB}",
+            f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={int(cpu * _NANO)}",
+            f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={ram_mib * _MiB}",
             "SOME_OTHER_ENV=unchanged",
         ]
     return spec
@@ -112,8 +112,8 @@ def test_write_limits_updates_resource_limit_env_vars():
     _write_limits(spec, _Resources(cpu=3.0, ram=4096 * _MiB))
 
     env: dict[str, str] = dict(e.split("=", 1) for e in spec["environment"])
-    assert int(env[CPU_RESOURCE_LIMIT_KEY]) == int(3.0 * _NANO)
-    assert int(env[MEM_RESOURCE_LIMIT_KEY]) == 4096 * _MiB
+    assert int(env[USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY]) == int(3.0 * _NANO)
+    assert int(env[USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY]) == 4096 * _MiB
     # unrelated env var must survive
     assert env["SOME_OTHER_ENV"] == "unchanged"
 
@@ -124,8 +124,8 @@ def test_write_limits_adds_env_vars_when_not_previously_set():
     _write_limits(spec, _Resources(cpu=3.0, ram=4096 * _MiB))
 
     env: dict[str, str] = dict(e.split("=", 1) for e in spec["environment"])
-    assert CPU_RESOURCE_LIMIT_KEY in env
-    assert MEM_RESOURCE_LIMIT_KEY in env
+    assert USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY in env
+    assert USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY in env
 
 
 def test_write_limits_compose_v2_updates_and_clamps_reservation():
@@ -342,8 +342,8 @@ def test_deduct_clamps_reservations(mocked_settings: MagicMock):
 
     # env vars must also reflect post-deduction values
     env: dict[str, str] = dict(e.split("=", 1) for e in spec["environment"])
-    assert int(env[CPU_RESOURCE_LIMIT_KEY]) == int(3.0 * _NANO)
-    assert int(env[MEM_RESOURCE_LIMIT_KEY]) == 7168 * _MiB
+    assert int(env[USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY]) == int(3.0 * _NANO)
+    assert int(env[USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY]) == 7168 * _MiB
 
 
 def test_raises_when_no_user_services(mocked_settings: MagicMock):

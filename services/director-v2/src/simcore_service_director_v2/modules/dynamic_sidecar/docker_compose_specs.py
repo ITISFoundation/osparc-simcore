@@ -27,7 +27,7 @@ from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from models_library.wallets import WalletID
 from pydantic import ByteSize
-from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 from settings_library.docker_registry import RegistrySettings
 from settings_library.egress_proxy import EgressProxySettings
 
@@ -191,12 +191,16 @@ def _update_resource_limits_and_reservations(
 
         # remove any already existing env var
         environment = [
-            e for e in environment if all(i not in e for i in [CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY])
+            e
+            for e in environment
+            if all(
+                i not in e for i in [USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY]
+            )
         ]
 
         resource_limits = [
-            f"{CPU_RESOURCE_LIMIT_KEY}={int(nano_cpu_limits * GIGA)}",
-            f"{MEM_RESOURCE_LIMIT_KEY}={mem_limits}",
+            f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={int(nano_cpu_limits * GIGA)}",
+            f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={mem_limits}",
         ]
 
         environment.extend(resource_limits)

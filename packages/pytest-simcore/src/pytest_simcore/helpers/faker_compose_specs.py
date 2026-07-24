@@ -12,7 +12,7 @@ from typing import Any
 
 from faker import Faker
 from pydantic import ByteSize, TypeAdapter
-from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 
 _RANDOM = -1
 
@@ -68,14 +68,14 @@ def inject_container_resources(
         if env is None:
             service["environment"] = env = []
         if isinstance(env, dict):
-            env[CPU_RESOURCE_LIMIT_KEY] = f"{nano_cpus}"
-            env[MEM_RESOURCE_LIMIT_KEY] = f"{memory_bytes}"
+            env[USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY] = f"{nano_cpus}"
+            env[USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY] = f"{memory_bytes}"
         else:
             assert isinstance(env, list)  # nosec
             env.extend(
                 [
-                    f"{CPU_RESOURCE_LIMIT_KEY}={nano_cpus}",
-                    f"{MEM_RESOURCE_LIMIT_KEY}={memory_bytes}",
+                    f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={nano_cpus}",
+                    f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={memory_bytes}",
                 ]
             )
         deploy = service.setdefault("deploy", {})

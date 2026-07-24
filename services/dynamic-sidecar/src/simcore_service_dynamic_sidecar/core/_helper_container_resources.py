@@ -14,7 +14,7 @@ from typing import Any, Final
 
 from fastapi import status
 from pydantic import ByteSize
-from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 
 from .errors import BaseDynamicSidecarError
 from .settings import ApplicationSettings
@@ -106,8 +106,8 @@ def _write_limits(service_spec: dict[str, Any], resources: _Resources) -> None:
     # Sync the resource-limit env vars that director-v2 already injected.
     # They must reflect the post-deduction limits so the user service is not misled.
     updated_env = {
-        CPU_RESOURCE_LIMIT_KEY: f"{int(resources.cpu * 10**9)}",
-        MEM_RESOURCE_LIMIT_KEY: f"{resources.ram}",
+        USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY: f"{int(resources.cpu * 10**9)}",
+        USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY: f"{resources.ram}",
     }
 
     environment = service_spec.get("environment")
@@ -146,7 +146,7 @@ def _get_biggest_user_service(
     spec_services = parsed_compose_spec.get("services", {})
     user_service_names = [name for name, spec in spec_services.items() if _is_user_service(spec)]
     if not user_service_names:
-        raise NoUserServiceFoundError(cpu_limit_key=CPU_RESOURCE_LIMIT_KEY)
+        raise NoUserServiceFoundError(cpu_limit_key=USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY)
 
     biggest = _find_biggest_overall_service(spec_services, user_service_names)
     return biggest, _read_limits(spec_services[biggest])
@@ -206,11 +206,11 @@ def _is_user_service(service_spec: dict[str, Any]) -> bool:
     """
     environment = service_spec.get("environment")
     if isinstance(environment, dict):
-        return CPU_RESOURCE_LIMIT_KEY in environment
+        return USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY in environment
     if not environment:
         return False
     assert isinstance(environment, list)  # nosec
-    return any(str(e).startswith(f"{CPU_RESOURCE_LIMIT_KEY}=") for e in environment)
+    return any(str(e).startswith(f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}=") for e in environment)
 
 
 def _deduct_helper_containers_resources(
