@@ -23,6 +23,12 @@ amqp==5.3.1
     # via
     #   -c requirements/_base.txt
     #   kombu
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
+antlr4-python3-runtime==4.13.2
+    # via moto
 anyio==4.7.0
     # via
     #   -c requirements/_base.txt
@@ -35,18 +41,21 @@ attrs==24.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   jsonschema
     #   pytest-docker
     #   referencing
+aws-sam-translator==1.106.0
+    # via cfn-lint
 aws-xray-sdk==0.95
     # via moto
 billiard==4.2.1
     # via
     #   -c requirements/_base.txt
     #   celery
-boto==2.49.0
-    # via moto
 boto3==1.42.70
-    # via moto
+    # via
+    #   aws-sam-translator
+    #   moto
 botocore==1.42.70
     # via
     #   boto3
@@ -70,6 +79,8 @@ cffi==1.17.1
     #   -c requirements/_base.txt
     #   cryptography
     #   pact-python-ffi
+cfn-lint==1.47.1
+    # via moto
 charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
@@ -101,6 +112,7 @@ cryptography==44.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   joserfc
     #   moto
 debugpy==1.8.20
     # via pytest-celery
@@ -110,21 +122,23 @@ docker==7.1.0
     #   moto
     #   pytest-celery
     #   pytest-docker-tools
-ecdsa==0.19.1
-    # via python-jose
 faker==40.11.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
 flask==2.1.3
+    # via
+    #   flask-cors
+    #   moto
+flask-cors==6.0.5
     # via moto
 frozenlist==1.5.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-future==0.18.3
-    # via python-jose
+graphql-core==3.2.11
+    # via moto
 greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
@@ -158,23 +172,43 @@ jinja2==3.1.6
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   flask
-    #   moto
 jmespath==1.1.0
     # via
     #   boto3
     #   botocore
-jsondiff==1.1.1
+joserfc==1.5.0
+    # via moto
+jsonpatch==1.33
+    # via cfn-lint
+jsonpath-ng==1.8.0
     # via moto
 jsonpickle==4.1.1
     # via aws-xray-sdk
+jsonpointer==3.1.1
+    # via jsonpatch
 jsonref==1.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+jsonschema==4.26.0
+    # via
+    #   -c requirements/_base.txt
+    #   aws-sam-translator
+    #   openapi-schema-validator
+    #   openapi-spec-validator
+jsonschema-path==0.3.4
+    # via openapi-spec-validator
+jsonschema-specifications==2025.9.1
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
+    #   openapi-schema-validator
 kombu==5.6.2
     # via
     #   -c requirements/_base.txt
     #   celery
+lazy-object-proxy==1.12.0
+    # via openapi-spec-validator
 librt==0.8.1
     # via mypy
 mako==1.3.12
@@ -187,10 +221,10 @@ markupsafe==3.0.2
     #   -c requirements/_base.txt
     #   jinja2
     #   mako
-mock==5.2.0
-    # via moto
-moto==1.3.7
+moto==5.2.2
     # via -r requirements/_test.in
+mpmath==1.3.0
+    # via sympy
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt
@@ -200,6 +234,12 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
+networkx==3.6.1
+    # via cfn-lint
+openapi-schema-validator==0.6.3
+    # via openapi-spec-validator
+openapi-spec-validator==0.7.2
+    # via moto
 packaging==24.2
     # via
     #   -c requirements/_base.txt
@@ -210,6 +250,8 @@ pact-python==3.2.1
     # via -r requirements/_test.in
 pact-python-ffi==0.4.28.1
     # via pact-python
+pathable==0.4.4
+    # via jsonschema-path
 pathspec==1.0.4
     # via mypy
 pluggy==1.6.0
@@ -229,16 +271,21 @@ psutil==6.1.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-pyaml==26.7.0
+py-partiql-parser==0.6.3
     # via moto
 pycparser==2.22
     # via
     #   -c requirements/_base.txt
     #   cffi
-pycryptodome==3.21.0
+pydantic==2.11.7
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   aws-sam-translator
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
-    #   python-jose
+    #   pydantic
 pygments==2.18.0
     # via
     #   -c requirements/_base.txt
@@ -247,6 +294,8 @@ pyinstrument==5.1.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+pyparsing==3.3.2
+    # via moto
 pytest==9.0.2
     # via
     #   -r requirements/_test.in
@@ -274,16 +323,13 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   botocore
     #   celery
-    #   moto
-python-jose==2.0.2
-    # via moto
-pytz==2026.1.post1
-    # via moto
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   pyaml
+    #   cfn-lint
+    #   jsonschema-path
+    #   moto
     #   responses
 redis==6.4.0
     # via
@@ -294,33 +340,42 @@ referencing==0.35.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   jsonschema
+    #   jsonschema-path
+    #   jsonschema-specifications
     #   types-jsonschema
+regex==2026.7.19
+    # via cfn-lint
 requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
     #   docker
+    #   jsonschema-path
     #   moto
     #   responses
 responses==0.26.0
     # via moto
 respx==0.22.0
     # via -r requirements/_test.in
+rfc3339-validator==0.1.4
+    # via openapi-schema-validator
 rpds-py==2026.6.3
     # via
     #   -c requirements/_base.txt
+    #   jsonschema
     #   referencing
 s3transfer==0.16.0
     # via boto3
 setuptools==80.9.0
-    # via pytest-celery
+    # via
+    #   moto
+    #   pytest-celery
 six==1.17.0
     # via
     #   -c requirements/_base.txt
-    #   ecdsa
-    #   moto
     #   python-dateutil
-    #   python-jose
+    #   rfc3339-validator
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
@@ -334,6 +389,8 @@ sqlalchemy==2.0.51
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
+sympy==1.14.0
+    # via cfn-lint
 tenacity==9.0.0
     # via
     #   -c requirements/_base.txt
@@ -352,8 +409,17 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
+    #   aws-sam-translator
+    #   cfn-lint
     #   mypy
+    #   pydantic
+    #   pydantic-core
     #   sqlalchemy
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 tzdata==2025.2
     # via
     #   -c requirements/_base.txt
@@ -383,6 +449,7 @@ wcwidth==0.2.13
 werkzeug==2.1.2
     # via
     #   flask
+    #   flask-cors
     #   moto
 wrapt==1.17.0
     # via
