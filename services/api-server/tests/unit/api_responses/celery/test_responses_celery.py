@@ -9,6 +9,7 @@ import datetime
 import pytest
 import respx
 from celery.contrib.testing.worker import TestWorkController  # type: ignore # pylint: disable=no-name-in-module
+from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
 from simcore_service_api_server._meta import API_VTAG
@@ -161,6 +162,128 @@ async def test_create_response_with_multiple_messages(
 
     assert response_obj.output is not None
     assert response_obj.output[0].content[0].text == "4"
+
+
+async def test_create_response_with_json_schema(
+    app: FastAPI,
+    client: AsyncClient,
+    auth: BasicAuth,
+    with_api_server_celery_worker: TestWorkController,
+    mocked_chatbot_backend: respx.MockRouter,
+):
+    # ARRANGE
+    expected_answer = '{"result": "4"}'
+    mocked_chatbot_backend.post("/v1/chat/completions").respond(
+        200,
+        json={
+            "id": "fake-completion-id",
+            "choices": [{"index": 0, "message": {"content": expected_answer}}],
+        },
+    )
+
+    body = {
+        "background": True,
+        "input": [
+            {"role": "developer", "content": "Return valid JSON only."},
+            {"role": "user", "content": "What is 2+2?"},
+        ],
+        "model": _CHAT_MODEL,
+        "temperature": 0.3,
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "math_result",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "result": {"type": "string"},
+                    },
+                    "required": ["result"],
+                    "additionalProperties": False,
+                },
+                "strict": True,
+            }
+        },
+    }
+
+    # ACT
+    response = await client.post(
+        f"/{API_VTAG}/responses",
+        auth=auth,
+        json=body,
+    )
+
+    # ASSERT
+    assert response.status_code == status.HTTP_200_OK
+    response_obj = ResponseObject.model_validate(response.json())
+    assert response_obj.status == ResponseStatus.QUEUED
+    response_id = response_obj.id
+
+    # Poll GET /responses/{id} until completed
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(30),
+        wait=wait_fixed(wait=datetime.timedelta(seconds=1.0)),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            response = await client.get(
+                f"/{API_VTAG}/responses/{response_id}",
+                auth=auth,
+            )
+            if response.status_code != status.HTTP_200_OK:
+                pytest.fail(f"GET /responses/{response_id} failed with {response.status_code}")
+            response_obj = ResponseObject.model_validate(response.json())
+            assert response_obj.status == ResponseStatus.COMPLETED
+
+    assert response_obj.output is not None
+    assert response_obj.output[0].content[0].text == expected_answer
+
+    posted_body = json_loads(mocked_chatbot_backend.calls[0].request.content.decode("utf-8"))
+    assert posted_body["response_format"]["type"] == "json_schema"
+    assert posted_body["response_format"]["json_schema"]["name"] == "math_result"
+    assert posted_body["response_format"]["json_schema"]["strict"] is True
+
+
+async def test_create_response_with_invalid_json_schema_returns_422(
+    app: FastAPI,
+    client: AsyncClient,
+    auth: BasicAuth,
+    with_api_server_celery_worker: TestWorkController,
+):
+    # ARRANGE
+    body = {
+        "background": True,
+        "input": [
+            {"role": "user", "content": "Return JSON"},
+        ],
+        "model": _CHAT_MODEL,
+        "temperature": 0.4,
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "broken_schema",
+                "schema": {
+                    "type": 1,
+                },
+            }
+        },
+    }
+
+    # ACT
+    response = await client.post(
+        f"/{API_VTAG}/responses",
+        auth=auth,
+        json=body,
+    )
+
+    # ASSERT - validation error is returned and body is json serializable
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    payload = response.json()
+    assert "errors" in payload
+    assert isinstance(payload["errors"], list)
+    assert payload["errors"]
+    assert any("Invalid JSON Schema" in error.get("msg", "") for error in payload["errors"])
 
 
 async def test_create_response_task_failure_is_reported(
