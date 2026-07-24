@@ -6,6 +6,48 @@
     "version": "0.8.0"
   },
   "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Get Health",
+        "operationId": "get_health__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_HealthCheck_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "tags": [
+          "status"
+        ],
+        "summary": "Get Status",
+        "operationId": "get_status_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_AppStatusCheck_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/": {
       "get": {
         "tags": [
