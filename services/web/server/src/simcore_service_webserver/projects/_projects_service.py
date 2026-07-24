@@ -2103,9 +2103,7 @@ async def get_project_node_resources(
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        node_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(
-            project_node.required_resources
-        )
+        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
         if not node_resources:
             # get default resources
             node_resources = await catalog_service.get_service_resources(
@@ -2131,9 +2129,7 @@ async def update_project_node_resources(
     try:
         # validate the resource are applied to the same container names
         current_project_node = await db.get_project_node(project_id, node_id)
-        current_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(
-            current_project_node.required_resources
-        )
+        current_resources = TypeAdapter(ServiceResourcesDict).validate_python(current_project_node.required_resources)
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
