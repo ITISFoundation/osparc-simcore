@@ -373,7 +373,7 @@ wrapt==1.17.3
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
-yarl==1.23.0
+yarl==1.24.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika

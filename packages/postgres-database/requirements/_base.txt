@@ -51,5 +51,5 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-yarl==1.23.0
+yarl==1.24.5
     # via -r requirements/_base.in

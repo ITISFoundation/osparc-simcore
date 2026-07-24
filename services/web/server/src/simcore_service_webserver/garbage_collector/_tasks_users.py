@@ -10,14 +10,13 @@ from datetime import timedelta
 from aiohttp import web
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.users import UserID
-from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
 
 from ..login import login_service
-from ..redis import get_redis_lock_manager_client_sdk
 from ..security import security_service
 from ..users import users_service
-from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
+from ._healthcheck import run_monitored_periodic_task
+from ._tasks_utils import CleanupContextFunc
 
 _logger = logging.getLogger(__name__)
 
@@ -69,17 +68,7 @@ def create_background_task_for_trial_accounts(wait_s: float) -> CleanupContextFu
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
         interval = timedelta(seconds=wait_s)
 
-        @exclusive_periodic(
-            # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
-            get_redis_lock_manager_client_sdk(app),
-            task_interval=interval,
-            retry_after=min(timedelta(seconds=10), interval / 10),
-        )
-        async def _update_expired_users_periodically() -> None:
-            with log_context(_logger, logging.INFO, "Updating expired users"):
-                await _update_expired_users(app)
-
-        async for _ in periodic_task_lifespan(app, _update_expired_users_periodically):
+        async with run_monitored_periodic_task(app, _update_expired_users, task_interval=interval):
             yield
 
     return _cleanup_ctx_fun

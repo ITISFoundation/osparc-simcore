@@ -461,7 +461,7 @@ wrapt==1.17.2
     #   opentelemetry-instrumentation-threading
 wsproto==1.2.0
     # via simple-websocket
-yarl==1.18.3
+yarl==1.24.5
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in

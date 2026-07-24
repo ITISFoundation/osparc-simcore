@@ -94,7 +94,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-propcache==0.2.0
+propcache==0.5.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -157,7 +157,7 @@ urllib3==2.7.0
     #   -c requirements/_base.txt
     #   docker
     #   requests
-yarl==1.17.1
+yarl==1.24.5
     # via
     #   -c requirements/_base.txt
     #   aiohttp
