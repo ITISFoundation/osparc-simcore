@@ -1,9 +1,9 @@
 import functools
 import inspect
 import logging
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Iterator
 from contextlib import contextmanager, suppress
-from contextvars import Token
+from contextvars import ContextVar, Token
 from enum import auto
 from typing import Any, Final, Self, overload
 
@@ -34,6 +34,11 @@ from .utils import get_callable_namespaced_name
 type TracingContext = otcontext.Context | None
 
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
+
+# NOTE: holds the TracingConfig set up for this process/context so that utilities such as
+# `log_context` can automatically create spans without threading `TracingConfig` through every
+# call site. Set once by `setup_log_tracing()` (see `logging_utils.setup_loggers`/`async_loggers`).
+_current_tracing_config: ContextVar["TracingConfig | None"] = ContextVar("current_tracing_config", default=None)
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
 _OTEL_NAMESPACE: Final[str] = "simcore"
@@ -104,7 +109,17 @@ def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: Tra
     HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
+def get_current_tracing_config() -> TracingConfig | None:
+    """Returns the `TracingConfig` set by the last call to `setup_log_tracing()`, if any.
+
+    Used by `log_context()` to automatically create spans without requiring every call site to
+    explicitly pass a `TracingConfig`.
+    """
+    return _current_tracing_config.get()
+
+
 def setup_log_tracing(tracing_config: TracingConfig):
+    _current_tracing_config.set(tracing_config)
     if tracing_config.tracing_enabled:
         LoggingInstrumentor().instrument(
             set_logging_format=True,
@@ -194,7 +209,7 @@ def traced_operation(
     tracing_config: TracingConfig,
     attributes: dict[str, str] | None = None,
     links: list[Link] | None = None,
-):
+) -> Iterator[None]:
     """Generic context manager for creating traced spans.
 
     Creates a span with the given operation name and attributes. Automatically detects
@@ -223,12 +238,30 @@ def traced_operation(
     # Only use provided links at root level; child spans inherit parent context automatically
     current_span = trace.get_current_span()
     is_root_span = not current_span.is_recording()
-    span_links = links if is_root_span else []
+    span_links = list(links) if links else []
+
+    # NOTE: a non-recording "current" span is not necessarily *absent* from the ambient
+    # context (e.g. a long-lived asyncio.Task - such as a periodic background task -
+    # copies the context once at creation time; the span it captured back then keeps
+    # being reported as "current" forever, even long after it ended). If we let
+    # `start_as_current_span` use that ambient context as-is, every single execution
+    # would be chained as a child of that same, already-finished span/trace, which
+    # eventually breaks clock-skew adjustment in the tracing backend once that old
+    # trace is no longer retrievable. So for root spans we explicitly detach from the
+    # ambient context and, if that stale span had a valid context, keep a `Link` to it
+    # instead so it remains navigable without corrupting the parent/child relationship.
+    start_context: otcontext.Context | None = None
+    if is_root_span:
+        stale_span_context = current_span.get_span_context()
+        if stale_span_context.is_valid:
+            span_links.append(Link(stale_span_context))
+        start_context = otcontext.Context()
 
     # Create a span with proper attributes and links
     # If tracing is disabled, this creates a no-op span
     with tracer.start_as_current_span(
         operation_name,
+        context=start_context,
         links=span_links,
         attributes=span_attributes,
     ) as span:
