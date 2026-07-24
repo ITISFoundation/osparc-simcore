@@ -20,7 +20,7 @@ from servicelib.fastapi.tracing import (
 from servicelib.tracing import TracingConfig
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
-from ..api.entrypoints import api_router
+from ..api.entrypoints import setup_api_routes
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -141,7 +141,7 @@ def create_base_app(
     app.state.settings = app_settings
     app.state.tracing_config = tracing_config
 
-    app.include_router(api_router)
+    setup_api_routes(app)
 
     app.add_event_handler("shutdown", logging_shutdown_event)
 

@@ -91,7 +91,7 @@ from ..dependencies.rut_client import get_rut_client
 
 _logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/computations", tags=["computations"])
 
 
 async def _check_pipeline_not_running_or_raise_409(
