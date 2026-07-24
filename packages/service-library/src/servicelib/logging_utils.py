@@ -688,12 +688,12 @@ def log_context(
             yield
         finally:
             potential_exception = sys.exception()
-            additional_info_message = (
-                f" (raised exception {type(potential_exception).__name__})" if potential_exception else ""
-            )
             elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+
             finished_log_msg = (
-                f"{_DONE_PREFIX}{msg}{additional_info_message} - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
+                f"{_DONE_PREFIX}{msg}"
+                f"{f' (raised exception {type(potential_exception).__name__})' if potential_exception else ''}"
+                f" - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
             )
             logger.log(
                 level,
