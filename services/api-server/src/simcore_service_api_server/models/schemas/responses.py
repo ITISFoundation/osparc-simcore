@@ -92,7 +92,8 @@ type TextFormatParam = ResponseFormatText | TextResponseFormatJsonSchema
 
 def _text_format_discriminator(v: TextFormatParam | dict) -> str:
     if isinstance(v, dict):
-        return v.get("type", "text")
+        discriminator = v.get("type", "text")
+        return discriminator if isinstance(discriminator, str) else "text"
     return v.type
 
 
