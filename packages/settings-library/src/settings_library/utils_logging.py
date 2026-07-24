@@ -6,7 +6,10 @@ from common_library.basic_types import LogLevel
 
 
 class _HasLogLevel(Protocol):
-    LOG_LEVEL: str
+    # NOTE: N802 (function name should be lowercase) is suppressed here because this
+    # property name must mirror the composing class's LOG_LEVEL field name exactly
+    @property
+    def LOG_LEVEL(self) -> str: ...  # noqa: N802
 
 
 class MixinLoggingSettings:
