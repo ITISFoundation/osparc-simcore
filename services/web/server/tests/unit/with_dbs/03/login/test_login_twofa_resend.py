@@ -8,11 +8,8 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
-from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.login._controller.rest.auth_schemas import (
     CodePageParams,
     NextPage,
@@ -21,34 +18,8 @@ from simcore_service_webserver.login.constants import CODE_2FA_SMS_CODE_REQUIRED
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    envs_login = setenvs_from_dict(
-        monkeypatch,
-        {
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
-        },
-    )
-
-    print(ApplicationSettings.create_from_envs().model_dump_json(indent=2))
-
-    return {**app_environment, **envs_login}
-
-
-@pytest.fixture
-def postgres_db(postgres_db: sa.engine.Engine):
-    # adds fake twilio_messaging_sid in osparc product (pre-initialized)
-    stmt = (
-        products.update()
-        .values(
-            twilio_messaging_sid="x" * 34,
-            login_settings=ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True),  # <--- 2FA Enabled for product
-        )
-        .where(products.c.name == "osparc")
-    )
-    with postgres_db.connect() as conn:
-        conn.execute(stmt)
-    return postgres_db
+def postgres_db(postgres_db_with_2fa_enabled_for_osparc: sa.engine.Engine) -> sa.engine.Engine:
+    return postgres_db_with_2fa_enabled_for_osparc
 
 
 async def test_resend_2fa_entrypoint_is_protected(

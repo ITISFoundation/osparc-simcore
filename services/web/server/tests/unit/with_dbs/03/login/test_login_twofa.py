@@ -15,13 +15,10 @@ from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
-from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._twofa_service import (
@@ -47,33 +44,8 @@ from twilio.base.exceptions import TwilioRestException
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    envs_login = setenvs_from_dict(
-        monkeypatch,
-        {
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "1",
-            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
-        },
-    )
-    print(ApplicationSettings.create_from_envs().model_dump_json(indent=1))
-
-    return {**app_environment, **envs_login}
-
-
-@pytest.fixture
-def postgres_db(postgres_db: sa.engine.Engine):
-    # adds fake twilio_messaging_sid in osparc product (pre-initialized)
-    stmt = (
-        products.update()
-        .values(
-            twilio_messaging_sid="x" * 34,
-            login_settings=ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True),  # <--- 2FA Enabled for product
-        )
-        .where(products.c.name == "osparc")
-    )
-    with postgres_db.connect() as conn:
-        conn.execute(stmt)
-    return postgres_db
+def postgres_db(postgres_db_with_2fa_enabled_for_osparc: sa.engine.Engine) -> sa.engine.Engine:
+    return postgres_db_with_2fa_enabled_for_osparc
 
 
 @pytest.fixture

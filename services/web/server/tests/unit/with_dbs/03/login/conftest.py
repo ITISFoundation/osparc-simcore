@@ -17,6 +17,7 @@ from models_library.basic_types import IDStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
+from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
@@ -166,3 +167,23 @@ def cleanup_db_tables(postgres_db: sa.engine.Engine) -> Iterator[None]:
     with postgres_db.connect() as conn:
         conn.execute(wallets.delete())
         conn.execute(users.delete())
+
+
+@pytest.fixture
+def postgres_db_with_2fa_enabled_for_osparc(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
+    """Adds a fake twilio_messaging_sid and enables 2FA for the 'osparc' product (pre-initialized).
+
+    NOTE: LOGIN_2FA_REQUIRED requires LOGIN_REGISTRATION_INVITATION_REQUIRED=1 (see
+    LoginSettings._login_2fa_needs_confirmed_email), so callers must also set that env var.
+    """
+    stmt = (
+        products.update()
+        .values(
+            twilio_messaging_sid="x" * 34,
+            login_settings=ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True),
+        )
+        .where(products.c.name == "osparc")
+    )
+    with postgres_db.connect() as conn:
+        conn.execute(stmt)
+    return postgres_db
