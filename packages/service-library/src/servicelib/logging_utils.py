@@ -626,6 +626,15 @@ def _caller_lineno() -> int:
     return frame.f_lineno if frame is not None else 0
 
 
+def _default_operation_name_and_lineno() -> tuple[str, int]:
+    """returns a default operation name made of the filename, function name,
+    and line number of the caller of `log_context()`"""
+    frame = _get_frame(_STACK_LEVEL_OFFSET)
+    if frame is None:
+        return "unknown:unknown - log_context", 0
+    return f"{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name} - log_context", frame.f_lineno
+
+
 @contextmanager
 def log_context(
     logger: logging.Logger,
@@ -654,13 +663,16 @@ def log_context(
             # NOTE: mirrors `logging.LogRecord.getMessage()` (only applies `%` formatting when
             # `args` is truthy) so this matches exactly what ends up in the actual log line.
             rendered_msg = msg % args if args else msg
+            operation_name_final, lineno = (
+                _default_operation_name_and_lineno() if operation_name is None else (operation_name, _caller_lineno())
+            )
             stack_mgr.enter_context(
                 traced_operation(
-                    operation_name or _default_operation_name(),
+                    operation_name_final,
                     tracing_config=tracing_config,
                     attributes={
                         "log.message": rendered_msg,
-                        "code.lineno": str(_caller_lineno()),
+                        "code.lineno": str(lineno),
                     },
                 )
             )
