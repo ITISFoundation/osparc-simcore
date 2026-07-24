@@ -5,7 +5,7 @@
 # pylint: disable=no-member
 
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -21,14 +21,14 @@ def test_get_full_class_name():
 
     class C(B2): ...
 
-    class B12(B1, ValueError): ...
+    class B12(B1, ValueError): ...  # noqa: N818
 
-    assert B1._get_full_class_name() == "A.B1"
-    assert C._get_full_class_name() == "A.B2.C"
-    assert A._get_full_class_name() == "A"
+    assert B1._get_full_class_name() == "A.B1"  # noqa: SLF001
+    assert C._get_full_class_name() == "A.B2.C"  # noqa: SLF001
+    assert A._get_full_class_name() == "A"  # noqa: SLF001
 
     # diamond inheritance (not usual but supported)
-    assert B12._get_full_class_name() == "ValueError.A.B1.B12"
+    assert B12._get_full_class_name() == "ValueError.A.B1.B12"  # noqa: SLF001
 
 
 def test_error_codes_and_msg_template():
@@ -96,6 +96,7 @@ def test_error_with_constructor():
     assert not hasattr(error, "my_value")
 
     # the autocompletion does not see this
+    assert hasattr(error, "something_else")
     assert error.something_else == "yes"
 
 
@@ -108,7 +109,7 @@ def test_error_with_constructor():
         pytest.param("{v:.2f}", {"v": 3.1415926}, "3.14", id="decimals"),
         pytest.param(
             "{dt:%Y-%m-%d %H:%M}",
-            {"dt": datetime(2020, 5, 17, 18, 45)},
+            {"dt": datetime(2020, 5, 17, 18, 45, tzinfo=UTC)},
             "2020-05-17 18:45",
             id="datetime",
         ),
@@ -148,3 +149,77 @@ def test_exception_context():
         "message": "42 and 'missing=?'",
         "value": 42,
     }
+
+
+def test_nested_errors_in_msg_template_keep_their_message():
+    # FIXED BEHAVIOR: OsparcErrorMixin.__repr__ now delegates to the real templated
+    # message instead of the default, information-less Exception.__repr__ (empty
+    # `args`). This matters because when an OsparcErrorMixin exception is embedded
+    # inside a container (list/tuple) that is itself interpolated into another error's
+    # msg_template, str.format_map renders it via repr(), not str().
+    class MyError(OsparcErrorMixin, Exception):
+        msg_template = "boom {value}"
+
+    class MyBatchError(OsparcErrorMixin, Exception):
+        msg_template = "batch failed: {errors}"
+
+    inner_error = MyError(value=42)
+    assert str(inner_error) == "boom 42"
+    assert "MyError()" not in repr(inner_error)
+
+    outer_error = MyBatchError(errors=[inner_error])
+
+    # the real message ("boom 42") now shows up in the outer error too...
+    assert "boom 42" in str(outer_error)
+    # ...and the useless default repr with empty args is gone
+    assert "MyError()" not in str(outer_error)
+
+
+def test_batch_delete_style_errors_keep_their_details():
+    # FIXED BEHAVIOR: mirrors the real-world case in
+    # simcore_service_webserver.projects.exceptions (ProjectDeleteError /
+    # ProjectsBatchDeleteError), reproduced here with local stand-ins to keep this
+    # package's tests dependency-free from the webserver service.
+    class ProjectDeleteError(OsparcErrorMixin, Exception):
+        msg_template = "Failed to complete deletion of '{project_uuid}': {details}"
+
+    class ProjectsBatchDeleteError(OsparcErrorMixin, Exception):
+        msg_template = "One or more projects could not be deleted in the batch: {errors}"
+
+    project_uuid = "7a9aa11e-844f-11f1-ad6e-02420a0434d7"
+    details = "some root cause explaining why deletion failed"
+
+    inner_error = ProjectDeleteError(project_uuid=project_uuid, details=details)
+    assert details in str(inner_error)
+
+    batch_error = ProjectsBatchDeleteError(
+        errors=[(project_uuid, inner_error)],
+        deleted_project_ids=["other-project-id"],
+    )
+
+    # the actual failure reason is now visible in the batch error message...
+    assert details in str(batch_error)
+    # ...and the generic, indistinguishable default repr is gone
+    assert "ProjectDeleteError()" not in str(batch_error)
+    # successfully deleted projects remain (correctly) excluded from the message
+    assert "other-project-id" not in str(batch_error)
+
+
+def test_long_message_is_truncated():
+    # Generic safety net: no single OsparcErrorMixin message should be allowed to grow
+    # unbounded (e.g. many batched errors, or an accidentally embedded traceback/blob),
+    # since that can blow past what log aggregators can handle in a single line.
+    class MyError(OsparcErrorMixin, Exception):
+        msg_template = "{value}"
+
+    huge_value = "x" * 10_000
+    error = MyError(value=huge_value)
+
+    message = str(error)
+    assert len(message) < len(huge_value)
+    assert message.startswith("x" * 100)
+    assert "truncated" in message
+
+    # a short message is untouched
+    short_error = MyError(value="short")
+    assert str(short_error) == "short"
