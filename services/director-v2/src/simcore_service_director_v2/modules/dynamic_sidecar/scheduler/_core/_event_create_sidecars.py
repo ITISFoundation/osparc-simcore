@@ -51,6 +51,7 @@ from ...docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
 from ...docker_service_specs.settings import merge_settings_before_use
+from ...errors import InsufficientResourcesAfterProxyReservationError
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import get_allow_metrics_collection
 
@@ -89,11 +90,15 @@ def _subtract_proxy_reservation_from_service_resources(
     ram_reservation: int,  # in bytes
 ) -> None:
     """Subtracts the proxy's reservation from both limit and reservation of the service
-    with the largest RAM limit, in-place, flooring at 0.
+    with the largest RAM limit, in-place.
 
     Selecting by RAM limit keeps this consistent with
     _helper_container_resources._find_biggest_overall_service so both sides of the
     pipeline operate on the same container.
+
+    Raises:
+        InsufficientResourcesAfterProxyReservationError: if subtracting the proxy's
+            reservation would bring RAM or CPU (reservation or limit) to 0 or below
     """
     if not service_resources:
         return
@@ -112,11 +117,31 @@ def _subtract_proxy_reservation_from_service_resources(
     ram_before = int(float(image_resources["RAM"].limit)) if "RAM" in image_resources else 0
 
     if "RAM" in image_resources:
-        image_resources["RAM"].reservation = max(0, int(float(image_resources["RAM"].reservation) - ram_reservation))
-        image_resources["RAM"].limit = max(0, int(float(image_resources["RAM"].limit) - ram_reservation))
+        new_ram_reservation = int(float(image_resources["RAM"].reservation) - ram_reservation)
+        new_ram_limit = int(float(image_resources["RAM"].limit) - ram_reservation)
+        for field, value in (("reservation", new_ram_reservation), ("limit", new_ram_limit)):
+            if value <= 0:
+                raise InsufficientResourcesAfterProxyReservationError(
+                    service_key=biggest_key,
+                    resource_name="RAM",
+                    resource_field=field,
+                    new_value=value,
+                )
+        image_resources["RAM"].reservation = new_ram_reservation
+        image_resources["RAM"].limit = new_ram_limit
     if "CPU" in image_resources:
-        image_resources["CPU"].reservation = max(0.0, float(image_resources["CPU"].reservation) - cpu_reservation)
-        image_resources["CPU"].limit = max(0.0, float(image_resources["CPU"].limit) - cpu_reservation)
+        new_cpu_reservation = float(image_resources["CPU"].reservation) - cpu_reservation
+        new_cpu_limit = float(image_resources["CPU"].limit) - cpu_reservation
+        for field, value in (("reservation", new_cpu_reservation), ("limit", new_cpu_limit)):
+            if value <= 0:
+                raise InsufficientResourcesAfterProxyReservationError(
+                    service_key=biggest_key,
+                    resource_name="CPU",
+                    resource_field=field,
+                    new_value=value,
+                )
+        image_resources["CPU"].reservation = new_cpu_reservation
+        image_resources["CPU"].limit = new_cpu_limit
 
     _logger.info(
         "Removed reserved dy-proxy resources from '%s': "
