@@ -6,12 +6,16 @@ import logging
 import re
 from collections.abc import Iterable
 from contextlib import suppress
+from inspect import currentframe, getframeinfo
 from pathlib import Path
 from typing import Any
 
 import pytest
 from common_library.logging.logging_base import get_log_record_extra
 from faker import Faker
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from pydantic import AnyUrl
 from servicelib.logging_utils import (
     _DEFAULT_FORMATTING,
     CustomFormatter,
@@ -25,7 +29,8 @@ from servicelib.logging_utils import (
     log_exceptions,
     set_parent_module_log_level,
 )
-from servicelib.tracing import TracingConfig
+from servicelib.tracing import TracingConfig, _current_tracing_config, get_current_tracing_config
+from settings_library.tracing import TracingSettings
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -269,6 +274,151 @@ def test_log_context_caller_is_included_in_log(
 
     # Verify file name is in the log
     assert Path(__file__).name in caplog.text
+
+
+@pytest.fixture
+def no_tracing_config() -> Iterable[None]:
+    # NOTE: `_current_tracing_config` is process-wide (set once by `setup_log_tracing` and never
+    # reset), so we explicitly force/restore it here to make this test independent of test order.
+    token = _current_tracing_config.set(None)
+    try:
+        yield
+    finally:
+        _current_tracing_config.reset(token)
+
+
+@pytest.fixture
+def tracing_config_enabled(faker: Faker) -> Iterable[tuple[TracingConfig, InMemorySpanExporter]]:
+    tracing_settings = TracingSettings(
+        TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION="0.144.0",
+        TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=AnyUrl("http://opentelemetry-collector"),
+        TRACING_OPENTELEMETRY_COLLECTOR_PORT=4318,
+        TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=1.0,
+    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+    assert tracing_config.tracer_provider is not None
+
+    memory_exporter = InMemorySpanExporter()
+    tracing_config.tracer_provider.add_span_processor(SimpleSpanProcessor(memory_exporter))
+
+    token = _current_tracing_config.set(tracing_config)
+    try:
+        yield tracing_config, memory_exporter
+    finally:
+        _current_tracing_config.reset(token)
+
+
+def test_log_context_without_tracing_config_creates_no_span(
+    caplog: pytest.LogCaptureFixture,
+    no_tracing_config: None,
+):
+    assert get_current_tracing_config() is None
+    caplog.clear()
+
+    with log_context(_logger, logging.ERROR, "no tracing configured"):
+        ...
+
+    # unchanged behavior: only the start/finish log messages, no tracing side-effects
+    assert len(caplog.messages) == 2
+
+
+def test_log_context_creates_span_automatically(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+):
+    _tracing_config, memory_exporter = tracing_config_enabled
+
+    with log_context(_logger, logging.INFO, "doing something"):
+        ...
+
+    spans = memory_exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].name == f"{Path(__file__).stem}:test_log_context_creates_span_automatically - log_context"
+
+
+def test_log_context_operation_name_overrides_default_span_name(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+):
+    _tracing_config, memory_exporter = tracing_config_enabled
+
+    with log_context(_logger, logging.INFO, "doing something", operation_name="my_custom_operation"):
+        ...
+
+    spans = memory_exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].name == "my_custom_operation"
+
+
+def test_log_context_nested_calls_create_parent_child_spans(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+):
+    _tracing_config, memory_exporter = tracing_config_enabled
+
+    with (
+        log_context(_logger, logging.INFO, "outer", operation_name="outer_op"),
+        log_context(_logger, logging.INFO, "inner", operation_name="inner_op"),
+    ):
+        ...
+
+    spans = memory_exporter.get_finished_spans()
+    assert len(spans) == 2
+    spans_by_name = {span.name: span for span in spans}
+    outer_span = spans_by_name["outer_op"]
+    inner_span = spans_by_name["inner_op"]
+
+    assert inner_span.parent is not None
+    assert outer_span.context is not None
+    assert inner_span.parent.span_id == outer_span.context.span_id
+    assert inner_span.context is not None
+    assert inner_span.context.trace_id == outer_span.context.trace_id
+
+
+def test_log_context_span_has_log_message_attribute(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+):
+    _tracing_config, memory_exporter = tracing_config_enabled
+
+    with log_context(_logger, logging.INFO, "doing something important"):
+        ...
+
+    spans = memory_exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].attributes is not None
+    log_message = spans[0].attributes["log.message"]
+    assert isinstance(log_message, str)
+    assert "doing something important" in log_message
+    # span name stays stable/low-cardinality, unaffected by the free-form message
+    assert spans[0].name == f"{Path(__file__).stem}:test_log_context_span_has_log_message_attribute - log_context"
+
+
+def test_log_context_span_log_message_attribute_substitutes_args(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+):
+    _tracing_config, memory_exporter = tracing_config_enabled
+
+    with log_context(_logger, logging.INFO, "processing %s", "item-123"):
+        ...
+
+    spans = memory_exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].attributes is not None
+    log_message = spans[0].attributes["log.message"]
+    assert isinstance(log_message, str)
+    assert "item-123" in log_message
+    assert "%s" not in log_message
+
+
+def test_log_context_span_has_code_lineno_attribute(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+):
+    _tracing_config, memory_exporter = tracing_config_enabled
+
+    with log_context(_logger, logging.INFO, "doing something"):  # <-- this line's number is expected below
+        expected_lineno = getframeinfo(currentframe()).lineno - 1
+
+    spans = memory_exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].attributes is not None
+    assert spans[0].attributes["code.lineno"] == str(expected_lineno)
 
 
 @pytest.mark.parametrize("level", _ALL_LOGGING_LEVELS, ids=_to_level_name)

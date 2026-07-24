@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.testclient import TestClient
+from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
@@ -867,6 +868,67 @@ def test_traced_decorator_raises_on_missing_app_param():
         @traced
         async def _no_app_param(x: int) -> None:
             pass
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_operation_links_to_stale_ambient_span_instead_of_chaining_onto_it(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+):
+    """Reproduces the scenario of a long-lived `asyncio.Task` (e.g. a periodic background task)
+    that copied the ambient context once, while some span was open, at task-creation time.
+    Long after that captured span has ended, `trace.get_current_span()` inside the task still
+    returns it (non-recording). `traced_operation` must NOT chain new spans onto it as a parent
+    (that ancestor may never be exported again, e.g. it belongs to a completed/evicted trace) -
+    instead it should start a brand new root trace and keep a `Link` back to it.
+    """
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        # 1. Create and immediately end a span - simulates the span that was "current" at the
+        #    moment a background asyncio.Task copied the ambient context.
+        with traced_operation("stale_ancestor_operation", tracing_config=tracing_config):
+            stale_span = trace.get_current_span()
+            stale_trace_id = stale_span.get_span_context().trace_id
+            stale_span_id = stale_span.get_span_context().span_id
+        assert not stale_span.is_recording()  # confirms it is indeed stale/ended by now
+
+        # 2. Simulate a frozen Task context: `stale_span` is still "current", even though ended.
+        stale_context = trace.set_span_in_context(stale_span)
+        token = otel_context.attach(stale_context)
+        try:
+            with traced_operation("child_of_stale_operation", tracing_config=tracing_config):
+                new_span = trace.get_current_span()
+                new_trace_id = new_span.get_span_context().trace_id
+        finally:
+            otel_context.detach(token)
+
+        spans = mock_otel_collector.get_finished_spans()
+        child_spans = [s for s in spans if s.name == "child_of_stale_operation"]
+        assert len(child_spans) == 1
+        child_span = child_spans[0]
+
+        # New trace root: NOT chained onto the stale span (different trace_id, no parent)
+        assert new_trace_id != stale_trace_id
+        assert child_span.parent is None
+
+        # ... but still navigable back to where it originated via a Link
+        assert child_span.links is not None
+        assert len(child_span.links) == 1
+        assert child_span.links[0].context.trace_id == stale_trace_id
+        assert child_span.links[0].context.span_id == stale_span_id
 
 
 def test_traced_decorator_raises_on_wrong_app_type():
