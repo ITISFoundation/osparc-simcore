@@ -95,6 +95,7 @@ jobs:
       - name: check api-server openai compatibility
         if: steps.changes.outputs.api-server == 'true'
         run: |
+          source .venv/bin/activate
           cd services/api-server
           make test-openai-api-compatibility
 
