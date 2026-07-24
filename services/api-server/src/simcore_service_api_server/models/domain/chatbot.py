@@ -31,8 +31,6 @@ type ChatCompletionRequestMessage = _UserMessage | _AssistantMessage | _Develope
 
 
 class ChatResponseFormat(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
     type: Literal["text", "json_schema"]
     json_schema: dict[str, Any] | None = None
 
