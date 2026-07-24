@@ -521,8 +521,9 @@ class AuthSession:
             body_input["encryption"] = encryption
 
         body: ComputationStart = ComputationStart(**body_input)
-        # NOTE: encryption keys are secrets and must be transmitted in plaintext (api-server -> webserver -> director-v2),
-        # so we use model_dump_with_secrets with show_secrets=True
+        # NOTE: `encryption.encrypted_root_key` is an AWS KMS ciphertext blob (not the plaintext
+        # root key) by the time it gets here - it is still wrapped in a SecretStr for defense in
+        # depth/consistency, so we use model_dump_with_secrets with show_secrets=True to serialize it.
         body_data = model_dump_with_secrets(
             body,
             show_secrets=True,

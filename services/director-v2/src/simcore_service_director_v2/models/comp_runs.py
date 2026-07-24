@@ -30,7 +30,7 @@ class ProjectMetadataDict(TypedDict, total=False):
 
 class JobEncryptionRunMetadataDict(TypedDict):
     # storage form of models_library JobEncryptionContextMetadata
-    root_key: str  # base64-encoded 32-byte root key
+    encrypted_root_key: str  # base64-encoded AWS KMS ciphertext blob wrapping the AES-256 root key
     input_port_to_file_id: dict[NodeID, dict[ServicePortKey, FileIDStr]]
 
 

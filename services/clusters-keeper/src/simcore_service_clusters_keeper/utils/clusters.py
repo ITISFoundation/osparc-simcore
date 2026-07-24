@@ -106,6 +106,7 @@ def _prepare_environment_variables(
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_DRAINING}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
         f"AUTOSCALING_RABBITMQ={_convert_to_env_dict(model_dump_with_secrets(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT, show_secrets=True)) if app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT else 'null'}",  # noqa: E501
+        f"DASK_SIDECAR_KMS={_convert_to_env_dict(model_dump_with_secrets(app_settings.CLUSTERS_KEEPER_DASK_SIDECAR_KMS, show_secrets=True)) if app_settings.CLUSTERS_KEEPER_DASK_SIDECAR_KMS else 'null'}",  # noqa: E501
     ]
 
 

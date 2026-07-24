@@ -571,7 +571,7 @@ async def test_send_computation_task_propagates_encryption_context(
         expected_input_port_to_file_id: dict[str, str],
     ) -> TaskOutputData:
         assert encryption is not None
-        assert encryption.root_key.get_secret_value() == expected_root_key
+        assert base64.b64decode(encryption.encrypted_root_key.get_secret_value()) == expected_root_key
         assert encryption.input_port_to_file_id == expected_input_port_to_file_id
         return TaskOutputData.model_validate({"some_output_key": 123})
 
@@ -581,7 +581,7 @@ async def test_send_computation_task_propagates_encryption_context(
         JobEncryptionRunMetadataDict,
         model_dump_with_secrets(
             JobEncryptionContextMetadata(
-                root_key=base64.b64encode(expected_root_key).decode("ascii"),  # type: ignore[arg-type]
+                encrypted_root_key=base64.b64encode(expected_root_key).decode("ascii"),  # type: ignore[arg-type]
                 input_port_to_file_id={node_id: expected_input_port_to_file_id},
             ),
             show_secrets=True,

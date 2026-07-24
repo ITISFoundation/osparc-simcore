@@ -3,6 +3,8 @@ Helper functions to convert models used in
 services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
+import base64
+import logging
 import uuid
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
@@ -10,6 +12,7 @@ from functools import lru_cache
 from typing import Final
 
 import arrow
+from aws_library.kms import KMSNotConnectedError, KMSRuntimeError, SimcoreKMSAPI
 from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_nodes_ui import NodeUI
@@ -19,11 +22,16 @@ from models_library.projects import Project
 from models_library.projects_nodes import InputID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_nodes_layout import Position
-from pydantic import TypeAdapter
+from pydantic import SecretStr, TypeAdapter
 
 from simcore_service_api_server.models.api_resources import JobLinks
 
-from ..exceptions.backend_errors import InvalidEncryptionInputsError
+from ..exceptions.backend_errors import (
+    EncryptionMisconfiguredError,
+    EncryptionNotConfiguredError,
+    EncryptionServiceUnavailableError,
+    InvalidEncryptionInputsError,
+)
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
@@ -42,6 +50,8 @@ from .director_v2 import ComputationTaskGet
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
 
 _DEFAULT_SOLVER_NODE_POSITION: Final[Position] = Position(x=633, y=229)
+
+_logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -114,19 +124,27 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     return JobInputs(values=input_values)  # raises ValidationError
 
 
-def build_job_encryption_context(
+async def build_job_encryption_context(
     encryption: JobEncryptionInputs | None,
     *,
+    kms_client: SimcoreKMSAPI | None,
     node_id: NodeID,
     node_input_keys: Iterable[str],
+    encryption_context: dict[str, str] | None = None,
 ) -> JobEncryptionContextMetadata | None:
-    """Validates the client-supplied flat encryption inputs and wraps them into
-    director-v2's per-node ``JobEncryptionContextMetadata`` shape.
+    """Validates the client-supplied flat encryption inputs, encrypts the client-supplied
+    plaintext root key via AWS KMS, and wraps the result into director-v2's per-node
+    ``JobEncryptionContextMetadata`` shape (which only ever carries the KMS ciphertext,
+    never the plaintext key).
 
     raises InvalidEncryptionInputsError: if a port key is not an actual input of the node
+    raises EncryptionNotConfiguredError: if encryption is requested but no KMS client is configured
     """
     if encryption is None:
         return None
+
+    if kms_client is None:
+        raise EncryptionNotConfiguredError
 
     valid_keys = set(node_input_keys)
     if set(encryption.input_port_to_file_id) - valid_keys:
@@ -134,8 +152,17 @@ def build_job_encryption_context(
             inputs=set(encryption.input_port_to_file_id) - valid_keys, node_inputs=valid_keys
         )
 
+    root_key = base64.b64decode(encryption.root_key.get_secret_value())
+    try:
+        ciphertext = await kms_client.encrypt(root_key, encryption_context=encryption_context)
+    except KMSNotConnectedError as exc:
+        raise EncryptionServiceUnavailableError from exc
+    except KMSRuntimeError as exc:
+        _logger.exception("Unexpected error while encrypting job root key via KMS")
+        raise EncryptionMisconfiguredError from exc
+
     return JobEncryptionContextMetadata(
-        root_key=encryption.root_key,
+        encrypted_root_key=TypeAdapter(SecretStr).validate_python(base64.b64encode(ciphertext).decode("ascii")),
         input_port_to_file_id={node_id: encryption.input_port_to_file_id},
     )
 

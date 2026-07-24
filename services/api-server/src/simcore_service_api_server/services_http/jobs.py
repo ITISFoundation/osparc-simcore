@@ -1,5 +1,6 @@
 import logging
 
+from aws_library.kms import SimcoreKMSAPI
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -33,6 +34,7 @@ async def start_project(
     expected_job_name: str,
     pricing_spec: JobPricingSpecification | None,
     encryption: JobEncryptionInputs | None,
+    kms_client: SimcoreKMSAPI | None,
     webserver_api: AuthSession,
 ) -> None:
     encryption_metadata = None
@@ -55,10 +57,14 @@ async def start_project(
 
         if encryption is not None:
             node = project.workbench[node_ids[0]]
-            encryption_metadata = build_job_encryption_context(
+            encryption_metadata = await build_job_encryption_context(
                 encryption,
+                kms_client=kms_client,
                 node_id=node_id,
                 node_input_keys=(node.inputs or {}).keys(),
+                # NOTE: binds the KMS ciphertext to this job's project_id (AAD), so it cannot
+                # be reused/replayed for another job even if the ciphertext ever leaked
+                encryption_context={"project_id": f"{job_id}"},
             )
 
     with log_context(_logger, logging.DEBUG, "Starting job"):
