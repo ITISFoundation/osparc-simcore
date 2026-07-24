@@ -148,26 +148,12 @@ def create_base_app(
     return app
 
 
-def create_app(  # noqa: C901
-    settings: AppSettings | None = None,
-) -> FastAPI:
-    app = create_base_app(settings)
-    if settings is None:
-        settings = app.state.settings
-        _logger.info(
-            "Application settings: %s",
-            json_dumps(settings, indent=2, sort_keys=True),
-        )
-    assert settings  # nosec
-
-    substitutions.setup(app)
-
+def _setup_tracing_if_enabled(app: FastAPI) -> None:
     if get_tracing_config(app).tracing_enabled:
         setup_tracing(app, get_tracing_config(app))
 
-    if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        instrumentation.setup(app)
 
+def _setup_external_service_clients(app: FastAPI, settings: AppSettings) -> None:
     if settings.DIRECTOR_V0.DIRECTOR_ENABLED:
         director_v0.setup(
             app,
@@ -189,6 +175,64 @@ def create_app(  # noqa: C901
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
+
+def _is_dynamic_scheduler_enabled(settings: AppSettings) -> bool:
+    return bool(
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        and settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        and settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED
+    )
+
+
+def _setup_rabbitmq_and_redis(
+    app: FastAPI, *, dynamic_scheduler_enabled: bool, computational_backend_enabled: bool
+) -> None:
+    if dynamic_scheduler_enabled or computational_backend_enabled:
+        rabbitmq.setup(app)
+        setup_rpc_api_routes(app)  # Requires rabbitmq to be setup first
+        redis.setup(app)
+
+
+def _setup_dynamic_scheduler_modules(app: FastAPI) -> None:
+    dynamic_sidecar.setup(app)
+    socketio.setup(app)
+    notifier.setup(app)
+    long_running_tasks.setup(app)
+
+
+def _setup_computational_backend(app: FastAPI, settings: AppSettings, *, computational_backend_enabled: bool) -> None:
+    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED:
+        dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
+
+    if computational_backend_enabled:
+        comp_scheduler.setup(app)
+
+
+def create_app(
+    settings: AppSettings | None = None,
+) -> FastAPI:
+    # base app + settings
+    app = create_base_app(settings)
+    if settings is None:
+        settings = app.state.settings
+        _logger.info(
+            "Application settings: %s",
+            json_dumps(settings, indent=2, sort_keys=True),
+        )
+    assert settings is not None  # nosec
+
+    # osparc variables & tracing
+    substitutions.setup(app)
+    _setup_tracing_if_enabled(app)
+
+    # instrumentation
+    if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        instrumentation.setup(app)
+
+    # external service clients (director-v0, storage, catalog)
+    _setup_external_service_clients(app, settings)
+
+    # database
     db.setup(
         app,
         settings.POSTGRES,
@@ -199,38 +243,35 @@ def create_app(  # noqa: C901
     if get_tracing_config(app).tracing_enabled:
         initialize_fastapi_app_tracing(app, tracing_config=get_tracing_config(app))
 
+    # dynamic services
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app)
 
-    dynamic_scheduler_enabled = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
-        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-        and settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED
+    dynamic_scheduler_enabled = _is_dynamic_scheduler_enabled(settings)
+    computational_backend_enabled = settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED
+
+    # messaging backends (rabbitmq, rpc routes, redis)
+    _setup_rabbitmq_and_redis(
+        app,
+        dynamic_scheduler_enabled=dynamic_scheduler_enabled,
+        computational_backend_enabled=computational_backend_enabled,
     )
 
-    computational_backend_enabled = settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED
-    if dynamic_scheduler_enabled or computational_backend_enabled:
-        rabbitmq.setup(app)
-        setup_rpc_api_routes(app)  # Requires rabbitmq to be setup first
-        redis.setup(app)
-
+    # dynamic sidecar scheduler
     if dynamic_scheduler_enabled:
-        dynamic_sidecar.setup(app)
-        socketio.setup(app)
-        notifier.setup(app)
-        long_running_tasks.setup(app)
+        _setup_dynamic_scheduler_modules(app)
 
-    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED:
-        dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
+    # computational backend (dask client, scheduler)
+    _setup_computational_backend(app, settings, computational_backend_enabled=computational_backend_enabled)
 
-    if computational_backend_enabled:
-        comp_scheduler.setup(app)
-
+    # resource usage tracker
     resource_usage_tracker_client.setup(app)
 
+    # profiling
     if settings.DIRECTOR_V2_PROFILING:
         configure_profiler(app)
 
-    # setup app --
+    # event handlers & exception handlers
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
     _set_exception_handlers(app)
