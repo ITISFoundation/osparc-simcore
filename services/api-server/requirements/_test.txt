@@ -59,6 +59,7 @@ boto3==1.40.61
     #   moto
 botocore==1.40.61
     # via
+    #   -c requirements/_base.txt
     #   boto3
     #   moto
     #   s3transfer
@@ -369,8 +370,10 @@ rpds-py==2026.6.3
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.16.0
-    # via boto3
+s3transfer==0.14.0
+    # via
+    #   -c requirements/_base.txt
+    #   boto3
 setuptools==80.9.0
     # via
     #   moto
