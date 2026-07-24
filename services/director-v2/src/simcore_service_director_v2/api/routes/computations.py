@@ -19,6 +19,7 @@ import contextlib
 import logging
 from typing import Annotated, Any, Final, cast
 
+from annotated_types import doc
 import networkx as nx
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.serialization import model_dump_with_secrets
@@ -65,6 +66,7 @@ from ...models.comp_runs import (
     ProjectMetadataDict,
     RunMetadataDict,
 )
+from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
@@ -91,7 +93,7 @@ from ..dependencies.rut_client import get_rut_client
 
 _logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/computations", tags=["computations"])
 
 
 async def _check_pipeline_not_running_or_raise_409(
@@ -200,7 +202,7 @@ async def _get_project_metadata(
     return {}
 
 
-def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
+def _raise_insufficient_credits_error(computation: ComputationCreate) -> None:
     assert computation.wallet_info  # nosec
     raise WalletNotEnoughCreditsError(
         wallet_name=computation.wallet_info.wallet_name,
@@ -222,7 +224,10 @@ async def _try_start_pipeline(
     project_nodes: NodesDict,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
-) -> bool:
+) -> Annotated[
+    bool,
+    doc("True if the pipeline was submitted to run; False if there was nothing to run"),
+]:
     if not minimal_dag.nodes():
         # there is nothing else to be run here (up-to-date or no computational services)
         return False
@@ -270,6 +275,102 @@ async def _try_start_pipeline(
     return True
 
 
+def _raise_if_pipeline_has_computational_cycles(complete_dag: nx.DiGraph, computation: ComputationCreate) -> None:
+    if not computation.start_pipeline:
+        return
+    if computational_cycles := find_computational_node_cycles(complete_dag):
+        cycle_descriptions = [[complete_dag.nodes[n].get("name", n) for n in cycle] for cycle in computational_cycles]
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Project {computation.project_id} contains cycles with "
+            "computational services which are currently not supported: "
+            f"{cycle_descriptions}. Please remove them.",
+        )
+
+
+async def _get_latest_run_state(
+    comp_runs_repo: CompRunsRepository, project_id: ProjectID
+) -> tuple[CompRunsAtDB | None, RunningState]:
+    last_run: CompRunsAtDB | None = None
+    pipeline_state = RunningState.NOT_STARTED
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+        pipeline_state = last_run.result
+    return last_run, pipeline_state
+
+
+async def _start_pipeline_if_requested(  # noqa: PLR0913
+    request: Request,
+    response: Response,
+    *,
+    computation: ComputationCreate,
+    insufficient_credits: bool,
+    minimal_computational_dag: nx.DiGraph,
+    project: ProjectAtDB,
+    project_nodes: NodesDict,
+    projects_repo: ProjectsRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
+    users_repo: UsersRepository,
+    projects_metadata_repo: ProjectsMetadataRepository,
+) -> Annotated[
+    bool,
+    doc("True if the pipeline was actually started; False if start was not requested or nothing to run"),
+]:
+    if not computation.start_pipeline:
+        return False
+
+    if insufficient_credits:
+        _raise_insufficient_credits_error(computation)
+
+    pipeline_started = await _try_start_pipeline(
+        request.app,
+        projects_repo=projects_repo,
+        projects_nodes_repo=projects_nodes_repo,
+        computation=computation,
+        minimal_dag=minimal_computational_dag,
+        project=project,
+        project_nodes=project_nodes,
+        users_repo=users_repo,
+        projects_metadata_repo=projects_metadata_repo,
+    )
+    if not pipeline_started:
+        response.status_code = status.HTTP_200_OK
+    return pipeline_started
+
+
+async def _create_computation_get(
+    computation: ComputationCreate,
+    request: Request,
+    *,
+    complete_dag: nx.DiGraph,
+    minimal_computational_dag: nx.DiGraph,
+    comp_tasks: list[CompTaskAtDB],
+    last_run: CompRunsAtDB | None,
+    pipeline_state: RunningState,
+    pipeline_started: bool,
+) -> ComputationGet:
+    return ComputationGet(
+        id=computation.project_id,
+        state=pipeline_state,
+        pipeline_details=await compute_pipeline_details(complete_dag, minimal_computational_dag, comp_tasks),
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{request.url}/{computation.project_id}?user_id={computation.user_id}",
+        ),
+        stop_url=(
+            TypeAdapter(AnyHttpUrl).validate_python(
+                f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
+            )
+            if computation.start_pipeline and pipeline_started
+            else None
+        ),
+        iteration=last_run.iteration if last_run else None,
+        result=None,
+        started=last_run.started if last_run and pipeline_started else None,
+        stopped=last_run.ended if last_run and pipeline_started else None,
+        submitted=last_run.created if last_run else None,
+    )
+
+
 @router.post(
     "",
     description="Create and optionally start a new computation",
@@ -291,10 +392,12 @@ async def _try_start_pipeline(
             "description": "Invalid computation request (e.g. missing collection_run_id)",
         },
     },
+    # NOTE: This endpoint is historically used for CREATE, UPDATE or START a computation!
 )
-# NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
-@run_sequentially_in_context(target_args=["computation.project_id"])
-# NOTE: This endpoint is historically used for CREATE, UPDATE or START a computation!
+@run_sequentially_in_context(
+    target_args=["computation.project_id"]
+    # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
+)
 async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
     computation: ComputationCreate,
     request: Request,
@@ -316,30 +419,16 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         f"{computation.project_id=}",
     )
     try:
-        # get the project
         project = await projects_repo.get(computation.project_id)
 
-        # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
         project_nodes = await projects_nodes_repo.get_all(computation.project_id)
-
-        # create the complete DAG graph
         complete_dag = create_complete_dag(project_nodes)
 
         # reject cycles involving computational nodes early (before catalog checks)
-        if computation.start_pipeline and (computational_cycles := find_computational_node_cycles(complete_dag)):
-            cycle_descriptions = [
-                [complete_dag.nodes[n].get("name", n) for n in cycle] for cycle in computational_cycles
-            ]
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Project {computation.project_id} contains cycles with "
-                "computational services which are currently not supported: "
-                f"{cycle_descriptions}. Please remove them.",
-            )
+        _raise_if_pipeline_has_computational_cycles(complete_dag, computation)
 
-        # find the minimal viable graph to be run
         minimal_computational_dag: nx.DiGraph = await create_minimal_computational_graph_based_on_selection(
             complete_dag=complete_dag,
             selected_nodes=computation.subgraph or [],
@@ -349,7 +438,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         if computation.start_pipeline:
             await _check_pipeline_startable(minimal_computational_dag, computation, catalog_client)
 
-        # ok so put the tasks in the db
         await comp_pipelines_repo.upsert_pipeline(
             project.uuid,
             minimal_computational_dag,
@@ -369,51 +457,31 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
             rabbitmq_rpc_client=rpc_client,
         )
 
-        pipeline_started = False
-        if computation.start_pipeline:
-            if insufficient_credits:
-                _raise_if_insufficient_credits(computation)
+        pipeline_started = await _start_pipeline_if_requested(
+            request,
+            response,
+            computation=computation,
+            insufficient_credits=insufficient_credits,
+            minimal_computational_dag=minimal_computational_dag,
+            project=project,
+            project_nodes=project_nodes,
+            projects_repo=projects_repo,
+            projects_nodes_repo=projects_nodes_repo,
+            users_repo=users_repo,
+            projects_metadata_repo=projects_metadata_repo,
+        )
 
-            pipeline_started = await _try_start_pipeline(
-                request.app,
-                projects_repo=projects_repo,
-                projects_nodes_repo=projects_nodes_repo,
-                computation=computation,
-                minimal_dag=minimal_computational_dag,
-                project=project,
-                project_nodes=project_nodes,
-                users_repo=users_repo,
-                projects_metadata_repo=projects_metadata_repo,
-            )
-            if not pipeline_started:
-                response.status_code = status.HTTP_200_OK
+        last_run, pipeline_state = await _get_latest_run_state(comp_runs_repo, computation.project_id)
 
-        # get run details if any
-        last_run: CompRunsAtDB | None = None
-        pipeline_state = RunningState.NOT_STARTED
-        with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get_latest_run_by_project(project_id=computation.project_id)
-            pipeline_state = last_run.result
-
-        return ComputationGet(
-            id=computation.project_id,
-            state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, minimal_computational_dag, comp_tasks),
-            url=TypeAdapter(AnyHttpUrl).validate_python(
-                f"{request.url}/{computation.project_id}?user_id={computation.user_id}",
-            ),
-            stop_url=(
-                TypeAdapter(AnyHttpUrl).validate_python(
-                    f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
-                )
-                if computation.start_pipeline and pipeline_started
-                else None
-            ),
-            iteration=last_run.iteration if last_run else None,
-            result=None,
-            started=last_run.started if last_run and pipeline_started else None,
-            stopped=last_run.ended if last_run and pipeline_started else None,
-            submitted=last_run.created if last_run else None,
+        return await _create_computation_get(
+            computation,
+            request,
+            complete_dag=complete_dag,
+            minimal_computational_dag=minimal_computational_dag,
+            comp_tasks=comp_tasks,
+            last_run=last_run,
+            pipeline_state=pipeline_state,
+            pipeline_started=pipeline_started,
         )
 
     except (

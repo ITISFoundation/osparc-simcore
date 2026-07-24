@@ -4,14 +4,13 @@ from ..._meta import API_VTAG
 from . import health
 
 
-def setup_api_routes(app: FastAPI):
+def setup_api_routes(app: FastAPI) -> None:
     """
     Composes resources/sub-resources routers
     """
-    router = APIRouter()
+    # healthcheck at / and at /vX/
+    app.include_router(health.router)
 
-    # include operations in /
-    app.include_router(health.router, tags=["operations"])
-
-    # include the rest under /vX
-    app.include_router(router, prefix=f"/{API_VTAG}")
+    v0_router = APIRouter(prefix=f"/{API_VTAG}")
+    v0_router.include_router(health.router)
+    app.include_router(v0_router)

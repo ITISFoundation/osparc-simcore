@@ -55,7 +55,7 @@ from ..dependencies.dynamic_services import (
 
 _MAX_PARALLELISM: Final[NonNegativeInt] = 10
 
-router = APIRouter()
+router = APIRouter(prefix="/dynamic_services", tags=["dynamic services"])
 logger = logging.getLogger(__name__)
 
 
