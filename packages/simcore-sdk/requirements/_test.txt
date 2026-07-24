@@ -12,16 +12,16 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiobotocore
-    #   aioresponses
+    #   aiointercept
+aiointercept==0.1.9
+    # via -r requirements/_test.in
 aioitertools==0.13.0
     # via aiobotocore
-aioresponses==0.7.8
-    # via -r requirements/_test.in
 aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
@@ -185,6 +185,7 @@ multidict==6.7.1
     #   -c requirements/_base.txt
     #   aiobotocore
     #   aiohttp
+    #   aiointercept
     #   yarl
 mypy==1.19.1
     # via sqlalchemy
@@ -199,7 +200,6 @@ openapi-spec-validator==0.7.2
 packaging==26.0
     # via
     #   -c requirements/_base.txt
-    #   aioresponses
     #   pytest
 pathable==0.4.4
     # via jsonschema-path
@@ -377,3 +377,4 @@ yarl==1.24.5
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   aiointercept

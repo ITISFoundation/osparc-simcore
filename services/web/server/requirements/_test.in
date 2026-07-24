@@ -8,7 +8,7 @@
 --constraint _base.txt
 
 
-aioresponses
+aiointercept
 alembic
 asyncpg-stubs
 click

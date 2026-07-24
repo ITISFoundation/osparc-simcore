@@ -4,12 +4,12 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   aioresponses
-aioresponses==0.7.8
+    #   aiointercept
+aiointercept==0.1.9
     # via -r requirements/_test.in
 aiosignal==1.4.0
     # via
@@ -84,11 +84,11 @@ multidict==6.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   aiointercept
     #   yarl
 packaging==24.2
     # via
     #   -c requirements/_base.txt
-    #   aioresponses
     #   pytest
 pluggy==1.6.0
     # via
@@ -161,3 +161,4 @@ yarl==1.24.5
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   aiointercept

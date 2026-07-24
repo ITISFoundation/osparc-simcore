@@ -10,7 +10,7 @@
 
 
 aioboto3
-aioresponses
+aiointercept
 alembic
 click
 coverage

@@ -10,7 +10,6 @@ from uuid import uuid4
 
 import aiohttp
 import pytest
-from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocationArray,
@@ -21,6 +20,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
+from pytest_simcore.aiointercept_mocker import AioInterceptMock
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
@@ -94,7 +94,7 @@ async def session() -> AsyncIterator[aiohttp.ClientSession]:
 
 async def test_list_storage_locations(
     clear_caches: None,
-    storage_v0_service_mock: AioResponsesMock,
+    storage_v0_service_mock: AioInterceptMock,
     mock_postgres: EnvVarsDict,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -114,7 +114,7 @@ async def test_list_storage_locations(
 async def test_get_download_file_link(
     clear_caches: None,
     mock_environment: EnvVarsDict,
-    storage_v0_service_mock: AioResponsesMock,
+    storage_v0_service_mock: AioInterceptMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
     file_id: SimcoreS3FileID,
@@ -140,7 +140,7 @@ async def test_get_download_file_link(
 async def test_get_upload_file_links(
     clear_caches: None,
     mock_environment: EnvVarsDict,
-    storage_v0_service_mock: AioResponsesMock,
+    storage_v0_service_mock: AioInterceptMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
     file_id: SimcoreS3FileID,
@@ -166,7 +166,7 @@ async def test_get_upload_file_links(
 async def test_get_file_metadata(
     clear_caches: None,
     mock_environment: EnvVarsDict,
-    storage_v0_service_mock: AioResponsesMock,
+    storage_v0_service_mock: AioInterceptMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
     file_id: SimcoreS3FileID,
@@ -180,14 +180,14 @@ async def test_get_file_metadata(
 @pytest.fixture(params=["version1", "version2"])
 def storage_v0_service_mock_get_file_meta_data_not_found(
     request,
-    aioresponses_mocker: AioResponsesMock,
-) -> AioResponsesMock:
+    aiointercept_mocker: AioInterceptMock,
+) -> AioInterceptMock:
     get_file_metadata_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$")
     if request.param == "version1":
         #
         # WARNING: this is a LEGACY test. Do not modify this response.
         #   - The old storage service did not consider using a 404 for when file is not found
-        aioresponses_mocker.get(
+        aiointercept_mocker.get(
             get_file_metadata_pattern,
             status=status.HTTP_200_OK,
             payload={"error": "No result found", "data": {}},
@@ -195,18 +195,18 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
         )
     else:
         # NOTE: the new storage service shall do it right one day and we shall be prepared
-        aioresponses_mocker.get(
+        aiointercept_mocker.get(
             get_file_metadata_pattern,
             status=status.HTTP_404_NOT_FOUND,
             repeat=True,
         )
-    return aioresponses_mocker
+    return aiointercept_mocker
 
 
 async def test_get_file_metadata_invalid_s3_path(
     clear_caches: None,
     mock_environment: EnvVarsDict,
-    storage_v0_service_mock_get_file_meta_data_not_found: AioResponsesMock,
+    storage_v0_service_mock_get_file_meta_data_not_found: AioInterceptMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
     file_id: SimcoreS3FileID,
@@ -224,7 +224,7 @@ async def test_get_file_metadata_invalid_s3_path(
 async def test_list_file_metadata(
     clear_caches: None,
     mock_environment: EnvVarsDict,
-    storage_v0_service_mock: AioResponsesMock,
+    storage_v0_service_mock: AioInterceptMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
     file_id: SimcoreS3FileID,
@@ -239,7 +239,7 @@ async def test_list_file_metadata(
 async def test_delete_file(
     clear_caches: None,
     mock_environment: EnvVarsDict,
-    storage_v0_service_mock: AioResponsesMock,
+    storage_v0_service_mock: AioInterceptMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
     file_id: SimcoreS3FileID,

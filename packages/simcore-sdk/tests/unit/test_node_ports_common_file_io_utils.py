@@ -11,7 +11,6 @@ from unittest.mock import AsyncMock
 import pytest
 from aiobotocore.session import AioBaseClient, get_session
 from aiohttp import ClientResponse, ClientSession, TCPConnector
-from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadLinks,
@@ -21,6 +20,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.aiointercept_mocker import AioInterceptMock
 from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.exceptions import AwsS3BadRequestRequestTimeoutError
@@ -41,8 +41,8 @@ async def client_session() -> AsyncIterable[ClientSession]:
         yield session
 
 
-async def test_raise_for_status(aioresponses_mocker: aioresponses, client_session: ClientSession):
-    aioresponses_mocker.get(A_TEST_ROUTE, body="OPSIE there was an error here", status=400)
+async def test_raise_for_status(aiointercept_mocker: AioInterceptMock, client_session: ClientSession):
+    aiointercept_mocker.get(A_TEST_ROUTE, body="OPSIE there was an error here", status=400)
 
     async with client_session.get(A_TEST_ROUTE) as resp:
         assert isinstance(resp, ClientResponse)
@@ -70,11 +70,11 @@ class _TestParams:
     ],
 )
 async def test_check_for_aws_http_errors(
-    aioresponses_mocker: aioresponses,
+    aiointercept_mocker: AioInterceptMock,
     client_session: ClientSession,
     test_params: _TestParams,
 ):
-    aioresponses_mocker.get(A_TEST_ROUTE, body=test_params.body, status=test_params.status_code)
+    aiointercept_mocker.get(A_TEST_ROUTE, body=test_params.body, status=test_params.status_code)
 
     async with client_session.get(A_TEST_ROUTE) as resp:
         try:
@@ -86,7 +86,7 @@ async def test_check_for_aws_http_errors(
 
 
 async def test_process_batch_captures_400_request_timeout_and_wraps_in_error(
-    aioresponses_mocker: aioresponses, client_session: ClientSession
+    aiointercept_mocker: AioInterceptMock, client_session: ClientSession
 ):
     async def _mock_upload_task() -> None:
         body = (
@@ -98,7 +98,7 @@ async def test_process_batch_captures_400_request_timeout_and_wraps_in_error(
             "ZeNR52ghjv60fccNT4gCE4IranXjsGLG+L6FUyiIxx1tAuXL9xtz2NAY7ZlbzMTm94fhY3TBiCBmf"
             "</HostId></Error>"
         )
-        aioresponses_mocker.get(A_TEST_ROUTE, body=body, status=400)
+        aiointercept_mocker.get(A_TEST_ROUTE, body=body, status=400)
 
         async with client_session.get(A_TEST_ROUTE) as resp:
             # raises like _session_put does
