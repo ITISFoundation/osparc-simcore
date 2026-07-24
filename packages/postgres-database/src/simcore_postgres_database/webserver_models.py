@@ -7,7 +7,7 @@ the  webserver service
 
 from .models.api_keys import api_keys
 from .models.classifiers import group_classifiers
-from .models.comp_pipeline import StateType, comp_pipeline
+from .models.comp_pipeline import StateType
 from .models.comp_tasks import DB_CHANNEL_NAME, NodeClass, comp_tasks
 from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
@@ -32,7 +32,6 @@ __all__ = (
     "UserRole",
     "UserStatus",
     "api_keys",
-    "comp_pipeline",
     "comp_tasks",
     "confirmations",
     "group_classifiers",
@@ -48,4 +47,3 @@ __all__ = (
     "user_to_groups",
     "users",
 )
-# nopycln: file

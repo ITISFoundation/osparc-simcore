@@ -31,6 +31,7 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.status_codes_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -38,7 +39,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
-    comp_pipeline,
     comp_tasks,
 )
 from simcore_service_webserver._meta import API_VTAG
