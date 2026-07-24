@@ -9,6 +9,7 @@ from typing import Annotated, Any, Final, Literal, get_args
 
 import jsonschema
 from pydantic import Discriminator, Field, Tag, TypeAdapter, field_validator
+from pydantic_core import PydanticCustomError
 from referencing.jsonschema import ObjectSchema
 
 from ..domain.chatbot import ChatCompletionRequestMessage, ChatResponseFormat
@@ -65,8 +66,13 @@ class TextResponseFormatJsonSchema(ApiServerInputSchema):
         try:
             jsonschema.Draft7Validator.check_schema(v)
         except jsonschema.SchemaError as err:
-            msg = f"Invalid JSON Schema: {err.message}"
-            raise ValueError(msg) from err
+            _error_type = "invalid_json_schema"
+            _msg_template = "Invalid JSON Schema: {message}"
+            raise PydanticCustomError(
+                _error_type,
+                _msg_template,
+                {"message": err.message},
+            ) from err
         return v
 
     def to_domain(self) -> "ChatResponseFormat":
