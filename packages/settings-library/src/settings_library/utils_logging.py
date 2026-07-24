@@ -1,7 +1,12 @@
 import logging
 from functools import cached_property
+from typing import Protocol
 
 from common_library.basic_types import LogLevel
+
+
+class _HasLogLevel(Protocol):
+    LOG_LEVEL: str
 
 
 class MixinLoggingSettings:
@@ -20,8 +25,6 @@ class MixinLoggingSettings:
         return LogLevel(value.upper())
 
     @cached_property
-    def log_level(self) -> int:
+    def logging_level(self: _HasLogLevel) -> int:
         """Can be used in logging.setLogLevel()"""
-        assert issubclass(self.__class__, MixinLoggingSettings)  # nosec
-        assert hasattr(self, "LOG_LEVEL")  # nosec
-        return getattr(logging, self.LOG_LEVEL.upper())  # type: ignore # pylint: disable=no-member
+        return logging.getLevelNamesMapping()[self.LOG_LEVEL.upper()]

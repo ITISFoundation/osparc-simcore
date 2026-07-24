@@ -26,7 +26,7 @@ def get_app():
         log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=_settings.STORAGE_LOG_FILTER_MAPPING,
         tracing_config=_tracing_config,
-        log_base_level=_settings.log_level,
+        log_base_level=_settings.logging_level,
         noisy_loggers=None,
     )
 

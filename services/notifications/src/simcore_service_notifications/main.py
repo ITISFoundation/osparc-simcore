@@ -24,7 +24,7 @@ def app_factory() -> FastAPI:
         log_format_local_dev_enabled=app_settings.NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.NOTIFICATIONS_LOG_FILTER_MAPPING,
         tracing_config=tracing_config,
-        log_base_level=app_settings.log_level,
+        log_base_level=app_settings.logging_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
 
