@@ -30,7 +30,7 @@ from simcore_service_webserver.projects import _projects_service_delete, _trash_
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.trash import trash_service
 from sqlalchemy.ext.asyncio import AsyncEngine
-from tenacity import stop_after_delay, wait_fixed
+from tenacity import stop_after_attempt, wait_none
 
 
 @pytest.fixture
@@ -122,9 +122,13 @@ async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_suc
     """
     assert client.app
 
-    # speed up the tenacity retry so the test does not wait up to 60s
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_fixed(0.05))  # noqa: SLF001
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_delay(2))  # noqa: SLF001
+    # speed up the tenacity retry so the test does not wait up to 60s.
+    # NOTE: use an attempt-count bound (not `stop_after_delay`) so the retry isn't at the
+    # mercy of wall-clock timing on a busy/slow CI runner (a wall-clock bound previously
+    # caused flakiness: only 1 of the 3 expected calls happened before the bound elapsed).
+    # 3 attempts exactly matches the `side_effect` list below.
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_none())  # noqa: SLF001
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_attempt(3))  # noqa: SLF001
 
     mocker.patch(
         "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
@@ -154,7 +158,8 @@ async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_suc
     # UNDER TEST: a single GC cycle must retry internally until the pipeline is confirmed stopped
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
-    assert mock_is_pipeline_running.call_count >= 3
+    # exactly 3: matches the `side_effect` list above (2 "still running" + 1 "stopped")
+    assert mock_is_pipeline_running.call_count == 3
 
     resp = await client.get(f"/v0/projects/{user_project_id}")
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
@@ -192,9 +197,12 @@ async def test_trash_service__delete_expired_trash_retries_across_gc_cycles_when
         return_value=True,
     )
 
-    # speed up the retry so a stuck GC cycle gives up quickly instead of waiting up to 60s
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_fixed(0.05))  # noqa: SLF001
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_delay(0.3))  # noqa: SLF001
+    # speed up the retry so a stuck GC cycle gives up quickly instead of waiting up to 60s.
+    # NOTE: use an attempt-count bound (not `stop_after_delay`) to avoid wall-clock timing
+    # flakiness on a busy/slow CI runner: the pipeline is stuck (always "running"), so the
+    # exact attempt count just needs to be small, not timing-dependent.
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_none())  # noqa: SLF001
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_attempt(3))  # noqa: SLF001
 
     user_project_id = user_project["uuid"]
     await _trash_service.trash_project(
