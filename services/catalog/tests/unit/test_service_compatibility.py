@@ -235,6 +235,31 @@ async def test_evaluate_service_compatibility_map_with_other_service(mock_repo: 
     assert compatibility_map[ServiceVersion("1.0.1")].can_update_to.version == "5.1.0"
 
 
+async def test_evaluate_service_compatibility_map_caches_other_service_history(mock_repo: MockType, user_id: UserID):
+    # several releases referencing the SAME other service must fetch its history only once
+    other_service_key = "simcore/services/comp/other_service"
+    service_release_history = [
+        _create_as(
+            ReleaseDBGet,
+            version=f"1.0.{patch}",
+            compatibility_policy={
+                "other_service_key": other_service_key,
+                "versions_specifier": "<=5.1.0",
+            },
+        )
+        for patch in range(5)
+    ]
+
+    mock_repo.get_service_history.return_value = [
+        _create_as(ReleaseDBGet, version="5.0.0"),
+        _create_as(ReleaseDBGet, version="5.1.0"),
+    ]
+
+    await evaluate_service_compatibility_map(mock_repo, "product_name", user_id, service_release_history)
+
+    mock_repo.get_service_history.assert_called_once()
+
+
 async def test_evaluate_service_compatibility_map_with_deprecated_versions(mock_repo: MockType, user_id: UserID):
     service_release_history = [
         _create_as(ReleaseDBGet, version="1.0.0"),

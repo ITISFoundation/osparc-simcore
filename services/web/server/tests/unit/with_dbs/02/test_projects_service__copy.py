@@ -50,7 +50,9 @@ from simcore_service_webserver.projects._projects_service import (
     _remap_port_links_in_inputs,
     clone_project_data,
     copy_allow_guests_to_push_states_and_output_ports,
+    raise_if_project_is_trashed,
 )
+from simcore_service_webserver.projects.exceptions import ProjectCopyingTrashedProjectError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 
@@ -216,8 +218,50 @@ def test_remap_port_links_in_inputs_with_portlink_form():
 
 
 #
+# raise_if_project_is_trashed
+#
+
+
+def test_raise_if_project_is_trashed_with_non_trashed_project(fake_project: ProjectDict):
+    fake_project["trashed"] = None
+    raise_if_project_is_trashed(fake_project)  # does not raise
+
+
+def test_raise_if_project_is_trashed_with_trashed_project(fake_project: ProjectDict):
+    fake_project["trashed"] = "2026-07-21T00:00:00+00:00"
+    with pytest.raises(ProjectCopyingTrashedProjectError):
+        raise_if_project_is_trashed(fake_project)
+
+
+#
 # clone_project_data
 #
+
+
+async def test_clone_project_data_raises_if_source_is_trashed(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    osparc_product_name: ProductName,
+    task_progress: TaskProgress,
+):
+    assert client.app
+
+    # SETUP: a trashed source project must never be duplicated
+    source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    source_project["trashed"] = "2026-07-21T00:00:00+00:00"
+
+    # ACT & ASSERT
+    with pytest.raises(ProjectCopyingTrashedProjectError):
+        await clone_project_data(
+            client.app,
+            source_project=source_project,
+            forced_copy_project_id=None,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            product_api_base_url="http://product.testserver.io",
+            task_progress=task_progress,
+        )
 
 
 async def test_clone_project_data_from_standard_project(
