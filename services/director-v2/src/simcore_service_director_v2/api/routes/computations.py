@@ -19,8 +19,8 @@ import contextlib
 import logging
 from typing import Annotated, Any, Final, cast
 
-import networkx as nx
 from annotated_types import doc
+import networkx as nx
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.serialization import model_dump_with_secrets
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
