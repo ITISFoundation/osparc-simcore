@@ -36,7 +36,7 @@ class UserServicesTracingSettings(BaseApplicationSettings):
     USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT: Annotated[
         float,
         Field(description="CPU cores limit for the OTEL collector containers"),
-    ] = 0.30
+    ] = 0.25
     USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES: Annotated[
         int,
         Field(description="relative CPU weight for the OTEL collector containers"),

@@ -15,6 +15,8 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import ServiceRunID
+from models_library.services_resources import ServiceResourcesDict
+from pydantic import ByteSize
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -49,6 +51,7 @@ from ...docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
 from ...docker_service_specs.settings import merge_settings_before_use
+from ...errors import InsufficientResourcesAfterProxyReservationError
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import get_allow_metrics_collection
 
@@ -77,6 +80,80 @@ def _merge_service_base_and_user_specs(
             jsonable_encoder(user_specific_service_spec, exclude_unset=True, by_alias=False),
             include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
         )
+    )
+
+
+def _subtract_proxy_reservation_from_service_resources(
+    service_resources: ServiceResourcesDict,
+    *,
+    cpu_reservation: float,  # in fractional cores (e.g. 0.1), NOT nanocpus
+    ram_reservation: int,  # in bytes
+) -> None:
+    """Subtracts the proxy's reservation from both limit and reservation of the service
+    with the largest RAM limit, in-place.
+
+    Selecting by RAM limit keeps this consistent with
+    _helper_container_resources._find_biggest_overall_service so both sides of the
+    pipeline operate on the same container.
+
+    Raises:
+        InsufficientResourcesAfterProxyReservationError: if subtracting the proxy's
+            reservation would bring RAM or CPU (reservation or limit) to 0 or below
+    """
+    if not service_resources:
+        return
+
+    def _score(k: str) -> tuple[float, float]:
+        res = service_resources[k].resources
+        ram = float(res["RAM"].limit) if "RAM" in res else 0.0
+        cpu = float(res["CPU"].limit) if "CPU" in res else 0.0
+        return (ram, cpu)
+
+    biggest_key = max(service_resources, key=_score)
+
+    image_resources = service_resources[biggest_key].resources
+
+    cpu_before = float(image_resources["CPU"].limit) if "CPU" in image_resources else 0.0
+    ram_before = int(float(image_resources["RAM"].limit)) if "RAM" in image_resources else 0
+
+    if "RAM" in image_resources:
+        new_ram_reservation = int(float(image_resources["RAM"].reservation) - ram_reservation)
+        new_ram_limit = int(float(image_resources["RAM"].limit) - ram_reservation)
+        for field, value in (("reservation", new_ram_reservation), ("limit", new_ram_limit)):
+            if value <= 0:
+                raise InsufficientResourcesAfterProxyReservationError(
+                    service_key=biggest_key,
+                    resource_name="RAM",
+                    resource_field=field,
+                    new_value=value,
+                )
+        image_resources["RAM"].reservation = new_ram_reservation
+        image_resources["RAM"].limit = new_ram_limit
+    if "CPU" in image_resources:
+        new_cpu_reservation = float(image_resources["CPU"].reservation) - cpu_reservation
+        new_cpu_limit = float(image_resources["CPU"].limit) - cpu_reservation
+        for field, value in (("reservation", new_cpu_reservation), ("limit", new_cpu_limit)):
+            if value <= 0:
+                raise InsufficientResourcesAfterProxyReservationError(
+                    service_key=biggest_key,
+                    resource_name="CPU",
+                    resource_field=field,
+                    new_value=value,
+                )
+        image_resources["CPU"].reservation = new_cpu_reservation
+        image_resources["CPU"].limit = new_cpu_limit
+
+    _logger.info(
+        "Removed reserved dy-proxy resources from '%s': "
+        "cpu removed %.2f of %.2f cores (-%.2f%%); "
+        "ram removed %s of %s (-%.2f%%)",
+        biggest_key,
+        cpu_reservation,
+        cpu_before,
+        cpu_reservation / cpu_before * 100 if cpu_before else 0,
+        ByteSize(ram_reservation).human_readable(),
+        ByteSize(ram_before).human_readable(),
+        ram_reservation / ram_before * 100 if ram_before else 0,
     )
 
 
@@ -172,6 +249,13 @@ class CreateSidecars(DynamicSchedulerEvent):
         _logger.info("%s", f"{boot_options=}")
 
         catalog_client = CatalogClient.instance(app)
+
+        proxy_settings: DynamicSidecarProxySettings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
+        _subtract_proxy_reservation_from_service_resources(
+            scheduler_data.service_resources,
+            cpu_reservation=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
+            ram_reservation=int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION),
+        )
 
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             catalog_client=catalog_client,

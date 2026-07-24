@@ -22,13 +22,9 @@ ResourceName = str
 # extract the name from the `service_key` or `registry_address/service_key`
 DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = TypeAdapter(DockerGenericTag).validate_python("container")
 
-MEMORY_50MB: Final[int] = TypeAdapter(ByteSize).validate_python("50mib")
-MEMORY_250MB: Final[int] = TypeAdapter(ByteSize).validate_python("250mib")
 MEMORY_1GB: Final[int] = TypeAdapter(ByteSize).validate_python("1gib")
 
 GIGA: Final[float] = 1e9
-CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
-CPU_100_PERCENT: Final[int] = int(1 * GIGA)
 
 
 class ResourceValue(BaseModel, validate_assignment=True):
@@ -56,7 +52,7 @@ class ResourceValue(BaseModel, validate_assignment=True):
         self.limit = self.reservation = value
 
 
-ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]
+ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]  # noqa: UP040
 
 
 class BootMode(StrAutoEnum):
@@ -104,7 +100,7 @@ class ImageResources(BaseModel):
     )
 
 
-ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]
+ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]  # noqa: UP040
 
 
 class ServiceResourcesDictHelpers:

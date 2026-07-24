@@ -22,7 +22,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
 
 
@@ -50,16 +50,16 @@ environment:
 
     assert isinstance(compose_as_list_str["environment"], list)
 
-    assert docker_compose_specs._EnvironmentSection.parse(
+    assert docker_compose_specs._EnvironmentSection.parse(  # noqa: SLF001
         compose_as_dict["environment"]
-    ) == docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])
+    ) == docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])  # noqa: SLF001
 
     assert (
-        docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])
+        docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])  # noqa: SLF001
         == compose_as_dict["environment"]
     )
 
-    envs = docker_compose_specs._EnvironmentSection.export_as_list(compose_as_dict["environment"])
+    envs = docker_compose_specs._EnvironmentSection.export_as_list(compose_as_dict["environment"])  # noqa: SLF001
     assert envs == compose_as_list_str["environment"]
 
 
@@ -102,7 +102,7 @@ async def test_inject_resource_limits_and_reservations(
     service_spec: dict[str, Any],
     service_resources: ServiceResourcesDict,
 ) -> None:
-    docker_compose_specs._update_resource_limits_and_reservations(
+    docker_compose_specs._update_resource_limits_and_reservations(  # noqa: SLF001
         service_spec=service_spec, service_resources=service_resources
     )
 
@@ -119,8 +119,8 @@ async def test_inject_resource_limits_and_reservations(
             assert spec["deploy"]["resources"]["limits"]["cpus"] == cpu.limit
             assert spec["deploy"]["resources"]["limits"]["memory"] == f"{memory.limit}"
 
-            assert f"{CPU_RESOURCE_LIMIT_KEY}={int(float(cpu.limit) * 10**9)}" in spec["environment"]
-            assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
+            assert f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={int(float(cpu.limit) * 10**9)}" in spec["environment"]
+            assert f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={memory.limit}" in spec["environment"]
     else:
         for spec in service_spec["services"].values():
             assert spec["mem_limit"] == f"{memory.limit}"
@@ -128,8 +128,11 @@ async def test_inject_resource_limits_and_reservations(
             assert int(spec["mem_reservation"]) <= int(spec["mem_limit"])
             assert spec["cpus"] == max(cpu.limit, cpu.reservation)
 
-            assert f"{CPU_RESOURCE_LIMIT_KEY}={int(max(cpu.limit, cpu.reservation) * 10**9)}" in spec["environment"]
-            assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
+            assert (
+                f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={int(max(cpu.limit, cpu.reservation) * 10**9)}"
+                in spec["environment"]
+            )
+            assert f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={memory.limit}" in spec["environment"]
 
 
 @pytest.mark.parametrize(
@@ -164,7 +167,7 @@ def test_update_service_quotas_storage(
 ):
     assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
     if not has_quota_support:
-        docker_compose_specs._strip_service_quotas(service_spec=compose_spec)
+        docker_compose_specs._strip_service_quotas(service_spec=compose_spec)  # noqa: SLF001
 
     if has_quota_support:
         assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
@@ -180,7 +183,7 @@ def test_regression_service_has_no_reservations():
     service_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python({})
 
     spec_before = deepcopy(service_spec)
-    docker_compose_specs._update_resource_limits_and_reservations(
+    docker_compose_specs._update_resource_limits_and_reservations(  # noqa: SLF001
         service_spec=service_spec, service_resources=service_resources
     )
     assert spec_before == service_spec
@@ -231,7 +234,7 @@ EXPECTED_LABELS: list[str] = sorted(
     ],
 )
 async def test_update_container_labels(service_spec: dict[str, Any], expected_result: dict[str, Any]):
-    docker_compose_specs._update_container_labels(
+    docker_compose_specs._update_container_labels(  # noqa: SLF001
         service_spec,
         USER_ID,
         PROJECT_ID,

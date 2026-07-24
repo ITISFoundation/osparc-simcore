@@ -7,7 +7,7 @@ import os
 import urllib.parse
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
-from typing import Any
+from typing import Any, Final
 
 import aiodocker
 import httpx
@@ -303,7 +303,10 @@ async def _handle_redirection(redirection_response: httpx.Response, *, method: s
         return response
 
 
-async def assert_start_service(
+_MIN_CPU: Final[float] = 1.0
+
+
+async def assert_start_service(  # pylint: disable=too-many-arguments
     director_v2_client: httpx.AsyncClient,
     product_name: str,
     product_api_base_url: str,
@@ -314,13 +317,26 @@ async def assert_start_service(
     service_uuid: str,
     basepath: str | None,
     catalog_url: URL,
+    service_resources: ServiceResourcesDict | None = None,
 ) -> None:
-    service_resources: ServiceResourcesDict = await _get_service_resources(
-        catalog_url=catalog_url,
-        service_key=service_key,
-        service_version=service_version,
-        product_name=product_name,
-    )
+    if service_resources is None:
+        service_resources = await _get_service_resources(
+            catalog_url=catalog_url,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
+
+    # Older test images may ship with CPU.limit=0 in their labels.  The
+    # dynamic-sidecar requires at least one user-service container with a
+    # non-zero SIMCORE_NANO_CPUS_LIMIT so that helper-container resources can
+    # be allocated.  Apply a 1-core floor per container so integration tests
+    # work with pre-requirement images, regardless of container key names.
+    for image_resources in service_resources.values():
+        cpu = image_resources.resources.get("CPU")
+        if cpu is not None and float(cpu.limit) < _MIN_CPU:
+            cpu.limit = _MIN_CPU
+            cpu.reservation = _MIN_CPU
     data = {
         "user_id": user_id,
         "project_id": project_id,
@@ -338,6 +354,7 @@ async def assert_start_service(
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
         X_SIMCORE_USER_AGENT: "",
     }
+    print(f"Remaining start-service request payload: {data}")
 
     response = await director_v2_client.post(
         "/v2/dynamic_services",

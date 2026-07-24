@@ -18,6 +18,7 @@ from ..modules.user_services_tracing import (
     build_otel_collector_compose_service,
     build_otel_resource_attributes,
 )
+from ._helper_container_resources import remove_helper_containers_resources
 from .docker_compose_utils import docker_compose_config
 from .settings import ApplicationSettings
 
@@ -359,6 +360,15 @@ async def get_and_validate_compose_spec(
     _connect_user_services_to_shared_network(
         parsed_compose_spec,
         allow_internet_access=settings.DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS,
+    )
+
+    # Deduct helper-containers resource footprints from the biggest user service.
+    remove_helper_containers_resources(
+        settings,
+        parsed_compose_spec,
+        egress_proxy_count=sum(1 for name in spec_services if SUFFIX_EGRESS_PROXY_NAME in name),
+        with_tracing=is_user_services_tracing_enabled,
+        with_rclone=settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING,
     )
 
     _remap_service_keys(spec_services, spec_services_to_container_name)

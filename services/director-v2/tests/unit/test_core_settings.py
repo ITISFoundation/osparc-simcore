@@ -9,10 +9,8 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import DefaultFromEnvFactoryError
+from settings_library.egress_proxy import EnvoyLogLevel
 from settings_library.r_clone import S3Provider
-from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy import (
-    EnvoyLogLevel,
-)
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
     PlacementSettings,
@@ -37,7 +35,7 @@ def test_supported_backends_did_not_change() -> None:
 def test_enforce_r_clone_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         RCloneSettings.create_from_envs()
 
 

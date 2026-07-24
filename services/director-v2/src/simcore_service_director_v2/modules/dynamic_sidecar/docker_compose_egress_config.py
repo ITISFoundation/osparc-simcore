@@ -13,8 +13,7 @@ from models_library.service_settings_labels import (
 from models_library.service_settings_nat_rule import NATRule
 from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
-
-from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
+from settings_library.egress_proxy import EgressProxySettings
 
 _DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME: Final[str] = "with-internet"
 
@@ -29,7 +28,7 @@ class _HostData:
     dns_resolver_port: PortInt
 
     def __hash__(self) -> int:
-        return hash((type(self),) + tuple(self.__dict__.values()))
+        return hash((type(self), *self.__dict__.values()))
 
     def __lt__(self, other: "_HostData") -> bool:
         return self.hostname < other.hostname
@@ -52,7 +51,7 @@ def _get_tcp_listener(
         "name": name,
         "address": {
             "socket_address": {
-                "address": "0.0.0.0",  # nosec
+                "address": "0.0.0.0",  # nosec  # noqa: S104
                 "port_value": port,
             },
         },
@@ -247,7 +246,7 @@ def _allow_outgoing_internet(service_spec: ComposeSpecLabelDict, container_name:
     service_spec["services"][container_name]["networks"] = networks
 
 
-def add_egress_configuration(
+def add_egress_configuration(  # noqa: C901 # NOSONAR
     service_spec: ComposeSpecLabelDict,
     simcore_service_labels: SimcoreServiceLabels,
     egress_proxy_settings: EgressProxySettings,

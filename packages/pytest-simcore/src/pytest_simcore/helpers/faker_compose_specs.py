@@ -11,6 +11,8 @@ def test_it(faker: Faker):
 from typing import Any
 
 from faker import Faker
+from pydantic import ByteSize, TypeAdapter
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 
 _RANDOM = -1
 
@@ -51,3 +53,34 @@ def generate_fake_service_specs(faker: Faker) -> tuple[str, dict[str, Any]]:
         "ports": [f"{faker.random_int(1000, 9999)}:{faker.random_int(1000, 9999)}" for _ in _range(faker)],
     }
     return service_name, service
+
+
+def inject_container_resources(
+    compose_spec: dict[str, Any],
+    *,
+    nano_cpus: int = int(1.0 * 1e9),
+    memory_bytes: int = TypeAdapter(ByteSize).validate_python("1GiB"),
+) -> dict[str, Any]:
+    """Injects SIMCORE resource env vars and deploy limits into every service of a compose spec"""
+    cpus_float = nano_cpus / 1e9
+    for service in compose_spec.get("services", {}).values():
+        env = service.get("environment")
+        if env is None:
+            service["environment"] = env = []
+        if isinstance(env, dict):
+            env[USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY] = f"{nano_cpus}"
+            env[USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY] = f"{memory_bytes}"
+        else:
+            assert isinstance(env, list)  # nosec
+            env.extend(
+                [
+                    f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={nano_cpus}",
+                    f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={memory_bytes}",
+                ]
+            )
+        deploy = service.setdefault("deploy", {})
+        resources = deploy.setdefault("resources", {})
+        limits = resources.setdefault("limits", {})
+        limits["cpus"] = f"{cpus_float}"
+        limits["memory"] = f"{memory_bytes}"
+    return compose_spec
