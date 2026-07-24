@@ -22,7 +22,6 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
-from postgres_database.models.comp_pipeline import comp_pipeline
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -32,6 +31,7 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.status_codes_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_nodes import projects_nodes
