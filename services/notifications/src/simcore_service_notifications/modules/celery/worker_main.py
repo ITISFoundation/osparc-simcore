@@ -28,7 +28,7 @@ def get_app():
         log_format_local_dev_enabled=settings.NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.NOTIFICATIONS_LOG_FILTER_MAPPING,
         tracing_config=tracing_config,
-        log_base_level=settings.log_level,
+        log_base_level=settings.logging_level,
         noisy_loggers=None,
     )
 
