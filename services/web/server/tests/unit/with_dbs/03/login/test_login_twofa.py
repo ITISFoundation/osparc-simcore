@@ -15,17 +15,12 @@ from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser
+from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
-from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
-from simcore_service_webserver.application_settings import ApplicationSettings
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
-from simcore_service_webserver.login._confirmation_repository import (
-    ConfirmationRepository,
-)
 from simcore_service_webserver.login._twofa_service import (
     _do_create_2fa_code,
     create_2fa_code,
@@ -39,44 +34,18 @@ from simcore_service_webserver.login.constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_UNAVAILABLE,
     MSG_LOGGED_IN,
+    MSG_REGISTRATION_SUCCESS,
 )
 from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import (
     TwoFAFrontendUserPreference,
 )
 from twilio.base.exceptions import TwilioRestException
-from yarl import URL
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    envs_login = setenvs_from_dict(
-        monkeypatch,
-        {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
-            "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
-        },
-    )
-    print(ApplicationSettings.create_from_envs().model_dump_json(indent=1))
-
-    return {**app_environment, **envs_login}
-
-
-@pytest.fixture
-def postgres_db(postgres_db: sa.engine.Engine):
-    # adds fake twilio_messaging_sid in osparc product (pre-initialized)
-    stmt = (
-        products.update()
-        .values(
-            twilio_messaging_sid="x" * 34,
-            login_settings=ProductLoginSettingsDict(LOGIN_2FA_REQUIRED=True),  # <--- 2FA Enabled for product
-        )
-        .where(products.c.name == "osparc")
-    )
-    with postgres_db.connect() as conn:
-        conn.execute(stmt)
-    return postgres_db
+def postgres_db(postgres_db_with_2fa_enabled_for_osparc: sa.engine.Engine) -> sa.engine.Engine:
+    return postgres_db_with_2fa_enabled_for_osparc
 
 
 @pytest.fixture
@@ -125,7 +94,6 @@ async def test_2fa_code_operations(client: TestClient):
 async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     client: TestClient,
     mocked_notifications_service_send_message_from_template: AsyncMock,
-    confirmation_repository: ConfirmationRepository,
     user_email: str,
     user_password: str,
     user_phone_number: str,
@@ -136,30 +104,36 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
 
     # register email+password -----------------------
 
-    # 1. submit
-    url = client.app.router["auth_register"].url_for()
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": user_email,
-            "password": user_password,
-            "confirm": user_password,
-        },
-    )
-    await assert_status(response, status.HTTP_200_OK)
+    # 1. submit: account is created directly and login is granted right away
+    # (no e-mail confirmation step)
+    # NOTE: since LOGIN_2FA_REQUIRED implies LOGIN_REGISTRATION_INVITATION_REQUIRED
+    # (2FA assumes the invitation is what confirms the e-mail), registration
+    # here requires a valid invitation code
+    async with NewInvitation(client, guest_email=user_email) as invitation:
+        assert invitation.confirmation
 
-    # retrieves sent link from notification service mock
+        url = client.app.router["auth_register"].url_for()
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": user_email,
+                "password": user_password,
+                "confirm": user_password,
+                "invitation": invitation.confirmation["code"],
+            },
+        )
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
+
+    # registration grants login right away: the response carries the session identity cookie
+    assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
+
+    # welcome e-mail is sent
     mocked_notifications_service_send_message_from_template.assert_called_once()
-    notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
-    assert notification_context["link"] is not None
-    confirmation_url = URL(notification_context["link"]).path
-    assert "/auth/confirmation/" in f"{confirmation_url}"
-
-    url = confirmation_url
-
-    # 2. confirmation
-    response = await client.get(f"{url}")
-    assert response.status == status.HTTP_200_OK
+    call_kwargs = mocked_notifications_service_send_message_from_template.call_args.kwargs
+    assert call_kwargs["template_name"] == "registered"
+    assert call_kwargs["external_contacts"][0].email == user_email
+    mocked_notifications_service_send_message_from_template.reset_mock()
 
     # check email+password registered
     user = await _auth_service.get_user_or_none(client.app, email=user_email)
@@ -167,7 +141,8 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
-    # 0. login first (since there is no phone -> register)
+    # 0. login first: still required to grant session access to the 2FA phone
+    # registration step (independent from the login cookie set above)
     url = client.app.router["auth_login"].url_for()
     response = await client.post(
         f"{url}",
