@@ -10,6 +10,7 @@ from ..core.settings import ChatbotSettings
 from ..models.domain.chatbot import (
     ChatCompletionRequestMessage,
     ChatRequest,
+    ChatResponseFormat,
     CreateChatCompletionResponse,
 )
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
@@ -38,6 +39,7 @@ class ChatbotSession:
         metadata: dict[str, Any],
         temperature: float = 1.0,
         top_p: float = 1.0,
+        response_format: ChatResponseFormat | None = None,
     ) -> CreateChatCompletionResponse:
         # ensure the graph specified in settings are used
         _metadata = deepcopy(metadata)
@@ -47,12 +49,13 @@ class ChatbotSession:
             messages=messages,
             model=model,
             metadata=_metadata,
+            response_format=response_format,
             temperature=temperature,
             top_p=top_p,
         )
         response = await self._api.client.post(
             "/v1/chat/completions",
-            json=request.model_dump(),
+            json=request.model_dump(exclude_none=True),
         )
         response.raise_for_status()
         return CreateChatCompletionResponse.model_validate(response.json())

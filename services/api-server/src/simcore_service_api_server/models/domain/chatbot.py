@@ -30,6 +30,11 @@ class _DeveloperMessage(BaseModel):
 type ChatCompletionRequestMessage = _UserMessage | _AssistantMessage | _DeveloperMessage
 
 
+class ChatResponseFormat(BaseModel):
+    type: Literal["text", "json_schema"]
+    json_schema: dict[str, Any] | None = None
+
+
 class ChatRequest(BaseModel):
     messages: Annotated[
         list[ChatCompletionRequestMessage],
@@ -39,6 +44,7 @@ class ChatRequest(BaseModel):
     ]
     model: str
     metadata: dict[str, Any] = {}
+    response_format: ChatResponseFormat | None = None
     temperature: Annotated[float, Field(ge=0, le=1.9)] = 1.0
     top_p: Annotated[float, Field(ge=0, le=1.0)] = 1.0
 
