@@ -94,15 +94,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
                 )
                 else 0
             ),
-            "registration_confirmation_required": (
-                1
-                if getattr(
-                    app_settings.WEBSERVER_LOGIN,
-                    "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
-                    None,
-                )
-                else 0
-            ),
             "password_min_length": (
                 12 if getattr(app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None) else 0
             ),
@@ -228,7 +219,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         _set_if_disabled("WEBSERVER_LOGIN", section)
 
         envs["LOGIN_REGISTRATION_INVITATION_REQUIRED"] = section.get("registration_invitation_required")
-        envs["LOGIN_REGISTRATION_CONFIRMATION_REQUIRED"] = section.get("registration_confirmation_required")
 
     if section := cfg.get("storage"):
         _set_if_disabled("WEBSERVER_STORAGE", section)
