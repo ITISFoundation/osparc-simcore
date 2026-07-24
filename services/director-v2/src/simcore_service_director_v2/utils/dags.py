@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import datetime
 import logging
@@ -136,6 +137,7 @@ async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     comp_subgraph = complete_dag.subgraph(comp_nodes)
     for node_id in nx.algorithms.dag.topological_sort(comp_subgraph):
         await _compute_node_states(graph_data, node_id)
+        await asyncio.sleep(0)
 
 
 async def create_minimal_computational_graph_based_on_selection(
