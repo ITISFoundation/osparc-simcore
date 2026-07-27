@@ -28,7 +28,9 @@ async def load_dynamic_instances(
         filter_by_wallet_id=wallet_id,
         filter_by_instance_id=instance_id,
     )
-    return await analysis.parse_dynamic_instances(state, instances, state.ssh_key_path, user_id, wallet_id)
+    parsed_instances = await analysis.parse_dynamic_instances(state, instances, state.ssh_key_path, user_id, wallet_id)
+    # empty instances (warm/hot buffers or otherwise idle) are shown last
+    return sorted(parsed_instances, key=lambda instance: not instance.running_services)
 
 
 async def load_computational_clusters(
@@ -38,4 +40,6 @@ async def load_computational_clusters(
 ) -> list[ComputationalCluster]:
     """List EC2 computational instances and parse/analyze them in one step."""
     instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
-    return await analysis.parse_computational_clusters(state, instances, state.ssh_key_path, user_id, wallet_id)
+    clusters = await analysis.parse_computational_clusters(state, instances, state.ssh_key_path, user_id, wallet_id)
+    # warm buffers are shown last
+    return sorted(clusters, key=lambda cluster: cluster.primary.is_warm_buffer)

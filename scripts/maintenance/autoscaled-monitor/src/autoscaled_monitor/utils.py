@@ -70,6 +70,16 @@ def get_warm_buffer_tag(instance: Instance) -> bool:
     return False
 
 
+def get_hot_buffer_tag(instance: Instance) -> bool:
+    """Returns True if the instance is a hot buffer, False otherwise."""
+    for tag in instance.tags:
+        assert "Key" in tag  # nosec
+        if tag["Key"] == "io.simcore.autoscaling.hot_buffer_machine":
+            value = tag.get("Value", "false")
+            return value.lower() == "true"
+    return False
+
+
 def color_encode_with_state(string: str, ec2_instance: Instance) -> str:
     return f"[green]{string}[/green]" if ec2_instance.state["Name"] == "running" else f"[yellow]{string}[/yellow]"
 

@@ -449,8 +449,12 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                     issues,
                     end_section=True,
                 )
+        elif instance.is_hot_buffer:
+            service_table = "[dim]hot buffer - no services running[/dim]"
         elif instance.is_warm_buffer:
             service_table = "[dim]warm buffer - no services running[/dim]"
+        else:
+            service_table = "[dim]potential hot buffer - no services running[/dim]"
 
         instance_info = "\n".join(
             [
@@ -465,7 +469,7 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 *_format_disk_usage_lines(instance.disk_usage),
             ]
         )
-        if instance.is_warm_buffer:
+        if not instance.running_services:
             instance_info = f"[dim]{instance_info}[/dim]"
         graylog_line = f"Graylog: {create_graylog_permalinks(environment, instance.ec2_instance)}"
         right_content = Group(graylog_line, service_table)
@@ -701,6 +705,7 @@ def print_summary_as_json(
                 "name": instance.name,
                 "ec2_instance_id": instance.ec2_instance.instance_id,
                 "is_warm_buffer": instance.is_warm_buffer,
+                "is_hot_buffer": instance.is_hot_buffer,
                 "running_services": [
                     {
                         "user_id": service.user_id,
