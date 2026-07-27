@@ -56,8 +56,8 @@ async function logIn(page, user, pass) {
     return;
   }
 
-  // NOTE: since environ WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0, the
-  // backend automatically creates session after registration is submitted
+  // NOTE: registration no longer requires e-mail confirmation, the
+  // backend automatically creates a session after registration is submitted
   console.log("Logging in:", user);
   await page.waitForSelector('[osparc-test-id="loginUserEmailFld"]', {
     visible: true,

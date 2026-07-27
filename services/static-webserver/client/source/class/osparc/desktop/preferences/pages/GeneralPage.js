@@ -141,12 +141,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     __addInactivitySetting: function() {
       const box = new osparc.widget.SectionBox(this.tr("Automatic Shutdown of Idle Instances"));
 
-      box.addHelper(this.tr("Enter 0 to disable this function"));
-
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
-        minimum: 0,
-        maximum: Number.MAX_SAFE_INTEGER,
+        minimum: 1,
+        maximum: 3*60, // 3 hours
         singleStep: 1,
         allowGrowX: false
       });

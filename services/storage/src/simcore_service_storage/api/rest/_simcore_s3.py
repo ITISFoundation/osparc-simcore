@@ -8,13 +8,10 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
 )
 from models_library.generics import Envelope
-from models_library.projects import ProjectID
-from servicelib.aiohttp import status
 from settings_library.s3 import S3Settings
 
 from ...dsm import get_dsm_provider
 from ...models import (
-    DeleteFolderQueryParams,
     FileMetaData,
     SearchFilesQueryParams,
     StorageQueryParamsBase,
@@ -47,26 +44,6 @@ async def get_or_create_temporary_s3_access(
     )
     settings_get = S3SettingsGet(**response_data)
     return Envelope[S3SettingsGet](data=settings_get, error=None)
-
-
-@router.delete(
-    "/simcore-s3/folders/{folder_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def delete_folders_of_project(
-    query_params: Annotated[DeleteFolderQueryParams, Depends()],
-    folder_id: str,
-    request: Request,
-):
-    dsm = cast(
-        SimcoreS3DataManager,
-        get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
-    )
-    await dsm.delete_project_simcore_s3(
-        query_params.user_id,
-        ProjectID(folder_id),
-        query_params.node_id,
-    )
 
 
 @router.post(

@@ -5,6 +5,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.user_messages import user_message
 from models_library.notifications import Channel
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -18,7 +19,7 @@ from ....groups.groups_service import (
 from ....invitations.api import is_service_invitation_code
 from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
-from ....notifications.models import EmailContact
+from ....notifications._models import EmailContact
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import (
@@ -29,10 +30,9 @@ from ....utils import MINUTE
 from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_requests_validation import parse_request_body_as
-from ....web_utils import envelope_response, flash_response
+from ....web_utils import envelope_response
 from ... import (
     _auth_service,
-    _confirmation_web,
     _registration_service,
     _security_service,
     _twofa_service,
@@ -46,13 +46,11 @@ from ..._invitations_service import (
 from ..._login_service import (
     notify_user_confirmation,
 )
-from ..._models import Confirmation
 from ...constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
-    MSG_CANT_SEND_MAIL,
     MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
@@ -61,7 +59,6 @@ from ...settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
-from ._rest_dependencies import get_confirmation_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from .registration_schemas import (
     InvitationCheck,
@@ -114,7 +111,7 @@ async def register(request: web.Request):
     Starts user's registration by providing an email, password and
     invitation code (required by configuration).
 
-    An email with a link to 'email_confirmation' is sent to complete registration
+    Creates the account directly (no e-mail confirmation step) and grants login.
     """
     product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
@@ -133,7 +130,7 @@ async def register(request: web.Request):
         )
 
     # INVITATIONS
-    expires_at: datetime | None = None  # = does not expire
+    account_expires_at: datetime | None = None  # = does not expire
     invitation: ConfirmedInvitationData | None = None
     # There are 3 possible states for an invitation:
     # 1. Invitation is not required (i.e. the app has disabled invitations)
@@ -141,7 +138,7 @@ async def register(request: web.Request):
     # 3. Invitation is valid
     #
     # For those states the `invitation` variable get the following values
-    # 1. `None
+    # 1. `None`
     # 2. no value, it raises and exception
     # 3. gets `InvitationData`
     # `
@@ -156,7 +153,7 @@ async def register(request: web.Request):
         invitation_code = registration.invitation
         if invitation_code is None:
             raise web.HTTPBadRequest(
-                text="invitation field is required",
+                text=user_message("Registration requires a valid invitation code."),
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
@@ -168,7 +165,7 @@ async def register(request: web.Request):
         )
         if invitation.trial_account_days:
             # NOTE: expires_at is currently set as offset-naive
-            expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
+            account_expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
 
     #  get authorized user or create new
     user = await _auth_service.get_user_or_none(request.app, email=registration.email)
@@ -184,96 +181,21 @@ async def register(request: web.Request):
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),
-            status_upon_creation=(
-                UserStatus.CONFIRMATION_PENDING
-                if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
-                else UserStatus.ACTIVE
-            ),
-            expires_at=expires_at,
+            status_upon_creation=UserStatus.ACTIVE,
+            expires_at=account_expires_at,
         )
 
     assert user is not None  # nosec
-
-    # setup user groups
     assert (  # nosec
         product.name == invitation.product if invitation and invitation.product else True
     )
 
+    # setup user groups
     await auto_add_user_to_groups(app=request.app, user_id=user["id"])
     await auto_add_user_to_product_group(
         app=request.app,
         user_id=user["id"],
         product_name=product.name,
-    )
-
-    if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
-        # Confirmation required: send confirmation email
-        confirmation_service = get_confirmation_service(request.app)
-        _confirmation: Confirmation = await confirmation_service.create_confirmation(
-            user_id=user["id"],
-            action="REGISTRATION",
-            data=invitation.model_dump_json() if invitation else None,
-        )
-
-        email_confirmation_url = _confirmation_web.make_confirmation_link(request, _confirmation.code)
-
-        try:
-            await notifications_service.send_message_from_template(
-                request.app,
-                user_id=user["id"],
-                product_name=product.name,
-                channel=Channel.email,
-                group_ids=None,
-                external_contacts=[
-                    EmailContact(
-                        name=user.get("first_name") or user["name"],
-                        email=registration.email,
-                    )
-                ],
-                template_name="registered",
-                context={
-                    "host": request.host,
-                    "link": email_confirmation_url,
-                    "user": {
-                        "first_name": user.get("first_name"),
-                        "user_name": user.get("name"),
-                    },
-                },
-                locale=get_locale_or_none(request),
-            )
-        except Exception as err:  # pylint: disable=broad-except
-            error_code = create_error_code(err)
-            user_error_msg = MSG_CANT_SEND_MAIL
-
-            _logger.exception(
-                **create_troubleshooting_log_kwargs(
-                    user_error_msg,
-                    error=err,
-                    error_code=error_code,
-                    error_context={
-                        "request": request,
-                        "registration": registration,
-                        "user_id": user.get("id"),
-                        "user": user,
-                        "confirmation": _confirmation,
-                    },
-                    tip="Failed while sending confirmation email",
-                )
-            )
-
-            await confirmation_service.delete_confirmation_and_user(user_id=user["id"], confirmation=_confirmation)
-
-            raise web.HTTPServiceUnavailable(text=user_error_msg) from err
-
-        return flash_response(
-            translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
-            "INFO",
-        )
-
-    # NOTE: Here confirmation is disabled
-    assert settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED is False  # nosec
-    assert (  # nosec
-        product.name == invitation.product if invitation and invitation.product else True
     )
 
     await notify_user_confirmation(
@@ -283,11 +205,48 @@ async def register(request: web.Request):
         extra_credits_in_usd=invitation.extra_credits_in_usd if invitation else None,
     )
 
-    # No confirmation required: authorize login
-    assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
-    assert not settings.LOGIN_2FA_REQUIRED  # nosec
+    # Send welcome email
+    try:
+        user_name = user.get("name") or registration.email.split("@")[0]
+        first_name = user.get("first_name") or user_name
+        await notifications_service.send_message_from_template(
+            request.app,
+            user_id=user["id"],
+            product_name=product.name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[
+                EmailContact(
+                    name=first_name,
+                    email=registration.email,
+                ),
+            ],
+            template_name="registered",
+            context={
+                "host": request.host or "osparc.io",
+                "user": {
+                    "first_name": first_name,
+                    "user_name": user_name,
+                },
+            },
+            locale=get_locale_or_none(request),
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                f"Failed to send 'registered' email to {registration.email}",
+                error=exc,
+                error_context={"user_id": user["id"], "email": registration.email},
+            )
+        )
+        # Don't fail registration if email fails to send
 
-    return await _security_service.login_granted_response(request=request, user=user)
+    # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
+    return await _security_service.login_granted_response(
+        request,
+        user=user,
+        message=translate_message(MSG_REGISTRATION_SUCCESS, request).format(email=registration.email),
+    )
 
 
 @routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")

@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import time
 import urllib.parse
-from datetime import datetime
+from datetime import UTC, datetime
 
 from simcore_service_webserver.utils import (
     DATETIME_FORMAT,
@@ -49,8 +49,8 @@ def test_time_utils():
     now1 = to_datetime(snapshot1)
     assert now0 < now1
 
-    # tests biyective
-    now_time = datetime.utcnow()
+    # tests bijective
+    now_time = datetime.now(tz=UTC).replace(tzinfo=None)
     snapshot = now_time.strftime(DATETIME_FORMAT)
     assert now_time == datetime.strptime(snapshot, DATETIME_FORMAT)
 

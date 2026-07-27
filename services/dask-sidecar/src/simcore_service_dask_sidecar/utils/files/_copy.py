@@ -7,12 +7,10 @@ from pathlib import Path
 from typing import Any, BinaryIO, Literal, cast
 
 import fsspec  # type: ignore[import-untyped]
-from dask_task_models_library.container_tasks.encryption import (
-    TransferEncryptionSettings,
-)
 from pydantic.networks import AnyUrl
 
 from ..aes_gcm import decrypt_stream, encrypt_stream
+from ..encryption import TransferEncryptionSettings
 from ._progress import LogPublishingCB, _format_progress_message, _ThreadSafeProgressLogger
 
 CHUNK_SIZE = 4 * 1024 * 1024

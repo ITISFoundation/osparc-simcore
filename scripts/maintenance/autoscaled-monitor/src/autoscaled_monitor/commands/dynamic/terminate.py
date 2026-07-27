@@ -18,6 +18,7 @@ async def _run(
     instance_id: str | None,
     *,
     force: bool,
+    use_profile: str | None,
 ) -> None:
     if not user_id and not instance_id:
         rich.print("either define user_id or instance_id!")
@@ -39,12 +40,13 @@ async def _run(
         raise typer.Exit(1)
 
     assert state.ec2_resource_autoscaling  # nosec
-    rendering.print_dynamic_instances(
+    await rendering.print_dynamic_instances(
         dynamic_autoscaled_instances,
         state.environment,
         state.ec2_resource_autoscaling.meta.client.meta.region_name,
         output=None,
         service_extra_info=None,
+        pricing_profile=use_profile,
     )
 
     for instance in dynamic_autoscaled_instances:
@@ -66,7 +68,14 @@ def terminate(
     instance_id: Annotated[str | None, typer.Option(help="the instance ID")] = None,
     *,
     force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
+    use_profile: Annotated[
+        str | None,
+        typer.Option(
+            help="AWS profile (e.g. from ~/.aws/credentials) to use for AWS cost lookups "
+            "(pricing:GetProducts, ec2:DescribeVolumes), in case the deploy-config credentials lack access"
+        ),
+    ] = None,
 ) -> None:
     """Terminate dynamic EC2 instance(s) for a given user or instance ID."""
 
-    asyncio.run(_run(state, user_id, instance_id, force=force))
+    asyncio.run(_run(state, user_id, instance_id, force=force, use_profile=use_profile))

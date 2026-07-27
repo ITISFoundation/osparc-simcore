@@ -7,14 +7,24 @@ import base64
 import json
 
 import pytest
+from aws_library.kms import KMSKeyNotFoundError, KMSNotConnectedError
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
-from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata, RootKeyStr
+from models_library.api_schemas_directorv2.encryption import (
+    EncryptedRootKeyStr,
+    JobEncryptionContextMetadata,
+    RootKeyStr,
+)
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
 from models_library.projects_nodes_io import NodeID
 from pydantic import RootModel, TypeAdapter, create_model
-from simcore_service_api_server.exceptions.backend_errors import InvalidEncryptionInputsError
+from simcore_service_api_server.exceptions.backend_errors import (
+    EncryptionMisconfiguredError,
+    EncryptionNotConfiguredError,
+    EncryptionServiceUnavailableError,
+    InvalidEncryptionInputsError,
+)
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import (
@@ -268,50 +278,145 @@ def test_create_jobstatus_from_task():
 
 _VALID_ROOT_KEY_BASE64 = base64.b64encode(b"0" * 32).decode("ascii")
 _NODE_ID = NodeID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+_FAKE_CIPHERTEXT = b"fake-kms-ciphertext"
 
 
-def test_build_job_encryption_context_returns_none_when_no_encryption():
-    assert build_job_encryption_context(None, node_id=_NODE_ID, node_input_keys=["input_1"]) is None
+class _FakeKMSClient:
+    """Test double for aws_library.kms.SimcoreKMSAPI - only implements encrypt()."""
+
+    def __init__(self, ciphertext: bytes = _FAKE_CIPHERTEXT) -> None:
+        self.ciphertext = ciphertext
+        self.calls: list[dict] = []
+
+    async def encrypt(
+        self,
+        plaintext: bytes,
+        *,
+        key_id: str | None = None,
+        encryption_context: dict[str, str] | None = None,
+    ) -> bytes:
+        self.calls.append({"plaintext": plaintext, "key_id": key_id, "encryption_context": encryption_context})
+        return self.ciphertext
 
 
-def test_build_job_encryption_context_wraps_flat_inputs_per_node():
+class _RaisingFakeKMSClient:
+    """Test double simulating a KMS client whose encrypt() call fails."""
+
+    def __init__(self, exc_to_raise: Exception) -> None:
+        self._exc_to_raise = exc_to_raise
+
+    async def encrypt(
+        self,
+        plaintext: bytes,  # noqa: ARG002
+        *,
+        key_id: str | None = None,  # noqa: ARG002
+        encryption_context: dict[str, str] | None = None,  # noqa: ARG002
+    ) -> bytes:
+        raise self._exc_to_raise
+
+
+async def test_build_job_encryption_context_returns_none_when_no_encryption():
+    result = await build_job_encryption_context(
+        None, kms_client=_FakeKMSClient(), node_id=_NODE_ID, node_input_keys=["input_1"]
+    )
+    assert result is None
+
+
+async def test_build_job_encryption_context_wraps_flat_inputs_per_node():
     encryption = JobEncryptionInputs(
         root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
         input_port_to_file_id={"input_1": "input_1"},
     )
+    kms_client = _FakeKMSClient()
 
-    metadata = build_job_encryption_context(encryption, node_id=_NODE_ID, node_input_keys=["input_1", "input_2"])
+    metadata = await build_job_encryption_context(
+        encryption,
+        kms_client=kms_client,
+        node_id=_NODE_ID,
+        node_input_keys=["input_1", "input_2"],
+        encryption_context={"project_id": "abc"},
+    )
 
     assert metadata is not None
     # the flat client-supplied map is nested under the resolved node id
     assert metadata.input_port_to_file_id == {_NODE_ID: {"input_1": "input_1"}}
-    # the secret root_key is preserved (not masked)
-    assert metadata.root_key.get_secret_value() == _VALID_ROOT_KEY_BASE64
+    # the plaintext root_key was encrypted via KMS - only the ciphertext is stored
+    assert base64.b64decode(metadata.encrypted_root_key.get_secret_value()) == kms_client.ciphertext
+    assert kms_client.calls == [
+        {
+            "plaintext": base64.b64decode(_VALID_ROOT_KEY_BASE64),
+            "key_id": None,
+            "encryption_context": {"project_id": "abc"},
+        }
+    ]
 
 
-def test_build_job_encryption_context_raises_on_unknown_port_key():
+async def test_build_job_encryption_context_raises_on_unknown_port_key():
     encryption = JobEncryptionInputs(
         root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
         input_port_to_file_id={"not_a_node_input": "some_file_id"},
     )
 
     with pytest.raises(InvalidEncryptionInputsError, match="not_a_node_input"):
-        build_job_encryption_context(encryption, node_id=_NODE_ID, node_input_keys=["input_1", "input_2"])
+        await build_job_encryption_context(
+            encryption, kms_client=_FakeKMSClient(), node_id=_NODE_ID, node_input_keys=["input_1", "input_2"]
+        )
+
+
+async def test_build_job_encryption_context_raises_when_kms_not_configured():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"input_1": "input_1"},
+    )
+
+    with pytest.raises(EncryptionNotConfiguredError):
+        await build_job_encryption_context(encryption, kms_client=None, node_id=_NODE_ID, node_input_keys=["input_1"])
+
+
+async def test_build_job_encryption_context_raises_service_unavailable_when_kms_not_connected():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"input_1": "input_1"},
+    )
+
+    with pytest.raises(EncryptionServiceUnavailableError):
+        await build_job_encryption_context(
+            encryption,
+            kms_client=_RaisingFakeKMSClient(KMSNotConnectedError()),
+            node_id=_NODE_ID,
+            node_input_keys=["input_1"],
+        )
+
+
+async def test_build_job_encryption_context_raises_misconfigured_on_kms_access_error():
+    encryption = JobEncryptionInputs(
+        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        input_port_to_file_id={"input_1": "input_1"},
+    )
+
+    with pytest.raises(EncryptionMisconfiguredError):
+        await build_job_encryption_context(
+            encryption,
+            kms_client=_RaisingFakeKMSClient(KMSKeyNotFoundError(key_id="some-key-id")),
+            node_id=_NODE_ID,
+            node_input_keys=["input_1"],
+        )
 
 
 def test_job_encryption_metadata_serialization_preserves_root_key():
-    # regression: the SecretStr root_key must survive serialization to the outgoing HTTP
+    # regression: the SecretStr encrypted_root_key must survive serialization to the outgoing HTTP
     # body. Plain jsonable_encoder / model_dump(mode="json") masks it to "**********",
     # which would break decryption end-to-end (both api-server->webserver and
     # webserver->director-v2 hops rely on this exact serialization pattern).
+    ciphertext_b64 = base64.b64encode(_FAKE_CIPHERTEXT).decode("ascii")
     metadata = JobEncryptionContextMetadata(
-        root_key=TypeAdapter(RootKeyStr).validate_python(_VALID_ROOT_KEY_BASE64),
+        encrypted_root_key=TypeAdapter(EncryptedRootKeyStr).validate_python(ciphertext_b64),
         input_port_to_file_id={_NODE_ID: {"input_1": "input_1"}},
     )
 
     body = model_dump_with_secrets(metadata, show_secrets=True, mode="json")
 
-    assert body["root_key"] == _VALID_ROOT_KEY_BASE64
+    assert body["encrypted_root_key"] == ciphertext_b64
     assert "**********" not in json.dumps(body)
     # dict keyed by NodeID becomes a JSON-native string key
     assert body["input_port_to_file_id"] == {f"{_NODE_ID}": {"input_1": "input_1"}}

@@ -4,13 +4,12 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from models_library.basic_regex import SIMCORE_S3_FILE_ID_ALLOWED_PREFIXES
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import DatCoreFileID, NodeID, StorageFileID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.rabbitmq_messages import (
     FileNotificationEventType,
     FileNotificationMessage,
 )
 from models_library.users import UserID
-from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.rabbitmq_lifespan import configure_rabbitmq_client as _configure_rabbitmq_client
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
@@ -40,25 +39,14 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     return rabbit_client
 
 
-def _is_datcore_file_id(file_id: StorageFileID) -> bool:
-    try:
-        TypeAdapter(DatCoreFileID).validate_python(f"{file_id}")
-    except ValidationError:
-        return False
-    return True
-
-
 async def post_file_notification(
     app: FastAPI,
     *,
     event_type: FileNotificationEventType,
     user_id: UserID,
     file_id: StorageFileID,
+    fmd_is_directory: bool,
 ) -> None:
-    if _is_datcore_file_id(file_id):
-        _logger.debug("Skip notification for DatCore file_id=%s", file_id)
-        return
-
     with (
         log_catch(_logger, reraise=False),
         log_context(_logger, logging.DEBUG, msg=f"posting file notification for {file_id=} with {event_type=}"),
@@ -93,5 +81,6 @@ async def post_file_notification(
             project_id=project_id,
             node_id=node_id,
             file_id=file_id,
+            fmd_is_directory=fmd_is_directory,
         )
         await get_rabbitmq_client(app).publish(message.channel_name, message)

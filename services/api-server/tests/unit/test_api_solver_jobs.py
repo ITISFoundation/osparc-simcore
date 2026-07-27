@@ -600,6 +600,7 @@ async def test_start_solver_job_with_encryption(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     mock_dependency_get_celery_task_manager: MockType,
+    mock_dependency_get_kms_client: MockType,
 ):
     _solver_key: str = "simcore/services/comp/itis/sleeper"
     _version: str = "2.0.2"
@@ -633,6 +634,7 @@ async def test_start_solver_job_with_encryption(
     assert response.status_code == status.HTTP_202_ACCEPTED
     job_status = JobStatus.model_validate(response.json())
     assert f"{job_status.job_id}" == _job_id
+    mock_dependency_get_kms_client.encrypt.assert_awaited_once()
 
 
 async def test_start_solver_job_with_invalid_encryption(
@@ -644,6 +646,7 @@ async def test_start_solver_job_with_invalid_encryption(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     mock_dependency_get_celery_task_manager: MockType,
+    mock_dependency_get_kms_client: MockType,
 ):
     _solver_key: str = "simcore/services/comp/itis/sleeper"
     _version: str = "2.0.2"

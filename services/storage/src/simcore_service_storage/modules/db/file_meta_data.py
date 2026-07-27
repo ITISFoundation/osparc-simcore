@@ -11,14 +11,13 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import and_, literal_column
+from sqlalchemy import CursorResult, and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -150,7 +149,7 @@ class FileMetaDataRepository(BaseRepository):
             return FileMetaDataAtDB.model_validate(
                 (
                     await conn.execute(
-                        file_meta_data.insert().values(jsonable_encoder(fmd_db)).returning(literal_column("*"))
+                        file_meta_data.insert().values(**fmd_db.model_dump()).returning(literal_column("*"))
                     )
                 ).one()
             )
@@ -329,14 +328,7 @@ class FileMetaDataRepository(BaseRepository):
                 ((file_meta_data.c.project_id.in_([f"{p}" for p in project_ids])) if project_ids else sa.true()),
                 ((file_meta_data.c.upload_expires_at < expired_after) if expired_after else sa.true()),
                 (file_meta_data.c.file_id.startswith(file_id_prefix) if file_id_prefix else sa.true()),
-                (
-                    (
-                        file_meta_data.c.created_at
-                        < created_before.astimezone(datetime.UTC).replace(tzinfo=None).isoformat()
-                    )
-                    if created_before
-                    else sa.true()
-                ),
+                (file_meta_data.c.created_at < created_before if created_before else sa.true()),
             )
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -360,8 +352,7 @@ class FileMetaDataRepository(BaseRepository):
                     file_meta_data.c.upload_expires_at.is_(None)  # lgtm [py/test-equals-none]
                 )
             ):
-                fmd_at_db = FileMetaDataAtDB.model_validate(row)
-                yield fmd_at_db
+                yield FileMetaDataAtDB.model_validate(row)
 
     async def delete(
         self,
@@ -369,13 +360,9 @@ class FileMetaDataRepository(BaseRepository):
         connection: AsyncConnection | None = None,
         file_ids: Annotated[list[SimcoreS3FileID], doc("file IDs to delete")],
         recursive: Annotated[bool, doc("if True, deletes all files that are children of the given file_ids")],
-    ) -> None:
+    ) -> list[FileMetaDataAtDB]:
         """Delete the files with `file_ids`."""
-        async with transaction_context(self.db_engine, connection) as conn:
-            if not recursive:
-                await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
-                return
-
+        if recursive:
             conditions = [
                 sa.or_(
                     file_meta_data.c.file_id == file_id,
@@ -383,8 +370,13 @@ class FileMetaDataRepository(BaseRepository):
                 )
                 for file_id in file_ids
             ]
+            delete_stmt = file_meta_data.delete().where(sa.or_(*conditions))
+        else:
+            delete_stmt = file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids))
 
-            await conn.execute(file_meta_data.delete().where(sa.or_(*conditions)))
+        async with transaction_context(self.db_engine, connection) as conn:
+            deleted_rows: CursorResult = await conn.execute(delete_stmt.returning(sa.literal_column("*")))
+            return [FileMetaDataAtDB.model_validate(x) for x in deleted_rows.all()]
 
     async def delete_all_from_project(
         self, *, connection: AsyncConnection | None = None, project_id: ProjectID

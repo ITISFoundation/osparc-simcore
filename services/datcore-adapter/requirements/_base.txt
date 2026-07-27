@@ -183,7 +183,7 @@ jsonref==1.1.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-jsonschema==4.25.1
+jsonschema==4.26.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -587,7 +587,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
-yarl==1.20.0
+yarl==1.24.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika

@@ -11,9 +11,6 @@ import aiofiles.os
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
 import repro_zipfile
-from dask_task_models_library.container_tasks.encryption import (
-    TransferEncryptionSettings,
-)
 from pydantic.networks import AnyUrl
 from settings_library.s3 import S3Settings
 from yarl import URL
@@ -23,6 +20,7 @@ from ...errors import (
     HTTPDestinationEncryptionNotSupportedError,
 )
 from ..aes_gcm import AesGcmStreamError
+from ..encryption import TransferEncryptionSettings
 from ._copy import _copy_file
 from ._progress import LogPublishingCB, _file_progress_cb
 from ._s3 import HTTP_FILE_SYSTEM_SCHEMES, S3FsSettingsDict, _s3fs_settings_from_s3_settings

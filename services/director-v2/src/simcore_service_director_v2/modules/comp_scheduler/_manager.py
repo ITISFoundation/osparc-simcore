@@ -117,6 +117,12 @@ async def stop_pipeline(
     project_id: ProjectID,
     iteration: int | None = None,
 ) -> None:
+    """Stops a pipeline
+
+    Raises:
+        ComputationalRunNotFoundError: if the run does not exist
+        ConfigurationError: if the rabbitmq client is not configured
+    """
     db_engine = get_db_engine(app)
     comp_run = await CompRunsRepository.instance(db_engine).get(user_id, project_id, iteration)
 

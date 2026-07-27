@@ -18,6 +18,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 from simcore_service_webserver.login import _auth_service
@@ -28,8 +29,8 @@ from simcore_service_webserver.login._confirmation_web import _url_for_confirmat
 from simcore_service_webserver.login._controller.rest import registration
 from simcore_service_webserver.login.constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
-    MSG_LOGGED_IN,
     MSG_PASSWORD_MISMATCH,
+    MSG_REGISTRATION_SUCCESS,
     MSG_WEAK_PASSWORD,
 )
 from simcore_service_webserver.login.settings import (
@@ -37,7 +38,6 @@ from simcore_service_webserver.login.settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
-from yarl import URL
 
 
 @pytest.fixture
@@ -45,7 +45,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     login_envs = setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "1",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "0",
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
@@ -74,7 +73,20 @@ async def test_register_entrypoint(
     )
 
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    assert user_email in data["message"]
+    assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
+
+    # registration grants login right away: the response carries the session identity cookie
+    assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
+
+    # welcome e-mail is sent: the account is created directly
+    mocked_notifications_service_send_message_from_template.assert_called_once()
+    call_kwargs = mocked_notifications_service_send_message_from_template.call_args.kwargs
+    assert call_kwargs["template_name"] == "registered"
+    assert call_kwargs["external_contacts"][0].email == user_email
+
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
+    assert user["status"] == UserStatus.ACTIVE.name
 
 
 async def test_register_body_validation(client: TestClient, user_password: str, cleanup_db_tables: None):
@@ -158,7 +170,6 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
@@ -244,7 +255,6 @@ async def test_registration_with_invalid_confirmation_code(
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,  # <----- NO invitation
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
@@ -263,6 +273,7 @@ async def test_registration_with_invalid_confirmation_code(
 
 async def test_registration_without_confirmation(
     client: TestClient,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
     mocker: MockerFixture,
     user_email: str,
     user_password: str,
@@ -274,7 +285,6 @@ async def test_registration_without_confirmation(
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
@@ -293,69 +303,20 @@ async def test_registration_without_confirmation(
     )
 
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    assert MSG_LOGGED_IN in data["message"]
+    assert MSG_REGISTRATION_SUCCESS.split(".")[0] in data["message"]
 
-    user = await _auth_service.get_user_or_none(client.app, email=user_email)
-    assert user
+    # registration grants login right away: the response carries the session identity cookie
+    assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
 
-
-async def test_registration_with_confirmation(
-    client: TestClient,
-    mocked_notifications_service_send_message_from_template: AsyncMock,
-    mocker: MockerFixture,
-    user_email: str,
-    user_password: str,
-    cleanup_db_tables: None,
-):
-    assert client.app
-    mocker.patch(
-        "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
-        autospec=True,
-        return_value=LoginSettingsForProduct(
-            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
-            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
-            LOGIN_TWILIO=None,
-            LOGIN_2FA_REQUIRED=False,
-            LOGIN_PASSWORD_MIN_LENGTH=12,
-        ),
-    )
-
-    # login
-    url = client.app.router["auth_register"].url_for()
-    response = await client.post(
-        url.path,
-        json={
-            "email": user_email,
-            "password": user_password,
-            "confirm": user_password,
-        },
-    )
-    data, error = unwrap_envelope(await response.json())
-    assert response.status == 200, (data, error)
-
-    user = await _auth_service.get_user_or_none(client.app, email=user_email)
-    assert user
-    assert user["status"] == UserStatus.CONFIRMATION_PENDING.name
-
-    assert "verification link" in data["message"]
-
-    # retrieves sent link from notification service mock
-    mocked_notifications_service_send_message_from_template.assert_called_once()
-    notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
-    assert notification_context["link"] is not None
-    confirmation_url = URL(notification_context["link"]).path
-    assert "/auth/confirmation/" in f"{confirmation_url}"
-    response = await client.get(confirmation_url)
-    text = await response.text()
-
-    assert "This is a result of disable_static_webserver fixture for product OSPARC" in text
-    assert response.status == 200
-
-    # user is active
     user = await _auth_service.get_user_or_none(client.app, email=user_email)
     assert user
     assert user["status"] == UserStatus.ACTIVE.name
+
+    # welcome e-mail is sent
+    mocked_notifications_service_send_message_from_template.assert_called_once()
+    call_kwargs = mocked_notifications_service_send_message_from_template.call_args.kwargs
+    assert call_kwargs["template_name"] == "registered"
+    assert call_kwargs["external_contacts"][0].email == user_email
 
 
 @pytest.mark.parametrize(
@@ -385,7 +346,6 @@ async def test_registration_with_invitation(
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
@@ -446,7 +406,6 @@ async def test_registraton_with_invitation_for_trial_account(
         autospec=True,
         return_value=LoginSettingsForProduct(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
-            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,

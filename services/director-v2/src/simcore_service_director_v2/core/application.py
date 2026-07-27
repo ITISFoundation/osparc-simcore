@@ -47,6 +47,7 @@ from ..modules import (
 from ..modules.osparc_variables import substitutions
 from .errors import (
     ClusterNotFoundError,
+    ComputationalRunNotFoundError,
     PipelineNotFoundError,
     ProjectNetworkNotFoundError,
     ProjectNotFoundError,
@@ -81,6 +82,10 @@ def _set_exception_handlers(app: FastAPI):
     app.add_exception_handler(
         ClusterNotFoundError,
         make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, ClusterNotFoundError),
+    )
+    app.add_exception_handler(
+        ComputationalRunNotFoundError,
+        make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, ComputationalRunNotFoundError),
     )
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy

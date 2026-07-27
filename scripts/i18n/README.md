@@ -51,17 +51,23 @@ make -C scripts/i18n backend-compile
 `services/static-webserver/client/source/translation/{frontend.pot,*.po}`
 (no `.mo` — qooxdoo's `qx compile` reads `.po` directly)
 
-| Step | Target               | Description                                                            |
-| ---- | -------------------- | ---------------------------------------------------------------------- |
-| 1    | `frontend-extract`   | Extract `this.tr()` strings → `frontend.pot` (+enrich)                 |
-| —    | `frontend-plan`      | Dry-run: log the LLM prompts that step 2 WOULD send (no call, no save) |
-| 2    | `frontend-translate` | `msgmerge` + AI translate entries (one `.po` per `CLIENT_LANGS`)       |
+| Step | Target               | Description                                                                       |
+| ---- | -------------------- | --------------------------------------------------------------------------------- |
+| 1    | `frontend-extract`   | Extract `this.tr()` / `qx.locale.Manager.tr()` strings → `frontend.pot` (+enrich) |
+| —    | `frontend-plan`      | Dry-run: log the LLM prompts that step 2 WOULD send (no call, no save)            |
+| 2    | `frontend-translate` | `msgmerge` + AI translate entries (one `.po` per `CLIENT_LANGS`)                  |
 
 ```bash
 make -C scripts/i18n frontend-extract
 make -C scripts/i18n frontend-translate
 make -C scripts/i18n frontend-translate CLIENT_LANGS="de_DE"   # specific language
 ```
+
+`frontend-extract` parses qooxdoo's `.js` sources via the real TypeScript compiler API
+(`TypeScriptAstExtractor` in `i18n_extractor.py`), not `xgettext`'s JavaScript mode.
+This requires a local `typescript` package, installed once via the
+`frontend-tools-install` target (a `frontend-extract` prerequisite) into
+`scripts/i18n/tools/node_modules`.
 
 Frontend `.po` files are output to `services/static-webserver/client/source/translation/{lang}.po`.
 

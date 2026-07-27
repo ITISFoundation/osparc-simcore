@@ -30,6 +30,14 @@ Two-step .pot extractor:
                      line), which yields exact #: filepath:lineno references
                      and lets json.loads() handle string unescaping.
 
+    Step 1d — ts-ast: extract t()/tr() calls from .js/.jsx/.ts/.tsx files via the
+                     TypeScript compiler API (a small embedded Node script), not
+                     xgettext -- xgettext's `--language=JavaScript` mode has no real
+                     JSX/TypeScript support and silently truncates parsing mid-file
+                     on certain JSX constructs. Requires `--node-cwd <dir>` (a
+                     directory whose node_modules contains `typescript`) whenever
+                     --src contains any of those extensions.
+
     Step 2 — enrich: for each entry, read #: references to load
                      surrounding source lines (CTX-SNIPPET) and write a
              extractor-owned snippet freshness marker (CTX-SNIPPET-VERSION).
@@ -37,6 +45,7 @@ Two-step .pot extractor:
 Usage:
     uv run tools/i18n_extractor.py extract --src src/ --out messages.pot
     uv run tools/i18n_extractor.py xgettext --src src/ --langs python,cpp --out messages.pot
+    uv run tools/i18n_extractor.py xgettext --src ui/src --out ui.pot --node-cwd ui/
     uv run tools/i18n_extractor.py jinja --src src/templates --out templates.pot
     uv run tools/i18n_extractor.py json --src src/resource/tours --keys name,description,title,text --out tours.pot
     uv run tools/i18n_extractor.py enrich --pot messages.pot
@@ -47,6 +56,7 @@ import ast
 import json
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Final
 
@@ -76,12 +86,13 @@ class XgetextExtractor:
     """
 
     # xgettext --language flag per file extension (case-insensitive match).
+    # \note .js/.jsx/.ts/.tsx are deliberately NOT listed here anymore -- xgettext's
+    # `--language=JavaScript` mode has no real JSX/TypeScript support and has a
+    # confirmed defect where certain constructs inside a JSX expression container
+    # silently truncate parsing for the rest of the file (see TS_AST_EXTRACTOR_EXTS /
+    # TypeScriptAstExtractor below, which handles those extensions instead).
     LANG_MAP: Final[dict[str, str]] = {
         ".py": "Python",
-        ".js": "JavaScript",  # qooxdoo frontend
-        ".ts": "JavaScript",  # rocket frontend; xgettext has no TypeScript language
-        ".tsx": "JavaScript",
-        ".jsx": "JavaScript",
         ".cpp": "C++",
         ".cxx": "C++",
         ".cc": "C++",
@@ -90,13 +101,14 @@ class XgetextExtractor:
         ".rc": "C++",  # STRINGTABLE entries; xgettext treats .rc as C-like
     }
 
-    # --keyword flags: single source of truth for all translation functions.
+    # --keyword flags: single source of truth for all translation functions xgettext
+    # itself is invoked for (Python/C++/MFC). JS/TS keywords ("t"/"tr") are handled by
+    # TypeScriptAstExtractor's own KEYWORDS set below, not by xgettext anymore.
     KEYWORDS: Final[dict[str, str]] = {
         "_": "Python",
         "gettext": "Python",
         "user_message": "Python (osparc)",
-        "tr": "Qt/MFC C++, qooxdoo JS",
-        "t": "rocket JS/TS",
+        "tr": "Qt/MFC C++",
         "QT_TR_NOOP": "Qt no-op marker (C++)",
     }
 
@@ -150,6 +162,203 @@ class XgetextExtractor:
 # Python AST-based validate_no_fstring_translations() (never scans .js/.cpp files).
 PYTHON_TRANSLATION_FUNC_NAMES: Final[set[str]] = {"_", "gettext", "user_message"}
 assert XgetextExtractor.KEYWORDS.keys() >= PYTHON_TRANSLATION_FUNC_NAMES  # nosec
+
+
+# ---------------------------------------------------------------------------
+# Step 1d: TypeScript-compiler-API extraction for JS/TS/JSX/TSX files
+# ---------------------------------------------------------------------------
+#
+# xgettext's `--language=JavaScript` mode has no real JSX/TypeScript support: it has
+# a confirmed defect where certain constructs inside a JSX expression container (a
+# template literal, or a block-bodied arrow function returning JSX) silently
+# truncate parsing for the REST of that source file -- no error, exit code 0, just
+# silently missing translations. This extractor replaces xgettext entirely for
+# .js/.jsx/.ts/.tsx by shelling out to a small Node script that uses the real
+# TypeScript compiler API (a spec-correct JSX/TSX parser) to find translation calls.
+TS_AST_EXTRACTOR_EXTS: Final[frozenset[str]] = frozenset({".js", ".jsx", ".ts", ".tsx"})
+
+# Embedded as a string (not a separate fetched file) so this stays a single,
+# self-contained pinned script, consistent with the rest of this file. Written to a
+# `.cjs` tempfile before running so it's always treated as CommonJS regardless of the
+# target project's package.json "type" field.
+_TS_AST_EXTRACTOR_JS: Final[str] = r"""
+"use strict";
+const fs = require("fs");
+const path = require("path");
+const { createRequire } = require("module");
+
+const [, , srcDirArg, ...fileArgs] = process.argv;
+const srcDir = path.resolve(srcDirArg);
+
+// Module resolution for require() is relative to *this* file's own (tempfile)
+// location, not process.cwd() -- createRequire seeded from a package.json in the
+// target project's directory (passed as cwd by the Python caller) is what makes
+// `require("typescript")` resolve the CALLER's node_modules/typescript.
+const req = createRequire(path.join(process.cwd(), "package.json"));
+const ts = req("typescript");
+
+const KEYWORDS = new Set(["t", "tr"]);
+const results = [];
+
+function scriptKindFor(file) {
+  const ext = path.extname(file).toLowerCase();
+  if (ext === ".tsx") return ts.ScriptKind.TSX;
+  if (ext === ".ts") return ts.ScriptKind.TS;
+  if (ext === ".jsx") return ts.ScriptKind.JSX;
+  return ts.ScriptKind.JS;
+}
+
+// Heuristic (not full JSX-comment AST attachment): matches the @TRANSLATOR
+// convention used in this codebase, e.g. `{/* @TRANSLATOR: ... */}` immediately
+// followed (only whitespace in between) by the `t(...)`/`tr(...)` call.
+function findTranslatorComment(text, callStart) {
+  const before = text.slice(0, callStart);
+  const idx = before.lastIndexOf("{/*");
+  if (idx === -1) return null;
+  const closeIdx = text.indexOf("*/}", idx);
+  if (closeIdx === -1 || closeIdx >= callStart) return null;
+  const between = text.slice(closeIdx + 3, callStart);
+  // allow the JSX expression container's own opening "{" between the comment
+  // and the call (e.g. "{/* ... */}\n      {t(...)}") in addition to whitespace.
+  if (!/^[\s{]*$/.test(between)) return null;
+  const m = /@TRANSLATOR:?\s*([\s\S]*?)\s*\*\/\}$/.exec(text.slice(idx, closeIdx + 3));
+  return m ? m[1].trim() : null;
+}
+
+for (const file of fileArgs) {
+  const text = fs.readFileSync(file, "utf8");
+  const sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, scriptKindFor(file));
+  const rel = path.relative(srcDir, file).split(path.sep).join("/");
+
+  // Matches a bare call `t(...)` as well as a property-access call `i18n.t(...)`/
+  // `this.t(...)` -- xgettext's --keyword matching isn't identifier-qualifier-aware
+  // either, so this preserves parity with what the old xgettext-based pipeline used
+  // to catch (e.g. dockviewLayout.ts's `i18n.t(...)` calls).
+  function calleeKeyword(expr) {
+    if (ts.isIdentifier(expr)) return expr.text;
+    if (ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.name)) return expr.name.text;
+    return null;
+  }
+
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      KEYWORDS.has(calleeKeyword(node.expression)) &&
+      node.arguments.length > 0 &&
+      ts.isStringLiteralLike(node.arguments[0])
+    ) {
+      const argStart = node.arguments[0].getStart(sourceFile);
+      const { line } = sourceFile.getLineAndCharacterOfPosition(argStart);
+      results.push({
+        file: rel,
+        line: line + 1,
+        msgid: node.arguments[0].text,
+        translatorComment: findTranslatorComment(text, node.getStart(sourceFile)),
+      });
+    }
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+}
+
+process.stdout.write(JSON.stringify(results));
+"""
+
+
+class TypeScriptAstExtractor:
+    """Extract t()/tr() calls from JS/TS/JSX/TSX files via the TypeScript compiler API.
+
+    Runs a small embedded Node script (_TS_AST_EXTRACTOR_JS) instead of xgettext's
+    JavaScript mode -- a real, spec-correct JSX/TSX parser that cannot suffer the
+    silent-truncation defect xgettext has. `node_cwd` must be a directory whose
+    `node_modules` contains `typescript` (i.e. the frontend project root): module
+    resolution for `require()` is relative to the *process cwd*'s package.json, not
+    this script's own (temp-file) location, which is why `node_cwd` is required.
+    """
+
+    def run(
+        self, src_files: list[Path], out_pot: Path, src_dir: Path, node_cwd: Path, *, merge_into_existing: bool
+    ) -> bool:
+        """Returns True on success.
+
+        ``merge_into_existing`` must be True only when out_pot was FRESHLY written by
+        XgetextExtractor earlier in the SAME `run_xgettext_step` call (Python/C++ files
+        in the same --src tree); it must be False otherwise (a stale out_pot may exist
+        on disk from a PREVIOUS, unrelated invocation of this command and must not be
+        used as a merge base -- doing so would silently accumulate stale #: occurrences
+        for files/lines that may no longer exist).
+        """
+        if not src_files:
+            console.print("[ts-ast] No source files found.")
+            return False
+
+        with tempfile.NamedTemporaryFile("w", suffix=".cjs", delete=False) as tmp:
+            tmp.write(_TS_AST_EXTRACTOR_JS)
+            tmp_path = Path(tmp.name)
+
+        try:
+            # Resolve to absolute paths: src_files may be relative to the caller's cwd
+            # (e.g. `services/sim4life/ui/src/...`), but the subprocess below runs with
+            # cwd=node_cwd (a DIFFERENT directory, needed for require() resolution), so
+            # relative paths would otherwise be looked up in the wrong place.
+            cmd = [
+                "node",
+                str(tmp_path),
+                str(src_dir.resolve()),
+                *(str(f.resolve()) for f in src_files),
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False, cwd=node_cwd)  # noqa: S603
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+        if result.returncode != 0:
+            console.print(f"[ts-ast ERROR] {result.stderr.strip()}")
+            return False
+
+        try:
+            matches: list[dict] = json.loads(result.stdout or "[]")
+        except json.JSONDecodeError as err:
+            console.print(f"[ts-ast ERROR] could not parse extractor output: {err}")
+            return False
+
+        # msgid -> POEntry: duplicate strings merge into one entry with multiple #: occurrences.
+        entries: dict[str, polib.POEntry] = {}
+        for match in matches:
+            msgid = match["msgid"]
+            occurrence = (f"{src_dir}/{match['file']}", str(match["line"]))
+            comment = match.get("translatorComment") or None
+            if msgid in entries:
+                entries[msgid].occurrences.append(occurrence)
+                continue
+            entries[msgid] = polib.POEntry(
+                msgid=msgid,
+                msgstr="",
+                occurrences=[occurrence],
+                comment=f"{TRANSLATOR_TAG} {comment}" if comment else "",
+            )
+
+        if merge_into_existing and out_pot.exists():
+            pot = polib.pofile(str(out_pot), wrapwidth=0)
+        else:
+            pot = polib.POFile(wrapwidth=0)
+            pot.metadata = {
+                "Project-Id-Version": "osparc-simcore",
+                "Content-Type": "text/plain; charset=UTF-8",
+                "Content-Transfer-Encoding": "8bit",
+            }
+
+        for msgid, entry in entries.items():
+            existing = pot.find(msgid)
+            if existing is not None:
+                existing.occurrences.extend(entry.occurrences)
+                continue
+            pot.append(entry)
+
+        out_pot.parent.mkdir(parents=True, exist_ok=True)
+        pot.save(str(out_pot))
+        console.print(f"  [ts-ast] {len(entries)} entry/ies from {len(src_files)} file(s) -> {out_pot}")
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -634,7 +843,7 @@ def collect_sources(src_dir: Path, langs: list[str] | None) -> list[Path]:
         for lang in langs:
             allowed_exts |= lang_to_exts.get(lang.lower(), set())
     else:
-        allowed_exts = set(XgetextExtractor.LANG_MAP.keys())
+        allowed_exts = set(XgetextExtractor.LANG_MAP.keys()) | TS_AST_EXTRACTOR_EXTS
 
     files = [f for f in sorted(src_dir.rglob("*")) if f.suffix.lower() in allowed_exts]
     console.print(f"[collect] {len(files)} file(s) under {src_dir}")
@@ -652,6 +861,13 @@ def ensure_xgettext_available() -> None:
         raise typer.Exit(msg)
 
 
+def ensure_node_available() -> None:
+    # Check node is available (needed for TypeScriptAstExtractor, i.e. .js/.jsx/.ts/.tsx sources)
+    if subprocess.run(["which", "node"], capture_output=True, check=False).returncode != 0:  # noqa: S607
+        msg = "[error] node not found. Install Node.js: https://nodejs.org/"
+        raise typer.Exit(msg)
+
+
 app = typer.Typer(
     add_completion=False,
     help="Extract strings with xgettext and enrich .pot entries with CTX-* metadata.",
@@ -659,17 +875,35 @@ app = typer.Typer(
 )
 
 
-def run_xgettext_step(src: Path, out: Path, langs: str | None) -> None:
+def run_xgettext_step(src: Path, out: Path, langs: str | None, node_cwd: Path | None = None) -> None:
     """Shared implementation for xgettext."""
-    ensure_xgettext_available()
-
     lang_list = [lang.strip() for lang in langs.split(",")] if langs else None
     src_files = collect_sources(src, lang_list)
     if not src_files:
         raise typer.Exit(code=1)
 
-    if not XgetextExtractor().run(src_files, out):
+    xgettext_files = [f for f in src_files if f.suffix.lower() in XgetextExtractor.LANG_MAP]
+    ts_files = [f for f in src_files if f.suffix.lower() in TS_AST_EXTRACTOR_EXTS]
+
+    if not xgettext_files and not ts_files:
+        console.print("[extract] No files with supported extensions.")
         raise typer.Exit(code=1)
+
+    if xgettext_files:
+        ensure_xgettext_available()
+        if not XgetextExtractor().run(xgettext_files, out):
+            raise typer.Exit(code=1)
+
+    if ts_files:
+        if node_cwd is None:
+            console.print(
+                "[error] --node-cwd is required to extract .js/.jsx/.ts/.tsx files "
+                "(must be a directory whose node_modules contains 'typescript')"
+            )
+            raise typer.Exit(code=1)
+        ensure_node_available()
+        if not TypeScriptAstExtractor().run(ts_files, out, src, node_cwd, merge_into_existing=bool(xgettext_files)):
+            raise typer.Exit(code=1)
 
     if not validate_no_fstring_translations(src_files):
         raise typer.Exit(code=1)
@@ -700,9 +934,9 @@ def run_enrich_step(pot: Path, repo_root: Path) -> None:
     console.print(f"[done] enrich -> {pot}")
 
 
-def run_xgettext_cmd(src: Path, out: Path, langs: str | None) -> None:
+def run_xgettext_cmd(src: Path, out: Path, langs: str | None, node_cwd: Path | None = None) -> None:
     """Run only xgettext extraction over source files."""
-    run_xgettext_step(src=src, out=out, langs=langs)
+    run_xgettext_step(src=src, out=out, langs=langs, node_cwd=node_cwd)
 
 
 def run_enrich_cmd(pot: Path, repo_root: Path) -> None:
@@ -718,9 +952,14 @@ def xgettext_cmd(
         None,
         help="Comma-separated languages to extract: python,cpp,c,mfc (default: all)",
     ),
+    node_cwd: Path | None = typer.Option(
+        None,
+        help="Directory whose node_modules contains 'typescript' -- required when --src "
+        "contains .js/.jsx/.ts/.tsx files (e.g. the frontend project root)",
+    ),
 ) -> None:
     """Run only xgettext extraction."""
-    run_xgettext_cmd(src=src, out=out, langs=langs)
+    run_xgettext_cmd(src=src, out=out, langs=langs, node_cwd=node_cwd)
 
 
 @app.command("jinja")
@@ -786,9 +1025,14 @@ def extract(
         None,
         help="Comma-separated languages to extract: python,cpp,c,mfc (default: all)",
     ),
+    node_cwd: Path | None = typer.Option(
+        None,
+        help="Directory whose node_modules contains 'typescript' -- required when --src "
+        "contains .js/.jsx/.ts/.tsx files (e.g. the frontend project root)",
+    ),
 ) -> None:
     """Run xgettext then enrich."""
-    run_xgettext_cmd(src=src, out=out, langs=langs)
+    run_xgettext_cmd(src=src, out=out, langs=langs, node_cwd=node_cwd)
     run_enrich_cmd(pot=out, repo_root=repo_root)
 
 

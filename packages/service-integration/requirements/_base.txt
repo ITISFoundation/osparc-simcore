@@ -176,5 +176,5 @@ urllib3==2.7.0
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
-yarl==1.23.0
+yarl==1.24.5
     # via -r requirements/_base.in

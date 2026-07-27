@@ -109,7 +109,7 @@ pluggy==1.6.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.2.0
+propcache==0.5.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -195,7 +195,7 @@ wsproto==1.2.0
     # via
     #   -c requirements/_base.txt
     #   simple-websocket
-yarl==1.18.0
+yarl==1.24.5
     # via
     #   -c requirements/_base.txt
     #   aiohttp

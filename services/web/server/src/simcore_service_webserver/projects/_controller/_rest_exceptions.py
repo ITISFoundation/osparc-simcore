@@ -34,6 +34,7 @@ from ..exceptions import (
     InsufficientRoleForProjectTemplateTypeUpdateError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
+    ProjectCopyingTrashedProjectError,
     ProjectDeleteError,
     ProjectGroupNotFoundError,
     ProjectInDebtCanNotChangeWalletError,
@@ -83,6 +84,13 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
 
 
 _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
+    ProjectCopyingTrashedProjectError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "Cannot duplicate project {project_uuid} because it is in the trash. Restore it first and try again.",
+            _version=1,
+        ),
+    ),
     ProjectDeleteError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(

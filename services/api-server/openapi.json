@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.15.0"
+    "version": "0.16.0"
   },
   "paths": {
     "/v0/meta": {
@@ -9498,6 +9498,14 @@
             "maximum": 2.0,
             "minimum": 0.0,
             "title": "Temperature"
+          },
+          "text": {
+            "$ref": "#/components/schemas/TextParam",
+            "default": {
+              "format": {
+                "type": "text"
+              }
+            }
           }
         },
         "type": "object",
@@ -12981,6 +12989,32 @@
         ],
         "title": "RegisteredSolverFunctionJobWithStatus"
       },
+      "ResponseFormatJsonSchemaType": {
+        "type": "string",
+        "enum": [
+          "json_schema"
+        ],
+        "title": "ResponseFormatJsonSchemaType"
+      },
+      "ResponseFormatText": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/ResponseFormatTextType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "ResponseFormatText"
+      },
+      "ResponseFormatTextType": {
+        "type": "string",
+        "enum": [
+          "text"
+        ],
+        "title": "ResponseFormatTextType"
+      },
       "ResponseObject": {
         "properties": {
           "id": {
@@ -13666,6 +13700,68 @@
           "started"
         ],
         "title": "TaskStatus"
+      },
+      "TextParam": {
+        "properties": {
+          "format": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ResponseFormatText"
+              },
+              {
+                "$ref": "#/components/schemas/TextResponseFormatJsonSchema"
+              }
+            ],
+            "title": "Format",
+            "default": {
+              "type": "text"
+            }
+          }
+        },
+        "type": "object",
+        "title": "TextParam"
+      },
+      "TextResponseFormatJsonSchema": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/ResponseFormatJsonSchemaType"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Name"
+          },
+          "schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Schema"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "strict": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strict"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "name",
+          "schema"
+        ],
+        "title": "TextResponseFormatJsonSchema"
       },
       "UnitExtraInfoTier": {
         "properties": {

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Annotated, Any
 
 from pydantic import (
@@ -106,6 +107,10 @@ class ComputationDelete(ComputationStop):
         bool | None,
         Field(description="if True then the pipeline will be removed even if it is running"),
     ] = False
+    wait_for: Annotated[
+        timedelta,
+        Field(description="timeout when waiting for pipeline to stop"),
+    ] = timedelta(seconds=30)
 
 
 class TaskLogFileGet(BaseModel):

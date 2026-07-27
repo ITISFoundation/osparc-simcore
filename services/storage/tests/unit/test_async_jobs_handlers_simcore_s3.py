@@ -56,6 +56,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.celery.async_jobs.storage.paths import DELETE_PATHS_TASK_NAME, submit_delete_paths_task
 from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -386,14 +387,30 @@ async def _create_and_delete_folders_from_project(
         data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
         assert not error
     # DELETING
-    url = url_from_operation_id(
-        client,
-        initialized_app,
-        "delete_folders_of_project",
-        folder_id=project_id,
-    ).with_query(user_id=f"{user_id}")
-    resp = await client.delete(f"{url}")
-    assert_status(resp, status.HTTP_204_NO_CONTENT, None)
+    owner_metadata = _TestOwnerMetadata(
+        user_id=user_id,
+        product_name=product_name,
+        owner="PYTEST_CLIENT_NAME",
+    )
+    task_id, task_name = await submit_delete_paths_task(
+        task_manager,
+        owner_metadata=owner_metadata,
+        user_id=user_id,
+        product_name=product_name,
+        location_id=SimcoreS3DataManager.get_location_id(),
+        paths={Path(f"{project_id}")},
+    )
+    assert task_name == DELETE_PATHS_TASK_NAME
+    with log_context(logging.INFO, f"Deleting project {project_id} from S3") as ctx:
+        async for job_update in wait_and_get_job_result(
+            task_manager,
+            owner_metadata=owner_metadata,
+            job_id=task_id,
+            stop_after=stop_after,
+        ):
+            ctx.logger.info(
+                "Waiting for deletion of project %s from S3 with task_id=%s: %s", project_id, task_id, job_update
+            )
 
     # list data is gone
     if check_list_files:

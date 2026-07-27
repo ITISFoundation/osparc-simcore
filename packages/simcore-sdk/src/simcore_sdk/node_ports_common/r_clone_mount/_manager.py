@@ -6,6 +6,7 @@ from typing import Final
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
+from httpx import HTTPError
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.background_task import create_periodic_task
@@ -16,7 +17,7 @@ from ._config_provider import MountRemoteType, get_config_content
 from ._container import ContainerManager, RemoteControlHttpClient
 from ._errors import (
     InvalidRemotePathError,
-    MountAlreadyStartedError,
+    MountPathConflictError,
     NoMountFoundForRemotePathError,
 )
 from ._models import DelegateInterface, MountActivity, MountId
@@ -100,23 +101,51 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
     async def _worker_mount_activity(self) -> None:
         with log_catch(logger=_logger, reraise=False):
             mount_activity = await self._rc_client.get_mount_activity()
-            mount_activity.vfs_write_back_s = self._vfs_write_back_s
+            mount_activity.vfs_write_back_s = self._vfs_write_back_s  # required by frontend
             await self._update_and_notify_mount_activity(mount_activity)
 
-    async def start_mount(self) -> None:
-        assigned_port = await self._container_manager.create()
-        self._vfs_write_back_s = self._container_manager.vfs_write_back_s
+    async def _create_or_reconnect_container(self) -> bool:
+        create_result = await self._container_manager.create()
+        # always set since it's required for frontend
+        self._vfs_write_back_s = create_result.vfs_write_back_s
+
+        if create_result.reconnected:
+            # recover old values
+            self._rc_user = create_result.rc_user
+            self._rc_password = create_result.rc_password
+
+            _logger.info(
+                "Reconnected to existing container '%s' on port='%s'",
+                self._container_manager.r_clone_container_name,
+                create_result.assigned_port,
+            )
+
         node_address = await self.delegate.get_node_address()
 
         self._rc_http_client = RemoteControlHttpClient(
             rc_host=node_address,
-            rc_port=assigned_port,
+            rc_port=create_result.assigned_port,
             rc_user=self._rc_user,
             rc_password=self._rc_password,
             transfers_completed_timeout=self._transfers_completed_timeout,
         )
+        return create_result.reconnected
 
-        await self._rc_client.wait_for_interface_to_be_ready()
+    async def start_mount(self) -> None:
+        reconnected = await self._create_or_reconnect_container()
+        try:
+            await self._rc_client.wait_for_interface_to_be_ready()
+        except HTTPError:
+            if reconnected:
+                # NOTE: in case of a reconnection it is possible that the container's
+                # HTTP interface is not available (e.g. container was stopped).
+                # Attempt removal and recreation of the container before giving up.
+                await self.delegate.remove_container(self._container_manager.r_clone_container_name)
+
+                await self._create_or_reconnect_container()
+                await self._rc_client.wait_for_interface_to_be_ready()
+            else:
+                raise
 
         self._task_mount_activity = create_periodic_task(
             self._worker_mount_activity,
@@ -193,8 +222,15 @@ class RCloneMountManager:
         ):
             mount_id = get_mount_id(local_mount_path, index)
             if mount_id in self._tracked_mounts:
-                tracked_mount = self._tracked_mounts[mount_id]
-                raise MountAlreadyStartedError(local_mount_path=local_mount_path)
+                _logger.debug("Mount for '%s' at index '%s' is already started", local_mount_path, index)
+                existing_remote_path = self._reverse_path_search[mount_id]
+                if existing_remote_path != remote_path:
+                    raise MountPathConflictError(
+                        local_mount_path=local_mount_path,
+                        existing_remote_path=existing_remote_path,
+                        new_remote_path=remote_path,
+                    )
+                return
 
             tracked_mount = _TrackedMount(
                 node_id,

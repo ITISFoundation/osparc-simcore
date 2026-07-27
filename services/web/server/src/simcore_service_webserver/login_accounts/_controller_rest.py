@@ -11,10 +11,8 @@ from models_library.api_schemas_webserver.auth import (
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 from servicelib.logging_utils import log_context
-from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG
-from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..locale import translate_message
 from ..login import login_service
 from ..login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
@@ -103,17 +101,13 @@ async def request_product_account(request: web.Request):
     )
 
     # if created send email to fogbugz or user itself
-    fire_and_forget_task(
-        _service.send_account_request_email_to_support(
-            request.app,
-            product_name=product.name,
-            product=product,
-            request_form=body.form,
-            ipinfo=_get_ipinfo(request),
-            host=request.host,
-        ),
-        task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
-        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    await _service.send_account_request_email_to_support(
+        request.app,
+        product_name=product.name,
+        product=product,
+        request_form=body.form,
+        ipinfo=_get_ipinfo(request),
+        host=request.host,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -152,18 +146,14 @@ async def unregister_account(request: web.Request):
         await security_web.forget_identity(request, response)
 
         # send email in the background
-        fire_and_forget_task(
-            _service.send_close_account_email(
-                request.app,
-                product_name=product.name,
-                user_id=req_ctx.user_id,
-                user_email=credentials.email,
-                user_first_name=credentials.display_name,
-                retention_days=settings.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS,
-                host=request.host,
-            ),
-            task_suffix_name=f"{__name__}.unregister_account.send_close_account_email",
-            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        await _service.send_close_account_email(
+            request.app,
+            product_name=product.name,
+            user_id=req_ctx.user_id,
+            user_email=credentials.email,
+            user_first_name=credentials.display_name,
+            retention_days=settings.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS,
+            host=request.host,
         )
 
         return response

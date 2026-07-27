@@ -46,7 +46,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.rest_responses import create_data_response
-from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME, DELETE_PATHS_TASK_NAME
+from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME
 from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rest_responses import unwrap_envelope
@@ -64,6 +64,7 @@ from ..web_requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from . import api as storage_service
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -236,18 +237,9 @@ async def batch_delete_paths(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
     body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
-
-    async_job_get = await submit_job(
-        get_task_manager(request.app),
-        execution_metadata=TaskExecutionMetadata(
-            name=DELETE_PATHS_TASK_NAME,
-        ),
-        owner_metadata=OwnerMetadata.model_validate(
-            WebServerOwnerMetadata(
-                user_id=req_ctx.user_id,
-                product_name=req_ctx.product_name,
-            ).model_dump()
-        ),
+    async_job_get = await storage_service.submit_delete_paths(
+        request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         location_id=path_params.location_id,
         paths=body.paths,

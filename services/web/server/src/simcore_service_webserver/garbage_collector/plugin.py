@@ -8,8 +8,10 @@ from ..application_setup import ModuleCategory, app_setup_func
 from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
 from ..redis import setup_redis
+from ..rest.healthcheck import HEALTHCHECK_APPKEY
 from ..socketio.socketio_service import setup_socketio
 from . import _tasks_api_keys, _tasks_core, _tasks_documents, _tasks_trash, _tasks_users
+from ._healthcheck import on_healthcheck_async_adapter
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -35,6 +37,9 @@ def setup_garbage_collector(app: web.Application) -> None:
     setup_socketio(app)
 
     settings = get_plugin_settings(app)
+
+    # reports unhealthy if any of the periodic tasks below stops running or hangs
+    app[HEALTHCHECK_APPKEY].register_on_healthcheck(on_healthcheck_async_adapter)
 
     app.cleanup_ctx.append(_tasks_core.create_background_task_for_garbage_collection())
 

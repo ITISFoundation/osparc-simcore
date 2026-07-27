@@ -84,21 +84,10 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=_logger)
-async def is_pipeline_running(app: web.Application, user_id: UserID, project_id: UUID) -> bool | None:
-    # NOTE: possibility to make it cheaper by /computations/{project_id}/state. First trial shows
-    # that the efficiency gain is minimal but should be considered specially if the handler
-    # gets heavier with time
-    pipeline = await get_computation_task(app, user_id, project_id)
-    if pipeline is None:
-        # NOTE: at the time of this modification, error handling in `get_computation_task`
-        # is still limited and any type of errors is transformed into a None. Therefore
-        # at this point we cannot discern whether the pipeline is running or not.
-        # In order to define the "UNKNOWN" state we return None, which in an
-        # if statement casts to False
-        return None
-
-    pipeline_state: bool | None = pipeline.state.is_running()
-    return pipeline_state
+async def is_pipeline_running(app: web.Application, user_id: UserID, project_id: UUID) -> bool:
+    if pipeline := await get_computation_task(app, user_id, project_id):
+        return pipeline.state.is_running()
+    return False
 
 
 @log_decorator(logger=_logger)
@@ -128,7 +117,10 @@ def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
     reason="silence in case the pipeline does not exist",
     predicate=_skip_if_pipeline_not_found,
 )
-async def stop_pipeline(app: web.Application, *, user_id: UserID, project_id: ProjectID):
+async def stop_pipeline(app: web.Application, *, user_id: UserID, project_id: ProjectID) -> None:
+    """
+    raises DirectorV2ServiceError
+    """
     await DirectorV2RestClient(app).stop_computation(project_id=project_id, user_id=user_id)
 
 
@@ -140,6 +132,9 @@ async def delete_pipeline(
     *,
     force: bool = True,
 ) -> None:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
 
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -166,6 +161,9 @@ async def get_batch_tasks_outputs(
     project_id: ProjectID,
     selection: TasksSelection,
 ) -> TasksOutputs:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
     response_payload, _ = await request_director_v2(

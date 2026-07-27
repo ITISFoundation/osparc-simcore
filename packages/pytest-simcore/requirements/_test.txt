@@ -185,5 +185,5 @@ uvicorn==0.42.0
     # via -r requirements/_test.in
 wsproto==1.3.2
     # via simple-websocket
-yarl==1.23.0
+yarl==1.24.5
     # via aiohttp

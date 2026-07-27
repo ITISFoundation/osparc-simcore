@@ -37,14 +37,12 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.projects._projects_service import (
-    submit_delete_project_task,
-)
+from simcore_service_webserver.projects import projects_trash_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.trash import trash_service
 from simcore_service_webserver.users.users_service import (
     delete_user_without_projects,
     get_user_role,
@@ -475,10 +473,11 @@ async def test_access_cookie_of_expired_user(
 
         prj_id = projects[0]["uuid"]
 
-        delete_task = await submit_delete_project_task(
-            app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE, "osparc"
+        await projects_trash_service.trash_project_for_immediate_deletion(
+            app, product_name="osparc", user_id=uid, project_id=prj_id
         )
-        await delete_task
+        # NOTE: actual removal now happens exclusively via the periodic trash-pruning GC
+        await trash_service.safe_delete_expired_trash_as_admin(app)
 
         await delete_user_without_projects(app, user_id=uid)
         return uid

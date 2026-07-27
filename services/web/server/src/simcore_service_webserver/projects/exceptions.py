@@ -1,7 +1,7 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
 
 # mypy: disable-error-code=truthy-function
-from typing import Any
+from typing import Any, Final
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -83,7 +83,18 @@ class ProjectDeleteError(BaseProjectError):
 
 
 class ProjectsBatchDeleteError(BaseProjectError):
-    msg_template = "One or more projects could not be deleted in the batch: {errors}"
+    msg_template = "One or more projects could not be deleted in the batch ({num_errors} failed): {errors_summary}"
+
+    _MAX_DISPLAYED_ERRORS: Final[int] = 10
+
+    def __init__(self, *, errors: list[tuple[ProjectID, Exception]], **ctx: Any) -> None:
+        displayed_errors = errors[: self._MAX_DISPLAYED_ERRORS]
+        errors_summary = "; ".join(f"{project_uuid}: {err}" for project_uuid, err in displayed_errors)
+        num_omitted = len(errors) - len(displayed_errors)
+        if num_omitted > 0:
+            errors_summary += f"; ... and {num_omitted} more"
+
+        super().__init__(errors=errors, errors_summary=errors_summary, num_errors=len(errors), **ctx)
 
 
 class ProjectsPatchError(BaseProjectError): ...
@@ -144,6 +155,16 @@ class ParentProjectNotFoundError(BaseProjectError):
     msg_template = "Parent project '{project_uuid}' not found"
 
     def __init__(self, *, project_uuid: str | None, **ctx):
+        super().__init__(**ctx)
+        self.project_uuid = project_uuid
+
+
+class ProjectCopyingTrashedProjectError(BaseProjectError):
+    msg_template = (
+        "Cannot duplicate project '{project_uuid}' because it is in the trash. Restore it first and try again."
+    )
+
+    def __init__(self, *, project_uuid: str, **ctx):
         super().__init__(**ctx)
         self.project_uuid = project_uuid
 

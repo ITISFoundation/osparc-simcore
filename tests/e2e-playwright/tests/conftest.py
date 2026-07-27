@@ -621,7 +621,11 @@ def create_new_project_and_delete(
             _max_delete_attempts = 24
             for attempt in range(_max_delete_attempts):
                 response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
-                if response.status == 204:
+                if response.status in {204, 404}:
+                    # NOTE: 404 means the project was already deleted (e.g. by another
+                    # fixture/test step that also owns/tracks this project, such as
+                    # `create_function_from_project`'s teardown deleting the source
+                    # study of a project-based function). Treat it as already achieved.
                     break
                 if response.status == 409 and attempt < _max_delete_attempts - 1:
                     time.sleep(5)

@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Final
 
 import arrow
 from aiohttp import web
@@ -110,6 +111,52 @@ async def untrash_project(
     )
 
 
+_IMMEDIATE_TRASH_EPOCH: Final[datetime] = datetime(1970, 1, 1, tzinfo=UTC)
+
+
+async def trash_project_for_immediate_deletion(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+) -> None:
+    """Hides the project and stamps it as trashed (using an epoch sentinel) so
+    that the next run of the periodic garbage-collector (`safe_delete_expired_trash_as_admin`)
+    picks it up and deletes it right away, bypassing `TRASH_RETENTION_DAYS`.
+
+    This replaces the former in-process fire-and-forget deletion workflow: the actual
+    removal (stop services, delete pipeline, delete storage, delete DB row) is now
+    performed exclusively by `_projects_service_delete.delete_project_as_admin`,
+    invoked by the garbage collector. This makes deletion durable across webserver
+    restarts, since nothing here depends on an in-memory asyncio task surviving.
+
+    ::raises ProjectInvalidRightsError
+    ::raises ProjectNotFoundError
+    """
+    await _access_rights_service.check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="delete",
+    )
+
+    # NOTE: if the steps performed later by the GC fail, it might result in a
+    # services/projects/data that might be inconsistent. The GC retries every cycle
+    # until it succeeds (see `delete_project_as_admin`).
+    await _projects_repository.patch_project(
+        app,
+        project_uuid=project_id,
+        new_partial_project_data={
+            "hidden": True,
+            "trashed": _IMMEDIATE_TRASH_EPOCH,
+            "trashed_explicitly": True,
+            "trashed_by": user_id,
+        },
+    )
+
+
 def _can_delete(
     project: ProjectDict,
     user_id: UserID,
@@ -208,11 +255,11 @@ async def delete_explicitly_trashed_project(
             details="Cannot delete trashed project since it does not fit current criteria",
         )
 
-    await _projects_service.delete_project_by_user(
+    await trash_project_for_immediate_deletion(
         app,
-        user_id=user_id,
-        project_uuid=project_id,
         product_name=product_name,
+        user_id=user_id,
+        project_id=project_id,
     )
 
 

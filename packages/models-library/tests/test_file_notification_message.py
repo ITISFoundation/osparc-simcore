@@ -37,12 +37,14 @@ def test_channel_name():
 
 
 @pytest.mark.parametrize("event_type", FileNotificationEventType)
+@pytest.mark.parametrize("is_directory", [True, False])
 def test_serialization_roundtrip(
     event_type: FileNotificationEventType,
     user_id: int,
     project_id: uuid.UUID,
     node_id: uuid.UUID,
     file_id: str,
+    is_directory: bool,
 ):
     message = FileNotificationMessage(
         event_type=event_type,
@@ -50,6 +52,7 @@ def test_serialization_roundtrip(
         project_id=project_id,
         node_id=node_id,
         file_id=file_id,
+        fmd_is_directory=is_directory,
     )
 
     raw = message.body()
@@ -63,11 +66,13 @@ def test_serialization_roundtrip(
     assert restored.created_at == message.created_at
 
 
+@pytest.mark.parametrize("is_directory", [True, False])
 def test_routing_key_format(
     user_id: int,
     project_id: uuid.UUID,
     node_id: uuid.UUID,
     file_id: str,
+    is_directory: bool,
 ):
     message = FileNotificationMessage(
         event_type=FileNotificationEventType.FILE_UPLOADED,
@@ -75,6 +80,7 @@ def test_routing_key_format(
         project_id=project_id,
         node_id=node_id,
         file_id=file_id,
+        fmd_is_directory=is_directory,
     )
 
     routing_key = message.routing_key()

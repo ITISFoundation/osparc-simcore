@@ -11,7 +11,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import PositiveInt
+from pydantic import PositiveInt, TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
@@ -48,28 +48,21 @@ class CompTasksRepository(BaseRepository):
         self,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
-        tasks: list[CompTaskAtDB] = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")):
-                task_db = CompTaskAtDB.model_validate(row)
-                tasks.append(task_db)
-
-        return tasks
+            result = await conn.execute(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
+            return TypeAdapter(list[CompTaskAtDB]).validate_python(result.all())
 
     async def list_computational_tasks(
         self,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
-        tasks: list[CompTaskAtDB] = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(
+            result = await conn.execute(
                 sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 )
-            ):
-                task_db = CompTaskAtDB.model_validate(row)
-                tasks.append(task_db)
-        return tasks
+            )
+            return TypeAdapter(list[CompTaskAtDB]).validate_python(result.all())
 
     async def list_computational_tasks_rpc_domain(
         self,

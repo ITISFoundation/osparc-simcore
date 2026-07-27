@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import NamedTuple
+from typing import NamedTuple, Self
 
 from pydantic import BaseModel, ConfigDict, PositiveInt, model_validator
 
@@ -71,22 +71,20 @@ class RutPricingPlanGet(BaseModel):
     is_active: bool
 
     @model_validator(mode="after")
-    def ensure_classification_matches_extra_info(self):
+    def ensure_classification_matches_extra_info(self) -> Self:
         """Enforce that all PricingUnitGet.unit_extra_info match the plan's classification."""
-        if not self.pricing_units:
-            return self  # No units to check
-
-        for unit in self.pricing_units:
-            if self.classification == PricingPlanClassification.TIER and not isinstance(
-                unit.unit_extra_info, UnitExtraInfoTier
-            ):
-                error_message = "For TIER classification, unit_extra_info must be UnitExtraInfoTier"
-                raise ValueError(error_message)
-            if self.classification == PricingPlanClassification.LICENSE and not isinstance(
-                unit.unit_extra_info, UnitExtraInfoLicense
-            ):
-                error_message = "For LICENSE classification, unit_extra_info must be UnitExtraInfoLicense"
-                raise ValueError(error_message)
+        if self.pricing_units:
+            for unit in self.pricing_units:
+                if self.classification == PricingPlanClassification.TIER and not isinstance(
+                    unit.unit_extra_info, UnitExtraInfoTier
+                ):
+                    error_message = "For TIER classification, unit_extra_info must be UnitExtraInfoTier"
+                    raise ValueError(error_message)
+                if self.classification == PricingPlanClassification.LICENSE and not isinstance(
+                    unit.unit_extra_info, UnitExtraInfoLicense
+                ):
+                    error_message = "For LICENSE classification, unit_extra_info must be UnitExtraInfoLicense"
+                    raise ValueError(error_message)
         return self
 
     model_config = ConfigDict(
