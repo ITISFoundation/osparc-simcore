@@ -558,9 +558,12 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
             dask_state_display = f"[red]{dask_state_display}[/red]"
         else:
             dask_state_display = "[green]Ready[/green]"
+        primary_label = utils.color_encode_with_state("Primary", cluster.primary.ec2_instance)
+        if cluster.primary.is_warm_buffer:
+            primary_label += " [dim](warm buffer)[/dim]"
         primary_info = "\n".join(
             [
-                f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
+                f"[bold]{primary_label}",
                 f"{cluster.primary.name}",
                 f"ID: {cluster.primary.ec2_instance.id}",
                 f"AMI: {cluster.primary.ec2_instance.image_id}",
@@ -618,6 +621,8 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 table.add_row()
                 indent = "  "
                 worker_label = utils.color_encode_with_state(f"Worker {index + 1}", worker.ec2_instance)
+                if worker.is_warm_buffer:
+                    worker_label += " [dim](warm buffer)[/dim]"
                 worker_up = utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)
                 worker_info = "\n".join(
                     [

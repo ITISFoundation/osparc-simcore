@@ -21,13 +21,14 @@ from ..reconciliation import ReconciliationResult, reconcile_computational_clust
 _console = Console()
 
 
-async def _run(  # noqa: C901, PLR0915
+async def _run(  # noqa: C901, PLR0912, PLR0915
     state: AppState,
     user_id: int | None,
     wallet_id: int | None,
     *,
     output_json: bool,
     output: Path | None,
+    show_buffers: bool,
 ) -> bool:
     dynamic_autoscaled_instances: list[DynamicInstance] = []
     computational_clusters: list[ComputationalCluster] = []
@@ -50,7 +51,6 @@ async def _run(  # noqa: C901, PLR0915
         _dynamic_phase(),
         _computational_phase(),
     )
-    
 
     # DB engine — opened lazily and cleaned up in finally block
     db_stack = contextlib.AsyncExitStack()
@@ -100,17 +100,46 @@ async def _run(  # noqa: C901, PLR0915
             cluster_task_rows=recon.cluster_task_rows,
         )
     else:
+        dynamic_to_render = dynamic_autoscaled_instances
+        hidden_warm_count = 0
+        hidden_hot_count = 0
+        if not show_buffers:
+            dynamic_to_render = [inst for inst in dynamic_autoscaled_instances if inst.running_services]
+            hidden_dynamic_instances = [inst for inst in dynamic_autoscaled_instances if not inst.running_services]
+            hidden_warm_count = sum(1 for inst in hidden_dynamic_instances if inst.is_warm_buffer)
+            # untagged idle instances are potential/actual hot-buffer candidates, so count them as hot-buffer too
+            hidden_hot_count = len(hidden_dynamic_instances) - hidden_warm_count
+
+        computational_to_render = computational_clusters
+        hidden_computational_count = 0
+        if not show_buffers:
+            computational_to_render = [c for c in computational_clusters if not c.primary.is_warm_buffer]
+            hidden_computational_count = len(computational_clusters) - len(computational_to_render)
+
         if state.ec2_resource_autoscaling:
             rendering.print_dynamic_instances(
-                dynamic_autoscaled_instances,
+                dynamic_to_render,
                 state.environment,
                 state.ec2_resource_autoscaling.meta.client.meta.region_name,
                 output=output,
                 service_extra_info=service_extra_info,
             )
+            hidden_dynamic_parts = [
+                f"{count} {label}"
+                for count, label in (
+                    (hidden_warm_count, "warm buffer"),
+                    (hidden_hot_count, "hot-buffer"),
+                )
+                if count
+            ]
+            if hidden_dynamic_parts:
+                rich.print(
+                    f"[dim]  {', '.join(hidden_dynamic_parts)} dynamic instance(s) hidden "
+                    "— use --show-buffers to display them[/dim]"
+                )
         if state.ec2_resource_clusters_keeper:
             rendering.print_computational_clusters(
-                computational_clusters,
+                computational_to_render,
                 state.environment,
                 state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
                 output=output,
@@ -120,6 +149,11 @@ async def _run(  # noqa: C901, PLR0915
                 cluster_extra_info=recon.cluster_extra_info,
                 compact=True,
             )
+            if hidden_computational_count:
+                rich.print(
+                    f"[dim]  {hidden_computational_count} warm buffer computational cluster(s) hidden "
+                    "— use --show-buffers to display them[/dim]"
+                )
 
         rich.print()
         rich.print("[dim]For more details, run:[/dim]")
@@ -146,11 +180,16 @@ def summary(
     wallet_id: Annotated[int, typer.Option(help="filters by the wallet ID")] = 0,
     as_json: Annotated[bool, typer.Option(help="outputs as json")] = False,
     output: Annotated[Path | None, typer.Option(help="outputs to a file")] = None,
+    show_buffers: Annotated[
+        bool, typer.Option(help="also show warm/hot buffer machines individually, instead of just a count")
+    ] = False,
 ) -> None:
     """Compact overview of all dynamic and computational instances.
 
     Shows dynamic instances with their services and computational clusters
     with task-level details but without per-worker machine info.
+    Warm/hot buffer machines are hidden by default (shown as a count only);
+    use --show-buffers to display them individually.
     """
 
     if not asyncio.run(
@@ -160,6 +199,7 @@ def summary(
             wallet_id or None,
             output_json=as_json,
             output=output,
+            show_buffers=show_buffers,
         )
     ):
         raise typer.Exit(1)
