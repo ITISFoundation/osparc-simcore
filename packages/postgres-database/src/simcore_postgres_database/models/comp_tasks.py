@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -32,7 +33,12 @@ comp_tasks = sa.Table(
     sa.Column(
         "project_id",
         sa.String,
-        sa.ForeignKey("comp_pipeline.project_id"),
+        sa.ForeignKey(
+            "projects.uuid",
+            name="fk_comp_tasks_project_id_projects",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
         doc="Project that contains the node associated to this task",
     ),
     sa.Column("node_id", sa.String, doc="Node associated to this task"),
@@ -99,7 +105,8 @@ comp_tasks = sa.Table(
         "submit",
         sa.DateTime(timezone=True),
         server_default=sa.text("'1900-01-01T00:00:00Z'::timestamptz"),
-        doc="[DEPRECATED unused but kept for legacy services and must be filled with a default value of 1 January 1900]",
+        doc="[DEPRECATED unused but kept for legacy services and "
+        "must be filled with a default value of 1 January 1900]",
     ),
     # ------
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
@@ -159,7 +166,7 @@ CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
         RETURN NULL;
     END;
 $$ LANGUAGE plpgsql;
-"""
+"""  # noqa: S608
 )
 
 sa.event.listen(comp_tasks, "after_create", task_output_changed_procedure)
