@@ -17,7 +17,7 @@ from typing import Any, Final
 
 import arrow
 import pytest
-from playwright._impl._sync_base import EventContextManager
+from playwright._impl._sync_base import EventContextManager, EventInfo
 from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -132,13 +132,78 @@ class SocketIOEvent:
 
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
+_SOCKET_CLOSED_ERROR_MESSAGE: Final[str] = "Socket closed"
+
+
+@dataclass
+class _ReconnectableEventWaiter:
+    """A ``WebSocket.expect_event`` wrapper that survives ``RobustWebSocket`` reconnections.
+
+    Playwright's ``expect_event`` binds its wait to one specific ``WebSocket``
+    instance. If that connection drops and ``RobustWebSocket`` transparently
+    reconnects (see ``RobustWebSocket._attempt_reconnect``), the original wait is
+    left pointing at the now-dead socket: as soon as the ``with`` block exits it
+    raises ``playwright.Error: Socket closed``, even though a brand new, healthy
+    connection is already in place. This wrapper detects that case and re-attaches
+    the still-pending wait to the new connection instead of propagating the stale
+    error, so callers keep waiting for the *actual* remaining timeout.
+    """
+
+    websocket: "RobustWebSocket"
+    event: str
+    predicate: typing.Callable | None
+    timeout: float | None
+    _deadline: datetime | None = field(init=False, default=None)
+    _ctx: EventContextManager = field(init=False)
+    _event_info: EventInfo = field(init=False)
+    _bound_ws: WebSocket = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.timeout is not None:
+            self._deadline = datetime.now(UTC) + timedelta(milliseconds=self.timeout)
+        self._attach()
+
+    def _remaining_timeout(self) -> float | None:
+        if self._deadline is None:
+            return None
+        return (self._deadline - datetime.now(UTC)).total_seconds() * SECOND
+
+    def _attach(self) -> None:
+        self._bound_ws = self.websocket.ws
+        remaining_timeout = self._remaining_timeout()
+        if remaining_timeout is not None and remaining_timeout <= 0:
+            # NOTE: Playwright treats timeout=0 as "disable timeout" (wait forever),
+            # so an already-expired deadline must raise instead of being passed through.
+            msg = f"Timeout {self.timeout}ms exceeded while (re-)waiting for {self.event!r}."
+            raise PlaywrightTimeoutError(msg)
+        self._ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
+        # NOTE: EventContextManager itself has no `.value`; only the `EventInfo`
+        # returned by entering it does - keep a reference to *that*.
+        self._event_info = self._ctx.__enter__()
+
+    def __enter__(self) -> typing.Self:
+        return self
+
+    @property
+    def value(self) -> typing.Any:
+        while True:
+            try:
+                return self._event_info.value
+            except PlaywrightError as exc:
+                if _SOCKET_CLOSED_ERROR_MESSAGE not in str(exc) or self.websocket.ws is self._bound_ws:
+                    raise
+                # RobustWebSocket already reconnected to a fresh socket while we
+                # were waiting: re-attach the wait there instead of failing.
+                self._attach()
+
+    def __exit__(self, *args: object) -> None:
+        _ = self.value
 
 
 @dataclass
 class RobustWebSocket:
     page: Page
     ws: WebSocket
-    _registered_events: list[tuple[str, typing.Callable | None]] = field(default_factory=list)
     _num_reconnections: int = 0
     auto_reconnect: bool = True
 
@@ -199,9 +264,6 @@ class RobustWebSocket:
             self._num_reconnections,
         )
         self._configure_websocket_events()
-        # Re-register all custom event listeners
-        for event, predicate in self._registered_events:
-            self.ws.expect_event(event, predicate)
 
     def expect_event(
         self,
@@ -209,13 +271,11 @@ class RobustWebSocket:
         predicate: typing.Callable | None = None,
         *,
         timeout: float | None = None,
-    ) -> EventContextManager:
+    ) -> _ReconnectableEventWaiter:
         """
-        Register an event listener with support for reconnection.
+        Register an event listener that keeps waiting across reconnections.
         """
-        output = self.ws.expect_event(event, predicate, timeout=timeout)
-        self._registered_events.append((event, predicate))
-        return output
+        return _ReconnectableEventWaiter(websocket=self, event=event, predicate=predicate, timeout=timeout)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:

@@ -7,13 +7,17 @@
 import json
 import logging
 import subprocess
+import time
 from threading import Thread
+from typing import cast
 
 import pytest
 import socketio
 import uvicorn
 from fastapi import FastAPI
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket as PlaywrightWebSocket
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import RobustWebSocket
@@ -145,3 +149,113 @@ def test_robust_websocket_with_socketio(download_playwright_browser: None, real_
         assert response == "Echo: Reconnected"
 
         assert robust_ws._num_reconnections == 2, "Expected 2 restarts due to network issues"  # noqa: SLF001
+
+
+# --- Fast, deterministic unit tests for `RobustWebSocket.expect_event()` ---
+#
+# These do not need a real browser/network: they fake just enough of the
+# `playwright.sync_api.WebSocket` surface (`.on()`/`.expect_event()`) to drive
+# `RobustWebSocket`/`_ReconnectableEventWaiter` through the reconnect-recovery
+# logic directly and quickly, going through the same public `expect_event()`
+# entry point production code uses.
+
+
+class _FakeEventInfo:
+    """Mimics playwright's EventInfo: `.value` either returns or raises."""
+
+    def __init__(self, *, value: object = None, error: BaseException | None = None) -> None:
+        self._value = value
+        self._error = error
+
+    @property
+    def value(self) -> object:
+        if self._error is not None:
+            raise self._error
+        return self._value
+
+
+class _FakeEventContextManager:
+    def __init__(self, event_info: _FakeEventInfo) -> None:
+        self._event_info = event_info
+
+    def __enter__(self) -> _FakeEventInfo:
+        return self._event_info
+
+
+class _FakeWebSocket:
+    """Mimics playwright.sync_api.WebSocket enough for `RobustWebSocket`."""
+
+    def __init__(self, *event_infos: _FakeEventInfo) -> None:
+        self._event_infos = list(event_infos)
+
+    def on(self, *_args: object, **_kwargs: object) -> None:
+        """no-op: RobustWebSocket registers framesent/framereceived/close/socketerror listeners here."""
+
+    def expect_event(self, *_args: object, **_kwargs: object) -> _FakeEventContextManager:
+        return _FakeEventContextManager(self._event_infos.pop(0))
+
+
+def _make_robust_websocket(ws: _FakeWebSocket) -> RobustWebSocket:
+    return RobustWebSocket(page=cast(Page, None), ws=cast(PlaywrightWebSocket, ws))
+
+
+def test_reconnectable_event_waiter_resolves_without_reconnect():
+    robust_ws = _make_robust_websocket(_FakeWebSocket(_FakeEventInfo(value="hello")))
+
+    waiter = robust_ws.expect_event("framereceived", timeout=1000)
+
+    assert waiter.value == "hello"
+
+
+def test_reconnectable_event_waiter_survives_mid_wait_reconnect():
+    """Regression test for the original bug: a wait registered before a websocket
+    reconnect must keep waiting on the *new* socket instead of raising the stale
+    `Error: Socket closed` from the connection it was originally bound to.
+    """
+    old_ws = _FakeWebSocket(_FakeEventInfo(error=PlaywrightError("Socket closed")))
+    robust_ws = _make_robust_websocket(old_ws)
+
+    waiter = robust_ws.expect_event("framereceived", timeout=30000)
+
+    # simulate RobustWebSocket transparently reconnecting to a brand new socket
+    # while our wait was still in flight
+    robust_ws.ws = cast(PlaywrightWebSocket, _FakeWebSocket(_FakeEventInfo(value="resolved-after-reconnect")))
+
+    assert waiter.value == "resolved-after-reconnect"
+
+
+def test_reconnectable_event_waiter_reraises_when_no_reconnect_happened():
+    """If the socket really is gone and no new one took its place, the error must
+    still propagate instead of retrying forever."""
+    robust_ws = _make_robust_websocket(_FakeWebSocket(_FakeEventInfo(error=PlaywrightError("Socket closed"))))
+
+    waiter = robust_ws.expect_event("framereceived", timeout=1000)
+
+    with pytest.raises(PlaywrightError, match="Socket closed"):
+        _ = waiter.value
+
+
+def test_reconnectable_event_waiter_reraises_unrelated_errors():
+    robust_ws = _make_robust_websocket(_FakeWebSocket(_FakeEventInfo(error=PlaywrightError("boom"))))
+
+    waiter = robust_ws.expect_event("framereceived", timeout=1000)
+
+    with pytest.raises(PlaywrightError, match="boom"):
+        _ = waiter.value
+
+
+def test_reconnectable_event_waiter_raises_timeout_once_deadline_elapsed():
+    """Regression test: Playwright treats `timeout=0` as 'disable timeout' (wait
+    forever), so an already-expired deadline must raise a timeout instead of
+    silently re-arming the wait with an unlimited one."""
+    old_ws = _FakeWebSocket(_FakeEventInfo(error=PlaywrightError("Socket closed")))
+    robust_ws = _make_robust_websocket(old_ws)
+
+    waiter = robust_ws.expect_event("framereceived", timeout=1)
+
+    # should never be consulted: the deadline will already be gone by the time we re-attach
+    robust_ws.ws = cast(PlaywrightWebSocket, _FakeWebSocket())
+    time.sleep(0.05)  # let the 1ms deadline elapse
+
+    with pytest.raises(PlaywrightTimeoutError):
+        _ = waiter.value
