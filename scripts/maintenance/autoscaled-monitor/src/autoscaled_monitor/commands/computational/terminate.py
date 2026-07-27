@@ -24,13 +24,14 @@ async def _run(  # noqa: PLR0915
     force: bool,
     intervals_to_wait: int,
     skip_wait: bool,
+    use_profile: str | None,
 ) -> None:
     assert state.ec2_resource_clusters_keeper
     computational_clusters = await load_computational_clusters(state, user_id, wallet_id)
     assert computational_clusters
     assert len(computational_clusters) == 1, "too many clusters found! TIP: fix this code"
 
-    rendering.print_computational_clusters(
+    await rendering.print_computational_clusters(
         computational_clusters,
         state.environment,
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
@@ -38,6 +39,7 @@ async def _run(  # noqa: PLR0915
         cluster_task_rows=None,
         cluster_extra_info=None,
         compact=False,
+        pricing_profile=use_profile,
     )
     if (force is True) or typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
@@ -136,6 +138,13 @@ def terminate(
         int, typer.Option(help="number of CLUSTERS_KEEPER_TASK_INTERVAL periods to wait")
     ] = 10,
     skip_wait: Annotated[bool, typer.Option(help="skip wait phase and go directly to EC2 termination")] = False,
+    use_profile: Annotated[
+        str | None,
+        typer.Option(
+            help="AWS profile (e.g. from ~/.aws/credentials) to use for AWS cost lookups "
+            "(pricing:GetProducts, ec2:DescribeVolumes), in case the deploy-config credentials lack access"
+        ),
+    ] = None,
 ) -> None:
     """Trigger termination of a computational cluster.
 
@@ -145,4 +154,14 @@ def terminate(
     3. If still present, directly terminate EC2 instances as fallback
     """
 
-    asyncio.run(_run(state, user_id, wallet_id, force=force, intervals_to_wait=intervals_to_wait, skip_wait=skip_wait))
+    asyncio.run(
+        _run(
+            state,
+            user_id,
+            wallet_id,
+            force=force,
+            intervals_to_wait=intervals_to_wait,
+            skip_wait=skip_wait,
+            use_profile=use_profile,
+        )
+    )

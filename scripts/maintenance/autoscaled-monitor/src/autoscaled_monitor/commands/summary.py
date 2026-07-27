@@ -29,6 +29,7 @@ async def _run(  # noqa: C901, PLR0912, PLR0915
     output_json: bool,
     output: Path | None,
     show_buffers: bool,
+    use_profile: str | None,
 ) -> bool:
     dynamic_autoscaled_instances: list[DynamicInstance] = []
     computational_clusters: list[ComputationalCluster] = []
@@ -117,12 +118,13 @@ async def _run(  # noqa: C901, PLR0912, PLR0915
             hidden_computational_count = len(computational_clusters) - len(computational_to_render)
 
         if state.ec2_resource_autoscaling:
-            rendering.print_dynamic_instances(
+            await rendering.print_dynamic_instances(
                 dynamic_to_render,
                 state.environment,
                 state.ec2_resource_autoscaling.meta.client.meta.region_name,
                 output=output,
                 service_extra_info=service_extra_info,
+                pricing_profile=use_profile,
             )
             hidden_dynamic_parts = [
                 f"{count} {label}"
@@ -138,7 +140,7 @@ async def _run(  # noqa: C901, PLR0912, PLR0915
                     "— use --show-buffers to display them[/dim]"
                 )
         if state.ec2_resource_clusters_keeper:
-            rendering.print_computational_clusters(
+            await rendering.print_computational_clusters(
                 computational_to_render,
                 state.environment,
                 state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
@@ -148,6 +150,7 @@ async def _run(  # noqa: C901, PLR0912, PLR0915
                 },
                 cluster_extra_info=recon.cluster_extra_info,
                 compact=True,
+                pricing_profile=use_profile,
             )
             if hidden_computational_count:
                 rich.print(
@@ -183,6 +186,13 @@ def summary(
     show_buffers: Annotated[
         bool, typer.Option(help="also show warm/hot buffer machines individually, instead of just a count")
     ] = False,
+    use_profile: Annotated[
+        str | None,
+        typer.Option(
+            help="AWS profile (e.g. from ~/.aws/credentials) to use for AWS cost lookups "
+            "(pricing:GetProducts, ec2:DescribeVolumes), in case the deploy-config credentials lack access"
+        ),
+    ] = None,
 ) -> None:
     """Compact overview of all dynamic and computational instances.
 
@@ -200,6 +210,7 @@ def summary(
             output_json=as_json,
             output=output,
             show_buffers=show_buffers,
+            use_profile=use_profile,
         )
     ):
         raise typer.Exit(1)

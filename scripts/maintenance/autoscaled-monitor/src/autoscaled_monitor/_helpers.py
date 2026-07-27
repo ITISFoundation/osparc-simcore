@@ -15,6 +15,13 @@ def collect_services(
     return [(svc.user_id, svc.project_id, svc.node_id) for inst in instances for svc in inst.running_services]
 
 
+def _instance_product_name(instance: DynamicInstance) -> str:
+    """Returns the product name of the (first) service running on the instance, or "" if none."""
+    if instance.running_services:
+        return instance.running_services[0].product_name or ""
+    return ""
+
+
 async def load_dynamic_instances(
     state: AppState,
     user_id: int | None,
@@ -29,8 +36,11 @@ async def load_dynamic_instances(
         filter_by_instance_id=instance_id,
     )
     parsed_instances = await analysis.parse_dynamic_instances(state, instances, state.ssh_key_path, user_id, wallet_id)
-    # empty instances (warm/hot buffers or otherwise idle) are shown last
-    return sorted(parsed_instances, key=lambda instance: not instance.running_services)
+    # empty instances (warm/hot buffers or otherwise idle) are shown last, then sorted by product name
+    return sorted(
+        parsed_instances,
+        key=lambda instance: (not instance.running_services, _instance_product_name(instance).lower()),
+    )
 
 
 async def load_computational_clusters(
