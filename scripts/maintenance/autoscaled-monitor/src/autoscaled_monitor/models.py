@@ -82,6 +82,7 @@ class DynamicService:
 @dataclass(slots=True, kw_only=True)
 class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
+    is_hot_buffer: bool = False
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
