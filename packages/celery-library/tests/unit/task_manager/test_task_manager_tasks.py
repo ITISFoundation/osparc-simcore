@@ -123,7 +123,7 @@ async def test_filtering_listing_tasks(
         product_name: str | Wildcard
 
     user_id = 42
-    owner = "test-owner"
+    owner = "filter-test-owner"
     expected_task_uuids: set[TaskUUID] = set()
     all_tasks: list[tuple[TaskUUID, MyOwnerMetadata]] = []
 
