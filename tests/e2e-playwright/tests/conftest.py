@@ -133,6 +133,20 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="e2e-playwright",
         help="defines a specific user agent osparc header",
     )
+    group.addoption(
+        "--basic-auth-user",
+        action="store",
+        type=str,
+        default=None,
+        help="basic auth user name, for portals protected by HTTP basic auth",
+    )
+    group.addoption(
+        "--basic-auth-password",
+        action="store",
+        type=str,
+        default=None,
+        help="basic auth password, for portals protected by HTTP basic auth",
+    )
 
 
 # Dictionary to store start times of tests
@@ -149,10 +163,12 @@ def pytest_runtest_setup(item):
 _FORMAT: Final = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-def _construct_graylog_url(product_url: str | None, start_time: datetime.datetime, end_time: datetime.datetime) -> str:
+def _construct_graylog_url(
+    product_url: AnyUrl | None, start_time: datetime.datetime, end_time: datetime.datetime
+) -> str:
     # Deduce monitoring url
     if product_url:
-        scheme, tail = product_url.split("://", 1)
+        scheme, tail = f"{product_url}".split("://", 1)
     else:
         scheme, tail = "https", "<UNDEFINED>"
     monitoring_url = f"{scheme}://monitoring.{tail}".rstrip("/")
@@ -171,7 +187,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
     if call.when == "call" and call.excinfo is not None:
         test_name = item.name
         test_location = item.location
-        product_url = f"{item.config.getoption('--product-url', default=None)}"
+        product_url = item.config.getoption("--product-url", default=None)
         is_billable = item.config.getoption("--product-billable", default=None)
 
         diagnostics = {
@@ -214,10 +230,12 @@ def api_request_context(context: BrowserContext) -> APIRequestContext:
 
 
 @pytest.fixture(scope="session")
-def product_url(request: pytest.FixtureRequest) -> AnyUrl:
+def product_url(request: pytest.FixtureRequest) -> AnyUrl | None:
     if passed_product_url := request.config.getoption("--product-url"):
         return TypeAdapter(AnyUrl).validate_python(passed_product_url)
-    return TypeAdapter(AnyUrl).validate_python(os.environ["PRODUCT_URL"])
+    if os.environ.get("PRODUCT_URL"):
+        return TypeAdapter(AnyUrl).validate_python(os.environ["PRODUCT_URL"])
+    return None
 
 
 @pytest.fixture
@@ -300,15 +318,40 @@ def user_agent(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
+def basic_auth_user(request: pytest.FixtureRequest) -> str | None:
+    if user := request.config.getoption("--basic-auth-user"):
+        assert isinstance(user, str)
+        return user
+    return None
+
+
+@pytest.fixture(scope="session")
+def basic_auth_password(request: pytest.FixtureRequest) -> str | None:
+    if password := request.config.getoption("--basic-auth-password"):
+        assert isinstance(password, str)
+        return password
+    return None
+
+
+@pytest.fixture(scope="session")
 def browser_context_args(
-    browser_context_args: dict[str, dict[str, str] | str], user_agent: str
+    browser_context_args: dict[str, dict[str, str] | str],
+    user_agent: str,
+    basic_auth_user: str | None,
+    basic_auth_password: str | None,
 ) -> dict[str, dict[str, str] | str]:
     # Override browser context options, see https://playwright.dev/python/docs/test-runners#fixtures
-    return {
+    context_args: dict[str, Any] = {
         **browser_context_args,
         "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
         "viewport": {"width": 1600, "height": 900},  # HD+
     }
+    if basic_auth_user and basic_auth_password:
+        context_args["http_credentials"] = {
+            "username": basic_auth_user,
+            "password": basic_auth_password,
+        }
+    return context_args
 
 
 @pytest.fixture
