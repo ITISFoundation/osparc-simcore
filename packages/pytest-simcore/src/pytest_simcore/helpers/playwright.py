@@ -13,6 +13,7 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
+from types import SimpleNamespace
 from typing import Any, Final
 
 import arrow
@@ -308,7 +309,11 @@ class SocketIOWaitNodeForOutputs:
         return False
 
 
-_FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
+_FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("failed",)
+# NOTE: right after a service start is requested, the dynamic-scheduler may still
+# report "idle" for a short while (it has not yet picked up the start request).
+# This is expected and must not be treated as a failure immediately.
+_MIN_IDLE_DURATION_BEFORE_FAIL_FAST: Final[timedelta] = timedelta(seconds=15)
 _SERVICE_ROOT_POINT_STATUS_TIMEOUT: Final[timedelta] = timedelta(seconds=30)
 
 
@@ -378,10 +383,55 @@ _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(s
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
+    min_idle_before_fail_fast: timedelta = _MIN_IDLE_DURATION_BEFORE_FAIL_FAST
     _current_progress: dict[NodeProgressType, float] = field(default_factory=defaultdict)
     _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
+
+    _first_service_status_received_at: datetime | None = None
     _result: bool = False
+
+    def _handle_service_status(self, ctx: SimpleNamespace, obj: dict[str, Any]) -> bool | None:
+        """Returns True/False if the waiter is resolved by this SERVICE_STATUS
+        message, or None if it does not concern this node and should be ignored."""
+        if obj["service_uuid"] != self.node_id:
+            return None
+
+        if self._first_service_status_received_at is None:
+            self._first_service_status_received_at = datetime.now(UTC)
+
+        service_state = obj["service_state"]
+        if service_state in _FAIL_FAST_DYNAMIC_SERVICE_STATES:
+            # NOTE: this is a fail fast for dynamic services that fail to start
+            ctx.logger.error(
+                "❌ node %s failed with state %s, failing fast ❌",
+                self.node_id,
+                service_state,
+            )
+            self._result = False
+            return True
+
+        if service_state == "idle":
+            elapsed_since_first_status = datetime.now(UTC) - self._first_service_status_received_at
+            if elapsed_since_first_status > self.min_idle_before_fail_fast:
+                # NOTE: the service is still idle well after it was first observed
+                ctx.logger.error(
+                    "❌ node %s still idle %s since first status (> %s grace period), failing fast ❌",
+                    self.node_id,
+                    elapsed_since_first_status,
+                    self.min_idle_before_fail_fast,
+                )
+                self._result = False
+                return True
+            ctx.logger.info(
+                "⏳ node %s idle %s since first status (within %s grace period), still waiting ⏳",
+                self.node_id,
+                elapsed_since_first_status,
+                self.min_idle_before_fail_fast,
+            )
+            return False
+
+        return None
 
     def __call__(self, message: str) -> bool:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
@@ -390,19 +440,10 @@ class SocketIONodeProgressCompleteWaiter:
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 self._received_messages.append(decoded_message)
-                if (
-                    (decoded_message.name == _OSparcMessages.SERVICE_STATUS.value)
-                    and (decoded_message.obj["service_uuid"] == self.node_id)
-                    and (decoded_message.obj["service_state"] in _FAIL_FAST_DYNAMIC_SERVICE_STATES)
-                ):
-                    # NOTE: this is a fail fast for dynamic services that fail to start
-                    ctx.logger.error(
-                        "❌ node %s failed with state %s, failing fast ❌",
-                        self.node_id,
-                        decoded_message.obj["service_state"],
-                    )
-                    self._result = False
-                    return True
+                if decoded_message.name == _OSparcMessages.SERVICE_STATUS.value:
+                    service_status_result = self._handle_service_status(ctx, decoded_message.obj)
+                    if service_status_result is not None:
+                        return service_status_result
                 if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
                     node_progress_event = retrieve_node_progress_from_decoded_message(decoded_message)
                     if node_progress_event.node_id == self.node_id:
