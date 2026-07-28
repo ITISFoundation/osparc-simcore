@@ -671,3 +671,15 @@ def wait_for_label_text(page: Page, locator: str, substring: str, timeout: int =
     )
 
     return page.locator(locator)
+
+
+def get_node_id_from_service_key(workbench: dict[str, Any], service_key_fragment: str) -> str:
+    """Finds the node id in a project's workbench whose service key contains the given fragment.
+
+    Port of the legacy `utils.getNodeIdFromServiceKey()` used by tests/e2e/portal.
+    """
+    for node_id, node_data in workbench.items():
+        if service_key_fragment in node_data["key"]:
+            return node_id
+    msg = f"Could not find a node with service key containing {service_key_fragment!r} in workbench"
+    raise ValueError(msg)
