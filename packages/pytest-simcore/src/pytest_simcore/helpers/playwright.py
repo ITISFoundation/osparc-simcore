@@ -442,8 +442,8 @@ class SocketIONodeProgressCompleteWaiter:
                 self._received_messages.append(decoded_message)
                 if decoded_message.name == _OSparcMessages.SERVICE_STATUS.value:
                     service_status_result = self._handle_service_status(ctx, decoded_message.obj)
-                    if service_status_result is not None:
-                        return service_status_result
+                    if service_status_result is True:
+                        return True
                 if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
                     node_progress_event = retrieve_node_progress_from_decoded_message(decoded_message)
                     if node_progress_event.node_id == self.node_id:
