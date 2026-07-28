@@ -65,6 +65,7 @@ import polib
 import typer
 from rich.console import Console
 from rich.highlighter import RegexHighlighter
+from rich.progress import track
 from rich.theme import Theme
 
 CONTEXT_MAX_LINES = 10  # max lines to expand in each direction around a string
@@ -769,7 +770,7 @@ def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = No
 
     hints = py_hints
 
-    for entry in po:
+    for entry in track(po, description="[enrich] source context", console=console):
         if not entry.occurrences:
             continue
 

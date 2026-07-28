@@ -296,5 +296,65 @@ def test_translate_cli_strips_snippet_and_is_idempotent(tmp_path: Path, monkeypa
     assert fake.calls == []
 
 
+def _base_translate_args(pot: Path, gloss: Path, out: Path, model: str) -> list[str]:
+    return [
+        "translate",
+        "--pot",
+        str(pot),
+        "--lang",
+        "es_ES",
+        "--out",
+        str(out),
+        "--glossary",
+        str(gloss),
+        "--model",
+        model,
+        "--no-progress",
+    ]
+
+
+def test_translate_cli_prints_plan_banner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeProvider()
+    monkeypatch.setattr(tr, "LiteLLMProvider", lambda *_args, **_kwargs: fake)
+
+    pot = _write_pot_with_snippet(tmp_path)  # single untranslated entry
+    gloss = _write_glossary(tmp_path)
+    out = tmp_path / "es_ES.po"
+
+    result = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "openai/gpt-4o"), catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    # Pre-flight scope: 1 untranslated entry -> 1 NEW / 0 UPDATE / 0 SKIP -> 1 to model
+    assert "[plan]" in result.output
+    assert "1 NEW" in result.output
+    assert "to model" in result.output
+
+
+def test_ollama_parallel_emits_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeProvider()
+    monkeypatch.setattr(tr, "LiteLLMProvider", lambda *_args, **_kwargs: fake)
+
+    pot = _write_pot_with_snippet(tmp_path)
+    gloss = _write_glossary(tmp_path)
+    out = tmp_path / "es_ES.po"
+
+    # Default parallel=True + default max-workers=4 => Ollama warning must fire.
+    result = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "ollama/llama3.1"), catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    assert "Ollama runs one local model instance" in result.output
+
+
+def test_non_ollama_no_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeProvider()
+    monkeypatch.setattr(tr, "LiteLLMProvider", lambda *_args, **_kwargs: fake)
+
+    pot = _write_pot_with_snippet(tmp_path)
+    gloss = _write_glossary(tmp_path)
+    out = tmp_path / "es_ES.po"
+
+    result = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "openai/gpt-4o"), catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+    assert "Ollama runs one local model instance" not in result.output
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

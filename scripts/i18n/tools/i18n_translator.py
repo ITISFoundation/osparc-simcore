@@ -697,6 +697,17 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     else:
         console.print(f"[bold]\\[provider][/bold] model={model}" + (f" base_url={base_url}" if base_url else ""))
 
+    # Ollama serves from a single local model instance, so client-side threads do not
+    # translate into real concurrency unless the server is explicitly configured for it.
+    # Warn instead of leaving the impression that --parallel sped things up.
+    if not dry_run and parallel and max_workers > 1 and model.split("/", maxsplit=1)[0] == "ollama":
+        console.print(
+            "[yellow]\\[warning][/yellow] Ollama runs one local model instance: --parallel "
+            f"(--max-workers {max_workers}) will NOT speed up translation unless the Ollama server "
+            "is configured for concurrency (set OLLAMA_NUM_PARALLEL and ensure enough VRAM). "
+            "Requests will effectively run one at a time."
+        )
+
     source_path = in_po if in_po and in_po.exists() else pot
     po = polib.pofile(str(source_path))
     # Ensure save() writes UTF-8 even when template headers still advertise CHARSET.
@@ -771,6 +782,25 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
         entry_word = "entry" if len(entries) == 1 else "entries"
         console.print(f"[bold]\\[filter][/bold] {len(entries)} {entry_word} match {msgid_filter!r}")
     effective_force = force or bool(msgid_filter)
+
+    # Pre-flight plan: classify the (filtered) entries once so the user sees the scope
+    # -- how many are NEW (untranslated), UPDATE (fuzzy/changed msgid), or SKIP (fresh) --
+    # and thus the up-front estimate of how many will actually be sent to the model.
+    if effective_force:
+        plan_new = sum(1 for e in entries if _is_untranslated(e))
+        plan_update = len(entries) - plan_new
+        plan_skip = 0
+    else:
+        plan_states = [_classify_entry_state(e) for e in entries]
+        plan_new = sum(1 for s in plan_states if isinstance(s, EntryNew))
+        plan_update = sum(1 for s in plan_states if isinstance(s, EntryUpdated))
+        plan_skip = sum(1 for s in plan_states if isinstance(s, EntrySkipped))
+    plan_to_model = plan_new + plan_update
+    console.print(
+        f"[bold]\\[plan][/bold] {lang}: {len(po)} messages (template {len(pot_catalog)}) \u00b7 "
+        f"[cyan]{plan_new} NEW[/cyan] \u00b7 [yellow]{plan_update} UPDATE[/yellow] \u00b7 "
+        f"[dim]{plan_skip} SKIP[/dim] \u2192 {plan_to_model} to model"
+    )
 
     if progress:
         progress_bar = Progress(
