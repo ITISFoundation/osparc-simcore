@@ -256,6 +256,12 @@ $(ALL_INPUT_FILES):
 				echo "--service-version=$$SERVICE_VERSION" >> $@; \
 			fi; \
 		fi; \
+	fi; \
+	read -p "Does this deployment require HTTP basic auth [y/n]: " NEEDS_BASIC_AUTH; \
+	if [ "$$NEEDS_BASIC_AUTH" = "y" ]; then \
+		read -p "Enter the basic auth user: " BASIC_AUTH_USER; \
+		read -s -p "Enter the basic auth password: " BASIC_AUTH_PASSWORD; echo ""; \
+		echo "--basic-auth-user=$$BASIC_AUTH_USER --basic-auth-password=$$BASIC_AUTH_PASSWORD" >> $@; \
 	fi
 
 # Run the tests
