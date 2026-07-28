@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-30 16:12+0200\n"
+"POT-Creation-Date: 2026-07-28 20:48+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -15,6 +15,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Translation-Date: 2026-07-28T18:48:16Z\n"
+"X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
 # service of the application is temporarily down or unreachable.
@@ -55,36 +57,63 @@ msgstr "后端请求超时。"
 msgid "The provided input is not valid."
 msgstr "提供的输入无效。"
 
+# CTX-INTERPRETATION: This string is part of an error message displayed when
+# the encryption inputs provided by the user are invalid, indicating the
+# available node inputs.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:34
+#, python-brace-format
+msgid ""
+"The provided encryption inputs {inputs} are not valid. Available node inputs"
+" '{node_inputs}'"
+msgstr "提供的加密输入 {inputs} 无效。 可用的节点输入 '{node_inputs}'"
+
+# CTX-INTERPRETATION: This string is part of a custom exception message
+# indicating that encryption is not enabled on the current deployment,
+# prompting the user to contact support.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:40
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:52
+msgid ""
+"Encryption is not available on this deployment. Please contact support."
+msgstr "此部署上不支持加密。请联系支持人员。"
+
+# CTX-INTERPRETATION: This string appears in a backend error message,
+# indicating that the encryption service is currently unavailable, advising
+# the user to retry later.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:46
+msgid ""
+"The encryption service is temporarily unavailable. Please try again shortly."
+msgstr "加密服务暂时不可用。请稍后再试。"
+
 # CTX-INTERPRETATION: This string is an error message displayed when the
 # application fails to fetch the list of available solvers and projects from
 # the server.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:33
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:57
 msgid "Unable to retrieve the list of solvers and projects."
 msgstr "无法检索求解器和项目的列表。"
 
 # CTX-INTERPRETATION: This string appears as an error message when the
 # application fails to access or display the list of jobs due to a backend
 # issue.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:38
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:62
 msgid "Unable to retrieve the list of jobs."
 msgstr "无法检索作业列表。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to proceed with an action that requires payment in the application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:43
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:67
 msgid "Payment is required to proceed."
 msgstr "需要付款才能继续。"
 
 # CTX-INTERPRETATION: This string is an error message displayed to the user
 # when a requested profile is not found in the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:48
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:72
 msgid "The requested profile could not be found."
 msgstr "请求的配置文件无法找到。"
 
 # CTX-INTERPRETATION: This error message is displayed when a specified
 # program, solver, or project with a particular version cannot be located in
 # the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:54
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:78
 #, python-brace-format
 msgid ""
 "The program, solver, or project '{name}' version {version} could not be "
@@ -94,7 +123,7 @@ msgstr "程序、求解器或项目 '{name}' 版本 {version} 无法找到。"
 # CTX-INTERPRETATION: This string is an error message displayed when a user
 # attempts to access a program, solver, or project without the necessary
 # permissions.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:62
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:86
 #, python-brace-format
 msgid ""
 "You do not have permission to access the program, solver, or project "
@@ -104,14 +133,14 @@ msgstr "您没有权限访问程序、求解器或项目 '{name}' 版本 {versio
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # tries to access a job without the necessary permissions in the scientific
 # simulation application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:69
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:93
 #, python-brace-format
 msgid "You do not have permission to access job {project_id}."
 msgstr "您没有权限访问作业{project_id}。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # tries to access a batch job without the necessary permissions.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:74
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:98
 #, python-brace-format
 msgid "You do not have permission to access jobs {project_uuids}."
 msgstr "您没有权限访问作业 {project_uuids}。"
@@ -119,7 +148,7 @@ msgstr "您没有权限访问作业 {project_uuids}。"
 # CTX-INTERPRETATION: This error message appears when a user attempts to
 # access a solver or project job that does not exist or cannot be located in
 # the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:79
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:103
 #, python-brace-format
 msgid "The solver or project job {project_id} could not be found."
 msgstr "求解器或项目任务{project_id}无法找到。"
@@ -127,7 +156,7 @@ msgstr "求解器或项目任务{project_id}无法找到。"
 # CTX-INTERPRETATION: This error message is displayed when the system cannot
 # locate the specified solver or project jobs identified by the placeholder
 # ⟨0⟩.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:84
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:108
 #, python-brace-format
 msgid "The solver or project jobs {project_uuids} could not be found."
 msgstr "求解器或项目作业{project_uuids}无法找到。"
@@ -135,7 +164,7 @@ msgstr "求解器或项目作业{project_uuids}无法找到。"
 # CTX-INTERPRETATION: This string appears in an error message when the
 # application cannot locate the log file associated with a specific solver or
 # project job identified by a project ID.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:90
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:114
 #, python-brace-format
 msgid ""
 "The log file for the solver or project job {project_id} could not be found."
@@ -143,7 +172,7 @@ msgstr "无法找到求解器或项目作业{project_id}的日志文件。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when the
 # application cannot locate the output data for a specified project.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:97
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:121
 #, python-brace-format
 msgid "The output for project {project_id} could not be found."
 msgstr "项目{project_id}的输出找不到。"
@@ -151,33 +180,33 @@ msgstr "项目{project_id}的输出找不到。"
 # CTX-INTERPRETATION: This string is an error message displayed to the user
 # when there is a configuration issue in the scientific simulation
 # application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:102
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:126
 msgid "A configuration error occurred."
 msgstr "发生配置错误。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when the
 # application cannot find the price of a product in the database.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:107
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:131
 msgid "The product price could not be found."
 msgstr "未能找到产品价格。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when a user
 # attempts to access a wallet that does not exist in the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:112
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:136
 msgid "The requested wallet could not be found."
 msgstr "请求的钱包无法找到。"
 
 # CTX-INTERPRETATION: This string is an error message displayed to users when
 # they attempt to access a wallet without the necessary permissions in the
 # application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:117
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:141
 msgid "You do not have permission to access this wallet."
 msgstr "您没有权限访问此钱包。"
 
 # CTX-INTERPRETATION: This error message appears when the system cannot locate
 # the network ports associated with a specific job or project identified by
 # the placeholder ⟨0⟩.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:122
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:146
 #, python-brace-format
 msgid "The ports for job or project {project_id} could not be found."
 msgstr "无法找到作业或项目{project_id}的端口。"
@@ -185,33 +214,33 @@ msgstr "无法找到作业或项目{project_id}的端口。"
 # CTX-INTERPRETATION: This string is an error message displayed when the
 # application cannot locate the metadata for a specified job or project,
 # identified by a placeholder for the project ID.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:127
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:151
 #, python-brace-format
 msgid "The metadata for job or project {project_id} could not be found."
 msgstr "无法找到作业或项目{project_id}的元数据。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when the
 # application cannot locate the specified pricing unit.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:132
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:156
 msgid "The pricing unit could not be found."
 msgstr "未找到定价单位。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when a
 # requested pricing plan is not found in the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:137
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:161
 msgid "The pricing plan could not be found."
 msgstr "未找到定价计划。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to start a project that is already in progress within the
 # application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:142
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:166
 msgid "The project has already been started."
 msgstr "项目已经开始。"
 
 # CTX-INTERPRETATION: This string appears as an error message when there are
 # not enough available seats for a specific licensed item in the application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:147
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:171
 #, python-brace-format
 msgid "Not enough available seats for license item {licensed_item_id}."
 msgstr "许可证项目{licensed_item_id}的可用席位不足。"
@@ -219,7 +248,7 @@ msgstr "许可证项目{licensed_item_id}的可用席位不足。"
 # CTX-INTERPRETATION: This error message appears when a user attempts to check
 # out a license item for a service that is currently not running, providing
 # the service ID for reference.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:153
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:177
 #, python-brace-format
 msgid ""
 "Unable to check out license item {licensed_item_id} because the dynamic "
@@ -228,7 +257,7 @@ msgstr "无法签出许可证项{licensed_item_id}，因为动态服务未运行
 
 # CTX-INTERPRETATION: This error message is displayed when a specific license
 # item checkout cannot be located in the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:162
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:186
 #, python-brace-format
 msgid ""
 "The license item checkout {licensed_item_checkout_id} could not be found."
@@ -236,21 +265,28 @@ msgstr "许可证项目结账{licensed_item_checkout_id}无法找到。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when the
 # necessary assets for a specific job are not found in the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:169
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:193
 #, python-brace-format
 msgid "The assets for job {job_id} are missing."
 msgstr "作业{job_id}的资产丢失。"
 
+# CTX-INTERPRETATION: This string is used in a scientific simulation
+# application to inform the user that the chatbot service is currently
+# unavailable, likely due to a configuration issue or service outage.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:198
+msgid "The chatbot service is not enabled."
+msgstr "聊天机器人服务未启用。"
+
 # CTX-INTERPRETATION: This string appears as an error message when a task with
 # a specific UUID cannot be located in the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:174
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
 #, python-brace-format
 msgid "Task {task_uuid} could not be found."
 msgstr "任务{task_uuid}无法找到。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when a solver
 # job has not completed successfully, preventing the retrieval of its output.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:180
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:209
 #, python-brace-format
 msgid ""
 "Cannot retrieve output for solver job '{job_id}' because it has not "
@@ -259,7 +295,7 @@ msgstr "无法检索求解器作业 '{job_id}' 的输出，因为它未成功完
 
 # CTX-INTERPRETATION: This string is an error message displayed when a solver
 # job has not yet stopped, indicating its current status.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:189
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
 #, python-brace-format
 msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
 msgstr "求解器任务 '{job_id}' 尚未停止。当前状态：{state}。"
@@ -267,7 +303,7 @@ msgstr "求解器任务 '{job_id}' 尚未停止。当前状态：{state}。"
 # CTX-INTERPRETATION: This string is an error message displayed when a user
 # attempts to access the output of a project job that has not successfully
 # completed in the scientific simulation application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:197
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:226
 #, python-brace-format
 msgid ""
 "Cannot retrieve output for project job '{job_id}' because it has not "
@@ -484,6 +520,10 @@ msgstr ""
 "服务{service_key}:{service_version} {input} "
 "使用文件到键的{file_to_key_map}映射，但接收到的是压缩数据。提示：请传递单个文件或压缩文件，并移除文件到键的映射参数。"
 
+# CTX-INTERPRETATION: This string appears in the `dask_task_models_library`
+# library, specifically within error handling related to secure file
+# operations, indicating a failure to access a file due to encryption key
+# mismatch.
 #: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:54
 #, python-brace-format
 msgid ""
@@ -492,11 +532,26 @@ msgid ""
 " provided encryption key or context does not match the one used to encrypt "
 "the data."
 msgstr ""
+"该服务 {service_key}:{service_version} 无法安全地访问 {file_role} 文件 {file_id}: "
+"{error_message}。 提示：这通常意味着提供的加密密钥或上下文与用于加密数据时使用的密钥不匹配。"
+
+# CTX-INTERPRETATION: This string appears in the `dask_task_models_library`
+# library, specifically within error handling related to Dask task execution,
+# indicating a failure to decrypt a service.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:64
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} requires decryption, but the "
+"encryption service is currently unavailable: {error_message}. Please contact"
+" support if this persists."
+msgstr ""
+"该服务 {service_key}:{service_version} "
+"需要解密，但加密服务目前不可用：{error_message}。如果问题仍然存在，请联系支持。"
 
 # CTX-INTERPRETATION: This string is a log message indicating the completion
 # status of a project pipeline execution for a specific iteration in a
 # scientific simulation application.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:239
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:240
 #, python-brace-format
 msgid ""
 "Project pipeline execution for iteration {iteration} has completed with "
@@ -505,7 +560,7 @@ msgstr "项目管道执行的第{iteration}次迭代已完成，状态为：{run
 
 # CTX-INTERPRETATION: This string is an error message displayed to the user
 # when a task scheduling issue occurs in the application.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:843
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:861
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -514,14 +569,14 @@ msgstr "在任务调度过程中发生了意外错误。如果此问题仍然存
 # CTX-INTERPRETATION: This string appears in the application's log system when
 # a task involving variable resolution fails to complete in time and will be
 # attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:874
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:892
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr "在任务调度期间，变量分辨率超时，将重试。"
 
 # CTX-INTERPRETATION: This message appears when the system fails to allocate
 # computational resources for a task, prompting the user to retry or seek
 # support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:942
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:960
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
@@ -553,6 +608,8 @@ msgstr "系统在等待计算资源时超时。请尝试重新运行您的项目
 msgid "Dear %(first_name)s,"
 msgstr "亲爱的 %(first_name)s，"
 
+# CTX-INTERPRETATION: This string is part of an email template used to thank
+# users for their interest and provide them with a registration link.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:3
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:5
@@ -560,30 +617,41 @@ msgstr "亲爱的 %(first_name)s，"
 msgid ""
 "Thank you for your interest in %(product_name)s. We are pleased to provide "
 "you with a one-time invitation link to register on the platform."
-msgstr ""
+msgstr "感谢您对 %(product_name)s 的关注。我们很高兴为您提供一次性注册平台的邀请链接。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users about the trial period of their newly approved account.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:11
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:6
 msgid "Your account includes %(count)s day trial period."
 msgid_plural "Your account includes %(count)s days trial period."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "您的账户包含 1 天试用期。"
+msgstr[1] "您的账户包含 1 天试用期。"
 
+# CTX-INTERPRETATION: This string appears in an email template used to notify
+# users that their account has been approved, and informs them about receiving
+# free credits.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:15
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:10
 msgid "You also receive %(extra_credits)s free credits."
-msgstr ""
+msgstr "您还将获得 %(extra_credits)s 个免费积分。"
 
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# inform users that their account has been approved, and provides a link to
+# the registration page.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:20
 msgid "Click %(register_link)s to access the registration page."
-msgstr ""
+msgstr "点击 %(register_link)s 以访问注册页面。"
 
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# users that their account has been approved and provides instructions for
+# proceeding with registration, along with a support link.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:25
 msgid ""
 "Please follow the on-screen information and proceed with your registration. "
 "If any problem should occur, please feel free to contact us at "
 "%(support_link)s."
-msgstr ""
+msgstr "请按照屏幕上的信息进行操作并完成注册。如果遇到任何问题，请随时通过%(support_link)s联系我们。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
@@ -613,8 +681,8 @@ msgstr "此致敬礼，"
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:21
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
@@ -626,82 +694,115 @@ msgstr "此致敬礼，"
 msgid "The %(product_name)s Team"
 msgstr "%(product_name)s 团队"
 
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# inform users that their account has been approved and provides a link to the
+# registration page.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:13
 msgid "Click %(link)s to access the registration page."
-msgstr ""
+msgstr "点击 %(link)s 以访问注册页面。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users through the account approval registration process, providing contact
+# information for support.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:15
 msgid ""
 "Please follow the on-screen information and proceed with your registration. "
 "If any problem should occur, please feel free to contact us at "
 "%(support_email)s."
-msgstr ""
+msgstr "请按照屏幕上的信息进行操作并完成注册。如果遇到任何问题，请随时通过 %(support_email)s 联系我们。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/subject.j2:1
 msgid "Your Registration Request for %(product_name)s Has Been Accepted"
 msgstr "您在 %(product_name)s 的注册申请已通过"
 
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users that their account registration is not eligible for a specific
+# program, thanking them for their interest.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:3
 msgid ""
 "Thank you for your interest in %(product_name)s. Unfortunately, your "
 "registration is not eligible for participation in this program."
-msgstr ""
+msgstr "感谢您对 %(product_name)s 的兴趣。不幸的是，您的注册不符合参加该项目的资格。"
 
+# CTX-INTERPRETATION: This string appears in an email body template, offering
+# further assistance and contact information to the user.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:12
 msgid ""
 "In case of further interest in this or other solutions we might offer, "
 "please contact us at %(support_link)s."
-msgstr ""
+msgstr "如对本或我们提供的其他解决方案感兴趣，请通过 %(support_link)s 联系我们。"
 
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# users about account rejection and offer further assistance.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:5
 msgid ""
 "In case of further interest in this or other solutions we might offer, "
-"please check contact us at %(support_email)s."
-msgstr ""
+"please contact us at %(support_email)s."
+msgstr "如对此或我们提供的其他解决方案有进一步兴趣，请通过以下邮箱联系我们：%(support_email)s。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/subject.j2:1
 msgid "Your Registration Request for %(product_name)s Has Been Denied"
 msgstr "您在 %(product_name)s 的注册申请未通过"
 
+# CTX-INTERPRETATION: This string is part of an email body, likely used to
+# address a support team regarding an account request.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:4
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:1
 msgid "Dear Support team,"
-msgstr ""
+msgstr "尊敬的支持团队,"
 
+# CTX-INTERPRETATION: This string appears in an email template, specifically
+# within the body of an email sent to a user when an account request form has
+# been submitted.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:3
 msgid "We have received the following request form for an account:"
-msgstr ""
+msgstr "我们已收到以下账户申请表："
 
+# CTX-INTERPRETATION: This string appears in an email body template,
+# specifically within the 'account_requested' email, providing information
+# about a requested product.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:19
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:10
 msgid "Some details about the requested product follow:"
-msgstr ""
+msgstr "有关请求的产品详情如下："
 
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# a user about the status of their account request, providing additional
+# details and instructions.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:27
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:14
 msgid ""
 "To validate the request form, here you can get further info on this request:"
-msgstr ""
+msgstr "为了验证请求表单，您可以在此处获取有关此请求的更多信息："
 
+# CTX-INTERPRETATION: This string appears in an email template related to
+# account requests, providing users with a link to ipinfo.io to retrieve their
+# IP address information.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:34
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:18
 msgid "TIP: Use https://ipinfo.io/ to find out more information on the IP."
-msgstr ""
+msgstr "提示：请使用 https://ipinfo.io/ 以获取更多有关 IP 地址的信息。"
 
+# CTX-INTERPRETATION: This string is part of an email subject line, indicating
+# that a user has requested an account, and the email contains information
+# about the requested product.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/subject.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/subject.j2:1
 msgid "Request for an Account in %(product_name)s"
-msgstr ""
+msgstr "请求在%(product_name)s创建账户"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their email address change request has been processed, providing
+# instructions on how to proceed.
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:3
 msgid ""
 "You have requested to change the email address linked to your "
 "%(product_name)s account. Please follow the on-screen information in the "
 "link below:"
-msgstr ""
+msgstr "您已成功更改与您的{{ product_name }} 帐户关联的电子邮件地址。请按照屏幕上的信息，点击以下链接以完成操作："
 
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
 msgid "Change email"
@@ -711,7 +812,6 @@ msgstr "更改邮箱"
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:18
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
 msgid ""
 "Please don't hesitate to contact us at %(support_link)s if you need further "
@@ -728,8 +828,8 @@ msgstr "如需进一步帮助，请随时通过 %(support_link)s 联系我们。
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:9
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:19
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:28
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:40
@@ -745,7 +845,6 @@ msgstr "此致敬礼，"
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:8
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
 msgid ""
 "Please don't hesitate to contact us at %(support_email)s if you need further"
@@ -756,51 +855,72 @@ msgstr "如需进一步帮助，请随时通过 %(support_email)s 联系我们�
 msgid "Change of Your Sign-In Email Address on %(product_name)s"
 msgstr "您在 %(product_name)s 的登录邮箱已更改"
 
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# notify users about credit reimbursements, likely within a scientific
+# simulation application.
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:1
 msgid "Dear User,"
-msgstr ""
+msgstr "尊敬的用户,"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users that a service run on a specific product was interrupted due to a
+# platform issue and therefore not billed.
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:11
 msgid ""
 "We want to inform you that your service run (%(service_run)s) on "
 "%(product_name)s was affected by a platform issue and was not billed."
 msgstr ""
+"我们想通知您，您在（{{ service_run }}）上的服务运行（{{ product_name }}）由于平台问题而中断，因此未收取费用。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that credits have been reimbursed to their credit account.
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:16
 msgid "%(credit_amount)s credits have been reimbursed to your Credit Account."
-msgstr ""
+msgstr "%(credit_amount)s 信用已退还至您的信用账户。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:19
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:7
 msgid "No action is needed on your part."
 msgstr "您无需采取任何操作。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users about a service run that was affected by a platform issue and
+# therefore not billed, using placeholders for the service run ID and product
+# name.
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:3
 msgid ""
 "We want to inform you that your service run (%(service_run_id)s) on "
 "%(product_name)s was affected by a platform issue and was not billed."
 msgstr ""
+"我们想通知您，您的服务运行 (%(service_run_id)s) 在 %(product_name)s 上受到平台问题的影响，因此未产生费用。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that credits have been reimbursed to their credit account.
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:5
 msgid ""
 "%(reimbursed_credits)s credits have been reimbursed to your Credit Account."
-msgstr ""
+msgstr "%(reimbursed_credits)s 信用额已退还至您的信用账户。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/subject.j2:1
 msgid "Your credits have been reimbursed on %(product_name)s"
 msgstr "您的积分已在 %(product_name)s 上退还"
 
+# CTX-INTERPRETATION: This string is part of an email body, specifically
+# within the 'new_2fa_code' template, informing the user about their two-
+# factor authentication code for their account.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:5
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:3
 msgid ""
 "Please find below the Two-factor Authentication sign-in code for your "
 "%(host)s account."
-msgstr ""
+msgstr "请查阅以下两步验证登录代码，用于您的账户。"
 
+# CTX-INTERPRETATION: This string appears in an email body, informing the user
+# of their two-factor authentication (2FA) code.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
 msgid "Your code is: %(code_display)s"
-msgstr ""
+msgstr "您的验证码是：%(code_display)s"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
 msgid "Your code is: %(code)s"
@@ -810,43 +930,66 @@ msgstr "您的验证码是：%(code)s"
 msgid "%(code)s is Your 2FA Sign-In Code for %(host)s"
 msgstr "%(code)s 是您在 %(host)s 的双因素身份验证登录码"
 
+# CTX-INTERPRETATION: The string "Register" appears in the email body template
+# for a new invitation, likely prompting the recipient to create an account or
+# register for a service.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:11
 msgid "Register"
-msgstr ""
+msgstr "注册"
 
+# CTX-INTERPRETATION: This string appears in an email template, guiding the
+# user to follow on-screen instructions and complete the registration process.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:16
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:7
 msgid ""
 "Please follow the on-screen information and proceed with your registration."
-msgstr ""
+msgstr "请按照屏幕上的信息进行操作，并完成注册。"
 
+# CTX-INTERPRETATION: This string appears in an email body, providing contact
+# information for support in case of registration issues.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
 msgid ""
 "If any problem should occur, please feel free to contact us at "
 "%(support_link)s."
-msgstr ""
+msgstr "如果在注册过程中出现任何问题，请随时通过 %(support_link)s 联系我们。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to invite
+# users to register for a scientific simulation application, providing a link
+# to the registration page.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
 msgid "Click here to access the registration page: %(link)s"
-msgstr ""
+msgstr "点击此处访问注册页面：%(link)s"
 
+# CTX-INTERPRETATION: This string is part of an email template used to provide
+# a support email address to the user.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
 msgid ""
 "If any problem should occur, please feel free to contact us at "
 "%(support_email)s."
-msgstr ""
+msgstr "如果在任何问题发生时，请随时通过 %(support_email)s 联系我们。"
 
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# confirm a payment and credit purchase, dynamically inserting the user's
+# name, payment amount, credit amount, and product name.
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:10
 msgid ""
 "We are delighted to confirm the successful processing of your payment of "
 "%(price)s for the purchase of %(credits)s. The credits have been added to "
 "your %(product_name)s account, and you are all set to utilize them."
 msgstr ""
+"我们很高兴确认您的支付成功，金额为%(price)s，用于购买%(credits)s。%(credits)s积分已添加到您的%(product_name)s账户，您现在可以开始使用它们。"
 
+# CTX-INTERPRETATION: This string appears in an email body, specifically
+# within the 'body_html.j2' template, providing a link to view or download the
+# payment receipt.
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
 msgid "For more details you can view or download your %(receipt_link)s."
-msgstr ""
+msgstr "为了获取更多详细信息，您可以查看或下载您的收据。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their payment has been successfully processed, including the
+# amount paid, the number of credits purchased, and the product associated
+# with the purchase.
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:3
 msgid ""
 "We are delighted to confirm the successful processing of your payment of "
@@ -854,46 +997,72 @@ msgid ""
 "credits have been added to your %(product_name)s account, and you are all "
 "set to utilize them."
 msgstr ""
+"我们很高兴确认您的支付已成功处理，金额为%(price_dollars)s美元，购买%(osparc_credits)s个积分。积分已添加到您的%(product_name)s账户，您现在可以开始使用它们。"
 
+# CTX-INTERPRETATION: This string appears in an email body template, providing
+# a link to view or download a payment receipt for a user.
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:5
 msgid ""
 "For more details you can view or download your receipt: %(invoice_url)s."
-msgstr ""
+msgstr "如需更多详细信息，您可以查看或下载您的收据：%(invoice_url)s。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their payment for credits has been successfully processed.
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/subject.j2:1
 msgid ""
 "Your Payment %(price_dollars)s USD for %(osparc_credits)s Credits Was "
 "Successful"
-msgstr ""
+msgstr "您的支付 %(price_dollars)s 美元，用于 %(osparc_credits)s 个积分，已成功。"
 
+# CTX-INTERPRETATION: This string is part of an email body, specifically the
+# 'body_html.j2' template, used to confirm a user's registration with a
+# specific product and host.
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:5
+msgid ""
+"Thank you for registering with %(product_name)s. Your\n"
+"  account has been successfully created and you can now sign in to %(host)s."
+msgstr "感谢您使用 %(product_name)s 注册。 您的账户已成功创建，您现在可以登录到 %(host)s。"
+
+# CTX-INTERPRETATION: This string appears in the email body, providing a
+# contact link for users who have registered and may require support or
+# assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:8
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to contact\n"
+"  us at %(support_link)s."
+msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_link)s 联系我们。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to confirm
+# a user's registration with a specific product and provide instructions for
+# logging in.
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:3
 msgid ""
-"Thank you for your interest in %(product_name)s. You have successfully "
-"registered for %(host)s."
-msgstr ""
+"Thank you for registering with %(product_name)s. Your account\n"
+"has been successfully created and you can now sign in to %(host)s."
+msgstr "感谢您使用 {{ product_name }} 注册。您的帐户已成功创建，您现在可以登录到 {{ host }}。"
 
-# CTX-INTERPRETATION: This string appears as a user notification message
-# prompting the user to activate their account via an email link before they
-# can log in.
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:6
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:5
-#, fuzzy
-msgid "Please activate your account via the link below:"
-msgstr "请在登录前使用我们发送到您邮箱的激活链接激活您的账户。"
+# CTX-INTERPRETATION: This string appears in an email body template, providing
+# contact information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:6
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to\n"
+"contact us at %(support_email)s."
+msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_email)s 联系我们。"
 
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
-msgid "Activate"
-msgstr "激活"
-
+# CTX-INTERPRETATION: This string is part of an email subject line, welcoming
+# a user to a product, likely after registration, based on the file path and
+# surrounding code.
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
-msgid "Welcome to %(product_name)s"
-msgstr "欢迎使用 %(product_name)s"
+msgid "Welcome to %(product_name)s!"
+msgstr "欢迎使用 {{ product_name }}！"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that a password reset request has been submitted for their specified
+# host.
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:3
 msgid "A request to reset your %(host)s password has been made."
-msgstr ""
+msgstr "已收到重置您的 %(host)s 密码的请求。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:5
@@ -904,22 +1073,30 @@ msgstr "要完成操作，请点击以下链接："
 msgid "Reset Password"
 msgstr "重置密码"
 
+# CTX-INTERPRETATION: This string appears in an email body, indicating that a
+# password reset process failed and providing the reason for the failure.
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:21
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:8
 msgid "It could not be completed due to the following reason:"
-msgstr ""
+msgstr "由于以下原因，无法完成："
 
+# CTX-INTERPRETATION: This string appears in an email body template used for
+# password reset requests, informing the user to contact support immediately
+# for security reasons if they did not initiate the request.
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:26
 msgid ""
 "If you did not request this, please contact us immediately at "
 "%(support_link)s for security reasons."
-msgstr ""
+msgstr "如果您没有发起此请求，请立即通过 %(support_link)s 与我们联系，原因是为了安全。"
 
+# CTX-INTERPRETATION: This string appears in an email body, instructing the
+# user to contact support immediately if they did not initiate the password
+# reset request, providing the support email address.
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:11
 msgid ""
 "If you did not request this, please contact us immediately at "
 "%(support_email)s for security reasons."
-msgstr ""
+msgstr "如果您没有发起此请求，请立即通过 %(support_email)s 联系我们，以确保安全。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/subject.j2:1
 msgid "Reset Password on %(host)s"
@@ -946,44 +1123,64 @@ msgstr "打开"
 msgid "A project was shared with you on %(host)s"
 msgstr "%(host)s 上有人与您共享了一个项目"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users about a new reply in a support conversation, specifically within the
+# 'support_reply' email template.
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:8
 msgid "There is a new reply in the Support conversation %(convo_name)s."
-msgstr ""
+msgstr "在支持对话中，有新的回复。"
 
+# CTX-INTERPRETATION: This string is used in an email template to inform the
+# user about a new reply in a support conversation.
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:10
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
 msgid "There is a new reply in the Support conversation."
-msgstr ""
+msgstr "在支持对话中，有新的回复。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:28
 msgid "Go to the Conversation"
 msgstr "前往对话"
 
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users about a new reply in a support conversation, specifically within the
+# 'support_reply' email template.
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
 msgid ""
 "There is a new reply in the Support conversation \"%(conversation_name)s\"."
-msgstr ""
+msgstr "在支持对话中，有新的回复。"
 
+# CTX-INTERPRETATION: This string appears in an email body template, providing
+# a link to view a conversation related to a support request.
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:8
 msgid "View the conversation: %(conversation_url)s"
-msgstr ""
+msgstr "查看对话：%(conversation_url)s"
 
+# CTX-INTERPRETATION: This string is used in an email subject line to notify
+# the user about a new reply in their support center conversation, with the
+# conversation name as a placeholder.
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
 msgid "New reply in your Support Center \"%(conversation_name)s\" conversation"
-msgstr ""
+msgstr "您在支持中心 \"%(conversation_name)s\" 对话中的新回复"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
 msgid "New reply in your Support Center conversation"
 msgstr "您的支持中心对话中有新回复"
 
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# a user that their account closure request has been received, expressing
+# gratitude and acknowledging their decision.
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:3
 msgid ""
 "We have received your account closure request, and we want to say thank you "
 "for being a part of our platform. While we're sad to see you go, we respect "
 "your decision."
-msgstr ""
+msgstr "我们已收到您的注销请求，感谢您成为我们的平台的一部分。虽然我们很遗憾您离开，但我们尊重您的决定。"
 
+# CTX-INTERPRETATION: This string appears in an email body template, informing
+# users that their projects and data will be retained for a specified period,
+# and providing instructions on how to reactivate their account or have it
+# permanently deleted.
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:10
 msgid ""
 "Your projects and data will be securely retained for %(retention_days)s "
@@ -991,19 +1188,26 @@ msgid ""
 "your account by sending us an email to %(support_link)s. Afterwards it will "
 "be completely deleted from our system."
 msgstr ""
+"您的项目和数据将在指定期间安全地保留。在此期间，如果您决定返回，可以通过发送电子邮件至 %(support_link)s "
+"来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
 
+# CTX-INTERPRETATION: This string appears in an email body template used for
+# notifying users about unregistration, providing a link to the support team.
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:14
 msgid ""
 "Our support team is here to help with anything you need. Please feel free to"
 " contact us to %(support_link)s in case of questions or any required "
 "assistance."
-msgstr ""
+msgstr "我们的支持团队随时为您提供帮助。如有任何疑问或需要协助，请随时通过%(support_link)s联系我们。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:18
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:9
 msgid "We wish you all the best in your future endeavors."
 msgstr "祝您未来一切顺利。"
 
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# inform users about the retention policy for their projects and data, and how
+# to reactivate their account if they decide to return.
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:5
 msgid ""
 "Your projects and data will be securely retained for %(retention_days)s "
@@ -1011,13 +1215,18 @@ msgid ""
 "your account by sending us an email to %(support_email)s. Afterwards, it "
 "will be completely deleted from our system."
 msgstr ""
+"您的项目和数据将在{{ retention_days }}天内安全地保留。在此期间，如果您决定退回，可以通过发送电子邮件至 {{ "
+"support_email }} 来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
 
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users about contacting support for assistance, specifically mentioning the
+# support email address.
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:7
 msgid ""
 "Our support team is here to help with anything you need. Please feel free to"
 " contact us at %(support_email)s in case of questions or any required "
 "assistance."
-msgstr ""
+msgstr "我们的支持团队随时为您提供帮助。如有任何疑问或需要，请随时通过 %(support_email)s 联系我们。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/subject.j2:1
 msgid "Closing Your Account in %(host)s"
@@ -1327,7 +1536,7 @@ msgstr "所选的定价计划对该许可项目无效。请选择其他计划。
 # CTX-INTERPRETATION: This string appears in an error message displayed to
 # users when they attempt to register an email that has already been submitted
 # in the system.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/_rest_exceptions.py:37
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/_rest_exceptions.py:38
 #, python-brace-format
 msgid ""
 "An account for the email {email} was already submitted. If you haven't "
@@ -1337,17 +1546,33 @@ msgstr "电子邮件{email}的账户已提交。如果您没有收到任何更�
 # CTX-INTERPRETATION: This string appears in an error message that is raised
 # when the two-factor authentication login feature is not available in the
 # application.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:206
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:48
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:209
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
 msgid "2FA login is not available"
 msgstr "双因素认证登录不可用"
+
+# CTX-INTERPRETATION: The string appears as a user-facing message within a
+# registration flow, informing the user that a valid invitation code is
+# required for successful registration.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:156
+msgid "Registration requires a valid invitation code."
+msgstr "注册需要有效的邀请码。"
 
 # CTX-INTERPRETATION: This string appears in a web application when a user
 # attempts to resend a two-factor authentication code via SMS, but their phone
 # number is not registered in the system.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:71
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
 msgid "User does not have a phone number registered"
 msgstr "用户没有注册电话号码"
+
+# CTX-INTERPRETATION: This string is used to send a verification code to a
+# user via SMS, typically after a user has requested a two-factor
+# authentication.
+#. @TRANSLATOR SMS message of at most 70 characters
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#, python-brace-format
+msgid "Dear {first_name}, your verification code is {code}"
+msgstr "尊敬的{first_name}，您的验证码是{code}"
 
 # CTX-INTERPRETATION: This string is a user notification message indicating
 # that a verification code has been sent to the user's phone number via SMS.
@@ -1379,16 +1604,18 @@ msgid ""
 " before logging in."
 msgstr "请在登录前使用我们发送到您邮箱的激活链接激活您的账户。"
 
+# CTX-INTERPRETATION: This string is part of a welcome message displayed to a
+# user after successful account creation, indicating they can now log in using
+# their email address.
 #: services/web/server/src/simcore_service_webserver/login/constants.py:16
 #, python-brace-format
 msgid ""
-"You are registered successfully! To activate your account, please click on "
-"the verification link in the email we sent you to {email}."
-msgstr ""
+"Welcome! Your account has been created. You can now sign in as {email}."
+msgstr "欢迎！您的帐户已创建。您现在可以使用电子邮件登录。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to log in with incorrect credentials.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:21
+#: services/web/server/src/simcore_service_webserver/login/constants.py:20
 msgid ""
 "The provided credentials are incorrect. Please verify your email and "
 "password."
@@ -1396,14 +1623,14 @@ msgstr "提供的凭证不正确。请验证您的电子邮件和密码。"
 
 # CTX-INTERPRETATION: This string is an error message displayed to users when
 # the application fails to send an email.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:25
+#: services/web/server/src/simcore_service_webserver/login/constants.py:24
 msgid "We're unable to send emails at this time. Please try again later."
 msgstr "我们目前无法发送电子邮件。请稍后再试。"
 
 # CTX-INTERPRETATION: This string appears in a user interface message
 # prompting the user to verify their new email address by clicking a link sent
 # to them.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:28
+#: services/web/server/src/simcore_service_webserver/login/constants.py:27
 msgid ""
 "Please check your new email address and click the verification link we sent "
 "you."
@@ -1411,14 +1638,14 @@ msgstr "请检查您的新电子邮件地址并点击我们发送给您的验证
 
 # CTX-INTERPRETATION: This string appears as a confirmation message to inform
 # the user that their email address has been updated in the system.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:31
+#: services/web/server/src/simcore_service_webserver/login/constants.py:30
 msgid "Your email address has been successfully updated."
 msgstr "您的电子邮件地址已成功更新。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to register with an email address that is already linked to an
 # existing account.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:33
+#: services/web/server/src/simcore_service_webserver/login/constants.py:32
 msgid ""
 "This email address is already associated with an account. Please sign in or "
 "use a different email address."
@@ -1427,27 +1654,27 @@ msgstr "此电子邮件地址已与一个账户关联。请登录或使用其他
 # CTX-INTERPRETATION: This string appears in the application when a user
 # requests further instructions via email, such as for account verification or
 # password reset.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:36
+#: services/web/server/src/simcore_service_webserver/login/constants.py:35
 #, python-brace-format
 msgid "We've sent an email to {email} with further instructions."
 msgstr "我们已向{email}发送了一封电子邮件，其中包含进一步的说明。"
 
 # CTX-INTERPRETATION: This string appears as a confirmation message to the
 # user after they have successfully logged into the application.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:37
+#: services/web/server/src/simcore_service_webserver/login/constants.py:36
 msgid "You have successfully signed in."
 msgstr "您已成功登录。"
 
 # CTX-INTERPRETATION: This string appears as a confirmation message to the
 # user after they have logged out of the application.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:38
+#: services/web/server/src/simcore_service_webserver/login/constants.py:37
 msgid "You have successfully signed out."
 msgstr "您已成功注销。"
 
 # CTX-INTERPRETATION: This string appears as a notification message to inform
 # users that they have recently requested a password reset and should check
 # their email for further instructions.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:40
+#: services/web/server/src/simcore_service_webserver/login/constants.py:39
 msgid ""
 "You've recently requested a password reset. Please check your email for the "
 "reset link or wait before requesting another one."
@@ -1456,7 +1683,7 @@ msgstr "您最近请求了重置密码。请检查您的电子邮件以获取重
 # CTX-INTERPRETATION: This message appears when a user attempts to reset their
 # password but is unable to do so due to expired or removed permissions,
 # prompting them to try again or contact support.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:45
+#: services/web/server/src/simcore_service_webserver/login/constants.py:44
 #, python-brace-format
 msgid ""
 "Unable to reset password. Permissions may have expired or been removed. "
@@ -1466,28 +1693,28 @@ msgstr "无法重置密码。权限可能已过期或被移除。请重试，或
 
 # CTX-INTERPRETATION: This string appears as a notification message to inform
 # the user that their password change request has been successfully processed.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:49
+#: services/web/server/src/simcore_service_webserver/login/constants.py:48
 msgid "Your password has been updated."
 msgstr "您的密码已更新。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to update their password but the entered password and confirmation
 # password do not match.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:51
+#: services/web/server/src/simcore_service_webserver/login/constants.py:50
 msgid "Password and confirmation do not match. Please try again."
 msgstr "密码和确认密码不匹配。请再试一次。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to perform an action that requires a phone number, but none is
 # linked to their account.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:53
+#: services/web/server/src/simcore_service_webserver/login/constants.py:52
 msgid "No phone number is associated with this account."
 msgstr "此账户未关联电话号码。"
 
 # CTX-INTERPRETATION: This message appears when a user attempts to resend a
 # verification code for two-factor authentication but is no longer allowed to
 # do so.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:55
+#: services/web/server/src/simcore_service_webserver/login/constants.py:54
 msgid ""
 "You can no longer resend the verification code. Please restart the "
 "verification process."
@@ -1496,7 +1723,7 @@ msgstr "您不能再重新发送验证码。请重新启动验证过程。"
 # CTX-INTERPRETATION: This message appears when a user attempts to submit a
 # verification code after the allowed time has expired during the login
 # process.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:59
+#: services/web/server/src/simcore_service_webserver/login/constants.py:58
 msgid ""
 "You can no longer submit a verification code. Please restart the login "
 "process."
@@ -1505,7 +1732,7 @@ msgstr "您不能再提交验证码。请重新启动登录过程。"
 # CTX-INTERPRETATION: This string is a user-facing error message displayed
 # when a user attempts to register a phone number, which is no longer
 # permitted.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:63
+#: services/web/server/src/simcore_service_webserver/login/constants.py:62
 msgid ""
 "Phone registration is no longer allowed. Please restart the registration "
 "process."
@@ -1514,7 +1741,7 @@ msgstr "不再允许电话注册。请重新启动注册过程。"
 # CTX-INTERPRETATION: This message appears when a user attempts to submit a
 # verification code after the allowed time or attempts have expired, prompting
 # them to restart the process.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:67
+#: services/web/server/src/simcore_service_webserver/login/constants.py:66
 msgid ""
 "You can no longer submit a verification code. Please restart the "
 "confirmation process."
@@ -1523,14 +1750,14 @@ msgstr "您无法再提交验证码。请重新开始确认过程。"
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to log in or register with an email address that is not found in
 # the system.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:70
+#: services/web/server/src/simcore_service_webserver/login/constants.py:69
 msgid "This email address is not registered."
 msgstr "此电子邮件地址未注册。"
 
 # CTX-INTERPRETATION: This string appears as a user notification message
 # indicating that their account is set for deletion and provides instructions
 # to contact support for reactivation or more information.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:72
+#: services/web/server/src/simcore_service_webserver/login/constants.py:71
 #, python-brace-format
 msgid ""
 "This account is scheduled for deletion. To reactivate it or for more "
@@ -1540,7 +1767,7 @@ msgstr "此账户已被安排删除。如需重新激活或了解更多信息，
 # CTX-INTERPRETATION: This string is a user-facing message displayed when an
 # account is banned, instructing the user to contact support for further
 # assistance.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:77
+#: services/web/server/src/simcore_service_webserver/login/constants.py:76
 #, python-brace-format
 msgid ""
 "Access to this account is no longer available. Please contact support for "
@@ -1549,7 +1776,7 @@ msgstr "此账户的访问权限已被取消。请联系支持以获取更多信
 
 # CTX-INTERPRETATION: This string is a user-facing error message displayed
 # when an account has expired, prompting the user to contact support for help.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:81
+#: services/web/server/src/simcore_service_webserver/login/constants.py:80
 #, python-brace-format
 msgid ""
 "This account has expired and access is no longer available. Please contact "
@@ -1558,7 +1785,7 @@ msgstr "此账户已过期，无法再访问。请联系支持以获取帮助：
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to register an account that has been previously disabled.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:86
+#: services/web/server/src/simcore_service_webserver/login/constants.py:85
 #, python-brace-format
 msgid ""
 "This account has been disabled and cannot be registered again. Please "
@@ -1568,7 +1795,7 @@ msgstr "此账户已被禁用，无法再次注册。请联系支持以获取详
 # CTX-INTERPRETATION: This string is an error message displayed to users when
 # they enter an invalid verification code during the two-factor authentication
 # process.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:91
+#: services/web/server/src/simcore_service_webserver/login/constants.py:90
 msgid ""
 "The verification code entered is not valid. Please enter a valid "
 "verification code or generate a new one."
@@ -1577,7 +1804,7 @@ msgstr "输入的验证码无效。请输入有效的验证码或生成新的验
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # enters an expired or incorrect verification code during the authentication
 # process.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:95
+#: services/web/server/src/simcore_service_webserver/login/constants.py:94
 msgid ""
 "The verification code has expired or is incorrect. Please request a new code"
 " and try again."
@@ -1586,14 +1813,14 @@ msgstr "验证码已过期或不正确。请请求新的验证码并重试。"
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # inputs an incorrect CAPTCHA during a login or verification process in the
 # application.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:98
+#: services/web/server/src/simcore_service_webserver/login/constants.py:97
 msgid "The CAPTCHA entered is incorrect. Please try again."
 msgstr "输入的验证码不正确。请再试一次。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to log in with a password that does not match the one on record for
 # their email address.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:100
+#: services/web/server/src/simcore_service_webserver/login/constants.py:99
 msgid ""
 "The password does not match the one associated with this email address. "
 "Please try again."
@@ -1602,7 +1829,7 @@ msgstr "密码与此电子邮件地址关联的密码不匹配。请再试一次
 # CTX-INTERPRETATION: This string is an error message displayed to users when
 # they enter an incorrect password for a unified account login across multiple
 # platforms.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:104
+#: services/web/server/src/simcore_service_webserver/login/constants.py:103
 #, python-brace-format
 msgid ""
 "The password does not match the one associated with this email address.TIP: "
@@ -1614,7 +1841,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string is a user-facing message that appears when a
 # user is setting or changing their password, indicating the minimum required
 # length for security purposes.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:110
+#: services/web/server/src/simcore_service_webserver/login/constants.py:109
 #, python-brace-format
 msgid ""
 "Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters "
@@ -1623,14 +1850,14 @@ msgstr "您的密码必须至少包含 {LOGIN_PASSWORD_MIN_LENGTH} 个字符以�
 
 # CTX-INTERPRETATION: This string appears as a message to users when they need
 # to contact support for a new invitation to access the application.
-#: services/web/server/src/simcore_service_webserver/login/constants.py:114
+#: services/web/server/src/simcore_service_webserver/login/constants.py:113
 msgid "Please contact our support team to request a new invitation."
 msgstr "请联系我们的支持团队以请求新的邀请。"
 
 # CTX-INTERPRETATION: This string appears in a web application context where
 # it is used to display an error message indicating that the user-submitted
 # form contains invalid data.
-#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:94
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:92
 #, python-brace-format
 msgid "The form contains invalid information: '{failed}'"
 msgstr "表单包含无效信息：'{failed}'"
@@ -1638,7 +1865,7 @@ msgstr "表单包含无效信息：'{failed}'"
 # CTX-INTERPRETATION: This string is an error message displayed when a user
 # attempts to delete their account but provides incorrect email or password
 # credentials.
-#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:137
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:131
 msgid "Wrong email or password. Please try again to delete this account"
 msgstr "电子邮件或密码错误。请重试以删除此账户。"
 
@@ -1745,17 +1972,27 @@ msgstr "父节点 '{node_uuid}' 未找到。"
 msgid "Required input values for this project node have not been set."
 msgstr "此项目节点的必需输入值尚未设置。"
 
+# CTX-INTERPRETATION: This string appears in a REST API endpoint for project
+# management, specifically when a user attempts to duplicate a project that
+# has been moved to the trash.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Cannot duplicate project {project_uuid} because it is in the trash. Restore "
+"it first and try again."
+msgstr "由于该项目已移动到回收站，因此无法复制项目 {project_uuid}。请先恢复该项目，然后再尝试。"
+
 # CTX-INTERPRETATION: This string is an error message displayed when a project
 # deletion fails due to a conflict, with placeholders for the project UUID and
 # additional details.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:90
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:97
 #, python-brace-format
 msgid "Unable to complete deletion of project '{project_uuid}': {details}"
 msgstr "无法完成删除项目'{project_uuid}'：{details}"
 
 # CTX-INTERPRETATION: This string is an error message displayed to the user
 # when a requested project group is not found in the system.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:96
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:103
 #, python-brace-format
 msgid "The requested project group could not be found: {details}"
 msgstr "请求的项目组无法找到：{details}"
@@ -1763,7 +2000,7 @@ msgstr "请求的项目组无法找到：{details}"
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to perform an action on a project without having the necessary
 # access rights.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:101
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:108
 #, python-brace-format
 msgid ""
 "You do not have sufficient access rights to perform this action on project "
@@ -1773,21 +2010,21 @@ msgstr "您没有足够的访问权限来对项目{project_uuid}执行此操作�
 # CTX-INTERPRETATION: This error message appears when a user without the
 # necessary permissions attempts to update the project template type in the
 # application.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:108
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:115
 msgid ""
 "You do not have sufficient permissions to update the project template type."
 msgstr "您没有足够的权限来更新项目模板类型。"
 
 # CTX-INTERPRETATION: This string is an error message displayed to the user
 # when they attempt to use the project in an unsupported manner.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:114
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:121
 msgid "The project cannot be used in this way."
 msgstr "无法以这种方式使用该项目。"
 
 # CTX-INTERPRETATION: This error message appears when a user attempts to
 # create or modify a project in the application with more nodes than the
 # allowed maximum.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:119
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:126
 #, python-brace-format
 msgid ""
 "The project cannot contain more than {max_num_nodes} nodes. Requested: "
@@ -1796,17 +2033,10 @@ msgstr "项目不能包含超过 {max_num_nodes} 个节点。请求的节点数�
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to access a project that does not exist in the system.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:125
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:132
 #, python-brace-format
 msgid "Project {project_uuid} could not be found."
 msgstr "项目{project_uuid}无法找到。"
-
-# CTX-INTERPRETATION: This error message is displayed when the system cannot
-# locate the project owner's access rights within the project's permissions
-# settings.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:130
-msgid "The project owner could not be found in the project's access rights."
-msgstr "在项目的访问权限中找不到项目所有者。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to open more projects than the allowed limit in the application.
@@ -1995,7 +2225,7 @@ msgstr "无法停止动态服务{project_id}.{node_id}"
 # CTX-INTERPRETATION: This error message appears when the application cannot
 # identify the user's session due to a missing socket ID, prompting the user
 # to refresh the page or contact support if the issue continues.
-#: services/web/server/src/simcore_service_webserver/projects/_controller/projects_states_rest.py:114
+#: services/web/server/src/simcore_service_webserver/projects/_controller/projects_states_rest.py:115
 msgid ""
 "Data corruption detected: unable to identify your session (socket_id "
 "missing). Please refresh the page and try again. If the problem persists, "
@@ -2546,3 +2776,18 @@ msgid ""
 "We apologize for the inconvenience. The issue has been recorded, please "
 "report it if it persists."
 msgstr "我们对给您带来的不便深表歉意。问题已被记录，如果问题持续，请报告。"
+
+# CTX-INTERPRETATION: This message appears in the application's user
+# interface, prompting the user to activate their account by clicking a
+# provided link.
+#~ msgid "Please activate your account via the link below:"
+#~ msgstr "请通过以下链接激活您的账户："
+
+#~ msgid "Activate"
+#~ msgstr "激活"
+
+# CTX-INTERPRETATION: This error message is displayed when the system cannot
+# locate the project owner's access rights within the project's permissions
+# settings.
+#~ msgid "The project owner could not be found in the project's access rights."
+#~ msgstr "在项目的访问权限中找不到项目所有者。"
