@@ -24,7 +24,6 @@ from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from common_library.async_tools import cancel_wait_task, iter_with_timeout
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.encryption import TransferEncryptionSettings
 from dask_task_models_library.container_tasks.errors import ServiceTimeoutLoggingError
 from dask_task_models_library.container_tasks.protocol import (
     ContainerCommands,
@@ -50,6 +49,7 @@ from settings_library.s3 import S3Settings
 
 from ..settings import ApplicationSettings
 from ..utils.dask import TaskPublisher
+from ..utils.encryption import TransferEncryptionSettings
 from ..utils.files import push_file_to_remote
 from .constants import LEGACY_SERVICE_LOG_FILE_NAME
 from .models import (

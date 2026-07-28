@@ -301,7 +301,7 @@ termcolor==3.3.0
     # via pytest-sugar
 types-aioboto3==15.5.0
     # via -r requirements/_test.in
-types-aiobotocore==3.3.0
+types-aiobotocore==3.8.0
     # via
     #   -c requirements/_base.txt
     #   types-aioboto3

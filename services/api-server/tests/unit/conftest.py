@@ -256,6 +256,18 @@ def mock_dependency_get_celery_task_manager(app: FastAPI, mock_task_manager_obje
     app.dependency_overrides.pop(get_task_manager, None)
 
 
+@pytest.fixture
+def mock_dependency_get_kms_client(app: FastAPI, mocker: MockerFixture) -> MockType:
+    from simcore_service_api_server.clients.kms import get_kms_client  # noqa: PLC0415
+
+    mock_kms_client = mocker.AsyncMock()
+    mock_kms_client.encrypt.return_value = b"fake-kms-ciphertext"
+
+    app.dependency_overrides[get_kms_client] = lambda: mock_kms_client
+    yield mock_kms_client
+    app.dependency_overrides.pop(get_kms_client, None)
+
+
 # MOCKED res/web APIs from simcore services ------------------------------------------
 
 

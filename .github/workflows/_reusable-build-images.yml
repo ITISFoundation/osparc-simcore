@@ -52,7 +52,7 @@ jobs:
     timeout-minutes: 30
     runs-on: ${{ inputs.os }}
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:

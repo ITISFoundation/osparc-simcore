@@ -38,12 +38,37 @@ type RootKeyStr = Annotated[
     Field(description="base64-encoded 32-byte root key shared by all tasks of the job"),
 ]
 
+KMS_CIPHERTEXT_MAX_BYTES: Final[int] = 8192  # generous upper bound for a KMS symmetric-CMK ciphertext blob
+
+
+def _validate_encrypted_root_key_is_base64_ciphertext(value: SecretStr) -> SecretStr:
+    try:
+        raw = base64.b64decode(value.get_secret_value(), validate=True)
+    except binascii.Error as err:
+        msg = "encrypted_root_key must be valid base64"
+        raise ValueError(msg) from err
+    if not raw:
+        msg = "encrypted_root_key must not decode to an empty ciphertext"
+        raise ValueError(msg)
+    if len(raw) > KMS_CIPHERTEXT_MAX_BYTES:
+        msg = f"encrypted_root_key ciphertext exceeds {KMS_CIPHERTEXT_MAX_BYTES} bytes"
+        raise ValueError(msg)
+    return value
+
+
+type EncryptedRootKeyStr = Annotated[
+    SecretStr,
+    AfterValidator(_validate_encrypted_root_key_is_base64_ciphertext),
+    Field(description="base64-encoded AWS KMS ciphertext blob wrapping the job's AES-256 root key"),
+]
+
 _ROOT_KEY_EXAMPLE: Final[str] = "0123456789abcdef0123456789abcdef"
+_ENCRYPTED_ROOT_KEY_EXAMPLE: Final[str] = "fake-kms-ciphertext-blob"
 _NODE_ID_EXAMPLE: Final[str] = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
 
 class JobEncryptionContextMetadata(BaseModel):
-    root_key: RootKeyStr
+    encrypted_root_key: EncryptedRootKeyStr
     input_port_to_file_id: Annotated[
         dict[NodeID, dict[str, FileIDStr]],
         Field(
@@ -61,7 +86,9 @@ class JobEncryptionContextMetadata(BaseModel):
             {
                 "examples": [
                     {
-                        "root_key": base64.b64encode(_ROOT_KEY_EXAMPLE.encode("ascii")).decode("ascii"),
+                        "encrypted_root_key": base64.b64encode(_ENCRYPTED_ROOT_KEY_EXAMPLE.encode("ascii")).decode(
+                            "ascii"
+                        ),
                         "input_port_to_file_id": {_NODE_ID_EXAMPLE: {"input_1": "input_1"}},
                     },
                 ]

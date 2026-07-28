@@ -60,6 +60,7 @@ def parse_dynamic(state: AppState, instance: Instance) -> DynamicInstance | None
             running_services=[],
             disk_usage=[],
             is_warm_buffer=utils.get_warm_buffer_tag(instance),
+            is_hot_buffer=utils.get_hot_buffer_tag(instance),
         )
     return None
 

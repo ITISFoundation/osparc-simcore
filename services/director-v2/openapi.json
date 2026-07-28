@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": "Orchestrates the pipeline of services defined by the user",
-    "version": "2.5.0"
+    "version": "2.6.0"
   },
   "servers": [
     {
@@ -2098,6 +2098,12 @@
         ],
         "title": "DynamicSidecarStatus"
       },
+      "EncryptedRootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded AWS KMS ciphertext blob wrapping the job's AES-256 root key",
+        "writeOnly": true
+      },
       "ErrorDict": {
         "properties": {
           "loc": {
@@ -2350,8 +2356,8 @@
       },
       "JobEncryptionContextMetadata": {
         "properties": {
-          "root_key": {
-            "$ref": "#/components/schemas/RootKeyStr"
+          "encrypted_root_key": {
+            "$ref": "#/components/schemas/EncryptedRootKeyStr"
           },
           "input_port_to_file_id": {
             "additionalProperties": {
@@ -2370,7 +2376,7 @@
         },
         "type": "object",
         "required": [
-          "root_key"
+          "encrypted_root_key"
         ],
         "title": "JobEncryptionContextMetadata"
       },
@@ -2837,12 +2843,6 @@
           "data"
         ],
         "title": "RetrieveDataOutEnveloped"
-      },
-      "RootKeyStr": {
-        "type": "string",
-        "format": "password",
-        "description": "base64-encoded 32-byte root key shared by all tasks of the job",
-        "writeOnly": true
       },
       "RunningDynamicServiceDetails": {
         "properties": {

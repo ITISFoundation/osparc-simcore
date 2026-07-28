@@ -7,8 +7,10 @@ from dataclasses import dataclass
 from typing import Final
 
 import distributed
+from aws_library.kms import KMSRuntimeError
 from dask_task_models_library.container_tasks.errors import (
     ServiceEncryptionError,
+    ServiceEncryptionUnavailableError,
     TaskCancelledError,
 )
 from dask_task_models_library.container_tasks.events import (
@@ -27,7 +29,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 
-from ..errors import FileTransferEncryptionError
+from ..errors import EncryptionNotConfiguredError, FileTransferEncryptionError
 from ..rabbitmq_worker_plugin import get_rabbitmq_client
 
 _logger = logging.getLogger(__name__)
@@ -58,6 +60,12 @@ def sanitize_exceptions_across_dask_boundary[**P](
                 file_role=exc.file_role,
                 file_id=exc.file_id,
                 error_message=exc.error_message,
+            ) from None
+        except (EncryptionNotConfiguredError, KMSRuntimeError) as exc:
+            raise ServiceEncryptionUnavailableError(
+                service_key=task_parameters.image,
+                service_version=task_parameters.tag,
+                error_message=f"{exc}",
             ) from None
 
     return _wrapper
