@@ -532,38 +532,46 @@ def _clean_tcomment(comment: str, interp: str | None) -> str:
     CTX-INTERPRETATION is preserved. This keeps the shipped .po lean (no multi-line
     code snippets, no git/timestamp version stamps).
     """
-    passthrough: list[str] = []
+    before_ctx: list[str] = []
+    after_ctx: list[str] = []
     interp_parts: list[str] = []
     in_snippet = False
-    in_interp = False
+    seen_ctx = False
     for raw in comment.splitlines():
         line = raw.strip()
         if line.startswith("CTX-SNIPPET:"):
             in_snippet = True
-            in_interp = False
             continue
         if line.startswith("CTX-INTERPRETATION:"):
             in_snippet = False
-            in_interp = True
-            interp_parts = [line[len("CTX-INTERPRETATION:") :].strip()]
+            seen_ctx = True
+            interp_parts.append(line[len("CTX-INTERPRETATION:") :].strip())
             continue
         if line.startswith("CTX-"):  # CTX-SNIPPET-VERSION, CTX-VERSION, ...
             in_snippet = False
-            in_interp = False
             continue
         if in_snippet:
             continue
-        if in_interp:
-            # Rejoin lines that polib wrapped across multiple '#' lines back into the
-            # single CTX-INTERPRETATION sentence. Without this, the wrapped continuation
-            # leaks as bare '#' comments ordered *before* the CTX-INTERPRETATION line.
-            interp_parts.append(line)
-            continue
-        passthrough.append(raw)
+        (after_ctx if seen_ctx else before_ctx).append(line)
 
-    existing_interp = " ".join(part for part in interp_parts if part)
+    # A well-formed .po tcomment holds only CTX-* fields, so any stray non-CTX line is a
+    # fragment of the interpretation that polib wrapped across '#' lines (and that an
+    # earlier bug could re-order *before* the CTX-INTERPRETATION line). When an
+    # interpretation is present, fold every such fragment back into it -- CTX chunk first,
+    # then the wrapped remainder -- which both prevents the split and repairs an already
+    # broken/inverted comment. Only when NO interpretation exists are stray lines kept
+    # verbatim (genuine passthrough).
+    if interp is not None:
+        final_interp: str | None = interp
+        passthrough = [] if seen_ctx else before_ctx
+    elif seen_ctx:
+        final_interp = " ".join(part for part in (interp_parts + after_ctx + before_ctx) if part) or None
+        passthrough = []
+    else:
+        final_interp = None
+        passthrough = before_ctx
+
     lines = [line for line in passthrough if line.strip()]
-    final_interp = interp if interp is not None else (existing_interp or None)
     if final_interp:
         lines.append(f"CTX-INTERPRETATION: {final_interp}")
     return "\n".join(lines).strip()

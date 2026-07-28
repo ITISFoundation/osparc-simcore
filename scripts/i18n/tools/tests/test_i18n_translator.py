@@ -140,6 +140,16 @@ def test_clean_tcomment_rejoins_wrapped_interpretation() -> None:
     assert cleaned.splitlines()[0].startswith("CTX-INTERPRETATION:")
 
 
+def test_clean_tcomment_repairs_inverted_interpretation() -> None:
+    # Already-broken shape: wrapped tail re-ordered BEFORE the CTX-INTERPRETATION line
+    # (produced by the earlier bug). Repair must fold it back, CTX chunk first.
+    inverted = "likely indicating a section,\nin the UI.\nCTX-INTERPRETATION: The string appears as a label,"
+    cleaned = tr._clean_tcomment(inverted, None)
+    assert cleaned == "CTX-INTERPRETATION: The string appears as a label, likely indicating a section, in the UI."
+    assert cleaned.count("CTX-INTERPRETATION:") == 1
+    assert cleaned.splitlines()[0].startswith("CTX-INTERPRETATION:")
+
+
 # ---------------------------------------------------------------------------
 # Placeholder protection / normalization / glossary
 # ---------------------------------------------------------------------------

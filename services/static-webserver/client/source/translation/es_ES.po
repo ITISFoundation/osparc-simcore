@@ -9,10 +9,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Translation-Date: 2026-07-28T18:39:51Z\n"
+"X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
-# likely indicating information or details related to a specific subject or
-# product, possibly within a user interface or navigation element.
 #: services/static-webserver/client/source/class/osparc/About.js:24
 #: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:26
@@ -20,7 +20,6 @@ msgid "About "
 msgstr "Acerca de "
 
 # CTX-INTERPRETATION: The string appears in the About.js file, describing the
-# SPARC program and its online computational modeling platform.
 #: services/static-webserver/client/source/class/osparc/About.js:70
 msgid ""
 "         is an online-accessible, cloud-based, and collaborative "
