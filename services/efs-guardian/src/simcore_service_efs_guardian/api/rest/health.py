@@ -16,7 +16,7 @@ from servicelib.fastapi.health import HealthCheckError
 from ...services.modules.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ...services.modules.redis import get_redis_lock_client
 
-router = APIRouter()
+router = APIRouter(tags=["operations"])
 
 
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
