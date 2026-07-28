@@ -74,10 +74,12 @@ def download_playwright_browser() -> None:
     subprocess.run(["playwright", "install", "chromium"], check=True)  # noqa: S607
 
 
-def test_robust_websocket_with_socketio(download_playwright_browser: None, real_page: Page, fastapi_server: str):
-    # Connect to the FastAPI server
-    server_url = f"{fastapi_server}"
-    real_page.goto(f"{fastapi_server}")  # Simulate visiting the server
+@pytest.fixture
+def robust_ws(download_playwright_browser: None, real_page: Page, fastapi_server: str) -> RobustWebSocket:
+    """Navigates to the test server, opens a socket.io websocket connection there,
+    and wraps it in a connected `RobustWebSocket`."""
+    server_url = fastapi_server
+    real_page.goto(server_url)  # Simulate visiting the server
 
     # Load the socket.io client library in the browser context
     real_page.evaluate(
@@ -103,53 +105,55 @@ def test_robust_websocket_with_socketio(download_playwright_browser: None, real_
         )  # Open WebSocket in the browser
         websocket: PlaywrightWebSocket = ws_info.value
 
-        # Create a RobustWebSocket instance using the Playwright WebSocket
-        robust_ws = RobustWebSocket(page=real_page, ws=websocket)
-
-        # Test sending and receiving messages
-        real_page.wait_for_function("() => window.ws && window.ws.connected === true")
-        with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
-            real_page.evaluate("window.ws.send('Hello')")  # Send a message via WebSocket
-            raw_response = frame_received_event.value
-            # Decode the socket.io message format
-            assert raw_response.startswith("42"), "Invalid socket.io message format"
-            decoded_message = json.loads(raw_response[2:])  # Remove "42" prefix
-            assert decoded_message[0] == "message"
-            response = decoded_message[1]
-        assert response == "Echo: Hello"
-
-        # Simulate a network issue by disabling and re-enabling the network
-        with log_context(logging.INFO, msg="Simulating network issue") as ctx:
-            ctx.logger.info("First network issue")
-            real_page.context.set_offline(True)  # Disable network
-            real_page.wait_for_timeout(12000)  # Wait for 2 seconds to simulate network downtime
-            real_page.context.set_offline(False)  # Re-enable network
-            real_page.wait_for_timeout(12000)  # Wait for 2 seconds to simulate network downtime
-
-            ctx.logger.info("Second network issue")
-            real_page.context.set_offline(True)  # Disable network
-            real_page.wait_for_timeout(2000)  # Wait for 2 seconds to simulate network downtime
-            real_page.context.set_offline(False)  # Re-enable network
-            real_page.wait_for_timeout(2000)  # Wait for 2 seconds to simulate network downtime
-
-        # Test sending and receiving messages after automatic reconnection
-        real_page.wait_for_function("() => window.ws && window.ws.connected === true")
-        with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
-            real_page.evaluate("window.ws.send('Reconnected')")  # Send a message
-            raw_response = frame_received_event.value
-            # Decode the socket.io message format
-            assert raw_response.startswith("42"), "Invalid socket.io message format"
-            decoded_message = json.loads(raw_response[2:])  # Remove "42" prefix
-            assert decoded_message[0] == "message"
-            response = decoded_message[1]
-        assert response == "Echo: Reconnected"
-
-        assert robust_ws._num_reconnections == 2, "Expected 2 restarts due to network issues"  # noqa: SLF001
+    _wait_for_connected(real_page)
+    return RobustWebSocket(page=real_page, ws=websocket)
 
 
-def test_robust_websocket_reconnects_while_wait_is_pending(
-    download_playwright_browser: None, real_page: Page, fastapi_server: str
-):
+def _wait_for_connected(real_page: Page) -> None:
+    real_page.wait_for_function("() => window.ws && window.ws.connected === true")
+
+
+def _decode_socketio_message(raw_response: str) -> str:
+    """Decodes a socket.io `message` event payload (wire format: `42["message", <payload>]`)."""
+    assert raw_response.startswith("42"), "Invalid socket.io message format"
+    decoded_message = json.loads(raw_response[2:])  # Remove "42" prefix
+    assert decoded_message[0] == "message"
+    return decoded_message[1]
+
+
+def _simulate_network_blip(real_page: Page, *, offline_ms: int) -> None:
+    real_page.context.set_offline(True)  # Disable network
+    real_page.wait_for_timeout(offline_ms)
+    real_page.context.set_offline(False)  # Re-enable network
+    real_page.wait_for_timeout(offline_ms)
+
+
+def test_robust_websocket_with_socketio(robust_ws: RobustWebSocket, real_page: Page):
+    # Test sending and receiving messages
+    with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
+        real_page.evaluate("window.ws.send('Hello')")  # Send a message via WebSocket
+        response = _decode_socketio_message(frame_received_event.value)
+    assert response == "Echo: Hello"
+
+    # Simulate a network issue by disabling and re-enabling the network
+    with log_context(logging.INFO, msg="Simulating network issue") as ctx:
+        ctx.logger.info("First network issue")
+        _simulate_network_blip(real_page, offline_ms=12000)
+
+        ctx.logger.info("Second network issue")
+        _simulate_network_blip(real_page, offline_ms=2000)
+
+    # Test sending and receiving messages after automatic reconnection
+    _wait_for_connected(real_page)
+    with robust_ws.expect_event("framereceived", timeout=5000) as frame_received_event:
+        real_page.evaluate("window.ws.send('Reconnected')")  # Send a message
+        response = _decode_socketio_message(frame_received_event.value)
+    assert response == "Echo: Reconnected"
+
+    assert robust_ws._num_reconnections == 2, "Expected 2 restarts due to network issues"  # noqa: SLF001
+
+
+def test_robust_websocket_reconnects_while_wait_is_pending(robust_ws: RobustWebSocket, real_page: Page):
     """Regression test for the actual bug that was fixed: keep an `expect_event`
     wait *open* (in-flight) while the underlying websocket is closed and
     `RobustWebSocket` transparently reconnects, and only let the awaited frame
@@ -158,62 +162,20 @@ def test_robust_websocket_reconnects_while_wait_is_pending(
     `Error: Socket closed` as soon as the `with` block exited - even though a
     healthy new connection was already in place by then.
     """
-    # Connect to the FastAPI server
-    server_url = f"{fastapi_server}"
-    real_page.goto(f"{fastapi_server}")  # Simulate visiting the server
+    # Keep a wait open *across* the entire disconnect/reconnect cycle: the
+    # message that satisfies it is only sent *after* reconnection, so this
+    # wait genuinely spans the socket swap done by `RobustWebSocket`.
+    with robust_ws.expect_event("framereceived", timeout=20000) as frame_received_event:
+        with log_context(logging.INFO, msg="Simulating a reconnect while a wait is in-flight") as ctx:
+            ctx.logger.info("Disconnecting network while the wait is still pending")
+            _simulate_network_blip(real_page, offline_ms=2000)
+            _wait_for_connected(real_page)
 
-    # Load the socket.io client library in the browser context
-    real_page.evaluate(
-        """
-        const script = document.createElement('script');
-        script.src = "https://cdn.socket.io/4.5.4/socket.io.min.js";
-        script.onload = () => console.log("Socket.IO client library loaded");
-        document.head.appendChild(script);
-        """
+        ctx.logger.info("Sending message only after reconnection has completed")
+        real_page.evaluate("window.ws.send('SurvivedMidWaitReconnect')")  # Send a message via WebSocket
+        response = _decode_socketio_message(frame_received_event.value)
+    assert response == "Echo: SurvivedMidWaitReconnect"
+
+    assert robust_ws._num_reconnections >= 1, (  # noqa: SLF001
+        "Expected at least one reconnection to have happened while the wait was in flight"
     )
-
-    # Wait for the socket.io library to be available
-    real_page.wait_for_function("() => window.io !== undefined")
-
-    # Establish a WebSocket connection using socket.io
-    with real_page.expect_websocket() as ws_info:
-        real_page.evaluate(
-            f"""
-            window.ws = io("{server_url}", {{ transports: ["websocket"] }});
-            window.ws.on("connect", () => console.log("Connected to server"));
-            window.ws.on("message", (data) => console.log("Message received:", data));
-            """
-        )  # Open WebSocket in the browser
-        websocket: PlaywrightWebSocket = ws_info.value
-
-        # Create a RobustWebSocket instance using the Playwright WebSocket
-        robust_ws = RobustWebSocket(page=real_page, ws=websocket)
-
-        real_page.wait_for_function("() => window.ws && window.ws.connected === true")
-
-        # Keep a wait open *across* the entire disconnect/reconnect cycle: the
-        # message that satisfies it is only sent *after* reconnection, so this
-        # wait genuinely spans the socket swap done by `RobustWebSocket`.
-        with robust_ws.expect_event("framereceived", timeout=20000) as frame_received_event:
-            with log_context(logging.INFO, msg="Simulating a reconnect while a wait is in-flight") as ctx:
-                ctx.logger.info("Disconnecting network while the wait is still pending")
-                real_page.context.set_offline(True)  # Disable network
-                real_page.wait_for_timeout(2000)
-                real_page.context.set_offline(False)  # Re-enable network
-                real_page.wait_for_timeout(2000)
-                real_page.wait_for_function("() => window.ws && window.ws.connected === true")
-
-            ctx.logger.info("Sending message only after reconnection has completed")
-            real_page.evaluate("window.ws.send('SurvivedMidWaitReconnect')")  # Send a message via WebSocket
-
-            raw_response = frame_received_event.value
-            # Decode the socket.io message format
-            assert raw_response.startswith("42"), "Invalid socket.io message format"
-            decoded_message = json.loads(raw_response[2:])  # Remove "42" prefix
-            assert decoded_message[0] == "message"
-            response = decoded_message[1]
-        assert response == "Echo: SurvivedMidWaitReconnect"
-
-        assert robust_ws._num_reconnections >= 1, (  # noqa: SLF001
-            "Expected at least one reconnection to have happened while the wait was in flight"
-        )
