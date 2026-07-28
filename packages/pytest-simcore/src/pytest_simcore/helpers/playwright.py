@@ -13,6 +13,7 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
+from types import TracebackType
 from typing import Any, Final
 
 import arrow
@@ -196,8 +197,20 @@ class _ReconnectableEventWaiter:
                 # were waiting: re-attach the wait there instead of failing.
                 self._attach()
 
-    def __exit__(self, *args: object) -> None:
-        _ = self.value
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        # If the `with` block raised, do not block waiting for the event -
+        # let the original exception propagate instead of masking/hanging on it.
+        if exc_val is None:
+            _ = self.value
+        # Delegate to the underlying Playwright context manager so it can
+        # cancel the pending future (on exception) or release it (otherwise),
+        # exactly like a plain `ws.expect_event(...)` block would.
+        self._ctx.__exit__(exc_type, exc_val, exc_tb)
 
 
 @dataclass
