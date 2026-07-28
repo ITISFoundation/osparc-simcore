@@ -11,9 +11,9 @@ from pytest_simcore.helpers.playwright import (
     app_mode_trigger_next_app,
     check_node_outputs,
     get_node_id_from_service_key,
+    run_pipeline_and_wait_done,
 )
 from pytest_simcore.helpers.playwright_portal import (
-    run_pipeline_and_wait_done,
     wait_for_voila_iframe,
     wait_for_voila_rendered,
 )

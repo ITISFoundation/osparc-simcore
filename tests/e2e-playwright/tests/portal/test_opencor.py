@@ -7,8 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright import check_node_outputs
-from pytest_simcore.helpers.playwright_portal import run_pipeline_and_wait_done
+from pytest_simcore.helpers.playwright import check_node_outputs, run_pipeline_and_wait_done
 
 
 def test_opencor(

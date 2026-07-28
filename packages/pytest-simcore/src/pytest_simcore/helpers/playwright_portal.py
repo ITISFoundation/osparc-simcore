@@ -9,23 +9,14 @@ NOTE: only helpers reused by more than one test live here. Logic specific to a s
 lives in that test's module instead.
 """
 
-import datetime
 import logging
 from typing import Final
 
 from playwright.sync_api import FrameLocator, Page
 
 from .logging_tools import log_context
-from .playwright import (
-    SECOND,
-    RobustWebSocket,
-    RunningState,
-    SocketIOProjectStateUpdatedWaiter,
-    decode_socketio_42_message,
-    retrieve_project_state_from_decoded_message,
-)
+from .playwright import SECOND
 
-_RUN_PIPELINE_MAX_WAIT_TIME: Final[int] = 60 * SECOND
 _VOILA_IFRAME_MAX_WAIT_TIME: Final[int] = 4 * 60 * SECOND
 _VOILA_RENDERED_MAX_WAIT_TIME: Final[int] = 2 * 60 * SECOND
 
@@ -33,31 +24,6 @@ _VOILA_RENDERED_MAX_WAIT_TIME: Final[int] = 2 * 60 * SECOND
 def restore_iframe(page: Page) -> None:
     """Restores a maximized/fullscreen iframe. Port of the legacy `auto.restoreIFrame()`."""
     page.get_by_test_id("restoreBtn").click()
-
-
-def run_pipeline_and_wait_done(
-    page: Page,
-    websocket: RobustWebSocket,
-    *,
-    run_button_test_id: str = "runStudyBtn",
-    timeout_ms: int = _RUN_PIPELINE_MAX_WAIT_TIME,
-) -> RunningState:
-    """Clicks the "Run" button and waits until the pipeline reaches a final state.
-
-    Port of the legacy `TutorialBase.runPipeline()` + `TutorialBase.waitForStudyDone()`.
-    """
-    waiter = SocketIOProjectStateUpdatedWaiter(
-        expected_states=(RunningState.SUCCESS, RunningState.FAILED, RunningState.ABORTED)
-    )
-    with log_context(
-        logging.INFO,
-        f"Running pipeline and waiting for it to complete (timeout {datetime.timedelta(milliseconds=timeout_ms)})",
-    ):
-        with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
-            page.get_by_test_id(run_button_test_id).click()
-        current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
-        assert current_state == RunningState.SUCCESS, f"❌ Pipeline finished with {current_state} ❌"
-        return current_state
 
 
 def wait_for_voila_iframe(page: Page, node_id: str, *, timeout_ms: int = _VOILA_IFRAME_MAX_WAIT_TIME) -> FrameLocator:

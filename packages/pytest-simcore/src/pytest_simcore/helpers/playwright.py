@@ -476,7 +476,9 @@ def wait_for_service_endpoint_responding(
         )
         assert is_service_ready, "❌ the service failed starting! ❌"
 
-    with log_context(logging.INFO, msg=f"wait for service endpoint to be ready ({timeout=})") as ctx:
+    with log_context(
+        logging.INFO, msg=f"wait for service endpoint to be ready ({timedelta(seconds=timeout / 1000)})"
+    ) as ctx:
         _retry_check_service_endpoint(ctx.logger)
 
 
@@ -511,6 +513,128 @@ def wait_for_pipeline_state(
             if current_state in _FAIL_FAST_COMPUTATIONAL_STATES and current_state not in expected_states:
                 pytest.fail(f"❌ Pipeline failed fast with state {current_state}. Expected one of {expected_states} ❌")
     return current_state
+
+
+_RUNNING_STATES: Final[tuple[RunningState, ...]] = (
+    RunningState.PUBLISHED,
+    RunningState.PENDING,
+    RunningState.WAITING_FOR_CLUSTER,
+    RunningState.WAITING_FOR_RESOURCES,
+    RunningState.STARTED,
+)
+
+_RUN_PIPELINE_MAX_WAIT_TIME: Final[int] = 60 * SECOND
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PipelineStageTimeouts:
+    """Per-transition timeout budgets for a staged pipeline wait.
+
+    Needed for autoscaled deployments, where a cold cluster/worker scale-up can take several
+    minutes without the pipeline actually being stuck. Mirrors the legacy sleepers state machine:
+    PUBLISHED/PENDING -> [WAITING_FOR_CLUSTER] -> [WAITING_FOR_RESOURCES] -> STARTED -> SUCCESS
+    """
+
+    published_or_pending_ms: int = 1 * MINUTE
+    waiting_for_cluster_ms: int = 5 * MINUTE
+    waiting_for_resources_ms: int = 5 * MINUTE
+    started_ms: int = 5 * MINUTE
+
+
+def wait_for_computation_done(
+    current_state: RunningState,
+    *,
+    websocket: RobustWebSocket,
+    stage_timeouts: PipelineStageTimeouts | int,
+) -> RunningState:
+    """Waits for an already-started computational pipeline to reach a final state.
+
+    Pass an ``int`` for a single flat timeout budget covering the whole run (simple/
+    non-autoscaled deployments), or a `PipelineStageTimeouts` to instead wait through each
+    transition with its own budget (autoscaled deployments).
+    """
+    if isinstance(stage_timeouts, int):
+        return wait_for_pipeline_state(
+            current_state,
+            websocket=websocket,
+            if_in_states=_RUNNING_STATES,
+            expected_states=(RunningState.SUCCESS,),
+            timeout_ms=stage_timeouts,
+        )
+
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.PUBLISHED, RunningState.PENDING),
+        expected_states=(
+            RunningState.WAITING_FOR_CLUSTER,
+            RunningState.WAITING_FOR_RESOURCES,
+            RunningState.STARTED,
+            RunningState.SUCCESS,
+        ),
+        timeout_ms=stage_timeouts.published_or_pending_ms,
+    )
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
+        expected_states=(
+            RunningState.WAITING_FOR_RESOURCES,
+            RunningState.STARTED,
+            RunningState.SUCCESS,
+        ),
+        timeout_ms=stage_timeouts.waiting_for_cluster_ms,
+    )
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
+        expected_states=(
+            RunningState.STARTED,
+            RunningState.SUCCESS,
+        ),
+        timeout_ms=stage_timeouts.waiting_for_resources_ms,
+    )
+    return wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.STARTED,),
+        expected_states=(RunningState.SUCCESS,),
+        timeout_ms=stage_timeouts.started_ms,
+    )
+
+
+def run_pipeline_and_wait_done(
+    page: Page,
+    websocket: RobustWebSocket,
+    *,
+    run_button_test_id: str = "runStudyBtn",
+    timeout_ms: int = _RUN_PIPELINE_MAX_WAIT_TIME,
+    stage_timeouts: PipelineStageTimeouts | None = None,
+) -> RunningState:
+    """Clicks the "Run" button and waits until the pipeline reaches a final state.
+
+    By default (``stage_timeouts=None``) this waits within a single ``timeout_ms`` budget. Pass
+    ``stage_timeouts`` to instead wait through each transition with its own budget, needed for
+    autoscaled deployments (see `PipelineStageTimeouts`).
+
+    Port of the legacy `TutorialBase.runPipeline()` + `TutorialBase.waitForStudyDone()`.
+    """
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=tuple(RunningState))
+    with log_context(
+        logging.INFO,
+        f"Running pipeline and waiting for it to complete (timeout {timedelta(milliseconds=timeout_ms)})",
+    ):
+        with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
+            page.get_by_test_id(run_button_test_id).click()
+        current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
+        current_state = wait_for_computation_done(
+            current_state,
+            websocket=websocket,
+            stage_timeouts=stage_timeouts if stage_timeouts is not None else timeout_ms,
+        )
+        assert current_state == RunningState.SUCCESS, f"❌ Pipeline finished with {current_state} ❌"
+        return current_state
 
 
 def _node_started_predicate(request: Request) -> bool:

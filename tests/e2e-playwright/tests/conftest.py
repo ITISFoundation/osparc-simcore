@@ -605,9 +605,9 @@ def create_new_project_and_delete(
             # Enhanced context for better debugging when timeout occurs
             operation_type = "template" if template_id is not None else "new project"
             ctx.logger.info(
-                "Waiting for project to open: %s (timeout: %s seconds, expected_states: %s)",
+                "Waiting for project to open: %s (timeout: %s, expected_states: %s)",
                 operation_type,
-                (timeout + 10 * SECOND) / 1000,
+                datetime.timedelta(milliseconds=timeout + 10 * SECOND),
                 expected_states,
             )
 

@@ -23,18 +23,15 @@ from pytest_simcore.helpers.logging_tools import (
 )
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    PipelineStageTimeouts,
     RobustWebSocket,
-    RunningState,
     ServiceType,
     SocketIOEvent,
     check_node_outputs,
     retrieve_project_state_from_decoded_message,
-    wait_for_pipeline_state,
+    wait_for_computation_done,
 )
 
-_WAITING_FOR_PIPELINE_TO_CHANGE_STATE: Final[int] = 1 * MINUTE
-_WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
-_WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
 
 _VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
@@ -119,57 +116,14 @@ def test_sleepers(
     current_state = retrieve_project_state_from_decoded_message(socket_io_event)
     test_logger.info("pipeline is in %s", f"{current_state=}")
 
-    # this should not stay like this for long, it will either go to PENDING,
-    # WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
-    current_state = wait_for_pipeline_state(
+    # handles the autoscaled-deployment state machine (cold cluster/worker scale-up can take
+    # several minutes without the pipeline actually being stuck)
+    current_state = wait_for_computation_done(
         current_state,
         websocket=log_in_and_out,
-        if_in_states=(
-            RunningState.PUBLISHED,
-            RunningState.PENDING,
+        stage_timeouts=PipelineStageTimeouts(
+            started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
         ),
-        expected_states=(
-            RunningState.WAITING_FOR_CLUSTER,
-            RunningState.WAITING_FOR_RESOURCES,
-            RunningState.STARTED,
-            RunningState.SUCCESS,
-        ),
-        timeout_ms=_WAITING_FOR_PIPELINE_TO_CHANGE_STATE,
-    )
-
-    # in case we are in WAITING_FOR_CLUSTER, that means we have a new cluster OR
-    # that there is something restarting in a non billable deployment
-    current_state = wait_for_pipeline_state(
-        current_state,
-        websocket=log_in_and_out,
-        if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
-        expected_states=(
-            RunningState.WAITING_FOR_RESOURCES,
-            RunningState.STARTED,
-            RunningState.SUCCESS,
-        ),
-        timeout_ms=_WAITING_FOR_CLUSTER_MAX_WAITING_TIME,
-    )
-
-    # now we wait for the workers
-    current_state = wait_for_pipeline_state(
-        current_state,
-        websocket=log_in_and_out,
-        if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
-        expected_states=(
-            RunningState.STARTED,
-            RunningState.SUCCESS,
-        ),
-        timeout_ms=_WAITING_FOR_STARTED_MAX_WAITING_TIME,
-    )
-
-    # check that we get success state now
-    current_state = wait_for_pipeline_state(
-        current_state,
-        websocket=log_in_and_out,
-        if_in_states=(RunningState.STARTED,),
-        expected_states=(RunningState.SUCCESS,),
-        timeout_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
     )
 
     # check the outputs (the first item is the title, so we skip it)
