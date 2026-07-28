@@ -413,10 +413,10 @@ class SocketIONodeProgressCompleteWaiter:
 
         if service_state == "idle":
             elapsed_since_first_status = datetime.now(UTC) - self._first_service_status_received_at
-            if elapsed_since_first_status > self.min_idle_before_fail_fast:
+            if elapsed_since_first_status >= self.min_idle_before_fail_fast:
                 # NOTE: the service is still idle well after it was first observed
                 ctx.logger.error(
-                    "❌ node %s still idle %s since first status (> %s grace period), failing fast ❌",
+                    "❌ node %s still idle %s since first status (>= %s grace period), failing fast ❌",
                     self.node_id,
                     elapsed_since_first_status,
                     self.min_idle_before_fail_fast,
