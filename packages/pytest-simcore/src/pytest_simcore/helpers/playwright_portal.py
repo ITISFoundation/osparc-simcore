@@ -11,11 +11,9 @@ lives in that test's module instead.
 
 import datetime
 import logging
-import re
 from typing import Final
 
 from playwright.sync_api import FrameLocator, Page
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from .logging_tools import log_context
 from .playwright import (
@@ -23,7 +21,6 @@ from .playwright import (
     RobustWebSocket,
     RunningState,
     SocketIOProjectStateUpdatedWaiter,
-    SocketIOWaitNodeForOutputs,
     decode_socketio_42_message,
     retrieve_project_state_from_decoded_message,
 )
@@ -33,92 +30,9 @@ _VOILA_IFRAME_MAX_WAIT_TIME: Final[int] = 4 * 60 * SECOND
 _VOILA_RENDERED_MAX_WAIT_TIME: Final[int] = 2 * 60 * SECOND
 
 
-def _open_node(page: Page, position: int) -> str:
-    """Selects the node at `position` in the workbench tree (left panel) and returns its node id.
-
-    Port of the legacy `auto.openNode()`.
-    """
-    tree_items = page.locator('[osparc-test-id="nodeTreeItem"]')
-    node_ids_and_locators = []
-    for index in range(tree_items.count()):
-        item = tree_items.nth(index)
-        node_key = item.get_attribute("osparc-test-key")
-        if node_key and node_key != "root":
-            node_ids_and_locators.append((node_key, item))
-
-    node_id, locator = node_ids_and_locators[position]
-    locator.click()
-    # Iframes get loaded on demand
-    page.wait_for_timeout(5 * SECOND)
-    return node_id
-
-
 def restore_iframe(page: Page) -> None:
     """Restores a maximized/fullscreen iframe. Port of the legacy `auto.restoreIFrame()`."""
     page.get_by_test_id("restoreBtn").click()
-
-
-def check_node_outputs(
-    page: Page,
-    *,
-    websocket: RobustWebSocket,
-    study_id: str,
-    node_position: int | None = None,
-    node_id: str | None = None,
-    expected_file_names: list[str],
-    open_outputs_folder: bool = False,
-    app_mode: bool = False,
-    outputs_ready_timeout_ms: int = 60 * SECOND,
-) -> None:
-    """Opens a node's output files panel and asserts the number of files it contains.
-
-    Port of the legacy `TutorialBase.checkNodeOutputs()` /
-    `TutorialBase.checkNodeOutputsAppMode()`.
-    """
-    if node_id is None:
-        assert node_position is not None, "either node_id or node_position must be provided"
-        node_id = _open_node(page, node_position)
-
-    with log_context(
-        logging.INFO,
-        f"Waiting for node {node_id=} to produce {len(expected_file_names)} output(s)",
-    ):
-        waiter = SocketIOWaitNodeForOutputs(expected_number_of_outputs=len(expected_file_names), node_id=node_id)
-        try:
-            with websocket.expect_event("framereceived", waiter, timeout=outputs_ready_timeout_ms):
-                pass
-        except (PlaywrightTimeoutError, TimeoutError):
-            # NOTE: outputs might already have been produced before we started listening for this
-            # event (or the count might genuinely differ); the UI-based check below is authoritative
-            pass
-
-    with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
-        path_filter = f"{study_id}/{node_id}"
-        with page.expect_response(re.compile(r"storage/locations/0/paths\?file_filter="), timeout=30 * SECOND):
-            if app_mode:
-                page.get_by_test_id("outputsBtn").click()
-            page.get_by_test_id("nodeFilesBtn").click()
-
-        page.get_by_test_id("folderGridView").click()
-        items = page.get_by_test_id("FolderViewerItem")
-
-        if open_outputs_folder:
-            outputs_found = False
-            for index in range(items.count()):
-                item = items.nth(index)
-                if "output" in (item.text_content() or ""):
-                    item.dblclick()
-                    outputs_found = True
-            assert outputs_found, f"outputs folder not found for node {node_id} ({path_filter})"
-            items = page.get_by_test_id("FolderViewerItem")
-
-        actual_file_names = [(name or "").removesuffix("\ue24d") for name in items.all_text_contents()]
-        page.get_by_test_id("nodeDataManagerCloseBtn").click()
-
-        assert len(actual_file_names) == len(expected_file_names), (
-            f"Expected {len(expected_file_names)} file(s) {expected_file_names}, "
-            f"got {len(actual_file_names)} {actual_file_names}"
-        )
 
 
 def run_pipeline_and_wait_done(

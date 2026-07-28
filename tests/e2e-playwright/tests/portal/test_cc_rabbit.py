@@ -7,7 +7,8 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright_portal import check_node_outputs, run_pipeline_and_wait_done
+from pytest_simcore.helpers.playwright import check_node_outputs
+from pytest_simcore.helpers.playwright_portal import run_pipeline_and_wait_done
 
 
 def test_cc_rabbit(
@@ -23,21 +24,18 @@ def test_cc_rabbit(
 
     check_node_outputs(
         page,
-        websocket=opened_study.websocket,
         study_id=study_id,
         node_position=1,
         expected_file_names=["logs.zip", "allresult_1Hz.txt", "vm_1Hz.txt"],
     )
     check_node_outputs(
         page,
-        websocket=opened_study.websocket,
         study_id=study_id,
         node_position=2,
         expected_file_names=["model_INPUT.from1D", "logs.zip", "cai_1D.txt", "ap_1D.txt", "ECGs.txt"],
     )
     check_node_outputs(
         page,
-        websocket=opened_study.websocket,
         study_id=study_id,
         node_position=3,
         expected_file_names=["aps.zip", "logs.zip"],

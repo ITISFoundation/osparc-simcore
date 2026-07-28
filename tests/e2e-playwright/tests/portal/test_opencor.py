@@ -7,7 +7,8 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright_portal import check_node_outputs, run_pipeline_and_wait_done
+from pytest_simcore.helpers.playwright import check_node_outputs
+from pytest_simcore.helpers.playwright_portal import run_pipeline_and_wait_done
 
 
 def test_opencor(
@@ -24,7 +25,6 @@ def test_opencor(
 
     check_node_outputs(
         page,
-        websocket=opened_study.websocket,
         study_id=study_id,
         node_position=0,
         expected_file_names=["results.json", "logs.zip", "membrane-potential.csv"],

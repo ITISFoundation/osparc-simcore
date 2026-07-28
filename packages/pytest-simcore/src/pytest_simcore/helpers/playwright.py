@@ -683,3 +683,97 @@ def get_node_id_from_service_key(workbench: dict[str, Any], service_key_fragment
             return node_id
     msg = f"Could not find a node with service key containing {service_key_fragment!r} in workbench"
     raise ValueError(msg)
+
+
+def _open_node(page: Page, position: int) -> str:
+    """Selects the node at `position` in the workbench tree (left panel) and returns its node id.
+
+    Port of the legacy `auto.openNode()`.
+    """
+    tree_items = page.locator('[osparc-test-id="nodeTreeItem"]')
+    node_ids_and_locators = []
+    for index in range(tree_items.count()):
+        item = tree_items.nth(index)
+        node_key = item.get_attribute("osparc-test-key")
+        if node_key and node_key != "root":
+            node_ids_and_locators.append((node_key, item))
+
+    node_id, locator = node_ids_and_locators[position]
+    locator.click()
+    # Iframes get loaded on demand
+    page.wait_for_timeout(5 * SECOND)
+    return node_id
+
+
+_OUTPUT_FILE_NAMES_MAX_WAITING_TIME: Final[int] = 30 * SECOND
+_OUTPUT_FILE_NAMES_WAIT_INTERVAL: Final[int] = 1 * SECOND
+
+
+@retry(
+    stop=stop_after_delay(_OUTPUT_FILE_NAMES_MAX_WAITING_TIME),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+    wait=wait_fixed(_OUTPUT_FILE_NAMES_WAIT_INTERVAL),
+)
+def _read_output_file_names(
+    page: Page,
+    *,
+    node_id: str,
+    path_filter: str,
+    expected_file_names: list[str],
+    open_outputs_folder: bool,
+) -> list[str]:
+    # the frontend may still be rendering the file list right after the outputs API responds,
+    # so this whole read is wrapped with tenacity and retried until it matches (or times out)
+    page.get_by_test_id("folderGridView").click()
+    items = page.get_by_test_id("FolderViewerItem")
+
+    if open_outputs_folder:
+        outputs_found = False
+        for index in range(items.count()):
+            item = items.nth(index)
+            if "output" in (item.text_content() or ""):
+                item.dblclick()
+                outputs_found = True
+        assert outputs_found, f"outputs folder not found for node {node_id} ({path_filter})"
+        items = page.get_by_test_id("FolderViewerItem")
+
+    actual_file_names = [(name or "").removesuffix("\ue24d") for name in items.all_text_contents()]
+    assert actual_file_names == expected_file_names, f"Expected {expected_file_names}, got {actual_file_names}"
+    return actual_file_names
+
+
+def check_node_outputs(
+    page: Page,
+    *,
+    study_id: str,
+    node_position: int | None = None,
+    node_id: str | None = None,
+    expected_file_names: list[str],
+    open_outputs_folder: bool = False,
+    app_mode: bool = False,
+) -> None:
+    """Opens a node's output files panel and asserts it contains exactly `expected_file_names`.
+
+    Port of the legacy `TutorialBase.checkNodeOutputs()` /
+    `TutorialBase.checkNodeOutputsAppMode()`.
+    """
+    if node_id is None:
+        assert node_position is not None, "either node_id or node_position must be provided"
+        node_id = _open_node(page, node_position)
+
+    with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
+        path_filter = f"{study_id}/{node_id}"
+        with page.expect_response(re.compile(r"storage/locations/0/paths\?file_filter="), timeout=30 * SECOND):
+            if app_mode:
+                page.get_by_test_id("outputsBtn").click()
+            page.get_by_test_id("nodeFilesBtn").click()
+
+        _read_output_file_names(
+            page,
+            node_id=node_id,
+            path_filter=path_filter,
+            expected_file_names=expected_file_names,
+            open_outputs_folder=open_outputs_folder,
+        )
+        page.get_by_test_id("nodeDataManagerCloseBtn").click()

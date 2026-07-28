@@ -7,8 +7,8 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright import get_node_id_from_service_key, wait_for_service_running
-from pytest_simcore.helpers.playwright_portal import check_node_outputs, restore_iframe
+from pytest_simcore.helpers.playwright import check_node_outputs, get_node_id_from_service_key, wait_for_service_running
+from pytest_simcore.helpers.playwright_portal import restore_iframe
 
 # NOTE: bornstein-viewer is a legacy dynamic service (port of the legacy Bornstein.js, which calls
 # `waitForServices(..., waitForConnected=true)`), so the websocket node-progress path never fires.
@@ -45,7 +45,6 @@ def test_bornstein(
 
     check_node_outputs(
         page,
-        websocket=opened_study.websocket,
         study_id=project_data["uuid"],
         node_position=0,
         expected_file_names=_EXPECTED_OUTPUT_FILES,

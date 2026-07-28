@@ -7,9 +7,12 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright import app_mode_trigger_next_app, get_node_id_from_service_key
-from pytest_simcore.helpers.playwright_portal import (
+from pytest_simcore.helpers.playwright import (
+    app_mode_trigger_next_app,
     check_node_outputs,
+    get_node_id_from_service_key,
+)
+from pytest_simcore.helpers.playwright_portal import (
     run_pipeline_and_wait_done,
     wait_for_voila_iframe,
     wait_for_voila_rendered,
@@ -48,7 +51,6 @@ def test_kember(
     )
     check_node_outputs(
         page,
-        websocket=opened_study.websocket,
         study_id=project_data["uuid"],
         node_id=kember_solver_id,
         expected_file_names=["logs.zip", "outputController.dat"],

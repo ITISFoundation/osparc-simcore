@@ -8,7 +8,6 @@
 # pylint:disable=unused-variable
 
 
-import datetime
 import logging
 import re
 from collections.abc import Callable
@@ -28,17 +27,15 @@ from pytest_simcore.helpers.playwright import (
     RunningState,
     ServiceType,
     SocketIOEvent,
+    check_node_outputs,
     retrieve_project_state_from_decoded_message,
     wait_for_pipeline_state,
 )
-from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _WAITING_FOR_PIPELINE_TO_CHANGE_STATE: Final[int] = 1 * MINUTE
 _WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
-_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
-_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
 
 _VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
     parse_version("1.0.0"): ["logs.zip", "single_number.txt"],
@@ -51,25 +48,6 @@ def _get_expected_file_names_for_version(version: Version) -> list[str]:
         if version >= base_version:
             return expected_file_names
     return []
-
-
-@retry(
-    stop=stop_after_delay(_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME),
-    retry=retry_if_exception_type(AssertionError),
-    reraise=True,
-    wait=wait_fixed(_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL),
-)
-def _get_file_names(page: Page) -> list[str]:
-    file_names_found = []
-    page.get_by_test_id("folderGridView").click()
-    for file in page.get_by_test_id("FolderViewerItem").all():
-        file_name = file.text_content()
-        assert file_name
-        file_name = file_name.removesuffix("\ue24d")
-        file_names_found.append(file_name)
-    assert file_names_found
-
-    return file_names_found
 
 
 def test_sleepers(
@@ -135,12 +113,14 @@ def test_sleepers(
     # start the pipeline (depending on the state of the cluster, we might receive one of
     # in [] are optional states depending on the state of the clusters and if we have external clusters
     # sometimes they may jump
-    # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] -> (PENDING) -> STARTED -> SUCCESS/FAILED
+    # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] ->
+    # (PENDING) -> STARTED -> SUCCESS/FAILED
     socket_io_event = start_and_stop_pipeline()
     current_state = retrieve_project_state_from_decoded_message(socket_io_event)
     test_logger.info("pipeline is in %s", f"{current_state=}")
 
-    # this should not stay like this for long, it will either go to PENDING, WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
+    # this should not stay like this for long, it will either go to PENDING,
+    # WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=log_in_and_out,
@@ -157,7 +137,8 @@ def test_sleepers(
         timeout_ms=_WAITING_FOR_PIPELINE_TO_CHANGE_STATE,
     )
 
-    # in case we are in WAITING_FOR_CLUSTER, that means we have a new cluster OR that there is something restarting in a non billable deployment
+    # in case we are in WAITING_FOR_CLUSTER, that means we have a new cluster OR
+    # that there is something restarting in a non billable deployment
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=log_in_and_out,
@@ -199,16 +180,14 @@ def test_sleepers(
             done="<- All good, we're done here! This was really great!",
             raised="! Error checking outputs!",
         ),
-    ) as ctx:
-        for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
+    ):
+        for sleeper in page.get_by_test_id("nodeTreeItem").all()[1:]:
+            node_id = sleeper.get_attribute("osparc-test-key")
+            assert node_id
             sleeper.click()
-            # waiting for this response is not enough, the frontend needs some time to show the files
-            # therefore _get_file_names is wrapped with tenacity
-            with page.expect_response(re.compile(r"paths\?file_filter=")):
-                page.get_by_test_id("nodeFilesBtn").click()
-                output_file_names_found = _get_file_names(page)
-
-            msg = f"found {output_file_names_found=} in sleeper {index} service outputs."
-            ctx.logger.info(msg)
-            assert output_file_names_found == sleeper_expected_output_files
-            page.get_by_test_id("nodeDataManagerCloseBtn").click()
+            check_node_outputs(
+                page,
+                study_id=project_data["uuid"],
+                node_id=node_id,
+                expected_file_names=sleeper_expected_output_files,
+            )
