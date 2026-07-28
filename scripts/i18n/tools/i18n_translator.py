@@ -46,6 +46,7 @@ import re
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Final, NamedTuple
@@ -532,26 +533,37 @@ def _clean_tcomment(comment: str, interp: str | None) -> str:
     code snippets, no git/timestamp version stamps).
     """
     passthrough: list[str] = []
-    existing_interp: str | None = None
+    interp_parts: list[str] = []
     in_snippet = False
+    in_interp = False
     for raw in comment.splitlines():
         line = raw.strip()
         if line.startswith("CTX-SNIPPET:"):
             in_snippet = True
+            in_interp = False
             continue
         if line.startswith("CTX-INTERPRETATION:"):
             in_snippet = False
-            existing_interp = line[len("CTX-INTERPRETATION:") :].strip()
+            in_interp = True
+            interp_parts = [line[len("CTX-INTERPRETATION:") :].strip()]
             continue
         if line.startswith("CTX-"):  # CTX-SNIPPET-VERSION, CTX-VERSION, ...
             in_snippet = False
+            in_interp = False
             continue
         if in_snippet:
             continue
+        if in_interp:
+            # Rejoin lines that polib wrapped across multiple '#' lines back into the
+            # single CTX-INTERPRETATION sentence. Without this, the wrapped continuation
+            # leaks as bare '#' comments ordered *before* the CTX-INTERPRETATION line.
+            interp_parts.append(line)
+            continue
         passthrough.append(raw)
 
+    existing_interp = " ".join(part for part in interp_parts if part)
     lines = [line for line in passthrough if line.strip()]
-    final_interp = interp if interp is not None else existing_interp
+    final_interp = interp if interp is not None else (existing_interp or None)
     if final_interp:
         lines.append(f"CTX-INTERPRETATION: {final_interp}")
     return "\n".join(lines).strip()
@@ -715,6 +727,12 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     po.metadata["Language"] = lang
     po.metadata["Content-Type"] = "text/plain; charset=UTF-8"
     po.metadata["Content-Transfer-Encoding"] = "8bit"
+    # Record which LLM produced this catalog and when, for audit/reproducibility.
+    # Only stamped on real runs; under incremental save a no-op run never re-writes
+    # the file, so these do not churn when nothing was translated.
+    if not dry_run:
+        po.metadata["X-Translation-Model"] = model
+        po.metadata["X-Translation-Date"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     nplurals = _get_nplurals(po)
 
     # Source snippets live only in the .pot; build a msgid -> snippet map for prompt

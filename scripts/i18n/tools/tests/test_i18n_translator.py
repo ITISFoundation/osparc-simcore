@@ -129,6 +129,17 @@ def test_clean_tcomment_preserves_non_ctx_passthrough() -> None:
     assert tr._clean_tcomment("some note\nCTX-SNIPPET:\n  code", None) == "some note"
 
 
+def test_clean_tcomment_rejoins_wrapped_interpretation() -> None:
+    # polib wraps a long CTX-INTERPRETATION across several '#' lines on save; on the next
+    # load the continuation must be rejoined into the single line (not leak before it).
+    wrapped = "CTX-INTERPRETATION: The string appears as a label,\nlikely a title,\nin the UI."
+    cleaned = tr._clean_tcomment(wrapped, None)
+    assert cleaned == "CTX-INTERPRETATION: The string appears as a label, likely a title, in the UI."
+    # exactly one CTX-INTERPRETATION line, and nothing leaks before it
+    assert cleaned.count("CTX-INTERPRETATION:") == 1
+    assert cleaned.splitlines()[0].startswith("CTX-INTERPRETATION:")
+
+
 # ---------------------------------------------------------------------------
 # Placeholder protection / normalization / glossary
 # ---------------------------------------------------------------------------
@@ -354,6 +365,24 @@ def test_non_ollama_no_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     result = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "openai/gpt-4o"), catch_exceptions=False)
     assert result.exit_code == 0, result.output
     assert "Ollama runs one local model instance" not in result.output
+
+
+def test_translate_cli_stamps_model_and_date_in_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeProvider()
+    monkeypatch.setattr(tr, "LiteLLMProvider", lambda *_args, **_kwargs: fake)
+
+    pot = _write_pot_with_snippet(tmp_path)
+    gloss = _write_glossary(tmp_path)
+    out = tmp_path / "es_ES.po"
+
+    result = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "openai/gpt-4o"), catch_exceptions=False)
+    assert result.exit_code == 0, result.output
+
+    metadata = polib.pofile(str(out)).metadata
+    assert metadata["X-Translation-Model"] == "openai/gpt-4o"
+    # ISO-8601 UTC stamp, e.g. 2026-07-28T10:15:30Z
+    assert metadata["X-Translation-Date"].endswith("Z")
+    assert metadata["X-Translation-Date"][:4].isdigit()
 
 
 if __name__ == "__main__":
