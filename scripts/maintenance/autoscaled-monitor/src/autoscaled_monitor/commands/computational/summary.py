@@ -20,6 +20,7 @@ async def _run(
     *,
     output_json: bool,
     output: Path | None,
+    use_profile: str | None,
 ) -> bool:
     assert state.ec2_resource_clusters_keeper
 
@@ -38,7 +39,7 @@ async def _run(
             cluster_task_rows=recon.cluster_task_rows,
         )
     else:
-        rendering.print_computational_clusters(
+        await rendering.print_computational_clusters(
             computational_clusters,
             state.environment,
             state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
@@ -46,6 +47,7 @@ async def _run(
             cluster_task_rows={(c.primary.user_id, c.primary.wallet_id): rows for c, rows in recon.cluster_task_rows},
             cluster_extra_info=recon.cluster_extra_info,
             compact=False,
+            pricing_profile=use_profile,
         )
 
     task_issues_found = any(row.issues for _, task_rows in recon.cluster_task_rows for row in task_rows)
@@ -59,6 +61,13 @@ def summary(
     wallet_id: Annotated[int, typer.Option(help="filters by the wallet ID")] = 0,
     as_json: Annotated[bool, typer.Option(help="outputs as json")] = False,
     output: Annotated[Path | None, typer.Option(help="outputs to a file")] = None,
+    use_profile: Annotated[
+        str | None,
+        typer.Option(
+            help="AWS profile (e.g. from ~/.aws/credentials) to use for AWS cost lookups "
+            "(pricing:GetProducts, ec2:DescribeVolumes), in case the deploy-config credentials lack access"
+        ),
+    ] = None,
 ) -> None:
     """Verbose view of computational clusters with full worker details."""
 
@@ -69,6 +78,7 @@ def summary(
             wallet_id or None,
             output_json=as_json,
             output=output,
+            use_profile=use_profile,
         )
     ):
         raise typer.Exit(1)
