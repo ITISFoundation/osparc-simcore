@@ -61,7 +61,7 @@ qx.Class.define("osparc.store.Products", {
                 this.__uiConfig = uiConfig;
                 resolve(this.__uiConfig);
               } else {
-                osparc.FlashMessenger.logError("Wrong product.ui config");
+                osparc.FlashMessenger.logError(qx.locale.Manager.tr("Wrong product.ui config"));
                 validate.errors.forEach(err => {
                   console.error(`Error at ${err.dataPath}: ${err.message}`);
                 });
