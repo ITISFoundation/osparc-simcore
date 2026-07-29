@@ -80,10 +80,10 @@ qx.Class.define("osparc.snapshots.EditSnapshotView", {
       this._add(renderer);
 
       const tags = this.getChildControl("tags");
-      form.add(tags, "Tags", null, "tags");
+      form.add(tags, this.tr("Tags"), null, "tags");
 
       const message = this.getChildControl("message");
-      form.add(message, "Message", null, "message");
+      form.add(message, this.tr("Message"), null, "message");
 
       // buttons
       const cancelButton = this.getChildControl("cancel-button");
