@@ -193,12 +193,12 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const createAccountWindow = new osparc.ui.window.Dialog(this.tr("Request Account")).set({
         maxWidth: 380
       });
-      let message = "This version of the planning tool will be phased out soon and no longer accepts new users.";
+      let message = this.tr("This version of the planning tool will be phased out soon and no longer accepts new users.");
       message += "<br>";
       const tipLiteLabel = osparc.utils.Utils.createHTMLLink("TIP.lite", "https://tip-lite.science/");
       const tipLabel = osparc.utils.Utils.createHTMLLink("TIP", "https://tip.science/");
       const hereLabel = osparc.utils.Utils.createHTMLLink("here", "https://itis.swiss/tools-and-systems/ti-planning/overview/");
-      message += `Please visit ${tipLiteLabel} or ${tipLabel} instead. See ${hereLabel} for more information.`;
+      message += this.tr("Please visit %1 or %2 instead. See %3 for more information.", tipLiteLabel, tipLabel, hereLabel);
       createAccountWindow.setMessage(message);
       createAccountWindow.center();
       createAccountWindow.open();

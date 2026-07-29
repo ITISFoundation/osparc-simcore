@@ -2563,7 +2563,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         msg += ` '${studyNames[0]}'?`;
       }
       const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
-      msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
+      if (studyNames.length > 1) {
+        msg += "<br><br>" + this.tr("They will be permanently deleted after %1 days.", trashDays);
+      } else {
+        msg += "<br><br>" + this.tr("It will be permanently deleted after %1 days.", trashDays);
+      }
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),
@@ -2574,7 +2578,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmRemoveForMeWindow: function(studyName) {
-      const msg = `'${studyName}' ` + this.tr("will be removed from your list. Collaborators will still have access.");
+      const msg = this.tr("'%1' will be removed from your list. Collaborators will still have access.", studyName);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Remove"),
         confirmText: this.tr("Remove"),
