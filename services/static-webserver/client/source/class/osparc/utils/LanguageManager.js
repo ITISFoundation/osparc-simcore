@@ -45,6 +45,37 @@ qx.Class.define("osparc.utils.LanguageManager", {
     },
 
     /**
+     * Works around a qooxdoo compiler CLDR-extraction issue where some locale
+     * entries (e.g. the Chinese number separators) end up as objects
+     * ({"_": ".", "$": {"draft": "contributed"}}) instead of plain strings.
+     * Such values break locale-dependent widgets: qx.ui.form.Spinner builds its
+     * text field's filter RegExp from the decimal/group separators and throws
+     * ("Exception while creating child control 'textfield'") when they are not
+     * strings.
+     * Flattens any object-valued locale entry to its "_" string.
+     * Meant to be called once, early during application startup.
+     * Common Locale Data Repository (CLDR) - https://cldr.unicode.org/
+     */
+    normalizeCldrData: function() {
+      const catalog = qx.locale.Manager.getInstance().__locales;
+      if (!catalog) {
+        return;
+      }
+      Object.keys(catalog).forEach(localeCode => {
+        const localeMap = catalog[localeCode];
+        if (!localeMap || typeof localeMap !== "object") {
+          return;
+        }
+        Object.keys(localeMap).forEach(key => {
+          const value = localeMap[key];
+          if (value && typeof value === "object" && typeof value["_"] === "string") {
+            localeMap[key] = value["_"];
+          }
+        });
+      });
+    },
+
+    /**
      * Returns the locales for which translations were compiled (see compile.json).
      * @return {String[]} e.g. ["en_US", "es_ES"]
      */

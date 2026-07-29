@@ -61,6 +61,8 @@ qx.Class.define("osparc.Application", {
       this.__setupScrollbarColors();
       this.__updateTabName();
       if (osparc.product.Utils.isLocaleEnabled()) {
+        // Sanitize malformed CLDR entries (e.g. Chinese number separators) before any widget is built
+        osparc.utils.LanguageManager.normalizeCldrData();
         // No user profile yet: apply the browser locale so the login flow respects the browser language
         // Overridden with the profile's language once the user logs in
         osparc.utils.LanguageManager.applyUsersLocale();
