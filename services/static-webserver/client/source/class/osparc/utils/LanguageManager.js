@@ -57,6 +57,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
      * Common Locale Data Repository (CLDR) - https://cldr.unicode.org/
      */
     normalizeCldrData: function() {
+      // eslint-disable-next-line no-underscore-dangle
       const catalog = qx.locale.Manager.getInstance().__locales;
       if (!catalog) {
         return;
