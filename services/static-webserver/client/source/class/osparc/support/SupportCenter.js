@@ -55,7 +55,7 @@ qx.Class.define("osparc.support.SupportCenter", {
   statics: {
     WINDOW_WIDTH: 450,
     WINDOW_HEIGHT: 700,
-    REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
+    REQUEST_CALL_MESSAGE: qx.locale.Manager.tr("Dear Support,\nI would like to make an appointment for a support call."),
 
     getMaxHeight: function() {
       // height: max 80% of screen, or WINDOW_HEIGHT px
