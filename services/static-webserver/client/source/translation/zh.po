@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-07-30T13:56:56Z\n"
+"X-Translation-Date: 2026-07-30T14:21:13Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
@@ -1794,6 +1794,11 @@ msgstr "您创建或实例化该对象/按钮/列表项的次数"
 #: services/static-webserver/client/source/class/osparc/dashboard/GridButtonItem.js:192
 msgid "Viewer only"
 msgstr "仅限查看者"
+
+#: services/static-webserver/client/source/class/osparc/dashboard/GridButtonItem.js:256
+#: services/static-webserver/client/source/class/osparc/dashboard/ListButtonItem.js:246
+msgid "My %1"
+msgstr "我的%1"
 
 # CTX-INTERPRETATION: The string "My Function" appears in the context of a
 # user interface, likely within a grid or list, indicating whether a user has
