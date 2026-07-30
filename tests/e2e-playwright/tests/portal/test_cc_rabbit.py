@@ -14,12 +14,12 @@ def test_cc_rabbit(
     page: Page,
     open_study_link: Callable[..., Any],
     anonymous_study_url: str,
-    service_start_timeout: int,
+    run_pipeline_timeout: int,
 ) -> None:
     opened_study = open_study_link(anonymous_study_url)
     study_id = opened_study.project_data["uuid"]
 
-    run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=service_start_timeout)
+    run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=run_pipeline_timeout)
 
     check_node_outputs(
         page,

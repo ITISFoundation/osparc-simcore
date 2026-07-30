@@ -192,10 +192,14 @@ $(ALL_INPUT_FILES):
 		else \
 			read -p "Enter the anonymous study URL (url_prefix+template_uuid, no login needed): " ANONYMOUS_STUDY_URL; \
 			read -p "Enter the service start timeout in ms [default 60000]: " SERVICE_START_TIMEOUT; \
+			read -p "Enter the run pipeline timeout in ms [default 180000]: " RUN_PIPELINE_TIMEOUT; \
 			echo "--anonymous-study-url=$$ANONYMOUS_STUDY_URL" > $@; \
 			echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
 			if [ -n "$$SERVICE_START_TIMEOUT" ]; then \
 				echo "--service-start-timeout=$$SERVICE_START_TIMEOUT" >> $@; \
+			fi; \
+			if [ -n "$$RUN_PIPELINE_TIMEOUT" ]; then \
+				echo "--run-pipeline-timeout=$$RUN_PIPELINE_TIMEOUT" >> $@; \
 			fi; \
 		fi; \
 		echo "#TEST_FILE=$$TEST_FILE" >> $@; \

@@ -14,13 +14,13 @@ def test_opencor(
     page: Page,
     open_study_link: Callable[..., Any],
     anonymous_study_url: str,
-    service_start_timeout: int,
+    run_pipeline_timeout: int,
 ) -> None:
     url = f"{anonymous_study_url}?stimulation_mode=1&stimulation_level=0.5"
     opened_study = open_study_link(url)
     study_id = opened_study.project_data["uuid"]
 
-    run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=service_start_timeout)
+    run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=run_pipeline_timeout)
 
     check_node_outputs(
         page,

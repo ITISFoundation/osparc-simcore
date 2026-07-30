@@ -36,7 +36,7 @@ def test_kember(
     page: Page,
     open_study_link: Callable[..., Any],
     anonymous_study_url: str,
-    service_start_timeout: int,
+    run_pipeline_timeout: int,
 ) -> None:
     opened_study = open_study_link(anonymous_study_url)
     project_data = opened_study.project_data
@@ -52,7 +52,7 @@ def test_kember(
         page,
         opened_study.websocket,
         run_button_test_id="AppMode_RunBtn",
-        timeout_ms=service_start_timeout,
+        timeout_ms=run_pipeline_timeout,
     )
     check_node_outputs(
         page,

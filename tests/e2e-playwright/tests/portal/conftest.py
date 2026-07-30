@@ -50,8 +50,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         type=int,
         default=1 * MINUTE,
         help="timeout in milliseconds waiting for an anonymously-opened study's service(s) to "
-        "become ready or for its pipeline to complete (equivalent to the legacy "
-        "start_timeout CLI argument)",
+        "become ready (equivalent to the legacy start_timeout CLI argument)",
+    )
+    group.addoption(
+        "--run-pipeline-timeout",
+        action="store",
+        type=int,
+        default=3 * MINUTE,
+        help="timeout in milliseconds waiting for a computational pipeline run to complete "
+        "(equivalent to the legacy start_timeout CLI argument)",
     )
     group.addoption(
         "--viewer-url-prefix",
@@ -96,6 +103,13 @@ def anonymous_open_timeout(request: pytest.FixtureRequest) -> int:
 @pytest.fixture(scope="session")
 def service_start_timeout(request: pytest.FixtureRequest) -> int:
     timeout = request.config.getoption("--service-start-timeout")
+    assert isinstance(timeout, int)
+    return timeout
+
+
+@pytest.fixture(scope="session")
+def run_pipeline_timeout(request: pytest.FixtureRequest) -> int:
+    timeout = request.config.getoption("--run-pipeline-timeout")
     assert isinstance(timeout, int)
     return timeout
 

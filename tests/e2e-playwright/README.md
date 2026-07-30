@@ -53,6 +53,10 @@ pytest -s tests/portal/test_2d_plot.py --headed --browser chromium \
   --service-start-timeout 60000
 ```
 
+Computational-pipeline portal tests (`test_cc_human.py`, `test_cc_rabbit.py`, `test_opencor.py`,
+`test_kember.py`) wait for a pipeline run instead of a dynamic service, so they use
+`--run-pipeline-timeout` (default 180000ms) instead of `--service-start-timeout`.
+
 `tests/portal/test_vtk_file.py` (port of the legacy `tests/e2e/portal-files/VTK_file.js`) resolves
 its study URL from a viewer/file instead, so it takes different options:
 
