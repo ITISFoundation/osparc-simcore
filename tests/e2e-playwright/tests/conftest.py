@@ -230,12 +230,13 @@ def api_request_context(context: BrowserContext) -> APIRequestContext:
 
 
 @pytest.fixture(scope="session")
-def product_url(request: pytest.FixtureRequest) -> AnyUrl | None:
+def product_url(request: pytest.FixtureRequest) -> AnyUrl:
     if passed_product_url := request.config.getoption("--product-url"):
         return TypeAdapter(AnyUrl).validate_python(passed_product_url)
-    if os.environ.get("PRODUCT_URL"):
-        return TypeAdapter(AnyUrl).validate_python(os.environ["PRODUCT_URL"])
-    return None
+    if env_product_url := os.environ.get("PRODUCT_URL"):
+        return TypeAdapter(AnyUrl).validate_python(env_product_url)
+    msg = "missing --product-url option or PRODUCT_URL env var"
+    raise AssertionError(msg)
 
 
 @pytest.fixture
@@ -346,6 +347,9 @@ def browser_context_args(
         "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
         "viewport": {"width": 1600, "height": 900},  # HD+
     }
+    assert bool(basic_auth_user) == bool(basic_auth_password), (
+        "--basic-auth-user and --basic-auth-password must be provided together"
+    )
     if basic_auth_user and basic_auth_password:
         context_args["http_credentials"] = {
             "username": basic_auth_user,

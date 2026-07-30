@@ -888,7 +888,10 @@ def check_node_outputs(
 
     with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
         path_filter = f"{study_id}/{node_id}"
-        with page.expect_response(re.compile(r"storage/locations/0/paths\?file_filter="), timeout=30 * SECOND):
+        with page.expect_response(
+            re.compile(rf"storage/locations/0/paths\?file_filter={re.escape(path_filter)}"),
+            timeout=30 * SECOND,
+        ):
             if app_mode:
                 page.get_by_test_id("outputsBtn").click()
             page.get_by_test_id("nodeFilesBtn").click()
