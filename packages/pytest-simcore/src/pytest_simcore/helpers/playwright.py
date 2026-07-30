@@ -839,19 +839,23 @@ def _read_output_file_names(
     page.get_by_test_id("folderGridView").click()
     items = page.get_by_test_id("FolderViewerItem")
 
-    if open_outputs_folder:
-        outputs_found = False
-        for index in range(items.count()):
-            item = items.nth(index)
-            if "output" in (item.text_content() or ""):
-                item.dblclick()
-                outputs_found = True
-        assert outputs_found, f"outputs folder not found for node {node_id} ({path_filter})"
-        items = page.get_by_test_id("FolderViewerItem")
+    with log_context(logging.INFO, f"Reading node {node_id} outputs ({path_filter=})") as ctx:
+        if open_outputs_folder:
+            outputs_found = False
+            for index in range(items.count()):
+                item = items.nth(index)
+                if "output" in (item.text_content() or ""):
+                    item.dblclick()
+                    outputs_found = True
+            assert outputs_found, f"outputs folder not found for node {node_id} ({path_filter})"
+            items = page.get_by_test_id("FolderViewerItem")
 
-    actual_file_names = [(name or "").removesuffix("\ue24d") for name in items.all_text_contents()]
-    assert actual_file_names == expected_file_names, f"Expected {expected_file_names}, got {actual_file_names}"
-    return actual_file_names
+        actual_file_names = sorted([(name or "").removesuffix("\ue24d") for name in items.all_text_contents()])
+        assert actual_file_names == sorted(expected_file_names), (
+            f"Expected {expected_file_names}, got {actual_file_names}"
+        )
+        ctx.logger.info("✅ Node %s outputs match expected file names: %s", node_id, actual_file_names)
+        return actual_file_names
 
 
 @retry(
