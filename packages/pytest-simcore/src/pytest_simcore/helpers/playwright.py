@@ -29,6 +29,7 @@ from tenacity import (
     stop_after_attempt,
     stop_after_delay,
     wait_exponential,
+    wait_exponential_jitter,
     wait_fixed,
 )
 
@@ -798,10 +799,7 @@ def wait_for_label_text(page: Page, locator: str, substring: str, timeout: int =
 
 
 def get_node_id_from_service_key(workbench: dict[str, Any], service_key_fragment: str) -> str:
-    """Finds the node id in a project's workbench whose service key contains the given fragment.
-
-    Port of the legacy `utils.getNodeIdFromServiceKey()` used by tests/e2e/portal.
-    """
+    """Finds the node id in a project's workbench whose service key contains the given fragment."""
     for node_id, node_data in workbench.items():
         if service_key_fragment in node_data["key"]:
             return node_id
@@ -809,11 +807,8 @@ def get_node_id_from_service_key(workbench: dict[str, Any], service_key_fragment
     raise ValueError(msg)
 
 
-def _open_node(page: Page, position: int) -> str:
-    """Selects the node at `position` in the workbench tree (left panel) and returns its node id.
-
-    Port of the legacy `auto.openNode()`.
-    """
+def _select_node(page: Page, position: int) -> str:
+    """Selects the node at `position` in the workbench tree (left panel) and returns its node id."""
     tree_items = page.locator('[osparc-test-id="nodeTreeItem"]')
     node_ids_and_locators = []
     for index in range(tree_items.count()):
@@ -829,16 +824,10 @@ def _open_node(page: Page, position: int) -> str:
     return node_id
 
 
-_OUTPUT_FILE_NAMES_MAX_WAITING_TIME: Final[int] = 30 * SECOND
-_OUTPUT_FILE_NAMES_WAIT_INTERVAL: Final[int] = 1 * SECOND
+_OUTPUT_FILE_NAMES_MAX_WAITING_TIME: Final[timedelta] = timedelta(seconds=30)
+_OUTPUT_FILE_NAMES_WAIT_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
 
-@retry(
-    stop=stop_after_delay(_OUTPUT_FILE_NAMES_MAX_WAITING_TIME),
-    retry=retry_if_exception_type(AssertionError),
-    reraise=True,
-    wait=wait_fixed(_OUTPUT_FILE_NAMES_WAIT_INTERVAL),
-)
 def _read_output_file_names(
     page: Page,
     *,
@@ -867,6 +856,45 @@ def _read_output_file_names(
     return actual_file_names
 
 
+@retry(
+    stop=stop_after_delay(_OUTPUT_FILE_NAMES_MAX_WAITING_TIME),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+    wait=wait_exponential_jitter(max=_OUTPUT_FILE_NAMES_WAIT_INTERVAL.total_seconds()),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
+)
+def _check_node_outputs_dialog(
+    page: Page,
+    *,
+    study_id: str,
+    node_id: str,
+    expected_file_names: list[str],
+    open_outputs_folder: bool,
+    app_mode: bool,
+) -> None:
+    with log_context(logging.INFO, "Opening node outputs panel"):
+        path_filter = f"{study_id}/{node_id}"
+        with page.expect_response(
+            re.compile(r"storage/locations/0/paths\?file_filter="),
+            timeout=_OUTPUT_FILE_NAMES_MAX_WAITING_TIME.total_seconds() * 1000,
+        ):
+            if app_mode:
+                page.get_by_test_id("outputsBtn").click()
+            page.get_by_test_id("nodeFilesBtn").click()
+
+    try:
+        _read_output_file_names(
+            page,
+            node_id=node_id,
+            path_filter=path_filter,
+            expected_file_names=expected_file_names,
+            open_outputs_folder=open_outputs_folder,
+        )
+    finally:
+        with log_context(logging.INFO, "Closing node outputs panel"):
+            page.get_by_test_id("nodeDataManagerCloseBtn").click()
+
+
 def check_node_outputs(
     page: Page,
     *,
@@ -884,23 +912,14 @@ def check_node_outputs(
     """
     if node_id is None:
         assert node_position is not None, "either node_id or node_position must be provided"
-        node_id = _open_node(page, node_position)
+        node_id = _select_node(page, node_position)
 
     with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
-        path_filter = f"{study_id}/{node_id}"
-        with page.expect_response(
-            re.compile(rf"storage/locations/0/paths\?file_filter={re.escape(path_filter)}"),
-            timeout=30 * SECOND,
-        ):
-            if app_mode:
-                page.get_by_test_id("outputsBtn").click()
-            page.get_by_test_id("nodeFilesBtn").click()
-
-        _read_output_file_names(
+        _check_node_outputs_dialog(
             page,
+            study_id=study_id,
             node_id=node_id,
-            path_filter=path_filter,
             expected_file_names=expected_file_names,
             open_outputs_folder=open_outputs_folder,
+            app_mode=app_mode,
         )
-        page.get_by_test_id("nodeDataManagerCloseBtn").click()
