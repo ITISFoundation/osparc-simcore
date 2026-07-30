@@ -1183,9 +1183,7 @@ msgstr "Reconozco que los datos se procesarán de acuerdo con %1."
 # conditions.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:367
 msgid "I accept the %1 and I will use the product in accordance with it"
-msgstr ""
-"Acepto los términos y condiciones y utilizaré el producto de acuerdo con "
-"ellos."
+msgstr "Acepto %1 y utilizaré el producto de acuerdo con ello."
 
 # CTX-INTERPRETATION: The string "Request" appears as the label for a button
 # that initiates a request, likely related to account registration or a
@@ -8185,7 +8183,7 @@ msgstr "Se le ha notificado que se ha recuperado el estudio '%1'."
 # message.
 #: services/static-webserver/client/source/class/osparc/notification/NotificationUI.js:236
 msgid "%1 wants you to check the conversation"
-msgstr "quiere que revise la conversación"
+msgstr "%1 quiere que revise la conversación"
 
 # CTX-INTERPRETATION: The string is used within a UI component to display a
 # notification indicating that a study with a specific name has been added to
@@ -9003,8 +9001,7 @@ msgstr "Haga clic en %1 para leer los acuerdos de licencia."
 # for users seeking more information about the software.
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:99
 msgid "For more information about Sim4Life.lite, visit %1."
-msgstr ""
-"Para obtener más información sobre Sim4Life.lite, visite nuestro sitio web."
+msgstr "Para obtener más información sobre Sim4Life.lite, visite %1."
 
 # CTX-INTERPRETATION: The string appears in the AboutProduct.js file,
 # specifically within a section related to providing additional information

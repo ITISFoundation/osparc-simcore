@@ -1153,14 +1153,14 @@ msgstr "您是通过什么方式了解我们的？"
 # link based on the product name.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:354
 msgid "I acknowledge that data will be processed in accordance to %1"
-msgstr "\"我确认，数据将根据 %1 的规定进行处理\""
+msgstr "我确认，数据将根据 %1 的规定进行处理"
 
 # CTX-INTERPRETATION: This string appears in the 'RequestAccount' component,
 # specifically within a checkbox for accepting the EULA, prompting the user to
 # agree and use the product according to its terms.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:367
 msgid "I accept the %1 and I will use the product in accordance with it"
-msgstr "我同意该条款，并且将按照其使用该产品。"
+msgstr "我接受 %1，并将按照其规定使用该产品。"
 
 # CTX-INTERPRETATION: The string "Request" is used as the label for a button
 # that initiates a request, likely related to account registration or a
@@ -4172,7 +4172,7 @@ msgstr "钱包 \"%1\"，您的服务(们)已用完信用。 优雅地停止服�
 # prompting the user to reload for changes.
 #: services/static-webserver/client/source/class/osparc/desktop/StudyEditor.js:631
 msgid "New inputs for service %1. Please reload to refresh service."
-msgstr "新的服务输入。请刷新以更新服务。"
+msgstr "服务 %1 有新的输入。请刷新以更新服务。"
 
 # CTX-INTERPRETATION: This string appears in the StudyEditor, prompting the
 # user whether to re-run the pipeline if it's already up-to-date, after a
@@ -8105,7 +8105,7 @@ msgstr "您已收到通知：'%1'"
 # message thread.
 #: services/static-webserver/client/source/class/osparc/notification/NotificationUI.js:236
 msgid "%1 wants you to check the conversation"
-msgstr "您想查看对话"
+msgstr "%1 希望您查看对话"
 
 # CTX-INTERPRETATION: The string is used within a UI component to display a
 # notification message indicating that a study with a specific name has been
@@ -8628,7 +8628,7 @@ msgstr "已审核时间"
 # page, likely within a pagination control.
 #: services/static-webserver/client/source/class/osparc/po/UsersRegistered.js:333
 msgid "of %1 (%2 users)"
-msgstr "显示当前页码和该页的用户数"
+msgstr "共 %1（%2 个用户）"
 
 # CTX-INTERPRETATION: The string "Search" is used as a label for a group box,
 # likely within a user search functionality, providing a user interface
@@ -10684,7 +10684,7 @@ msgstr "- 额外信息：%1"
 # conversation with the user.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:328
 msgid "Hi %1,\n"
-msgstr "您好，\n"
+msgstr "您好，%1，\n"
 
 # CTX-INTERPRETATION: This string appears within the 'osparc' application,
 # specifically in a conversation or feedback section, offering users
