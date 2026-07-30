@@ -819,8 +819,6 @@ def _select_node(page: Page, position: int) -> str:
 
     node_id, locator = node_ids_and_locators[position]
     locator.click()
-    # Iframes get loaded on demand
-    page.wait_for_timeout(5 * SECOND)
     return node_id
 
 
