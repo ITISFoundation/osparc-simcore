@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-07-28T18:39:55Z\n"
+"X-Translation-Date: 2026-07-30T09:44:31Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
@@ -67,8 +67,8 @@ msgstr "后端"
 # `osparc.Application.js` file to display a message to the user when they are
 # about to navigate away from the application, indicating that they have been
 # logged out.
-#: services/static-webserver/client/source/class/osparc/Application.js:92
-#: services/static-webserver/client/source/class/osparc/Application.js:652
+#: services/static-webserver/client/source/class/osparc/Application.js:94
+#: services/static-webserver/client/source/class/osparc/Application.js:654
 msgid "You have been logged out"
 msgstr "您已注销"
 
@@ -503,7 +503,7 @@ msgstr "用户菜单"
 # likely representing the start date of a simulation or process within the
 # application.
 #: services/static-webserver/client/source/class/osparc/admin/Announcements.js:95
-#: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:395
+#: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:392
 #: services/static-webserver/client/source/class/osparc/desktop/StartPipelineView.js:82
 #: services/static-webserver/client/source/class/osparc/desktop/StartStopButtons.js:75
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:934
@@ -533,6 +533,13 @@ msgstr "结束"
 #: services/static-webserver/client/source/class/osparc/po/Invitations.js:66
 msgid "Generate"
 msgstr "生成"
+
+# CTX-INTERPRETATION: The string "Select at least one widget" appears in the
+# Annoucements.js file, likely within a UI component that allows users to
+# select widgets for an announcement or notification.
+#: services/static-webserver/client/source/class/osparc/admin/Announcements.js:117
+msgid "Select at least one widget"
+msgstr "至少选择一个组件"
 
 # CTX-INTERPRETATION: The string "Copy announcement" appears as the label for
 # a button that allows users to copy the announcement text to their clipboard,
@@ -676,6 +683,20 @@ msgstr "通过电子邮件"
 msgid "Invalid code"
 msgstr "无效代码"
 
+# CTX-INTERPRETATION: The string " Email" is used as a label for an email
+# input field within the login form of the Osparc application, providing
+# context to the user.
+#: services/static-webserver/client/source/class/osparc/auth/ui/LoginView.js:78
+msgid " Email"
+msgstr "邮箱"
+
+# CTX-INTERPRETATION: The string " Password" is used as a label for a password
+# field within a login form, indicating that the user should enter their
+# password.
+#: services/static-webserver/client/source/class/osparc/auth/ui/LoginView.js:93
+msgid " Password"
+msgstr "密码"
+
 # CTX-INTERPRETATION: The string "Sign in" is a button label used in a login
 # form, prompting the user to submit their credentials.
 #: services/static-webserver/client/source/class/osparc/auth/ui/LoginView.js:100
@@ -719,6 +740,21 @@ msgstr "免责声明"
 #: services/static-webserver/client/source/class/osparc/ui/basic/PoweredByOsparc.js:54
 msgid "powered by"
 msgstr "由赞助"
+
+# CTX-INTERPRETATION: This string appears in the LoginView.js file, informing
+# users about the upcoming phase-out of a planning tool and its inability to
+# accept new users.
+#: services/static-webserver/client/source/class/osparc/auth/ui/LoginView.js:196
+msgid ""
+"This version of the planning tool will be phased out soon and no longer "
+"accepts new users."
+msgstr "此版本的规划工具很快将被淘汰，并且将不再接受新用户。"
+
+# CTX-INTERPRETATION: This string appears in the LoginView.js file, providing
+# users with alternative resources to the soon-to-be-phased-out planning tool.
+#: services/static-webserver/client/source/class/osparc/auth/ui/LoginView.js:201
+msgid "Please visit %1 or %2 instead. See %3 for more information."
+msgstr "请访问 %1 或 %2 代替。有关更多信息，请参见 %3。"
 
 # CTX-INTERPRETATION: This string appears within the LoginView component,
 # likely displayed to the user when their email or password fails validation
@@ -815,6 +851,7 @@ msgstr "无法注册用户"
 # user's first name.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:41
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:193
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:211
 msgid "First Name"
 msgstr "用户名"
 
@@ -823,6 +860,7 @@ msgstr "用户名"
 # last name, possibly within a profile or account settings section.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:51
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:196
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:212
 msgid "Last Name"
 msgstr "姓"
 
@@ -837,6 +875,7 @@ msgstr "大学邮箱"
 # interface.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:77
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:200
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:213
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:189
 #: services/static-webserver/client/source/class/osparc/po/UsersRegistered.js:223
 #: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:82
@@ -851,6 +890,7 @@ msgstr "电子邮件"
 # or profile management.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:84
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:205
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:215
 msgid "Phone Number"
 msgstr "电话号码"
 
@@ -1357,9 +1397,9 @@ msgstr "删除消息？"
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1724
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2262
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2288
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2568
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2569
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2592
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2572
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2596
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:231
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:222
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:310
@@ -1368,7 +1408,7 @@ msgstr "删除消息？"
 #: services/static-webserver/client/source/class/osparc/desktop/SlideshowView.js:425
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:1273
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:1295
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:255
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:251
 #: services/static-webserver/client/source/class/osparc/desktop/paymentMethods/PaymentMethodListItem.js:208
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TokensPage.js:141
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TokensPage.js:280
@@ -1389,6 +1429,37 @@ msgstr "删除消息？"
 #: services/static-webserver/client/source/class/osparc/workbench/WorkbenchUI.js:2116
 msgid "Delete"
 msgstr "删除"
+
+# CTX-INTERPRETATION: The string "You" is likely used as a personal pronoun
+# within the NotificationUI component to address the user directly, possibly
+# indicating who sent or triggered the notification.
+#: services/static-webserver/client/source/class/osparc/conversation/NotificationUI.js:56
+#: services/static-webserver/client/source/class/osparc/conversation/NotificationUI.js:67
+msgid "You"
+msgstr "您"
+
+# CTX-INTERPRETATION: The string "unknown user" is used within the
+# NotificationUI class to display a message when a user's authentication
+# status is not recognized, likely indicating an unauthenticated or
+# unauthorized session.
+#: services/static-webserver/client/source/class/osparc/conversation/NotificationUI.js:60
+#: services/static-webserver/client/source/class/osparc/conversation/NotificationUI.js:71
+msgid "unknown user"
+msgstr "未知用户"
+
+# CTX-INTERPRETATION: The string "notified" appears within the
+# NotificationUI.js file, likely indicating that a user has been informed
+# about a specific event or action within the application.
+#: services/static-webserver/client/source/class/osparc/conversation/NotificationUI.js:63
+msgid "notified"
+msgstr "已通知"
+
+# CTX-INTERPRETATION: The string "unknown user notified" appears in the
+# NotificationUI.js file, likely indicating that a notification was sent to an
+# unrecognized or unauthorized user within the Osparc conversation system.
+#: services/static-webserver/client/source/class/osparc/conversation/NotificationUI.js:75
+msgid "unknown user notified"
+msgstr "未知用户已通知"
 
 # CTX-INTERPRETATION: The string "Loading Apps..." appears as a loading
 # indicator within the AppBrowser, likely during the process of fetching and
@@ -1654,7 +1725,7 @@ msgstr "重命名文件夹"
 # deletion of a folder, likely within a study or workspace browser.
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:374
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2558
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2588
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2592
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:324
 msgid "Are you sure you want to delete"
 msgstr "您确定要删除吗？"
@@ -1673,7 +1744,7 @@ msgstr "删除文件夹"
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1343
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1738
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2259
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2593
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2597
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:232
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:232
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:328
@@ -1927,6 +1998,7 @@ msgstr "无"
 #: services/static-webserver/client/source/class/osparc/desktop/credits/UsageTable.js:121
 #: services/static-webserver/client/source/class/osparc/filter/UserTagsFilter.js:14
 #: services/static-webserver/client/source/class/osparc/info/StudyLarge.js:187
+#: services/static-webserver/client/source/class/osparc/snapshots/EditSnapshotView.js:83
 #: services/static-webserver/client/source/class/osparc/snapshots/Snapshots.js:44
 #: services/static-webserver/client/source/class/osparc/study/StudyOptions.js:154
 msgid "Tags"
@@ -1999,7 +2071,7 @@ msgstr "编辑"
 # the user to confirm the deletion of a template, likely within a resource
 # management or simulation setup interface.
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:796
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:252
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:248
 msgid "Are you sure you want to delete "
 msgstr "您确定要删除吗？ "
 
@@ -2149,6 +2221,35 @@ msgstr "未找到教程"
 msgid "No Apps found"
 msgstr "未找到任何应用"
 
+# CTX-INTERPRETATION: The string "No Group" is used to display the title of a
+# group when no specific group criteria are applied in the
+# ResourceContainerManager, likely for a user interface element.
+#: services/static-webserver/client/source/class/osparc/dashboard/ResourceContainerManager.js:401
+msgid "No Group"
+msgstr "无组"
+
+# CTX-INTERPRETATION: The string "Not Tagged" appears in the
+# ResourceContainerManager.js file, likely indicating that a resource or item
+# within the application is not associated with any tags.
+#: services/static-webserver/client/source/class/osparc/dashboard/ResourceContainerManager.js:404
+msgid "Not Tagged"
+msgstr "未标记"
+
+# CTX-INTERPRETATION: The string "Not Shared" is used to indicate whether a
+# study is shared with only one collaborator or multiple collaborators, based
+# on the number of access rights associated with the study.
+#: services/static-webserver/client/source/class/osparc/dashboard/ResourceContainerManager.js:407
+#: services/static-webserver/client/source/class/osparc/info/StudyUtils.js:121
+msgid "Not Shared"
+msgstr "未共享"
+
+# CTX-INTERPRETATION: The string "Misc" is used as a placeholder for the title
+# of miscellaneous services within the ResourceContainerManager, likely
+# indicating a general category or grouping.
+#: services/static-webserver/client/source/class/osparc/dashboard/ResourceContainerManager.js:410
+msgid "Misc"
+msgstr "杂项"
+
 # CTX-INTERPRETATION: The string appears in the ResourceDetails.js file,
 # likely within a function that handles displaying resource data, indicating
 # that the requested data is unavailable and prompting the user to retry.
@@ -2232,8 +2333,8 @@ msgstr "管道视图"
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:530
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:73
 #: services/static-webserver/client/source/class/osparc/study/Conversations.js:52
-#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:124
-#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:178
+#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:123
+#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:177
 #: services/static-webserver/client/source/class/osparc/ui/message/NodeLockedPage.js:75
 msgid "Conversations"
 msgstr "对话"
@@ -2459,6 +2560,31 @@ msgstr "提交一个新的应用程序"
 #: services/static-webserver/client/source/class/osparc/dashboard/ServiceSubmission.js:80
 msgid "Service submission is deprecated."
 msgstr "服务提交已过时。"
+
+# CTX-INTERPRETATION: This string appears in the 'osparc' dashboard and study
+# import functionalities, informing users when they attempt to upload a file
+# exceeding the maximum allowed size.
+#: services/static-webserver/client/source/class/osparc/dashboard/ServiceSubmission.js:100
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1673
+#: services/static-webserver/client/source/class/osparc/study/Import.js:52
+msgid ""
+"The file is too big. Maximum size is %1MB. Please provide with a smaller "
+"file or a repository URL."
+msgstr "文件过大。最大允许大小为 %1MB。请提供较小的文件或存储库 URL。"
+
+# CTX-INTERPRETATION: This message confirms successful submission of data to
+# the curation team, providing users with an expected response time.
+#: services/static-webserver/client/source/class/osparc/dashboard/ServiceSubmission.js:114
+msgid ""
+"Your data was sent to our curation team. We will get back to you shortly."
+msgstr "您的数据已发送给我们的整理团队。 我们很快会与您联系。"
+
+# CTX-INTERPRETATION: This string appears in the osparc dashboard's
+# ServiceSubmission.js file, indicating an error message to the user when data
+# processing fails.
+#: services/static-webserver/client/source/class/osparc/dashboard/ServiceSubmission.js:117
+msgid "A problem occurred while processing your data: %1"
+msgstr "数据处理过程中出现问题: %1"
 
 # CTX-INTERPRETATION: The string "Sort" appears as a label for a button or
 # menu item, likely used to initiate or control the sorting functionality
@@ -2768,8 +2894,8 @@ msgstr "导出 cMIS"
 # CTX-INTERPRETATION: The string "Remove" is used as a label for a button
 # within the StudyBrowser, likely to delete a study or related item.
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2265
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2579
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2580
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2583
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2584
 #: services/static-webserver/client/source/class/osparc/form/json/JsonSchemaFormHeader.js:35
 msgid "Remove"
 msgstr "删除"
@@ -2882,31 +3008,46 @@ msgstr "已成功移除"
 msgid "You don't have permissions to delete or remove this project."
 msgstr "您没有删除或移除此项目的权限。"
 
-# CTX-INTERPRETATION: This string appears in the StudyBrowser component,
-# informing the user that a study will be removed from their list, while
-# collaborators will retain access.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2577
-msgid "will be removed from your list. Collaborators will still have access."
-msgstr "将被从您的列表中删除。 合作者仍将拥有访问权限。"
+# CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
+# within a function that displays information about studies and their deletion
+# settings.
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2567
+msgid "They will be permanently deleted after %1 days."
+msgstr "它们将在%1天后永久删除。"
+
+# CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
+# within a function related to managing data deletion or retention policies
+# for studies.
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2569
+msgid "It will be permanently deleted after %1 days."
+msgstr "它将在%1天后永久删除。"
+
+# CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
+# specifically when a user confirms the removal of a study from their list,
+# informing them that collaborators will retain access.
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2581
+msgid ""
+"'%1' will be removed from your list. Collaborators will still have access."
+msgstr "\"%1' 将从您的列表中移除。 合作者仍将拥有访问权限。"
 
 # CTX-INTERPRETATION: The string "Duplicating " is part of a user interface
 # element, likely a button or label, used to indicate that a study is being
 # duplicated.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2615
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2619
 msgid "Duplicating "
 msgstr "复制 "
 
 # CTX-INTERPRETATION: The string "Duplication completed" appears in the
 # StudyBrowser.js file, likely indicating that a study duplication process has
 # finished successfully.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2631
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2635
 msgid "Duplication completed"
 msgstr "复制完成"
 
 # CTX-INTERPRETATION: The string "Duplication cancelled" appears in the
 # StudyBrowser.js file, likely within a function that handles the cancellation
 # of a task duplication operation, providing feedback to the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2636
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2640
 msgid "Duplication cancelled"
 msgstr "复制已取消"
 
@@ -3059,6 +3200,21 @@ msgstr "正在加载..."
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspacesTree.js:23
 msgid "Workspaces"
 msgstr "工作区"
+
+# CTX-INTERPRETATION: The string "Operation not permitted" appears in the
+# Permissions.js file, likely indicating that a user does not have the
+# necessary permissions to perform a specific operation within the
+# application.
+#: services/static-webserver/client/source/class/osparc/data/Permissions.js:273
+msgid "Operation not permitted"
+msgstr "操作权限不足"
+
+# CTX-INTERPRETATION: The string appears in the Permissions.js file, likely
+# within a user interface element that prompts users with an unknown role to
+# register before accessing a specific feature.
+#: services/static-webserver/client/source/class/osparc/data/Permissions.js:275
+msgid "Please register to use this functionality"
+msgstr "请注册以使用此功能"
 
 # CTX-INTERPRETATION: This string appears within a `PollTask` class, likely
 # indicating an error or failure during a polling operation, providing a user-
@@ -3387,6 +3543,32 @@ msgstr "已退役"
 msgid "There was an issue starting"
 msgstr "启动过程中出现问题"
 
+# CTX-INTERPRETATION: This string is used within the IframeHandler class to
+# display a message indicating that a specific service is waiting for
+# resources, prompting the user to contact support and provide a related
+# message.
+#: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:274
+msgid ""
+"The service \"%1\" is waiting for available resources. Please inform support"
+" and provide the following message in case this does not resolve in a few "
+"minutes: \"%2\" reported \"%3\""
+msgstr "服务 \"%1\" 正在等待可用资源。请告知支持人员，并在几分钟内无法解决时提供以下消息：\"%2\"报告了\"%3\""
+
+# CTX-INTERPRETATION: This string is used within the IframeHandler class to
+# display an error message indicating that a service operation has failed,
+# including a specific error message associated with the failure.
+#: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:316
+msgid "Service failed: %1"
+msgstr "服务失败：%1"
+
+# CTX-INTERPRETATION: The string "Service %1 %2" is used within the
+# IframeHandler class to display a message indicating the status of a service,
+# likely related to data processing or communication.
+#: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:404
+#: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:419
+msgid "Service %1 %2"
+msgstr "服务 %1 %2"
+
 # CTX-INTERPRETATION: The string "Service metadata missing" appears in the
 # Node.js code when the application fails to retrieve necessary metadata for a
 # service, likely related to data retrieval or service configuration.
@@ -3423,6 +3605,20 @@ msgstr "您真的想停止并保存当前状态吗？"
 #: services/static-webserver/client/source/class/osparc/workbench/NodeUI.js:428
 msgid "Stop"
 msgstr "停止"
+
+# CTX-INTERPRETATION: The string is used within the Node.js application to
+# display a log message indicating that a simulation process has started,
+# specifying the node ID and version number.
+#: services/static-webserver/client/source/class/osparc/data/model/Node.js:1219
+msgid "Starting %1:%2..."
+msgstr "正在启动：%1:%2..."
+
+# CTX-INTERPRETATION: The string is used within the Node.js application to
+# display a message indicating that a process or operation is being stopped,
+# along with specific details like the node ID and version.
+#: services/static-webserver/client/source/class/osparc/data/model/Node.js:1238
+msgid "Stopping %1:%2..."
+msgstr "正在停止 %1:%2..."
 
 # CTX-INTERPRETATION: This string appears in the NodeProgressSequence class,
 # likely indicating a loading or processing state during a simulation.
@@ -3904,6 +4100,22 @@ msgstr "交互式服务。"
 msgid "Please start them manually."
 msgstr "请手动启动它们。"
 
+# CTX-INTERPRETATION: The string appears in the StudyEditor.js file, likely
+# within a function that handles scenarios where a user's wallet has
+# insufficient credits to run services, prompting them to stop gracefully.
+#: services/static-webserver/client/source/class/osparc/desktop/StudyEditor.js:607
+msgid ""
+"Wallet \"%1\", running your service(s) has run out of credits. Stopping "
+"service(s) gracefully."
+msgstr "钱包 \"%1\"，您的服务(们)已用完信用。 优雅地停止服务(们)。"
+
+# CTX-INTERPRETATION: The string appears in the StudyEditor.js file, likely
+# within a user interface element related to updating service inputs and
+# prompting the user to reload for changes.
+#: services/static-webserver/client/source/class/osparc/desktop/StudyEditor.js:631
+msgid "New inputs for service %1. Please reload to refresh service."
+msgstr "新的服务输入。请刷新以更新服务。"
+
 # CTX-INTERPRETATION: This string appears in the StudyEditor, prompting the
 # user whether to re-run the pipeline if it's already up-to-date, after a
 # successful pipeline check.
@@ -4049,6 +4261,7 @@ msgstr "对话"
 # likely within a user interface for creating or managing notes related to a
 # scientific simulation or data visualization.
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:978
+#: services/static-webserver/client/source/class/osparc/editor/AnnotationEditor.js:80
 #: services/static-webserver/client/source/class/osparc/editor/AnnotationNoteCreator.js:103
 msgid "Note"
 msgstr "备注"
@@ -4064,6 +4277,7 @@ msgstr "框"
 # the WorkbenchView, likely indicating a text input field or a similar
 # element.
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:994
+#: services/static-webserver/client/source/class/osparc/editor/AnnotationEditor.js:72
 msgid "Text"
 msgstr "文本"
 
@@ -4186,12 +4400,27 @@ msgstr "删除帐户"
 msgid "Your email"
 msgstr "您的电子邮件"
 
+# CTX-INTERPRETATION: The string "Email address" is used as a label for an
+# email input field within a form related to deleting an account, likely
+# providing instructions or clarification to the user.
+#: services/static-webserver/client/source/class/osparc/desktop/account/DeleteAccount.js:77
+msgid "Email address"
+msgstr "电子邮件地址"
+
 # CTX-INTERPRETATION: The string "Your password" is a placeholder text
 # displayed within a password field in the account deletion form, prompting
 # the user to enter their password.
 #: services/static-webserver/client/source/class/osparc/desktop/account/DeleteAccount.js:81
 msgid "Your password"
 msgstr "您的密码"
+
+# CTX-INTERPRETATION: The string "Password" is used within the ProfilePage.js
+# file, likely to label a section or input field related to setting or
+# managing a user's password.
+#: services/static-webserver/client/source/class/osparc/desktop/account/DeleteAccount.js:84
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:535
+msgid "Password"
+msgstr "密码"
 
 # CTX-INTERPRETATION: The string "Profile" is used as the title for a tab
 # within a user profile page, likely indicating the current user's profile
@@ -4242,6 +4471,14 @@ msgstr "我的帐户"
 # be entered.
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:189
 msgid "userName"
+msgstr "用户名"
+
+# CTX-INTERPRETATION: The string "UserName" is used within a UI component to
+# display the user's name, likely within a user profile or settings section of
+# the application.
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:210
+#: services/static-webserver/client/source/class/osparc/user/UserProfile.js:86
+msgid "UserName"
 msgstr "用户名"
 
 # CTX-INTERPRETATION: The string "Expiration date:" is used within a profile
@@ -4300,6 +4537,27 @@ msgstr "隐私"
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:351
 msgid "Choose what others see."
 msgstr "选择其他人能看到的内容。"
+
+# CTX-INTERPRETATION: The string "Hide UserName" is used within a user profile
+# page to provide a label for an option that allows the user to hide their
+# username from other users.
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:364
+msgid "Hide UserName"
+msgstr "隐藏用户名"
+
+# CTX-INTERPRETATION: The string "Hide Full Name" is used within a form on a
+# profile page to allow the user to choose whether or not their full name is
+# displayed.
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:365
+msgid "Hide Full Name"
+msgstr "隐藏全名"
+
+# CTX-INTERPRETATION: The string "Hide Email" is used within a form to allow
+# the user to hide their email address from being displayed, likely related to
+# privacy settings or profile customization.
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:366
+msgid "Hide Email"
+msgstr "隐藏电子邮件"
 
 # CTX-INTERPRETATION: The string "Update Privacy" appears as the label of a
 # button within a user profile settings page, likely allowing the user to
@@ -4414,13 +4672,6 @@ msgstr "是的，禁用"
 msgid "2FA Method"
 msgstr "2FA 方法"
 
-# CTX-INTERPRETATION: The string "Password" is used within the ProfilePage.js
-# file, likely to label a section or input field related to setting or
-# managing a user's password.
-#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:535
-msgid "Password"
-msgstr "密码"
-
 # CTX-INTERPRETATION: The string "Your current password" is used as a
 # placeholder within a password field on a user profile page, prompting the
 # user to enter their existing password for authentication or account
@@ -4428,6 +4679,27 @@ msgstr "密码"
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:553
 msgid "Your current password"
 msgstr "您的当前密码"
+
+# CTX-INTERPRETATION: The string "Current Password" appears as a label within
+# a form used for updating a user's password on the ProfilePage, likely
+# prompting the user to enter their existing password.
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:572
+msgid "Current Password"
+msgstr "当前密码"
+
+# CTX-INTERPRETATION: The string "New Password" appears as a label for a
+# password input field within a profile settings page, likely used for
+# changing the user's account password.
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:573
+msgid "New Password"
+msgstr "新密码"
+
+# CTX-INTERPRETATION: The string "Confirm New Password" appears as a label
+# within a form on the ProfilePage, likely used to verify the user's input for
+# setting a new password.
+#: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:574
+msgid "Confirm New Password"
+msgstr "确认新密码"
 
 # CTX-INTERPRETATION: The string "Unsuccessful password reset" appears in the
 # ProfilePage.js file, likely indicating that a password reset attempt failed,
@@ -5077,7 +5349,7 @@ msgstr "返回到组织列表"
 # CTX-INTERPRETATION: This string appears in various UI components related to
 # managing organizations and wallets, indicating a successful edit operation.
 #: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationDetails.js:138
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:306
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:302
 #: services/static-webserver/client/source/class/osparc/desktop/wallets/WalletDetails.js:123
 #: services/static-webserver/client/source/class/osparc/desktop/wallets/WalletsList.js:199
 msgid " successfully edited"
@@ -5087,7 +5359,7 @@ msgstr "已成功编辑"
 # likely a form or editor, to inform the user when an error occurs during data
 # modification, such as when saving or updating an organization or wallet.
 #: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationDetails.js:141
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:309
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:305
 #: services/static-webserver/client/source/class/osparc/desktop/wallets/WalletDetails.js:128
 msgid "Something went wrong while editing "
 msgstr "编辑时出现问题 "
@@ -5115,29 +5387,23 @@ msgstr "教程"
 msgid "Apps"
 msgstr "应用程序"
 
-# CTX-INTERPRETATION: The string appears within the OrganizationsList
-# component, explaining the concept of an organization and its features to the
-# user.
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:27
-msgid "    An organization is a group of users who can share "
-msgstr "一个组织是由可以共享的用户组成的团体。 "
-
 # CTX-INTERPRETATION: This string appears in the OrganizationsList component,
-# providing an introduction explaining the functionality related to
-# organizations and their management.
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:28
+# explaining the concept of an organization and its features to the user.
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:27
 msgid ""
-" and other resources.<br>    Here you can see the list of organizations you "
-"belong to, create new organizations,     or manage the membership by setting"
-" up the access rights of each member in the organization     if you are a "
-"manager or administrator."
+"An organization is a group of users who can share %1 and other "
+"resources.<br>Here you can see the list of organizations you belong to, "
+"create new organizations, or manage the membership by setting up the access "
+"rights of each member in the organization if you are a manager or "
+"administrator."
 msgstr ""
-"以及其他资源。<br>在这里，您可以查看您所属的组织列表、创建新的组织，或通过设置组织中每个成员的访问权限来管理成员身份，如果您是经理或管理员。"
+"一个组织是由可以共享 %1 "
+"和其他资源的用户的群体。<br>在这里，您可以查看您所属的组织列表、创建新的组织或通过设置组织中每个成员的访问权限来管理成员身份（如果您是经理或管理员）。"
 
 # CTX-INTERPRETATION: The string "New Organization" is used as a button label
 # within the OrganizationsList and OrganizationEditor components, likely to
 # initiate the creation of a new organization record.
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:102
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:98
 #: services/static-webserver/client/source/class/osparc/editor/OrganizationEditor.js:22
 msgid "New Organization"
 msgstr "新建组织"
@@ -5145,21 +5411,21 @@ msgstr "新建组织"
 # CTX-INTERPRETATION: The string "Delete Organization" is used as the caption
 # for a confirmation dialog, likely to delete an organization within a user
 # interface.
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:254
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:250
 msgid "Delete Organization"
 msgstr "删除组织"
 
 # CTX-INTERPRETATION: This string appears within the OrganizationsList
 # component, likely displaying an error message to the user when an attempt to
 # delete an organization fails.
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:268
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:264
 msgid "Something went wrong while deleting "
 msgstr "在删除时发生了一些错误 "
 
 # CTX-INTERPRETATION: This string appears within the OrganizationsList
 # component, likely indicating that a new organization entry has been
 # successfully added to the list, possibly after a user interaction.
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:285
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:281
 #: services/static-webserver/client/source/class/osparc/pricing/PlanEditor.js:221
 msgid " successfully created"
 msgstr "已成功创建"
@@ -5167,7 +5433,7 @@ msgstr "已成功创建"
 # CTX-INTERPRETATION: This string appears within a scientific simulation
 # application, likely during the creation of an organization or plan,
 # indicating an error occurred.
-#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:290
+#: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:286
 #: services/static-webserver/client/source/class/osparc/pricing/PlanEditor.js:225
 msgid "Something went wrong while creating "
 msgstr "在创建时出现问题 "
@@ -5295,12 +5561,12 @@ msgstr "在执行以下操作之前，请确认："
 msgid "Go back to the Dashboard"
 msgstr "返回到仪表盘"
 
-# CTX-INTERPRETATION: This string is used within a confirmation dialog to
-# inform the user about deleting a study, specifically within the
-# 'ConfirmationsPage' of the osparc desktop application.
+# CTX-INTERPRETATION: The string "Delete a %1" is used in the
+# ConfirmationsPage to display a warning message when the user attempts to
+# delete a study, prompting them to confirm their action.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/ConfirmationsPage.js:61
-msgid "Delete a "
-msgstr "删除一个 "
+msgid "Delete a %1"
+msgstr "删除一个 %1"
 
 # CTX-INTERPRETATION: The string appears in a confirmation dialog within the
 # application's preferences settings, warning the user that deleting a study
@@ -5351,6 +5617,14 @@ msgstr "停止节点"
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/ConfirmationsPage.js:118
 msgid "Snap Node to Grid"
 msgstr "将节点固定到网格"
+
+# CTX-INTERPRETATION: The string "Experimental preferences" appears as the
+# title of a section within a user interface for configuring experimental
+# settings in the application, likely related to defining parameters and
+# options for simulations.
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/ConfirmationsPage.js:129
+msgid "Experimental preferences"
+msgstr "实验偏好"
 
 # CTX-INTERPRETATION: The string appears within a user interface element,
 # likely a confirmation page, to describe the purpose of a section displaying
@@ -5451,6 +5725,13 @@ msgstr "设置低磁盘空间可用性的警告阈值"
 msgid "Threshold (in GB)"
 msgstr "阈值 (以 GB 为单位)"
 
+# CTX-INTERPRETATION: The string "Privacy Settings" appears as the title of a
+# section within the general preferences settings page, allowing users to
+# manage their privacy options.
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:185
+msgid "Privacy Settings"
+msgstr "隐私设置"
+
 # CTX-INTERPRETATION: The string appears within a user preferences page,
 # likely prompting the user to provide feedback or contribute to improving the
 # Sim4Life application.
@@ -5465,41 +5746,22 @@ msgstr "帮助我们改进 Sim4Life 用户体验"
 msgid "Share usage data"
 msgstr "分享使用数据"
 
-# CTX-INTERPRETATION: The string appears within a UI element on a TagsPage,
-# explaining how tags help organize studies and improve searchability within
-# the application.
+# CTX-INTERPRETATION: The string explains how tags help users organize topics
+# in the Dashboard for easier searching and filtering, referring to 'studies'
+# and 'tags'.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TagsPage.js:21
-msgid "    Tags help you organize the "
-msgstr ""
-"标签有助于您组织研究，并在仪表板中按主题进行分类，从而更轻松地搜索和过滤。 一旦创建了标签，就可以将它们分配给研究，方法是使用 '更多选项...' "
-"在研究卡上进行操作。 "
-
-# CTX-INTERPRETATION: This string appears in the TagsPage, explaining how tags
-# help organize studies in the Dashboard, facilitating search and filtering.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TagsPage.js:22
 msgid ""
-" in the Dashboard by categorizing topics, making it easier to search and "
-"filter.     Once the tags are created, they can be assigned to the "
-msgstr "标签可以帮助您在仪表板中按主题进行分类，从而更轻松地搜索和过滤。 一旦标签创建后，它们可以分配给仪表板中的研究。 "
-
-# CTX-INTERPRETATION: The string appears within a UI element explaining how to
-# assign tags to studies, specifically referring to the 'More options...'
-# button on study cards.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TagsPage.js:23
-msgid "  via 'More options...' on the "
-msgstr "通过“更多选项...”按钮将标签分配给 "
-
-# CTX-INTERPRETATION: The string appears within a UI element explaining how
-# tags are used to categorize and assign tags to studies, specifically within
-# the 'More options...' on the study cards.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TagsPage.js:23
-msgid " cards."
-msgstr "卡片。"
+"Tags help you organize the %1 in the Dashboard by categorizing topics, "
+"making it easier to search and filter. Once the tags are created, they can "
+"be assigned to the %2 via 'More options...' on the %2 cards."
+msgstr ""
+"标签可以帮助您在仪表板中组织主题，通过分类来简化搜索和过滤。 一旦创建了标签，就可以将它们分配给 '%1'（例如：研究）或 "
+"'%2'（例如：标签），方法是在 '%2' 卡片上的 '更多选项...' 中进行。"
 
 # CTX-INTERPRETATION: The string "New Tag" appears as the label for a button,
 # likely used to create a new tag within a user interface, possibly in a
 # preferences or tagging management context.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TagsPage.js:69
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TagsPage.js:67
 #: services/static-webserver/client/source/class/osparc/form/tag/TagManager.js:115
 msgid "New Tag"
 msgstr "新建标签"
@@ -5595,6 +5857,13 @@ msgstr "您确定要删除此令牌吗？"
 msgid "Delete Token"
 msgstr "删除令牌"
 
+# CTX-INTERPRETATION: The string "Add new service API tokens" appears in the
+# TokensPage.js file, likely within a user interface element related to
+# managing API keys for different services.
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TokensPage.js:312
+msgid "Add new service API tokens"
+msgstr "添加新的服务API令牌"
+
 # CTX-INTERPRETATION: The string "Enter your token key" is used within the
 # TokensPage.js file, likely as a label or prompt for the user to input their
 # token key, which is a common requirement for authentication or authorization
@@ -5632,6 +5901,13 @@ msgstr "密钥"
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/window/CreateAPIKey.js:20
 msgid "Generate API Key"
 msgstr "生成 API 密钥"
+
+# CTX-INTERPRETATION: The string appears in the CreateAPIKey window within the
+# OSPARC desktop application, informing the user that API key names must be
+# distinct to avoid conflicts.
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/window/CreateAPIKey.js:21
+msgid "Key names must be unique."
+msgstr "密钥名称必须是唯一的。"
 
 # CTX-INTERPRETATION: The string "Key Name" is used as a label for a text
 # field within a form, likely for entering the name of an API key, as
@@ -5899,6 +6175,22 @@ msgstr "在更新信用账户时出现问题"
 msgid "Preferred"
 msgstr "首选"
 
+# CTX-INTERPRETATION: The string "Color" is used within a UI element, likely a
+# color picker, to label a color input field or a refresh button, indicating
+# the purpose of the associated control.
+#: services/static-webserver/client/source/class/osparc/editor/AnnotationEditor.js:84
+#: services/static-webserver/client/source/class/osparc/form/tag/TagItem.js:335
+msgid "Color"
+msgstr "颜色"
+
+# CTX-INTERPRETATION: The string "Size" likely refers to the file size, and is
+# used in a table to display file information, probably within a folder
+# content viewer.
+#: services/static-webserver/client/source/class/osparc/editor/AnnotationEditor.js:88
+#: services/static-webserver/client/source/class/osparc/file/FolderContent.js:106
+msgid "Size"
+msgstr "大小"
+
 # CTX-INTERPRETATION: The string "Add Note" is used as the title for a pop-up
 # window, likely within a note editor, allowing the user to create a new
 # annotation.
@@ -5976,6 +6268,7 @@ msgstr "编写"
 # `TextField` element, likely for users to input a URL, probably related to
 # image or data source.
 #: services/static-webserver/client/source/class/osparc/editor/ThumbnailEditor.js:71
+#: services/static-webserver/client/source/class/osparc/file/FilePicker.js:212
 msgid "url"
 msgstr "URL"
 
@@ -6004,6 +6297,7 @@ msgstr "输入一个链接"
 # choose a specific file or option.
 #: services/static-webserver/client/source/class/osparc/file/FileDownloadLink.js:117
 #: services/static-webserver/client/source/class/osparc/file/FilePicker.js:667
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:74
 msgid "Select"
 msgstr "选择"
 
@@ -6167,6 +6461,13 @@ msgstr "项目已成功删除"
 msgid "Deletion aborted"
 msgstr "删除已取消"
 
+# CTX-INTERPRETATION: The string "label" is used as a placeholder within the
+# qx.ui.form.TextField to display the label associated with a file picker
+# input field, likely in a user interface.
+#: services/static-webserver/client/source/class/osparc/file/FilePicker.js:219
+msgid "label"
+msgstr "标签"
+
 # CTX-INTERPRETATION: The string "Cancel upload" appears as a tooltip for a
 # button that allows the user to cancel an ongoing file upload process within
 # the FilePicker component.
@@ -6223,13 +6524,6 @@ msgstr "从其他来源选择文件 "
 #: services/static-webserver/client/source/class/osparc/file/FolderContent.js:105
 msgid "Date Modified"
 msgstr "上次修改日期"
-
-# CTX-INTERPRETATION: The string "Size" likely refers to the file size, and is
-# used in a table to display file information, probably within a folder
-# content viewer.
-#: services/static-webserver/client/source/class/osparc/file/FolderContent.js:106
-msgid "Size"
-msgstr "大小"
 
 # CTX-INTERPRETATION: The string "Id" likely represents a unique identifier
 # for a file or folder within a file management system, displayed in a table.
@@ -6447,13 +6741,6 @@ msgstr "分享标签"
 #: services/static-webserver/client/source/class/osparc/form/tag/TagItem.js:247
 msgid "Edit tag"
 msgstr "编辑标签"
-
-# CTX-INTERPRETATION: The string "Color" is used within a UI element, likely a
-# color picker, to label a color input field or a refresh button, indicating
-# the purpose of the associated control.
-#: services/static-webserver/client/source/class/osparc/form/tag/TagItem.js:335
-msgid "Color"
-msgstr "颜色"
 
 # CTX-INTERPRETATION: The string "Apply Tags" appears within the TagManager
 # component, likely as a button label or similar UI element, allowing users to
@@ -6937,13 +7224,6 @@ msgstr "项目信息"
 #: services/static-webserver/client/source/class/osparc/info/StudyUtils.js:50
 msgid "me"
 msgstr "我"
-
-# CTX-INTERPRETATION: The string "Not Shared" is used to indicate whether a
-# study is shared with only one collaborator or multiple collaborators, based
-# on the number of access rights associated with the study.
-#: services/static-webserver/client/source/class/osparc/info/StudyUtils.js:121
-msgid "Not Shared"
-msgstr "未共享"
 
 # CTX-INTERPRETATION: The string "Autostart services" appears as a label for a
 # checkbox, likely related to controlling the automatic startup of services
@@ -7625,8 +7905,8 @@ msgstr "PO 中心"
 # providing users with access to assistance resources.
 #: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:90
 #: services/static-webserver/client/source/class/osparc/support/SupportButton.js:29
-#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:112
-#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:167
+#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:111
+#: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:166
 msgid "Help & Support"
 msgstr "帮助与支持"
 
@@ -8408,6 +8688,12 @@ msgstr "定价计划编辑器"
 #: services/static-webserver/client/source/class/osparc/pricing/ServicesList.js:58
 msgid "Add Service"
 msgstr "添加服务"
+
+# CTX-INTERPRETATION: The string appears in the ServicesList component,
+# displaying a warning message when data retrieval from some services fails.
+#: services/static-webserver/client/source/class/osparc/pricing/ServicesList.js:110
+msgid "Could not retrieve data from some services:"
+msgstr "无法从某些服务获取数据："
 
 # CTX-INTERPRETATION: The string "Unit Name" is used as a label for a text
 # field within a UnitEditor component, allowing the user to input the name of
@@ -9615,6 +9901,16 @@ msgstr "以下用户/组将无法打开共享研究，因为他们没有访问�
 msgid "OK"
 msgstr "确定"
 
+# CTX-INTERPRETATION: The string "Message" is likely used as a generic label
+# or identifier within the application, possibly for displaying messages or
+# status updates in the user interface, as seen in the provided file paths.
+#: services/static-webserver/client/source/class/osparc/snapshots/EditSnapshotView.js:86
+#: services/static-webserver/client/source/class/osparc/snapshots/Snapshots.js:48
+#: services/static-webserver/client/source/class/osparc/tester/ConsoleErrors.js:40
+#: services/static-webserver/client/source/class/osparc/tester/WebSocketMessages.js:41
+msgid "Message"
+msgstr "消息"
+
 # CTX-INTERPRETATION: The string "iterations" is used as a label for a section
 # within a UI component that displays and manages simulation iterations.
 #: services/static-webserver/client/source/class/osparc/snapshots/IterationsView.js:64
@@ -9635,15 +9931,6 @@ msgstr "编辑标签"
 #: services/static-webserver/client/source/class/osparc/snapshots/IterationsView.js:251
 msgid "Edit Iteration"
 msgstr "编辑迭代"
-
-# CTX-INTERPRETATION: The string "Message" is likely used as a generic label
-# or identifier within the application, possibly for displaying messages or
-# status updates in the user interface, as seen in the provided file paths.
-#: services/static-webserver/client/source/class/osparc/snapshots/Snapshots.js:48
-#: services/static-webserver/client/source/class/osparc/tester/ConsoleErrors.js:40
-#: services/static-webserver/client/source/class/osparc/tester/WebSocketMessages.js:41
-msgid "Message"
-msgstr "消息"
 
 # CTX-INTERPRETATION: This string likely appears in a user interface element,
 # such as a table or form, to display the timestamp when a snapshot was
@@ -9682,6 +9969,13 @@ msgstr "正在上传一个空文件"
 #: services/static-webserver/client/source/class/osparc/store/Data.js:234
 msgid "Unsuccessful file copy"
 msgstr "文件复制失败"
+
+# CTX-INTERPRETATION: The string "Wrong product.ui config" appears in the
+# Products.js file when a configuration error is detected during product
+# validation, indicating an invalid UI configuration.
+#: services/static-webserver/client/source/class/osparc/store/Products.js:64
+msgid "Wrong product.ui config"
+msgstr "产品.ui 配置错误"
 
 # CTX-INTERPRETATION: This string appears within the `osparc.store.Services`
 # class, specifically in a `catch` block, indicating an error occurred while
@@ -10040,6 +10334,13 @@ msgstr "租用"
 msgid "will be available until "
 msgstr "将在...可用 "
 
+# CTX-INTERPRETATION: The string "Selected" is used within the PricingUnitTier
+# component to display a label indicating whether a specific item or option
+# has been selected, based on user interaction.
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:74
+msgid "Selected"
+msgstr "已选择"
+
 # CTX-INTERPRETATION: The string "Credits/h" is used within a pricing unit
 # tier, likely to display the cost of a service in terms of credits per hour,
 # based on the surrounding code context.
@@ -10221,6 +10522,82 @@ msgstr "正在处理..."
 msgid "Share Project with Support"
 msgstr "与支持人员共享项目"
 
+# CTX-INTERPRETATION: The string "Book a Call" is used within a user interface
+# component to label a button or element that allows the user to initiate a
+# call, likely within a conversation or scheduling context.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:130
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:139
+#: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:155
+#: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:73
+#: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:82
+#: services/static-webserver/client/source/class/osparc/support/HomePage.js:93
+#: services/static-webserver/client/source/class/osparc/support/HomePage.js:103
+msgid "Book a Call"
+msgstr "预约电话"
+
+# CTX-INTERPRETATION: This string is used within the Conversation.js file to
+# display the 'topic' field from a bookACallInfo object, likely in a user
+# interface for displaying conversation details.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:132
+msgid ""
+"\n"
+"- Topic: %1"
+msgstr "- 主题: %1"
+
+# CTX-INTERPRETATION: This string is used within the Conversation.js file to
+# display additional information related to a call, specifically when
+# 'extraInfo' exists in the bookACallInfo object.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:134
+msgid ""
+"\n"
+"- Extra Info: %1"
+msgstr "- 额外信息：%1"
+
+# CTX-INTERPRETATION: This string is part of a greeting message used in a
+# conversational interface within the osparc application, likely to initiate a
+# conversation with the user.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:328
+msgid "Hi %1,\n"
+msgstr "您好，\n"
+
+# CTX-INTERPRETATION: This string appears within the 'osparc' application,
+# specifically in a conversation or feedback section, offering users
+# assistance.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
+msgid ""
+"Have a question or feedback?\n"
+"We are happy to assist!"
+msgstr "您有任何问题或反馈吗？我们很乐意为您提供帮助！"
+
+# CTX-INTERPRETATION: This string appears within the
+# 'osparc.support.Conversation' class, likely used to prompt a user for their
+# availability when scheduling a meeting.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:334
+msgid ""
+"Let us know what your availability is and we will get back to you shortly to"
+" schedule a meeting."
+msgstr "请告知您的时间安排，我们将尽快与您联系以安排会议。"
+
+# CTX-INTERPRETATION: This message appears within the 'osparc' support
+# conversation system, guiding users to escalate their questions to the
+# support team after initial confirmation or editing.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:337
+msgid ""
+"Our support team will take it from here — please confirm or edit your "
+"question below to get started."
+msgstr "我们的支持团队会接手处理 — 请在下方确认或编辑您的问题以开始。"
+
+# CTX-INTERPRETATION: This message appears within the oSPARC support system,
+# informing users that a support ticket has been created and their request
+# will be reviewed.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
+msgid ""
+"A support ticket has been created.\n"
+"Our team will review your request and contact you soon."
+msgstr ""
+"一个支持工单已创建。\n"
+"我们的团队将审核您的请求并尽快与您联系。"
+
 # CTX-INTERPRETATION: The string "Unread" is used to label a badge indicating
 # unread messages within a conversation list, likely for a chat or messaging
 # application.
@@ -10291,17 +10668,6 @@ msgstr "返回对话"
 msgid "Ask a Question"
 msgstr "提问"
 
-# CTX-INTERPRETATION: The string "Book a Call" is used within a user interface
-# component to label a button or element that allows the user to initiate a
-# call, likely within a conversation or scheduling context.
-#: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:155
-#: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:73
-#: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:82
-#: services/static-webserver/client/source/class/osparc/support/HomePage.js:93
-#: services/static-webserver/client/source/class/osparc/support/HomePage.js:103
-msgid "Book a Call"
-msgstr "预约电话"
-
 # CTX-INTERPRETATION: The string "Book a Call 3rd" is used within the "Book a
 # Call 3rd" flow, likely related to scheduling a call with a third party, as
 # indicated by the context of the "ConversationPage" class.
@@ -10322,6 +10688,27 @@ msgstr "选择日期和时间"
 #: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:182
 msgid "Report an Error"
 msgstr "报告错误"
+
+# CTX-INTERPRETATION: The string "Ticket ID: %1" is used to display the Ticket
+# ID associated with a conversation within a support interface, likely for
+# tracking and referencing purposes.
+#: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:217
+msgid "Ticket ID: %1"
+msgstr "票号ID：%1"
+
+# CTX-INTERPRETATION: The string "Project ID: %1" is used within a
+# conversation page to display the project ID associated with the current
+# conversation, likely for identification and tracking purposes.
+#: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:221
+msgid "Project ID: %1"
+msgstr "项目ID：%1"
+
+# CTX-INTERPRETATION: The string "Fogbugz Case: %1" is used within the
+# ConversationPage.js file to display a link to a Fogbugz case, likely for
+# referencing or tracking related issues.
+#: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:227
+msgid "Fogbugz Case: %1"
+msgstr "\"Fogbugz 案例：%1\""
 
 # CTX-INTERPRETATION: The string "Show all conversations" is likely a tooltip
 # or label associated with a button or control that allows the user to view
@@ -10750,6 +11137,13 @@ msgstr "这将有助于我们的支持团队更快地理解上下文并解决问
 msgid "Send Report"
 msgstr "发送报告"
 
+# CTX-INTERPRETATION: This string is part of a message sent to the support
+# team when a user confirms their report submission, providing additional
+# context and a confirmation message.
+#: services/static-webserver/client/source/class/osparc/ui/message/FlashMessageOEC.js:141
+msgid "Dear Support Team,"
+msgstr "尊敬的客服团队,"
+
 # CTX-INTERPRETATION: This string is part of a message displayed to the user
 # after submitting a report, confirming that the report has been sent and that
 # the support team will respond.
@@ -10800,13 +11194,6 @@ msgstr "确认"
 msgid "User Account"
 msgstr "用户账户"
 
-# CTX-INTERPRETATION: The string "UserName" is used within a UI component to
-# display the user's name, likely within a user profile or settings section of
-# the application.
-#: services/static-webserver/client/source/class/osparc/user/UserProfile.js:86
-msgid "UserName"
-msgstr "用户名"
-
 # CTX-INTERPRETATION: The string "Full Name" is used within the UserProfile
 # component to display the user's full name in a table, likely as part of a
 # user profile display.
@@ -10845,7 +11232,7 @@ msgstr "机构"
 # CTX-INTERPRETATION: This string appears within the LanguageManager class,
 # indicating a failure during a language update operation, likely within a
 # web-based user interface.
-#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:99
+#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:136
 msgid "Unsuccessful language update"
 msgstr "语言更新失败"
 
@@ -12012,3 +12399,29 @@ msgid ""
 "Once the payment is validated, the Credits will be added to your Credit "
 "Account and they will be ready to be used."
 msgstr "一旦付款验证成功，信用额将添加到您的信用账户中，并可立即使用。"
+
+# CTX-INTERPRETATION: The string appears within the OrganizationsList
+# component, explaining the concept of an organization and its features to the
+# user.
+#~ msgid "    An organization is a group of users who can share "
+#~ msgstr "一个组织是由可以共享的用户组成的团体。 "
+
+# CTX-INTERPRETATION: The string appears within a UI element on a TagsPage,
+# explaining how tags help organize studies and improve searchability within
+# the application.
+#~ msgid "    Tags help you organize the "
+#~ msgstr ""
+#~ "标签有助于您组织研究，并在仪表板中按主题进行分类，从而更轻松地搜索和过滤。 一旦创建了标签，就可以将它们分配给研究，方法是使用 '更多选项...' "
+#~ "在研究卡上进行操作。 "
+
+# CTX-INTERPRETATION: The string appears within a UI element explaining how to
+# assign tags to studies, specifically referring to the 'More options...'
+# button on study cards.
+#~ msgid "  via 'More options...' on the "
+#~ msgstr "通过“更多选项...”按钮将标签分配给 "
+
+# CTX-INTERPRETATION: The string appears within a UI element explaining how
+# tags are used to categorize and assign tags to studies, specifically within
+# the 'More options...' on the study cards.
+#~ msgid " cards."
+#~ msgstr "卡片。"
