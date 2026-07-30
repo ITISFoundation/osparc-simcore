@@ -477,7 +477,7 @@ def wait_for_service_endpoint_responding(
         assert is_service_ready, "❌ the service failed starting! ❌"
 
     with log_context(
-        logging.INFO, msg=f"wait for service endpoint to be ready ({timedelta(seconds=timeout / 1000)})"
+        logging.INFO, msg=f"wait for service endpoint to be ready ({timedelta(milliseconds=timeout)})"
     ) as ctx:
         _retry_check_service_endpoint(ctx.logger)
 
@@ -500,7 +500,7 @@ def wait_for_pipeline_state(
         with log_context(
             logging.INFO,
             msg=ContextMessages(
-                starting=f"wait for one of {expected_states=}",
+                starting=f"wait for one of {expected_states=} (timeout {timedelta(milliseconds=timeout_ms)})",
                 done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
                 raised=lambda: f"pipeline failed or timed out with {current_state}. Expected one of {expected_states=}",
             ),
