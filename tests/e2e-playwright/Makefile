@@ -299,7 +299,7 @@ test-portal-anywhere: _check_venv_active $(PORTAL_INPUT_FILE) ## run a portal te
 		exit 1; \
 	fi; \
 	TEST_ARGS=$$(grep -v '^#' $(PORTAL_INPUT_FILE) | xargs); \
-	echo $$TEST_ARGS; \
+	echo $$TEST_ARGS | sed 's/--password=[^ ]*/--password=***REDACTED***/g; s/--basic-auth-password=[^ ]*/--basic-auth-password=***REDACTED***/g'; \
 	pytest -s $$TEST_PATH \
 		--color=yes \
 		--browser chromium \
@@ -313,7 +313,7 @@ define run_test
 		exit 1; \
 	fi; \
 	TEST_ARGS=$$(cat $1 | xargs); \
-	echo $$TEST_ARGS; \
+	echo $$TEST_ARGS | sed 's/--password=[^ ]*/--password=***REDACTED***/g; s/--basic-auth-password=[^ ]*/--basic-auth-password=***REDACTED***/g'; \
 	pytest -s $2 \
 		--color=yes \
 		--browser chromium \
@@ -327,7 +327,7 @@ define run_test_on_chrome
 		exit 1; \
 	fi; \
 	TEST_ARGS=$$(cat $1 | xargs); \
-	echo $$TEST_ARGS; \
+	echo $$TEST_ARGS | sed 's/--password=[^ ]*/--password=***REDACTED***/g; s/--basic-auth-password=[^ ]*/--basic-auth-password=***REDACTED***/g'; \
 	pytest -s $2 \
 		--color=yes \
 		--browser-channel chrome \
