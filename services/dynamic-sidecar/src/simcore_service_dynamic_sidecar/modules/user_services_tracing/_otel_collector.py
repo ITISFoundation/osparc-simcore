@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 import yaml
 from servicelib.tracing import SourceOrigin, create_standard_attributes
-
-from ._settings import UserServicesTracingSettings
+from settings_library.user_services_tracing import UserServicesTracingSettings
 
 if TYPE_CHECKING:
     from ...core.settings import ApplicationSettings

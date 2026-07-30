@@ -1,6 +1,7 @@
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
 from settings_library.egress_proxy import EgressProxySettings
+from settings_library.user_services_tracing import UserServicesTracingSettings
 from settings_library.webserver import WebServerSettings
 
 from .proxy import DynamicSidecarProxySettings
@@ -22,6 +23,10 @@ class DynamicServicesSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: EgressProxySettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG: UserServicesTracingSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
 

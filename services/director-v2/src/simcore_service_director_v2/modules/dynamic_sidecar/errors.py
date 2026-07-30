@@ -35,11 +35,3 @@ class LegacyServiceIsNotSupportedError(DirectorError):
 
 class UnexpectedContainerStatusError(DynamicSidecarError):
     msg_template: str = "Unexpected status from containers: {containers_with_error}"
-
-
-class InsufficientResourcesAfterProxyReservationError(DynamicSidecarError):
-    msg_template: str = (
-        "Not enough resources for service '{service_key}': subtracting the "
-        "dynamic-sidecar-proxy reservation would bring '{resource_name}' "
-        "{resource_field} to {new_value} (must remain > 0)"
-    )

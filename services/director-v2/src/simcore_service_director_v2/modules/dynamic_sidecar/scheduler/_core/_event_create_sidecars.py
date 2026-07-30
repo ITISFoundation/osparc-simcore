@@ -13,10 +13,17 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressType,
 )
-from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.service_settings_labels import (
+    SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
+)
 from models_library.services import ServiceRunID
-from models_library.services_resources import ServiceResourcesDict
-from pydantic import ByteSize
+from models_library.services_resources import (
+    GIGA,
+    ImageResources,
+    ResourceValue,
+    ServiceResourcesDict,
+)
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -45,13 +52,13 @@ from ...docker_api import (
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
 )
+from ...docker_compose_egress_config import count_required_egress_proxies
 from ...docker_service_specs import (
     extract_service_port_service_settings,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
 )
 from ...docker_service_specs.settings import merge_settings_before_use
-from ...errors import InsufficientResourcesAfterProxyReservationError
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import get_allow_metrics_collection
 
@@ -83,77 +90,52 @@ def _merge_service_base_and_user_specs(
     )
 
 
-def _subtract_proxy_reservation_from_service_resources(
+_HELPER_CONTAINERS_RESOURCE_KEY: Final[str] = "dy-sidecar-helper-containers"
+
+
+def _add_helper_containers_resources_to_service_resources(
     service_resources: ServiceResourcesDict,
     *,
-    cpu_reservation: float,  # in fractional cores (e.g. 0.1), NOT nanocpus
-    ram_reservation: int,  # in bytes
+    dynamic_services_settings: DynamicServicesSettings,
+    egress_proxy_count: int,
+    with_tracing: bool,
+    with_rclone: bool,
 ) -> None:
-    """Subtracts the proxy's reservation from both limit and reservation of the service
-    with the largest RAM limit, in-place.
-
-    Selecting by RAM limit keeps this consistent with
-    _helper_container_resources._find_biggest_overall_service so both sides of the
-    pipeline operate on the same container.
-
-    Raises:
-        InsufficientResourcesAfterProxyReservationError: if subtracting the proxy's
-            reservation would bring RAM or CPU (reservation or limit) to 0 or below
+    """Adds a synthetic entry to `service_resources` summing the footprint of helper
+    containers (envoy egress-proxies, otel collector/forwarder, rclone mount) that the
+    dynamic-sidecar creates but which are NOT their own Swarm services, so that Swarm/
+    autoscaling correctly sizes the dynamic-sidecar's own Swarm service. dy-proxy (caddy)
+    is excluded: it already runs as its own separate Swarm service with its own
+    dedicated resources.
     """
-    if not service_resources:
+    cpu = 0.0
+    ram = 0
+
+    egress_proxy_settings = dynamic_services_settings.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
+    cpu += egress_proxy_count * egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT
+    ram += egress_proxy_count * int(egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT)
+
+    if with_tracing:
+        tracing_settings = dynamic_services_settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
+        # otel collector (injected in compose) + otel forwarder (created via docker API)
+        cpu += 2 * tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT
+        ram += 2 * int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT)
+
+    if with_rclone:
+        r_clone_settings = dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
+        mount_settings = r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
+        cpu += mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS / GIGA
+        ram += int(mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT)
+
+    if cpu <= 0 and ram <= 0:
         return
 
-    def _score(k: str) -> tuple[float, float]:
-        res = service_resources[k].resources
-        ram = float(res["RAM"].limit) if "RAM" in res else 0.0
-        cpu = float(res["CPU"].limit) if "CPU" in res else 0.0
-        return (ram, cpu)
-
-    biggest_key = max(service_resources, key=_score)
-
-    image_resources = service_resources[biggest_key].resources
-
-    cpu_before = float(image_resources["CPU"].limit) if "CPU" in image_resources else 0.0
-    ram_before = int(float(image_resources["RAM"].limit)) if "RAM" in image_resources else 0
-
-    if "RAM" in image_resources:
-        new_ram_reservation = int(float(image_resources["RAM"].reservation) - ram_reservation)
-        new_ram_limit = int(float(image_resources["RAM"].limit) - ram_reservation)
-        for field, value in (("reservation", new_ram_reservation), ("limit", new_ram_limit)):
-            if value <= 0:
-                raise InsufficientResourcesAfterProxyReservationError(
-                    service_key=biggest_key,
-                    resource_name="RAM",
-                    resource_field=field,
-                    new_value=value,
-                )
-        image_resources["RAM"].reservation = new_ram_reservation
-        image_resources["RAM"].limit = new_ram_limit
-    if "CPU" in image_resources:
-        new_cpu_reservation = float(image_resources["CPU"].reservation) - cpu_reservation
-        new_cpu_limit = float(image_resources["CPU"].limit) - cpu_reservation
-        for field, value in (("reservation", new_cpu_reservation), ("limit", new_cpu_limit)):
-            if value <= 0:
-                raise InsufficientResourcesAfterProxyReservationError(
-                    service_key=biggest_key,
-                    resource_name="CPU",
-                    resource_field=field,
-                    new_value=value,
-                )
-        image_resources["CPU"].reservation = new_cpu_reservation
-        image_resources["CPU"].limit = new_cpu_limit
-
-    _logger.info(
-        "Removed reserved dy-proxy resources from '%s': "
-        "cpu removed %.2f of %.2f cores (-%.2f%%); "
-        "ram removed %s of %s (-%.2f%%)",
-        biggest_key,
-        cpu_reservation,
-        cpu_before,
-        cpu_reservation / cpu_before * 100 if cpu_before else 0,
-        ByteSize(ram_reservation).human_readable(),
-        ByteSize(ram_before).human_readable(),
-        ram_reservation / ram_before * 100 if ram_before else 0,
+    service_resources[_HELPER_CONTAINERS_RESOURCE_KEY] = ImageResources(
+        image=_HELPER_CONTAINERS_RESOURCE_KEY,
+        resources={
+            "CPU": ResourceValue(limit=cpu, reservation=cpu),
+            "RAM": ResourceValue(limit=ram, reservation=ram),
+        },
     )
 
 
@@ -250,11 +232,18 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         catalog_client = CatalogClient.instance(app)
 
-        proxy_settings: DynamicSidecarProxySettings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
-        _subtract_proxy_reservation_from_service_resources(
+        # fetched early (again, later re-fetched in SendUserServicesSpec) so the exact
+        # count of egress-proxy helper containers is known before the dynamic-sidecar's
+        # own Swarm service resources are computed below
+        simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
+            scheduler_data.key, scheduler_data.version
+        )
+        _add_helper_containers_resources_to_service_resources(
             scheduler_data.service_resources,
-            cpu_reservation=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION,
-            ram_reservation=int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION),
+            dynamic_services_settings=app_settings.DYNAMIC_SERVICES,
+            egress_proxy_count=count_required_egress_proxies(simcore_service_labels),
+            with_tracing=scheduler_data.tracing,
+            with_rclone=scheduler_data.requires_data_mounting,
         )
 
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(

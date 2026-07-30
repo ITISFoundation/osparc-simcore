@@ -22,9 +22,8 @@ from fastapi import FastAPI, status
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
+from settings_library.user_services_tracing import UserServicesTracingSettings
 from yarl import URL
-
-from ._settings import UserServicesTracingSettings
 
 if TYPE_CHECKING:
     from ...core.settings import ApplicationSettings

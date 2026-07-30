@@ -190,6 +190,8 @@ def _get_egress_proxy_service_config(
     egress_proxy_config: dict[str, Any] = {
         "image": egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_IMAGE,
         "command": command,
+        "mem_limit": f"{egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT}",
+        "cpus": f"{egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT}",
         "networks": {
             # allows the proxy to access the internet
             network_with_internet: None,
@@ -246,6 +248,23 @@ def _allow_outgoing_internet(service_spec: ComposeSpecLabelDict, container_name:
     service_spec["services"][container_name]["networks"] = networks
 
 
+def _flatten_host_permit_list_policies(
+    simcore_service_labels: SimcoreServiceLabels,
+) -> list[NATRule]:
+    return [
+        host_permit_list_policy
+        for host_permit_list_policies in simcore_service_labels.containers_allowed_outgoing_permit_list.values()
+        for host_permit_list_policy in host_permit_list_policies
+    ]
+
+
+def count_required_egress_proxies(simcore_service_labels: SimcoreServiceLabels) -> int:
+    """Returns the number of dy-sidecar-egress-proxy containers `add_egress_configuration` will create."""
+    if not simcore_service_labels.containers_allowed_outgoing_permit_list:
+        return 0
+    return len(_get_egress_proxy_dns_port_rules(_flatten_host_permit_list_policies(simcore_service_labels)))
+
+
 def add_egress_configuration(  # noqa: C901 # NOSONAR
     service_spec: ComposeSpecLabelDict,
     simcore_service_labels: SimcoreServiceLabels,
@@ -278,7 +297,7 @@ def add_egress_configuration(  # noqa: C901 # NOSONAR
     # allow internet access to containers based on DNS:PORT rules
     if simcore_service_labels.containers_allowed_outgoing_permit_list:
         # get all HostPermitListPolicy entries from all containers
-        all_host_permit_list_policies: list[NATRule] = []
+        all_host_permit_list_policies = _flatten_host_permit_list_policies(simcore_service_labels)
 
         hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
         container_name_to_proxies_names: dict[str, set[str]] = {}
@@ -288,8 +307,6 @@ def add_egress_configuration(  # noqa: C901 # NOSONAR
             host_permit_list_policies,
         ) in simcore_service_labels.containers_allowed_outgoing_permit_list.items():
             for host_permit_list_policy in host_permit_list_policies:
-                all_host_permit_list_policies.append(host_permit_list_policy)
-
                 for port in host_permit_list_policy.iter_tcp_ports():
                     hostname_port_to_container_name[
                         (

@@ -327,11 +327,9 @@ async def assert_start_service(  # pylint: disable=too-many-arguments
             product_name=product_name,
         )
 
-    # Older test images may ship with CPU.limit=0 in their labels.  The
-    # dynamic-sidecar requires at least one user-service container with a
-    # non-zero SIMCORE_NANO_CPUS_LIMIT so that helper-container resources can
-    # be allocated.  Apply a 1-core floor per container so integration tests
-    # work with pre-requirement images, regardless of container key names.
+    # Older test images may ship with CPU.limit=0 in their labels. Apply a 1-core
+    # floor per container so integration tests work with pre-requirement images,
+    # regardless of container key names.
     for image_resources in service_resources.values():
         cpu = image_resources.resources.get("CPU")
         if cpu is not None and float(cpu.limit) < _MIN_CPU:
