@@ -12,12 +12,12 @@ tools/i18n_translator.py
 Translate a .pot/.po catalog using an LLM provider (litellm-backed).
 
 Per entry:
-    - Reads CTX-SNIPPET / CTX-INTERPRETATION from translator comments for context
+    - Reads CTX-SNIPPET from the .pot for prompt context (never stored in the .po)
     - Includes extracted @TRANSLATOR notes, glossary terms, and source snippet in the prompt
     - LLM returns: context interpretation + translation
-        - Writes back CTX-INTERPRETATION, CTX-VERSION, and msgstr
-    - Supports sequential or threaded translation, live progress, and incremental atomic saves
-    - Uses git-blame freshness checks with timestamp fallback when git is unavailable
+        - Writes back CTX-INTERPRETATION and msgstr
+    - Translates in parallel by default with live progress and incremental atomic saves
+    - Re-translates only entries that are untranslated or flagged fuzzy (msgid changed)
 
 Commands:
   translate   Translate a .pot into a language-specific .po
@@ -43,7 +43,6 @@ import json
 import logging
 import os
 import re
-import subprocess
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -102,26 +101,6 @@ class Translation(NamedTuple):
     text_plural: TranslationStr | None = None  # set only for plural (msgid_plural) entries
 
 
-class TranslatorContext(NamedTuple):
-    snippet: str
-    snippet_version: str
-    interp: str
-    version: str
-
-
-@dataclass(frozen=True)
-class BlameCommitFound:
-    commit: str  # explicit success branch for git blame lookups
-
-
-@dataclass(frozen=True)
-class BlameCommitUnknown:
-    pass  # explicit failure branch when git blame is unavailable
-
-
-type BlameCommitResult = BlameCommitFound | BlameCommitUnknown
-
-
 @dataclass(frozen=True)
 class EntryNew:
     entry: polib.POEntry  # explicit branch for untranslated entries
@@ -156,7 +135,6 @@ class TranslationCompleted:
     entry: polib.POEntry  # explicit branch for successful translations
     state: EntryState
     result: Translation
-    version: str
 
 
 type TranslationJob = TranslationSkipped | TranslationFailed | TranslationCompleted
@@ -318,30 +296,6 @@ def _extract_translator_notes(comment: str) -> str:
     return "\n".join(notes)
 
 
-def _parse_catalog_timestamp(value: str) -> datetime | None:
-    """Parse gettext timestamps like '2026-06-24 10:15+0000' or ISO UTC."""
-    text = value.strip()
-    if not text:
-        return None
-    for fmt in ("%Y-%m-%d %H:%M%z", "%Y-%m-%d %H:%M:%S%z"):
-        try:
-            return datetime.strptime(text, fmt)  # noqa: DTZ007  # fmt includes %z
-        except ValueError:
-            continue
-    try:
-        return datetime.fromisoformat(text.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
-def _parse_ctx_version(version: str) -> tuple[str, datetime | None]:
-    """Parse CTX-VERSION as '<commit> <timestamp>' and return parts."""
-    parts = version.split(maxsplit=1)
-    commit = parts[0] if parts else ""
-    timestamp = _parse_catalog_timestamp(parts[1]) if len(parts) > 1 else None
-    return commit, timestamp
-
-
 def _get_nplurals(po: polib.POFile) -> int:
     """Return the number of plural forms declared in the catalog's Plural-Forms header.
 
@@ -370,65 +324,6 @@ def _save_po_atomic(po: polib.POFile, out: Path) -> None:
     with _PO_SAVE_LOCK:
         po.save(str(temp_out))
         temp_out.replace(out)
-
-
-# ---------------------------------------------------------------------------
-# Git commit hash for the source file at a given line
-# ---------------------------------------------------------------------------
-
-
-def _git_repo_root() -> str | None:
-    """Return the absolute repo root, or None if not in a git repo."""
-    try:
-        return (
-            subprocess.run(
-                ["git", "rev-parse", "--show-toplevel"],  # noqa: S607
-                capture_output=True,
-                text=True,
-                check=True,
-            ).stdout.strip()
-            or None
-        )
-    except Exception:
-        return None
-
-
-_REPO_ROOT: Final[str | None] = _git_repo_root()
-
-
-def _get_blame_commit(filepath: str, lineno: int) -> BlameCommitResult:
-    """Returns short commit hash for the given file:line, or 'unknown'.
-
-    Handles uncommitted changes by attempting to get the previous commit.
-    filepath is relative to the repo root.
-    """
-    try:
-        result = subprocess.run(  # noqa: S603
-            ["git", "blame", "-L", f"{lineno},{lineno}", "--porcelain", filepath],  # noqa: S607
-            capture_output=True,
-            text=True,
-            check=True,
-            cwd=_REPO_ROOT,
-        )
-        first_line = result.stdout.splitlines()[0]
-        commit = first_line.split()[0][:7]
-
-        # If git blame returns 00000000 (uncommitted), try to get HEAD commit instead
-        if commit == "0000000":
-            try:
-                result = subprocess.run(
-                    ["git", "rev-parse", "--short", "HEAD"],  # noqa: S607
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                )
-                commit = result.stdout.strip()[:7]
-            except Exception:
-                commit = "unknown"
-
-        return BlameCommitFound(commit=commit)
-    except Exception:
-        return BlameCommitUnknown()
 
 
 # ---------------------------------------------------------------------------
@@ -563,35 +458,36 @@ def _build_translation_job(
     provider: LiteLLMProvider | DryRunProvider,
     lang_name: LangNameStr,
     glossary: TermGlossaryDict,
-    use_git: bool,
-    pot_creation_at: datetime | None,
+    snippet_by_msgid: dict[str, str],
     logger: logging.Logger | None = None,
     *,
     force: bool = False,
 ) -> TranslationJob:
-    """Compute a translation job without mutating shared PO state."""
-    ctx = _parse_translator_comments(entry)
+    """Compute a translation job without mutating shared PO state.
+
+    Change detection is intentionally minimal: an entry is (re)translated only when
+    it is untranslated or flagged ``fuzzy`` (both set by ``msgmerge`` precisely when
+    the ``msgid`` changes). ``force`` bypasses this to (re)translate every matched
+    entry. Source snippets come from ``snippet_by_msgid`` (built from the .pot), never
+    from the .po -- the shipped .po stays snippet-free.
+    """
     if force:
-        # Bypass staleness check: --force / --filter always (re)translate matched entries.
+        # Bypass change detection: --force / --filter always (re)translate matched entries.
         state: EntryState = EntryNew(entry=entry) if _is_untranslated(entry) else EntryUpdated(entry=entry)
     else:
-        state = _classify_entry_state(
-            entry=entry,
-            ctx=ctx,
-            use_git=use_git,
-            pot_creation_at=pot_creation_at,
-        )
+        state = _classify_entry_state(entry)
     if isinstance(state, EntrySkipped):
         return TranslationSkipped(entry=entry)
 
+    snippet = snippet_by_msgid.get(entry.msgid, "")
     try:
         result = _translate_entry(
             provider=provider,
             msgid=entry.msgid,
-            snippet=ctx.snippet,
+            snippet=snippet,
             translator_notes=_extract_translator_notes(entry.comment or ""),
             lang_name=lang_name,
-            glossary=_filter_glossary(glossary, entry.msgid, ctx.snippet),
+            glossary=_filter_glossary(glossary, entry.msgid, snippet),
             occurrences=entry.occurrences,
             msgid_plural=entry.msgid_plural or "",
             logger=logger,
@@ -599,16 +495,7 @@ def _build_translation_job(
     except Exception as e:
         return TranslationFailed(entry=entry, error=str(e))
 
-    version = "unknown"
-    if entry.occurrences:
-        filepath, lineno_str = entry.occurrences[0]
-        if lineno_str:
-            commit_result = _get_blame_commit(filepath, int(lineno_str))
-            commit = commit_result.commit if isinstance(commit_result, BlameCommitFound) else "unknown"
-            ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-            version = f"{commit} {ts}"
-
-    return TranslationCompleted(entry=entry, state=state, result=result, version=version)
+    return TranslationCompleted(entry=entry, state=state, result=result)
 
 
 # ---------------------------------------------------------------------------
@@ -616,143 +503,104 @@ def _build_translation_job(
 # ---------------------------------------------------------------------------
 
 
-def _parse_translator_comments(entry: polib.POEntry) -> TranslatorContext:
-    """Extract Pass-2 enrichment fields (CTX-SNIPPET, CTX-INTERPRETATION, CTX-VERSION) from # comment lines.
+def _snippet_from_comment(comment: str) -> str:
+    """Return the CTX-SNIPPET block (source-code context) from a # comment block.
 
-    CTX-INTERPRETATION may wrap onto continuation lines (e.g. a long LLM response);
-    those lines are joined with spaces so the field is always returned as one string.
+    Snippets live only in the .pot; this reads them back so the LLM prompt has
+    source context. The shipped .po itself is kept snippet-free (see _clean_tcomment).
     """
     snippet_lines: list[str] = []
-    interp_lines: list[str] = []
-    version = snippet_version = ""
     in_snippet = False
-    in_interp = False
-    # CTX-* fields are stored in translator comments (# => tcomment).
-    # Fallback to extracted comments for backward compatibility.
-    comment_block = entry.tcomment or entry.comment or ""
-    for line in comment_block.splitlines():
-        line = line.strip()  # noqa: PLW2901
+    for raw in comment.splitlines():
+        line = raw.strip()
         if line.startswith("CTX-SNIPPET:"):
             in_snippet = True
-            in_interp = False
-        elif line.startswith("CTX-INTERPRETATION:"):
+            continue
+        if line.startswith("CTX-"):
             in_snippet = False
-            in_interp = True
-            interp_lines = [line[len("CTX-INTERPRETATION:") :].strip()]
-        elif line.startswith("CTX-SNIPPET-VERSION:"):
-            in_snippet = False
-            in_interp = False
-            snippet_version = line[len("CTX-SNIPPET-VERSION:") :].strip()
-        elif line.startswith("CTX-VERSION:"):
-            in_snippet = False
-            in_interp = False
-            version = line[len("CTX-VERSION:") :].strip()
-        elif in_snippet:
+            continue
+        if in_snippet:
             snippet_lines.append(line)
-        elif in_interp:
-            interp_lines.append(line)
-    interp = " ".join(part for part in interp_lines if part)
-    return TranslatorContext("\n".join(snippet_lines), snippet_version, interp, version)
+    return "\n".join(snippet_lines)
 
 
-def _update_comment(comment: str, interp: str, version: str) -> str:
-    """Rewrite Pass-2 enrichment fields CTX-INTERPRETATION and CTX-VERSION in the # comment block.
+def _clean_tcomment(comment: str, interp: str | None) -> str:
+    """Strip CTX-SNIPPET / CTX-SNIPPET-VERSION / CTX-VERSION from a # comment block.
 
-    Drops any stale continuation lines left over from a previous multiline
-    CTX-INTERPRETATION so interpretations never accumulate across rounds.
+    Non-CTX passthrough lines are preserved. CTX-INTERPRETATION is the only CTX field
+    kept in the .po: when *interp* is given it is (re)written; when None an existing
+    CTX-INTERPRETATION is preserved. This keeps the shipped .po lean (no multi-line
+    code snippets, no git/timestamp version stamps).
     """
-    new_lines = []
-    saw_interp = False
-    skipping_old_interp = False
-    for line in comment.splitlines():
-        stripped = line.strip()
-        # Skip old CTX-VERSION lines - they will be re-added below
-        if stripped.startswith("CTX-VERSION:"):
-            skipping_old_interp = False
+    before_ctx: list[str] = []
+    after_ctx: list[str] = []
+    interp_parts: list[str] = []
+    in_snippet = False
+    seen_ctx = False
+    for raw in comment.splitlines():
+        line = raw.strip()
+        if line.startswith("CTX-SNIPPET:"):
+            in_snippet = True
             continue
-        if stripped.startswith("CTX-INTERPRETATION:"):
-            new_lines.append(f"CTX-INTERPRETATION: {interp}")
-            saw_interp = True
-            skipping_old_interp = True  # drop stale continuation lines below, if any
+        if line.startswith("CTX-INTERPRETATION:"):
+            in_snippet = False
+            seen_ctx = True
+            interp_parts.append(line[len("CTX-INTERPRETATION:") :].strip())
             continue
-        if stripped.startswith("CTX-"):
-            skipping_old_interp = False
-            new_lines.append(line)
+        if line.startswith("CTX-"):  # CTX-SNIPPET-VERSION, CTX-VERSION, ...
+            in_snippet = False
             continue
-        if skipping_old_interp:
+        if in_snippet:
             continue
-        new_lines.append(line)
+        (after_ctx if seen_ctx else before_ctx).append(line)
 
-    if not saw_interp:
-        new_lines.append(f"CTX-INTERPRETATION: {interp}")
+    # A well-formed .po tcomment holds only CTX-* fields, so any stray non-CTX line is a
+    # fragment of the interpretation that polib wrapped across '#' lines (and that an
+    # earlier bug could re-order *before* the CTX-INTERPRETATION line). When an
+    # interpretation is present, fold every such fragment back into it -- CTX chunk first,
+    # then the wrapped remainder -- which both prevents the split and repairs an already
+    # broken/inverted comment. Only when NO interpretation exists are stray lines kept
+    # verbatim (genuine passthrough).
+    if interp is not None:
+        final_interp: str | None = interp
+        passthrough = [] if seen_ctx else before_ctx
+    elif seen_ctx:
+        final_interp = " ".join(part for part in (interp_parts + after_ctx + before_ctx) if part) or None
+        passthrough = []
+    else:
+        final_interp = None
+        passthrough = before_ctx
 
-    # Always add the fresh CTX-VERSION at the end
-    new_lines.append(f"CTX-VERSION: {version}")
-
-    return "\n".join(new_lines)
+    lines = [line for line in passthrough if line.strip()]
+    if final_interp:
+        lines.append(f"CTX-INTERPRETATION: {final_interp}")
+    return "\n".join(lines).strip()
 
 
 # ---------------------------------------------------------------------------
-# Staleness check
+# Change detection
 # ---------------------------------------------------------------------------
 
 
-def _is_stale(  # noqa: PLR0911
-    entry: polib.POEntry,
-    ctx: TranslatorContext,
-    use_git: bool,
-    pot_creation_at: datetime | None,
-) -> bool:
+def _needs_translation(entry: polib.POEntry) -> bool:
+    """True when an entry must be (re)translated.
+
+    Only two native gettext signals trigger work, both set by ``msgmerge`` exactly
+    when the source ``msgid`` changes:
+      - untranslated (new/changed msgid with no close match)
+      - ``fuzzy`` flag (changed msgid fuzzy-matched to a prior translation)
+    Line references, comments, and header timestamps are deliberately ignored.
     """
-    An entry needs (re)translation if:
-      - msgstr is empty
-      - flagged fuzzy
-    - CTX-VERSION is pending/unknown (not yet translated)
-      - git blame commit differs from stored commit (code changed around string)
-    """
-    if _is_untranslated(entry):
-        return True
-
-    # https://www.gnu.org/software/gettext/manual/html_node/Fuzzy-Entries.html
-    if "fuzzy" in entry.flags:
-        return True
-    if ctx.version in ("(pending)", "unknown", ""):
-        return True
-
-    stored_commit, translated_at = _parse_ctx_version(ctx.version)
-    if stored_commit in ("", "unknown"):
-        return True
-
-    # Check git blame for first occurrence
-    if use_git and entry.occurrences:
-        filepath, lineno_str = entry.occurrences[0]
-        try:
-            current = _get_blame_commit(filepath, int(lineno_str)) if lineno_str else None
-            if isinstance(current, BlameCommitFound):
-                return current.commit != stored_commit
-        except Exception:  # noqa: S110
-            pass
-
-    # Fallback for no-git mode or git lookup failures.
-    if pot_creation_at and translated_at:
-        return pot_creation_at > translated_at
-
-    # Conservative fallback: if freshness can't be proven, mark stale.
-    return True
+    return _is_untranslated(entry) or "fuzzy" in entry.flags
 
 
-def _classify_entry_state(
-    entry: polib.POEntry,
-    ctx: TranslatorContext,
-    use_git: bool,
-    pot_creation_at: datetime | None,
-) -> EntryState:
+def _classify_entry_state(entry: polib.POEntry) -> EntryState:
     """Return explicit new/updated/skipped entry state objects for translation routing."""
     if _is_untranslated(entry):
         return EntryNew(entry=entry)
     if "fuzzy" in entry.flags:
         return EntryUpdated(entry=entry)
-    return EntryUpdated(entry=entry) if _is_stale(entry, ctx, use_git, pot_creation_at) else EntrySkipped(entry=entry)
+    return EntrySkipped(entry=entry)
 
 
 # ---------------------------------------------------------------------------
@@ -804,11 +652,6 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
         None,
         help=("Append AI prompts and responses to this file for review (default: <out_dir>/translate.log)"),
     ),
-    use_git: bool = typer.Option(
-        True,
-        "--use-git/--no-git",
-        help="Use git blame commit checks for staleness; fallback to timestamps when unavailable.",
-    ),
     incremental_save: bool = typer.Option(
         True,
         "--incremental-save/--no-incremental-save",
@@ -820,9 +663,9 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
         help="Show live translation progress.",
     ),
     parallel: bool = typer.Option(
-        False,
+        True,
         "--parallel/--no-parallel",
-        help="Translate entries concurrently using a thread pool.",
+        help="Translate entries concurrently using a thread pool (default: parallel).",
     ),
     max_workers: int = typer.Option(
         4,
@@ -840,7 +683,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     force: bool = typer.Option(
         False,
         "--force",
-        help="Force (re)translation even if entries appear fresh, bypassing the staleness check.",
+        help="Force (re)translation even if entries appear fresh, bypassing the change-detection check.",
     ),
     dry_run: bool = typer.Option(
         False,
@@ -874,6 +717,17 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     else:
         console.print(f"[bold]\\[provider][/bold] model={model}" + (f" base_url={base_url}" if base_url else ""))
 
+    # Ollama serves from a single local model instance, so client-side threads do not
+    # translate into real concurrency unless the server is explicitly configured for it.
+    # Warn instead of leaving the impression that --parallel sped things up.
+    if not dry_run and parallel and max_workers > 1 and model.split("/", maxsplit=1)[0] == "ollama":
+        console.print(
+            "[yellow]\\[warning][/yellow] Ollama runs one local model instance: --parallel "
+            f"(--max-workers {max_workers}) will NOT speed up translation unless the Ollama server "
+            "is configured for concurrency (set OLLAMA_NUM_PARALLEL and ensure enough VRAM). "
+            "Requests will effectively run one at a time."
+        )
+
     source_path = in_po if in_po and in_po.exists() else pot
     po = polib.pofile(str(source_path))
     # Ensure save() writes UTF-8 even when template headers still advertise CHARSET.
@@ -881,8 +735,21 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
     po.metadata["Language"] = lang
     po.metadata["Content-Type"] = "text/plain; charset=UTF-8"
     po.metadata["Content-Transfer-Encoding"] = "8bit"
-    pot_creation_at = _parse_catalog_timestamp(po.metadata.get("POT-Creation-Date", ""))
+    # Record which LLM produced this catalog and when, for audit/reproducibility.
+    # Only stamped on real runs; under incremental save a no-op run never re-writes
+    # the file, so these do not churn when nothing was translated.
+    if not dry_run:
+        po.metadata["X-Translation-Model"] = model
+        po.metadata["X-Translation-Date"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     nplurals = _get_nplurals(po)
+
+    # Source snippets live only in the .pot; build a msgid -> snippet map for prompt
+    # context, then strip any snippet/version stamps carried into the working .po so
+    # the shipped catalog stays lean (only msgstr + CTX-INTERPRETATION).
+    pot_catalog = polib.pofile(str(pot))
+    snippet_by_msgid = {entry.msgid: _snippet_from_comment(entry.tcomment or "") for entry in pot_catalog}
+    for entry in po:
+        entry.tcomment = _clean_tcomment(entry.tcomment or "", None)
 
     total = translated = skipped = new_count = updated_count = errors = 0
 
@@ -917,11 +784,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 }
             else:
                 job.entry.msgstr = job.result.text
-            job.entry.tcomment = _update_comment(
-                job.entry.tcomment or job.entry.comment or "",
-                job.result.interpretation,
-                job.version,
-            )
+            job.entry.tcomment = _clean_tcomment(job.entry.tcomment or "", job.result.interpretation)
             job.entry.flags = [f for f in job.entry.flags if f != "fuzzy"]
 
             console.print(f"    [green]→[/green] {job.result.text!r}")
@@ -946,6 +809,25 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
         console.print(f"[bold]\\[filter][/bold] {len(entries)} {entry_word} match {msgid_filter!r}")
     effective_force = force or bool(msgid_filter)
 
+    # Pre-flight plan: classify the (filtered) entries once so the user sees the scope
+    # -- how many are NEW (untranslated), UPDATE (fuzzy/changed msgid), or SKIP (fresh) --
+    # and thus the up-front estimate of how many will actually be sent to the model.
+    if effective_force:
+        plan_new = sum(1 for e in entries if _is_untranslated(e))
+        plan_update = len(entries) - plan_new
+        plan_skip = 0
+    else:
+        plan_states = [_classify_entry_state(e) for e in entries]
+        plan_new = sum(1 for s in plan_states if isinstance(s, EntryNew))
+        plan_update = sum(1 for s in plan_states if isinstance(s, EntryUpdated))
+        plan_skip = sum(1 for s in plan_states if isinstance(s, EntrySkipped))
+    plan_to_model = plan_new + plan_update
+    console.print(
+        f"[bold]\\[plan][/bold] {lang}: {len(po)} messages (template {len(pot_catalog)}) \u00b7 "
+        f"[cyan]{plan_new} NEW[/cyan] \u00b7 [yellow]{plan_update} UPDATE[/yellow] \u00b7 "
+        f"[dim]{plan_skip} SKIP[/dim] \u2192 {plan_to_model} to model"
+    )
+
     if progress:
         progress_bar = Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -966,8 +848,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                             provider,
                             lang_name,
                             glossary,
-                            use_git,
-                            pot_creation_at,
+                            snippet_by_msgid,
                             logger,
                             force=effective_force,
                         )
@@ -988,8 +869,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                         provider,
                         lang_name,
                         glossary,
-                        use_git,
-                        pot_creation_at,
+                        snippet_by_msgid,
                         logger,
                         force=effective_force,
                     )
@@ -1009,8 +889,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                     provider,
                     lang_name,
                     glossary,
-                    use_git,
-                    pot_creation_at,
+                    snippet_by_msgid,
                     logger,
                     force=effective_force,
                 )
@@ -1026,8 +905,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 provider,
                 lang_name,
                 glossary,
-                use_git,
-                pot_creation_at,
+                snippet_by_msgid,
                 logger,
                 force=effective_force,
             )

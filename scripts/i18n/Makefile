@@ -37,10 +37,9 @@ PO_FILES         := $(foreach lang,$(LANGS),$(LOCALE_OUT_DIR)/$(lang)/LC_MESSAGE
 MO_FILES         := $(PO_FILES:.po=.mo)
 MODEL            ?= ollama/translategemma:4b  ## LLM model id (provider/model); default runs locally via Ollama
 BASE_URL         ?=                           ## Custom OpenAI-compatible API base URL (empty = provider default)
-PARALLEL         ?= false                     ## Translate entries in parallel
+PARALLEL         ?= true                      ## Translate entries in parallel (default)
 PROGRESS         ?= true                      ## Show progress bar during translation
 INCREMENTAL_SAVE ?= true                      ## Save .po incrementally as entries are translated
-USE_GIT          ?= true                      ## Use git blame for source-context enrichment
 MAX_WORKERS      ?= 4                         ## Max parallel workers when PARALLEL=true
 TRANSLATE_TS     := $(shell date +%Y%m%dT%H%M%S)
 
@@ -106,12 +105,6 @@ TOURS_DIR_REL    := services/static-webserver/client/source/resource/osparc/tour
 JSON_TOURS_KEYS  := name,description,title,text
 
 # --- Flag helpers ---
-ifeq ($(USE_GIT),true)
-  USE_GIT_FLAG :=
-else
-  USE_GIT_FLAG := --no-git
-endif
-
 ifeq ($(INCREMENTAL_SAVE),true)
   INCREMENTAL_SAVE_FLAG :=
 else
@@ -157,7 +150,7 @@ STEP = printf '\033[1;33m[%s]\033[0m %s\n' "$(1)" "$(2)"
 
 .PHONY: backend-all backend-extract backend-plan backend-translate backend-compile \
         frontend-all frontend-extract frontend-plan frontend-translate frontend-tools-install \
-        check-i18n-style clean vars
+        check-i18n-style clean test vars
 
 # ===========================================================================
 # BACKEND catalog  (messages.pot / messages.po / messages.mo)
@@ -226,7 +219,6 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT) | $(TRANSLATE_DEPS)
 	  --lang $* \
 	  --model $(MODEL) \
 	  $(BASE_URL_FLAG) \
-	  $(USE_GIT_FLAG) \
 	  $(INCREMENTAL_SAVE_FLAG) \
 	  $(PROGRESS_FLAG) \
 	  $(PARALLEL_FLAG) \
@@ -328,7 +320,6 @@ frontend-translate: $(TRANSLATE_DEPS)  ## msgmerge + AI translate frontend .po f
 	    --lang $$lang \
 	    --model $(MODEL) \
 	    $(BASE_URL_FLAG) \
-	    $(USE_GIT_FLAG) \
 	    $(INCREMENTAL_SAVE_FLAG) \
 	    $(PROGRESS_FLAG) \
 	    $(PARALLEL_FLAG) \
@@ -363,6 +354,23 @@ check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DI
 	  $(call STEP,VALIDATE,$$dir); \
 	  cd $(REPO_ROOT) && $(EXTRACTOR) validate --src $$dir/src --langs python; \
 	done
+
+# ---------------------------------------------------------------------------
+# test — unit tests for the i18n tools (i18n_extractor.py / i18n_translator.py).
+# Runs pytest under uv with the tools' runtime deps injected via --with, so no
+# project install is needed. Tests gated on external binaries (xgettext, node +
+# local typescript) self-skip when those are unavailable.
+# ---------------------------------------------------------------------------
+test:  ## Run unit tests for the i18n tools (uv-managed deps, self-skips gated tests)
+	cd $(I18N_TOOLS) && uv run \
+	  --with pytest \
+	  --with polib \
+	  --with typer \
+	  --with rich \
+	  --with Babel \
+	  --with Jinja2 \
+	  --with litellm \
+	  pytest tests -v
 
 # ---------------------------------------------------------------------------
 # Cleanup — remove ONLY regenerable build artifacts. The .po files are
