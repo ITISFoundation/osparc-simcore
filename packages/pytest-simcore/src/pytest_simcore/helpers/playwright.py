@@ -673,7 +673,7 @@ def expected_service_running(
         ctx = stack.enter_context(
             log_context(
                 logging.INFO,
-                msg=f"Waiting for node to run. Timeout: {timeout}",
+                msg=f"Waiting for node to run. Timeout: {timedelta(milliseconds=timeout)}",
             )
         )
 
