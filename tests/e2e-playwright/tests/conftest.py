@@ -335,13 +335,13 @@ def basic_auth_password(request: pytest.FixtureRequest) -> str | None:
 
 @pytest.fixture(scope="session")
 def browser_context_args(
-    browser_context_args: dict[str, dict[str, str] | str],
+    browser_context_args: dict[str, dict[str, Any] | str],
     user_agent: str,
     basic_auth_user: str | None,
     basic_auth_password: str | None,
-) -> dict[str, dict[str, str] | str]:
+) -> dict[str, dict[str, Any] | str]:
     # Override browser context options, see https://playwright.dev/python/docs/test-runners#fixtures
-    context_args: dict[str, Any] = {
+    context_args: dict[str, dict[str, Any] | str] = {
         **browser_context_args,
         "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
         "viewport": {"width": 1600, "height": 900},  # HD+
