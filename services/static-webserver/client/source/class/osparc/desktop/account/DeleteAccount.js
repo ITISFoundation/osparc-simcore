@@ -74,14 +74,14 @@ qx.Class.define("osparc.desktop.account.DeleteAccount", {
         placeholder: this.tr("Your email"),
         required: true
       });
-      form.add(email, "Email address", qx.util.Validate.email(), "email");
+      form.add(email, this.tr("Email address"), qx.util.Validate.email(), "email");
       this.addListener("appear", () => email.focus());
 
       const password = new osparc.ui.form.PasswordField().set({
         placeholder: this.tr("Your password"),
         required: true
       });
-      form.add(password, "Password", null, "password");
+      form.add(password, this.tr("Password"), null, "password");
 
       const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
         appearance: "form-button-text"
