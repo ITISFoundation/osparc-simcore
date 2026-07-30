@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 """Portal e2e-playwright suite.
 
 Ports the legacy Puppeteer scripts in tests/e2e/portal/*.js, tests/e2e/portal-files/VTK_file.js
