@@ -257,7 +257,7 @@ $(ALL_INPUT_FILES):
 			fi; \
 		fi; \
 	fi; \
-	read -p "Does this deployment require HTTP basic auth [y/n]: " NEEDS_BASIC_AUTH; \
+	read -p "Does this deployment require HTTP basic auth [y/N]: " NEEDS_BASIC_AUTH; \
 	if [ "$$NEEDS_BASIC_AUTH" = "y" ]; then \
 		read -p "Enter the basic auth user: " BASIC_AUTH_USER; \
 		read -s -p "Enter the basic auth password: " BASIC_AUTH_PASSWORD; echo ""; \
