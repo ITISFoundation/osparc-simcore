@@ -30,7 +30,7 @@ from ..dependencies.database import get_repository
 
 log = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/computations", tags=["computations"])
 
 
 # HELPERS -------------------------------------------------------------------

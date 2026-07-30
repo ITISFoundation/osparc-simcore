@@ -49,7 +49,7 @@ qx.Class.define("osparc.study.Import", {
         const size = file.size;
         const maxSize = 10 * 1000 * 1000 * 1000; // 10 GB
         if (size > maxSize) {
-          osparc.FlashMessenger.logError(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`);
+          osparc.FlashMessenger.logError(this.tr("The file is too big. Maximum size is %1MB. Please provide with a smaller file or a repository URL.", maxSize));
           return;
         }
         this.fireDataEvent("fileReady", file);

@@ -604,8 +604,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           ttlMap.addOrUpdateEntry(walletId);
           const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
           const walletName = usedWallet.getName();
-          const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
-          osparc.FlashMessenger.logError(this.tr(text), null, flashMessageDisplayDuration);
+          const text = this.tr("Wallet \"%1\", running your service(s) has run out of credits. Stopping service(s) gracefully.", walletName);
+          osparc.FlashMessenger.logError(text, null, flashMessageDisplayDuration);
         }, this);
       }
     },
@@ -628,7 +628,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               const workbench = this.getStudy().getWorkbench();
               const node = workbench.getNode(nodeId);
               const label = node.getLabel();
-              const text = `New inputs for service ${label}. Please reload to refresh service.`;
+              const text = this.tr("New inputs for service %1. Please reload to refresh service.", label);
               osparc.FlashMessenger.logAs(text, "INFO");
             }
           }
