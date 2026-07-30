@@ -161,6 +161,7 @@ JUPYTER_LAB_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
 CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
 PERSONALIZED_TIP_INPUT_FILE := .e2e-playwright-personalizedtip-env.txt
 RSM_INPUT_FILE := .e2e-playwright-rsm-env.txt
+PORTAL_INPUT_FILE := .e2e-playwright-portal-env.txt
 
 ALL_INPUT_FILES := \
 	$(SLEEPERS_INPUT_FILE) \
@@ -168,48 +169,90 @@ ALL_INPUT_FILES := \
 	$(CLASSIC_TIP_INPUT_FILE) \
 	$(S4L_INPUT_FILE) \
 	$(PERSONALIZED_TIP_INPUT_FILE) \
-	$(RSM_INPUT_FILE)
+	$(RSM_INPUT_FILE) \
+	$(PORTAL_INPUT_FILE)
 
 # Prompt the user for input and store it into variables
 $(ALL_INPUT_FILES):
-	@read -p "Enter your product URL: " PRODUCT_URL; \
-	read -p "Is the product billable [y/n]: " BILLABLE; \
-	read -p "Is the product lite [y/n]: " IS_LITE; \
-	read -p "Is the test running in autoscaled deployment [y/n]: " AUTOSCALED; \
-	read -p "Enter your username: " USER_NAME; \
-	read -s -p "Enter your password: " PASSWORD; echo ""; \
-	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
-	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
-	if [ "$$BILLABLE" = "y" ]; then \
-		echo "--product-billable" >> $@; \
-	fi; \
-	if [ "$$IS_LITE" = "y" ]; then \
-		echo "--product-lite" >> $@; \
-	fi; \
-	if [ "$$AUTOSCALED" = "y" ]; then \
-		echo "--autoscaled" >> $@; \
-	fi; \
-	if [ "$@" = "$(JUPYTER_LAB_INPUT_FILE)" ]; then \
-		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
-		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
-		read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
-			if [ -z "$$SERVICE_VERSION" ]; then \
-				echo "No service version specified, using default."; \
-			else \
-				echo "--service-version=$$SERVICE_VERSION" >> $@; \
+	@if [ "$@" = "$(PORTAL_INPUT_FILE)" ]; then \
+		TEST_FILE=""; \
+		while [ -z "$$TEST_FILE" ]; do \
+			read -p "Enter the test file to run inside tests/portal (e.g. test_2d_plot.py), required: " TEST_FILE; \
+		done; \
+		if [ "$$TEST_FILE" = "test_vtk_file.py" ]; then \
+			read -p "Enter the viewer url prefix: " VIEWER_URL_PREFIX; \
+			read -p "Enter the download link: " DOWNLOAD_LINK; \
+			read -p "Enter the file size (bytes): " FILE_SIZE; \
+			read -p "Enter the service start timeout in ms [default 60000]: " SERVICE_START_TIMEOUT; \
+			echo "--viewer-url-prefix=$$VIEWER_URL_PREFIX --download-link=$$DOWNLOAD_LINK --file-size=$$FILE_SIZE" > $@; \
+			echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
+			if [ -n "$$SERVICE_START_TIMEOUT" ]; then \
+				echo "--service-start-timeout=$$SERVICE_START_TIMEOUT" >> $@; \
 			fi; \
-	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
-		read -p "Do you want to check the videostreaming ? (requires to run with chrome/msedge) [y/n]: " VIDEOSTREAM; \
-		if [ "$$VIDEOSTREAM" = "y" ]; then \
-			echo "--check-videostreaming" >> $@; \
-		fi; \
-		read -p "Do you want to use the plus button (NOTE: if yes then pass the osparc-test-ID of the plus button in the service key) ? [y/n]: " PLUS_BUTTON; \
-		if [ "$$PLUS_BUTTON" = "y" ]; then \
-			echo "--service-key=startS4LButton" >> $@; \
-			echo "--use-plus-button" >> $@; \
 		else \
-			read -p "Enter the service key: " SERVICE_KEY; \
-			echo "--service-key=$$SERVICE_KEY" >> $@; \
+			read -p "Enter the anonymous study URL (url_prefix+template_uuid, no login needed): " ANONYMOUS_STUDY_URL; \
+			read -p "Enter the service start timeout in ms [default 60000]: " SERVICE_START_TIMEOUT; \
+			read -p "Enter the run pipeline timeout in ms [default 180000]: " RUN_PIPELINE_TIMEOUT; \
+			echo "--anonymous-study-url=$$ANONYMOUS_STUDY_URL" > $@; \
+			echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
+			if [ -n "$$SERVICE_START_TIMEOUT" ]; then \
+				echo "--service-start-timeout=$$SERVICE_START_TIMEOUT" >> $@; \
+			fi; \
+			if [ -n "$$RUN_PIPELINE_TIMEOUT" ]; then \
+				echo "--run-pipeline-timeout=$$RUN_PIPELINE_TIMEOUT" >> $@; \
+			fi; \
+		fi; \
+		echo "#TEST_FILE=$$TEST_FILE" >> $@; \
+	else \
+		read -p "Enter your product URL: " PRODUCT_URL; \
+		read -p "Is the product billable [y/n]: " BILLABLE; \
+		read -p "Is the product lite [y/n]: " IS_LITE; \
+		read -p "Is the test running in autoscaled deployment [y/n]: " AUTOSCALED; \
+		read -p "Enter your username: " USER_NAME; \
+		read -s -p "Enter your password: " PASSWORD; echo ""; \
+		echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
+		echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
+		if [ "$$BILLABLE" = "y" ]; then \
+			echo "--product-billable" >> $@; \
+		fi; \
+		if [ "$$IS_LITE" = "y" ]; then \
+			echo "--product-lite" >> $@; \
+		fi; \
+		if [ "$$AUTOSCALED" = "y" ]; then \
+			echo "--autoscaled" >> $@; \
+		fi; \
+		if [ "$@" = "$(JUPYTER_LAB_INPUT_FILE)" ]; then \
+			read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
+			echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
+			read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
+				if [ -z "$$SERVICE_VERSION" ]; then \
+					echo "No service version specified, using default."; \
+				else \
+					echo "--service-version=$$SERVICE_VERSION" >> $@; \
+				fi; \
+		elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
+			read -p "Do you want to check the videostreaming ? (requires to run with chrome/msedge) [y/n]: " VIDEOSTREAM; \
+			if [ "$$VIDEOSTREAM" = "y" ]; then \
+				echo "--check-videostreaming" >> $@; \
+			fi; \
+			read -p "Do you want to use the plus button (NOTE: if yes then pass the osparc-test-ID of the plus button in the service key) ? [y/n]: " PLUS_BUTTON; \
+			if [ "$$PLUS_BUTTON" = "y" ]; then \
+				echo "--service-key=startS4LButton" >> $@; \
+				echo "--use-plus-button" >> $@; \
+			else \
+				read -p "Enter the service key: " SERVICE_KEY; \
+				echo "--service-key=$$SERVICE_KEY" >> $@; \
+				read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
+				if [ -z "$$SERVICE_VERSION" ]; then \
+					echo "No service version specified, using default."; \
+				else \
+					echo "--service-version=$$SERVICE_VERSION" >> $@; \
+				fi; \
+			fi; \
+		elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
+			read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
+			echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
+		elif [ "$@" = "$(RSM_INPUT_FILE)" ]; then \
 			read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
 			if [ -z "$$SERVICE_VERSION" ]; then \
 				echo "No service version specified, using default."; \
@@ -217,16 +260,12 @@ $(ALL_INPUT_FILES):
 				echo "--service-version=$$SERVICE_VERSION" >> $@; \
 			fi; \
 		fi; \
-	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
-		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
-		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
-	elif [ "$@" = "$(RSM_INPUT_FILE)" ]; then \
-		read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
-		if [ -z "$$SERVICE_VERSION" ]; then \
-			echo "No service version specified, using default."; \
-		else \
-			echo "--service-version=$$SERVICE_VERSION" >> $@; \
-		fi; \
+	fi; \
+	read -p "Does this deployment require HTTP basic auth [y/N]: " NEEDS_BASIC_AUTH; \
+	if [ "$$NEEDS_BASIC_AUTH" = "y" ]; then \
+		read -p "Enter the basic auth user: " BASIC_AUTH_USER; \
+		read -s -p "Enter the basic auth password: " BASIC_AUTH_PASSWORD; echo ""; \
+		echo "--basic-auth-user=$$BASIC_AUTH_USER --basic-auth-password=$$BASIC_AUTH_PASSWORD" >> $@; \
 	fi
 
 # Run the tests
@@ -248,10 +287,37 @@ test-personalized-tip-anywhere: _check_venv_active $(PERSONALIZED_TIP_INPUT_FILE
 test-response-surface-modeling-anywhere: _check_venv_active $(RSM_INPUT_FILE) ## run response surface modeling test and cache settings
 	@$(call run_test, $(RSM_INPUT_FILE), tests/metamodeling/test_response_surface_modeling.py)
 
+test-portal-anywhere: _check_venv_active $(PORTAL_INPUT_FILE) ## run a portal test inside tests/portal; uses the cached test file (or pass TEST=test_xxx.py to override) and cache settings
+	@TEST_FILE="$(TEST)"; \
+	if [ -z "$$TEST_FILE" ]; then \
+		TEST_FILE=$$(grep '^#TEST_FILE=' $(PORTAL_INPUT_FILE) | sed 's/^#TEST_FILE=//'); \
+	fi; \
+	if [ -z "$$TEST_FILE" ]; then \
+		echo "ERROR: no test file specified. Pass TEST=test_xxx.py or run 'make clean' to be prompted again"; \
+		echo "       (running the whole tests/portal suite is not supported: each test targets a different study)"; \
+		exit 1; \
+	fi; \
+	TEST_PATH=tests/portal/$$TEST_FILE; \
+	if [ ! -e "$$TEST_PATH" ]; then \
+		echo "ERROR: test path '$$TEST_PATH' does not exist (relative to $(CURDIR))"; \
+		exit 1; \
+	fi; \
+	TEST_ARGS=$$(grep -v '^#' $(PORTAL_INPUT_FILE) | xargs); \
+	echo $$TEST_ARGS | sed 's/--password=[^ ]*/--password=***REDACTED***/g; s/--basic-auth-password=[^ ]*/--basic-auth-password=***REDACTED***/g'; \
+	pytest -s $$TEST_PATH \
+		--color=yes \
+		--browser chromium \
+		--headed \
+		$$TEST_ARGS
+
 # Define the common test running function
 define run_test
+	if [ ! -e $2 ]; then \
+		echo "ERROR: test path '$2' does not exist (relative to $(CURDIR))"; \
+		exit 1; \
+	fi; \
 	TEST_ARGS=$$(cat $1 | xargs); \
-	echo $$TEST_ARGS; \
+	echo $$TEST_ARGS | sed 's/--password=[^ ]*/--password=***REDACTED***/g; s/--basic-auth-password=[^ ]*/--basic-auth-password=***REDACTED***/g'; \
 	pytest -s $2 \
 		--color=yes \
 		--browser chromium \
@@ -260,8 +326,12 @@ define run_test
 endef
 
 define run_test_on_chrome
+	if [ ! -e $2 ]; then \
+		echo "ERROR: test path '$2' does not exist (relative to $(CURDIR))"; \
+		exit 1; \
+	fi; \
 	TEST_ARGS=$$(cat $1 | xargs); \
-	echo $$TEST_ARGS; \
+	echo $$TEST_ARGS | sed 's/--password=[^ ]*/--password=***REDACTED***/g; s/--basic-auth-password=[^ ]*/--basic-auth-password=***REDACTED***/g'; \
 	pytest -s $2 \
 		--color=yes \
 		--browser-channel chrome \
