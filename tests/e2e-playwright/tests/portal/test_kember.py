@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-"""Port of the legacy tests/e2e/portal/Kember.js Puppeteer script."""
 
 import logging
 from collections.abc import Callable

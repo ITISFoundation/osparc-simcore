@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-"""Port of the legacy tests/e2e/publications/SarValidation.js Puppeteer script."""
 
 import re
 from collections.abc import Callable

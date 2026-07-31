@@ -40,8 +40,7 @@ pytest -s tests/sim4life.py --tracing on --html=report.html --browser-channel ch
 
 ## Portal suite
 
-`tests/portal` is the Playwright equivalent of the legacy Puppeteer scripts in `tests/e2e/portal`,
-`tests/e2e/portal-files` and `tests/e2e/publications`. Unlike the other suites, it opens a
+`tests/portal` is the Playwright portal testing suite. Unlike the other suites, it opens a
 **public/portal study without logging in** (via the `open_study_link` fixture), so it doesn't need
 `--product-url`, `--user-name` or `--password`.
 
@@ -57,7 +56,7 @@ Computational-pipeline portal tests (`test_cc_human.py`, `test_cc_rabbit.py`, `t
 `test_kember.py`) wait for a pipeline run instead of a dynamic service, so they use
 `--run-pipeline-timeout` (default 180000ms) instead of `--service-start-timeout`.
 
-`tests/portal/test_vtk_file.py` (port of the legacy `tests/e2e/portal-files/VTK_file.js`) resolves
+`tests/portal/test_vtk_file.py` resolves
 its study URL from a viewer/file instead, so it takes different options:
 
 ```cmd

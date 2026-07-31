@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-"""Port of the legacy tests/e2e/portal-files/VTK_file.js Puppeteer script."""
 
 from collections.abc import Callable
 from typing import Any
@@ -25,9 +24,6 @@ def _resolve_viewer_url(
 ) -> str:
     """Resolves the public "study dispatcher" URL for a given file type, appending the
     provided query parameters (e.g. download_link, file_size).
-
-    Port of the legacy tests/e2e/portal-files/VTK_file.js logic that queries
-    `/v0/viewers/default`.
     """
     response = api_request_context.get(f"{url_prefix}/v0/viewers/default")
     assert response.ok, f"{response.status}: {response.text()}"

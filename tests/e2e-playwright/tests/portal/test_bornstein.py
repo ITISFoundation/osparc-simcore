@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-"""Port of the legacy tests/e2e/portal/Bornstein.js Puppeteer script."""
 
 import contextlib
 import logging
