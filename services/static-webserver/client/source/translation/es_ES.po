@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-07-30T09:43:20Z\n"
+"X-Translation-Date: 2026-07-30T14:21:07Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
@@ -382,6 +382,8 @@ msgstr "Uso de memoria"
 # monitoring or managing activities.
 #: services/static-webserver/client/source/class/osparc/activityManager/ActivityTree.js:220
 #: services/static-webserver/client/source/class/osparc/dashboard/CardBase.js:849
+#: services/static-webserver/client/source/class/osparc/data/Job.js:94
+#: services/static-webserver/client/source/class/osparc/data/Job.js:95
 #: services/static-webserver/client/source/class/osparc/navigation/PrevNextButtons.js:162
 #: services/static-webserver/client/source/class/osparc/service/StatusUI.js:122
 msgid "Running"
@@ -390,6 +392,8 @@ msgstr "En ejecución"
 # CTX-INTERPRETATION: The string "Queued" is used to display the status of a
 # task or activity in a table, indicating that it is waiting to be executed.
 #: services/static-webserver/client/source/class/osparc/activityManager/ActivityTree.js:223
+#: services/static-webserver/client/source/class/osparc/data/Job.js:92
+#: services/static-webserver/client/source/class/osparc/data/Job.js:93
 #: services/static-webserver/client/source/class/osparc/jobs/RunsTable.js:127
 msgid "Queued"
 msgstr "En espera"
@@ -1167,12 +1171,19 @@ msgstr "Redes sociales"
 msgid "How did you hear about us?"
 msgstr "¿Cómo nos enteró?"
 
-# CTX-INTERPRETATION: The string appears within a form related to account
-# creation or data processing, specifically within the 'RequestAccount'
-# component, indicating user agreement with privacy policy terms.
+# CTX-INTERPRETATION: The string appears in the 'RequestAccount' form,
+# specifically related to acknowledging data processing according to a privacy
+# policy link, based on the product name.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:354
-msgid "I acknowledge that data will be processed in accordance to "
-msgstr "Reconozco que los datos se procesarán de acuerdo con "
+msgid "I acknowledge that data will be processed in accordance to %1"
+msgstr "Reconozco que los datos se procesarán de acuerdo con %1."
+
+# CTX-INTERPRETATION: The string is part of the user agreement checkbox in the
+# account request form, prompting the user to accept the license terms and
+# conditions.
+#: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:367
+msgid "I accept the %1 and I will use the product in accordance with it"
+msgstr "Acepto %1 y utilizaré el producto de acuerdo con ello."
 
 # CTX-INTERPRETATION: The string "Request" appears as the label for a button
 # that initiates a request, likely related to account registration or a
@@ -1810,6 +1821,11 @@ msgstr "Número de veces que se ha instanciado"
 #: services/static-webserver/client/source/class/osparc/dashboard/GridButtonItem.js:192
 msgid "Viewer only"
 msgstr "Solo visualizador"
+
+#: services/static-webserver/client/source/class/osparc/dashboard/GridButtonItem.js:256
+#: services/static-webserver/client/source/class/osparc/dashboard/ListButtonItem.js:246
+msgid "My %1"
+msgstr "Mi %1"
 
 # CTX-INTERPRETATION: The string "My Function" appears in the context of a
 # user interface, likely within a grid or list, to indicate whether a user has
@@ -3235,6 +3251,48 @@ msgstr "Cargando..."
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspacesTree.js:23
 msgid "Workspaces"
 msgstr "Espacios de trabajo"
+
+# CTX-INTERPRETATION: The string "Unknown" is used as a default label when the
+# application cannot determine a compatible version for a chip, likely in a
+# user interface related to managing or configuring simulation components.
+#: services/static-webserver/client/source/class/osparc/data/Job.js:90
+#: services/static-webserver/client/source/class/osparc/data/Job.js:91
+#: services/static-webserver/client/source/class/osparc/metadata/ServicesInStudyUpdate.js:194
+#: services/static-webserver/client/source/class/osparc/workbench/NodeUI.js:271
+msgid "Unknown"
+msgstr "Desconocido"
+
+# CTX-INTERPRETATION: This string likely represents the final status of a job
+# or simulation process after it has completed successfully.
+#: services/static-webserver/client/source/class/osparc/data/Job.js:96
+msgid "Finished"
+msgstr "Finalizado"
+
+# CTX-INTERPRETATION: The 'Failed' label is used within the Job class to
+# indicate that a simulation job has encountered an error during execution.
+#: services/static-webserver/client/source/class/osparc/data/Job.js:97
+msgid "Failed"
+msgstr "Fallido"
+
+# CTX-INTERPRETATION: This string likely represents the status of a job that
+# was intentionally stopped or terminated due to an error or user
+# intervention.
+#: services/static-webserver/client/source/class/osparc/data/Job.js:98
+msgid "Aborted"
+msgstr "Abortado"
+
+# CTX-INTERPRETATION: The string appears in the Job.js file, likely within a
+# user interface element that displays the status of a job, indicating that
+# hardware is ready and solvers are being installed.
+#: services/static-webserver/client/source/class/osparc/data/Job.js:99
+msgid "Hardware is ready, installing solvers"
+msgstr "El hardware está listo, instalando simuladores."
+
+# CTX-INTERPRETATION: The string appears in the Job.js file, likely related to
+# describing the setup or configuration process of a job involving solvers.
+#: services/static-webserver/client/source/class/osparc/data/Job.js:100
+msgid "Creating your personal computing hardware"
+msgstr "Creando su propio hardware de computación personal"
 
 # CTX-INTERPRETATION: The string "Operation not permitted" appears in the
 # Permissions.js file, likely indicating that a user does not have the
@@ -5589,6 +5647,13 @@ msgstr ""
 "La ventana ha sido cerrada. Inténtelo de nuevo y siga las instrucciones "
 "dentro de la ventana abierta."
 
+# CTX-INTERPRETATION: The string "Add payment method" appears within the
+# context of a payment gateway window, likely used to allow users to add or
+# select a payment method for a transaction.
+#: services/static-webserver/client/source/class/osparc/desktop/paymentMethods/PaymentMethods.js:140
+msgid "Add payment method"
+msgstr "Añadir método de pago"
+
 # CTX-INTERPRETATION: The string "No Payment Methods found" is displayed in
 # the PaymentMethods.js file, likely indicating that no payment methods have
 # been configured or are available for a specific user or context.
@@ -7843,14 +7908,6 @@ msgstr "Compatible"
 msgid "Latest compatible version"
 msgstr "Última versión compatible"
 
-# CTX-INTERPRETATION: The string "Unknown" is used as a default label when the
-# application cannot determine a compatible version for a chip, likely in a
-# user interface related to managing or configuring simulation components.
-#: services/static-webserver/client/source/class/osparc/metadata/ServicesInStudyUpdate.js:194
-#: services/static-webserver/client/source/class/osparc/workbench/NodeUI.js:271
-msgid "Unknown"
-msgstr "Desconocido"
-
 # CTX-INTERPRETATION: The string "Up-to-date" is displayed when the latest
 # compatible version of a metadata object matches the version of the object
 # currently being processed, indicating that no update is needed.
@@ -8131,7 +8188,7 @@ msgstr "Se le ha notificado que se ha recuperado el estudio '%1'."
 # message.
 #: services/static-webserver/client/source/class/osparc/notification/NotificationUI.js:236
 msgid "%1 wants you to check the conversation"
-msgstr "quiere que revise la conversación"
+msgstr "%1 quiere que revise la conversación"
 
 # CTX-INTERPRETATION: The string is used within a UI component to display a
 # notification indicating that a study with a specific name has been added to
@@ -8884,6 +8941,79 @@ msgstr "Editor de Unidad de Precios"
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:63
 msgid "Information is unavailable"
 msgstr "La información no está disponible"
+
+# CTX-INTERPRETATION: This string appears in the AboutProduct.js file, likely
+# within a section describing the origins and funding of Sim4Life.web,
+# highlighting its connection to the o<sup>2</sup>S<sup>2</sup>PARC platform
+# and related organizations.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:79
+msgid ""
+"Sim4Life.web makes use of technologies developed by our research partner for"
+" the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-"
+"funded by the U.S. National Institutes of Health’s SPARC initiative."
+msgstr ""
+"Sim4Life.web utiliza tecnologías desarrolladas por nuestro socio de "
+"investigación para la plataforma o<sup>2</sup>S<sup>2</sup>PARC, la IT’IS "
+"Foundation, y financiada conjuntamente por la iniciativa SPARC del Instituto"
+" Nacional de Salud de los EE. UU."
+
+# CTX-INTERPRETATION: This string appears in the AboutProduct.js file,
+# providing a link to more information about Sim4Life.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:81
+msgid "For more information about Sim4Life, please visit %1."
+msgstr "Para obtener más información sobre Sim4Life, visite %1."
+
+# CTX-INTERPRETATION: This string appears in the AboutProduct.js file, likely
+# within a section describing licensing information and providing a link to
+# review license agreements.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:82
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:130
+msgid "To review license agreements, click %1."
+msgstr "Para revisar los acuerdos de licencia, haga clic en %1."
+
+# CTX-INTERPRETATION: The string "Send us an email %1" appears in the
+# AboutProduct.js file, likely within a contact form or section related to
+# contacting support for Sim4Life.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:83
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:101
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:131
+msgid "Send us an email %1"
+msgstr "Envíenos un correo electrónico %1"
+
+# CTX-INTERPRETATION: This string appears in the AboutProduct.js file, likely
+# within a user interface section describing the Sim4Life.lite software.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:92
+msgid ""
+"Sim4Life.lite is a powerful web-based simulation platform that allows you to"
+" model and analyze real-world phenomena and to design complex technical "
+"devices in a validated environment. With its intuitive interface and "
+"advanced tools, Sim4Life.lite makes it easy to develop your simulation "
+"project, wherever you are."
+msgstr ""
+"Sim4Life.lite es una potente plataforma de simulación basada en la web que "
+"le permite modelar y analizar fenómenos del mundo real y diseñar "
+"dispositivos técnicos complejos en un entorno validado. Con su interfaz "
+"intuitiva y herramientas avanzadas, Sim4Life.lite facilita el desarrollo de "
+"su proyecto de simulación, dondequiera que se encuentre."
+
+# CTX-INTERPRETATION: The string appears in the AboutProduct.js file,
+# providing a link to read license agreements for the Sim4Life application.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:95
+msgid "Click %1 to read the license agreements."
+msgstr "Haga clic en %1 para leer los acuerdos de licencia."
+
+# CTX-INTERPRETATION: The string provides a link to the Sim4Life.lite website
+# for users seeking more information about the software.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:99
+msgid "For more information about Sim4Life.lite, visit %1."
+msgstr "Para obtener más información sobre Sim4Life.lite, visite %1."
+
+# CTX-INTERPRETATION: The string appears in the AboutProduct.js file,
+# specifically within a section related to providing additional information
+# about TIP and its licensing.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:129
+msgid "For more information about TIP, please visit %1."
+msgstr "Para obtener más información sobre TIP, visite %1."
 
 # CTX-INTERPRETATION: The string 'project' is likely used to display the name
 # or alias of a project within the application, possibly in a user interface
