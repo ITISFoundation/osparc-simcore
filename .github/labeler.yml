@@ -191,7 +191,9 @@
 
 e2e:
   - changed-files:
-      - any-glob-to-any-file: tests/e2e/**
+      - any-glob-to-any-file:
+        - tests/e2e-playwright/**
+        - tests/e2e-performance/**
 
 dependencies:
   - changed-files:

@@ -2,10 +2,6 @@
 # pylint: disable=unused-argument
 """Portal e2e-playwright suite.
 
-Ports the legacy Puppeteer scripts in tests/e2e/portal/*.js, tests/e2e/portal-files/VTK_file.js
-and tests/e2e/publications/*.js: opens a public/portal study without logging in (see
-`open_study_link` below) and interacts with the service(s) it contains.
-
 Shared fixtures such as `api_request_context` are defined in the parent conftest.py. Each test
 hardcodes its own `is_service_legacy`-equivalent value (matching the legacy JS
 `waitForServices(..., waitForConnected)` argument for that specific service) since it's a fixed
@@ -36,8 +32,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store",
         type=str,
         default=None,
-        help="Full URL pointing to a public/portal study that can be opened without logging in "
-        "(equivalent to url_prefix+template_uuid in the legacy tests/e2e/portal scripts)",
+        help="Full URL pointing to a public/portal study that can be opened without logging in ",
     )
     group.addoption(
         "--anonymous-open-timeout",
@@ -127,12 +122,7 @@ class OpenedAnonymousStudy:
 
 @pytest.fixture
 def open_study_link(page: Page, anonymous_open_timeout: int) -> Callable[..., OpenedAnonymousStudy]:
-    """Opens a public/portal study by URL without any login/registration.
-
-    This is the Playwright equivalent of the legacy Puppeteer
-    `TutorialBase.openStudyLink()` used by tests/e2e/portal, tests/e2e/portal-files
-    and tests/e2e/publications (all ported into tests/portal).
-    """
+    """Opens a public/portal study by URL without any login/registration."""
 
     def _(url: str, *, timeout: int | None = None) -> OpenedAnonymousStudy:
         timeout = timeout if timeout is not None else anonymous_open_timeout

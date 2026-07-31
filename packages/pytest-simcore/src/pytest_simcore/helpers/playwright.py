@@ -834,28 +834,31 @@ def _read_output_file_names(
     expected_file_names: list[str],
     open_outputs_folder: bool,
 ) -> list[str]:
-    # the frontend may still be rendering the file list right after the outputs API responds,
-    # so this whole read is wrapped with tenacity and retried until it matches (or times out)
+    # the frontend may still be rendering the file list right after the outputs API responds, so
+    # this is retried until it matches (or times out). NOTE: the mismatch case is expected/routine
+    # here, so it's kept out of `log_context` to avoid logging a full traceback on every retry.
     page.get_by_test_id("folderGridView").click()
     items = page.get_by_test_id("FolderViewerItem")
 
-    with log_context(logging.INFO, f"Reading node {node_id} outputs ({path_filter=})") as ctx:
-        if open_outputs_folder:
-            outputs_found = False
-            for index in range(items.count()):
-                item = items.nth(index)
-                if "output" in (item.text_content() or ""):
-                    item.dblclick()
-                    outputs_found = True
-            assert outputs_found, f"outputs folder not found for node {node_id} ({path_filter})"
-            items = page.get_by_test_id("FolderViewerItem")
+    if open_outputs_folder:
+        outputs_found = False
+        for index in range(items.count()):
+            item = items.nth(index)
+            if "output" in (item.text_content() or ""):
+                item.dblclick()
+                outputs_found = True
+        assert outputs_found, f"outputs folder not found for node {node_id} ({path_filter})"
+        items = page.get_by_test_id("FolderViewerItem")
 
-        actual_file_names = sorted([(name or "").removesuffix("\ue24d") for name in items.all_text_contents()])
-        assert actual_file_names == sorted(expected_file_names), (
-            f"Expected {expected_file_names}, got {actual_file_names}"
-        )
-        ctx.logger.info("✅ Node %s outputs match expected file names: %s", node_id, actual_file_names)
-        return actual_file_names
+    actual_file_names = sorted([(name or "").removesuffix("\ue24d") for name in items.all_text_contents()])
+    missing_file_names = sorted(set(expected_file_names) - set(actual_file_names))
+    unexpected_file_names = sorted(set(actual_file_names) - set(expected_file_names))
+    if missing_file_names or unexpected_file_names:
+        msg = f"Node {node_id} outputs not ready yet: missing={missing_file_names} unexpected={unexpected_file_names}"
+        raise AssertionError(msg)
+
+    _logger.info("✅ Node %s outputs match expected file names: %s", node_id, actual_file_names)
+    return actual_file_names
 
 
 @retry(
