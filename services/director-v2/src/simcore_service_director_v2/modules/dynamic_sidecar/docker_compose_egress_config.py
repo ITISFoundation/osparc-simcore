@@ -251,17 +251,18 @@ def _allow_outgoing_internet(service_spec: ComposeSpecLabelDict, container_name:
 def _flatten_host_permit_list_policies(
     simcore_service_labels: SimcoreServiceLabels,
 ) -> list[NATRule]:
+    permit_list = simcore_service_labels.containers_allowed_outgoing_permit_list
+    if permit_list is None:
+        return []
     return [
         host_permit_list_policy
-        for host_permit_list_policies in simcore_service_labels.containers_allowed_outgoing_permit_list.values()
+        for host_permit_list_policies in permit_list.values()
         for host_permit_list_policy in host_permit_list_policies
     ]
 
 
 def count_required_egress_proxies(simcore_service_labels: SimcoreServiceLabels) -> int:
     """Returns the number of dy-sidecar-egress-proxy containers `add_egress_configuration` will create."""
-    if not simcore_service_labels.containers_allowed_outgoing_permit_list:
-        return 0
     return len(_get_egress_proxy_dns_port_rules(_flatten_host_permit_list_policies(simcore_service_labels)))
 
 
