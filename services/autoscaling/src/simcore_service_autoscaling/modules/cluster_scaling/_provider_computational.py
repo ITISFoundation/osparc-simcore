@@ -109,7 +109,7 @@ class ComputationalAutoscalingProvider:
         assert self  # nosec
         assert task  # nosec
         # NOTE: currently not tagged on computational EC2 instances
-        return None
+        return None  # pylint: disable=useless-return
 
     async def compute_node_used_resources(self, app: FastAPI, instance: AssociatedInstance) -> Resources:
         assert self  # nosec
