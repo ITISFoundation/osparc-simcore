@@ -15,6 +15,7 @@ from models_library.service_settings_nat_rule import (
     NATRule,
     _PortRange,
 )
+from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from ordered_set import OrderedSet
 from pydantic import NonNegativeInt
 from settings_library.egress_proxy import EgressProxySettings
@@ -188,8 +189,10 @@ def test_count_required_egress_proxies_no_permit_list():
 def test_count_required_egress_proxies_matches_generated_proxies():
     simcore_service_labels = _simcore_service_labels_with_permit_list(
         {
-            "container1": [NATRule(hostname="host1", tcp_ports=[80])],
-            "container2": [NATRule(hostname="host2", tcp_ports=[80])],
+            DEFAULT_SINGLE_SERVICE_NAME: [
+                NATRule(hostname="host1", tcp_ports=[80]),
+                NATRule(hostname="host2", tcp_ports=[80]),
+            ],
         }
     )
 
