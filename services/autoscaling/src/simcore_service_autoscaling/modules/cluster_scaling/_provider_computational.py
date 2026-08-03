@@ -105,11 +105,11 @@ class ComputationalAutoscalingProvider:
         # NOTE: currently no such constraints are defined for dask tasks
         return {}
 
-    def get_task_product_name(self, task) -> ProductName | None:
+    def get_task_product_name(self, task) -> ProductName | None:  # pylint: disable=useless-return
         assert self  # nosec
         assert task  # nosec
         # NOTE: currently not tagged on computational EC2 instances
-        return None  # pylint: disable=useless-return
+        return None
 
     async def compute_node_used_resources(self, app: FastAPI, instance: AssociatedInstance) -> Resources:
         assert self  # nosec
