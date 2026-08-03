@@ -35,6 +35,18 @@
   },
   "packageRules": [
     {
+      "description": "pip-compile lockfiles (e.g. _test.txt, _tools.txt) reference _base.txt as a --constraint, so packages only pinned there (not required directly by their own .in file) are classified by Renovate as 'indirect' deps and ignored by default. Force-enable them so they don't silently drift out of sync (e.g. stay on an old, vulnerable version) whenever _base.txt is bumped.",
+      "matchManagers": ["pip-compile"],
+      "matchDepTypes": ["indirect"],
+      "enabled": true
+    },
+    {
+      "description": "Group all pip-compile outputs (_base.txt, _test.txt, _tools.txt, ...) of the same requirements/ directory into a single branch/PR, so they are always updated atomically instead of drifting apart",
+      "matchManagers": ["pip-compile"],
+      "groupName": "{{packageFileDir}}",
+      "groupSlug": "{{packageFileDir}}"
+    },
+    {
       "description": "Shared packages: upgrade faster (smaller blast radius)",
       "matchFileNames": [
         "packages/**/requirements/**"
