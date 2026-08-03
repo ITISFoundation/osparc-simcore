@@ -1,8 +1,10 @@
 import base64
 from collections.abc import Sequence
 
+from aws_library.ec2 import PRODUCT_NAME_TAG_KEY
 from common_library.json_serialization import json_loads
 from models_library.docker import DockerGenericTag
+from models_library.products import ProductName
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import (
@@ -51,6 +53,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     expected_user_data: list[str] | None = None,
     check_reservation_index: int | None = None,
     check_instance_type: InstanceTypeType | None = None,
+    expected_product_name: ProductName | None = None,
 ) -> list[InstanceTypeDef]:
     if expected_user_data is None:
         expected_user_data = ["docker swarm join"]
@@ -70,6 +73,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
         instance_filters=instance_filters,
         check_reservation_index=check_reservation_index,
         check_instance_type=check_instance_type,
+        expected_product_name=expected_product_name,
     )
 
 
@@ -116,6 +120,7 @@ async def _assert_reservation(
     expected_instance_tag_keys: list[str],
     expected_user_data: list[str],
     expected_pre_pulled_images: list[DockerGenericTag] | None,
+    expected_product_name: ProductName | None = None,
 ) -> list[InstanceTypeDef]:
     list_instances: list[InstanceTypeDef] = []
     assert "Instances" in reservation
@@ -133,7 +138,24 @@ async def _assert_reservation(
             "Name",
         }
         instance_tag_keys = {tag["Key"] for tag in instance["Tags"] if "Key" in tag}
+        if expected_product_name is None:
+            # NOTE: the product-name tag is only added when all the tasks assigned to
+            # an instance share the same product name. Most tests do not care about it,
+            # so it is not enforced here unless explicitly requested.
+            instance_tag_keys.discard(PRODUCT_NAME_TAG_KEY)
+        else:
+            expected_tag_keys.add(PRODUCT_NAME_TAG_KEY)
         assert instance_tag_keys == expected_tag_keys
+
+        if expected_product_name is not None:
+
+            def _by_product_name(ec2_tag: TagTypeDef) -> bool:
+                assert "Key" in ec2_tag
+                return ec2_tag["Key"] == PRODUCT_NAME_TAG_KEY
+
+            instance_product_name_aws_tag = next(iter(filter(_by_product_name, instance["Tags"])))
+            assert "Value" in instance_product_name_aws_tag
+            assert instance_product_name_aws_tag["Value"] == expected_product_name
 
         if expected_pre_pulled_images is None:
             assert "io.simcore.autoscaling.pre_pulled_images" not in instance_tag_keys
@@ -184,6 +206,7 @@ async def assert_ec2_instances(
     instance_filters: Sequence[FilterTypeDef] | None = None,
     check_reservation_index: int | None = None,
     check_instance_type: InstanceTypeType | None = None,
+    expected_product_name: ProductName | None = None,
 ) -> list[InstanceTypeDef]:
     all_instances = await ec2_client.describe_instances(Filters=instance_filters or [])
     assert len(all_instances["Reservations"]) == expected_num_reservations
@@ -199,6 +222,7 @@ async def assert_ec2_instances(
             expected_instance_tag_keys=expected_instance_tag_keys,
             expected_user_data=expected_user_data,
             expected_pre_pulled_images=expected_pre_pulled_images,
+            expected_product_name=expected_product_name,
         )
     if check_instance_type is not None:
         reservation_index: set[int] = set()
@@ -221,6 +245,7 @@ async def assert_ec2_instances(
             expected_instance_tag_keys=expected_instance_tag_keys,
             expected_user_data=expected_user_data,
             expected_pre_pulled_images=expected_pre_pulled_images,
+            expected_product_name=expected_product_name,
         )
     list_instances: list[InstanceTypeDef] = []
     for reservation in all_instances["Reservations"]:
@@ -234,6 +259,7 @@ async def assert_ec2_instances(
                 expected_instance_tag_keys=expected_instance_tag_keys,
                 expected_user_data=expected_user_data,
                 expected_pre_pulled_images=expected_pre_pulled_images,
+                expected_product_name=expected_product_name,
             )
         )
     return list_instances

@@ -537,6 +537,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
     instance_type_filters: Sequence[FilterTypeDef],
     run_against_moto: bool,
     spied_cluster_analysis: MockType,
+    osparc_docker_label_keys: SimcoreContainerLabels,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
@@ -580,6 +581,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
                     else list(ec2_instance_custom_tags)
                 ),
                 instance_filters=instance_type_filters,
+                # NOTE: all tasks in this batch share the same (uniform) product name,
+                # so the launched EC2 instance is expected to carry that tag
+                expected_product_name=osparc_docker_label_keys.product_name,
             )
 
             # as the new node is already running, but is not yet connected, hence not tagged and drained
@@ -1047,6 +1051,7 @@ async def test_cluster_scaling_up_and_down(
     instance_type_filters: Sequence[FilterTypeDef],
     scale_up_params: _ScaleUpParams,
     spied_cluster_analysis: MockType,
+    osparc_docker_label_keys: SimcoreContainerLabels,
 ):
     await _test_cluster_scaling_up_and_down(
         app_settings=app_settings,
@@ -1067,6 +1072,7 @@ async def test_cluster_scaling_up_and_down(
         instance_type_filters=instance_type_filters,
         run_against_moto=True,
         spied_cluster_analysis=spied_cluster_analysis,
+        osparc_docker_label_keys=osparc_docker_label_keys,
     )
 
 
@@ -1126,6 +1132,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     instance_type_filters: Sequence[FilterTypeDef],
     scale_up_params: _ScaleUpParams,
     spied_cluster_analysis: MockType,
+    osparc_docker_label_keys: SimcoreContainerLabels,
 ):
     # ensure we run a test that makes sense
     assert external_ec2_instances_allowed_types
@@ -1152,6 +1159,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
         instance_type_filters=instance_type_filters,
         run_against_moto=False,
         spied_cluster_analysis=spied_cluster_analysis,
+        osparc_docker_label_keys=osparc_docker_label_keys,
     )
 
 

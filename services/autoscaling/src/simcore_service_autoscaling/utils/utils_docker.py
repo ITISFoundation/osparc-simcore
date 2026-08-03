@@ -27,8 +27,10 @@ from models_library.generated_models.docker_rest_api import (
     Task,
     TaskState,
 )
+from models_library.products import ProductName
 from models_library.services_metadata_runtime import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    SimcoreContainerLabels,
 )
 from pydantic import ByteSize, TypeAdapter, ValidationError
 from servicelib.docker_utils import to_datetime
@@ -317,6 +319,16 @@ async def get_task_osparc_custom_docker_placement_constraints(
                     break
 
     return custom_labels
+
+
+_UNKNOWN_PRODUCT_NAME: Final[ProductName] = "unknown"
+
+
+def get_task_product_name(task: Task) -> ProductName:
+    """Extract the product name from the task's container labels, defaulting to 'unknown' if missing/invalid."""
+    with contextlib.suppress(ValidationError):
+        return SimcoreContainerLabels.from_docker_task(task).product_name
+    return _UNKNOWN_PRODUCT_NAME
 
 
 async def get_task_instance_restriction(docker_client: AutoscalingDocker, task: Task) -> InstanceTypeType | None:
