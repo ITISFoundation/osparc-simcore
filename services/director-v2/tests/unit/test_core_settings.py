@@ -235,8 +235,8 @@ def test_class_dynamicsidecarsettings_in_production(
 
 
 def test_envoy_log_level():
-    for enum in (EnvoyLogLevel("WARNING"), EnvoyLogLevel.WARNING):
-        assert enum.to_log_level() == "warning"
+    for enum in (EnvoyLogLevel("warning"), EnvoyLogLevel.WARNING):
+        assert enum == "warning"
 
 
 def test_placement_settings(monkeypatch: pytest.MonkeyPatch):

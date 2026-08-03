@@ -180,7 +180,7 @@ def _get_egress_proxy_service_config(
         [
             "envoy",
             "--log-level",
-            egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL.to_log_level(),
+            egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL,
             # add envoy proxy config
             "--config-yaml",
             f"'{yaml_str_envoy_config}'",

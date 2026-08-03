@@ -10,7 +10,7 @@ from .base import BaseCustomSettings
 class EnvoyLogLevel(StrEnum):
     @staticmethod
     def _generate_next_value_(name: str, start: int, count: int, last_values: list) -> str:  # noqa: ARG004
-        return name
+        return name.lower()
 
     TRACE = enum.auto()
     DEBUG = enum.auto()
@@ -18,9 +18,6 @@ class EnvoyLogLevel(StrEnum):
     WARNING = enum.auto()
     ERROR = enum.auto()
     CRITICAL = enum.auto()
-
-    def to_log_level(self) -> str:
-        return self.value.lower()
 
 
 class EgressProxySettings(BaseCustomSettings):
