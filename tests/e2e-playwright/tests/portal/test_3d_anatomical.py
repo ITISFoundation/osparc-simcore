@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-"""Port of the legacy tests/e2e/portal/3D_Anatomical.js Puppeteer script."""
 
 from collections.abc import Callable
 from typing import Any
