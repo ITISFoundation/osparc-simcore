@@ -1,3 +1,4 @@
+import enum
 from enum import StrEnum
 from typing import Annotated
 
@@ -7,12 +8,16 @@ from .base import BaseCustomSettings
 
 
 class EnvoyLogLevel(StrEnum):
-    TRACE = "TRACE"
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
+    @staticmethod
+    def _generate_next_value_(name: str, start: int, count: int, last_values: list) -> str:  # noqa: ARG004
+        return name
+
+    TRACE = enum.auto()
+    DEBUG = enum.auto()
+    INFO = enum.auto()
+    WARNING = enum.auto()
+    ERROR = enum.auto()
+    CRITICAL = enum.auto()
 
     def to_log_level(self) -> str:
         return self.value.lower()
