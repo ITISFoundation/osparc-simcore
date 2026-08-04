@@ -810,6 +810,7 @@ def osparc_docker_label_keys(
             "user_id": faker.pyint(),
             "project_id": faker.uuid4(),
             "node_id": faker.uuid4(),
+            "product_name": faker.pystr(),
         }
     )
 
