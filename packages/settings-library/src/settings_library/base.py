@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Any, Final
 
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
-from pydantic import ValidationInfo, field_validator
+from pydantic import TypeAdapter, ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import ValidationError
 from pydantic_settings import (
@@ -12,6 +12,7 @@ from pydantic_settings import (
     PydanticBaseSettingsSource,
     SettingsConfigDict,
 )
+from pydantic_settings.sources.types import EnvPrefixTarget
 
 _logger = logging.getLogger(__name__)
 
@@ -62,12 +63,14 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
     def __init__(self, settings_cls: type[BaseSettings], env_settings: EnvSettingsSource):
         super().__init__(
             settings_cls,
-            env_settings.case_sensitive,
-            env_settings.env_prefix,
-            env_settings.env_nested_delimiter,
-            env_settings.env_ignore_empty,
-            env_settings.env_parse_none_str,
-            env_settings.env_parse_enums,
+            case_sensitive=env_settings.case_sensitive,
+            env_prefix=env_settings.env_prefix,
+            env_prefix_target=TypeAdapter(EnvPrefixTarget).validate_python(env_settings.env_prefix_target),
+            env_nested_delimiter=env_settings.env_nested_delimiter,
+            env_nested_max_split=env_settings.env_nested_max_split,
+            env_ignore_empty=env_settings.env_ignore_empty,
+            env_parse_none_str=env_settings.env_parse_none_str,
+            env_parse_enums=env_settings.env_parse_enums,
         )
 
     def prepare_field_value(
@@ -141,7 +144,10 @@ class BaseCustomSettings(BaseSettings):
                 raise ValueError(msg)
 
             elif auto_default_from_env:
-                msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclasses but field {cls}.{name} is {field_type} "
+                msg = (
+                    "auto_default_from_env=True can only be used in BaseCustomSettings "
+                    f"subclasses but field {cls}.{name} is {field_type} "
+                )
                 raise ValueError(msg)
 
         cls.model_rebuild(force=True)

@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=protected-access
 
+import inspect
 import json
 from collections.abc import Callable
 from typing import Annotated, Any
@@ -13,7 +14,7 @@ import pytest
 import settings_library.base
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -381,3 +382,28 @@ def test_upgrade_failure_to_pydantic_settings_2_6(
 
     settings = ProblematicSettings()
     assert settings.WEBSERVER_TRACING is not None
+
+
+def test_env_settings_source_init_signature_is_pinned():
+    # EnvSettingsWithAutoDefaultSource.__init__ forwards every parameter of
+    # EnvSettingsSource.__init__ explicitly by keyword. If pydantic-settings adds a
+    # new parameter, this test MUST fail so we notice and forward it too instead of
+    # silently defaulting it.
+    expected_params = {
+        "self",
+        "settings_cls",
+        "case_sensitive",
+        "env_prefix",
+        "env_prefix_target",
+        "env_nested_delimiter",
+        "env_nested_max_split",
+        "env_ignore_empty",
+        "env_parse_none_str",
+        "env_parse_enums",
+    }
+    actual_params = set(inspect.signature(EnvSettingsSource.__init__).parameters)
+    assert actual_params == expected_params, (
+        "EnvSettingsSource.__init__ signature changed: "
+        f"added={actual_params - expected_params}, removed={expected_params - actual_params}. "
+        "Update EnvSettingsWithAutoDefaultSource.__init__ in settings_library.base accordingly."
+    )
