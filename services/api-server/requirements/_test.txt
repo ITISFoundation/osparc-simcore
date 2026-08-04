@@ -112,7 +112,7 @@ click-repl==0.3.0
     #   celery
 coverage==7.13.5
     # via pytest-cov
-cryptography==46.0.7
+cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

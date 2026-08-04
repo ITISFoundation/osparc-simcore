@@ -58,7 +58,7 @@ click==8.2.1
     #   rich-toolkit
     #   typer
     #   uvicorn
-cryptography==46.0.7
+cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
