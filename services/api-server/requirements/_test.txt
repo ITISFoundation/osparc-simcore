@@ -282,12 +282,11 @@ pycparser==2.22
     # via
     #   -c requirements/_base.txt
     #   cffi
-pydantic==2.11.7
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -425,7 +424,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic

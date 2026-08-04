@@ -6,12 +6,11 @@ orjson==3.11.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pydantic==2.11.10
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   pydantic-extra-types
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/_base.in

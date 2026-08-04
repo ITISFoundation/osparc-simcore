@@ -26,13 +26,12 @@ propcache==0.4.1
     # via yarl
 psycopg2-binary==2.9.11
     # via sqlalchemy
-pydantic==2.11.10
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
     #   pydantic-extra-types
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/../../../packages/common-library/requirements/_base.in

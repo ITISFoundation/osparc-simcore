@@ -8,11 +8,9 @@ packaging==26.0
     # via pytest
 pluggy==1.6.0
     # via pytest
-pydantic==2.11.10
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/requirements.in
-pydantic-core==2.33.2
+pydantic==2.13.4
+    # via -r requirements/requirements.in
+pydantic-core==2.46.4
     # via pydantic
 pygments==2.19.2
     # via pytest

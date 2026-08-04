@@ -220,14 +220,13 @@ propcache==0.3.1
     #   yarl
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pydantic==2.11.7
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-cloud-cli
     #   fastapi-pagination
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -387,7 +386,7 @@ typing-extensions==4.14.1
     #   sqlalchemy
     #   typer
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
