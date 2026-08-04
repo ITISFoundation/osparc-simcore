@@ -133,13 +133,15 @@ class BaseCustomSettings(BaseSettings):
             auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
             is_not_literal = not is_literal(field)
-            if is_not_literal and issubclass(field_type, BaseCustomSettings):
+            # NOTE: field_type can be a parameterized generic (e.g. dict[str, str]) which is not a class
+            is_class = isinstance(field_type, type)
+            if is_not_literal and is_class and issubclass(field_type, BaseCustomSettings):
                 if auto_default_from_env:
                     # Builds a default factory `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None
 
-            elif is_not_literal and issubclass(field_type, BaseSettings):
+            elif is_not_literal and is_class and issubclass(field_type, BaseSettings):
                 msg = f"{cls}.{name} of type {field_type} must inherit from BaseCustomSettings"
                 raise ValueError(msg)
 
