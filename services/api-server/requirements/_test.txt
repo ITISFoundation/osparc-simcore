@@ -300,7 +300,7 @@ pyinstrument==5.1.1
     #   -r requirements/_test.in
 pyparsing==3.3.2
     # via moto
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

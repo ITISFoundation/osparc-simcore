@@ -36,7 +36,7 @@ pydantic-settings==2.14.2
     # via -r requirements/_test.in
 pygments==2.19.2
     # via pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

@@ -257,7 +257,7 @@ pygments==2.19.2
     #   rich
 pyinstrument==5.1.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

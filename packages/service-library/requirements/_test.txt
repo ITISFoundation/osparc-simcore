@@ -171,7 +171,7 @@ pygments==2.19.2
     #   pytest
 pyleak==0.2.0
     # via -r requirements/_test.in
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -230,7 +230,6 @@ redis==7.4.0
     #   fakeredis
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   jsonschema

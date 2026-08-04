@@ -230,7 +230,7 @@ pyopenssl==26.4.0
     # via pytest-localftpserver
 pyparsing==3.3.2
     # via moto
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
