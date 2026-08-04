@@ -274,12 +274,11 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.11.7
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -343,7 +342,6 @@ redis==6.4.0
     #   fakeredis
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path
@@ -414,7 +412,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic

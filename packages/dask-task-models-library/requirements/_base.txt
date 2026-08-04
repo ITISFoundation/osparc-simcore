@@ -68,24 +68,22 @@ partd==1.4.2
     # via dask
 psutil==7.2.2
     # via distributed
-pydantic==2.11.10
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-pydantic-settings==2.7.0
+pydantic-settings==2.14.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.2
@@ -101,7 +99,6 @@ pyyaml==6.0.3
     #   distributed
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 rich==14.3.3
@@ -136,7 +133,9 @@ typing-extensions==4.15.0
     #   pydantic-extra-types
     #   typing-inspection
 typing-inspection==0.4.2
-    # via pydantic
+    # via
+    #   pydantic
+    #   pydantic-settings
 tzdata==2025.3
     # via arrow
 urllib3==2.7.0

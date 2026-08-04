@@ -246,9 +246,8 @@ psutil==7.2.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 pycryptodome==3.23.0
     # via stream-zip
-pydantic==2.11.10
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -258,15 +257,14 @@ pydantic==2.11.10
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-pydantic-settings==2.7.0
+pydantic-settings==2.14.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.2
@@ -290,7 +288,6 @@ redis==7.4.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.34.2
@@ -357,6 +354,7 @@ typing-inspection==0.4.2
     # via
     #   fastapi
     #   pydantic
+    #   pydantic-settings
 tzdata==2025.3
     # via arrow
 urllib3==2.7.0

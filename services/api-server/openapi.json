@@ -9243,33 +9243,7 @@
         ],
         "title": "ApiServerEnvelope[list[TaskGet]]"
       },
-      "ArgumentTypes-Input": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/File"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "integer"
-          },
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "items": {},
-            "type": "array"
-          },
-          {
-            "type": "null"
-          }
-        ]
-      },
-      "ArgumentTypes-Output": {
+      "ArgumentTypes": {
         "anyOf": [
           {
             "$ref": "#/components/schemas/File"
@@ -10043,7 +10017,7 @@
       "JobInputs": {
         "properties": {
           "values": {
-            "$ref": "#/components/schemas/KeywordArguments-Input"
+            "$ref": "#/components/schemas/KeywordArguments"
           }
         },
         "type": "object",
@@ -10204,7 +10178,7 @@
             "description": "Job that produced this output"
           },
           "results": {
-            "$ref": "#/components/schemas/KeywordArguments-Output"
+            "$ref": "#/components/schemas/KeywordArguments"
           }
         },
         "type": "object",
@@ -10302,15 +10276,9 @@
           "submitted_at": "2021-04-01 07:15:54.631007"
         }
       },
-      "KeywordArguments-Input": {
+      "KeywordArguments": {
         "additionalProperties": {
-          "$ref": "#/components/schemas/ArgumentTypes-Input"
-        },
-        "type": "object"
-      },
-      "KeywordArguments-Output": {
-        "additionalProperties": {
-          "$ref": "#/components/schemas/ArgumentTypes-Output"
+          "$ref": "#/components/schemas/ArgumentTypes"
         },
         "type": "object"
       },

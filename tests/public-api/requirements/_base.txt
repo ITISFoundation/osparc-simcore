@@ -42,21 +42,19 @@ osparc-client==0.8.3
     # via osparc
 packaging==26.0
     # via osparc
-pydantic==2.11.10
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   osparc
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.7.0
+pydantic-settings==2.14.2
     # via
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   osparc
 pygments==2.19.2
@@ -88,7 +86,9 @@ typing-extensions==4.15.0
     #   pydantic-extra-types
     #   typing-inspection
 typing-inspection==0.4.2
-    # via pydantic
+    # via
+    #   pydantic
+    #   pydantic-settings
 urllib3==2.7.0
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
