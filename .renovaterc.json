@@ -9,6 +9,9 @@
   "platformAutomerge": false,
   "automerge": false,
   "commitMessageSuffix": " [Renovate]",
+  "labels": [
+    "t:maintenance"
+  ],
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": true
   },
