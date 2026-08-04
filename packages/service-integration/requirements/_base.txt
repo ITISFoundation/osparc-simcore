@@ -108,7 +108,6 @@ pyyaml==6.0.3
     #   cookiecutter
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.34.2

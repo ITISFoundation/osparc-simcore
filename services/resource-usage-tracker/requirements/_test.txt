@@ -248,7 +248,6 @@ redis==7.4.0
     #   fakeredis
 referencing==0.29.3
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path

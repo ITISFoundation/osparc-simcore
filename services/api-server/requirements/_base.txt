@@ -412,7 +412,6 @@ redis==6.4.0
     #   kombu
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.34.2

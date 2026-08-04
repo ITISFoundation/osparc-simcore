@@ -253,7 +253,6 @@ pyyaml==6.0.3
     #   responses
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path
