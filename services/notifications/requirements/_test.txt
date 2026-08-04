@@ -126,7 +126,7 @@ pygments==2.19.1
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

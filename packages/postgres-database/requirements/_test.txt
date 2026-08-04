@@ -41,7 +41,7 @@ pycparser==3.0
     # via cffi
 pygments==2.19.2
     # via pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
