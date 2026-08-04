@@ -78,7 +78,7 @@ certifi==2024.8.30
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.1
+cffi==2.1.1
     # via
     #   -c requirements/_base.txt
     #   cryptography
@@ -112,7 +112,7 @@ click-repl==0.3.0
     #   celery
 coverage==7.13.5
     # via pytest-cov
-cryptography==44.0.0
+cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -253,7 +253,7 @@ packaging==24.2
     #   pytest
 pact-python==3.2.1
     # via -r requirements/_test.in
-pact-python-ffi==0.4.28.1
+pact-python-ffi==0.4.28.2
     # via pact-python
 pathable==0.4.4
     # via jsonschema-path

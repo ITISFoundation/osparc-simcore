@@ -10,7 +10,7 @@ coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.5
+cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   types-paramiko
