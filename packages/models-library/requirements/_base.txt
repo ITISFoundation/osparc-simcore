@@ -22,13 +22,11 @@ jsonschema-specifications==2025.9.1
     # via jsonschema
 orjson==3.11.9
     # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
 pydantic==2.11.10
     # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -42,7 +40,6 @@ pydantic-extra-types==2.11.1
     #   -r requirements/_base.in
 pydantic-settings==2.7.0
     # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
 python-dateutil==2.9.0.post0
@@ -51,7 +48,6 @@ python-dotenv==1.2.2
     # via pydantic-settings
 referencing==0.35.1
     # via
-    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications

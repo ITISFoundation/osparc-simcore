@@ -92,7 +92,7 @@ cloudpickle==3.1.2
     #   distributed
 contourpy==1.3.3
     # via bokeh
-cryptography==49.0.0
+cryptography==46.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
