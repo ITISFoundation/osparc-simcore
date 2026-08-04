@@ -2134,6 +2134,7 @@
             "title": "Ctx"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "loc",
@@ -3531,7 +3532,8 @@
                 "type": "number"
               },
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               }
             ],
             "title": "Wallet Credit Amount"
@@ -3556,6 +3558,7 @@
           },
           "wallet_credit_amount": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Wallet Credit Amount"
           }
         },
