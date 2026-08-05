@@ -13,7 +13,6 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
-from types import SimpleNamespace
 from typing import Any, Final
 
 import arrow
@@ -379,6 +378,57 @@ def _check_service_endpoint(
 _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(seconds=60)
 
 
+def _evaluate_service_status(
+    obj: dict[str, Any],
+    *,
+    node_id: str,
+    first_service_status_received_at: datetime | None,
+    min_idle_before_fail_fast: timedelta,
+    logger: logging.Logger,
+) -> tuple[bool | None, datetime | None]:
+    """Returns a tuple of:
+    - True/False if the waiter is resolved by this SERVICE_STATUS message, or
+      None if it does not concern this node and should be ignored
+    - the (possibly updated) first_service_status_received_at timestamp
+    """
+    if obj["service_uuid"] != node_id:
+        return None, first_service_status_received_at
+
+    if first_service_status_received_at is None:
+        first_service_status_received_at = datetime.now(UTC)
+
+    service_state = obj["service_state"]
+    if service_state in _FAIL_FAST_DYNAMIC_SERVICE_STATES:
+        # NOTE: this is a fail fast for dynamic services that fail to start
+        logger.error(
+            "❌ node %s failed with state %s, failing fast ❌",
+            node_id,
+            service_state,
+        )
+        return True, first_service_status_received_at
+
+    if service_state == "idle":
+        elapsed_since_first_status = datetime.now(UTC) - first_service_status_received_at
+        if elapsed_since_first_status >= min_idle_before_fail_fast:
+            # NOTE: the service is still idle well after it was first observed
+            logger.error(
+                "❌ node %s still idle %s since first status (>= %s grace period), failing fast ❌",
+                node_id,
+                elapsed_since_first_status,
+                min_idle_before_fail_fast,
+            )
+            return True, first_service_status_received_at
+        logger.info(
+            "⏳ node %s idle %s since first status (within %s grace period), still waiting ⏳",
+            node_id,
+            elapsed_since_first_status,
+            min_idle_before_fail_fast,
+        )
+        return False, first_service_status_received_at
+
+    return None, first_service_status_received_at
+
+
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
@@ -391,48 +441,6 @@ class SocketIONodeProgressCompleteWaiter:
     _first_service_status_received_at: datetime | None = None
     _result: bool = False
 
-    def _handle_service_status(self, ctx: SimpleNamespace, obj: dict[str, Any]) -> bool | None:
-        """Returns True/False if the waiter is resolved by this SERVICE_STATUS
-        message, or None if it does not concern this node and should be ignored."""
-        if obj["service_uuid"] != self.node_id:
-            return None
-
-        if self._first_service_status_received_at is None:
-            self._first_service_status_received_at = datetime.now(UTC)
-
-        service_state = obj["service_state"]
-        if service_state in _FAIL_FAST_DYNAMIC_SERVICE_STATES:
-            # NOTE: this is a fail fast for dynamic services that fail to start
-            ctx.logger.error(
-                "❌ node %s failed with state %s, failing fast ❌",
-                self.node_id,
-                service_state,
-            )
-            self._result = False
-            return True
-
-        if service_state == "idle":
-            elapsed_since_first_status = datetime.now(UTC) - self._first_service_status_received_at
-            if elapsed_since_first_status >= self.min_idle_before_fail_fast:
-                # NOTE: the service is still idle well after it was first observed
-                ctx.logger.error(
-                    "❌ node %s still idle %s since first status (>= %s grace period), failing fast ❌",
-                    self.node_id,
-                    elapsed_since_first_status,
-                    self.min_idle_before_fail_fast,
-                )
-                self._result = False
-                return True
-            ctx.logger.info(
-                "⏳ node %s idle %s since first status (within %s grace period), still waiting ⏳",
-                self.node_id,
-                elapsed_since_first_status,
-                self.min_idle_before_fail_fast,
-            )
-            return False
-
-        return None
-
     def __call__(self, message: str) -> bool:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
@@ -441,8 +449,16 @@ class SocketIONodeProgressCompleteWaiter:
                 decoded_message = decode_socketio_42_message(message)
                 self._received_messages.append(decoded_message)
                 if decoded_message.name == _OSparcMessages.SERVICE_STATUS.value:
-                    service_status_result = self._handle_service_status(ctx, decoded_message.obj)
-                    if service_status_result is True:
+                    service_status_resolved, self._first_service_status_received_at = _evaluate_service_status(
+                        decoded_message.obj,
+                        node_id=self.node_id,
+                        first_service_status_received_at=self._first_service_status_received_at,
+                        min_idle_before_fail_fast=self.min_idle_before_fail_fast,
+                        logger=ctx.logger,
+                    )
+                    if service_status_resolved is True:
+                        # NOTE: reaching this point always means a fail-fast (see _evaluate_service_status)
+                        self._result = False
                         return True
                 if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
                     node_progress_event = retrieve_node_progress_from_decoded_message(decoded_message)
