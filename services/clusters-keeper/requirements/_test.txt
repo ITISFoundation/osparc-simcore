@@ -80,7 +80,7 @@ coverage==7.13.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.5
+cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
@@ -218,12 +218,11 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.11.10
+pydantic==2.13.4
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.33.2
+pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -270,7 +269,6 @@ redis==7.4.0
     #   fakeredis
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path

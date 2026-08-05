@@ -182,7 +182,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
 
     __addS4LUserPrivacySettings: function() {
-      const box = new osparc.widget.SectionBox("Privacy Settings");
+      const box = new osparc.widget.SectionBox(this.tr("Privacy Settings"));
       box.addHelper(this.tr("Help us improve Sim4Life user experience"));
 
       const preferencesSettings = osparc.Preferences.getInstance();

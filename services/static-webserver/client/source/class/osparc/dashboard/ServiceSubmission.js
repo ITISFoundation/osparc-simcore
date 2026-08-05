@@ -97,7 +97,7 @@ qx.Class.define("osparc.dashboard.ServiceSubmission", {
         const size = data.files[0].size;
         const maxSize = 10 * 1000 * 1000; // 10 MB
         if (size > maxSize) {
-          osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+          osparc.FlashMessenger.logAs(qx.locale.Manager.tr("The file is too big. Maximum size is %1MB. Please provide with a smaller file or a repository URL.", maxSize), "ERROR");
           return;
         }
         body.append("attachment", data.files[0], data.files[0].name);
@@ -111,10 +111,10 @@ qx.Class.define("osparc.dashboard.ServiceSubmission", {
       })
         .then(resp => {
           if (resp.ok) {
-            osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+            osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Your data was sent to our curation team. We will get back to you shortly."), "INFO");
             addServiceWindow.close();
           } else {
-            osparc.FlashMessenger.logAs(`A problem occurred while processing your data: ${resp.statusText}`, "ERROR");
+            osparc.FlashMessenger.logAs(qx.locale.Manager.tr("A problem occurred while processing your data: %1", resp.statusText), "ERROR");
           }
         })
         .finally(() => form.setFetching(false));

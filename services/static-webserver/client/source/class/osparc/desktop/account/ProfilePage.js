@@ -207,12 +207,12 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const profileForm = this.__userProfileForm = new qx.ui.form.Form();
-      profileForm.add(userName, "UserName", null, "userName");
-      profileForm.add(firstName, "First Name", null, "firstName");
-      profileForm.add(lastName, "Last Name", null, "lastName");
-      profileForm.add(email, "Email", null, "email");
+      profileForm.add(userName, this.tr("UserName"), null, "userName");
+      profileForm.add(firstName, this.tr("First Name"), null, "firstName");
+      profileForm.add(lastName, this.tr("Last Name"), null, "lastName");
+      profileForm.add(email, this.tr("Email"), null, "email");
       if (osparc.store.StaticInfo.is2FARequired()) {
-        profileForm.add(phoneNumber, "Phone Number", null, "phone");
+        profileForm.add(phoneNumber, this.tr("Phone Number"), null, "phone");
       }
       this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithWidget(profileForm);
       box.add(this.__userProfileRenderer);
@@ -361,9 +361,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const privacyForm = new qx.ui.form.Form();
-      privacyForm.add(hideUserName, "Hide UserName", null, "hideUserName");
-      privacyForm.add(hideFullname, "Hide Full Name", null, "hideFullname");
-      privacyForm.add(hideEmail, "Hide Email", null, "hideEmail");
+      privacyForm.add(hideUserName, this.tr("Hide UserName"), null, "hideUserName");
+      privacyForm.add(hideFullname, this.tr("Hide Full Name"), null, "hideFullname");
+      privacyForm.add(hideEmail, this.tr("Hide Email"), null, "hideEmail");
       this.__privacyRenderer = new qx.ui.form.renderer.Single(privacyForm);
       box.add(this.__privacyRenderer);
 
@@ -569,9 +569,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       confirm.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "new-password");
 
       const form = new qx.ui.form.Form();
-      form.add(currentPassword, "Current Password", null, "curPassword");
-      form.add(newPassword, "New Password", null, "newPassword");
-      form.add(confirm, "Confirm New Password", null, "newPassword2");
+      form.add(currentPassword, this.tr("Current Password"), null, "curPassword");
+      form.add(newPassword, this.tr("New Password"), null, "newPassword");
+      form.add(confirm, this.tr("Confirm New Password"), null, "newPassword2");
       box.add(new qx.ui.form.renderer.Single(form));
 
       const manager = new qx.ui.form.validation.Manager();

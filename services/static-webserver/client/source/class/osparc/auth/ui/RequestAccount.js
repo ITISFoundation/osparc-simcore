@@ -351,7 +351,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           ppLink = osparc.CookiePolicy.getS4LPrivacyPolicyLink("our privacy policy");
           break;
       }
-      const ppText = this.tr("I acknowledge that data will be processed in accordance to ") + ppLink;
+      const ppText = this.tr("I acknowledge that data will be processed in accordance to %1", ppLink);
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
         value: false,
@@ -364,7 +364,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       // Eula link
       if (osparc.product.Utils.getProductName() !== "osparc") {
         const eulaLink = osparc.CookiePolicy.getZMTEULALink("end-users license agreement (EULA)");
-        const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
+        const eulaText = this.tr("I accept the %1 and I will use the product in accordance with it", eulaLink);
         const eula = new qx.ui.form.CheckBox().set({
           required: true,
           value: false,

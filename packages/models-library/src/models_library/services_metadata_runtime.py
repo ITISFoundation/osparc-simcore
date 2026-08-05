@@ -34,7 +34,7 @@ _BACKWARDS_COMPATIBILITY_SIMCORE_RUNTIME_DOCKER_LABELS_MAP: Final[dict[str, str]
     "mem_limit": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit",
     "swarm_stack_name": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name",
 }
-_UNDEFINED_LABEL_VALUE_STR: Final[str] = "undefined"
+UNDEFINED_LABEL_VALUE_STR: Final[str] = "undefined"
 _UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 
@@ -85,7 +85,7 @@ class SimcoreContainerLabels(BaseModel):
             for key in ["product-name", "simcore-user-agent", "swarm-stack-name"]:
                 mapped_values.setdefault(
                     f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key}",
-                    _UNDEFINED_LABEL_VALUE_STR,
+                    UNDEFINED_LABEL_VALUE_STR,
                 )
 
             mapped_values.setdefault(

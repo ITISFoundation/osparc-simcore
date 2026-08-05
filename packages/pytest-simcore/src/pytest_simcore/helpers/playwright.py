@@ -29,6 +29,7 @@ from tenacity import (
     stop_after_attempt,
     stop_after_delay,
     wait_exponential,
+    wait_exponential_jitter,
     wait_fixed,
 )
 
@@ -533,7 +534,9 @@ def wait_for_service_endpoint_responding(
         )
         assert is_service_ready, "❌ the service failed starting! ❌"
 
-    with log_context(logging.INFO, msg=f"wait for service endpoint to be ready ({timeout=})") as ctx:
+    with log_context(
+        logging.INFO, msg=f"wait for service endpoint to be ready ({timedelta(milliseconds=timeout)})"
+    ) as ctx:
         _retry_check_service_endpoint(ctx.logger)
 
 
@@ -555,7 +558,7 @@ def wait_for_pipeline_state(
         with log_context(
             logging.INFO,
             msg=ContextMessages(
-                starting=f"wait for one of {expected_states=}",
+                starting=f"wait for one of {expected_states=} (timeout {timedelta(milliseconds=timeout_ms)})",
                 done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
                 raised=lambda: f"pipeline failed or timed out with {current_state}. Expected one of {expected_states=}",
             ),
@@ -568,6 +571,128 @@ def wait_for_pipeline_state(
             if current_state in _FAIL_FAST_COMPUTATIONAL_STATES and current_state not in expected_states:
                 pytest.fail(f"❌ Pipeline failed fast with state {current_state}. Expected one of {expected_states} ❌")
     return current_state
+
+
+_RUNNING_STATES: Final[tuple[RunningState, ...]] = (
+    RunningState.PUBLISHED,
+    RunningState.PENDING,
+    RunningState.WAITING_FOR_CLUSTER,
+    RunningState.WAITING_FOR_RESOURCES,
+    RunningState.STARTED,
+)
+
+_RUN_PIPELINE_MAX_WAIT_TIME: Final[int] = 60 * SECOND
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PipelineStageTimeouts:
+    """Per-transition timeout budgets for a staged pipeline wait.
+
+    Needed for autoscaled deployments, where a cold cluster/worker scale-up can take several
+    minutes without the pipeline actually being stuck. Mirrors the legacy sleepers state machine:
+    PUBLISHED/PENDING -> [WAITING_FOR_CLUSTER] -> [WAITING_FOR_RESOURCES] -> STARTED -> SUCCESS
+    """
+
+    published_or_pending_ms: int = 1 * MINUTE
+    waiting_for_cluster_ms: int = 5 * MINUTE
+    waiting_for_resources_ms: int = 5 * MINUTE
+    started_ms: int = 5 * MINUTE
+
+
+def wait_for_computation_done(
+    current_state: RunningState,
+    *,
+    websocket: RobustWebSocket,
+    stage_timeouts: PipelineStageTimeouts | int,
+) -> RunningState:
+    """Waits for an already-started computational pipeline to reach a final state.
+
+    Pass an ``int`` for a single flat timeout budget covering the whole run (simple/
+    non-autoscaled deployments), or a `PipelineStageTimeouts` to instead wait through each
+    transition with its own budget (autoscaled deployments).
+    """
+    if isinstance(stage_timeouts, int):
+        return wait_for_pipeline_state(
+            current_state,
+            websocket=websocket,
+            if_in_states=_RUNNING_STATES,
+            expected_states=(RunningState.SUCCESS,),
+            timeout_ms=stage_timeouts,
+        )
+
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.PUBLISHED, RunningState.PENDING),
+        expected_states=(
+            RunningState.WAITING_FOR_CLUSTER,
+            RunningState.WAITING_FOR_RESOURCES,
+            RunningState.STARTED,
+            RunningState.SUCCESS,
+        ),
+        timeout_ms=stage_timeouts.published_or_pending_ms,
+    )
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
+        expected_states=(
+            RunningState.WAITING_FOR_RESOURCES,
+            RunningState.STARTED,
+            RunningState.SUCCESS,
+        ),
+        timeout_ms=stage_timeouts.waiting_for_cluster_ms,
+    )
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
+        expected_states=(
+            RunningState.STARTED,
+            RunningState.SUCCESS,
+        ),
+        timeout_ms=stage_timeouts.waiting_for_resources_ms,
+    )
+    return wait_for_pipeline_state(
+        current_state,
+        websocket=websocket,
+        if_in_states=(RunningState.STARTED,),
+        expected_states=(RunningState.SUCCESS,),
+        timeout_ms=stage_timeouts.started_ms,
+    )
+
+
+def run_pipeline_and_wait_done(
+    page: Page,
+    websocket: RobustWebSocket,
+    *,
+    run_button_test_id: str = "runStudyBtn",
+    timeout_ms: int = _RUN_PIPELINE_MAX_WAIT_TIME,
+    stage_timeouts: PipelineStageTimeouts | None = None,
+) -> RunningState:
+    """Clicks the "Run" button and waits until the pipeline reaches a final state.
+
+    By default (``stage_timeouts=None``) this waits within a single ``timeout_ms`` budget. Pass
+    ``stage_timeouts`` to instead wait through each transition with its own budget, needed for
+    autoscaled deployments (see `PipelineStageTimeouts`).
+
+    Port of the legacy `TutorialBase.runPipeline()` + `TutorialBase.waitForStudyDone()`.
+    """
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=tuple(RunningState))
+    with log_context(
+        logging.INFO,
+        f"Running pipeline and waiting for it to complete (timeout {timedelta(milliseconds=timeout_ms)})",
+    ):
+        with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
+            page.get_by_test_id(run_button_test_id).click()
+        current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
+        current_state = wait_for_computation_done(
+            current_state,
+            websocket=websocket,
+            stage_timeouts=stage_timeouts if stage_timeouts is not None else timeout_ms,
+        )
+        assert current_state == RunningState.SUCCESS, f"❌ Pipeline finished with {current_state} ❌"
+        return current_state
 
 
 def _node_started_predicate(request: Request) -> bool:
@@ -606,7 +731,7 @@ def expected_service_running(
         ctx = stack.enter_context(
             log_context(
                 logging.INFO,
-                msg=f"Waiting for node to run. Timeout: {timeout}",
+                msg=f"Waiting for node to run. Timeout: {timedelta(milliseconds=timeout)}",
             )
         )
 
@@ -664,7 +789,7 @@ def wait_for_service_running(
         ctx = stack.enter_context(
             log_context(
                 logging.INFO,
-                msg=f"Waiting for node to run. Timeout: {timeout}",
+                msg=f"Waiting for node to run. Timeout: {timedelta(milliseconds=timeout)}",
             )
         )
         if is_service_legacy:
@@ -728,3 +853,135 @@ def wait_for_label_text(page: Page, locator: str, substring: str, timeout: int =
     )
 
     return page.locator(locator)
+
+
+def get_node_id_from_service_key(workbench: dict[str, Any], service_key_fragment: str) -> str:
+    """Finds the node id in a project's workbench whose service key contains the given fragment."""
+    for node_id, node_data in workbench.items():
+        if service_key_fragment in node_data["key"]:
+            return node_id
+    msg = f"Could not find a node with service key containing {service_key_fragment!r} in workbench"
+    raise ValueError(msg)
+
+
+def _select_node(page: Page, position: int) -> str:
+    """Selects the node at `position` in the workbench tree (left panel) and returns its node id."""
+    tree_items = page.locator('[osparc-test-id="nodeTreeItem"]')
+    node_ids_and_locators = []
+    for index in range(tree_items.count()):
+        item = tree_items.nth(index)
+        node_key = item.get_attribute("osparc-test-key")
+        if node_key and node_key != "root":
+            node_ids_and_locators.append((node_key, item))
+
+    node_id, locator = node_ids_and_locators[position]
+    locator.click()
+    return node_id
+
+
+_OUTPUT_FILE_NAMES_MAX_WAITING_TIME: Final[timedelta] = timedelta(seconds=30)
+_OUTPUT_FILE_NAMES_WAIT_INTERVAL: Final[timedelta] = timedelta(seconds=5)
+
+
+def _read_output_file_names(
+    page: Page,
+    *,
+    node_id: str,
+    path_filter: str,
+    expected_file_names: list[str],
+    open_outputs_folder: bool,
+) -> list[str]:
+    # the frontend may still be rendering the file list right after the outputs API responds, so
+    # this is retried until it matches (or times out). NOTE: the mismatch case is expected/routine
+    # here, so it's kept out of `log_context` to avoid logging a full traceback on every retry.
+    page.get_by_test_id("folderGridView").click()
+    items = page.get_by_test_id("FolderViewerItem")
+
+    if open_outputs_folder:
+        outputs_found = False
+        for index in range(items.count()):
+            item = items.nth(index)
+            if "output" in (item.text_content() or ""):
+                item.dblclick()
+                outputs_found = True
+        assert outputs_found, f"outputs folder not found for node {node_id} ({path_filter})"
+        items = page.get_by_test_id("FolderViewerItem")
+
+    actual_file_names = sorted([(name or "").removesuffix("\ue24d") for name in items.all_text_contents()])
+    missing_file_names = sorted(set(expected_file_names) - set(actual_file_names))
+    unexpected_file_names = sorted(set(actual_file_names) - set(expected_file_names))
+    if missing_file_names or unexpected_file_names:
+        msg = f"Node {node_id} outputs not ready yet: missing={missing_file_names} unexpected={unexpected_file_names}"
+        raise AssertionError(msg)
+
+    _logger.info("✅ Node %s outputs match expected file names: %s", node_id, actual_file_names)
+    return actual_file_names
+
+
+@retry(
+    stop=stop_after_delay(_OUTPUT_FILE_NAMES_MAX_WAITING_TIME),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+    wait=wait_exponential_jitter(max=_OUTPUT_FILE_NAMES_WAIT_INTERVAL.total_seconds()),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
+)
+def _check_node_outputs_dialog(
+    page: Page,
+    *,
+    study_id: str,
+    node_id: str,
+    expected_file_names: list[str],
+    open_outputs_folder: bool,
+    app_mode: bool,
+) -> None:
+    with log_context(logging.INFO, "Opening node outputs panel"):
+        path_filter = f"{study_id}/{node_id}"
+        with page.expect_response(
+            re.compile(r"storage/locations/0/paths\?file_filter="),
+            timeout=_OUTPUT_FILE_NAMES_MAX_WAITING_TIME.total_seconds() * 1000,
+        ):
+            if app_mode:
+                page.get_by_test_id("outputsBtn").click()
+            page.get_by_test_id("nodeFilesBtn").click()
+
+    try:
+        _read_output_file_names(
+            page,
+            node_id=node_id,
+            path_filter=path_filter,
+            expected_file_names=expected_file_names,
+            open_outputs_folder=open_outputs_folder,
+        )
+    finally:
+        with log_context(logging.INFO, "Closing node outputs panel"):
+            page.get_by_test_id("nodeDataManagerCloseBtn").click()
+
+
+def check_node_outputs(
+    page: Page,
+    *,
+    study_id: str,
+    node_position: int | None = None,
+    node_id: str | None = None,
+    expected_file_names: list[str],
+    open_outputs_folder: bool = False,
+    app_mode: bool = False,
+) -> None:
+    """Opens a node's output files panel and asserts it contains exactly `expected_file_names`.
+
+    Port of the legacy `TutorialBase.checkNodeOutputs()` /
+    `TutorialBase.checkNodeOutputsAppMode()`.
+    """
+    if node_id is None:
+        assert node_position is not None, "either node_id or node_position must be provided"
+        node_id = _select_node(page, node_position)
+
+    with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
+        _check_node_outputs_dialog(
+            page,
+            study_id=study_id,
+            node_id=node_id,
+            expected_file_names=expected_file_names,
+            open_outputs_folder=open_outputs_folder,
+            app_mode=app_mode,
+        )

@@ -25,6 +25,7 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
+from models_library.products import ProductName
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import traced
@@ -563,6 +564,9 @@ async def _try_start_warm_buffer_instances(
             activation_tags = get_activated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app))
             if required_labels := non_associated_instance.tasks_required_pending_labels():
                 activation_tags |= utils_ec2.dump_task_required_node_labels_as_tags(required_labels)
+            activation_tags |= utils_ec2.dump_product_name_as_tag(
+                non_associated_instance.assigned_task_product_name_if_uniform()
+            )
             # update the instance tags to activate warm buffer
             await get_ec2_client(app).set_instances_tags(
                 [instance],
@@ -594,6 +598,7 @@ def _try_assign_task_to_ec2_instance(
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
     task_required_docker_node_labels: dict[DockerLabelKey, str],
+    task_product_name: ProductName | None,
 ) -> bool:
     for instance in instances:
         # Check EC2 instance type
@@ -616,7 +621,7 @@ def _try_assign_task_to_ec2_instance(
 
         # Check resources
         if instance.has_resources_for_task(task_required_resources):
-            instance.assign_task(task, task_required_resources, task_required_docker_node_labels)
+            instance.assign_task(task, task_required_resources, task_required_docker_node_labels, task_product_name)
             _logger.debug(
                 "%s",
                 f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, "
@@ -634,6 +639,7 @@ def _try_assign_task_to_ec2_instance_type(
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
     task_required_labels: dict[DockerLabelKey, str],
+    task_product_name: ProductName | None = None,
 ) -> bool:
     """Try to assign task to an existing instance being created.
 
@@ -654,7 +660,7 @@ def _try_assign_task_to_ec2_instance_type(
             continue
 
         # Compatible! Assign task and merge labels
-        instance.assign_task(task, task_required_resources, task_required_labels)
+        instance.assign_task(task, task_required_resources, task_required_labels, task_product_name)
         _logger.debug(
             "%s",
             f"assigned task with {task_required_resources=}, {task_required_ec2_instance=},"
@@ -699,6 +705,7 @@ async def _assign_tasks_to_current_cluster(
         task_required_resources = auto_scaling_mode.get_task_required_resources(task)
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(app, task)
         task_required_labels = await auto_scaling_mode.get_task_instance_required_docker_tags(app, task)
+        task_product_name = auto_scaling_mode.get_task_product_name(task)
 
         if any(
             is_assigned(
@@ -706,6 +713,7 @@ async def _assign_tasks_to_current_cluster(
                 task_required_ec2_instance=task_required_ec2_instance,
                 task_required_resources=task_required_resources,
                 task_required_docker_node_labels=task_required_labels,
+                task_product_name=task_product_name,
             )
             for is_assigned in assignment_predicates
         ):
@@ -739,6 +747,7 @@ async def _find_needed_instances(
             task_required_resources = auto_scaling_mode.get_task_required_resources(task)
             task_required_ec2 = await auto_scaling_mode.get_task_defined_instance(app, task)
             task_required_labels = await auto_scaling_mode.get_task_instance_required_docker_tags(app, task)
+            task_product_name = auto_scaling_mode.get_task_product_name(task)
 
             # first check if we can assign the task to one of the newly tobe created instances
             if _try_assign_task_to_ec2_instance_type(
@@ -747,6 +756,7 @@ async def _find_needed_instances(
                 task_required_ec2_instance=task_required_ec2,
                 task_required_resources=task_required_resources,
                 task_required_labels=task_required_labels,
+                task_product_name=task_product_name,
             ):
                 continue
 
@@ -766,6 +776,7 @@ async def _find_needed_instances(
                             assigned_tasks=[task],
                             available_resources=defined_ec2.resources - task_required_resources,
                             osparc_custom_node_labels=task_required_labels,
+                            _assigned_task_product_names={task_product_name} if task_product_name else set(),
                         )
                     )
                 else:
@@ -781,6 +792,7 @@ async def _find_needed_instances(
                             assigned_tasks=[task],
                             available_resources=best_ec2_instance.resources - task_required_resources,
                             osparc_custom_node_labels=task_required_labels,
+                            _assigned_task_product_names={task_product_name} if task_product_name else set(),
                         )
                     )
             except TaskBestFittingInstanceNotFoundError:
@@ -806,6 +818,7 @@ async def _find_needed_instances(
         InstanceToLaunch(
             instance_type=assigned_instance.instance_type,
             node_labels=assigned_instance.osparc_custom_node_labels.copy(),
+            product_name=assigned_instance.assigned_task_product_name_if_uniform(),
         )
         for assigned_instance in needed_new_instance_types_for_tasks
     )
@@ -880,6 +893,7 @@ async def _launch_instances(
                             if instance_batch.node_labels
                             else {}
                         )
+                        | utils_ec2.dump_product_name_as_tag(instance_batch.product_name)
                     ),
                     startup_script=await ec2_startup_script(
                         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
