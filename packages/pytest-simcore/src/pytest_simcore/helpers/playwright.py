@@ -221,9 +221,7 @@ class _ReconnectableEventWaiter:
         # If the `with` block raised, do not block waiting for the event -
         # let the original exception propagate instead of masking/hanging on it.
         if exc_val is None:
-            # NOTE: `self.value` may itself reattach (mutate `self._ctx`) if a
-            # reconnection happens during this very wait - `__exit__` below always
-            # operates on whichever context ends up current after that.
+            # NOTE: enforce the same same as behaviour as `EventContextManager.__exit__``
             _ = self.value
         # Delegate to the underlying Playwright context manager so it can
         # cancel the pending future (on exception) or release it (otherwise),
