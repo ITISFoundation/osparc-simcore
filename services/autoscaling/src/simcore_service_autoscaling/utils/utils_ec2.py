@@ -10,6 +10,7 @@ from typing import Final
 
 from aws_library.ec2 import (
     AWS_TAG_VALUE_MAX_LENGTH,
+    PRODUCT_NAME_TAG_KEY,
     AWSTagKey,
     AWSTagValue,
     EC2InstanceType,
@@ -22,6 +23,7 @@ from models_library.docker import (
     OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerLabelKey,
 )
+from models_library.products import ProductName
 from pydantic import TypeAdapter
 
 from .._meta import VERSION
@@ -212,6 +214,16 @@ def dump_task_required_node_labels_as_tags(
         filtered_labels,
         base_tag_key=APPLICATION_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
     )
+
+
+def dump_product_name_as_tag(product_name: ProductName | None) -> EC2Tags:
+    """Tag the instance with its product name, for cost allocation in AWS Cost Explorer.
+
+    Returns an empty dict if no (uniform) product name is known.
+    """
+    if product_name is None:
+        return {}
+    return {PRODUCT_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{product_name}")}
 
 
 def load_task_required_docker_node_labels_from_tags(

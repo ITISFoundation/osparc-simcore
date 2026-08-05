@@ -137,7 +137,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
       const pgWindow = osparc.desktop.credits.PaymentGatewayWindow.popUp(
         url,
-        "Add payment method",
+        this.tr("Add payment method"),
         options
       );
       // listen to "tap" instead of "execute": the "execute" is not propagated

@@ -107,7 +107,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
       servicesList.setModel(serviceModels);
 
       if (failedServices.length) {
-        let msg = "Could not retrieve data from some services:<br>";
+        let msg = this.tr("Could not retrieve data from some services:") + "<br>";
         failedServices.forEach(failedService => {
           msg+= `- ${failedService.key}:${failedService.version}<br>`;
         });

@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from aws_library.ec2 import AWSTagValue, EC2Tags
+from aws_library.ec2 import PRODUCT_NAME_TAG_KEY, AWSTagValue, EC2Tags
 from models_library.products import ProductName
 from models_library.users import UserID, UserIDAdapter
 from models_library.wallets import WalletID, WalletIDAdapter
@@ -12,7 +12,6 @@ from ..constants import (
     EC2_MINIMAL_APPLICATION_TAG_KEY,
     EC2_NAME_TAG_KEY,
     MANAGER_ROLE_TAG_VALUE,
-    PRODUCT_NAME_TAG_KEY,
     ROLE_TAG_KEY,
     USER_ID_TAG_KEY,
     WALLET_ID_TAG_KEY,

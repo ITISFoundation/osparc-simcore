@@ -69,7 +69,7 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
           break;
         case "text-field":
           control = new qx.ui.form.TextField();
-          this.__form.add(control, "Text", null, "text");
+          this.__form.add(control, this.tr("Text"), null, "text");
           break;
         case "text-area":
           control = new qx.ui.form.TextArea().set({
@@ -77,15 +77,15 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
             minHeight: 70,
             maxHeight: 140
           });
-          this.__form.add(control, "Note", null, "note");
+          this.__form.add(control, this.tr("Note"), null, "note");
           break;
         case "color-picker":
           control = new osparc.form.ColorPicker();
-          this.__form.add(control, "Color", null, "color");
+          this.__form.add(control, this.tr("Color"), null, "color");
           break;
         case "font-size":
           control = new qx.ui.form.Spinner();
-          this.__form.add(control, "Size", null, "size");
+          this.__form.add(control, this.tr("Size"), null, "size");
           break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
