@@ -134,23 +134,16 @@ class SocketIOEvent:
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 _SOCKET_CLOSED_ERROR_MESSAGE: Final[str] = "Socket closed"
+_MAX_REATTACH_WINDOW: Final[timedelta] = timedelta(seconds=30)
 
 
 @dataclass
 class _ReconnectableEventWaiter:
-    """A ``WebSocket.expect_event`` wrapper that survives ``RobustWebSocket`` reconnections.
-
-    Playwright's ``expect_event`` binds its wait to one specific ``WebSocket``
-    instance. If that connection drops and ``RobustWebSocket`` transparently
-    reconnects (see ``RobustWebSocket._attempt_reconnect``), the original wait is
-    left pointing at the now-dead socket: as soon as the ``with`` block exits it
-    raises ``playwright.Error: Socket closed``, even though a brand new, healthy
-    connection is already in place. This wrapper detects that case and re-attaches
-    the still-pending wait to the new connection instead of propagating the stale
-    error, so callers keep waiting for the *actual* remaining timeout.
+    """Wraps ``WebSocket.expect_event`` so a pending wait survives ``RobustWebSocket``
+    reconnections instead of raising a stale ``Socket closed`` error.
     """
 
-    websocket: "RobustWebSocket"
+    robust_websocket: "RobustWebSocket"
     event: str
     predicate: typing.Callable | None
     timeout: float | None
@@ -158,6 +151,7 @@ class _ReconnectableEventWaiter:
     _ctx: EventContextManager = field(init=False)
     _event_info: EventInfo = field(init=False)
     _bound_ws: WebSocket = field(init=False)
+    _reattach_deadline: datetime | None = field(init=False, default=None)
 
     def __post_init__(self) -> None:
         if self.timeout is not None:
@@ -170,17 +164,24 @@ class _ReconnectableEventWaiter:
         return (self._deadline - datetime.now(UTC)).total_seconds() * SECOND
 
     def _attach(self) -> None:
-        self._bound_ws = self.websocket.ws
+        self._release_current_wait()
+        self._bound_ws = self.robust_websocket.ws
         remaining_timeout = self._remaining_timeout()
         if remaining_timeout is not None and remaining_timeout <= 0:
             # NOTE: Playwright treats timeout=0 as "disable timeout" (wait forever),
             # so an already-expired deadline must raise instead of being passed through.
-            msg = f"Timeout {self.timeout}ms exceeded while (re-)waiting for {self.event!r}."
+            msg = f"Timeout {self.timeout}ms exceeded while waiting for {self.event!r}."
             raise PlaywrightTimeoutError(msg)
         self._ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
         # NOTE: EventContextManager itself has no `.value`; only the `EventInfo`
         # returned by entering it does - keep a reference to *that*.
         self._event_info = self._ctx.__enter__()
+
+    def _release_current_wait(self) -> None:
+        if hasattr(self, "_ctx"):
+            # exit the context on the connection we're replacing, as if the `with` block
+            # around it had raised - this cancels its pending future instead of blocking on it
+            self._ctx.__exit__(PlaywrightError, PlaywrightError("Reattaching to a new connection"), None)
 
     def __enter__(self) -> typing.Self:
         return self
@@ -191,11 +192,24 @@ class _ReconnectableEventWaiter:
             try:
                 return self._event_info.value
             except PlaywrightError as exc:
-                if _SOCKET_CLOSED_ERROR_MESSAGE not in str(exc) or self.websocket.ws is self._bound_ws:
+                if _SOCKET_CLOSED_ERROR_MESSAGE not in str(exc) or self.robust_websocket.ws is self._bound_ws:
                     raise
-                # RobustWebSocket already reconnected to a fresh socket while we
-                # were waiting: re-attach the wait there instead of failing.
-                self._attach()
+                if self.timeout is None:
+                    # NOTE: with no caller-supplied timeout, `_attach()` never raises on
+                    # its own (see `_remaining_timeout()`), so bound the reattach loop here
+                    # instead. Callers that do pass a timeout are already bounded by their
+                    # own deadline, so this window must not shorten that.
+                    now = datetime.now(UTC)
+                    if self._reattach_deadline is None:
+                        self._reattach_deadline = now + _MAX_REATTACH_WINDOW
+                    elif now >= self._reattach_deadline:
+                        msg = f"Giving up reattaching after {_MAX_REATTACH_WINDOW} while waiting for {self.event!r}."
+                        raise PlaywrightError(msg) from exc
+                with log_context(
+                    logging.INFO,
+                    msg=f"Reattaching wait for {self.event!r} to newly reconnected websocket",
+                ):
+                    self._attach()
 
     def __exit__(
         self,
@@ -206,6 +220,9 @@ class _ReconnectableEventWaiter:
         # If the `with` block raised, do not block waiting for the event -
         # let the original exception propagate instead of masking/hanging on it.
         if exc_val is None:
+            # NOTE: `self.value` may itself reattach (mutate `self._ctx`) if a
+            # reconnection happens during this very wait - `__exit__` below always
+            # operates on whichever context ends up current after that.
             _ = self.value
         # Delegate to the underlying Playwright context manager so it can
         # cancel the pending future (on exception) or release it (otherwise),
@@ -288,7 +305,7 @@ class RobustWebSocket:
         """
         Register an event listener that keeps waiting across reconnections.
         """
-        return _ReconnectableEventWaiter(websocket=self, event=event, predicate=predicate, timeout=timeout)
+        return _ReconnectableEventWaiter(robust_websocket=self, event=event, predicate=predicate, timeout=timeout)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:

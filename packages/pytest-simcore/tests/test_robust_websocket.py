@@ -4,9 +4,9 @@
 # pylint: disable=protected-access
 
 
-import json
 import logging
 import subprocess
+import typing
 from threading import Thread
 
 import pytest
@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from playwright.sync_api import Page, sync_playwright
 from playwright.sync_api import WebSocket as PlaywrightWebSocket
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import RobustWebSocket
+from pytest_simcore.helpers.playwright import RobustWebSocket, decode_socketio_42_message
 
 # FastAPI application setup
 app = FastAPI()
@@ -114,11 +114,9 @@ def _wait_for_connected(real_page: Page) -> None:
 
 
 def _decode_socketio_message(raw_response: str) -> str:
-    """Decodes a socket.io `message` event payload (wire format: `42["message", <payload>]`)."""
-    assert raw_response.startswith("42"), "Invalid socket.io message format"
-    decoded_message = json.loads(raw_response[2:])  # Remove "42" prefix
-    assert decoded_message[0] == "message"
-    return decoded_message[1]
+    event = decode_socketio_42_message(raw_response)
+    assert event.name == "message"
+    return typing.cast(str, event.obj)
 
 
 def _simulate_network_blip(real_page: Page, *, offline_ms: int) -> None:
