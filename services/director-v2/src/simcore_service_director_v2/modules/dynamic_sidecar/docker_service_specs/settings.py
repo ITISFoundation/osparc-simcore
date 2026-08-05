@@ -17,6 +17,7 @@ from models_library.services_metadata_runtime import to_simcore_runtime_docker_l
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     GIGA,
+    HELPER_CONTAINERS_RESOURCE_KEY,
     MEMORY_1GB,
     ServiceResourcesDict,
 )
@@ -26,6 +27,8 @@ from models_library.utils.docker_compose import (
     MATCH_IMAGE_START,
     MATCH_SERVICE_VERSION,
 )
+from pydantic import ByteSize, TypeAdapter
+from settings_library.r_clone import SimcoreSDKMountSettings
 
 from ....modules.catalog import CatalogClient
 from ..errors import DynamicSidecarError
@@ -34,6 +37,34 @@ BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
 
 
 log = logging.getLogger(__name__)
+
+
+def get_max_user_service_container_memory(service_resources: ServiceResourcesDict) -> ByteSize:
+    """largest RAM limit declared among the user-service containers (excludes the synthetic helper-containers entry)"""
+    user_service_ram_limits = [
+        int(image_resources.resources["RAM"].limit)
+        for key, image_resources in service_resources.items()
+        if key != HELPER_CONTAINERS_RESOURCE_KEY and "RAM" in image_resources.resources
+    ]
+    return TypeAdapter(ByteSize).validate_python(max(user_service_ram_limits, default=0))
+
+
+def get_max_rclone_container_memory_limit(
+    mount_settings: SimcoreSDKMountSettings, max_user_service_container_memory: ByteSize
+) -> ByteSize:
+    """
+    returns a clapped value between max and min limits
+    max is a percentage of the max_user_service_container_memory value
+    """
+    max_user_service_limit = int(
+        max_user_service_container_memory
+        * mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_PERCENT_OF_MAX_USER_SERVICE
+    )
+    clamped = min(
+        max(mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MIN, max_user_service_limit),
+        mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MAX,
+    )
+    return TypeAdapter(ByteSize).validate_python(clamped)
 
 
 def _parse_mount_settings(settings: list[dict]) -> list[dict]:

@@ -22,6 +22,14 @@ ResourceName = str
 # extract the name from the `service_key` or `registry_address/service_key`
 DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = TypeAdapter(DockerGenericTag).validate_python("container")
 
+# Synthetic `ServiceResourcesDict` key for the combined CPU/RAM footprint of helper containers
+# (egress-proxies, otel collector/forwarder, rclone mount) that the dynamic-sidecar creates
+# directly (not as their own Swarm services), so their resource usage can still be accounted
+# for when sizing the dynamic-sidecar's own Swarm service. Never a real container/image name.
+HELPER_CONTAINERS_RESOURCE_KEY: Final[DockerGenericTag] = TypeAdapter(DockerGenericTag).validate_python(
+    "dy-sidecar-helper-containers"
+)
+
 MEMORY_1GB: Final[int] = TypeAdapter(ByteSize).validate_python("1gib")
 
 GIGA: Final[float] = 1e9

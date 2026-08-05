@@ -20,6 +20,7 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceRunID
 from models_library.services_resources import (
     GIGA,
+    HELPER_CONTAINERS_RESOURCE_KEY,
     ImageResources,
     ResourceValue,
     ServiceResourcesDict,
@@ -58,7 +59,11 @@ from ...docker_service_specs import (
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
 )
-from ...docker_service_specs.settings import merge_settings_before_use
+from ...docker_service_specs.settings import (
+    get_max_rclone_container_memory_limit,
+    get_max_user_service_container_memory,
+    merge_settings_before_use,
+)
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import get_allow_metrics_collection
 
@@ -88,9 +93,6 @@ def _merge_service_base_and_user_specs(
             include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
         )
     )
-
-
-_HELPER_CONTAINERS_RESOURCE_KEY: Final[str] = "dy-sidecar-helper-containers"
 
 
 def _add_helper_containers_resources_to_service_resources(
@@ -124,14 +126,15 @@ def _add_helper_containers_resources_to_service_resources(
     if with_rclone:
         r_clone_settings = dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
         mount_settings = r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
+        max_user_service_container_memory = get_max_user_service_container_memory(service_resources)
         cpu += mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS / GIGA
-        ram += int(mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT)
+        ram += int(get_max_rclone_container_memory_limit(mount_settings, max_user_service_container_memory))
 
     if cpu <= 0 and ram <= 0:
         return
 
-    service_resources[_HELPER_CONTAINERS_RESOURCE_KEY] = ImageResources(
-        image=_HELPER_CONTAINERS_RESOURCE_KEY,
+    service_resources[HELPER_CONTAINERS_RESOURCE_KEY] = ImageResources(
+        image=HELPER_CONTAINERS_RESOURCE_KEY,
         resources={
             "CPU": ResourceValue(limit=cpu, reservation=cpu),
             "RAM": ResourceValue(limit=ram, reservation=ram),
