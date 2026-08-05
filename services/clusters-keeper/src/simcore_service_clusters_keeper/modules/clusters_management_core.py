@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Final
 
 import arrow
-from aws_library.ec2 import EC2InstanceData
+from aws_library.ec2 import PRODUCT_NAME_TAG_KEY, EC2InstanceData
 from aws_library.ec2._models import AWSTagValue
 from fastapi import FastAPI
 from pydantic import TypeAdapter
@@ -16,7 +16,6 @@ from ..constants import (
     DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY,
     DOCKER_STACK_DEPLOY_COMMAND_NAME,
     HEARTBEAT_TAG_KEY,
-    PRODUCT_NAME_TAG_KEY,
     ROLE_TAG_KEY,
     USER_ID_TAG_KEY,
     WALLET_ID_TAG_KEY,

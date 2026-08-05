@@ -5,6 +5,7 @@ from aws_library.ec2._models import EC2InstanceType
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
+from models_library.products import ProductName
 from pydantic import ByteSize
 from servicelib.docker_utils import estimate_dynamic_sidecar_resources_from_ec2_instance
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -55,6 +56,10 @@ class DynamicAutoscalingProvider:
     async def get_task_instance_required_docker_tags(self, app: FastAPI, task) -> dict[DockerLabelKey, str]:
         assert self  # nosec
         return await utils_docker.get_task_osparc_custom_docker_placement_constraints(get_docker_client(app), task)
+
+    def get_task_product_name(self, task) -> ProductName | None:
+        assert self  # nosec
+        return utils_docker.get_task_product_name(task)
 
     async def compute_node_used_resources(self, app: FastAPI, instance: AssociatedInstance) -> Resources:
         assert self  # nosec

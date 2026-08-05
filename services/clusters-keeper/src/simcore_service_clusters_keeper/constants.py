@@ -26,7 +26,6 @@ EC2_MINIMAL_APPLICATION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).valid
     f"{_APPLICATION_TAG_PREFIX}.deploy"
 )
 USER_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("io.simcore.user_id")
-PRODUCT_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("io.simcore.product_name")
 WALLET_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("io.simcore.wallet_id")
 ROLE_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(f"{_APPLICATION_TAG_PREFIX}.role")
 HEARTBEAT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
