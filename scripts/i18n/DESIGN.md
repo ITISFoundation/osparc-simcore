@@ -31,7 +31,7 @@ produces the per-scope partials, then `msgcat`+enrich merges them into the maste
 
 1. **Extract** (`make backend-extract`) — scan `services/*` and `packages/*` source trees and generate per-scope partial templates.
 2. **Merge** (`make backend-extract`) — combine those partials into the master template; existing human edits in `.po` are carried forward during the next translate sync.
-3. **Translate** (`make backend-translate`) — update pending (new untranslated entries), fuzzy (source text changed), and stale (source context hash changed) entries.
+3. **Translate** (`make backend-translate`) — (re)translate only entries that are pending (new/untranslated) or `fuzzy` (source `msgid` changed). Line references, comments, and header timestamps never trigger translation.
 4. **Compile** (`make backend-compile`) — build runtime `.mo` files from `.po` catalogs.
 
 ### Version-Control Policy For Generated Artifacts
@@ -50,40 +50,42 @@ The operational rule is simple: version-control source and catalog intent (`.py`
 
 #### What It Is
 
-CTX is a source-context fingerprint added during `make backend-extract` (the `enrich` step) as `CTX-SNIPPET-VERSION`.
+`CTX-SNIPPET` is the surrounding source-code snippet captured during `make backend-extract` (the `enrich` step) to give the LLM context when translating. It is written to the **`.pot` only** and is deliberately **stripped from the shipped `.po`**, which keeps only `CTX-INTERPRETATION` (a one-sentence LLM context note).
 
 #### Why It Exists
 
 - This project mostly uses prose-as-key msgids (full user-facing English text as the key).
-- `fuzzy` mostly captures text edits to `msgid`.
-- Sometimes the text does not change, but its surrounding code meaning does.
-- CTX detects that situation by comparing the stored snippet version with the current one.
-- If the version changed, the entry is treated as `stale` and is re-evaluated in `make backend-translate`.
+- The translator reads `CTX-SNIPPET` from the `.pot` to build a richer prompt, then discards it — multi-line code snippets add no value once the string is translated and would bloat the `.po`.
+- Change detection does **not** depend on CTX: an entry is re-translated only when it is untranslated or flagged `fuzzy` (both set by `msgmerge` exactly when the `msgid` changes). There is no git-blame or timestamp staleness.
 
-Example `.po` entry with CTX comments:
+Example `.pot` entry with CTX comments (as seen during translation, before the `.po` is written):
 
 ```po
-#, fuzzy
 #: services/web/server/src/simcore_service_webserver/handlers/errors.py:73
-#. CTX-SOURCE: services/web/server/src/simcore_service_webserver/handlers/errors.py:73
-#. CTX-SNIPPET: raise web.HTTPInternalServerError(reason=user_message("Internal error"))
-#. CTX-SNIPPET-VERSION: 7f3a9d4a
+#. CTX-SNIPPET:
+#.    >>> raise web.HTTPInternalServerError(reason=user_message("Internal error"))
+msgid "Internal error"
+msgstr ""
+```
+
+The corresponding shipped `.po` entry keeps only the interpretation:
+
+```po
+#: services/web/server/src/simcore_service_webserver/handlers/errors.py:73
 #. CTX-INTERPRETATION: Generic internal error shown to end users when request processing fails.
 msgid "Internal error"
 msgstr "Error interno"
 ```
 
 Legend for markers shown above:
-- `#, fuzzy` — gettext flag: translation needs review because source text changed or was auto-matched.
+- `#, fuzzy` — gettext flag: translation needs review because the source `msgid` changed or was auto-matched. This is the **only** metadata (besides an empty msgstr) that triggers re-translation.
 - `#:` — source location reference (`file:line`) where the string was extracted.
 - `#.` — extracted translator comment. Here it carries `CTX-*` metadata.
-- `#. CTX-*` — project-specific context comments (`CTX-SOURCE`, `CTX-SNIPPET`, `CTX-SNIPPET-VERSION`, `CTX-INTERPRETATION`) used to detect context drift.
+- `#. CTX-*` — project-specific context comments (`CTX-SNIPPET` in the `.pot`, `CTX-INTERPRETATION` in the `.po`).
 
 Reference documentation for `.po` syntax and annotations:
 - GNU gettext manual, PO file entries and comment types: https://www.gnu.org/software/gettext/manual/html_node/PO-File-Entries.html
 - GNU gettext manual, workflow and fuzzy handling: https://www.gnu.org/software/gettext/manual/html_node/Workflow-flags.html
-
-If that source snippet changes in a later commit (even with the same `msgid`), `make backend-translate` can treat this entry as context-stale and refresh the translation/context.
 
 ### Why Per-Service Partials
 
@@ -110,7 +112,7 @@ Scientific domain terms ("mesh", "solver", "voxel") must translate consistently.
 
 ## Entry Lifecycle
 
-Every `msgid` in both catalogs follows this state machine. The three paths back to `live` from `fuzzy`, `stale`, and `corrected` are the entire maintenance cycle:
+Every `msgid` in both catalogs follows this state machine. The two paths back to `live` from `fuzzy` and `corrected` are the entire maintenance cycle:
 
 ```mermaid
 stateDiagram-v2
@@ -121,11 +123,8 @@ stateDiagram-v2
     in_pot --> pending : backend-translate sync
     pending --> live : translate then compile
 
-    live --> fuzzy : dev changes string text
+    live --> fuzzy : dev changes string text (msgid)
     fuzzy --> live : translate then compile
-
-    live --> stale : CTX-VERSION drifts
-    stale --> live : translate then compile
 
     live --> corrected : translator edits .po
     corrected --> live : compile only
@@ -134,8 +133,7 @@ stateDiagram-v2
     obsolete --> [*]
 ```
 
-`fuzzy` — the `msgid` changed (detected during the catalog sync step in `make backend-translate`).
-`stale` — same `msgid`, but the surrounding source lines moved to a new commit (detected by CTX hash comparison inside `i18n_translator.py`).
+`fuzzy` — the `msgid` changed (set by `msgmerge` during the catalog sync step in `make backend-translate`); together with `pending` (untranslated), it is the *only* signal that triggers re-translation. Changes to line references, comments, or header timestamps never do.
 
 ---
 
@@ -214,7 +212,7 @@ flowchart TD
 | B        | dev removes `user_message()`                                            | `make backend-extract backend-compile`                                     | `backend-translate` is safe to skip — obsolete entries are excluded automatically                        |
 | C        | dev adds `@TRANSLATOR` note in source, or adds a service to `I18N_DIRS` | `make backend-extract backend-translate backend-compile`                   | note lands in `.pot` as `#.` comment; AI picks it up on next `backend-translate`                         |
 | D        | translator directly edits a `.po` to fix a translation                  | `make backend-compile`                                                     | no extraction or AI step needed                                                                          |
-| E        | update `glossary.json` or switch model                                  | `make backend-translate backend-compile MODEL=anthropic/claude-sonnet-4-6` | only stale/fuzzy/pending entries are re-translated; committed entries are skipped unless `USE_GIT=false` |
+| E        | update `glossary.json` or switch model                                  | `make backend-translate backend-compile MODEL=anthropic/claude-sonnet-4-6` | only fuzzy/pending entries are re-translated automatically; to also re-translate already-fresh entries, run `i18n_translator.py translate --force` (or `--filter <glob>`) directly |
 | F        | add a new language                                                      | `make backend-translate backend-compile LANGS=de_DE`                       | `msginit` creates the new `.po` from the existing `.pot`                                                 |
 | G        | full backend rebuild                                                    | `make clean && make backend-all`                                           |                                                                                                          |
 | —        | preview prompts without calling the LLM                                 | `make backend-plan` / `make frontend-plan`                                 | dry-run: logs the composed prompts, spends no tokens, writes nothing                                     |

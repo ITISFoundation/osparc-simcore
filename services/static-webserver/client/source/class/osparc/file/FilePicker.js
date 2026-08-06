@@ -209,14 +209,14 @@ qx.Class.define("osparc.file.FilePicker", {
       const urlEntry = new qx.ui.form.TextField().set({
         value: outFileValue["downloadLink"]
       });
-      form.add(urlEntry, "url", null, "url");
+      form.add(urlEntry, this.tr("url"), null, "url");
 
       const label = osparc.file.FilePicker.extractLabelFromLink(outputs);
       if (label) {
         const labelEntry = new qx.ui.form.TextField().set({
           value: label
         });
-        form.add(labelEntry, "label", null, "label");
+        form.add(labelEntry, this.tr("label"), null, "label");
       }
     },
 

@@ -11087,7 +11087,8 @@
                   "exclusiveMaximum": 0.0
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
                 }
               ],
               "title": "Amount"
@@ -15879,7 +15880,8 @@
           "osparcCredits": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               },
               {
                 "type": "null"
@@ -16216,7 +16218,8 @@
           "osparcCredits": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               },
               {
                 "type": "null"
@@ -16598,7 +16601,8 @@
                 "type": "number"
               },
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               }
             ],
             "title": "Costperunit"
@@ -16664,7 +16668,8 @@
                 "exclusiveMinimum": 0.0
               },
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               }
             ],
             "title": "Pricedollars"
@@ -16820,64 +16825,7 @@
         "type": "string",
         "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
       },
-      "DatCoreFileLink-Input": {
-        "properties": {
-          "store": {
-            "$ref": "#/components/schemas/LocationID",
-            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
-          },
-          "path": {
-            "$ref": "#/components/schemas/StorageFileID",
-            "description": "The path to the file in the storage provider domain"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label",
-            "description": "The real file name"
-          },
-          "eTag": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Etag",
-            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
-          },
-          "lastModified": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastmodified",
-            "description": "Timestamp of the last modification of the file, set together with e_tag"
-          },
-          "dataset": {
-            "type": "string",
-            "title": "Dataset",
-            "description": "Unique identifier to access the dataset on datcore (REQUIRED for datcore)"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "store",
-          "path",
-          "label",
-          "dataset"
-        ],
-        "title": "DatCoreFileLink",
-        "description": "I/O port type to hold a link to a file in DATCORE storage"
-      },
-      "DatCoreFileLink-Output": {
+      "DatCoreFileLink": {
         "properties": {
           "store": {
             "$ref": "#/components/schemas/LocationID",
@@ -20109,6 +20057,7 @@
             "title": "Ctx"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "loc",
@@ -20946,18 +20895,21 @@
           },
           "minBalanceInCredits": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Minbalanceincredits",
             "description": "Minimum balance in credits that triggers an auto-recharge [Read only]"
           },
           "topUpAmountInUsd": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Topupamountinusd",
             "description": "Amount in USD paid when auto-recharge condition is satisfied"
           },
           "monthlyLimitInUsd": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               },
               {
                 "type": "null"
@@ -21457,10 +21409,10 @@
               "$ref": "#/components/schemas/PortLink"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink-Input"
+              "$ref": "#/components/schemas/SimCoreFileLink"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink-Input"
+              "$ref": "#/components/schemas/DatCoreFileLink"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -21500,10 +21452,10 @@
               "$ref": "#/components/schemas/PortLink"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink-Output"
+              "$ref": "#/components/schemas/SimCoreFileLink"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink-Output"
+              "$ref": "#/components/schemas/DatCoreFileLink"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -21737,6 +21689,7 @@
           },
           "pricingUnitCost": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Pricingunitcost"
           },
           "startAt": {
@@ -23050,7 +23003,7 @@
           "state": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/NodeState-Input"
+                "$ref": "#/components/schemas/NodeState"
               },
               {
                 "type": "null"
@@ -23228,7 +23181,7 @@
           "state": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/NodeState-Output"
+                "$ref": "#/components/schemas/NodeState"
               },
               {
                 "type": "null"
@@ -23762,76 +23715,7 @@
         ],
         "title": "NodeShareStatus"
       },
-      "NodeState-Input": {
-        "properties": {
-          "modified": {
-            "type": "boolean",
-            "title": "Modified",
-            "description": "true if the node's outputs need to be re-computed",
-            "default": true
-          },
-          "dependencies": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "uniqueItems": true,
-            "title": "Dependencies",
-            "description": "contains the node inputs dependencies if they need to be computed first"
-          },
-          "currentStatus": {
-            "$ref": "#/components/schemas/RunningState",
-            "description": "the node's current state",
-            "default": "NOT_STARTED"
-          },
-          "progress": {
-            "anyOf": [
-              {
-                "type": "number",
-                "maximum": 1.0,
-                "minimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Progress",
-            "description": "current progress of the task if available (None if not started or not a computational task)",
-            "default": 0
-          },
-          "lock_state": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/NodeShareState"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "the node's lock state"
-          },
-          "errors": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ErrorDict"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Errors",
-            "description": "error details when the node is in a FAILED state"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "NodeState"
-      },
-      "NodeState-Output": {
+      "NodeState": {
         "properties": {
           "modified": {
             "type": "boolean",
@@ -23944,6 +23828,7 @@
         "properties": {
           "osparc_credits": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Osparc Credits"
           },
           "service_key": {
@@ -23953,6 +23838,7 @@
           },
           "running_time_in_hours": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Running Time In Hours"
           }
         },
@@ -23989,10 +23875,10 @@
               "type": "string"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink-Input"
+              "$ref": "#/components/schemas/SimCoreFileLink"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink-Input"
+              "$ref": "#/components/schemas/DatCoreFileLink"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -24029,10 +23915,10 @@
               "type": "string"
             },
             {
-              "$ref": "#/components/schemas/SimCoreFileLink-Output"
+              "$ref": "#/components/schemas/SimCoreFileLink"
             },
             {
-              "$ref": "#/components/schemas/DatCoreFileLink-Output"
+              "$ref": "#/components/schemas/DatCoreFileLink"
             },
             {
               "$ref": "#/components/schemas/DownloadLink"
@@ -24763,6 +24649,7 @@
           },
           "priceDollars": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Pricedollars"
           },
           "walletId": {
@@ -24770,6 +24657,7 @@
           },
           "osparcCredits": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Osparccredits"
           },
           "comment": {
@@ -24911,7 +24799,7 @@
           },
           "node_states": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/NodeState-Output"
+              "$ref": "#/components/schemas/NodeState"
             },
             "propertyNames": {
               "format": "uuid"
@@ -25195,6 +25083,7 @@
           },
           "currentCostPerUnit": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -25224,7 +25113,8 @@
                 "type": "number"
               },
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               }
             ],
             "title": "Cost Per Unit"
@@ -25265,6 +25155,7 @@
           },
           "currentCostPerUnit": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -25393,7 +25284,8 @@
           "creditsPerUsd": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               },
               {
                 "type": "null"
@@ -27095,7 +26987,8 @@
                 "minimum": 0.0
               },
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               }
             ],
             "title": "Topupamountinusd"
@@ -27107,7 +27000,8 @@
                 "minimum": 0.0
               },
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               },
               {
                 "type": "null"
@@ -28135,7 +28029,8 @@
           "credit_cost": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               },
               {
                 "type": "null"
@@ -28231,76 +28126,7 @@
       "ShortTruncatedStr": {
         "type": "string"
       },
-      "SimCoreFileLink-Input": {
-        "properties": {
-          "store": {
-            "$ref": "#/components/schemas/LocationID",
-            "description": "The store identifier: 0 for simcore S3, 1 for datcore"
-          },
-          "path": {
-            "$ref": "#/components/schemas/StorageFileID",
-            "description": "The path to the file in the storage provider domain"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label",
-            "description": "The real file name"
-          },
-          "eTag": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Etag",
-            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
-          },
-          "lastModified": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastmodified",
-            "description": "Timestamp of the last modification of the file, set together with e_tag"
-          },
-          "dataset": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dataset",
-            "deprecated": true
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "store",
-          "path"
-        ],
-        "title": "SimCoreFileLink",
-        "description": "I/O port type to hold a link to a file in simcore S3 storage"
-      },
-      "SimCoreFileLink-Output": {
+      "SimCoreFileLink": {
         "properties": {
           "store": {
             "$ref": "#/components/schemas/LocationID",
@@ -30443,6 +30269,7 @@
           },
           "availableCredits": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Availablecredits"
           }
         },

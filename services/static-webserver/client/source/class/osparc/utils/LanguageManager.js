@@ -13,18 +13,20 @@ qx.Class.define("osparc.utils.LanguageManager", {
   type: "static",
 
   statics: {
-    // Display names for the locales we want to expose
-    __localeLabels: {
-      "en_US": "English",
-      "es_ES": "Español [Spanish]",
-      "zh": "中文 [Chinese]",
-    },
-
-    // maps qooxdoo compiler locales (keys) to backend SupportedLocale values
-    __localeMapping: {
-      "en_US": "en",
-      "es_ES": "es_ES",
-      "zh": "zh_CN",
+    // Locale registry keyed by qooxdoo compiler locale
+    __locales: {
+      "en_US": {
+        backend: "en",
+        label: "English",
+      },
+      "es_ES": {
+        backend: "es_ES",
+        label: "Español [Spanish]",
+      },
+      "zh": {
+        backend: "zh_CN",
+        label: "中文 [Chinese]",
+      },
     },
 
     /**
@@ -32,7 +34,8 @@ qx.Class.define("osparc.utils.LanguageManager", {
      * @return {String} e.g. "en_US" -> "en"
      */
     __toBackendLocale: function(frontendLocale) {
-      return this.__localeMapping[frontendLocale] || frontendLocale;
+      const locale = this.__locales[frontendLocale];
+      return locale ? locale.backend : frontendLocale;
     },
 
     /**
@@ -40,8 +43,41 @@ qx.Class.define("osparc.utils.LanguageManager", {
      * @return {String} e.g. "en" -> "en_US"
      */
     __toFrontendLocale: function(backendLocale) {
-      const frontendLocale = Object.keys(this.__localeMapping).find(feLocale => this.__localeMapping[feLocale] === backendLocale);
+      const frontendLocale = Object.keys(this.__locales)
+        .find(feLocale => this.__locales[feLocale].backend === backendLocale);
       return frontendLocale || backendLocale;
+    },
+
+    /**
+     * Works around a qooxdoo compiler CLDR-extraction issue where some locale
+     * entries (e.g. the Chinese number separators) end up as objects
+     * ({"_": ".", "$": {"draft": "contributed"}}) instead of plain strings.
+     * Such values break locale-dependent widgets: qx.ui.form.Spinner builds its
+     * text field's filter RegExp from the decimal/group separators and throws
+     * ("Exception while creating child control 'textfield'") when they are not
+     * strings.
+     * Flattens any object-valued locale entry to its "_" string.
+     * Meant to be called once, early during application startup.
+     * Common Locale Data Repository (CLDR) - https://cldr.unicode.org/
+     */
+    normalizeCldrData: function() {
+      // eslint-disable-next-line no-underscore-dangle
+      const catalog = qx.locale.Manager.getInstance().__locales;
+      if (!catalog) {
+        return;
+      }
+      Object.keys(catalog).forEach(localeCode => {
+        const localeMap = catalog[localeCode];
+        if (!localeMap || typeof localeMap !== "object") {
+          return;
+        }
+        Object.keys(localeMap).forEach(key => {
+          const value = localeMap[key];
+          if (value && typeof value === "object" && typeof value["_"] === "string") {
+            localeMap[key] = value["_"];
+          }
+        });
+      });
     },
 
     /**
@@ -53,7 +89,8 @@ qx.Class.define("osparc.utils.LanguageManager", {
     },
 
     getLocaleLabel: function(localeCode) {
-      return this.__localeLabels[localeCode] || localeCode;
+      const locale = this.__locales[localeCode];
+      return locale ? locale.label : localeCode;
     },
 
     isSwitchUseful: function() {
