@@ -11,15 +11,19 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_projects import create_project
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.db.models import projects as projects_table
 from simcore_service_webserver.projects.models import ProjectDict
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @dataclasses.dataclass(frozen=True)
@@ -260,3 +264,61 @@ async def test_workspaces_deletion_cleans_up_project_storage_and_pipeline_data(
     assert mock_project_deletion_side_effects.director_v2_delete_pipeline.call_count == len(created_projects), (
         "project pipeline data was not cleaned up (orphaned pipeline data bug)"
     )
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_workspaces_deletion_with_more_than_one_page_of_root_projects(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    fake_project: ProjectDict,
+    workspaces_clean_db: None,
+    mock_project_deletion_side_effects: _ProjectDeletionMocks,
+    asyncpg_engine: AsyncEngine,
+):
+    """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
+    `delete_workspace_with_all_content` had the same multi-page pagination bug as
+    `batch_delete_trashed_projects_as_admin` when a workspace had more than one page
+    (`MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE`) of root projects to delete.
+    """
+    assert client.app
+
+    # create a new workspace
+    url = client.app.router["create_workspace"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={"name": "Workspace with many root projects", "description": None, "thumbnail": None},
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    added_workspace = WorkspaceGet.model_validate(data)
+
+    num_projects = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 10  # forces more than one page
+    project_data = deepcopy(fake_project)
+    project_data["workspace_id"] = f"{added_workspace.workspace_id}"
+    created_project_ids: list[str] = []
+    for _ in range(num_projects):
+        project = await create_project(client.app, project_data, user_id=logged_user["id"], product_name="osparc")
+        created_project_ids.append(project["uuid"])
+
+    # ---------------------
+    # TESTING DELETION
+    # ---------------------
+
+    url = client.app.router["delete_workspace"].url_for(workspace_id=f"{added_workspace.workspace_id}")
+    resp = await client.delete(f"{url}")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # ---------------------
+    # Assertions
+
+    resp = await client.get(f"/v0/workspaces/{added_workspace.workspace_id}")
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(projects_table.c.uuid).where(projects_table.c.uuid.in_(created_project_ids))
+        )
+        remaining_uuids = {row.uuid for row in result}
+    assert not remaining_uuids

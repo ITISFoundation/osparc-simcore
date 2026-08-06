@@ -117,6 +117,9 @@ async def _legacy_convert_db_projects_to_api_projects(
     return api_projects
 
 
+type TotalCount = int
+
+
 async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     app: web.Application,
     user_id: UserID,
@@ -138,7 +141,7 @@ async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     limit: int,
     # ordering
     order_by: OrderBy,
-) -> tuple[list[ProjectDict], int]:
+) -> tuple[list[ProjectDict], TotalCount]:
     db = ProjectDBAPI.get_from_app_context(app)
 
     workspace_is_private = True
