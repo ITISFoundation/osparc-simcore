@@ -15,6 +15,7 @@ from models_library.workspaces import (
     WorkspaceID,
     WorkspaceUpdates,
 )
+from servicelib.logging_utils import log_context
 
 from ..folders.folders_service import delete_folder_with_all_content, list_folders
 from ..projects import projects_trash_service
@@ -98,11 +99,8 @@ async def delete_workspace_with_all_content(
     )
 
     # Get all root projects
-    # NOTE: re-query from offset=0 each round since deleted projects vanish from the
-    # matching set; iter_pagination_params assumes a stable collection, which doesn't
-    # hold here (see projects._trash_service.batch_delete_trashed_projects_as_admin).
     while True:
-        projects, _ = await list_projects(
+        projects, total_number_projects = await list_projects(
             app,
             user_id=user_id,
             product_name=product_name,
@@ -122,14 +120,21 @@ async def delete_workspace_with_all_content(
         workspace_root_projects: list[ProjectID] = [Project(**project).uuid for project in projects]
 
         # Delete projects properly
-        for project_uuid in workspace_root_projects:
-            await projects_trash_service.delete_project_as_user(
-                app, project_id=project_uuid, user_id=user_id, product_name=product_name
-            )
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Deleting %d root projects out of %d",
+            len(workspace_root_projects),
+            total_number_projects,
+        ):
+            for project_uuid in workspace_root_projects:
+                await projects_trash_service.delete_project_as_user(
+                    app, project_id=project_uuid, user_id=user_id, product_name=product_name
+                )
 
     # Get all root folders
     while True:
-        folders, _ = await list_folders(
+        folders, folders_total_count = await list_folders(
             app,
             user_id=user_id,
             product_name=product_name,
@@ -146,13 +151,20 @@ async def delete_workspace_with_all_content(
         workspace_root_folders: list[FolderID] = [folder.folder_db.folder_id for folder in folders]
 
         # Delete folders properly
-        for folder_id in workspace_root_folders:
-            await delete_folder_with_all_content(
-                app,
-                user_id=user_id,
-                product_name=product_name,
-                folder_id=folder_id,
-            )
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Deleting %d root folders out of %d",
+            len(workspace_root_folders),
+            folders_total_count,
+        ):
+            for folder_id in workspace_root_folders:
+                await delete_folder_with_all_content(
+                    app,
+                    user_id=user_id,
+                    product_name=product_name,
+                    folder_id=folder_id,
+                )
 
     await db.delete_workspace(
         app,
