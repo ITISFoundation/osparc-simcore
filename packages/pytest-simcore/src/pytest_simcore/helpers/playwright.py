@@ -187,6 +187,8 @@ class _ReconnectableEventWaiter:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        # NOTE: mirrors EventContextManager.__exist__'s behaviour
+
         # If the `with` block raised, do not block waiting for the event -
         # let the original exception propagate instead of masking/hanging on it.
         if exc_val is not None and self._ctx is not None:
