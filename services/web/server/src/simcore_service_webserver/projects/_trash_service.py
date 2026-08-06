@@ -284,7 +284,7 @@ async def batch_delete_trashed_projects_as_admin(
             trashed_before=trashed_before,
             offset=offset,
             limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-            order_by=_projects_repository.OLDEST_TRASHED_FIRST,
+            order_by=OrderBy(field=IDStr("id")),
         )
         if not expired_trashed_projects:
             break
