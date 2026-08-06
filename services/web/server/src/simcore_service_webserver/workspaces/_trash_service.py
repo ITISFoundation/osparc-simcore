@@ -16,6 +16,7 @@ from models_library.workspaces import (
     WorkspaceID,
     WorkspaceUpdates,
 )
+from servicelib.logging_utils import log_context
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
@@ -370,7 +371,7 @@ async def batch_delete_trashed_workspaces_as_admin(
     offset = 0
     while True:
         (
-            _,
+            total_count,
             expired_trashed_workspaces,
         ) = await _workspaces_repository.list_workspaces_db_get_as_admin(
             app,
@@ -384,22 +385,30 @@ async def batch_delete_trashed_workspaces_as_admin(
 
         # BATCH delete: best-effort across workspaces (per `fail_fast=False`) - one broken
         # workspace does not block the others in this batch from being deleted.
-        newly_failed = 0
-        for trashed_workspace in expired_trashed_workspaces:
-            assert trashed_workspace.trashed  # nosec
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Deleting %d trashed workspaces out of %d [trashed_at < %s will be deleted]",
+            len(expired_trashed_workspaces),
+            total_count,
+            trashed_before,
+        ):
+            newly_failed = 0
+            for trashed_workspace in expired_trashed_workspaces:
+                assert trashed_workspace.trashed  # nosec
 
-            deleted_workspace_id = await _delete_trashed_workspace_content_and_row(
-                app,
-                trashed_workspace=trashed_workspace,
-                fail_fast=fail_fast,
-                errors=errors,
-            )
-            if deleted_workspace_id is not None:
-                deleted_workspace_ids.append(deleted_workspace_id)
-            else:
-                newly_failed += 1
+                deleted_workspace_id = await _delete_trashed_workspace_content_and_row(
+                    app,
+                    trashed_workspace=trashed_workspace,
+                    fail_fast=fail_fast,
+                    errors=errors,
+                )
+                if deleted_workspace_id is not None:
+                    deleted_workspace_ids.append(deleted_workspace_id)
+                else:
+                    newly_failed += 1
 
-        offset += newly_failed
+            offset += newly_failed
 
     if errors:
         raise WorkspaceBatchDeleteError(
