@@ -1,9 +1,11 @@
+import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Final
+from uuid import uuid4
 
 import arrow
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -29,7 +31,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis._semaphore_decorator import (
     with_limited_concurrency_cm,
 )
-from servicelib.utils import limited_as_completed, limited_gather
+from servicelib.utils import fire_and_forget_task, limited_as_completed, limited_gather
 from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 
 from ..._meta import APP_NAME
@@ -59,6 +61,7 @@ from ..db.repositories.comp_runs import (
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._models import TaskStateTracker
+from ._publisher import request_task_result_release
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
@@ -70,6 +73,10 @@ _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
+# NOTE: gives already-published release-task-result messages for this run a chance to reuse
+# the still-warm pooled DaskClient instead of racing _safe_release_resources and having to
+# recreate/tear-down a fresh client per release
+_SAFE_RELEASE_RESOURCES_DELAY_S: Final[float] = 10
 
 
 @asynccontextmanager
@@ -81,7 +88,8 @@ async def _cluster_dask_client(
     project_id: ProjectID,
     run_id: PositiveInt,
     run_metadata: RunMetadataDict,
-) -> AsyncIterator[DaskClient]:
+    ref: str | None = None,
+) -> AsyncGenerator[DaskClient]:
     """returns the dask client to use for a given user and project, it will automatically create an on-demand
     cluster if needed and wait for it to be ready
 
@@ -106,6 +114,11 @@ async def _cluster_dask_client(
             wallet_id=run_metadata.get("wallet_id"),
         )
 
+    # NOTE: callers that must not share the run-scoped pool reference (e.g. the dataset
+    # releaser, whose lifetime is independent from `_safe_release_resources`) can pass
+    # their own `ref` and are responsible for calling `dask_clients_pool.release_client_ref`
+    client_ref = ref or _DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id)
+
     @with_limited_concurrency_cm(
         scheduler.redis_client,
         key=f"{APP_NAME}-cluster-user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}",
@@ -114,11 +127,9 @@ async def _cluster_dask_client(
         blocking_timeout=None,
     )
     @asynccontextmanager
-    async def _acquire_client(user_id: UserID, scheduler: "DaskScheduler") -> AsyncIterator[DaskClient]:
-        async with scheduler.dask_clients_pool.acquire(
-            cluster,
-            ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id),
-        ) as client:
+    async def _acquire_client(user_id: UserID, scheduler: "DaskScheduler") -> AsyncGenerator[DaskClient]:
+        assert user_id  # nosec
+        async with scheduler.dask_clients_pool.acquire(cluster, ref=client_ref) as client:
             yield client
 
     async with _acquire_client(user_id, scheduler) as client:
@@ -128,6 +139,7 @@ async def _cluster_dask_client(
 @dataclass
 class DaskScheduler(BaseCompScheduler):
     dask_clients_pool: DaskClientsPool
+    _delayed_release_tasks: set[asyncio.Task] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.dask_clients_pool.register_handlers(
@@ -285,19 +297,75 @@ class DaskScheduler(BaseCompScheduler):
             limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
 
+    async def release_task_result(
+        self,
+        *,
+        user_id: UserID,
+        project_id: ProjectID,
+        run_id: PositiveInt,
+        use_on_demand_clusters: bool,
+        run_metadata: RunMetadataDict,
+        job_ids: list[str],
+    ) -> None:
+        """unpublish task results/datasets for a given cluster.
+
+        Called by the dedicated release-task-result rabbitmq consumer, decoupled from the
+        main pipeline scheduling flow so a slow/unresponsive scheduler cannot leak consumer
+        slots meant for scheduling.
+
+        NOTE: uses its own pool reference (independent from the run-scoped one managed by
+        `_safe_release_resources`) since this call can happen after the run already finished
+        and released its own reference - reusing that ref here would either be a no-op on an
+        already-torn-down entry or silently leave a fresh client registered forever. All the
+        job_ids of a single scheduling batch share the SAME acquire/release bracket so a run
+        with many completed tasks does not create/delete a client once per task.
+        """
+        pool_ref = f"release-task-result:{uuid4()}"
+        try:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=use_on_demand_clusters,
+                project_id=project_id,
+                run_id=run_id,
+                run_metadata=run_metadata,
+                ref=pool_ref,
+            ) as client:
+                await limited_gather(
+                    *(client.release_task_result(job_id) for job_id in job_ids),
+                    log=_logger,
+                    limit=1,  # to avoid overloading the dask scheduler
+                )
+        finally:
+            await self.dask_clients_pool.release_client_ref(ref=pool_ref)
+
     async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: Iteration) -> None:
-        """release resources used by the scheduler for a given user and project"""
-        with (
-            log_catch(_logger, reraise=False),
-            log_context(
-                _logger,
-                logging.INFO,
-                msg=f"releasing resources for {user_id=}, {project_id=}, {run_id=}",
-            ),
-        ):
-            await self.dask_clients_pool.release_client_ref(
-                ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id)
-            )
+        """release resources used by the scheduler for a given user and project
+
+        NOTE: delayed (not awaited inline) so any release-task-result message published for this
+        run right before it completed gets a chance to reuse the still-warm pooled DaskClient
+        instead of racing this call and having to recreate one from scratch.
+        """
+
+        async def _delayed_release() -> None:
+            with (
+                log_catch(_logger, reraise=False),
+                log_context(
+                    _logger,
+                    logging.INFO,
+                    msg=f"releasing resources for {user_id=}, {project_id=}, {run_id=}",
+                ),
+            ):
+                await asyncio.sleep(_SAFE_RELEASE_RESOURCES_DELAY_S)
+                await self.dask_clients_pool.release_client_ref(
+                    ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id)
+                )
+
+        fire_and_forget_task(
+            _delayed_release(),
+            task_suffix_name=f"safe_release_resources_{user_id}_{project_id}_{run_id}",
+            fire_and_forget_tasks_collection=self._delayed_release_tasks,
+        )
 
     async def _stop_tasks(self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB) -> None:
         # NOTE: if this exception raises, it means the backend was anyway not up
@@ -340,6 +408,7 @@ class DaskScheduler(BaseCompScheduler):
                 log=_logger,
                 limit=1,  # to avoid overloading the dask scheduler
             )
+            releasable_job_ids: list[str] = []
             async for future in limited_as_completed(
                 (
                     self._process_task_result(
@@ -355,7 +424,22 @@ class DaskScheduler(BaseCompScheduler):
                 with log_catch(_logger, reraise=False):
                     task_can_be_cleaned, job_id = await future
                     if task_can_be_cleaned and job_id:
-                        await client.release_task_result(job_id)
+                        releasable_job_ids.append(job_id)
+
+        if releasable_job_ids:
+            # NOTE: releasing is delegated to a dedicated consumer so a slow/hanging
+            # dask-scheduler cannot leak this pipeline-scheduling slot (see _releaser.py).
+            # All the job_ids completed in this batch are sent as a single message so the
+            # releaser only needs one client acquire/release for the whole batch.
+            await request_task_result_release(
+                self.rabbitmq_client,
+                user_id=user_id,
+                project_id=comp_run.project_uuid,
+                run_id=comp_run.run_id,
+                use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_metadata=comp_run.metadata,
+                job_ids=releasable_job_ids,
+            )
 
     async def _handle_successful_run(
         self,
