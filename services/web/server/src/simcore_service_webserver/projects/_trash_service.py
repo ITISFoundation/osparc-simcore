@@ -273,9 +273,6 @@ async def batch_delete_trashed_projects_as_admin(
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    # NOTE: this loop deletes matching rows as it goes, so the collection being
-    # paginated shrinks while iterating. Plain offset/limit pagination
-    # (e.g. iter_pagination_params) does not apply here as it would raise after 2 pages
     offset = 0
     while True:
         (
@@ -344,8 +341,6 @@ async def batch_delete_projects_in_root_workspace_as_admin(
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    # NOTE: see batch_delete_trashed_projects_as_admin for why we avoid
-    # iter_pagination_params and re-query from offset=0, skipping only past failures.
     offset = 0
     while True:
         (
