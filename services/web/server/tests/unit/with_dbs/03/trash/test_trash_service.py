@@ -25,12 +25,15 @@ from pytest_simcore.helpers.webserver_login import (
 )
 from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces as workspaces_table
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.models import projects as projects_table
+from simcore_service_webserver.folders import _folders_service
 from simcore_service_webserver.projects import _projects_service_delete, _trash_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.trash import trash_service
+from simcore_service_webserver.workspaces import _workspaces_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import stop_after_attempt, wait_none
 
@@ -154,6 +157,98 @@ async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_pro
         )
         remaining_uuids = {row.uuid for row in result}
     assert not remaining_uuids
+
+
+async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_folders(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    asyncpg_engine: AsyncEngine,
+):
+    """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
+    `batch_delete_trashed_folders_as_admin` had the same multi-page pagination bug as
+    `batch_delete_trashed_projects_as_admin` (see the sibling projects test above).
+    """
+    assert client.app
+
+    num_folders = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 10  # forces more than one page
+
+    created_folder_ids: list[int] = []
+    for i in range(num_folders):
+        folder = await _folders_service.create_folder(
+            client.app,
+            user_id=logged_user["id"],
+            name=f"folder-{i}",
+            parent_folder_id=None,
+            product_name="osparc",
+            workspace_id=None,
+        )
+        created_folder_ids.append(folder.folder_db.folder_id)
+
+    # TRASH all folders directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
+    already_expired = arrow.utcnow().shift(days=-1).datetime
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            folders_v2.update()
+            .where(folders_v2.c.folder_id.in_(created_folder_ids))
+            .values(trashed=already_expired, trashed_explicitly=True, trashed_by=logged_user["id"])
+        )
+
+    # UNDER TEST: a single GC cycle must delete ALL of them, without raising
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    # ASSERT: none of the folders remain in the DB
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(folders_v2.c.folder_id).where(folders_v2.c.folder_id.in_(created_folder_ids))
+        )
+        remaining_ids = {row.folder_id for row in result}
+    assert not remaining_ids
+
+
+async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_workspaces(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    asyncpg_engine: AsyncEngine,
+):
+    """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
+    `batch_delete_trashed_workspaces_as_admin` had the same multi-page pagination bug as
+    `batch_delete_trashed_projects_as_admin` (see the sibling projects test above).
+    """
+    assert client.app
+
+    num_workspaces = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 10  # forces more than one page
+
+    created_workspace_ids: list[int] = []
+    for i in range(num_workspaces):
+        workspace = await _workspaces_service.create_workspace(
+            client.app,
+            user_id=logged_user["id"],
+            name=f"workspace-{i}",
+            description=None,
+            thumbnail=None,
+            product_name="osparc",
+        )
+        created_workspace_ids.append(workspace.workspace_id)
+
+    # TRASH all workspaces directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
+    already_expired = arrow.utcnow().shift(days=-1).datetime
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            workspaces_table.update()
+            .where(workspaces_table.c.workspace_id.in_(created_workspace_ids))
+            .values(trashed=already_expired, trashed_by=logged_user["id"])
+        )
+
+    # UNDER TEST: a single GC cycle must delete ALL of them, without raising
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    # ASSERT: none of the workspaces remain in the DB
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(workspaces_table.c.workspace_id).where(workspaces_table.c.workspace_id.in_(created_workspace_ids))
+        )
+        remaining_ids = {row.workspace_id for row in result}
+    assert not remaining_ids
 
 
 async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_succeeds(
