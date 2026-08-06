@@ -9,10 +9,12 @@
 from copy import deepcopy
 from unittest.mock import MagicMock
 
+import arrow
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -104,6 +106,54 @@ async def test_trash_service__delete_expired_trash(
     async with switch_client_session_to(client, other_user):
         resp = await client.get(f"/v0/projects/{other_user_project_id}")
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+
+async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_projects(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    fake_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_director_v2: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocked_storage: None,
+    asyncpg_engine: AsyncEngine,
+):
+    """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
+    `batch_delete_trashed_projects_as_admin` used to raise a RuntimeError (aborting the whole
+    GC run) as soon as more than one page (`MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE`) of trashed
+    projects had to be deleted, because deleting a page's projects changes the count of the
+    very collection `iter_pagination_params` was iterating over.
+    """
+    assert client.app
+
+    num_projects = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 10  # forces more than one page
+
+    created_project_ids: list[str] = []
+    for _ in range(num_projects):
+        project = await create_project(
+            client.app, deepcopy(fake_project), user_id=logged_user["id"], product_name="osparc"
+        )
+        created_project_ids.append(project["uuid"])
+
+    # TRASH all projects directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
+    already_expired = arrow.utcnow().shift(days=-1).datetime
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            projects_table.update()
+            .where(projects_table.c.uuid.in_(created_project_ids))
+            .values(trashed=already_expired, trashed_explicitly=True, trashed_by=logged_user["id"])
+        )
+
+    # UNDER TEST: a single GC cycle must delete ALL of them, without raising
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    # ASSERT: none of the projects remain in the DB
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(projects_table.c.uuid).where(projects_table.c.uuid.in_(created_project_ids))
+        )
+        remaining_uuids = {row.uuid for row in result}
+    assert not remaining_uuids
 
 
 async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_succeeds(
