@@ -16,6 +16,7 @@ from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.temporalio import TemporalioSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -104,6 +105,14 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ),
         ),
     ] = False
+
+    DYNAMIC_SCHEDULER_TEMPORALIO_SETTINGS: Annotated[
+        TemporalioSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="settings for Temporalio workflow engine",
+        ),
+    ]
 
     @cached_property
     def log_level(self) -> LogLevelInt:

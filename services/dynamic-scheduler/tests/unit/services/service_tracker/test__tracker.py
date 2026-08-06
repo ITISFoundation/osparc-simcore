@@ -43,6 +43,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     redis_service: RedisSettings,
     remove_redis_data: None,
+    disable_t_scheduler_lifespan: None,
 ) -> EnvVarsDict:
     return app_environment
 
