@@ -157,7 +157,7 @@ class _ReconnectableEventWaiter:
     _ctx: Annotated[
         EventContextManager | None,
         doc(
-            "(Re)populated by _attach() below",
+            "populated by _attach() below",
         ),
     ] = field(init=False, default=None)
     _event_info: Annotated[
@@ -166,7 +166,12 @@ class _ReconnectableEventWaiter:
             "EventContextManager itself has no `.value`; only the EventInfo returned by entering it does",
         ),
     ] = field(init=False, default=None)
-    _bound_ws: WebSocket = field(init=False)
+    _bound_ws: Annotated[
+        WebSocket,
+        doc(
+            "populated by _attach() below",
+        ),
+    ] = field(init=False)
 
     def __post_init__(self) -> None:
         if self.timeout is not None:
@@ -216,6 +221,7 @@ class _ReconnectableEventWaiter:
         # timeout already bounds the whole wait via `_remaining_timeout()` in `_attach()`.
         if self.timeout is not None:
             return
+
         now = datetime.now(UTC)
         if self._reattach_deadline is None:
             self._reattach_deadline = now + _MAX_REATTACH_WINDOW
