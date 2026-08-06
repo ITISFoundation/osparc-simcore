@@ -1,9 +1,8 @@
-import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Final
 from uuid import uuid4
 
@@ -31,7 +30,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis._semaphore_decorator import (
     with_limited_concurrency_cm,
 )
-from servicelib.utils import fire_and_forget_task, limited_as_completed, limited_gather
+from servicelib.utils import limited_as_completed, limited_gather
 from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 
 from ..._meta import APP_NAME
@@ -73,10 +72,6 @@ _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
-# NOTE: gives already-published release-task-result messages for this run a chance to reuse
-# the still-warm pooled DaskClient instead of racing _safe_release_resources and having to
-# recreate/tear-down a fresh client per release
-_SAFE_RELEASE_RESOURCES_DELAY_S: Final[float] = 10
 
 
 @asynccontextmanager
@@ -139,7 +134,6 @@ async def _cluster_dask_client(
 @dataclass
 class DaskScheduler(BaseCompScheduler):
     dask_clients_pool: DaskClientsPool
-    _delayed_release_tasks: set[asyncio.Task] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.dask_clients_pool.register_handlers(
@@ -340,32 +334,18 @@ class DaskScheduler(BaseCompScheduler):
             await self.dask_clients_pool.release_client_ref(ref=pool_ref)
 
     async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: Iteration) -> None:
-        """release resources used by the scheduler for a given user and project
-
-        NOTE: delayed (not awaited inline) so any release-task-result message published for this
-        run right before it completed gets a chance to reuse the still-warm pooled DaskClient
-        instead of racing this call and having to recreate one from scratch.
-        """
-
-        async def _delayed_release() -> None:
-            with (
-                log_catch(_logger, reraise=False),
-                log_context(
-                    _logger,
-                    logging.INFO,
-                    msg=f"releasing resources for {user_id=}, {project_id=}, {run_id=}",
-                ),
-            ):
-                await asyncio.sleep(_SAFE_RELEASE_RESOURCES_DELAY_S)
-                await self.dask_clients_pool.release_client_ref(
-                    ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id)
-                )
-
-        fire_and_forget_task(
-            _delayed_release(),
-            task_suffix_name=f"safe_release_resources_{user_id}_{project_id}_{run_id}",
-            fire_and_forget_tasks_collection=self._delayed_release_tasks,
-        )
+        """release resources used by the scheduler for a given user and project"""
+        with (
+            log_catch(_logger, reraise=False),
+            log_context(
+                _logger,
+                logging.INFO,
+                msg=f"releasing resources for {user_id=}, {project_id=}, {run_id=}",
+            ),
+        ):
+            await self.dask_clients_pool.release_client_ref(
+                ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id)
+            )
 
     async def _stop_tasks(self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB) -> None:
         # NOTE: if this exception raises, it means the backend was anyway not up
