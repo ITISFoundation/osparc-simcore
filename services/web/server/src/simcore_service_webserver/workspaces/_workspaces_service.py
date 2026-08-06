@@ -3,7 +3,6 @@
 import logging
 
 from aiohttp import web
-from common_library.pagination_tools import iter_pagination_params
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.products import ProductName
@@ -99,11 +98,11 @@ async def delete_workspace_with_all_content(
     )
 
     # Get all root projects
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
-        (
-            projects,
-            page_params.total_number_of_items,
-        ) = await list_projects(
+    # NOTE: re-query from offset=0 each round since deleted projects vanish from the
+    # matching set; iter_pagination_params assumes a stable collection, which doesn't
+    # hold here (see projects._trash_service.batch_delete_trashed_projects_as_admin).
+    while True:
+        projects, _ = await list_projects(
             app,
             user_id=user_id,
             product_name=product_name,
@@ -113,10 +112,12 @@ async def delete_workspace_with_all_content(
             template_type=None,
             folder_id=None,
             trashed=None,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=0,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             order_by=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         )
+        if not projects:
+            break
 
         workspace_root_projects: list[ProjectID] = [Project(**project).uuid for project in projects]
 
@@ -127,21 +128,20 @@ async def delete_workspace_with_all_content(
             )
 
     # Get all root folders
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
-        (
-            folders,
-            page_params.total_number_of_items,
-        ) = await list_folders(
+    while True:
+        folders, _ = await list_folders(
             app,
             user_id=user_id,
             product_name=product_name,
             workspace_id=workspace_id,
             folder_id=None,
             trashed=None,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=0,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             order_by=OrderBy(field=IDStr("folder_id"), direction=OrderDirection.ASC),
         )
+        if not folders:
+            break
 
         workspace_root_folders: list[FolderID] = [folder.folder_db.folder_id for folder in folders]
 
