@@ -150,6 +150,7 @@ class _ReconnectableEventWaiter:
     event: str
     predicate: typing.Callable | None
     timeout: float | None
+
     _deadline: datetime | None = field(init=False, default=None)
     _reattach_deadline: datetime | None = field(init=False, default=None)
 
