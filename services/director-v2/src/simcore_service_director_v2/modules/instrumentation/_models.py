@@ -3,6 +3,7 @@ from typing import Final
 
 from prometheus_client import CollectorRegistry, Histogram
 from pydantic import ByteSize, TypeAdapter
+from servicelib.db_asyncpg_pool_metrics import DbPoolMetrics
 from servicelib.instrumentation import MetricsBase, get_metrics_namespace
 
 from ..._meta import PROJECT_NAME
@@ -67,7 +68,8 @@ class DynamiSidecarMetrics(MetricsBase):
     def __post_init__(self) -> None:
         self.start_time_duration = Histogram(
             "start_time_duration_seconds",
-            "time to start dynamic service (from start request in dv-2 till service containers are in running state (healthy))",
+            "time to start dynamic service (from start request in dv-2 till service "
+            "containers are in running state (healthy))",
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_METRICS_NAMESPACE,
             buckets=_BUCKETS_TIME_S,
@@ -76,7 +78,8 @@ class DynamiSidecarMetrics(MetricsBase):
         )
         self.stop_time_duration = Histogram(
             "stop_time_duration_seconds",
-            "time to stop dynamic service (from stop request in dv-2 till all allocated resources (services + dynamic-sidecar) are removed)",
+            "time to stop dynamic service (from stop request in dv-2 till all allocated resources "
+            "(services + dynamic-sidecar) are removed)",
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_METRICS_NAMESPACE,
             buckets=_BUCKETS_TIME_S,
@@ -136,8 +139,14 @@ class DynamiSidecarMetrics(MetricsBase):
 class DirectorV2Instrumentation:
     registry: CollectorRegistry
     dynamic_sidecar_metrics: DynamiSidecarMetrics = field(init=False)
+    db_pool_metrics: DbPoolMetrics = field(init=False)
 
     def __post_init__(self) -> None:
         self.dynamic_sidecar_metrics = DynamiSidecarMetrics(  # pylint: disable=unexpected-keyword-arg
             subsystem="dynamic_services", registry=self.registry
+        )
+        self.db_pool_metrics = DbPoolMetrics(
+            subsystem="database",
+            namespace=_METRICS_NAMESPACE,
+            registry=self.registry,
         )

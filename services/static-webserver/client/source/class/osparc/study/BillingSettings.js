@@ -72,7 +72,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         case "buy-credits-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Buy Credits"),
-            icon: "@FontAwesome5Solid/dollar-sign/14",
+            icon: "@FontAwesomeSolid/dollar-sign/14",
             allowGrowX: false
           });
           this.getChildControl("pay-debt-layout").add(control);
@@ -80,7 +80,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         case "transfer-debt-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Transfer from this Credit Account"),
-            icon: "@FontAwesome5Solid/exchange-alt/14",
+            icon: "@FontAwesomeSolid/exchange-alt/14",
             allowGrowX: false
           });
           this.getChildControl("pay-debt-layout").add(control);

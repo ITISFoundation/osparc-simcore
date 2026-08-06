@@ -3,9 +3,11 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import RabbitMessageBase
+from servicelib.fastapi.rabbitmq_lifespan import configure_rabbitmq_client as _configure_rabbitmq_client
 from servicelib.logging_utils import log_catch
-from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
@@ -13,27 +15,22 @@ from ..core.errors import ConfigurationError
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app.state.rabbitmq_client = None
-        settings: RabbitSettings | None = app.state.settings.AUTOSCALING_RABBITMQ
-        if not settings:
-            logger.warning("Rabbit MQ client is de-activated in the settings")
-            return
-        await wait_till_rabbitmq_responsive(settings.dsn)
-        app.state.rabbitmq_client = RabbitMQClient(client_name="autoscaling", settings=settings)
-
-    async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await app.state.rabbitmq_client.close()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+def configure_rabbitmq_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: RabbitSettings | None,
+) -> None:
+    _configure_rabbitmq_client(
+        app_lifespan,
+        settings=settings,
+        client_name="autoscaling",
+    )
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
-    if not app.state.rabbitmq_client:
-        raise ConfigurationError(msg="RabbitMQ client is not available. Please check the configuration.")
+    if not hasattr(app.state, "rabbitmq_client") or not app.state.rabbitmq_client:
+        msg = "RabbitMQ client is not available. Please check the configuration."
+        raise ConfigurationError(msg=msg)
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 

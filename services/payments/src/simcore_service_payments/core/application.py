@@ -59,7 +59,7 @@ def create_app(
         setup_tracing(app, app_tracing_config)
 
     # API w/ postgres db
-    setup_postgres(app)
+    setup_postgres(app, tracing_config=app_tracing_config)
 
     # APIs w/ webserver
     setup_rabbitmq(app)

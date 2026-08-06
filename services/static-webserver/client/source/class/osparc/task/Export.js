@@ -27,6 +27,6 @@ qx.Class.define("osparc.task.Export", {
   },
 
   statics: {
-    ICON: "@FontAwesome5Solid/cloud-download-alt"
+    ICON: "@FontAwesomeSolid/cloud-download-alt"
   },
 });

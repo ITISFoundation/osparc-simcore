@@ -14,16 +14,14 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed, limited_gather
 
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects._projects_service import (
     is_node_id_present_in_any_project_workbench,
     list_node_ids_in_project,
 )
 from ..projects.api import has_user_project_access_rights
-from ..resource_manager.registry import RedisResourceRegistry
-from ..resource_manager.service import list_opened_project_ids
+from ..resource_manager.resource_manager_service import RedisResourceRegistry, list_opened_project_ids
 from ..users import users_service
-from ..users.exceptions import UserNotFoundError
+from ..users.errors import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -56,8 +54,6 @@ async def _remove_service(app: web.Application, node_id: NodeID, service: Dynami
             f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
         ),
     ):
-        service_repo = ProjectDBAPI.get_from_app_context(app)
-        project_at_db = await service_repo.get_project_db(service.project_id)
         await dynamic_scheduler_service.stop_dynamic_service(
             app,
             dynamic_service_stop=DynamicServiceStop(
@@ -65,7 +61,7 @@ async def _remove_service(app: web.Application, node_id: NodeID, service: Dynami
                 project_id=service.project_id,
                 node_id=service.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                product_name=project_at_db.product_name,
+                product_name=service.product_name,
                 save_state=save_service_state,
             ),
         )

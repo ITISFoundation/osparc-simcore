@@ -104,8 +104,46 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         await self.start()
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-        await self.finish()
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: object
+    ) -> None:
+        _logger.debug("finishing %s", f"{self.num_steps} progress")
+        if self._parent is None:
+            await self.set_(self.num_steps)
+            return
+
+        exited_with_exception = exc_type is not None
+        if exited_with_exception:
+            # Remove child first so stale state doesn't appear in progress
+            # reports during rollback.
+            self._parent._children.remove(self)  # pylint: disable=protected-access # noqa: SLF001
+            # Roll back partial progress so callers that catch the exception
+            # and retry the same sub-step do not over-count parent progress.
+            # Skip set_ to avoid a spurious 100% report.
+            await self._parent._on_child_error(  # pylint: disable=protected-access # noqa: SLF001
+                self._compute_progress(self._current_steps)
+            )
+        else:
+            # Complete first, then remove — keeps the slot occupied until
+            # propagation finishes, preventing a concurrent task from
+            # creating a replacement child mid-update.
+            await self.set_(self.num_steps)
+            self._parent._children.remove(self)  # pylint: disable=protected-access # noqa: SLF001
+
+    async def _on_child_error(self, child_progress_contribution: float) -> None:
+        """Rollback a failed child's progress and reset the report baseline
+        so a retry emits intermediate reports from the start."""
+        contribution_to_rollback = max(child_progress_contribution, 0.0)
+        await self.update(-contribution_to_rollback)
+        self._reset_report_baseline_upwards()
+
+    def _reset_report_baseline_upwards(self) -> None:
+        """Reset _last_report_value so subsequent reports are not suppressed,
+        then propagate up to all ancestors so deeply nested retries report correctly.
+        """
+        self._last_report_value = _INITIAL_VALUE
+        if self._parent is not None:
+            self._parent._reset_report_baseline_upwards()  # pylint: disable=protected-access # noqa: SLF001
 
     async def _update_parent(self, value: float) -> None:
         if self._parent:
@@ -161,7 +199,9 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     async def update(self, steps: float = 1) -> None:
         parent_update_value = 0.0
         async with self._continuous_value_lock:
-            new_steps_value = self._current_steps + steps
+            # NOTE: clamp to 0 because floating-point accumulation drift can
+            # produce tiny negatives (~ -1e-16) after rollback.
+            new_steps_value = max(self._current_steps + steps, 0)
             if new_steps_value > self.num_steps:
                 new_steps_value = round(new_steps_value)
             if new_steps_value > self.num_steps:
@@ -195,10 +235,6 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
 
     async def set_(self, new_value: float) -> None:
         await self.update(new_value - self._current_steps)
-
-    async def finish(self) -> None:
-        _logger.debug("finishing %s", f"{self.num_steps} progress")
-        await self.set_(self.num_steps)
 
     def sub_progress(
         self,

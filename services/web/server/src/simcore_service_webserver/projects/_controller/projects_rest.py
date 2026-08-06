@@ -11,19 +11,10 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.generics import Envelope
 from models_library.rest_ordering import OrderBy
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_headers_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
-from servicelib.common_headers import (
-    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-    X_SIMCORE_USER_AGENT,
-)
 from servicelib.redis import get_project_locked_state
 
 from ..._meta import API_VTAG as VTAG
@@ -35,7 +26,13 @@ from ...security import security_web
 from ...security.decorators import permission_required
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
-from .. import _crud_api_create, _crud_api_read, _projects_service
+from ...web_requests_validation import (
+    parse_request_body_as,
+    parse_request_headers_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
+from .. import _crud_api_create, _crud_api_read, _projects_service, projects_trash_service
 from .._permalink_service import update_or_pop_permalink_in_project
 from ..models import ProjectDict
 from . import _rest_utils
@@ -106,7 +103,6 @@ async def create_project(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
-        simcore_user_agent=header_params.simcore_user_agent,
         predefined_project=predefined_project,
         parent_project_uuid=header_params.parent_project_uuid,
         parent_node_id=header_params.parent_node_id,
@@ -269,7 +265,12 @@ async def get_project(request: web.Request):
     )
 
     # Adds permalink
-    await update_or_pop_permalink_in_project(request.app, request.url, dict(request.headers), project)
+    await update_or_pop_permalink_in_project(
+        request.app,
+        request_url=request.url,
+        request_headers=dict(request.headers),
+        project=project,
+    )
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
     return envelope_json_response(data)
@@ -340,7 +341,7 @@ async def delete_project(request: web.Request):
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
-    project_users: set[int] = set()
+    project_users: set[UserID] = set()
     with managed_resource(req_ctx.user_id, None, request.app) as user_session:
         project_users = {
             s.user_id
@@ -365,12 +366,11 @@ async def delete_project(request: web.Request):
     ):
         raise web.HTTPConflict(text=f"Project {path_params.project_id} is locked: {project_locked_state=}")
 
-    await _projects_service.submit_delete_project_task(
+    await projects_trash_service.trash_project_for_immediate_deletion(
         request.app,
-        project_uuid=path_params.project_id,
-        user_id=req_ctx.user_id,
-        simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
         product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -407,7 +407,6 @@ async def clone_project(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
-        simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
         predefined_project=None,
         parent_project_uuid=None,
         parent_node_id=None,

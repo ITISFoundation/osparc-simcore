@@ -50,7 +50,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
           control = new qx.ui.form.Button().set({
             label: this.tr("Reload"),
             font: "text-14",
-            icon: "@FontAwesome5Solid/sync-alt/14",
+            icon: "@FontAwesomeSolid/sync-alt/14",
             allowGrowX: false
           });
           this.getChildControl("header-layout").add(control);
@@ -59,7 +59,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Calculating Size"),
             font: "text-14",
-            icon: "@FontAwesome5Solid/spinner/14",
+            icon: "@FontAwesomeSolid/spinner/14",
             allowGrowX: false
           });
           osparc.utils.Utils.setIdToWidget(control.getChildControl("label"), "totalSizeLabel");

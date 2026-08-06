@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, ParamSpec, TypeAlias, TypeVar
+from typing import Any
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
@@ -37,15 +37,12 @@ from .storage_endpoint import get_base_url, get_basic_auth
 _logger = logging.getLogger(__name__)
 
 
-RequestContextManager: TypeAlias = (
+type RequestContextManager = (
     aiohttp_client_module._RequestContextManager  # pylint: disable=protected-access # noqa: SLF001
 )
 
-P = ParamSpec("P")
-R = TypeVar("R")
 
-
-def handle_client_exception(
+def handle_client_exception[**P, R](
     handler: Callable[P, Coroutine[Any, Any, R]],
 ) -> Callable[P, Coroutine[Any, Any, R]]:
     @wraps(handler)
@@ -58,17 +55,17 @@ def handle_client_exception(
                 raise exceptions.S3InvalidPathError(msg) from err
             if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
                 msg = f"Invalid call to storage: {err.message}"
-                raise exceptions.StorageInvalidCall(msg) from err
+                raise exceptions.StorageInvalidCallError(msg) from err
             if status.HTTP_500_INTERNAL_SERVER_ERROR > err.status >= status.HTTP_400_BAD_REQUEST:
-                raise exceptions.StorageInvalidCall(err.message) from err
+                raise exceptions.StorageInvalidCallError(err.message) from err
             if err.status > status.HTTP_500_INTERNAL_SERVER_ERROR:
-                raise exceptions.StorageServerIssue(err.message) from err
+                raise exceptions.StorageServerIssueError(err.message) from err
         except ClientConnectionError as err:
             msg = f"{err}"
-            raise exceptions.StorageServerIssue(msg) from err
+            raise exceptions.StorageServerIssueError(msg) from err
         except JSONDecodeError as err:
             msg = f"{err}"
-            raise exceptions.StorageServerIssue(msg) from err
+            raise exceptions.StorageServerIssueError(msg) from err
         # satisfy mypy
         msg = "Unhandled control flow"
         raise RuntimeError(msg)
@@ -140,7 +137,7 @@ async def list_storage_locations(*, session: ClientSession, user_id: UserID) -> 
         locations_enveloped = Envelope[FileLocationArray].model_validate(await response.json())
         if locations_enveloped.data is None:
             msg = "Storage server is not responding"
-            raise exceptions.StorageServerIssue(msg)
+            raise exceptions.StorageServerIssueError(msg)
         return locations_enveloped.data
 
 
@@ -154,8 +151,8 @@ async def get_download_file_link(
     link_type: LinkType,
 ) -> AnyUrl:
     """
-    :raises exceptions.StorageInvalidCall
-    :raises exceptions.StorageServerIssue
+    :raises exceptions.StorageInvalidCallError
+    :raises exceptions.StorageServerIssueError
     """
     async with retry_request(
         session,
@@ -185,7 +182,7 @@ async def get_upload_file_links(
     sha256_checksum: SHA256Str | None,
 ) -> FileUploadSchema:
     """
-    :raises exceptions.StorageServerIssue: _description_
+    :raises exceptions.StorageServerIssueError: _description_
     :raises ClientResponseError
     """
 
@@ -207,7 +204,7 @@ async def get_upload_file_links(
         file_upload_links_enveloped = Envelope[FileUploadSchema].model_validate(await response.json())
     if file_upload_links_enveloped.data is None:
         msg = "Storage server is not responding"
-        raise exceptions.StorageServerIssue(msg)
+        raise exceptions.StorageServerIssueError(msg)
     return file_upload_links_enveloped.data
 
 

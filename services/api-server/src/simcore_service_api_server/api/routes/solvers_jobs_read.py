@@ -1,17 +1,20 @@
 # pylint: disable=too-many-arguments
 
 import logging
+import urllib.parse
 from collections import deque
 from collections.abc import Callable
 from functools import partial
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.products import ProductName
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
@@ -21,13 +24,14 @@ from starlette.background import BackgroundTask
 
 from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ..._service_solvers import SolverService
+from ...exceptions.backend_errors import JobNotFoundError
 from ...exceptions.custom_errors import MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.api_resources import parse_resources_ids
 from ...models.basic_types import LogStreamingResponse, NameValueTuple, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.jobs import Job, JobID, JobLog, JobMetadata, JobOutputs
+from ...models.schemas.jobs import BatchGetJobMetadataResponse, Job, JobID, JobLog, JobMetadata, JobOutputs
 from ...models.schemas.jobs_filters import JobMetadataFilter
 from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
@@ -44,13 +48,15 @@ from ...services_http.solver_job_models_converters import (
     create_job_from_project,
     get_solver_job_rest_interface_links,
 )
+from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
+from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT,
@@ -60,6 +66,8 @@ from .solvers_jobs import JOBS_STATUS_CODES, METADATA_STATUS_CODES
 from .wallets import WALLET_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
+
+_BATCH_GET_MAX_IDS = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 
 _OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_402_PAYMENT_REQUIRED: {
@@ -118,7 +126,7 @@ router = APIRouter()
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=True,
 )
 async def list_all_solvers_jobs(
     page_params: Annotated[PaginationParams, Depends()],
@@ -132,7 +140,15 @@ async def list_all_solvers_jobs(
                 NameValueTuple(filter_metadata.name, filter_metadata.pattern)
                 for filter_metadata in filter_job_metadata_params.any
             ]
-            if filter_job_metadata_params
+            if filter_job_metadata_params and filter_job_metadata_params.any
+            else None
+        ),
+        filter_all_custom_metadata=(
+            [
+                NameValueTuple(filter_metadata.name, filter_metadata.pattern)
+                for filter_metadata in filter_job_metadata_params.all
+            ]
+            if filter_job_metadata_params and filter_job_metadata_params.all
             else None
         ),
         pagination_offset=page_params.offset,
@@ -147,6 +163,67 @@ async def list_all_solvers_jobs(
         jobs,
         total=meta.total,
         params=page_params,
+    )
+
+
+@router.get(
+    "/-/releases/-/jobs/metadata:batchGet",
+    responses=METADATA_STATUS_CODES,
+    description=create_route_description(
+        base="Gets custom metadata for multiple jobs in a single request",
+        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")],
+    ),
+)
+async def batch_get_jobs_custom_metadata(
+    job_ids: Annotated[list[JobID], Query(min_length=1, max_length=_BATCH_GET_MAX_IDS)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+) -> BatchGetJobMetadataResponse:
+    metadata_map = await wb_api_rpc.batch_get_project_custom_metadata(
+        product_name=product_name,
+        user_id=user_id,
+        project_uuids=job_ids,
+    )
+
+    # Fetch job_parent_resource_name for each job to build self-links
+    jobs_page = await wb_api_rpc.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filter_by_job_parent_resource_name_prefix=None,
+        filter_any_custom_metadata=None,
+        filter_all_custom_metadata=None,
+        filter_by_project_uuids=job_ids,
+        pagination_limit=_BATCH_GET_MAX_IDS,
+    )
+
+    # Validate all requested jobs exist and are solver jobs and their metadata can be retrieved.
+    missing_metadata_job_ids = set(job_ids) - set(metadata_map.keys())
+    missing_job_ids = set(job_ids) - {project_job.uuid for project_job in jobs_page.data}
+    if missing_job_ids or missing_metadata_job_ids:
+        raise JobNotFoundError(project_id=sorted(f"{j}" for j in missing_job_ids | missing_metadata_job_ids))
+    # Map project_uuid -> URL from job_parent_resource_name
+    job_url_map: dict[JobID, str] = {}
+    for project_job in jobs_page.data:
+        resource_name = project_job.job_parent_resource_name
+        solver_key, version = parse_resources_ids(resource_name)[:2]
+        job_url_map[project_job.uuid] = url_for(
+            "get_job_custom_metadata",
+            solver_key=urllib.parse.quote_plus(solver_key),
+            version=version,
+            job_id=project_job.uuid,
+        )
+
+    return BatchGetJobMetadataResponse(
+        items=[
+            JobMetadata(
+                job_id=job_id,
+                metadata=metadata_map[job_id],
+                url=HttpUrl(job_url_map[job_id]),
+            )
+            for job_id in job_ids
+        ]
     )
 
 

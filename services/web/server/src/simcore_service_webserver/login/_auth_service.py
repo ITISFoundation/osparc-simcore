@@ -2,13 +2,14 @@ from datetime import datetime
 from typing import TypedDict
 
 from aiohttp import web
+from models_library.users import UserID
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups import api as groups_service
+from ..groups.groups_service import is_user_by_email_in_group
 from ..products.models import Product
 from ..security import security_service
 from . import _login_service
@@ -17,7 +18,7 @@ from .errors import WrongPasswordError
 
 
 class UserInfoDict(TypedDict):
-    id: int
+    id: UserID
     name: str
     email: str
     role: str
@@ -28,7 +29,7 @@ class UserInfoDict(TypedDict):
 
 
 async def get_user_or_none(
-    app: web.Application, *, email: str | None = None, user_id: int | None = None
+    app: web.Application, *, email: str | None = None, user_id: UserID | None = None
 ) -> UserInfoDict | None:
     if email is None and user_id is None:
         msg = "Either email or user_id must be provided"
@@ -47,7 +48,7 @@ async def get_user_or_none(
         return None
 
     return UserInfoDict(
-        id=user_row.id,
+        id=UserID(user_row.id),
         name=user_row.name,
         email=user_row.email,
         role=user_row.role.value,
@@ -82,7 +83,7 @@ async def create_user(
             new_user_email=user_row.email,
         )
     return UserInfoDict(
-        id=user_row.id,
+        id=UserID(user_row.id),
         name=user_row.name,
         email=user_row.email,
         role=user_row.role.value,
@@ -147,7 +148,7 @@ async def check_authorized_user_in_product(
     product_group_id = product.group_id
     assert product_group_id is not None  # nosec
 
-    if product_group_id is not None and not await groups_service.is_user_by_email_in_group(
+    if product_group_id is not None and not await is_user_by_email_in_group(
         app, user_email=user_email, group_id=product_group_id
     ):
         raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)

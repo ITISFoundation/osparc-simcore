@@ -23,6 +23,7 @@
 
 qx.Class.define("osparc.store.Data", {
   extend: qx.core.Object,
+  include: qx.locale.MTranslation,
   type: "singleton",
 
   construct: function() {

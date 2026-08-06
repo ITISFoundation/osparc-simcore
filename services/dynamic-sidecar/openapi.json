@@ -916,14 +916,12 @@
           "wallet_id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "$ref": "#/components/schemas/_WalletIDInt"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Wallet Id"
+            ]
           },
           "wallet_name": {
             "anyOf": [
@@ -1438,6 +1436,10 @@
           "SelectBox"
         ],
         "title": "WidgetType"
+      },
+      "_WalletIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     }
   }

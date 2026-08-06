@@ -21,7 +21,6 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from yarl import URL
 
 from ..users import users_service
-from ..wallets.api import get_wallet_by_user
 from . import _rpc
 from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
@@ -234,7 +233,10 @@ async def init_creation_of_wallet_payment_method(
 
     Raises:
         WalletAccessForbiddenError
+
+    Deferred import (R0401) is safe; happens at call time, not module import.
     """
+    from ..wallets import wallets_service  # noqa: PLC0415
 
     # check permissions
     await raise_for_wallet_payments_permissions(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
@@ -245,7 +247,9 @@ async def init_creation_of_wallet_payment_method(
 
     assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
 
-    user_wallet = await get_wallet_by_user(app, user_id=user_id, wallet_id=wallet_id, product_name=product_name)
+    user_wallet = await wallets_service.get_wallet_by_user(
+        app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
+    )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     user = await users_service.get_user_display_and_id_names(app, user_id=user_id)

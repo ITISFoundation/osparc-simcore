@@ -220,7 +220,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("left-items").add(control);
           break;
         case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/home/16").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesomeSolid/home/16").set({
             ...this.self().BUTTON_OPTIONS
           });
           control.set({
@@ -237,7 +237,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "saving-study-icon":
           control = new qx.ui.basic.Atom().set({
-            icon: "@FontAwesome5Solid/cloud-upload-alt/14",
+            icon: "@FontAwesomeSolid/cloud-upload-alt/14",
             label: this.tr("Saving..."),
             font: "text-12",
             opacity: 0.8,
@@ -246,10 +246,18 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           osparc.utils.Utils.setIdToWidget(control, "savingStudyIcon");
           this.getChildControl("left-items").add(control);
           break;
+        case "saving-study-files-icon":
+          control = new qx.ui.basic.Atom().set({
+            font: "text-12",
+            opacity: 0.8,
+            visibility: "excluded",
+          });
+          this.getChildControl("left-items").add(control);
+          break;
         case "read-only-info": {
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Read only"),
-            icon: "@FontAwesome5Solid/eye/22",
+            icon: "@FontAwesomeSolid/eye/22",
             gap: 10,
             font: "text-14",
             visibility: "excluded"
@@ -276,7 +284,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "expiration-icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/hourglass-end/22").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/hourglass-end/22").set({
             visibility: "excluded",
             textColor: "danger-red",
             cursor: "pointer"
@@ -374,7 +382,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createLoginBtn: function() {
-      const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesome5Solid/edit/14");
+      const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesomeSolid/edit/14");
       registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
       return registerButton;
     },
@@ -390,17 +398,52 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __applyStudy: function(study) {
       const savingStudyIcon = this.getChildControl("saving-study-icon");
+      const savingStudyFilesIcon = this.getChildControl("saving-study-files-icon");
       const readOnlyInfo = this.getChildControl("read-only-info");
       if (study) {
         this.getChildControl("study-title-options").setStudy(study);
         study.bind("savePending", savingStudyIcon, "visibility", {
           converter: value => value && ["workbench", "pipeline"].includes(study.getUi().getMode()) ? "visible" : "excluded"
         });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "visibility", {
+          converter: value => value && ["workbench", "pipeline"].includes(study.getUi().getMode()) ? "visible" : "excluded"
+        });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "label", {
+          converter: value => {
+            if (value === "Uploading") {
+              return this.tr("Uploading...");
+            } else if (value === "Queued") {
+              return this.tr("Queued...");
+            }
+            return null;
+          }
+        });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "toolTipText", {
+          converter: value => {
+            if (value === "Uploading") {
+              return this.tr("Files are being uploaded/synced");
+            } else if (value === "Queued") {
+              return this.tr("Files are queued for upload/syncing");
+            }
+            return null;
+          }
+        });
+        study.bind("saveFilesPending", savingStudyFilesIcon, "icon", {
+          converter: value => {
+            if (value === "Uploading") {
+              return "@FontAwesomeSolid/upload/12";
+            } else if (value === "Queued") {
+              return "@FontAwesomeSolid/file-medical/12";
+            }
+            return null;
+          }
+        });
         study.bind("readOnly", readOnlyInfo, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
       } else {
         savingStudyIcon.exclude();
+        savingStudyFilesIcon.exclude();
         readOnlyInfo.exclude();
       }
 

@@ -3,44 +3,39 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import RabbitMessageBase
-from servicelib.logging_utils import log_catch
-from servicelib.rabbitmq import (
-    RabbitMQClient,
-    RabbitMQRPCClient,
-    wait_till_rabbitmq_responsive,
+from servicelib.fastapi.rabbitmq_lifespan import (
+    configure_rabbitmq_client as _configure_rabbitmq_client,
 )
+from servicelib.fastapi.rabbitmq_lifespan import (
+    configure_rabbitmq_rpc_client as _configure_rabbitmq_rpc_client,
+)
+from servicelib.logging_utils import log_catch
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
-from ..core.settings import get_application_settings
 
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app.state.rabbitmq_client = None
-        app.state.rabbitmq_rpc_client = None
-        settings: RabbitSettings | None = get_application_settings(app).CLUSTERS_KEEPER_RABBITMQ
-        if not settings:
-            logger.warning("Rabbit MQ client is de-activated in the settings")
-            return
-        await wait_till_rabbitmq_responsive(settings.dsn)
-        # create the clients
-        app.state.rabbitmq_client = RabbitMQClient(client_name="clusters_keeper", settings=settings)
-        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-            client_name="clusters_keeper_rpc_client", settings=settings
-        )
-
-    async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await app.state.rabbitmq_client.close()
-        if app.state.rabbitmq_rpc_client:
-            await app.state.rabbitmq_rpc_client.close()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+def configure_rabbitmq_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: RabbitSettings | None,
+) -> None:
+    _configure_rabbitmq_client(
+        app_lifespan,
+        settings=settings,
+        client_name="clusters_keeper",
+    )
+    _configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=settings,
+        client_name="clusters_keeper_rpc_client",
+        wait_for_connectivity=False,
+    )
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

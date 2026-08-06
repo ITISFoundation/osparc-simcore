@@ -57,7 +57,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
             maxHeight: iconSize,
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
+            icon: "@FontAwesomeSolid/ellipsis-v/"+(iconSize-11),
             focusable: false
           });
           this._add(control, {

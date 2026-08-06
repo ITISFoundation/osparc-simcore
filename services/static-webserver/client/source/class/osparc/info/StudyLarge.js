@@ -109,13 +109,13 @@ qx.Class.define("osparc.info.StudyLarge", {
       vBox.add(infoLayout);
 
       // Copy Id button
-      let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
+      let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Id");
       if (this.getStudy().getTemplateType()) {
-        text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
+        text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + this.tr(" Id");
       }
-      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/copy/12").set({
         label: text,
-        toolTipText: "Copy " + text,
+        toolTipText: this.tr("Copy %1", text),
         marginTop: 15,
         allowGrowX: false
       });
@@ -254,7 +254,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openTitleEditor: function() {
-      const title = this.tr("Edit Title");
+      const title = this.tr("Rename ") + osparc.product.Utils.getStudyAlias();
       const titleEditor = new osparc.widget.Renamer(this.getStudy().getName(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();

@@ -72,7 +72,6 @@ qx.Class.define("osparc.filter.TextFilter", {
             paddingRight: 15,
             placeholder: this.tr("Filter")
           });
-          osparc.utils.Utils.disableAutocomplete(control);
           this._add(control, {
             width: "100%"
           });

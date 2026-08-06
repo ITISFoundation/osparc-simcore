@@ -132,7 +132,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         case "pin-node": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.ToggleButton().set({
-            icon: "@FontAwesome5Solid/thumbtack/14",
+            icon: "@FontAwesomeSolid/thumbtack/14",
             toolTipText: this.tr("Show logs only from current node"),
             appearance: "toolbar-button"
           });
@@ -191,7 +191,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
           });
           control.bind("value", this, "lockLogs");
           control.bind("value", control, "icon", {
-            converter: val => val ? "@FontAwesome5Solid/lock-open/14" : "@FontAwesome5Solid/lock/14"
+            converter: val => val ? "@FontAwesomeSolid/lock-open/14" : "@FontAwesomeSolid/lock/14"
           });
           const toolbar = this.getChildControl("toolbar");
           toolbar.add(control);
@@ -200,7 +200,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         case "copy-to-clipboard": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/copy/14",
+            icon: "@FontAwesomeSolid/copy/14",
             toolTipText: this.tr("Copy logs to clipboard"),
             appearance: "toolbar-button"
           });
@@ -211,7 +211,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         case "copy-selected-to-clipboard": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/file/14",
+            icon: "@FontAwesomeSolid/file/14",
             toolTipText: this.tr("Copy Selected log to clipboard"),
             appearance: "toolbar-button"
           });
@@ -221,7 +221,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         case "download-logs-button": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/download/14",
+            icon: "@FontAwesomeSolid/download/14",
             toolTipText: this.tr("Download logs"),
             appearance: "toolbar-button"
           });

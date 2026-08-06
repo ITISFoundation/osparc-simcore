@@ -1,6 +1,5 @@
-from typing import Annotated, Generic
+from typing import Annotated, Any, ClassVar, Generic, cast
 
-from common_library.basic_types import DEFAULT_FACTORY
 from common_library.json_serialization import json_dumps
 from pydantic import (
     BaseModel,
@@ -8,6 +7,7 @@ from pydantic import (
     ConfigDict,
     Field,
     field_validator,
+    model_validator,
 )
 
 from .basic_types import IDStr
@@ -128,8 +128,11 @@ def _parse_order_by(v):
     if not v:
         return []
 
+    # Pass through if already parsed (list of dicts or OrderClause instances)
     if isinstance(v, list):
-        v = ",".join(v)
+        if all(isinstance(item, (dict, OrderClause)) for item in v):
+            return v
+        v = ",".join(str(item) for item in v)
 
     if not isinstance(v, str):
         msg = "order_by must be a string"
@@ -152,7 +155,7 @@ def _parse_order_by(v):
     return [{"field": field, "direction": direction} for field, direction in check_ordering_list(clauses)]
 
 
-class OrderingQueryParams(BaseModel, Generic[TField]):
+class OrderingQueryParams(BaseModel, Generic[TField]):  # noqa: UP046
     """
     This class is designed to parse query parameters for ordering results in an API request.
 
@@ -167,19 +170,58 @@ class OrderingQueryParams(BaseModel, Generic[TField]):
         /my/path?order_by=field1,-field2,+field3
 
     would sort by field1 ascending, field2 descending, and field3 ascending.
+
+    Subclasses can configure:
+        _default_order_by: ClassVar[str] — default ordering string (e.g., "-modified_at")
+        _field_name_map: ClassVar[dict[str, str]] — remap API field names to DB column names
+
+    Example:
+        class FolderOrdering(OrderingQueryParams[Literal["modified_at", "name"]]):
+            _default_order_by: ClassVar[str] = "-modified_at"
+            _field_name_map: ClassVar[dict[str, str]] = {"modified_at": "modified"}
     """
+
+    _default_order_by: ClassVar[str] = ""
+    _field_name_map: ClassVar[dict[str, str]] = {}
 
     order_by: Annotated[
         list[OrderClause[TField]],
         BeforeValidator(_parse_order_by),
-        Field(default_factory=list),
-    ] = DEFAULT_FACTORY
+        Field(
+            description="Comma-separated list of field names with optional direction prefix (+ for asc, - for desc).",
+            json_schema_extra={
+                "examples": [
+                    "-created_at,name,+gender",
+                    "name",
+                    "-modified_at",
+                    "",
+                ],
+            },
+        ),
+    ] = ""  # type: ignore[assignment]
 
     model_config = ConfigDict(
+        validate_default=True,
         json_schema_extra={
             "examples": [
                 {"order_by": "-created_at,name,+gender"},
                 {"order_by": ""},
             ],
-        }
+        },
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _inject_default_order_by(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "order_by" not in data and cls._default_order_by:
+            return {**data, "order_by": cls._default_order_by}
+        return data
+
+    @model_validator(mode="after")
+    def _apply_field_name_map(self) -> "OrderingQueryParams[TField]":
+        if self._field_name_map:
+            for clause in self.order_by:
+                mapped = self._field_name_map.get(str(clause.field))
+                if mapped is not None:
+                    clause.field = cast(TField, mapped)
+        return self

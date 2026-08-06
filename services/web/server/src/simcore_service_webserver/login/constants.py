@@ -12,6 +12,10 @@ MSG_ACTIVATION_REQUIRED: Final[str] = user_message(
     "Please activate your account using the activation link we sent to your email before logging in.",
     _version=1,
 )
+MSG_REGISTRATION_SUCCESS: Final[str] = user_message(
+    "Welcome! Your account has been created. You can now sign in as {email}.",
+    _version=3,
+)
 MSG_AUTH_FAILED: Final[str] = user_message(
     "The provided credentials are incorrect. Please verify your email and password.",
     _version=2,

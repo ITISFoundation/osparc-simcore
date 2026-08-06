@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Annotated, TypeAlias
+from typing import Annotated, Self
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.config import JsonDict
 
 from ...projects import NodesDict, ProjectID
@@ -26,8 +26,25 @@ class ListProjectsMarkedAsJobRpcFilters(BaseModel):
 
     any_custom_metadata: Annotated[
         list[MetadataFilterItem] | None,
-        Field(description="Searchs for matches of any of the custom metadata fields"),
+        Field(description="Searches for matches of any of the custom metadata fields"),
     ] = None
+
+    all_custom_metadata: Annotated[
+        list[MetadataFilterItem] | None,
+        Field(description="Searches for matches of all of the custom metadata fields"),
+    ] = None
+
+    project_uuids: Annotated[
+        list[ProjectID] | None,
+        Field(description="Filters by a list of project UUIDs"),
+    ] = None
+
+    @model_validator(mode="after")
+    def _check_any_and_all_are_mutually_exclusive(self) -> Self:
+        if self.any_custom_metadata and self.all_custom_metadata:
+            msg = "any_custom_metadata and all_custom_metadata are mutually exclusive"
+            raise ValueError(msg)
+        return self
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -67,7 +84,7 @@ class ListProjectsMarkedAsJobRpcFilters(BaseModel):
 
 class ProjectJobRpcGet(BaseModel):
     """
-    Minimal information about a project that (for now) will fullfill
+    Minimal information about a project that (for now) will fulfill
     the needs of the api-server. Specifically, the fields needed in
     project to call create_job_from_project
     """
@@ -139,7 +156,7 @@ class ProjectJobRpcGet(BaseModel):
     )
 
 
-PageRpcProjectJobRpcGet: TypeAlias = PageRpc[
+PageRpcProjectJobRpcGet = PageRpc[
     # WARNING: keep this definition in models_library and not in the RPC interface
     # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
     # and will fail to serialize/deserialize these parameters when transmitted/received

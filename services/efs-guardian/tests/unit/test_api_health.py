@@ -9,7 +9,6 @@ import pytest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_efs_guardian.api.rest.health import HealthCheckError
 from starlette import status
 
 pytest_simcore_core_services_selection = []
@@ -43,5 +42,5 @@ async def test_healthcheck(client: httpx.AsyncClient, is_healthy: bool):
         assert response.status_code == status.HTTP_200_OK
         assert "simcore_service_efs_guardian" in response.text
     else:
-        with pytest.raises(HealthCheckError):
-            await client.get("/")
+        response = await client.get("/")
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE

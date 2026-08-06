@@ -10,7 +10,6 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
-from simcore_service_catalog.api.rest._health import HealthCheckError
 
 
 @pytest.fixture
@@ -30,12 +29,11 @@ def test_sync_client(
     client: TestClient,
     is_healthy: bool,
 ):
+    response = client.get("/v0/")
     if is_healthy:
-        response = client.get("/v0/")
         assert response.status_code == status.HTTP_200_OK
     else:
-        with pytest.raises(HealthCheckError):
-            client.get("/v0/")
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
     response = client.get("/v0/meta")
     assert response.status_code == status.HTTP_200_OK
@@ -51,12 +49,11 @@ async def test_async_client(
     aclient: httpx.AsyncClient,
     is_healthy: bool,
 ):
+    response = await aclient.get("/v0/")
     if is_healthy:
-        response = await aclient.get("/v0/")
         assert response.status_code == status.HTTP_200_OK
     else:
-        with pytest.raises(HealthCheckError):
-            await aclient.get("/v0/")
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
     response = await aclient.get("/v0/meta")
     assert response.status_code == status.HTTP_200_OK

@@ -7,7 +7,7 @@ This application is written using [qooxdoo] and the [source](source) needs to be
 
 ## [qooxdoo] compiler
 
-All [qooxdoo] tools used to compile this source code are pre-installed in the [itisfoundation/qooxdoo-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/qooxdoo-kit) docker image. This toolkit is configured for this project in [tools](services/static-webserver/client/tools).
+All [qooxdoo] tools used to compile this source code are pre-installed in the [itisfoundation/qooxdoo-kit](https://github.com/ITISFoundation/dockerfiles/tree/master/qooxdoo-kit) docker image. This toolkit is configured for this project in [tools](tools).
 
 A **makefile** provides recipes to easily compile and *statically* serve the client application. The latter is mostly for development purposes.
 
@@ -16,7 +16,7 @@ A **makefile** provides recipes to easily compile and *statically* serve the cli
 The [itisfoundation/qooxdoo-kit] is used in two different ways:
 
 - runs **as a container**, binds the current directly and compiles the code at **run-time**
-- used **as a base image** of a [Dockerfile](services/static-webserver/client/tools/qooxdoo-kit/builder/Dockerfile) that compiles the source code at **build-time**.
+- used **as a base image** of a [Dockerfile](tools/qooxdoo-kit/builder/Dockerfile) that compiles the source code at **build-time**.
 
 The former is used in development and the latter is used for production. Some (hopefully) self-explanatory examples:
 
@@ -27,7 +27,7 @@ The former is used in development and the latter is used for production. Some (h
 
 
 
-> See **limitations of docker on a Windows** below (Sept. 2019)
+> See **limitations of docker on a Windows** below
 
 
 ## [qooxdoo] server
@@ -53,6 +53,10 @@ For demo purposes, the user/pass to login when the fake server is active is ```b
 
 ![Frontend UI Workflow](docs/img/frontend-diagram.svg)
 
+## Frontend Localization Workflow
+
+For extraction, AI translation, and validation steps, follow the canonical workflow reference in [scripts/i18n/README.md](../../../scripts/i18n/README.md).
+
 ---
 
 ### Limitations running in a Windows host
@@ -64,9 +68,9 @@ pip install docker-windows-volume-watcher
 docker-volume-watcher
 ```
 
-**NOTE** Use scripts in [osparc-simcore/scripts/win-watcher.bat](../../../scripts/win-watcher.bat)
+**NOTE** Use scripts in [scripts/win-watcher.bat](../../../scripts/win-watcher.bat)
 
 
 <!-- ADD REFERENCES ALPHABETICALLY BELOW THIS LINE -->
-[qooxdoo]:http://www.qooxdoo.org/
+[qooxdoo]:https://qooxdoo.org
 [itisfoundation/qooxdoo-kit]:https://github.com/ITISFoundation/dockerfiles/tree/master/qooxdoo-kit

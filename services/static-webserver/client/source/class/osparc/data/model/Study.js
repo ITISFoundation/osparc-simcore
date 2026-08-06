@@ -66,7 +66,7 @@ qx.Class.define("osparc.data.model.Study", {
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
-    const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
+    const workbench = new osparc.data.model.Workbench(wbData);
     this.setWorkbench(workbench);
     workbench.setStudy(this);
 
@@ -255,6 +255,13 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeSavePending",
       init: false
     },
+
+    saveFilesPending: {
+      check: [null, "Uploading", "Queued"],
+      nullable: true,
+      event: "changeSaveFilesPending",
+      init: null,
+    },
   },
 
   events: {
@@ -289,6 +296,7 @@ qx.Class.define("osparc.data.model.Study", {
       // "trashedAt", // backend sets it
       // "trashedBy", // backend sets it
       // "savePending", // frontend only
+      // "saveFilesPending", // frontend only
     ],
 
     // Properties of the Study class that should not be serialized
@@ -300,6 +308,7 @@ qx.Class.define("osparc.data.model.Study", {
       "readOnly",
       "trashedAt",
       "savePending",
+      "saveFilesPending",
     ],
 
     OwnPatch: [
@@ -764,7 +773,7 @@ qx.Class.define("osparc.data.model.Study", {
       studyPropertyKeys.forEach(studyPropertyKey => {
         if (studyPropertyKey in studyDiffs) {
           const newValue = studyDiffs[studyPropertyKey][1];
-          if ("lastChangeDate" === studyPropertyKey) {
+          if (studyPropertyKey === "lastChangeDate") {
             this.setLastChangeDate(new Date(newValue));
           } else {
             const upKey = qx.lang.String.firstUp(studyPropertyKey);
@@ -784,10 +793,10 @@ qx.Class.define("osparc.data.model.Study", {
         const path = patch.path;
         const value = patch.value;
         switch (op) {
-          case "replace":
+          case "replace": {
             const studyProperty = path.substring(1); // remove the leading "/"
             if (studyPropertyKeys.includes(studyProperty)) {
-              if (path === "/lastChangeDate") {
+              if (studyProperty === "lastChangeDate") {
                 this.setLastChangeDate(new Date(value));
               } else {
                 const setter = "set" + qx.lang.String.firstUp(studyProperty);
@@ -799,6 +808,7 @@ qx.Class.define("osparc.data.model.Study", {
               }
             }
             break;
+          }
           default:
             console.warn(`Unhandled patch operation "${op}" for path "${path}" with value "${value}"`);
         }

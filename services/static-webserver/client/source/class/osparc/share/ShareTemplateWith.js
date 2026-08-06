@@ -54,7 +54,7 @@ qx.Class.define("osparc.share.ShareTemplateWith", {
         font: "text-14",
       });
       addCollaborators.getChildControl("share-with").set({
-        icon: "@FontAwesome5Solid/share-alt/12",
+        icon: "@FontAwesomeSolid/share-alt/12",
         label: this.tr("Share"),
       });
       this._add(addCollaborators);

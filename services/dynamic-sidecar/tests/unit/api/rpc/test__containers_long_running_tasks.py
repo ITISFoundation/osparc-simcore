@@ -46,7 +46,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import (
     containers_long_running_tasks,
 )
 from settings_library.rabbit import RabbitSettings
-from simcore_sdk.node_ports_common.exceptions import NodeNotFound
+from simcore_sdk.node_ports_common.exceptions import NodeNotFoundError
 from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecError
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import long_running_tasks as sidecar_lrts
@@ -255,7 +255,7 @@ def missing_node_uuid(faker: faker.Faker) -> str:
 @pytest.fixture
 def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
     async def _mocked(*args, **kwargs) -> None:
-        raise NodeNotFound(missing_node_uuid)
+        raise NodeNotFoundError(missing_node_uuid, project_id="fake-project-id")
 
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",

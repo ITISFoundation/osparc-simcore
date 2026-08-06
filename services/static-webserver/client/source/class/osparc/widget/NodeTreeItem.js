@@ -191,7 +191,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
           });
           control = new qx.ui.form.MenuButton().set({
             menu: optionsMenu,
-            icon: "@FontAwesome5Solid/ellipsis-v/8",
+            icon: "@FontAwesomeSolid/ellipsis-v/8",
             allowGrowX: false,
             alignY: "middle"
           });
@@ -203,7 +203,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
           control = new qx.ui.menu.Button().set({
             backgroundColor: "background-main",
             label: this.tr("Start"),
-            icon: "@FontAwesome5Solid/play/10",
+            icon: "@FontAwesomeSolid/play/10",
             visibility: "excluded"
           });
           const optionsMenu = this.getChildControl("options-menu-button");
@@ -214,7 +214,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
           control = new qx.ui.menu.Button().set({
             backgroundColor: "background-main",
             label: this.tr("Stop"),
-            icon: "@FontAwesome5Solid/stop/10",
+            icon: "@FontAwesomeSolid/stop/10",
             visibility: "excluded"
           });
           const optionsMenu = this.getChildControl("options-menu-button");
@@ -224,7 +224,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
         case "rename-button": {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Rename"),
-            icon: "@FontAwesome5Solid/i-cursor/10"
+            icon: "@FontAwesomeSolid/i-cursor/10"
           });
           control.getChildControl("shortcut").setValue("F2");
           control.addListener("execute", () => this.fireDataEvent("renameNode", this.getId()));
@@ -234,7 +234,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
         }
         case "marker-button": {
           control = new qx.ui.menu.Button().set({
-            icon: "@FontAwesome5Solid/bookmark/10",
+            icon: "@FontAwesomeSolid/bookmark/10",
             visibility: "excluded"
           });
           control.addListener("execute", () => this.getNode().toggleMarker());
@@ -245,7 +245,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
         case "info-button": {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Information..."),
-            icon: "@FontAwesome5Solid/info/10"
+            icon: "@FontAwesomeSolid/info/10"
           });
           control.getChildControl("shortcut").setValue("I");
           control.addListener("execute", () => this.fireDataEvent("infoNode", this.getId()));
@@ -256,7 +256,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
         case "delete-button": {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Delete"),
-            icon: "@FontAwesome5Solid/trash/10"
+            icon: "@FontAwesomeSolid/trash/10"
           });
           control.getChildControl("shortcut").setValue("Del");
           control.addListener("execute", () => this.fireDataEvent("deleteNode", this.getId()));
@@ -286,7 +286,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
         }
         case "marker":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/bookmark/12",
+            source: "@FontAwesomeSolid/bookmark/12",
             padding: 4,
             visibility: "excluded"
           });

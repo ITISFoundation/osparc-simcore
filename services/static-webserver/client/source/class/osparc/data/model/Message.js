@@ -97,7 +97,11 @@ qx.Class.define("osparc.data.model.Message", {
       return message.getUserGroupId() === osparc.data.model.Message.SYSTEM_MESSAGE_ID;
     },
 
-    isMyMessage: function(message) {
+    isMyMessage: function(messageOrData) {
+      let message = messageOrData;
+      if (!(messageOrData instanceof osparc.data.model.Message)) {
+        message = new osparc.data.model.Message(messageOrData);
+      }
       if (osparc.data.model.Message.isSupportMessage(message)) {
         return false;
       }

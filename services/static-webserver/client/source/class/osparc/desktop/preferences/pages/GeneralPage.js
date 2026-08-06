@@ -24,6 +24,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    if (osparc.product.Utils.isLocaleEnabled() && osparc.utils.LanguageManager.isSwitchUseful()) {
+      this.__addLanguageSetting();
+    }
+
     if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addCreditsIndicatorSettings();
     }
@@ -47,6 +51,45 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       return this._getChildren().length;
     },
 
+    __addLanguageSetting: function() {
+      const box = new osparc.widget.SectionBox(this.tr("Language"));
+
+      box.addHelper(this.tr("Translations are AI-generated and may contain errors."));
+
+      const form = new qx.ui.form.Form();
+
+      const languageSB = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
+      languageSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
+      osparc.utils.LanguageManager.getAvailableLocales().forEach(localeCode => {
+        const label = osparc.utils.LanguageManager.getLocaleLabel(localeCode);
+        const lItem = new qx.ui.form.ListItem(label, null, localeCode);
+        languageSB.add(lItem);
+      });
+
+      const currentLocale = osparc.utils.LanguageManager.getUserLocale();
+      languageSB.getSelectables().forEach(selectable => {
+        if (selectable.getModel() === currentLocale) {
+          languageSB.setSelection([selectable]);
+        }
+      });
+
+      languageSB.addListener("changeValue", e => {
+        const selectable = e.getData();
+        if (selectable) {
+          const localeCode = selectable.getModel();
+          osparc.utils.LanguageManager.setLocale(localeCode);
+          osparc.utils.LanguageManager.patchLocale(localeCode);
+        }
+      });
+      form.add(languageSB, this.tr("Language"));
+
+      box.add(new qx.ui.form.renderer.Single(form));
+
+      this._add(box);
+    },
+
     __addCreditsIndicatorSettings: function() {
       const box = new osparc.widget.SectionBox(this.tr("Credits Indicator"));
 
@@ -60,10 +103,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       walletIndicatorVisibilitySB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "always",
-        label: "Always"
+        label: this.tr("Always")
       }, {
         id: "warning",
-        label: "Warning"
+        label: this.tr("Warning")
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
         walletIndicatorVisibilitySB.add(lItem);
@@ -98,12 +141,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     __addInactivitySetting: function() {
       const box = new osparc.widget.SectionBox(this.tr("Automatic Shutdown of Idle Instances"));
 
-      box.addHelper(this.tr("Enter 0 to disable this function"));
-
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
-        minimum: 0,
-        maximum: Number.MAX_SAFE_INTEGER,
+        minimum: 1,
+        maximum: 3*60, // 3 hours
         singleStep: 1,
         allowGrowX: false
       });
@@ -141,7 +182,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
 
     __addS4LUserPrivacySettings: function() {
-      const box = new osparc.widget.SectionBox("Privacy Settings");
+      const box = new osparc.widget.SectionBox(this.tr("Privacy Settings"));
       box.addHelper(this.tr("Help us improve Sim4Life user experience"));
 
       const preferencesSettings = osparc.Preferences.getInstance();

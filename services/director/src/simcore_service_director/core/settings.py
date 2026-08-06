@@ -19,11 +19,13 @@ from pydantic import (
     NonNegativeInt,
     PositiveInt,
     field_validator,
+    model_validator,
 )
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.postgres import PostgresSettings
+from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -52,7 +54,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool,
         Field(
             validation_alias=AliasChoices("DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description="Enables local development log format. "
+            "WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ]
     DIRECTOR_LOG_FILTER_MAPPING: Annotated[
@@ -60,7 +63,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("DIRECTOR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+            "to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
     DIRECTOR_TRACING: Annotated[
@@ -73,11 +77,19 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = 0
     DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = 0
-    DIRECTOR_REGISTRY_CACHING: Annotated[bool, Field(description="cache the docker registry internally")]
+    DIRECTOR_REGISTRY_CACHING: Annotated[bool, Field(description="cache the docker registry")]
     DIRECTOR_REGISTRY_CACHING_TTL: Annotated[
         datetime.timedelta,
-        Field(description="cache time to live value (defaults to 15 minutes)"),
+        Field(description="cache time to live value for the docker registry cache"),
     ]
+    DIRECTOR_REGISTRY_CACHING_REDIS_NAMESPACE: Annotated[
+        str, Field(description="namespace for the docker registry cache in Redis")
+    ] = "director-v0-registry-cache"
+
+    DIRECTOR_REDIS: Annotated[
+        RedisSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ] = None
 
     DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
         list[DockerPlacementConstraint],
@@ -95,7 +107,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Json[dict[DockerLabelKey, str]],
         Field(
             default_factory=lambda: "{}",
-            description="Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
+            description="Dynamic placement labels for service node placement. "
+            "Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
             examples=['{"product-name": "osparc", "user-id": "{user_id}"}'],
         ),
     ] = DEFAULT_FACTORY
@@ -157,7 +170,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def _validate_osparc_custom_placement_constraints_keys(cls, v: dict[str, str]) -> dict[str, str]:
         invalid_keys = set(v.keys()) - set(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
         if invalid_keys:
-            msg = f"Invalid placement label keys {invalid_keys}. Must be one of {OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}"
+            msg = (
+                f"Invalid placement label keys {invalid_keys}. "
+                f"Must be one of {OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}"
+            )
             raise ValueError(msg)
         return v
 
@@ -184,6 +200,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             raise ValueError(msg)
 
         return v
+
+    @model_validator(mode="after")
+    def _validate_redis_settings(self) -> "ApplicationSettings":
+        if self.DIRECTOR_REGISTRY_CACHING and self.DIRECTOR_REDIS is None:
+            msg = "DIRECTOR_REGISTRY_CACHING=True requires DIRECTOR_REDIS settings"
+            raise ValueError(msg)
+        return self
 
     @cached_property
     def log_level(self) -> LogLevelInt:

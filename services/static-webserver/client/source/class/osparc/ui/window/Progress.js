@@ -16,6 +16,10 @@ qx.Class.define("osparc.ui.window.Progress", {
 
     const progressBar = this.getChildControl("progress-bar");
     this.bind("progress", progressBar, "value");
+
+    this.set({
+      minWidth: 350,
+    });
   },
 
   properties: {
@@ -49,6 +53,12 @@ qx.Class.define("osparc.ui.window.Progress", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    addHideButton: function() {
+      const hideButton = this.addCancelButton();
+      hideButton.setLabel(qx.locale.Manager.tr("Hide"));
+      return hideButton;
     },
   }
 });

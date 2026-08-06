@@ -12,6 +12,7 @@ from servicelib.background_task import create_periodic_task
 from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
+from servicelib.tracing import traced
 from servicelib.utils import limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -102,7 +103,8 @@ async def run_new_pipeline(
         rabbitmq_client,
         user_id,
         project_id,
-        log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
+        log="Project pipeline scheduled using "
+        f"{'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
         log_level=logging.INFO,
     )
     await publish_pipeline_scheduling_state(rabbitmq_client, user_id, project_id, new_run.result)
@@ -115,6 +117,12 @@ async def stop_pipeline(
     project_id: ProjectID,
     iteration: int | None = None,
 ) -> None:
+    """Stops a pipeline
+
+    Raises:
+        ComputationalRunNotFoundError: if the run does not exist
+        ConfigurationError: if the rabbitmq client is not configured
+    """
     db_engine = get_db_engine(app)
     comp_run = await CompRunsRepository.instance(db_engine).get(user_id, project_id, iteration)
 
@@ -153,6 +161,7 @@ async def _get_pipeline_tasks_at_db(
 _LOST_TASKS_FACTOR: Final[int] = 10
 
 
+@traced
 @exclusive(
     get_redis_client_from_app,
     lock_key=get_redis_lock_key(MODULE_NAME_SCHEDULER, unique_lock_key_builder=None),

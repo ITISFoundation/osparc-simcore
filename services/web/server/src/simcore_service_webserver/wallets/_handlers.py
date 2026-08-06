@@ -15,17 +15,12 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
 )
-from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.rest_base import RequestParameters
 from models_library.rest_error import ErrorGet
 from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import API_VTAG as VTAG
@@ -48,16 +43,15 @@ from ..payments.errors import (
 )
 from ..products.errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 from ..security.decorators import permission_required
-from ..users.exceptions import (
-    BillingDetailsNotFoundError,
-    UserDefaultWalletNotFoundError,
-)
+from ..users.errors import BillingDetailsNotFoundError, UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from . import _api
 from ._constants import (
     MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
     MSG_PRICE_NOT_DEFINED_ERROR,
 )
+from ._schemas import WalletsPathParams
 from .errors import (
     WalletAccessForbiddenError,
     WalletNotEnoughCreditsError,
@@ -164,10 +158,6 @@ routes = web.RouteTableDef()
 class WalletsRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
-class WalletsPathParams(StrictRequestParameters):
-    wallet_id: WalletID
 
 
 @routes.post(f"/{VTAG}/wallets", name="create_wallet")

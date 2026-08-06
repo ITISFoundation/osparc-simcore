@@ -27,7 +27,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.conversations import _conversation_message_service
+from simcore_service_webserver.conversations import _conversation_message_service, _conversation_service
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.fogbugz._client import _APPKEY, FogbugzRestClient
 from simcore_service_webserver.groups import _groups_repository
@@ -549,3 +549,57 @@ async def test_conversation_messages_with_database(
 
     # Verify chatbot processing was triggered
     assert mocked_trigger_chatbot_processing.call_count == 1
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_conversation_auto_unarchive_on_new_message(
+    app_environment: EnvVarsDict,
+    client: TestClient,
+    mocked_fogbugz_client: MockType,
+    mocked_list_users_in_group: MockType,
+    mocked_get_current_product: MockType,
+    mocked_trigger_chatbot_processing: MockType,
+    logged_user: UserInfoDict,
+    mocker: MockerFixture,
+):
+    """Test that sending a new message auto-unarchives an archived conversation"""
+    assert client.app
+
+    # Mock user as support group member so they can archive
+    # mocked_get_current_product returns support_standard_group_id=123
+    mocker.patch.object(
+        _conversation_service,
+        "list_user_groups_ids_with_read_access",
+        return_value={123},
+    )
+    mocker.patch.object(
+        _conversation_service,
+        "get_recipients_from_product_support_group",
+        return_value=set(),
+    )
+
+    # Create a conversation
+    base_url = client.app.router["list_conversations"].url_for()
+    body = {"name": "Auto-unarchive Test", "type": "SUPPORT"}
+    resp = await client.post(f"{base_url}", json=body)
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    conversation_id = data["conversationId"]
+    assert data["status"] == "ACTIVE"
+
+    # Archive the conversation
+    update_url = client.app.router["update_conversation"].url_for(conversation_id=conversation_id)
+    resp = await client.patch(f"{update_url}", json={"status": "ARCHIVED"})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["status"] == "ARCHIVED"
+
+    # Send a new message — should auto-unarchive
+    create_message_url = client.app.router["create_conversation_message"].url_for(conversation_id=conversation_id)
+    message_body = {"content": "New message after archive", "type": "MESSAGE"}
+    resp = await client.post(f"{create_message_url}", json=message_body)
+    await assert_status(resp, status.HTTP_201_CREATED)
+
+    # Verify the conversation is now ACTIVE again
+    get_url = client.app.router["get_conversation"].url_for(conversation_id=conversation_id)
+    resp = await client.get(f"{get_url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data["status"] == "ACTIVE"

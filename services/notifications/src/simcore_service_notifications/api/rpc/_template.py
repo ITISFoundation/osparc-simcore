@@ -3,6 +3,7 @@ from dataclasses import asdict
 from fastapi import FastAPI
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
+    NotificationsProductNotFoundError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
@@ -24,6 +25,7 @@ router = RPCRouter()
 
 @router.expose(
     reraise_if_error_type=(
+        NotificationsProductNotFoundError,
         NotificationsTemplateContextValidationError,
         NotificationsTemplateNotFoundError,
     )
@@ -34,9 +36,10 @@ async def preview_template(
     request: PreviewTemplateRequest,
 ) -> PreviewTemplateResponse:
     assert app  # nosec
-    service = get_template_service()
+    service = get_template_service(app)
 
-    preview = service.preview_template(
+    preview = await service.preview_template(
+        product_name=request.product_name,
         ref=TemplateRef(**request.ref.model_dump()),
         context=request.context,
     )
@@ -68,7 +71,7 @@ async def search_templates(
     """
     assert app  # nosec
 
-    service = get_template_service()
+    service = get_template_service(app)
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [

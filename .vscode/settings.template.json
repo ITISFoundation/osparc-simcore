@@ -60,6 +60,15 @@
   "[makefile]": {
     "editor.insertSpaces": false
   },
+  "eslint.useFlatConfig": false,
+  "eslint.validate": [
+    "javascript"
+  ],
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
   "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "hadolint.cliOptions": [],
   "ruff.configuration": "${workspaceFolder}/.ruff.toml",

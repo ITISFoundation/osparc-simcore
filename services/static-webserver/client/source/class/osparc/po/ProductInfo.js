@@ -20,6 +20,10 @@ qx.Class.define("osparc.po.ProductInfo", {
 
   members: {
     _buildLayout: function() {
+      this.addListenerOnce("appear", () => this.__fetchProductInfo());
+    },
+
+    __fetchProductInfo: function() {
       const params = {
         url: {
           productName: osparc.product.Utils.getProductName()

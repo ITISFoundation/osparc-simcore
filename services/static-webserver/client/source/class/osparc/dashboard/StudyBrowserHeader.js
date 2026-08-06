@@ -26,7 +26,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10));
+    this._setLayout(new qx.ui.layout.HBox(10).set({
+      alignY: "middle",
+    }));
 
     this.set({
       minHeight: this.self().HEIGHT,
@@ -113,7 +115,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: "text-16",
+            font: "text-14",
             alignY: "middle",
           });
           this._addAt(control, this.self().POS.TITLE);
@@ -136,7 +138,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             padding: [0, 8],
             maxWidth: 22,
             maxHeight: 22,
-            icon: "@FontAwesome5Solid/ellipsis-v/8",
+            icon: "@FontAwesomeSolid/ellipsis-v/8",
             focusable: false,
             alignY: "middle",
           });
@@ -193,7 +195,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case "empty-trash-button": {
-          control = new osparc.ui.form.FetchButton(this.tr("Delete all"), "@FontAwesome5Solid/trash/14").set({
+          control = new osparc.ui.form.FetchButton(this.tr("Delete all"), "@FontAwesomeSolid/trash/14").set({
             appearance: "danger-button",
             allowGrowY: false,
             alignY: "middle",
@@ -288,7 +290,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             workspace.bind("accessRights", this, "accessRights");
             workspace.bind("myAccessRights", this, "myAccessRights");
           } else {
-            this.__setIcon("@FontAwesome5Solid/home/24");
+            this.__setIcon("@FontAwesomeSolid/home/18");
             title.setValue(this.tr("My Workspace"));
           }
           break;
@@ -298,22 +300,22 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           title.setValue(this.tr("Shared Workspaces"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES: {
-          this.__setIcon("@FontAwesome5Solid/copy/24");
+          this.__setIcon("@FontAwesomeSolid/copy/18");
           title.setValue(this.tr("Templates"));
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES: {
-          this.__setIcon("@FontAwesome5Solid/globe/24");
+          this.__setIcon("@FontAwesomeSolid/globe/18");
           title.setValue(this.tr("Public Projects"));
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS: {
-          this.__setIcon("@MaterialIcons/functions/26");
+          this.__setIcon("@MaterialIcons/functions/20");
           title.setValue(this.tr("Functions"));
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH: {
-          this.__setIcon("@FontAwesome5Solid/trash/24");
+          this.__setIcon("@FontAwesomeSolid/trash/18");
           title.setValue(this.tr("Recently Deleted"));
           const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
           description.set({
@@ -323,23 +325,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesomeSolid/search/18");
           title.setValue(this.tr("My Projects results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesomeSolid/search/18");
           title.setValue(this.tr("Templates results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesomeSolid/search/18");
           title.setValue(this.tr("Public Projects results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesomeSolid/search/18");
           title.setValue(this.tr("Functions results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-          this.__setIcon("@FontAwesome5Solid/search/24");
+          this.__setIcon("@FontAwesomeSolid/search/18");
           title.setValue(this.tr("Files results"));
           break;
       }
@@ -423,10 +425,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
         });
-        const edit = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
+        const edit = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesomeSolid/pencil-alt/12");
         edit.addListener("execute", () => this.__editWorkspace(), this);
         menu.add(edit);
-        const share = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
+        const share = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesomeSolid/share-alt/12");
         share.addListener("execute", () => this.__openShareWith(), this);
         menu.add(share);
         editButton.setMenu(menu);

@@ -39,7 +39,7 @@ qx.Class.define("osparc.task.TasksButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/cog/22");
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/cog/22");
           osparc.utils.Utils.addClass(control.getContentElement(), "rotateSlow");
 
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({

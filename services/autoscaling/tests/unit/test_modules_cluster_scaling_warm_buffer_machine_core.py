@@ -27,16 +27,26 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
+from simcore_service_autoscaling.constants import (
+    INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY,
+    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    INSTANCE_PULLING_EC2_TAG_KEY,
+)
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
     DynamicAutoscalingProvider,
 )
 from simcore_service_autoscaling.modules.cluster_scaling._warm_buffer_machines_pool_core import (
     monitor_buffer_machines,
 )
+from simcore_service_autoscaling.modules.ec2 import get_ec2_client
+from simcore_service_autoscaling.utils.warm_buffer_machines import (
+    get_legacy_deactivated_warm_buffer_ec2_tags,
+    get_warm_buffer_ec2_instances,
+)
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef
+from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 
 @pytest.fixture
@@ -156,7 +166,9 @@ async def _test_monitor_buffer_machines(
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances["Reservations"], (
-        f"There should be no instances at the start of the test. Found following instance ids: {[i['InstanceId'] for r in all_instances['Reservations'] if 'Instances' in r for i in r['Instances'] if 'InstanceId' in i]}"
+        "There should be no instances at the start of the test. "
+        "Found following instance ids: "
+        f"{[i['InstanceId'] for r in all_instances['Reservations'] if 'Instances' in r for i in r['Instances'] if 'InstanceId' in i]}"  # noqa: E501
     )
 
     # 1. run, this will create as many buffer machines as needed
@@ -208,8 +220,8 @@ async def _test_monitor_buffer_machines(
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="running",
                 expected_additional_tag_keys=[
-                    "pulling",
-                    "ssm-command-id",
+                    INSTANCE_PULLING_EC2_TAG_KEY,
+                    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                     *list(ec2_instance_custom_tags),
                 ],
                 expected_pre_pulled_images=None,
@@ -239,7 +251,7 @@ async def _test_monitor_buffer_machines(
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="stopped",
                 expected_additional_tag_keys=[
-                    PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                    INSTANCE_PRE_PULLED_IMAGES_EC2_TAG_KEY,
                     *list(ec2_instance_custom_tags),
                 ],
                 expected_pre_pulled_images=pre_pulled_images,
@@ -278,6 +290,53 @@ class _BufferMachineParams:
     instance_state_name: InstanceStateNameType
     pre_pulled_images: list[DockerGenericTag] | None
     tag_keys: list[AWSTagKey]
+
+
+async def test_get_warm_buffer_ec2_instances_recognizes_legacy_tag(
+    minimal_configuration: None,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+    ec2_client: EC2Client,
+    aws_ami_id: str,
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
+    caplog: pytest.LogCaptureFixture,
+):
+    """An EC2 instance tagged before the '.buffer_machine' -> '.warm_buffer_machine' rename must
+    still be discovered as a warm buffer, with a deprecation warning logged."""
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    instance_type = next(iter(ec2_instances_allowed_types_with_only_1_buffered))
+    auto_scaling_mode = DynamicAutoscalingProvider()
+    base_tags = auto_scaling_mode.get_ec2_tags(initialized_app)
+
+    # simulate an instance tagged with the deprecated legacy tag key only (including the '-buffer'
+    # suffix that get_legacy_deactivated_warm_buffer_ec2_tags adds to the Name tag)
+    legacy_tags: list[TagTypeDef] = [
+        {"Key": tag_key, "Value": tag_value}
+        for tag_key, tag_value in get_legacy_deactivated_warm_buffer_ec2_tags(base_tags).items()
+    ]
+    await ec2_client.run_instances(
+        ImageId=aws_ami_id,
+        MaxCount=1,
+        MinCount=1,
+        InstanceType=instance_type,
+        KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+        SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
+        SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS[0],
+        IamInstanceProfile={"Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE},
+        TagSpecifications=[{"ResourceType": "instance", "Tags": legacy_tags}],
+        UserData="echo 'I am pytest'",
+    )
+
+    with caplog.at_level(logging.WARNING):
+        found_instances = await get_warm_buffer_ec2_instances(
+            get_ec2_client(initialized_app),
+            key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+            base_ec2_tags=base_tags,
+        )
+
+    assert len(found_instances) == 1
+    assert found_instances[0].type == instance_type
+    assert any("deprecated" in record.message for record in caplog.records)
 
 
 @pytest.mark.parametrize(

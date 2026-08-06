@@ -34,13 +34,13 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       switch (id) {
         case "edit-slideshow-buttons": {
           control = new qx.ui.container.Stack();
-          const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
+          const editBtn = new qx.ui.form.Button(null, "@FontAwesomeSolid/edit/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             toolTipText: this.tr("Edit App Mode"),
             visibility: osparc.data.Permissions.getInstance().canDo("study.slides.edit") ? "visible" : "excluded"
           });
           editBtn.editing = false;
-          const saveBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/check/14").set({
+          const saveBtn = new qx.ui.form.Button(null, "@FontAwesomeSolid/check/14").set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             toolTipText: this.tr("Save App Mode")
           });
@@ -74,7 +74,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
             btn.set({
               marginLeft: 5,
               marginRight: 5,
-              icon: "@FontAwesome5Solid/ellipsis-h/24",
+              icon: "@FontAwesomeSolid/ellipsis-h/24",
               backgroundColor: "transparent"
             });
           });
@@ -118,7 +118,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
             appearance: "form-button-outlined",
             label: this.tr("App Mode"),
             toolTipText: this.tr("Stop App Mode"),
-            icon: "@FontAwesome5Solid/stop/14",
+            icon: "@FontAwesomeSolid/stop/14",
             alignY: "middle",
             marginRight: 10,
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,

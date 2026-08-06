@@ -64,8 +64,8 @@ class LogDistributor:
             queue = self._log_streamers.get(item.job_id)
             if queue is None:
                 msg = user_message(
-                    f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
-                )
+                    "Could not forward log because a logstreamer associated with job_id={job_id} was not registered"
+                ).format(job_id=item.job_id)
                 raise LogStreamerNotRegisteredError(job_id=item.job_id, details=msg)
             await queue.put(item)
             return True

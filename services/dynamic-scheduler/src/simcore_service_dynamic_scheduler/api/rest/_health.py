@@ -8,7 +8,8 @@ from models_library.errors import (
     RABBITMQ_CLIENT_UNHEALTHY_MSG,
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
-from servicelib.fastapi.docker import is_docker_api_proxy_ready
+from servicelib.fastapi.docker import get_remote_docker_client, is_docker_api_proxy_ready
+from servicelib.fastapi.health import HealthCheckError
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
@@ -27,10 +28,6 @@ router = APIRouter()
 _TEMPORALIO_CLIENT_UNHEALTHY_MSG: Final[str] = "Temporalio cannot be reached!"
 
 
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
-
-
 @router.get("/health", response_class=PlainTextResponse)
 async def healthcheck(
     app: Annotated[FastAPI, Depends(get_app)],
@@ -45,7 +42,7 @@ async def healthcheck(
         Depends(get_temporalio_health_check_from_request),
     ],
 ):
-    if not await is_docker_api_proxy_ready(app, timeout=1):
+    if not await is_docker_api_proxy_ready(get_remote_docker_client(app), timeout=1):
         raise HealthCheckError(DOCKER_API_PROXY_UNHEALTHY_MSG)
 
     if not rabbit_client.healthy or not rabbit_rpc_client.healthy:

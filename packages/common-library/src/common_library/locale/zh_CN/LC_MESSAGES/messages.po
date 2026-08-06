@@ -1,0 +1,2793 @@
+# Chinese translations for osparc-simcore package.
+# Copyright (C) 2026 THE osparc-simcore'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the osparc-simcore package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: osparc-simcore\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-28 20:48+0200\n"
+"PO-Revision-Date: 2026-06-24 16:28+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Translation-Date: 2026-07-28T18:48:16Z\n"
+"X-Translation-Model: ollama/translategemma:4b\n"
+
+# CTX-INTERPRETATION: This message is displayed to users when the backend
+# service of the application is temporarily down or unreachable.
+#: services/api-server/src/simcore_service_api_server/_constants.py:6
+msgid "The service is currently unavailable. Please try again later."
+msgstr "服务当前不可用。请稍后再试。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# an internal issue occurs in the application.
+#: services/api-server/src/simcore_service_api_server/_constants.py:10
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience."
+msgstr "我们这边出了点问题。我们已收到通知，并将尽快解决此问题。感谢您的耐心等待。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when their request to the scientific simulation application fails.
+#: services/api-server/src/simcore_service_api_server/_constants.py:15
+msgid "Something went wrong with your request."
+msgstr "您的请求出现了问题。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when the application fails to communicate with the backend service.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:12
+msgid "An error occurred when contacting the backend service."
+msgstr "联系后端服务时发生错误。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a request
+# to the backend server exceeds the allowed time limit and fails to complete.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:23
+msgid "The backend request timed out."
+msgstr "后端请求超时。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when they provide invalid input data to the scientific simulation
+# application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:28
+msgid "The provided input is not valid."
+msgstr "提供的输入无效。"
+
+# CTX-INTERPRETATION: This string is part of an error message displayed when
+# the encryption inputs provided by the user are invalid, indicating the
+# available node inputs.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:34
+#, python-brace-format
+msgid ""
+"The provided encryption inputs {inputs} are not valid. Available node inputs"
+" '{node_inputs}'"
+msgstr "提供的加密输入 {inputs} 无效。 可用的节点输入 '{node_inputs}'"
+
+# CTX-INTERPRETATION: This string is part of a custom exception message
+# indicating that encryption is not enabled on the current deployment,
+# prompting the user to contact support.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:40
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:52
+msgid ""
+"Encryption is not available on this deployment. Please contact support."
+msgstr "此部署上不支持加密。请联系支持人员。"
+
+# CTX-INTERPRETATION: This string appears in a backend error message,
+# indicating that the encryption service is currently unavailable, advising
+# the user to retry later.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:46
+msgid ""
+"The encryption service is temporarily unavailable. Please try again shortly."
+msgstr "加密服务暂时不可用。请稍后再试。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application fails to fetch the list of available solvers and projects from
+# the server.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:57
+msgid "Unable to retrieve the list of solvers and projects."
+msgstr "无法检索求解器和项目的列表。"
+
+# CTX-INTERPRETATION: This string appears as an error message when the
+# application fails to access or display the list of jobs due to a backend
+# issue.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:62
+msgid "Unable to retrieve the list of jobs."
+msgstr "无法检索作业列表。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to proceed with an action that requires payment in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:67
+msgid "Payment is required to proceed."
+msgstr "需要付款才能继续。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a requested profile is not found in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:72
+msgid "The requested profile could not be found."
+msgstr "请求的配置文件无法找到。"
+
+# CTX-INTERPRETATION: This error message is displayed when a specified
+# program, solver, or project with a particular version cannot be located in
+# the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:78
+#, python-brace-format
+msgid ""
+"The program, solver, or project '{name}' version {version} could not be "
+"found."
+msgstr "程序、求解器或项目 '{name}' 版本 {version} 无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to access a program, solver, or project without the necessary
+# permissions.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:86
+#, python-brace-format
+msgid ""
+"You do not have permission to access the program, solver, or project "
+"'{name}' version {version}."
+msgstr "您没有权限访问程序、求解器或项目 '{name}' 版本 {version}。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a job without the necessary permissions in the scientific
+# simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:93
+#, python-brace-format
+msgid "You do not have permission to access job {project_id}."
+msgstr "您没有权限访问作业{project_id}。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a batch job without the necessary permissions.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:98
+#, python-brace-format
+msgid "You do not have permission to access jobs {project_uuids}."
+msgstr "您没有权限访问作业 {project_uuids}。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a solver or project job that does not exist or cannot be located in
+# the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:103
+#, python-brace-format
+msgid "The solver or project job {project_id} could not be found."
+msgstr "求解器或项目任务{project_id}无法找到。"
+
+# CTX-INTERPRETATION: This error message is displayed when the system cannot
+# locate the specified solver or project jobs identified by the placeholder
+# ⟨0⟩.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:108
+#, python-brace-format
+msgid "The solver or project jobs {project_uuids} could not be found."
+msgstr "求解器或项目作业{project_uuids}无法找到。"
+
+# CTX-INTERPRETATION: This string appears in an error message when the
+# application cannot locate the log file associated with a specific solver or
+# project job identified by a project ID.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:114
+#, python-brace-format
+msgid ""
+"The log file for the solver or project job {project_id} could not be found."
+msgstr "无法找到求解器或项目作业{project_id}的日志文件。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application cannot locate the output data for a specified project.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:121
+#, python-brace-format
+msgid "The output for project {project_id} could not be found."
+msgstr "项目{project_id}的输出找不到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when there is a configuration issue in the scientific simulation
+# application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:126
+msgid "A configuration error occurred."
+msgstr "发生配置错误。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application cannot find the price of a product in the database.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:131
+msgid "The product price could not be found."
+msgstr "未能找到产品价格。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to access a wallet that does not exist in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:136
+msgid "The requested wallet could not be found."
+msgstr "请求的钱包无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a wallet without the necessary permissions in the
+# application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:141
+msgid "You do not have permission to access this wallet."
+msgstr "您没有权限访问此钱包。"
+
+# CTX-INTERPRETATION: This error message appears when the system cannot locate
+# the network ports associated with a specific job or project identified by
+# the placeholder ⟨0⟩.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:146
+#, python-brace-format
+msgid "The ports for job or project {project_id} could not be found."
+msgstr "无法找到作业或项目{project_id}的端口。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application cannot locate the metadata for a specified job or project,
+# identified by a placeholder for the project ID.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:151
+#, python-brace-format
+msgid "The metadata for job or project {project_id} could not be found."
+msgstr "无法找到作业或项目{project_id}的元数据。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application cannot locate the specified pricing unit.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:156
+msgid "The pricing unit could not be found."
+msgstr "未找到定价单位。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a
+# requested pricing plan is not found in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:161
+msgid "The pricing plan could not be found."
+msgstr "未找到定价计划。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to start a project that is already in progress within the
+# application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:166
+msgid "The project has already been started."
+msgstr "项目已经开始。"
+
+# CTX-INTERPRETATION: This string appears as an error message when there are
+# not enough available seats for a specific licensed item in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:171
+#, python-brace-format
+msgid "Not enough available seats for license item {licensed_item_id}."
+msgstr "许可证项目{licensed_item_id}的可用席位不足。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to check
+# out a license item for a service that is currently not running, providing
+# the service ID for reference.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:177
+#, python-brace-format
+msgid ""
+"Unable to check out license item {licensed_item_id} because the dynamic "
+"service is not running. Current service ID: {service_run_id}."
+msgstr "无法签出许可证项{licensed_item_id}，因为动态服务未运行。当前服务ID：{service_run_id}。"
+
+# CTX-INTERPRETATION: This error message is displayed when a specific license
+# item checkout cannot be located in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:186
+#, python-brace-format
+msgid ""
+"The license item checkout {licensed_item_checkout_id} could not be found."
+msgstr "许可证项目结账{licensed_item_checkout_id}无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# necessary assets for a specific job are not found in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:193
+#, python-brace-format
+msgid "The assets for job {job_id} are missing."
+msgstr "作业{job_id}的资产丢失。"
+
+# CTX-INTERPRETATION: This string is used in a scientific simulation
+# application to inform the user that the chatbot service is currently
+# unavailable, likely due to a configuration issue or service outage.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:198
+msgid "The chatbot service is not enabled."
+msgstr "聊天机器人服务未启用。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a task with
+# a specific UUID cannot be located in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+#, python-brace-format
+msgid "Task {task_uuid} could not be found."
+msgstr "任务{task_uuid}无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a solver
+# job has not completed successfully, preventing the retrieval of its output.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:209
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for solver job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr "无法检索求解器作业 '{job_id}' 的输出，因为它未成功完成。当前状态：{state}。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a solver
+# job has not yet stopped, indicating its current status.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
+#, python-brace-format
+msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
+msgstr "求解器任务 '{job_id}' 尚未停止。当前状态：{state}。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to access the output of a project job that has not successfully
+# completed in the scientific simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:226
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for project job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr "无法检索项目作业 '{job_id}' 的输出，因为它未成功完成。当前状态：{state}。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to request solver outputs without sufficient credits in their
+# wallet.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:13
+#, python-brace-format
+msgid ""
+"Wallet '{wallet_name}' has {wallet_credit_amount} credits. Please add "
+"credits before requesting solver outputs."
+msgstr "钱包 '{wallet_name}' 有 {wallet_credit_amount} 个积分。请在请求求解器输出之前添加积分。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a job in
+# the application is missing an associated wallet, identified by a job ID
+# placeholder.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:19
+#, python-brace-format
+msgid "Job {job_id} does not have an associated wallet."
+msgstr "作业{job_id}没有关联的钱包。"
+
+# CTX-INTERPRETATION: This error message appears when a user sets the
+# solver_version parameter without setting the solver_id parameter in the
+# SolverService configuration.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:33
+msgid ""
+"The solver_version parameter is set but solver_id is not. Please provide "
+"both parameters or neither."
+msgstr "已设置 solver_version 参数，但未设置 solver_id 参数。请同时提供这两个参数，或都不提供。"
+
+# CTX-INTERPRETATION: This error message appears when a requested function job
+# cannot be retrieved from the cache, indicating it was not previously stored.
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:12
+msgid "No cached function job was found."
+msgstr "未找到缓存的函数作业。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application fails to process a function job due to a missing project
+# component.
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:17
+msgid "Unable to process the function job."
+msgstr "无法处理函数作业。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# connect a second stream to a job that already has an active stream
+# connection.
+#: services/api-server/src/simcore_service_api_server/exceptions/log_streaming_errors.py:16
+#, python-brace-format
+msgid ""
+"A stream is already connected to {job_id}. Only one stream can be connected "
+"at a time."
+msgstr "已经有一个流连接到{job_id}。一次只能连接一个流。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# an internal issue occurs in the application, indicating that the developers
+# have been notified and are working on a resolution.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:21
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience. [{}]"
+msgstr "我们这边出了点问题。我们已收到通知，并将尽快解决此问题。感谢您的耐心等待。 [{}]"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a
+# specific service is unavailable, indicating a service outage or connectivity
+# issue.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:84
+#, python-brace-format
+msgid "The {service_name} service was unavailable."
+msgstr "{service_name} 服务不可用。"
+
+# CTX-INTERPRETATION: This string is an error message that appears when the
+# application receives an unexpected response from a specified service,
+# indicated by the placeholder ⟨0⟩.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:89
+#, python-brace-format
+msgid "Received unexpected response from {service_name}"
+msgstr "收到来自{service_name}的意外响应"
+
+# CTX-INTERPRETATION: This string is an error message indicating that a
+# specific service has returned an invalid response, and it is used in the
+# context of logging an exception in the software.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:116
+#, python-brace-format
+msgid "{service_name} service returned invalid response"
+msgstr "{service_name} 服务返回了无效的响应"
+
+# CTX-INTERPRETATION: This string appears in an exception message indicating
+# that a request to the backend server has exceeded the time limit and has
+# timed out.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:132
+msgid "Request to backend timed out"
+msgstr "请求到后端超时"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a request to the backend server was unsuccessful.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:144
+msgid "Request to backend failed"
+msgstr "请求到后端失败"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when there is a problem with the task scheduler in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:8
+msgid "An error occurred in the task scheduler."
+msgstr "任务调度器中发生错误。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a specific
+# task identified by a job ID cannot be located in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:13
+#, python-brace-format
+msgid "Task {job_id} could not be found."
+msgstr "任务{job_id}无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to access the results of a task that has not yet finished
+# processing in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:18
+#, python-brace-format
+msgid "Task {job_id} has not completed yet."
+msgstr "任务{job_id}尚未完成。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a task in
+# the scientific simulation application is cancelled by the user or system.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:23
+#, python-brace-format
+msgid "Task {job_id} has been cancelled."
+msgstr "任务{job_id}已被取消。"
+
+# CTX-INTERPRETATION: This string is an error message template used in the
+# application to notify users when a specific task identified by a job ID
+# encounters an error during execution.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:28
+#, python-brace-format
+msgid "Task '{job_id}' encountered an error."
+msgstr "任务 '{job_id}' 遇到错误。"
+
+# CTX-INTERPRETATION: This string appears in the application's logging system
+# when it attempts to forward a log entry but fails because the corresponding
+# logstreamer for a specific job ID is not registered.
+#: services/api-server/src/simcore_service_api_server/services_http/log_streaming.py:67
+#, python-brace-format
+msgid ""
+"Could not forward log because a logstreamer associated with job_id={job_id} "
+"was not registered"
+msgstr "无法转发日志，因为与job_id={job_id}关联的日志流器未注册"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a service
+# running in a container encounters an unexpected error, with placeholders for
+# service key, service version, container ID, and error message.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:9
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} encountered an unexpected error: {error_message}."
+msgstr ""
+"服务 {service_key}:{service_version} 在容器 {container_id} 中运行时遇到意外错误: "
+"{error_message}。"
+
+# CTX-INTERPRETATION: This string is an error message template used to inform
+# users that a specific service running in a container has failed, including
+# details about the service key, version, container ID, and exit code.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:17
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} failed with code {exit_code}."
+msgstr ""
+"服务 {service_key}:{service_version} 在容器 {container_id} 中运行失败，错误代码为 "
+"{exit_code}。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a service
+# running in a container exceeds its memory allocation and is terminated.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:24
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} ran out of memory and was terminated. Current limits are "
+"{service_resources}."
+msgstr ""
+"服务 {service_key}:{service_version} 在容器 {container_id} 中运行时内存不足并被终止。当前限制为 "
+"{service_resources}。"
+
+# CTX-INTERPRETATION: This string is an error message that appears when a
+# service running in a container exceeds a specified timeout period and is
+# terminated.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:33
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} was silent/hanging for longer than {timeout_timedelta} and "
+"was terminated."
+msgstr ""
+"服务 {service_key}:{service_version} 在容器 {container_id} 中运行时静默/挂起超过 "
+"{timeout_timedelta}，已被终止。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a task in
+# the scientific simulation application is cancelled by the user or system.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:40
+msgid "The task was cancelled"
+msgstr "任务已取消"
+
+# CTX-INTERPRETATION: This error message appears when a service in the
+# application expects a file-to-key map but receives zip data instead,
+# prompting the user to adjust their input.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:45
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} {input} uses a file-to-key "
+"{file_to_key_map} map but receives zip data instead. TIP: either pass a "
+"single file or zip file and remove the file-to-key map parameter."
+msgstr ""
+"服务{service_key}:{service_version} {input} "
+"使用文件到键的{file_to_key_map}映射，但接收到的是压缩数据。提示：请传递单个文件或压缩文件，并移除文件到键的映射参数。"
+
+# CTX-INTERPRETATION: This string appears in the `dask_task_models_library`
+# library, specifically within error handling related to secure file
+# operations, indicating a failure to access a file due to encryption key
+# mismatch.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:54
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} could not securely {operation} "
+"the {file_role} file {file_id}: {error_message}. TIP: this usually means the"
+" provided encryption key or context does not match the one used to encrypt "
+"the data."
+msgstr ""
+"该服务 {service_key}:{service_version} 无法安全地访问 {file_role} 文件 {file_id}: "
+"{error_message}。 提示：这通常意味着提供的加密密钥或上下文与用于加密数据时使用的密钥不匹配。"
+
+# CTX-INTERPRETATION: This string appears in the `dask_task_models_library`
+# library, specifically within error handling related to Dask task execution,
+# indicating a failure to decrypt a service.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:64
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} requires decryption, but the "
+"encryption service is currently unavailable: {error_message}. Please contact"
+" support if this persists."
+msgstr ""
+"该服务 {service_key}:{service_version} "
+"需要解密，但加密服务目前不可用：{error_message}。如果问题仍然存在，请联系支持。"
+
+# CTX-INTERPRETATION: This string is a log message indicating the completion
+# status of a project pipeline execution for a specific iteration in a
+# scientific simulation application.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:240
+#, python-brace-format
+msgid ""
+"Project pipeline execution for iteration {iteration} has completed with "
+"status: {run_result}"
+msgstr "项目管道执行的第{iteration}次迭代已完成，状态为：{run_result}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a task scheduling issue occurs in the application.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:861
+msgid ""
+"An unexpected error occurred during task scheduling. Please contact oSparc "
+"support if this issue persists."
+msgstr "在任务调度过程中发生了意外错误。如果此问题仍然存在，请联系oSparc支持。"
+
+# CTX-INTERPRETATION: This string appears in the application's log system when
+# a task involving variable resolution fails to complete in time and will be
+# attempted again.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:892
+msgid "Variable resolution timed out during task scheduling, will retry."
+msgstr "在任务调度期间，变量分辨率超时，将重试。"
+
+# CTX-INTERPRETATION: This message appears when the system fails to allocate
+# computational resources for a task, prompting the user to retry or seek
+# support.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:960
+msgid ""
+"The system has timed out while waiting for computational resources. Please "
+"try running your project again or contact oSparc support if this issue "
+"persists."
+msgstr "系统在等待计算资源时超时。请尝试重新运行您的项目，如果问题仍然存在，请联系oSparc支持。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:1
+msgid "Dear %(first_name)s,"
+msgstr "亲爱的 %(first_name)s，"
+
+# CTX-INTERPRETATION: This string is part of an email template used to thank
+# users for their interest and provide them with a registration link.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:3
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. We are pleased to provide "
+"you with a one-time invitation link to register on the platform."
+msgstr "感谢您对 %(product_name)s 的关注。我们很高兴为您提供一次性注册平台的邀请链接。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users about the trial period of their newly approved account.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:6
+msgid "Your account includes %(count)s day trial period."
+msgid_plural "Your account includes %(count)s days trial period."
+msgstr[0] "您的账户包含 1 天试用期。"
+msgstr[1] "您的账户包含 1 天试用期。"
+
+# CTX-INTERPRETATION: This string appears in an email template used to notify
+# users that their account has been approved, and informs them about receiving
+# free credits.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:10
+msgid "You also receive %(extra_credits)s free credits."
+msgstr "您还将获得 %(extra_credits)s 个免费积分。"
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# inform users that their account has been approved, and provides a link to
+# the registration page.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:20
+msgid "Click %(register_link)s to access the registration page."
+msgstr "点击 %(register_link)s 以访问注册页面。"
+
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# users that their account has been approved and provides instructions for
+# proceeding with registration, along with a support link.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:25
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr "请按照屏幕上的信息进行操作并完成注册。如果遇到任何问题，请随时通过%(support_link)s联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
+msgid "Enjoy %(product_name)s!"
+msgstr "祝您使用 %(product_name)s 愉快！"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
+msgid "Best regards,"
+msgstr "此致敬礼，"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
+msgid "The %(product_name)s Team"
+msgstr "%(product_name)s 团队"
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# inform users that their account has been approved and provides a link to the
+# registration page.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:13
+msgid "Click %(link)s to access the registration page."
+msgstr "点击 %(link)s 以访问注册页面。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users through the account approval registration process, providing contact
+# information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:15
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr "请按照屏幕上的信息进行操作并完成注册。如果遇到任何问题，请随时通过 %(support_email)s 联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Accepted"
+msgstr "您在 %(product_name)s 的注册申请已通过"
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users that their account registration is not eligible for a specific
+# program, thanking them for their interest.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. Unfortunately, your "
+"registration is not eligible for participation in this program."
+msgstr "感谢您对 %(product_name)s 的兴趣。不幸的是，您的注册不符合参加该项目的资格。"
+
+# CTX-INTERPRETATION: This string appears in an email body template, offering
+# further assistance and contact information to the user.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:12
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_link)s."
+msgstr "如对本或我们提供的其他解决方案感兴趣，请通过 %(support_link)s 联系我们。"
+
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# users about account rejection and offer further assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:5
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_email)s."
+msgstr "如对此或我们提供的其他解决方案有进一步兴趣，请通过以下邮箱联系我们：%(support_email)s。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Denied"
+msgstr "您在 %(product_name)s 的注册申请未通过"
+
+# CTX-INTERPRETATION: This string is part of an email body, likely used to
+# address a support team regarding an account request.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:1
+msgid "Dear Support team,"
+msgstr "尊敬的支持团队,"
+
+# CTX-INTERPRETATION: This string appears in an email template, specifically
+# within the body of an email sent to a user when an account request form has
+# been submitted.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:3
+msgid "We have received the following request form for an account:"
+msgstr "我们已收到以下账户申请表："
+
+# CTX-INTERPRETATION: This string appears in an email body template,
+# specifically within the 'account_requested' email, providing information
+# about a requested product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:10
+msgid "Some details about the requested product follow:"
+msgstr "有关请求的产品详情如下："
+
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# a user about the status of their account request, providing additional
+# details and instructions.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:27
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:14
+msgid ""
+"To validate the request form, here you can get further info on this request:"
+msgstr "为了验证请求表单，您可以在此处获取有关此请求的更多信息："
+
+# CTX-INTERPRETATION: This string appears in an email template related to
+# account requests, providing users with a link to ipinfo.io to retrieve their
+# IP address information.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:18
+msgid "TIP: Use https://ipinfo.io/ to find out more information on the IP."
+msgstr "提示：请使用 https://ipinfo.io/ 以获取更多有关 IP 地址的信息。"
+
+# CTX-INTERPRETATION: This string is part of an email subject line, indicating
+# that a user has requested an account, and the email contains information
+# about the requested product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/subject.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/subject.j2:1
+msgid "Request for an Account in %(product_name)s"
+msgstr "请求在%(product_name)s创建账户"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their email address change request has been processed, providing
+# instructions on how to proceed.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:3
+msgid ""
+"You have requested to change the email address linked to your "
+"%(product_name)s account. Please follow the on-screen information in the "
+"link below:"
+msgstr "您已成功更改与您的{{ product_name }} 帐户关联的电子邮件地址。请按照屏幕上的信息，点击以下链接以完成操作："
+
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
+msgid "Change email"
+msgstr "更改邮箱"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further "
+"help."
+msgstr "如需进一步帮助，请随时通过 %(support_link)s 联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:40
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:11
+msgid "Best Regards,"
+msgstr "此致敬礼，"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need further"
+" help."
+msgstr "如需进一步帮助，请随时通过 %(support_email)s 联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/subject.j2:1
+msgid "Change of Your Sign-In Email Address on %(product_name)s"
+msgstr "您在 %(product_name)s 的登录邮箱已更改"
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# notify users about credit reimbursements, likely within a scientific
+# simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:1
+msgid "Dear User,"
+msgstr "尊敬的用户,"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users that a service run on a specific product was interrupted due to a
+# platform issue and therefore not billed.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:11
+msgid ""
+"We want to inform you that your service run (%(service_run)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+"我们想通知您，您在（{{ service_run }}）上的服务运行（{{ product_name }}）由于平台问题而中断，因此未收取费用。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that credits have been reimbursed to their credit account.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:16
+msgid "%(credit_amount)s credits have been reimbursed to your Credit Account."
+msgstr "%(credit_amount)s 信用已退还至您的信用账户。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:7
+msgid "No action is needed on your part."
+msgstr "您无需采取任何操作。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users about a service run that was affected by a platform issue and
+# therefore not billed, using placeholders for the service run ID and product
+# name.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:3
+msgid ""
+"We want to inform you that your service run (%(service_run_id)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+"我们想通知您，您的服务运行 (%(service_run_id)s) 在 %(product_name)s 上受到平台问题的影响，因此未产生费用。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that credits have been reimbursed to their credit account.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:5
+msgid ""
+"%(reimbursed_credits)s credits have been reimbursed to your Credit Account."
+msgstr "%(reimbursed_credits)s 信用额已退还至您的信用账户。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/subject.j2:1
+msgid "Your credits have been reimbursed on %(product_name)s"
+msgstr "您的积分已在 %(product_name)s 上退还"
+
+# CTX-INTERPRETATION: This string is part of an email body, specifically
+# within the 'new_2fa_code' template, informing the user about their two-
+# factor authentication code for their account.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:3
+msgid ""
+"Please find below the Two-factor Authentication sign-in code for your "
+"%(host)s account."
+msgstr "请查阅以下两步验证登录代码，用于您的账户。"
+
+# CTX-INTERPRETATION: This string appears in an email body, informing the user
+# of their two-factor authentication (2FA) code.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
+msgid "Your code is: %(code_display)s"
+msgstr "您的验证码是：%(code_display)s"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
+msgid "Your code is: %(code)s"
+msgstr "您的验证码是：%(code)s"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/subject.j2:1
+msgid "%(code)s is Your 2FA Sign-In Code for %(host)s"
+msgstr "%(code)s 是您在 %(host)s 的双因素身份验证登录码"
+
+# CTX-INTERPRETATION: The string "Register" appears in the email body template
+# for a new invitation, likely prompting the recipient to create an account or
+# register for a service.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:11
+msgid "Register"
+msgstr "注册"
+
+# CTX-INTERPRETATION: This string appears in an email template, guiding the
+# user to follow on-screen instructions and complete the registration process.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:7
+msgid ""
+"Please follow the on-screen information and proceed with your registration."
+msgstr "请按照屏幕上的信息进行操作，并完成注册。"
+
+# CTX-INTERPRETATION: This string appears in an email body, providing contact
+# information for support in case of registration issues.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr "如果在注册过程中出现任何问题，请随时通过 %(support_link)s 联系我们。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to invite
+# users to register for a scientific simulation application, providing a link
+# to the registration page.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
+msgid "Click here to access the registration page: %(link)s"
+msgstr "点击此处访问注册页面：%(link)s"
+
+# CTX-INTERPRETATION: This string is part of an email template used to provide
+# a support email address to the user.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr "如果在任何问题发生时，请随时通过 %(support_email)s 联系我们。"
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# confirm a payment and credit purchase, dynamically inserting the user's
+# name, payment amount, credit amount, and product name.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:10
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price)s for the purchase of %(credits)s. The credits have been added to "
+"your %(product_name)s account, and you are all set to utilize them."
+msgstr ""
+"我们很高兴确认您的支付成功，金额为%(price)s，用于购买%(credits)s。%(credits)s积分已添加到您的%(product_name)s账户，您现在可以开始使用它们。"
+
+# CTX-INTERPRETATION: This string appears in an email body, specifically
+# within the 'body_html.j2' template, providing a link to view or download the
+# payment receipt.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
+msgid "For more details you can view or download your %(receipt_link)s."
+msgstr "为了获取更多详细信息，您可以查看或下载您的收据。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their payment has been successfully processed, including the
+# amount paid, the number of credits purchased, and the product associated
+# with the purchase.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:3
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price_dollars)s USD for the purchase of %(osparc_credits)s credits. The "
+"credits have been added to your %(product_name)s account, and you are all "
+"set to utilize them."
+msgstr ""
+"我们很高兴确认您的支付已成功处理，金额为%(price_dollars)s美元，购买%(osparc_credits)s个积分。积分已添加到您的%(product_name)s账户，您现在可以开始使用它们。"
+
+# CTX-INTERPRETATION: This string appears in an email body template, providing
+# a link to view or download a payment receipt for a user.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:5
+msgid ""
+"For more details you can view or download your receipt: %(invoice_url)s."
+msgstr "如需更多详细信息，您可以查看或下载您的收据：%(invoice_url)s。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their payment for credits has been successfully processed.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/subject.j2:1
+msgid ""
+"Your Payment %(price_dollars)s USD for %(osparc_credits)s Credits Was "
+"Successful"
+msgstr "您的支付 %(price_dollars)s 美元，用于 %(osparc_credits)s 个积分，已成功。"
+
+# CTX-INTERPRETATION: This string is part of an email body, specifically the
+# 'body_html.j2' template, used to confirm a user's registration with a
+# specific product and host.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:5
+msgid ""
+"Thank you for registering with %(product_name)s. Your\n"
+"  account has been successfully created and you can now sign in to %(host)s."
+msgstr "感谢您使用 %(product_name)s 注册。 您的账户已成功创建，您现在可以登录到 %(host)s。"
+
+# CTX-INTERPRETATION: This string appears in the email body, providing a
+# contact link for users who have registered and may require support or
+# assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:8
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to contact\n"
+"  us at %(support_link)s."
+msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_link)s 联系我们。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to confirm
+# a user's registration with a specific product and provide instructions for
+# logging in.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:3
+msgid ""
+"Thank you for registering with %(product_name)s. Your account\n"
+"has been successfully created and you can now sign in to %(host)s."
+msgstr "感谢您使用 {{ product_name }} 注册。您的帐户已成功创建，您现在可以登录到 {{ host }}。"
+
+# CTX-INTERPRETATION: This string appears in an email body template, providing
+# contact information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:6
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to\n"
+"contact us at %(support_email)s."
+msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_email)s 联系我们。"
+
+# CTX-INTERPRETATION: This string is part of an email subject line, welcoming
+# a user to a product, likely after registration, based on the file path and
+# surrounding code.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
+msgid "Welcome to %(product_name)s!"
+msgstr "欢迎使用 {{ product_name }}！"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that a password reset request has been submitted for their specified
+# host.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:3
+msgid "A request to reset your %(host)s password has been made."
+msgstr "已收到重置您的 %(host)s 密码的请求。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:5
+msgid "To complete the process, please click the link below:"
+msgstr "要完成操作，请点击以下链接："
+
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:15
+msgid "Reset Password"
+msgstr "重置密码"
+
+# CTX-INTERPRETATION: This string appears in an email body, indicating that a
+# password reset process failed and providing the reason for the failure.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:8
+msgid "It could not be completed due to the following reason:"
+msgstr "由于以下原因，无法完成："
+
+# CTX-INTERPRETATION: This string appears in an email body template used for
+# password reset requests, informing the user to contact support immediately
+# for security reasons if they did not initiate the request.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:26
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_link)s for security reasons."
+msgstr "如果您没有发起此请求，请立即通过 %(support_link)s 与我们联系，原因是为了安全。"
+
+# CTX-INTERPRETATION: This string appears in an email body, instructing the
+# user to contact support immediately if they did not initiate the password
+# reset request, providing the support email address.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:11
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_email)s for security reasons."
+msgstr "如果您没有发起此请求，请立即通过 %(support_email)s 联系我们，以确保安全。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/subject.j2:1
+msgid "Reset Password on %(host)s"
+msgstr "在 %(host)s 上重置密码"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:3
+msgid ""
+"Great news! %(sharer_name)s has shared a project with you on "
+"%(product_name)s."
+msgstr "好消息！%(sharer_name)s 已在 %(product_name)s 上与您共享了一个项目。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:5
+msgid "To view the project and accept the sharing, follow below:"
+msgstr "要查看项目并接受共享，请按以下步骤操作："
+
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:30
+msgid "Open"
+msgstr "打开"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/subject.j2:1
+msgid "A project was shared with you on %(host)s"
+msgstr "%(host)s 上有人与您共享了一个项目"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users about a new reply in a support conversation, specifically within the
+# 'support_reply' email template.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:8
+msgid "There is a new reply in the Support conversation %(convo_name)s."
+msgstr "在支持对话中，有新的回复。"
+
+# CTX-INTERPRETATION: This string is used in an email template to inform the
+# user about a new reply in a support conversation.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid "There is a new reply in the Support conversation."
+msgstr "在支持对话中，有新的回复。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:28
+msgid "Go to the Conversation"
+msgstr "前往对话"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users about a new reply in a support conversation, specifically within the
+# 'support_reply' email template.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid ""
+"There is a new reply in the Support conversation \"%(conversation_name)s\"."
+msgstr "在支持对话中，有新的回复。"
+
+# CTX-INTERPRETATION: This string appears in an email body template, providing
+# a link to view a conversation related to a support request.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:8
+msgid "View the conversation: %(conversation_url)s"
+msgstr "查看对话：%(conversation_url)s"
+
+# CTX-INTERPRETATION: This string is used in an email subject line to notify
+# the user about a new reply in their support center conversation, with the
+# conversation name as a placeholder.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center \"%(conversation_name)s\" conversation"
+msgstr "您在支持中心 \"%(conversation_name)s\" 对话中的新回复"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center conversation"
+msgstr "您的支持中心对话中有新回复"
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# a user that their account closure request has been received, expressing
+# gratitude and acknowledging their decision.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:3
+msgid ""
+"We have received your account closure request, and we want to say thank you "
+"for being a part of our platform. While we're sad to see you go, we respect "
+"your decision."
+msgstr "我们已收到您的注销请求，感谢您成为我们的平台的一部分。虽然我们很遗憾您离开，但我们尊重您的决定。"
+
+# CTX-INTERPRETATION: This string appears in an email body template, informing
+# users that their projects and data will be retained for a specified period,
+# and providing instructions on how to reactivate their account or have it
+# permanently deleted.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:10
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_link)s. Afterwards it will "
+"be completely deleted from our system."
+msgstr ""
+"您的项目和数据将在指定期间安全地保留。在此期间，如果您决定返回，可以通过发送电子邮件至 %(support_link)s "
+"来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
+
+# CTX-INTERPRETATION: This string appears in an email body template used for
+# notifying users about unregistration, providing a link to the support team.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:14
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to"
+" contact us to %(support_link)s in case of questions or any required "
+"assistance."
+msgstr "我们的支持团队随时为您提供帮助。如有任何疑问或需要协助，请随时通过%(support_link)s联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:9
+msgid "We wish you all the best in your future endeavors."
+msgstr "祝您未来一切顺利。"
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# inform users about the retention policy for their projects and data, and how
+# to reactivate their account if they decide to return.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:5
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period, if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_email)s. Afterwards, it "
+"will be completely deleted from our system."
+msgstr ""
+"您的项目和数据将在{{ retention_days }}天内安全地保留。在此期间，如果您决定退回，可以通过发送电子邮件至 {{ "
+"support_email }} 来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users about contacting support for assistance, specifically mentioning the
+# support email address.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:7
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to"
+" contact us at %(support_email)s in case of questions or any required "
+"assistance."
+msgstr "我们的支持团队随时为您提供帮助。如有任何疑问或需要，请随时通过 %(support_email)s 联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/subject.j2:1
+msgid "Closing Your Account in %(host)s"
+msgstr "正在关闭您在 %(host)s 的账户"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when they attempt to create a new API key with a display name that is
+# already in use.
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:15
+msgid "An API key with this display name already exists"
+msgstr "具有此显示名称的 API 密钥已存在"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the API key required for accessing a service or feature is missing or
+# incorrect.
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:19
+msgid "The requested API key could not be found"
+msgstr "请求的API密钥未找到"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the catalog service of the application is not accessible, indicating that
+# the issue has been recorded for further investigation.
+#: services/web/server/src/simcore_service_webserver/catalog/_constants.py:9
+msgid ""
+"The catalog service is currently unavailable. This issue has been logged and"
+" will be investigated. "
+msgstr "目录服务当前不可用。此问题已被记录并将进行调查。 "
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the catalog service of the application is not available, suggesting them to
+# try accessing it again later.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:84
+msgid ""
+"The catalog service is temporarily unavailable. Please try again later."
+msgstr "目录服务暂时不可用。请稍后再试。"
+
+# CTX-INTERPRETATION: This string appears in an error message displayed to
+# users when they attempt to access a catalog item without the necessary
+# permissions.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:91
+msgid "Access denied: You don't have permission to view this catalog item."
+msgstr "访问被拒绝：您没有权限查看此目录项。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a catalog item in the application that is either non-
+# existent or has been deleted.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:97
+msgid "This catalog item does not exist or has been removed."
+msgstr "此目录项不存在或已被删除。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts an operation that requires a default pricing plan, but none is
+# available.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:101
+msgid "No default pricing plan is available for this operation."
+msgstr "此操作没有可用的默认定价计划。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to access a service that lacks a predefined pricing unit.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:105
+msgid "No default pricing unit is defined for this service."
+msgstr "此服务未定义默认定价单位。"
+
+# CTX-INTERPRETATION: This string is a user message indicating that a feature
+# is under development and can be enabled by setting a specific environment
+# variable.
+#: services/web/server/src/simcore_service_webserver/constants.py:39
+msgid ""
+"Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current "
+"implementation"
+msgstr "正在开发中。使用 WEBSERVER_DEV_FEATURES_ENABLED=1 来启用当前实现"
+
+# CTX-INTERPRETATION: This message appears when a user encounters an error or
+# issue within the application, prompting them to retry or seek support if the
+# problem continues.
+#: services/web/server/src/simcore_service_webserver/constants.py:47
+msgid "Please try again shortly. If the issue persists, contact support."
+msgstr "请稍后再试。如果问题仍然存在，请联系支持。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to access a conversation that does not exist or cannot be found in
+# the application.
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:27
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:34
+msgid "Conversation not found."
+msgstr "对话未找到。"
+
+# CTX-INTERPRETATION: This error message appears when the application receives
+# a request with a conversation type that it does not support, resulting in a
+# bad request error.
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:41
+msgid "Unsupported conversation type."
+msgstr "不支持的会话类型。"
+
+# CTX-INTERPRETATION: This string appears as a user-facing error message when
+# the service is temporarily unavailable due to a potential issue with the
+# director service.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:45
+msgid ""
+"This service is temporarily unavailable. The incident has been logged and "
+"will be investigated. "
+msgstr "此服务暂时不可用。事件已被记录并将进行调查。 "
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a default wallet is necessary for executing computations but is missing.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:83
+msgid ""
+"A default wallet is required for running computations but could not be "
+"found."
+msgstr "运行计算需要一个默认钱包，但未找到。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to run a computation in the application but does not have enough
+# credits in their wallet.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Your wallet does not have sufficient credits to run this computation: "
+"{details}"
+msgstr "您的钱包没有足够的积分来运行此计算：{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a requested folder is not found in the application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:35
+msgid "The requested folder could not be found."
+msgstr "请求的文件夹无法找到。"
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to the
+# user when a requested workspace is not found in the application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:39
+msgid "The requested workspace could not be found."
+msgstr "请求的工作区无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a folder without the necessary permissions in the
+# application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:43
+msgid "You do not have permission to access this folder."
+msgstr "您没有权限访问此文件夹。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a workspace without the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:47
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:32
+msgid "You do not have permission to access this workspace."
+msgstr "您没有权限访问此工作区。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when they attempt to access a folder that is not permitted in the current
+# workspace of the application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:51
+msgid "This folder is not available in the selected workspace."
+msgstr "此文件夹在所选工作区中不可用。"
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to the
+# user when a folder operation fails due to a conflict, with specific details
+# provided in the placeholder.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:55
+#, python-brace-format
+msgid "The folder operation cannot be completed: {details}"
+msgstr "无法完成文件夹操作：{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when there is a conflict in the folder configuration settings of the
+# application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:59
+#, python-brace-format
+msgid "The folder configuration is invalid: {details}"
+msgstr "文件夹配置无效：{details}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to move a project without the necessary permissions in a scientific
+# simulation application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:64
+#, python-brace-format
+msgid ""
+"You do not have permission to move the project with UUID: {project_uuid}. To"
+" locate this project, copy and paste the UUID into the search bar."
+msgstr "您没有权限移动具有 UUID: {project_uuid} 的项目。要定位此项目，请将 UUID 复制并粘贴到搜索栏中。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a folder containing active projects in a scientific simulation
+# application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:72
+msgid ""
+"Cannot move folder to trash because it contains projects that are currently "
+"running. Please stop all running services first and try again."
+msgstr "无法将文件夹移至回收站，因为其中包含当前正在运行的项目。请先停止所有正在运行的服务，然后重试。"
+
+# CTX-INTERPRETATION: This error message appears when the application fails to
+# stop running services in projects within a folder before attempting to
+# delete them.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:79
+msgid ""
+"Something went wrong while stopping running services in projects within this"
+" folder before trashing. Aborting trash."
+msgstr "在删除此文件夹中的项目之前停止正在运行的服务时出现问题。中止删除。"
+
+# CTX-INTERPRETATION: This error message is displayed when the application
+# cannot find the group access rights for a specific function within a
+# specified product.
+#: services/web/server/src/simcore_service_webserver/functions/_functions_exceptions.py:23
+#, python-brace-format
+msgid ""
+"Group access rights could not be found for Function '{function_id}' in "
+"product '{product_name}'."
+msgstr "无法找到产品 '{product_name}' 中功能 '{function_id}' 的组访问权限。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# with a specific ID or email cannot be found in the system.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:27
+#, python-brace-format
+msgid "The user with ID {uid} or email {email} could not be found."
+msgstr "ID为{uid}或电子邮件为{email}的用户无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a group with a specific ID cannot be found in the system.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:31
+#, python-brace-format
+msgid "The group with ID {gid} could not be found."
+msgstr "ID为{gid}的组无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to perform an action requiring group membership, but they are not
+# part of the specified group.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:35
+#, python-brace-format
+msgid "The user is not a member of group {gid}."
+msgstr "用户不是组{gid}的成员。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to join a group they are already a member of.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:39
+#, python-brace-format
+msgid "The user is already a member of group {gid}."
+msgstr "用户已经是组{gid}的成员。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to access a group without the necessary permissions in the
+# application.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:44
+#, python-brace-format
+msgid ""
+"You do not have sufficient rights for {permission} access to group {gid}."
+msgstr "您没有足够的权限进行{permission}访问组{gid}。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# inputs an invalid RRID in the scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:51
+#, python-brace-format
+msgid "The RRID {rrid} is not valid."
+msgstr "RRID {rrid} 无效。"
+
+# CTX-INTERPRETATION: This error message appears when the application attempts
+# to access RRID information from scicrunch.org, but the service is down.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:56
+msgid ""
+"Unable to retrieve RRID information because the scicrunch.org service is "
+"currently unavailable."
+msgstr "无法检索RRID信息，因为scicrunch.org服务当前不可用。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to use an invitation link that is not functioning correctly.
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:9
+msgid "The invitation link appears to be corrupted or incomplete."
+msgstr "邀请链接似乎已损坏或不完整。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to use an invitation link that has already been redeemed in the
+# application.
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:11
+msgid "This invitation has already been used and cannot be used again."
+msgstr "此邀请已被使用，无法再次使用。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to access a market item in the application that does not exist or
+# cannot be found.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:22
+#, python-brace-format
+msgid "The requested market item '{licensed_item_id}' could not be found."
+msgstr "请求的市场项目 '{licensed_item_id}' 无法找到。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to access a credit account without the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:29
+#, python-brace-format
+msgid "You do not have permission to access credit account '{wallet_id}'."
+msgstr "您没有权限访问信用账户 '{wallet_id}'。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to make a purchase but does not have enough credits in their
+# account.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:36
+msgid ""
+"Your credit account does not have sufficient funds to complete this "
+"purchase."
+msgstr "您的信用账户余额不足，无法完成此次购买。"
+
+# CTX-INTERPRETATION: This error message appears when a user selects an
+# incompatible pricing plan for a licensed item in the application.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:43
+msgid ""
+"The selected pricing plan is not valid for this licensed item. Please choose"
+" a different plan."
+msgstr "所选的定价计划对该许可项目无效。请选择其他计划。"
+
+# CTX-INTERPRETATION: This string appears in an error message displayed to
+# users when they attempt to register an email that has already been submitted
+# in the system.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/_rest_exceptions.py:38
+#, python-brace-format
+msgid ""
+"An account for the email {email} was already submitted. If you haven't "
+"received any updates, please contact support."
+msgstr "电子邮件{email}的账户已提交。如果您没有收到任何更新，请联系支持。"
+
+# CTX-INTERPRETATION: This string appears in an error message that is raised
+# when the two-factor authentication login feature is not available in the
+# application.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:209
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
+msgid "2FA login is not available"
+msgstr "双因素认证登录不可用"
+
+# CTX-INTERPRETATION: The string appears as a user-facing message within a
+# registration flow, informing the user that a valid invitation code is
+# required for successful registration.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:156
+msgid "Registration requires a valid invitation code."
+msgstr "注册需要有效的邀请码。"
+
+# CTX-INTERPRETATION: This string appears in a web application when a user
+# attempts to resend a two-factor authentication code via SMS, but their phone
+# number is not registered in the system.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
+msgid "User does not have a phone number registered"
+msgstr "用户没有注册电话号码"
+
+# CTX-INTERPRETATION: This string is used to send a verification code to a
+# user via SMS, typically after a user has requested a two-factor
+# authentication.
+#. @TRANSLATOR SMS message of at most 70 characters
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#, python-brace-format
+msgid "Dear {first_name}, your verification code is {code}"
+msgstr "尊敬的{first_name}，您的验证码是{code}"
+
+# CTX-INTERPRETATION: This string is a user notification message indicating
+# that a verification code has been sent to the user's phone number via SMS.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:5
+#, python-brace-format
+msgid "A verification code has been sent via SMS to {phone_number}."
+msgstr "验证码已通过短信发送到{phone_number}。"
+
+# CTX-INTERPRETATION: This message appears when a user attempts to use two-
+# factor authentication, but the service is temporarily down.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:7
+msgid ""
+"The two-factor authentication service is currently unavailable. Please try "
+"again in a few minutes."
+msgstr "双因素认证服务当前不可用。请几分钟后再试。"
+
+# CTX-INTERPRETATION: This string is a user notification message indicating
+# that their account activation process has been completed successfully.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:10
+msgid "Your account has been successfully activated."
+msgstr "您的账户已成功激活。"
+
+# CTX-INTERPRETATION: This string appears as a user notification message
+# prompting the user to activate their account via an email link before they
+# can log in.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:12
+msgid ""
+"Please activate your account using the activation link we sent to your email"
+" before logging in."
+msgstr "请在登录前使用我们发送到您邮箱的激活链接激活您的账户。"
+
+# CTX-INTERPRETATION: This string is part of a welcome message displayed to a
+# user after successful account creation, indicating they can now log in using
+# their email address.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:16
+#, python-brace-format
+msgid ""
+"Welcome! Your account has been created. You can now sign in as {email}."
+msgstr "欢迎！您的帐户已创建。您现在可以使用电子邮件登录。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to log in with incorrect credentials.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:20
+msgid ""
+"The provided credentials are incorrect. Please verify your email and "
+"password."
+msgstr "提供的凭证不正确。请验证您的电子邮件和密码。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the application fails to send an email.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:24
+msgid "We're unable to send emails at this time. Please try again later."
+msgstr "我们目前无法发送电子邮件。请稍后再试。"
+
+# CTX-INTERPRETATION: This string appears in a user interface message
+# prompting the user to verify their new email address by clicking a link sent
+# to them.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:27
+msgid ""
+"Please check your new email address and click the verification link we sent "
+"you."
+msgstr "请检查您的新电子邮件地址并点击我们发送给您的验证链接。"
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to inform
+# the user that their email address has been updated in the system.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:30
+msgid "Your email address has been successfully updated."
+msgstr "您的电子邮件地址已成功更新。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to register with an email address that is already linked to an
+# existing account.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:32
+msgid ""
+"This email address is already associated with an account. Please sign in or "
+"use a different email address."
+msgstr "此电子邮件地址已与一个账户关联。请登录或使用其他电子邮件地址。"
+
+# CTX-INTERPRETATION: This string appears in the application when a user
+# requests further instructions via email, such as for account verification or
+# password reset.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:35
+#, python-brace-format
+msgid "We've sent an email to {email} with further instructions."
+msgstr "我们已向{email}发送了一封电子邮件，其中包含进一步的说明。"
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to the
+# user after they have successfully logged into the application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:36
+msgid "You have successfully signed in."
+msgstr "您已成功登录。"
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to the
+# user after they have logged out of the application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:37
+msgid "You have successfully signed out."
+msgstr "您已成功注销。"
+
+# CTX-INTERPRETATION: This string appears as a notification message to inform
+# users that they have recently requested a password reset and should check
+# their email for further instructions.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:39
+msgid ""
+"You've recently requested a password reset. Please check your email for the "
+"reset link or wait before requesting another one."
+msgstr "您最近请求了重置密码。请检查您的电子邮件以获取重置链接，或在请求另一个之前稍等。"
+
+# CTX-INTERPRETATION: This message appears when a user attempts to reset their
+# password but is unable to do so due to expired or removed permissions,
+# prompting them to try again or contact support.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:44
+#, python-brace-format
+msgid ""
+"Unable to reset password. Permissions may have expired or been removed. "
+"Please try again, or contact support if the problem continues: "
+"{support_email}"
+msgstr "无法重置密码。权限可能已过期或被移除。请重试，或如果问题仍然存在，请联系支持：{support_email}"
+
+# CTX-INTERPRETATION: This string appears as a notification message to inform
+# the user that their password change request has been successfully processed.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:48
+msgid "Your password has been updated."
+msgstr "您的密码已更新。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to update their password but the entered password and confirmation
+# password do not match.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:50
+msgid "Password and confirmation do not match. Please try again."
+msgstr "密码和确认密码不匹配。请再试一次。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to perform an action that requires a phone number, but none is
+# linked to their account.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:52
+msgid "No phone number is associated with this account."
+msgstr "此账户未关联电话号码。"
+
+# CTX-INTERPRETATION: This message appears when a user attempts to resend a
+# verification code for two-factor authentication but is no longer allowed to
+# do so.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:54
+msgid ""
+"You can no longer resend the verification code. Please restart the "
+"verification process."
+msgstr "您不能再重新发送验证码。请重新启动验证过程。"
+
+# CTX-INTERPRETATION: This message appears when a user attempts to submit a
+# verification code after the allowed time has expired during the login
+# process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:58
+msgid ""
+"You can no longer submit a verification code. Please restart the login "
+"process."
+msgstr "您不能再提交验证码。请重新启动登录过程。"
+
+# CTX-INTERPRETATION: This string is a user-facing error message displayed
+# when a user attempts to register a phone number, which is no longer
+# permitted.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:62
+msgid ""
+"Phone registration is no longer allowed. Please restart the registration "
+"process."
+msgstr "不再允许电话注册。请重新启动注册过程。"
+
+# CTX-INTERPRETATION: This message appears when a user attempts to submit a
+# verification code after the allowed time or attempts have expired, prompting
+# them to restart the process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:66
+msgid ""
+"You can no longer submit a verification code. Please restart the "
+"confirmation process."
+msgstr "您无法再提交验证码。请重新开始确认过程。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to log in or register with an email address that is not found in
+# the system.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:69
+msgid "This email address is not registered."
+msgstr "此电子邮件地址未注册。"
+
+# CTX-INTERPRETATION: This string appears as a user notification message
+# indicating that their account is set for deletion and provides instructions
+# to contact support for reactivation or more information.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:71
+#, python-brace-format
+msgid ""
+"This account is scheduled for deletion. To reactivate it or for more "
+"information, please contact support: {support_email}"
+msgstr "此账户已被安排删除。如需重新激活或了解更多信息，请联系支持：{support_email}"
+
+# CTX-INTERPRETATION: This string is a user-facing message displayed when an
+# account is banned, instructing the user to contact support for further
+# assistance.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:76
+#, python-brace-format
+msgid ""
+"Access to this account is no longer available. Please contact support for "
+"more information: {support_email}"
+msgstr "此账户的访问权限已被取消。请联系支持以获取更多信息：{support_email}"
+
+# CTX-INTERPRETATION: This string is a user-facing error message displayed
+# when an account has expired, prompting the user to contact support for help.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:80
+#, python-brace-format
+msgid ""
+"This account has expired and access is no longer available. Please contact "
+"support for assistance: {support_email}"
+msgstr "此账户已过期，无法再访问。请联系支持以获取帮助：{support_email}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to register an account that has been previously disabled.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:85
+#, python-brace-format
+msgid ""
+"This account has been disabled and cannot be registered again. Please "
+"contact support for details: {support_email}"
+msgstr "此账户已被禁用，无法再次注册。请联系支持以获取详细信息：{support_email}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they enter an invalid verification code during the two-factor authentication
+# process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:90
+msgid ""
+"The verification code entered is not valid. Please enter a valid "
+"verification code or generate a new one."
+msgstr "输入的验证码无效。请输入有效的验证码或生成新的验证码。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# enters an expired or incorrect verification code during the authentication
+# process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:94
+msgid ""
+"The verification code has expired or is incorrect. Please request a new code"
+" and try again."
+msgstr "验证码已过期或不正确。请请求新的验证码并重试。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# inputs an incorrect CAPTCHA during a login or verification process in the
+# application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:97
+msgid "The CAPTCHA entered is incorrect. Please try again."
+msgstr "输入的验证码不正确。请再试一次。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to log in with a password that does not match the one on record for
+# their email address.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:99
+msgid ""
+"The password does not match the one associated with this email address. "
+"Please try again."
+msgstr "密码与此电子邮件地址关联的密码不匹配。请再试一次。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they enter an incorrect password for a unified account login across multiple
+# platforms.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:103
+#, python-brace-format
+msgid ""
+"The password does not match the one associated with this email address.TIP: "
+"Your accounts across multiple platforms have been unified into a single "
+"login. Please try using the password from your {suggested_product} account."
+msgstr ""
+"密码与此电子邮件地址关联的密码不匹配。提示：您在多个平台上的账户已合并为一个登录。请尝试使用您{suggested_product}账户的密码。"
+
+# CTX-INTERPRETATION: This string is a user-facing message that appears when a
+# user is setting or changing their password, indicating the minimum required
+# length for security purposes.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:109
+#, python-brace-format
+msgid ""
+"Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters "
+"for security."
+msgstr "您的密码必须至少包含 {LOGIN_PASSWORD_MIN_LENGTH} 个字符以确保安全。"
+
+# CTX-INTERPRETATION: This string appears as a message to users when they need
+# to contact support for a new invitation to access the application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:113
+msgid "Please contact our support team to request a new invitation."
+msgstr "请联系我们的支持团队以请求新的邀请。"
+
+# CTX-INTERPRETATION: This string appears in a web application context where
+# it is used to display an error message indicating that the user-submitted
+# form contains invalid data.
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:92
+#, python-brace-format
+msgid "The form contains invalid information: '{failed}'"
+msgstr "表单包含无效信息：'{failed}'"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to delete their account but provides incorrect email or password
+# credentials.
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:131
+msgid "Wrong email or password. Please try again to delete this account"
+msgstr "电子邮件或密码错误。请重试以删除此账户。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to send a notification but has not selected any recipients.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:23
+msgid "No active recipients selected."
+msgstr "未选择任何活跃的接收者。"
+
+# CTX-INTERPRETATION: This string appears as an error message when the email
+# settings for a specific product are not configured in the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:30
+#, python-brace-format
+msgid "Email settings for product '{product_name}' are not configured."
+msgstr "产品“{product_name}”的电子邮件设置未配置。"
+
+# CTX-INTERPRETATION: This string appears in an error message when the
+# validation of a context for a notification template fails in the
+# application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:37
+#, python-brace-format
+msgid ""
+"Validation of context failed for notification template '{template_name}'."
+msgstr "通知模板 '{template_name}' 的上下文验证失败。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a
+# notification template for a specific channel cannot be found in the
+# application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:44
+#, python-brace-format
+msgid ""
+"Notification template '{template_name}' for channel '{channel}' not found."
+msgstr "通知模板 '{template_name}' 在频道 '{channel}' 中未找到。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to use an unsupported notification channel in the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:51
+#, python-brace-format
+msgid "Notification channel '{channel}' is not supported."
+msgstr "通知通道 '{channel}' 不受支持。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to send a notification to more recipients than the allowed maximum in
+# the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:58
+#, python-brace-format
+msgid ""
+"The number of recipients ({num_recipients}) exceeds the maximum of "
+"{max_recipients}. Please reduce the number of recipients and try again."
+msgstr "收件人数 ({num_recipients}) 超过了最大限制 {max_recipients}。请减少收件人数后重试。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to make a payment to a digital wallet without having the required
+# permissions.
+#: services/web/server/src/simcore_service_webserver/payments/_onetime_api.py:40
+#, python-brace-format
+msgid ""
+"You do not have the necessary permissions to make payments to wallet "
+"{wallet_id}."
+msgstr "您没有必要的权限来向钱包{wallet_id}进行支付。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# a requested product is not found in the system.
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:16
+msgid "This product could not be found."
+msgstr "找不到该产品。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the service is down due to a configuration problem.
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:21
+msgid "This service is temporarily unavailable due to a configuration issue. "
+msgstr "由于配置问题，此服务暂时不可用。 "
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a folder they do not have permission to access within
+# the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:61
+msgid "Access to this folder is forbidden."
+msgstr "无法访问此文件夹。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to access a folder that does not exist in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:65
+msgid "The requested folder could not be found"
+msgstr "请求的文件夹无法找到"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a
+# specific node cannot be found within a given project in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:73
+#, python-brace-format
+msgid "Node '{node_uuid}' was not found in project '{project_uuid}'."
+msgstr "节点 '{node_uuid}' 在项目 '{project_uuid}' 中未找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a parent
+# node with a specific UUID is not found in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:77
+#, python-brace-format
+msgid "Parent node '{node_uuid}' was not found."
+msgstr "父节点 '{node_uuid}' 未找到。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to run a
+# simulation project node without setting all necessary input values.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:81
+msgid "Required input values for this project node have not been set."
+msgstr "此项目节点的必需输入值尚未设置。"
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint for project
+# management, specifically when a user attempts to duplicate a project that
+# has been moved to the trash.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Cannot duplicate project {project_uuid} because it is in the trash. Restore "
+"it first and try again."
+msgstr "由于该项目已移动到回收站，因此无法复制项目 {project_uuid}。请先恢复该项目，然后再尝试。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a project
+# deletion fails due to a conflict, with placeholders for the project UUID and
+# additional details.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:97
+#, python-brace-format
+msgid "Unable to complete deletion of project '{project_uuid}': {details}"
+msgstr "无法完成删除项目'{project_uuid}'：{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a requested project group is not found in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:103
+#, python-brace-format
+msgid "The requested project group could not be found: {details}"
+msgstr "请求的项目组无法找到：{details}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to perform an action on a project without having the necessary
+# access rights.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:108
+#, python-brace-format
+msgid ""
+"You do not have sufficient access rights to perform this action on project "
+"{project_uuid}."
+msgstr "您没有足够的访问权限来对项目{project_uuid}执行此操作。"
+
+# CTX-INTERPRETATION: This error message appears when a user without the
+# necessary permissions attempts to update the project template type in the
+# application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:115
+msgid ""
+"You do not have sufficient permissions to update the project template type."
+msgstr "您没有足够的权限来更新项目模板类型。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when they attempt to use the project in an unsupported manner.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:121
+msgid "The project cannot be used in this way."
+msgstr "无法以这种方式使用该项目。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# create or modify a project in the application with more nodes than the
+# allowed maximum.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:126
+#, python-brace-format
+msgid ""
+"The project cannot contain more than {max_num_nodes} nodes. Requested: "
+"{requested_num_nodes}."
+msgstr "项目不能包含超过 {max_num_nodes} 个节点。请求的节点数：{requested_num_nodes}。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to access a project that does not exist in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:132
+#, python-brace-format
+msgid "Project {project_uuid} could not be found."
+msgstr "项目{project_uuid}无法找到。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to open more projects than the allowed limit in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:137
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_projects} project/s at once. Please close"
+" another project and retry."
+msgstr "您不能同时打开超过{max_num_projects}个项目。请关闭另一个项目并重试。"
+
+# CTX-INTERPRETATION: This error message appears when a user tries to start a
+# new dynamic service in the application, but the maximum limit of
+# concurrently running services has already been reached.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:144
+msgid ""
+"The maximum number of concurrently running dynamic services has been "
+"reached. Please manually stop a service and retry."
+msgstr "已达到同时运行的动态服务数量上限。请手动停止一个服务并重试。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to change the wallet for a project that has pending
+# transactions.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:152
+msgid ""
+"This project has pending transactions. Changing the wallet is currently not "
+"allowed."
+msgstr "此项目有待处理的交易。目前不允许更改钱包。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to open more sessions than allowed for a single project in the
+# application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:159
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_sessions} session(s) for the same project"
+" at once. Please close another session and retry."
+msgstr "您一次不能为同一个项目打开超过{max_num_sessions}个会话。请关闭另一个会话并重试。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# change the credit account linked to a project that is currently embargoed
+# due to a negative balance from the last transaction.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:167
+#, python-brace-format
+msgid ""
+"Unable to change the credit account linked to the project. The project is "
+"embargoed because the last transaction of {debt_amount} resulted in the "
+"credit account going negative."
+msgstr "无法更改与项目关联的信用账户。由于上一次交易导致信用账户余额为负，项目已被禁运。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to open
+# a project that is restricted due to a negative balance from the last
+# transaction.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:176
+#, python-brace-format
+msgid ""
+"Unable to open the project. The project is embargoed because the last "
+"transaction of {debt_amount} resulted in the credit account going negative."
+msgstr "无法打开项目。由于上一次交易{debt_amount}导致信用账户余额为负，该项目被禁止访问。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when they provide incorrect tag IDs in an HTTP request within the
+# application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:183
+msgid "Invalid tag IDs were provided in the request."
+msgstr "请求中提供了无效的标签ID。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# create or modify a project with an incompatible combination of project type
+# and template type in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:188
+msgid "The project type and template type combination is not valid"
+msgstr "项目类型和模板类型的组合无效"
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to
+# users when they attempt to access a workspace they do not have permission to
+# access.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:198
+#, python-brace-format
+msgid "Access to this workspace is forbidden: {details}"
+msgstr "访问此工作区被禁止：{details}"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to access a workspace that does not exist or cannot be located.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:202
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:36
+#, python-brace-format
+msgid "The requested workspace could not be found: {details}"
+msgstr "请求的工作区无法找到：{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a requested wallet cannot be found in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:210
+#, python-brace-format
+msgid "The requested wallet could not be found: {details}"
+msgstr "请求的钱包无法找到：{details}"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a feature that requires payment, but they do not have permission to
+# use the project's associated wallet.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:215
+#, python-brace-format
+msgid ""
+"Payment is required, but you do not have access to the project's linked "
+"wallet: {details}"
+msgstr "需要付款，但您无权访问项目的关联钱包：{details}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to perform an operation in the application but does not have
+# sufficient credits in their wallet.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:222
+#, python-brace-format
+msgid ""
+"The wallet does not have enough credits to complete this operation: "
+"{details}"
+msgstr "钱包中的积分不足以完成此操作：{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when the default pricing plan is not available in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:232
+msgid "The default pricing plan could not be found."
+msgstr "找不到默认定价计划。"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the default pricing unit is missing or unavailable in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:236
+msgid "The default pricing unit could not be found."
+msgstr "找不到默认定价单位。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to access a conversation that does not exist in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:244
+msgid "The requested conversation could not be found."
+msgstr "请求的对话无法找到。"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a specific conversation message is missing or unavailable in the
+# application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:248
+msgid "The requested conversation message could not be found."
+msgstr "请求的会话消息无法找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the catalog service cannot be accessed due to unavailability.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:256
+msgid "The catalog service is currently unavailable."
+msgstr "目录服务当前不可用。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when the clusters-keeper service cannot be accessed due to it being
+# unavailable.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:260
+msgid "The clusters-keeper service is currently unavailable."
+msgstr "集群管理服务当前不可用。"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the user lacks the necessary permissions to access a specific resource or
+# feature within the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:265
+#, python-brace-format
+msgid "Access denied: You do not have sufficient permissions for {name}."
+msgstr "访问被拒绝：您没有足够的权限访问{name}。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a requested item is not found in the catalog of the scientific
+# simulation application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:271
+#, python-brace-format
+msgid "The requested item '{name}' was not found."
+msgstr "请求的项目 '{name}' 未找到。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a requested
+# item cannot be found in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:275
+#, python-brace-format
+msgid "None of these items '{name}' could be found."
+msgstr "这些项目中没有一个“{name}”能被找到。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when the application fails to stop a dynamic service identified by project
+# and node IDs.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/nodes_rest.py:311
+#, python-brace-format
+msgid "Could not stop dynamic service {project_id}.{node_id}"
+msgstr "无法停止动态服务{project_id}.{node_id}"
+
+# CTX-INTERPRETATION: This error message appears when the application cannot
+# identify the user's session due to a missing socket ID, prompting the user
+# to refresh the page or contact support if the issue continues.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/projects_states_rest.py:115
+msgid ""
+"Data corruption detected: unable to identify your session (socket_id "
+"missing). Please refresh the page and try again. If the problem persists, "
+"contact support."
+msgstr "检测到数据损坏：无法识别您的会话（缺少 socket_id）。请刷新页面并重试。如果问题仍然存在，请联系支持。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a study that is currently active in a scientific simulation
+# application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:30
+#, python-brace-format
+msgid ""
+"Current study is in use and cannot be trashed [project_id={project_uuid}]. "
+"Please stop all services first and try again"
+msgstr "当前研究正在使用中，无法删除 [project_id={project_uuid}]。请先停止所有服务，然后重试。"
+
+# CTX-INTERPRETATION: This string appears in the error handling section of the
+# code, indicating a failure to stop services before attempting to delete or
+# 'trash' them.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:35
+msgid ""
+"Something went wrong while stopping services before trashing. Aborting "
+"trash."
+msgstr "在停止服务以进行删除操作之前出现问题。正在中止删除。"
+
+# CTX-INTERPRETATION: This string is a user-facing error message indicating
+# that the service responsible for tracking resource usage is currently not
+# accessible and suggests retrying after a short period.
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:8
+msgid ""
+"The resource usage tracking service is temporarily unavailable. Please try "
+"again in a few moments."
+msgstr "资源使用跟踪服务暂时不可用。请稍后再试。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application fails to retrieve the resource usage data requested by the user.
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:13
+msgid "The requested resource usage information could not be found."
+msgstr "无法找到请求的资源使用信息。"
+
+# CTX-INTERPRETATION: This string appears as a user message indicating that
+# the user does not have the necessary permissions to access a certain feature
+# or area of the application.
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:5
+msgid "Unauthorized"
+msgstr "未授权"
+
+# CTX-INTERPRETATION: This string is displayed to users when they attempt to
+# authenticate, but the authentication service is currently not available.
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:6
+msgid "Authentication service is temporary unavailable"
+msgstr "认证服务暂时不可用"
+
+# CTX-INTERPRETATION: This message appears when a user attempts to access a
+# study in the application without being logged in.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:11
+msgid ""
+"You must be logged in to access this study. Please log in and try again."
+msgstr "您必须登录才能访问此研究。请登录后重试。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a project by its ID, but the project either does not exist or is not
+# accessible to the user.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:15
+#, python-brace-format
+msgid "The project with ID '{project_id}' could not be found."
+msgstr "ID为'{project_id}'的项目无法找到。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a project that either does not exist or is not shared with
+# them.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:19
+#, python-brace-format
+msgid "The project with ID '{project_id}' is not available or not shared."
+msgstr "ID为'{project_id}'的项目不可用或未共享。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a project that is restricted to registered users only.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:24
+#, python-brace-format
+msgid ""
+"This project is only available for registered users.<br/><br/>Please log in "
+"and try again.<br/><br/>If you don't have an account, please request one at "
+"{support_email}.<br/><br/>"
+msgstr ""
+"此项目仅对注册用户开放。<br/><br/>请登录后重试。<br/><br/>如果您没有账户，请通过 {support_email} "
+"申请。<br/><br/>"
+
+# CTX-INTERPRETATION: This message is displayed to users when the platform has
+# reached its limit for anonymous users, prompting them to try again later or
+# log in with an account.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:32
+msgid ""
+"We have reached the maximum number of anonymous users allowed on the "
+"platform. Please try again later or log in with a registered account."
+msgstr "我们已达到平台允许的匿名用户最大数量。请稍后再试或使用注册账户登录。"
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to
+# users when an unexpected issue occurs in the application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:38
+msgid ""
+"Sorry, something unexpected went wrong! We track these errors automatically,"
+" but if the problem persists please contact us. In the meantime, try "
+"refreshing the page."
+msgstr "抱歉，发生了意外错误！我们会自动跟踪这些错误，但如果问题仍然存在，请联系我们。同时，请尝试刷新页面。"
+
+# CTX-INTERPRETATION: This string appears as an error message to inform the
+# user that their project could not be opened, with the specific error detail
+# provided in the placeholder ⟨0⟩.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:81
+#, python-brace-format
+msgid "Unable to open your project: {public_error}"
+msgstr "无法打开您的项目：{public_error}"
+
+# CTX-INTERPRETATION: This message appears as an error notification when a
+# user without an account attempts to access the application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:109
+msgid ""
+"Access is restricted to registered users.<br/><br/>If you don't have an "
+"account, please contact support to request one.<br/><br/>"
+msgstr "访问仅限于注册用户。<br/><br/>如果您没有账户，请联系支持以申请一个。<br/><br/>"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they provide an invalid link that lacks necessary data or service
+# information.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:143
+msgid ""
+"The link you provided is invalid because it doesn't contain valid "
+"information related to data or a service. Please check the link and make "
+"sure it is correct."
+msgstr "您提供的链接无效，因为它不包含与数据或服务相关的有效信息。请检查链接并确保其正确。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a file type
+# is not supported by any of the registered services in the application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:10
+#, python-brace-format
+msgid "None of the registered services can handle '{file_type}' files."
+msgstr "没有注册的服务可以处理“{file_type}”文件。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to upload a file that is too large for the application to process.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:14
+#, python-brace-format
+msgid "File size {file_size_in_mb} MB exceeds the allowed limit."
+msgstr "文件大小 {file_size_in_mb} MB 超过允许的限制。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a
+# specific service identified by its key and version cannot be located in the
+# application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:18
+#, python-brace-format
+msgid "Service {service_key}:{service_version} could not be found."
+msgstr "服务 {service_key}:{service_version} 无法找到。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# provides a link that is either invalid or incomplete in the context of a
+# scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:22
+msgid "The provided link is invalid or incomplete."
+msgstr "提供的链接无效或不完整。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# maximum number of guest users for the scientific simulation application has
+# been reached, prompting the user to log in with a registered account or try
+# again later.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:27
+msgid ""
+"Maximum number of guest users has been reached. Please log in with a "
+"registered account or try again later."
+msgstr "已达到访客用户的最大数量。请使用注册账户登录或稍后再试。"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a guest
+# user attempts to access a restricted resource in the application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:33
+msgid "Guest users are not allowed to access this resource."
+msgstr "访客用户不允许访问此资源。"
+
+# CTX-INTERPRETATION: This error message is displayed when a project file is
+# detected as corrupted and cannot be accessed by the application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:38
+#, python-brace-format
+msgid ""
+"Project {project_uuid} appears to be corrupted and cannot be accessed "
+"properly."
+msgstr "项目{project_uuid}似乎已损坏，无法正常访问。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to access a tag in the application that either does not exist or
+# they do not have permission to access.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:40
+#, python-brace-format
+msgid "The tag '{tag_id}' could not be found or you don't have access to it."
+msgstr "标签 '{tag_id}' 找不到，或者您没有权限访问它。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to perform an operation on a tag in the application, but the tag is
+# either missing or the user lacks the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:47
+#, python-brace-format
+msgid ""
+"Unable to {operation} tag '{tag_id}'. The tag was not found or you don't "
+"have sufficient access."
+msgstr "无法{operation}标签'{tag_id}'。标签未找到或您没有足够的访问权限。"
+
+# CTX-INTERPRETATION: This string appears as an error message in the
+# application when a user attempts to share a tag with all users, which is not
+# permitted.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:53
+msgid "Sharing with everyone is not allowed."
+msgstr "不允许与所有人共享。"
+
+# CTX-INTERPRETATION: This error message appears when a non-admin user
+# attempts to share a resource with all users in the application.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:58
+msgid ""
+"Sharing with all users is only allowed for admin users (e.g. testers, POs, "
+"...)."
+msgstr "只有管理员用户（例如测试人员、产品负责人等）才允许与所有用户共享。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to share or unshare a tag without having the necessary access
+# rights.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:65
+#, python-brace-format
+msgid ""
+"You don't have sufficient access rights to share (or unshare) tag "
+"'{tag_id}'."
+msgstr "您没有足够的访问权限来共享（或取消共享）标签 '{tag_id}'。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a file with a specific identifier cannot be located in the system.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:26
+#, python-brace-format
+msgid "The file with identifier {file_id} could not be found"
+msgstr "标识符为{file_id}的文件无法找到"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to access a file without the necessary permissions in a scientific
+# simulation application.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:31
+#, python-brace-format
+msgid ""
+"Permission denied: You (user {user_id}) don't have the necessary rights to "
+"access file {file_id} in location {location_id}"
+msgstr "权限被拒绝：您（用户 {user_id}）没有必要的权限访问位置 {location_id} 中的文件 {file_id}"
+
+# CTX-INTERPRETATION: This string appears in an error message displayed to the
+# user when a task in the scientific simulation application is aborted before
+# it can be completed.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:38
+#, python-brace-format
+msgid "Task {job_id} was terminated before completion"
+msgstr "任务{job_id}在完成之前被终止"
+
+# CTX-INTERPRETATION: This string appears in an error message displayed to the
+# user when a task in the scientific simulation application encounters an
+# error.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:43
+#, python-brace-format
+msgid ""
+"Task '{job_id}' encountered an error: {exc_msg} (error type: '{exc_type}')"
+msgstr "任务 '{job_id}' 遇到错误: {exc_msg} (错误类型: '{exc_type}')"
+
+# CTX-INTERPRETATION: This string is a user-facing error message indicating
+# that a specific task identified by a job ID is still in progress and has not
+# yet finished.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:49
+#, python-brace-format
+msgid "Task {job_id} is still running and has not completed yet"
+msgstr "任务{job_id}仍在运行中，尚未完成"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a task with a specified ID cannot be found in the system.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:53
+#, python-brace-format
+msgid "The requested task with ID {job_id} does not exist"
+msgstr "请求的任务ID为{job_id}的任务不存在"
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to the
+# user when the task scheduling system fails due to an internal server error.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:58
+msgid ""
+"The task scheduling system encountered an error. Please try again later"
+msgstr "任务调度系统遇到错误。请稍后再试。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when the application fails to retrieve the current status of a specific task
+# identified by job_id.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:64
+#, python-brace-format
+msgid "Unable to get the current status for task {job_id}"
+msgstr "无法获取任务{job_id}的当前状态"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a project that is currently active and has running services in a
+# scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:30
+msgid ""
+"The project is currently in use and cannot be moved to trash. Please stop "
+"all running services first and try again."
+msgstr "该项目当前正在使用中，无法移至回收站。请先停止所有正在运行的服务，然后重试。"
+
+# CTX-INTERPRETATION: This string appears in an error message when the
+# application fails to stop services before attempting to move them to the
+# trash, resulting in the cancellation of the operation.
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:37
+msgid ""
+"An error occurred while stopping services before moving to trash. The "
+"operation has been cancelled."
+msgstr "在停止服务以移动到回收站之前发生错误。操作已被取消。"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the application failed to create or update user preferences due to a bad
+# request.
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:19
+msgid "Could not create or modify preferences"
+msgstr "无法创建或修改偏好设置"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a specific user preference setting was not found in the system.
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
+#, python-brace-format
+msgid "Provided {frontend_preference_name} not found"
+msgstr "未找到提供的{frontend_preference_name}"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the API token for a specified service could not be located.
+#: services/web/server/src/simcore_service_webserver/user_tokens/_controller/rest/_rest_exceptions.py:16
+#, python-brace-format
+msgid "The API token for '{service}' could not be found."
+msgstr "找不到“{service}”的API令牌。"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# there is no pending registration request associated with the specified email
+# and product name.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:30
+#, python-brace-format
+msgid ""
+"No pending registration request found for email {email} in {product_name}."
+msgstr "在{product_name}中找不到与电子邮件{email}相关的待处理注册请求。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# a requested user profile cannot be accessed due to non-registration or
+# privacy settings.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:37
+msgid ""
+"The requested user could not be found. This may be because the user is not "
+"registered or has privacy settings enabled."
+msgstr "请求的用户无法找到。这可能是因为用户未注册或启用了隐私设置。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to register with a username that is already taken, suggesting an
+# alternative username.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:45
+#, python-brace-format
+msgid ""
+"The username '{user_name}' is already in use. Please try "
+"'{alternative_user_name}' instead."
+msgstr "用户名 '{user_name}' 已被使用。请尝试使用 '{alternative_user_name}'。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to pre-register an account with an email that already has existing
+# accounts associated with it.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:52
+#, python-brace-format
+msgid ""
+"Found {num_found} existing account(s) for '{email}'. Unable to pre-register "
+"an existing user."
+msgstr "找到{num_found}个现有账户为'{email}'。无法为已存在的用户进行预注册。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a product that is still being set up and is not
+# available for use yet.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:59
+msgid ""
+"This product is currently being configured and is not yet ready for use. "
+"Please try again later."
+msgstr "此产品当前正在配置中，尚未准备好使用。请稍后再试。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to proceed with a phone registration process that has not been
+# initiated.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:66
+msgid ""
+"No pending phone registration found. Please start the phone registration "
+"process first."
+msgstr "未找到待处理的电话注册。请先开始电话注册过程。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# their phone registration session is no longer valid or has expired,
+# prompting them to restart the registration process.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:73
+msgid ""
+"Your phone registration session is invalid or has expired. Please start the "
+"phone registration process again."
+msgstr "您的手机注册会话无效或已过期。请重新开始手机注册过程。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# inputs an incorrect confirmation code during phone registration in the
+# application.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:81
+msgid ""
+"The confirmation code you entered is incorrect. Please check and try again."
+msgstr "您输入的确认码不正确。请检查后重试。"
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to the
+# user when a requested product is not found in the system, likely due to an
+# incorrect product ID or the product being unavailable.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:88
+msgid "The requested product could not be found."
+msgstr "请求的产品无法找到。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a pre-registration that does not exist in the system.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:95
+msgid "The requested pre-registration was not found."
+msgstr "请求的预注册未找到。"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a request has already been reviewed and cannot be changed or moved.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:102
+msgid "This request was already reviewed and cannot be moved."
+msgstr "此请求已被审核，无法移动。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to link
+# a request to an account that has already been associated with another
+# account, preventing further action.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:109
+msgid ""
+"This request is already linked to a created account and cannot be moved."
+msgstr "此请求已链接到一个已创建的账户，无法移动。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to register with an email that is already associated with an
+# existing request in the product.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:116
+msgid "A request with this email already exists in the target product."
+msgstr "目标产品中已存在使用此电子邮件的请求。"
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# attempts to access a product that is not available in the system.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:72
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:205
+#, python-brace-format
+msgid ""
+"Invalid product '{product_name}'. The specified product does not exist."
+msgstr "无效的产品 '{product_name}'。指定的产品不存在。"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# makes too many requests to the application in a short period.
+#: services/web/server/src/simcore_service_webserver/utils_rate_limiting.py:20
+msgid ""
+"Requests are being made too frequently. Please wait a moment before trying "
+"again."
+msgstr "请求过于频繁。请稍等片刻后再试。"
+
+# CTX-INTERPRETATION: This message appears when a user attempts to make a
+# payment for a product, but the pricing information has not been set up in
+# the system.
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:6
+msgid ""
+"Payments are not currently available for this product as pricing has not "
+"been configured."
+msgstr "由于尚未配置定价，目前无法为此产品付款。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to make
+# a payment but their account lacks necessary billing information.
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:11
+msgid ""
+"Unable to process payment because required billing information (such as "
+"country for tax purposes) is missing from your account. Please contact "
+"support to complete your billing setup."
+msgstr "无法处理付款，因为您的账户缺少必要的账单信息（例如用于税务目的的国家）。请联系支持以完成您的账单设置。"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the payment processing service is down, advising them to contact support for
+# assistance.
+#: services/web/server/src/simcore_service_webserver/wallets/_handlers.py:88
+msgid ""
+"Payment processing is currently unavailable. Please hold off on retrying and"
+" contact support for help completing your payment. Our team has been "
+"notified and is already looking into it."
+msgstr "支付处理目前不可用。请暂时不要重试，并联系支持以帮助完成您的支付。我们的团队已收到通知，并正在调查此问题。"
+
+# CTX-INTERPRETATION: This string appears in an error message template used to
+# inform users about invalid parameters in the request path of an HTTP
+# request.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:24
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request path"
+msgstr "请求路径中的参数“{failed}”无效"
+
+# CTX-INTERPRETATION: This string appears in the context of handling HTTP
+# errors, specifically when a request query contains invalid parameters.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:25
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request query"
+msgstr "请求查询中无效的参数 '{failed}'"
+
+# CTX-INTERPRETATION: This string appears in the context of handling HTTP
+# errors, specifically when there are invalid parameters in the request
+# headers of a web request.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:26
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request headers"
+msgstr "请求头中无效的参数“{failed}”"
+
+# CTX-INTERPRETATION: This string appears in an error message template
+# indicating that there are invalid fields in the request body of an HTTP
+# request.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:27
+#, python-brace-format
+msgid "Invalid field/s '{failed}' in request body"
+msgstr "请求正文中无效的字段 '{failed}'"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a specific workspace group in the application, but the system cannot
+# locate it.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:26
+#, python-brace-format
+msgid ""
+"The requested workspace {workspace_id} group {group_id} could not be found."
+msgstr "请求的工作区{workspace_id}组{group_id}无法找到。"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a workspace in the application while there are active projects
+# running, prompting them to stop all services before retrying.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:42
+msgid ""
+"Unable to delete workspace because one or more projects are currently "
+"running. Please stop all running services and try again."
+msgstr "无法删除工作区，因为一个或多个项目正在运行。请停止所有正在运行的服务，然后重试。"
+
+# CTX-INTERPRETATION: This error message appears when the application fails to
+# stop running services in projects within a workspace before attempting to
+# delete them.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:49
+msgid ""
+"Something went wrong while stopping running services in projects within this"
+" workspace before trashing. Aborting trash."
+msgstr "在删除工作区内项目之前停止运行服务时出现问题。中止删除。"
+
+# CTX-INTERPRETATION: This string is a user-facing error message that appears
+# when an internal error occurs in the application, prompting the user to
+# report the issue if it continues.
+#: packages/service-library/src/servicelib/aiohttp/rest_middlewares.py:37
+msgid ""
+"We apologize for the inconvenience. The issue has been recorded, please "
+"report it if it persists."
+msgstr "我们对给您带来的不便深表歉意。问题已被记录，如果问题持续，请报告。"
+
+# CTX-INTERPRETATION: This message appears in the application's user
+# interface, prompting the user to activate their account by clicking a
+# provided link.
+#~ msgid "Please activate your account via the link below:"
+#~ msgstr "请通过以下链接激活您的账户："
+
+#~ msgid "Activate"
+#~ msgstr "激活"
+
+# CTX-INTERPRETATION: This error message is displayed when the system cannot
+# locate the project owner's access rights within the project's permissions
+# settings.
+#~ msgid "The project owner could not be found in the project's access rights."
+#~ msgstr "在项目的访问权限中找不到项目所有者。"

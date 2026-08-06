@@ -2,9 +2,10 @@ import asyncio
 import logging
 from collections import defaultdict
 from collections.abc import AsyncIterator, Generator, MutableMapping
-from typing import Final
+from typing import Annotated, Final
 
 from aiohttp import web
+from annotated_types import doc
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_state import RUNNING_STATE_COMPLETED_STATES
@@ -28,16 +29,17 @@ from simcore_sdk.node_ports_common.exceptions import ProjectNotFoundError
 
 from ..projects import _nodes_service, _projects_service
 from ..rabbitmq import get_rabbitmq_client
-from ..socketio.messages import (
+from ..socketio import socketio_service
+from ..socketio.constants import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
-    send_message_to_project_room,
-    send_message_to_standard_group,
-    send_message_to_user,
 )
-from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
-from ..wallets import api as wallets_service
+from ..socketio.models import (
+    WebSocketNodeProgress,
+    WebSocketProjectProgress,
+)
+from ..wallets.wallets_service import list_wallet_groups_with_read_access_by_wallet
 from . import project_logs
 from ._rabbitmq_consumers_common import SubscribeArgumentsTuple, subscribe_to_rabbitmq
 
@@ -71,7 +73,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
         message = WebSocketNodeProgress.from_rabbit_message(rabbit_message).to_socket_dict()
 
     if message:
-        await send_message_to_project_room(
+        await socketio_service.send_message_to_project_room(
             app,
             project_id=rabbit_message.project_id,
             message=message,
@@ -83,7 +85,9 @@ def _is_computational_node(node_key: str) -> bool:
     return "/comp/" in node_key
 
 
-async def _computational_pipeline_status_message_parser(app: web.Application, data: bytes) -> bool:
+async def _computational_pipeline_status_message_parser(
+    app: web.Application, data: bytes
+) -> Annotated[bool, doc("ACKs whether message was processed")]:
     rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
     try:
         project = await _projects_service.get_project_for_user(
@@ -93,32 +97,33 @@ async def _computational_pipeline_status_message_parser(app: web.Application, da
             include_state=True,
         )
     except ProjectNotFoundError:
+        # NOTE: the project is gone (e.g. deleted by the user): nothing to notify,
+        # so the message is still considered as processed (acked, not retried)
         _logger.warning(
             "Cannot notify user %s about project %s status: project not found",
             rabbit_message.user_id,
             rabbit_message.project_id,
         )
-        return True  # <-- telling RabbitMQ that message was processed
-
-    if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
-        # the pipeline finished, the frontend needs to update all computational nodes
-        computational_node_ids = (
-            n.node_id
-            for n in await _nodes_service.get_project_nodes(app, project_uuid=project["uuid"])
-            if _is_computational_node(n.key)
-        )
-        await limited_gather(
-            *[_projects_service.notify_project_node_update(app, project, n_id) for n_id in computational_node_ids],
-            limit=10,  # notify 10 nodes at a time
-        )
-    await _projects_service.notify_project_state_update(app, project)
+    else:
+        if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
+            # the pipeline finished, the frontend needs to update all computational nodes
+            computational_node_ids = (
+                n.node_id
+                for n in await _nodes_service.get_project_nodes(app, project_uuid=project["uuid"])
+                if _is_computational_node(n.key)
+            )
+            await limited_gather(
+                *[_projects_service.notify_project_node_update(app, project, n_id) for n_id in computational_node_ids],
+                limit=10,  # notify 10 nodes at a time
+            )
+        await _projects_service.notify_project_state_update(app, project)
 
     return True
 
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.model_validate_json(data)
-    await send_message_to_user(
+    await socketio_service.send_message_to_user(
         app,
         rabbit_message.user_id,
         message=SocketMessageDict(
@@ -131,7 +136,7 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
 
 async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = EventRabbitMessage.model_validate_json(data)
-    await send_message_to_user(
+    await socketio_service.send_message_to_user(
         app,
         rabbit_message.user_id,
         message=SocketMessageDict(
@@ -179,12 +184,10 @@ async def _webserver_internal_events_message_parser(app: web.Application, data: 
 
 async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
-    wallet_groups = await wallets_service.list_wallet_groups_with_read_access_by_wallet(
-        app, wallet_id=rabbit_message.wallet_id
-    )
+    wallet_groups = await list_wallet_groups_with_read_access_by_wallet(app, wallet_id=rabbit_message.wallet_id)
     rooms_to_notify: Generator[GroupID] = (item.gid for item in wallet_groups)
     for room in rooms_to_notify:
-        await send_message_to_standard_group(
+        await socketio_service.send_message_to_standard_group(
             app,
             room,
             message=SocketMessageDict(

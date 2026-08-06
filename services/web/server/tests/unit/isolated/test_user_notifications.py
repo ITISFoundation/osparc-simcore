@@ -67,7 +67,7 @@ def test_get_notification_key(user_id: UserID):
                     "product": "osparc",
                 }
             ),
-            id="a_new_id_is_alway_recreated",
+            id="a_new_id_is_always_recreated",
         ),
         pytest.param(
             UserNotificationCreate.model_validate(

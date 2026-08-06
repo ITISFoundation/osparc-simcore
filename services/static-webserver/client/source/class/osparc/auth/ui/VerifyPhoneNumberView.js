@@ -180,7 +180,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         validateCodeField.setEnabled(false);
         validateCodeBtn.setFetching(false);
         validateCodeBtn.setEnabled(false);
-        validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
+        validateCodeBtn.setIcon("@FontAwesomeSolid/check/12");
         this.fireDataEvent("done", msg);
       };
 

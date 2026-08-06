@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG, REDIS_CLIENT_UNHEALTHY_MSG
+from servicelib.fastapi.health import HealthCheckError
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 
@@ -20,11 +21,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
-
-
-@router.get("/", response_class=PlainTextResponse)
+@router.get("/", response_class=PlainTextResponse, response_model=None)
 async def healthcheck(
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
     rabbitmq_rpc_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client_from_request)],

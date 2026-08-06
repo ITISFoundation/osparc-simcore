@@ -4,7 +4,6 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
@@ -19,6 +18,10 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.base_repository import BaseRepository
+from ._projects_repository_legacy_utils import (
+    get_project_workbench,
+    get_projects_workbenches,
+)
 from .models import ProjectDBGet, ProjectJobDBGet
 
 _logger = logging.getLogger(__name__)
@@ -34,22 +37,28 @@ def _apply_job_parent_resource_name_filter(query: sa.sql.Select, prefix: str) ->
     return query.where(projects_to_jobs.c.job_parent_resource_name.like(f"{prefix}%"))
 
 
-def _apply_custom_metadata_filter(query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]) -> sa.sql.Select:
+def _apply_custom_metadata_filter(
+    query: sa.sql.Select,
+    metadata_fields: list[tuple[str, str]],
+    *,
+    match_all: bool = False,
+) -> sa.sql.Select:
     """Apply metadata filters to query.
 
-    For PostgreSQL JSONB fields, we need to extract the text value using ->> operator
+    For PostgreSQL JSONB fields, we extract the text value using ->> operator
     before applying string comparison operators like ILIKE.
+
+    When match_all=False (default), uses OR logic. When match_all=True, uses AND logic.
     """
-    assert any_metadata_fields  # nosec
+    assert metadata_fields  # nosec
 
     metadata_fields_ilike = []
-    for key, pattern in any_metadata_fields:
-        # Use ->> operator to extract the text value from JSONB
-        # Then apply ILIKE for case-insensitive pattern matching
+    for key, pattern in metadata_fields:
         sql_pattern = pattern.replace("*", "%")  # Convert glob-like pattern to SQL LIKE
         metadata_fields_ilike.append(projects_metadata.c.custom[key].astext.ilike(sql_pattern))
 
-    return query.where(sa.or_(*metadata_fields_ilike))
+    combine = sa.and_ if match_all else sa.or_
+    return query.where(combine(*metadata_fields_ilike))
 
 
 class ProjectJobsRepository(BaseRepository):
@@ -88,8 +97,10 @@ class ProjectJobsRepository(BaseRepository):
         user_id: UserID,
         pagination_offset: int,
         pagination_limit: int,
-        filter_by_job_parent_resource_name_prefix: str | None = None,
-        filter_any_custom_metadata: list[tuple[str, str]] | None = None,
+        filter_by_job_parent_resource_name_prefix: str | None,
+        filter_any_custom_metadata: list[tuple[str, str]] | None,
+        filter_all_custom_metadata: list[tuple[str, str]] | None,
+        filter_by_project_uuids: list[ProjectID] | None,
     ) -> tuple[int, list[ProjectJobDBGet]]:
         """Lists projects marked as jobs for a specific user and product
 
@@ -141,6 +152,11 @@ class ProjectJobsRepository(BaseRepository):
         )
 
         # Step 3: Apply filters
+        if filter_by_project_uuids:
+            access_query = access_query.where(
+                projects_to_jobs.c.project_uuid.in_([f"{pid}" for pid in filter_by_project_uuids])
+            )
+
         if filter_by_job_parent_resource_name_prefix:
             access_query = _apply_job_parent_resource_name_filter(
                 access_query, filter_by_job_parent_resource_name_prefix
@@ -148,6 +164,9 @@ class ProjectJobsRepository(BaseRepository):
 
         if filter_any_custom_metadata:
             access_query = _apply_custom_metadata_filter(access_query, filter_any_custom_metadata)
+
+        if filter_all_custom_metadata:
+            access_query = _apply_custom_metadata_filter(access_query, filter_all_custom_metadata, match_all=True)
 
         # Step 4. Convert access_query to a subquery
         base_query = access_query.subquery()
@@ -159,7 +178,6 @@ class ProjectJobsRepository(BaseRepository):
         list_query = (
             sa.select(
                 *_PROJECT_DB_COLS,
-                projects.c.workbench,
                 base_query.c.job_parent_resource_name,
                 base_query.c.storage_assets_deleted,
             )
@@ -183,7 +201,16 @@ class ProjectJobsRepository(BaseRepository):
             assert isinstance(total_count, int)  # nosec
 
             result = await conn.execute(list_query)
-            projects_list = TypeAdapter(list[ProjectJobDBGet]).validate_python(result.fetchall())
+            rows = result.all()
+
+            # Batch-fetch all workbenches in a single query
+            project_uuids = [row.uuid for row in rows]
+            workbenches = await get_projects_workbenches(conn, project_uuids)
+
+            projects_list = []
+            for project_row in rows:
+                workbench = workbenches.get(project_row.uuid, {})
+                projects_list.append(ProjectJobDBGet.model_validate({**project_row._asdict(), "workbench": workbench}))
 
             return total_count, projects_list
 
@@ -200,7 +227,6 @@ class ProjectJobsRepository(BaseRepository):
         query = (
             sa.select(
                 *_PROJECT_DB_COLS,
-                projects.c.workbench,
                 projects_to_jobs.c.job_parent_resource_name,
                 projects_to_jobs.c.storage_assets_deleted,
             )
@@ -223,4 +249,6 @@ class ProjectJobsRepository(BaseRepository):
             row = result.first()
             if row is None:
                 return None
-            return TypeAdapter(ProjectJobDBGet).validate_python(row)
+
+            workbench = await get_project_workbench(conn, row.uuid)
+            return ProjectJobDBGet.model_validate({**row._asdict(), "workbench": workbench})

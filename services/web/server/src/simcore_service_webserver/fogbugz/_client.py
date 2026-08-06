@@ -186,7 +186,10 @@ class FogbugzRestClient:
         elif current_status.lower().startswith("closed"):
             cmd = "reopen"
         else:
-            msg = f"Cannot reopen case {case_id} with status '{current_status}'. Only resolved or closed cases can be reopened."
+            msg = (
+                f"Cannot reopen case {case_id} with status '{current_status}'."
+                " Only resolved or closed cases can be reopened."
+            )
             raise FogbugzClientBaseError(msg)
 
         json_payload = {
@@ -239,7 +242,8 @@ async def setup_fogbugz_rest_client(app: web.Application) -> None:
                 raise FogbugzClientBaseError(msg)
         else:
             _logger.info(
-                "Product '%s' has support conversation disabled (therefore Fogbugz integration is not necessary for this product)",
+                "Product '%s' has support conversation disabled "
+                "(therefore Fogbugz integration is not necessary for this product)",
                 product.name,
             )
 

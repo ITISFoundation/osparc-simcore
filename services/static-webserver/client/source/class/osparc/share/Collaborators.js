@@ -114,7 +114,7 @@ qx.Class.define("osparc.share.Collaborators", {
       const copyLinkBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy link"));
       copyLinkBtn.addListener("execute", () => {
         if (osparc.utils.Utils.copyTextToClipboard(link)) {
-          copyLinkBtn.setIcon("@FontAwesome5Solid/check/12");
+          copyLinkBtn.setIcon("@FontAwesomeSolid/check/12");
         }
       });
       hBox.add(copyLinkBtn);
@@ -152,7 +152,7 @@ qx.Class.define("osparc.share.Collaborators", {
         const copyLinkBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy link"));
         copyLinkBtn.addListener("execute", () => {
           if (osparc.utils.Utils.copyTextToClipboard(link)) {
-            copyLinkBtn.setIcon("@FontAwesome5Solid/check/12");
+            copyLinkBtn.setIcon("@FontAwesomeSolid/check/12");
           }
         });
         hBox.add(copyLinkBtn);
@@ -506,13 +506,13 @@ qx.Class.define("osparc.share.Collaborators", {
           if (!("getUserId" in collab)) {
             // organization
             if (everyoneGroupIds.includes(parseInt(gid))) {
-              collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+              collaborator["thumbnail"] = "@FontAwesomeSolid/globe/32";
               collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE; // needed for sorting per product related groups
             } else if (supportGroup && supportGroup.getGroupId() === parseInt(gid)) {
-              collaborator["thumbnail"] = "@FontAwesome5Solid/question-circle/32";
+              collaborator["thumbnail"] = "@FontAwesomeSolid/question-circle/32";
               collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT; // needed for sorting per product related groups
             } else if (!collaborator["thumbnail"]) {
-              collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
+              collaborator["thumbnail"] = "@FontAwesomeSolid/users/26";
             }
           }
           collaborator["accessRights"] = accessRights[gid];

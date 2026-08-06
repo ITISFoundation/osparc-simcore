@@ -3,8 +3,7 @@ import logging
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.projects import ProjectID
-from models_library.users import UserID
-from pydantic import TypeAdapter
+from models_library.users import UserID, UserIDAdapter
 from servicelib.db_asyncpg_utils import create_async_engine_and_database_ready
 from settings_library.node_ports import NodePortsSettings
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
@@ -15,7 +14,7 @@ from simcore_postgres_database.utils_comp_run_snapshot_tasks import (
 from simcore_postgres_database.utils_comp_runs import get_latest_run_id_for_project
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .exceptions import NodeNotFound, ProjectNotFoundError
+from .exceptions import NodeNotFoundError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -33,6 +32,7 @@ async def _get_node_from_db(project_id: str, node_uuid: str, connection: AsyncCo
             (comp_tasks.c.node_id == node_uuid) & (comp_tasks.c.project_id == project_id),
         )
     )
+    assert rows_count is not None  # nosec
     if rows_count > 1:
         _logger.error("the node id %s is not unique", node_uuid)
     result = await connection.execute(
@@ -40,8 +40,7 @@ async def _get_node_from_db(project_id: str, node_uuid: str, connection: AsyncCo
     )
     node = result.one_or_none()
     if not node:
-        _logger.error("the node id %s was not found", node_uuid)
-        raise NodeNotFound(node_uuid)
+        raise NodeNotFoundError(node_uuid, project_id=project_id)
     return node
 
 
@@ -83,7 +82,7 @@ class DBContextManager:
     async def _create_db_engine(application_name: str) -> AsyncEngine:
         settings = NodePortsSettings.create_from_envs()
         engine = await create_async_engine_and_database_ready(
-            settings.POSTGRES_SETTINGS, f"{application_name}-simcore-sdk"
+            settings.POSTGRES_SETTINGS, f"{application_name}-simcore-sdk", tracing_config=None
         )
         assert isinstance(engine, AsyncEngine)  # nosec
         return engine
@@ -167,4 +166,4 @@ class DBManager:
             )
             if prj_owner is None:
                 raise ProjectNotFoundError(project_id)
-        return TypeAdapter(UserID).validate_python(prj_owner)
+        return UserIDAdapter.validate_python(prj_owner)

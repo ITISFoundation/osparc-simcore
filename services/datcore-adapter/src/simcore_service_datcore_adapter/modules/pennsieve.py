@@ -9,6 +9,7 @@ from typing import Any, Final, TypedDict, cast
 import boto3
 from aiocache import SimpleMemoryCache  # type: ignore[import-untyped]
 from fastapi.applications import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData,
     DataType,
@@ -27,12 +28,14 @@ from tenacity.stop import stop_after_attempt
 from ..core.settings import PennsieveSettings
 from ..models.files import DatCorePackageMetaData
 from ..models.user import Profile
-from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
 logger = logging.getLogger(__name__)
 
 Total = int
-_GATHER_MAX_CONCURRENCY = 10
+_GATHER_MAX_CONCURRENCY: Final[int] = 10
+
+_PAGE_SIZE: Final[int] = 1000
 
 
 def _to_file_meta_data(package: dict[str, Any], files: list[DatCorePackageMetaData], base_path: Path) -> FileMetaData:
@@ -406,7 +409,6 @@ class PennsieveApiClient(BaseServiceClientApi):
 
         file_meta_data = []
         cursor = ""
-        PAGE_SIZE = 1000
 
         num_packages, dataset_details = await logged_gather(
             self._get_dataset_packages_count(api_key, api_secret, dataset_id),
@@ -417,7 +419,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
         # get all data packages inside the dataset
         all_packages: dict[str, dict[str, Any]] = {}
-        while resp := await self._get_dataset_packages(api_key, api_secret, dataset_id, PAGE_SIZE, cursor):
+        while resp := await self._get_dataset_packages(api_key, api_secret, dataset_id, _PAGE_SIZE, cursor):
             cursor = resp.get("cursor")  # type: ignore[assignment]
             assert isinstance(cursor, str | None)  # nosec
             all_packages.update({p["content"]["id"]: p for p in resp.get("packages", [])})
@@ -488,9 +490,10 @@ class PennsieveApiClient(BaseServiceClientApi):
         await self._request(api_key, api_secret, "POST", "/data/delete", json={"things": [obj_id]})
 
 
-def setup(app: FastAPI, settings: PennsieveSettings) -> None:
-    setup_client_instance(
+def configure(app: FastAPI, app_lifespan: LifespanManager[FastAPI], settings: PennsieveSettings) -> None:
+    configure_client_instance(
         app,
+        app_lifespan,
         PennsieveApiClient,
         api_baseurl=f"{settings.PENNSIEVE_API_URL}",
         api_general_timeout=settings.PENNSIEVE_API_GENERAL_TIMEOUT,

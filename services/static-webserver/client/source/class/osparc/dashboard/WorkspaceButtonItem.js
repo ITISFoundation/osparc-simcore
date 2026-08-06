@@ -131,10 +131,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
             minHeight: this.self().MENU_BTN_DIMENSIONS,
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
-            padding: [0, 8, 0, 8],
+            padding: 0,
+            center: true,
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
@@ -198,7 +199,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS ||
           studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES
         ) {
-          const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
+          const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesomeSolid/pencil-alt/12");
           editButton.addListener("execute", () => {
             const workspace = this.getWorkspace();
             const workspaceEditor = new osparc.editor.WorkspaceEditor(workspace);
@@ -212,13 +213,13 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           });
           menu.add(editButton);
 
-          const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
+          const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesomeSolid/share-alt/12");
           shareButton.addListener("execute", () => this.__openShareWith(), this);
           menu.add(shareButton);
 
           menu.addSeparator();
 
-          const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+          const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/12");
           trashButton.addListener("execute", () => this.__trashWorkspaceRequested(), this);
           menu.add(trashButton);
         } else if (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
@@ -228,12 +229,14 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
           menu.addSeparator();
 
-          const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
+          const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesomeSolid/trash/12");
           osparc.utils.Utils.setIdToWidget(deleteButton, "deleteWorkspaceMenuItem");
           deleteButton.addListener("execute", () => this.__deleteWorkspaceRequested(), this);
           menu.add(deleteButton);
         }
         menuButton.setMenu(menu);
+        this._keepRevealedWhileMenuOpen(menu);
+        this._setHoverRevealWidget(menuButton);
       }
     },
 

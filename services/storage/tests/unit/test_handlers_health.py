@@ -4,18 +4,22 @@
 # pylint: disable=protected-access
 
 
+from unittest.mock import Mock
+
 import httpx
 import simcore_service_storage._meta
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
+from models_library.errors import REDIS_CLIENT_UNHEALTHY_MSG
 from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from servicelib.aiohttp import status
+from simcore_service_storage.api.rest.dependencies.redis import get_redis_client_manager_from_request
 from types_aiobotocore_s3 import S3Client
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -30,6 +34,24 @@ async def test_health_check(initialized_app: FastAPI, client: httpx.AsyncClient)
     assert app_health.version == str(
         simcore_service_storage._meta.VERSION  # noqa: SLF001
     )
+
+
+async def test_health_check_fails_when_redis_is_unhealthy(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+):
+    unhealthy_redis_client_manager = Mock()
+    unhealthy_redis_client_manager.healthy = False
+
+    initialized_app.dependency_overrides[get_redis_client_manager_from_request] = lambda: unhealthy_redis_client_manager
+    try:
+        url = url_from_operation_id(client, initialized_app, "get_health")
+        response = await client.get(f"{url}")
+    finally:
+        initialized_app.dependency_overrides.pop(get_redis_client_manager_from_request, None)
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.json() == {"error": {"errors": [REDIS_CLIENT_UNHEALTHY_MSG]}}
 
 
 async def test_health_status(initialized_app: FastAPI, client: httpx.AsyncClient):

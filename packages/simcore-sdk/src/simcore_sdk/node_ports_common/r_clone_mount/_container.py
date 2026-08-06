@@ -4,14 +4,16 @@ from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
 from textwrap import dedent
-from typing import Final
+from typing import Annotated, Final, Self
 
+from attr import dataclass
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX
 from models_library.basic_types import PortInt
+from models_library.docker import DockerLabelKey
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
-from pydantic import NonNegativeInt
+from pydantic import BaseModel, Field, NonNegativeInt, TypeAdapter, ValidationError
 from servicelib.file_utils import disk_usage
 from servicelib.r_clone_utils import get_r_clone_version
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
@@ -23,10 +25,12 @@ from tenacity import (
     wait_fixed,
 )
 
-from ..r_clone_utils import overwrite_command
+from ..r_clone_utils import get_effective_vfs_write_back_seconds, overwrite_command
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY
+from ._docker_utils import RC_PORT
 from ._errors import (
+    InvalidContainerLabelsError,
     RefreshMountError,
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
@@ -37,11 +41,43 @@ from ._utils import get_mount_id
 _logger = logging.getLogger(__name__)
 
 
-_MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
-_DEFAULT_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=1)
-_DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
+@dataclass
+class _ContainerCreateResult:
+    rc_user: str
+    rc_password: str
+    vfs_write_back_s: NonNegativeInt
+    assigned_port: PortInt
+    reconnected: bool
 
-_TPSLIMIT: Final[NonNegativeInt] = 2000
+
+class _RCloneContainerLabels(BaseModel):
+    rc_user: Annotated[str, Field(alias="rc-user")]
+    rc_password: Annotated[str, Field(alias="rc-password")]
+    vfs_write_back_s: Annotated[NonNegativeInt, Field(alias="vfs-write-back-s")]
+
+    def to_docker_labels(self) -> dict[DockerLabelKey, str]:
+        return {
+            TypeAdapter(DockerLabelKey).validate_python(k): f"{v}" for k, v in self.model_dump(by_alias=True).items()
+        }
+
+    @classmethod
+    def from_rc_credentials(cls, *, rc_user: str, rc_password: str, vfs_write_back_s: int) -> Self:
+        return TypeAdapter(cls).validate_python(
+            {"rc-user": rc_user, "rc-password": rc_password, "vfs-write-back-s": vfs_write_back_s}
+        )
+
+    @classmethod
+    def from_docker_labels(cls, container_name: str, labels: dict[DockerLabelKey, str]) -> Self:
+        """raises MissingContainerLabelsError if data is not valid"""
+        try:
+            return cls.model_validate(labels)
+        except ValidationError as exc:
+            errors = sorted({str(e["loc"][0]) for e in exc.errors()})
+            raise InvalidContainerLabelsError(container_name=container_name, errors=errors) from exc
+
+
+_MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
+_DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
 
 _R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
@@ -103,7 +139,7 @@ async def _get_rclone_mount_command(
     index: NonNegativeInt,
     rc_user: str,
     rc_password: str,
-) -> str:
+) -> tuple[str, int]:
     escaped_remote_path = f"{remote_path}".lstrip("/")
     target_cache_path = get_vfs_cache_path(index)
 
@@ -127,60 +163,59 @@ async def _get_rclone_mount_command(
         "--vfs-cache-poll-interval",
         "1m",
         "--vfs-write-back",
-        "5s",
+        "30s",
         "--cache-dir",
         f"{target_cache_path}",
-        "--dir-cache-time",
-        "10m",
         "--attr-timeout",
         "1m",
-        "--tpslimit",
-        f"{_TPSLIMIT}",
-        "--tpslimit-burst",
-        f"{_TPSLIMIT * 2}",
         "--no-modtime",
-        "--max-buffer-memory",
-        "16M",
         # TRANSFERS
         "--retries",
         "3",
         "--retries-sleep",
         "30s",
+        "--max-connections",
+        "64",
         "--transfers",
-        "15",
+        "16",
         "--buffer-size",
-        "16M",
+        "64M",
         "--checkers",
         "8",
         "--s3-upload-concurrency",
-        "5",
+        "8",
         "--s3-chunk-size",
-        "16M",
-        "--order-by",
-        "size,mixed",
+        "64M",
+        "--s3-upload-cutoff",
+        "0",
+        # PERMISSIONS
+        "--file-perms",
+        "0777",
+        "--dir-perms",
+        "0777",
         # REMOTE CONTROL
         "--rc",
-        "--rc-addr=0.0.0.0:8000",
+        f"--rc-addr=0.0.0.0:{RC_PORT}",
         "--rc-enable-metrics",
         f"--rc-user='{rc_user}'",
         f"--rc-pass='{rc_password}'",
         "--allow-non-empty",
         "--allow-other",
     ]
-    r_clone_command = " ".join(
-        overwrite_command(
-            command_parts,
-            edit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS,
-            remove=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS,
-        )
+    resolved_parts = overwrite_command(
+        command_parts,
+        edit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS,
+        remove=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS,
     )
+    vfs_write_back_s = get_effective_vfs_write_back_seconds(resolved_parts)
+    r_clone_command = " ".join(resolved_parts)
     return _R_CLONE_MOUNT_TEMPLATE.format(
         r_clone_config_path=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH,
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
         local_mount_path=local_mount_path,
         target_cache_path=target_cache_path,
-    )
+    ), vfs_write_back_s
 
 
 class ContainerManager:  # pylint:disable=too-many-instance-attributes
@@ -188,7 +223,6 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         self,
         r_clone_settings: RCloneSettings,
         node_id: NodeID,
-        rc_port: PortInt,
         local_mount_path: Path,
         index: NonNegativeInt,
         r_clone_config_content: str,
@@ -200,7 +234,6 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
     ) -> None:
         self.r_clone_settings = r_clone_settings
         self.node_id = node_id
-        self.rc_port = rc_port
         self.local_mount_path = local_mount_path
         self.index = index
         self.r_clone_config_content = r_clone_config_content
@@ -210,38 +243,73 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
 
         self.delegate = delegate
 
+        self.vfs_write_back_s: NonNegativeInt = 0
+
     @cached_property
-    def _r_clone_container_name(self) -> str:
+    def r_clone_container_name(self) -> str:
         mount_id = get_mount_id(self.local_mount_path, self.index)
         return f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{self.node_id}-{mount_id}"[:63]
 
-    async def create(self):
-        # ensure nothing was left from previous runs
-        await self.delegate.remove_container(self._r_clone_container_name)
+    async def create(self) -> _ContainerCreateResult:
+        # If an existing container is found, reconnect to it instead of recreating.
+        # This handles sidecar restarts where the rclone container survived.
+        result = await _docker_utils.try_inspect_r_clone_container(self.delegate, self.r_clone_container_name)
+        if result is not None:
+            assigned_port, labels = result
 
-        mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
-        await _docker_utils.create_r_clone_container(
-            self.delegate,
-            self._r_clone_container_name,
-            command=await _get_rclone_mount_command(
-                self.delegate,
-                mount_settings=mount_settings,
-                r_clone_config_content=self.r_clone_config_content,
-                remote_path=self.remote_path,
-                local_mount_path=self.local_mount_path,
-                index=self.index,
+            from_labels = _RCloneContainerLabels.from_docker_labels(self.r_clone_container_name, labels)
+            self.rc_user = from_labels.rc_user
+            self.rc_password = from_labels.rc_password
+            self.vfs_write_back_s = from_labels.vfs_write_back_s
+
+            return _ContainerCreateResult(
                 rc_user=self.rc_user,
                 rc_password=self.rc_password,
-            ),
+                vfs_write_back_s=self.vfs_write_back_s,
+                assigned_port=assigned_port,
+                reconnected=True,
+            )
+
+        # No existing container — create fresh
+        await self.delegate.remove_container(self.r_clone_container_name)
+
+        mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
+        command, vfs_write_back_s = await _get_rclone_mount_command(
+            self.delegate,
+            mount_settings=mount_settings,
+            r_clone_config_content=self.r_clone_config_content,
+            remote_path=self.remote_path,
+            local_mount_path=self.local_mount_path,
+            index=self.index,
+            rc_user=self.rc_user,
+            rc_password=self.rc_password,
+        )
+        assigned_port = await _docker_utils.create_r_clone_container(
+            self.delegate,
+            self.r_clone_container_name,
+            command=command,
             r_clone_version=await get_r_clone_version(),
-            rc_port=self.rc_port,
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
             nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
+            labels=_RCloneContainerLabels.from_rc_credentials(
+                rc_user=self.rc_user,
+                rc_password=self.rc_password,
+                vfs_write_back_s=vfs_write_back_s,
+            ).to_docker_labels(),
+        )
+        self.vfs_write_back_s = vfs_write_back_s
+
+        return _ContainerCreateResult(
+            rc_user=self.rc_user,
+            rc_password=self.rc_password,
+            vfs_write_back_s=self.vfs_write_back_s,
+            assigned_port=assigned_port,
+            reconnected=False,
         )
 
     async def remove(self):
-        await self.delegate.remove_container(self._r_clone_container_name)
+        await self.delegate.remove_container(self.r_clone_container_name)
 
 
 class RemoteControlHttpClient:
@@ -289,7 +357,7 @@ class RemoteControlHttpClient:
         return await self._request("POST", "rc/noopauth")
 
     async def post_vfs_refresh(self, dir_to_refresh: str, *, recursive: bool) -> None:
-        params = {}
+        params: dict[str, str] = {}
         if recursive:
             params["recursive"] = "true"
         if dir_to_refresh != "":

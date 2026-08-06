@@ -27,4 +27,5 @@ APP_STARTED_BANNER_MSG = r"""
 """.format(f"v{__version__}")
 
 
+APP_STARTING_BANNER_MSG = info.get_starting_banner()
 APP_FINISHED_BANNER_MSG = info.get_finished_banner()

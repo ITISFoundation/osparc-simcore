@@ -1,0 +1,3475 @@
+# Spanish translations for osparc-simcore package.
+# Copyright (C) 2026 THE osparc-simcore'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the osparc-simcore package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: osparc-simcore\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-28 20:48+0200\n"
+"PO-Revision-Date: 2026-06-24 16:28+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Translation-Date: 2026-07-28T18:49:06Z\n"
+"X-Translation-Model: ollama/translategemma:4b\n"
+
+# CTX-INTERPRETATION: This message is displayed to users when the backend
+# service cannot be accessed. service of the application is temporarily
+# unavailable.
+#: services/api-server/src/simcore_service_api_server/_constants.py:6
+msgid "The service is currently unavailable. Please try again later."
+msgstr ""
+"El servicio no está disponible en este momento. Por favor, inténtelo de "
+"nuevo más tarde."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# something unexpected occurs in the application. an internal issue occurs in
+# the scientific simulation application.
+#: services/api-server/src/simcore_service_api_server/_constants.py:10
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience."
+msgstr ""
+"Algo salió mal de nuestro lado. Hemos sido notificados y resolveremos este "
+"problema lo antes posible. Gracias por su paciencia."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user.
+# when their request to the application fails.
+#: services/api-server/src/simcore_service_api_server/_constants.py:15
+msgid "Something went wrong with your request."
+msgstr "Algo salió mal con su solicitud."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when there is a problem connecting to the backend service. when there is a
+# failure in communication with the backend service of the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:12
+msgid "An error occurred when contacting the backend service."
+msgstr "Se produjo un error al contactar con el servicio de backend."
+
+# CTX-INTERPRETATION: This string appears as an error message when a request
+# to the backend server takes too long to respond and times out. to the
+# backend server takes too long to respond and times out.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:23
+msgid "The backend request timed out."
+msgstr "La solicitud al backend ha excedido el tiempo de espera."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when the input they provided does not meet the required criteria. when they
+# provide invalid input data to the scientific simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:28
+msgid "The provided input is not valid."
+msgstr "La entrada proporcionada no es válida."
+
+# CTX-INTERPRETATION: This string appears in a backend service, likely within
+# an API endpoint, to inform the user that the encryption inputs they provided
+# are invalid, along with the available node inputs.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:34
+#, python-brace-format
+msgid ""
+"The provided encryption inputs {inputs} are not valid. Available node inputs"
+" '{node_inputs}'"
+msgstr ""
+"Las entradas de cifrado proporcionadas {inputs} no son válidas. Entradas de "
+"nodo disponibles {node_inputs}"
+
+# CTX-INTERPRETATION: This string is part of a custom exception message
+# indicating that encryption is not configured for the current deployment,
+# prompting the user to contact support.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:40
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:52
+msgid ""
+"Encryption is not available on this deployment. Please contact support."
+msgstr ""
+"La encriptación no está disponible en esta implementación. Por favor, "
+"contacte con el soporte."
+
+# CTX-INTERPRETATION: This string appears in a backend error message,
+# indicating that the encryption service is currently unavailable, advising
+# the user to retry later.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:46
+msgid ""
+"The encryption service is temporarily unavailable. Please try again shortly."
+msgstr ""
+"El servicio de cifrado está temporalmente no disponible. Por favor, "
+"inténtelo de nuevo más tarde."
+
+# CTX-INTERPRETATION: This error message appears when the application fails to
+# access or obtain the list of available solvers and projects. access or load
+# the list of available solvers and projects, possibly due to a missing
+# resource or incorrect request.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:57
+msgid "Unable to retrieve the list of solvers and projects."
+msgstr "No se puede recuperar la lista de simuladores y proyectos."
+
+# CTX-INTERPRETATION: This error message is displayed when the application
+# cannot access or find the list of tasks that need to be processed. fails to
+# access or load the list of simulation jobs from the server.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:62
+msgid "Unable to retrieve the list of jobs."
+msgstr "No se puede recuperar la lista de tareas."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# needs to make a payment to continue using the application. attempts to
+# proceed with an action in the application that requires payment.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:67
+msgid "Payment is required to proceed."
+msgstr "Se requiere pago para continuar."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# tries to access a profile that does not exist in the system. attempts to
+# access a profile that does not exist in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:72
+msgid "The requested profile could not be found."
+msgstr "No se pudo encontrar el perfil solicitado."
+
+# CTX-INTERPRETATION: This error message is displayed when a specified
+# program, solver, or project version cannot be located. program, solver, or
+# project with a particular version cannot be located in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:78
+#, python-brace-format
+msgid ""
+"The program, solver, or project '{name}' version {version} could not be "
+"found."
+msgstr ""
+"El programa, simulador o proyecto '{name}' versión {version} no se pudo "
+"encontrar."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a restricted program, solver, or project version.
+# they attempt to access a program, solver, or project without the necessary
+# permissions.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:86
+#, python-brace-format
+msgid ""
+"You do not have permission to access the program, solver, or project "
+"'{name}' version {version}."
+msgstr ""
+"No tiene permiso para acceder al programa, simulador o proyecto '{name}' "
+"versión {version}."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a job without the necessary permissions. tries to access a
+# job or project they do not have permission to view or modify.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:93
+#, python-brace-format
+msgid "You do not have permission to access job {project_id}."
+msgstr "No tienes permiso para acceder a la tarea {project_id}."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access jobs they do not have permission for. tries to access batch
+# jobs without the necessary permissions.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:98
+#, python-brace-format
+msgid "You do not have permission to access jobs {project_uuids}."
+msgstr "No tienes permiso para acceder a las tareas {project_uuids}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a solver
+# or project job cannot be located. requested solver or project job cannot be
+# located in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:103
+#, python-brace-format
+msgid "The solver or project job {project_id} could not be found."
+msgstr ""
+"El simulador o las tareas del proyecto {project_id} no se pudieron "
+"encontrar."
+
+# CTX-INTERPRETATION: This error message is displayed when the application
+# cannot locate the specified solver or project tasks. cannot locate the
+# specified solver or project jobs using the provided project UUIDs.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:108
+#, python-brace-format
+msgid "The solver or project jobs {project_uuids} could not be found."
+msgstr ""
+"No se pudieron encontrar el simulador o las tareas del proyecto "
+"{project_uuids}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when the log
+# file for a solver or project job cannot be located. application cannot
+# locate the log file associated with a specific solver or project job
+# identified by a project ID.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:114
+#, python-brace-format
+msgid ""
+"The log file for the solver or project job {project_id} could not be found."
+msgstr ""
+"No se pudo encontrar el archivo de registro para el simulador o las tareas "
+"del proyecto {project_id}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# output for a specific project cannot be located. application cannot locate
+# the output data for a specified project.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:121
+#, python-brace-format
+msgid "The output for project {project_id} could not be found."
+msgstr "No se pudo encontrar el resultado para el proyecto {project_id}."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# indicating that there is an issue with the configuration settings. when
+# there is a configuration issue in the scientific simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:126
+msgid "A configuration error occurred."
+msgstr "Se produjo un error de configuración."
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# application cannot locate the price of a product. application cannot locate
+# the price of a product in the database.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:131
+msgid "The product price could not be found."
+msgstr "No se pudo encontrar el precio del producto."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# tries to access a wallet that does not exist or cannot be located. attempts
+# to access a digital wallet that does not exist in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:136
+msgid "The requested wallet could not be found."
+msgstr "No se pudo encontrar la billetera solicitada."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a wallet without the necessary permissions. they
+# attempt to access a wallet without the necessary permissions.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:141
+msgid "You do not have permission to access this wallet."
+msgstr "No tienes permiso para acceder a esta billetera."
+
+# CTX-INTERPRETATION: This error message appears when the application cannot
+# locate the necessary ports for a specified job or project. locate the
+# necessary ports for a specific job or project identified by the placeholder
+# ⟨0⟩.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:146
+#, python-brace-format
+msgid "The ports for job or project {project_id} could not be found."
+msgstr ""
+"No se pudieron encontrar los puertos para la tarea o el proyecto "
+"{project_id}."
+
+# CTX-INTERPRETATION: This error message appears when the application cannot
+# locate the metadata for a specified job or project. locate the metadata
+# associated with a specific job or project identified by the placeholder ⟨0⟩.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:151
+#, python-brace-format
+msgid "The metadata for job or project {project_id} could not be found."
+msgstr ""
+"No se pudo encontrar los metadatos para la tarea o proyecto {project_id}."
+
+# CTX-INTERPRETATION: This error message is displayed when the application
+# cannot locate the specified pricing unit. cannot locate the specified
+# pricing unit in the backend system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:156
+msgid "The pricing unit could not be found."
+msgstr "La unidad de precio no pudo ser encontrada."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a
+# requested pricing plan is not available in the system. requested pricing
+# plan is not found in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:161
+msgid "The pricing plan could not be found."
+msgstr "No se pudo encontrar el plan de precios."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to start a project that is already in progress. attempts to start a
+# project that is already in progress within the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:166
+msgid "The project has already been started."
+msgstr "El proyecto ya ha sido iniciado."
+
+# CTX-INTERPRETATION: This error message appears when a user tries to access a
+# license item but there are not enough available seats. licensed feature of
+# the application, but there are not enough available seats for the requested
+# license item.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:171
+#, python-brace-format
+msgid "Not enough available seats for license item {licensed_item_id}."
+msgstr ""
+"No hay suficientes asientos disponibles para el elemento de licencia "
+"{licensed_item_id}."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to check
+# out a license item but the required dynamic service is not running. out a
+# license item for a service that is currently not running, providing the
+# service ID for reference.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:177
+#, python-brace-format
+msgid ""
+"Unable to check out license item {licensed_item_id} because the dynamic "
+"service is not running. Current service ID: {service_run_id}."
+msgstr ""
+"No se puede verificar el elemento de licencia {licensed_item_id} porque el "
+"servicio dinámico no está en funcionamiento. ID del servicio actual: "
+"{service_run_id}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a
+# specific license item checkout cannot be located in the system. specific
+# license item checkout cannot be located in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:186
+#, python-brace-format
+msgid ""
+"The license item checkout {licensed_item_checkout_id} could not be found."
+msgstr ""
+"No se pudo encontrar el checkout del elemento de licencia "
+"{licensed_item_checkout_id}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# assets required for a specific job are not found. necessary assets for a
+# specific job are not found in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:193
+#, python-brace-format
+msgid "The assets for job {job_id} are missing."
+msgstr "Los recursos para la tarea {job_id} están ausentes."
+
+# CTX-INTERPRETATION: This string is used to inform the user that the chatbot
+# service is currently unavailable, likely within a scientific simulation
+# application's API.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:198
+msgid "The chatbot service is not enabled."
+msgstr "El servicio del chatbot no está habilitado."
+
+# CTX-INTERPRETATION: This string appears as an error message when a task with
+# a specific identifier cannot be located. a specific UUID cannot be located
+# in the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+#, python-brace-format
+msgid "Task {task_uuid} could not be found."
+msgstr "La tarea {task_uuid} no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access the output of a solver job that hasn't finished
+# successfully. attempts to access the output of a solver job that has not
+# successfully completed in the scientific simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:209
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for solver job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr ""
+"No se puede recuperar la salida para la tarea del simulador '{job_id}' "
+"porque no se ha completado con éxito. Estado actual: {state}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a solver
+# job has not yet stopped. job has not yet stopped, showing the job ID and its
+# current status.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
+#, python-brace-format
+msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
+msgstr ""
+"La tarea del simulador '{job_id}' no se ha detenido todavía. Estado actual: "
+"{state}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# tries to access the output of a project job that hasn't finished
+# successfully. attempts to access the output of a project job that has not
+# successfully completed in the scientific simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:226
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for project job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr ""
+"No se puede recuperar la salida para la tarea del proyecto '{job_id}' porque"
+" no se ha completado con éxito. Estado actual: {state}."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user does
+# not have enough credits in their wallet to request solver outputs. attempts
+# to request solver outputs without having enough credits in their wallet.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:13
+#, python-brace-format
+msgid ""
+"Wallet '{wallet_name}' has {wallet_credit_amount} credits. Please add "
+"credits before requesting solver outputs."
+msgstr ""
+"La billetera '{wallet_name}' tiene {wallet_credit_amount} créditos. Por "
+"favor, añada créditos antes de solicitar resultados del simulador."
+
+# CTX-INTERPRETATION: This string appears as an error message when a job in a
+# scientific simulation application lacks an associated wallet. the
+# application is missing an associated wallet, likely during a financial
+# transaction or resource allocation process.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:19
+#, python-brace-format
+msgid "Job {job_id} does not have an associated wallet."
+msgstr "La tarea {job_id} no tiene una billetera asociada."
+
+# CTX-INTERPRETATION: This error message appears when a user has specified a
+# solver version without specifying the solver ID. solver version without
+# providing the corresponding solver ID in the simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:33
+msgid ""
+"The solver_version parameter is set but solver_id is not. Please provide "
+"both parameters or neither."
+msgstr ""
+"El parámetro solver_version está establecido, pero solver_id no lo está. "
+"Proporcione ambos parámetros o ninguno."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a cached
+# function job cannot be located. requested function job is not found in the
+# cache of the scientific simulation application.
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:12
+msgid "No cached function job was found."
+msgstr "No se encontró una tarea de función en caché."
+
+# CTX-INTERPRETATION: This error message is displayed when the application
+# cannot process a specific function-related task. fails to execute a function
+# job due to a missing project component.
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:17
+msgid "Unable to process the function job."
+msgstr "No se puede procesar la tarea de función."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# connect multiple streams to the same job. connect a second stream to a job
+# that already has an active stream connection.
+#: services/api-server/src/simcore_service_api_server/exceptions/log_streaming_errors.py:16
+#, python-brace-format
+msgid ""
+"A stream is already connected to {job_id}. Only one stream can be connected "
+"at a time."
+msgstr ""
+"Ya hay un flujo conectado a {job_id}. Solo se puede conectar un flujo a la "
+"vez."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# something unexpected occurs in the application. something goes wrong with
+# the application. an internal issue occurs in the application, indicating
+# that the developers have been notified and are working on a resolution.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:21
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience. [{}]"
+msgstr ""
+"Algo salió mal de nuestro lado. Hemos sido notificados y resolveremos este "
+"problema lo antes posible. Gracias por su paciencia. [{}]"
+
+# CTX-INTERPRETATION: This string is an error message indicating that a
+# service was not available. service was not available. specific service,
+# identified by a placeholder, was not available when the application
+# attempted to access it.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:84
+#, python-brace-format
+msgid "The {service_name} service was unavailable."
+msgstr "El servicio {service_name} no estaba disponible."
+
+# CTX-INTERPRETATION: This string is an error message indicating that an
+# unexpected response was received from a specified service. unexpected
+# response was received from a specified service. unexpected response was
+# received from a specified service, likely used in logging or user
+# notifications.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:89
+#, python-brace-format
+msgid "Received unexpected response from {service_name}"
+msgstr "Se recibió una respuesta inesperada de {service_name}"
+
+# CTX-INTERPRETATION: This string is an error message indicating that a
+# service returned an invalid response. service returned an invalid response.
+# service returned an invalid response, and it is used in the context of
+# handling exceptions in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:116
+#, python-brace-format
+msgid "{service_name} service returned invalid response"
+msgstr "El servicio {service_name} devolvió una respuesta no válida"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a request to the backend server has exceeded the time limit and was not
+# completed. a request to the backend server has exceeded the time limit and
+# has timed out.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:132
+msgid "Request to backend timed out"
+msgstr "La solicitud al servidor backend ha excedido el tiempo de espera"
+
+# CTX-INTERPRETATION: This string appears in an error message that is raised
+# when a request to the backend server fails. when a request to the backend
+# server fails in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:144
+msgid "Request to backend failed"
+msgstr "La solicitud al servidor backend falló"
+
+# CTX-INTERPRETATION: This string is an error message displayed when there is
+# a problem with the task scheduler in the application. a problem with the
+# task scheduler in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:8
+msgid "An error occurred in the task scheduler."
+msgstr "Se produjo un error en el programador de tareas."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a task
+# cannot be located. specific task identified by a job ID cannot be located in
+# the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:13
+#, python-brace-format
+msgid "Task {job_id} could not be found."
+msgstr "La tarea {job_id} no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access the results of a task that has not finished processing.
+# tries to access the results of a task that has not yet finished processing
+# in the application.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:18
+#, python-brace-format
+msgid "Task {job_id} has not completed yet."
+msgstr "La tarea {job_id} aún no se ha completado."
+
+# CTX-INTERPRETATION: This string appears as an error message when a task in
+# the application has been cancelled. the scientific simulation application is
+# cancelled by the user or system.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:23
+#, python-brace-format
+msgid "Task {job_id} has been cancelled."
+msgstr "La tarea {job_id} ha sido cancelada."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a task
+# encounters an error. specific task in the application encounters an issue
+# during execution.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:28
+#, python-brace-format
+msgid "Task '{job_id}' encountered an error."
+msgstr "La tarea '{job_id}' encontró un error."
+
+# CTX-INTERPRETATION: This message is shown when the application cannot
+# forward a log due to a missing logstreamer registration for a specific job.
+# forward a log due to a missing logstreamer registration for a specific job.
+# when an attempt to forward a log fails due to a missing logstreamer
+# registration for a specific job ID.
+#: services/api-server/src/simcore_service_api_server/services_http/log_streaming.py:67
+#, python-brace-format
+msgid ""
+"Could not forward log because a logstreamer associated with job_id={job_id} "
+"was not registered"
+msgstr ""
+"No se pudo reenviar el registro porque un logstreamer asociado con "
+"job_id={job_id} no fue registrado"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a service
+# encounters an unexpected error while running in a container. running in a
+# container encounters an unexpected error, with placeholders for service
+# details and the error message.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:9
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} encountered an unexpected error: {error_message}."
+msgstr ""
+"El servicio {service_key}:{service_version} que se ejecuta en el contenedor "
+"{container_id} encontró un error inesperado: {error_message}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a service
+# running in a container fails. running in a container fails, indicating the
+# service key, version, container ID, and exit code.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:17
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} failed with code {exit_code}."
+msgstr ""
+"El servicio {service_key}:{service_version} ejecutándose en el contenedor "
+"{container_id} falló con el código {exit_code}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a service
+# runs out of memory and is terminated. running in a container exceeds its
+# memory allocation and is terminated.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:24
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} ran out of memory and was terminated. Current limits are "
+"{service_resources}."
+msgstr ""
+"El servicio {service_key}:{service_version} que se ejecuta en el contenedor "
+"{container_id} se quedó sin memoria y fue terminado. Los límites actuales "
+"son {service_resources}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a service
+# running in a container is unresponsive for too long and is terminated.
+# running in a container exceeds a specified timeout period and is terminated.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:33
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} was silent/hanging for longer than {timeout_timedelta} and "
+"was terminated."
+msgstr ""
+"El servicio {service_key}:{service_version} que se ejecuta en el contenedor "
+"{container_id} estuvo silencioso/colgado por más tiempo del permitido "
+"{timeout_timedelta} y fue terminado."
+
+# CTX-INTERPRETATION: This string appears as an error message when a task in
+# the application is cancelled by the user or system. the application is
+# cancelled by the user or system.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:40
+msgid "The task was cancelled"
+msgstr "La tarea fue cancelada"
+
+# CTX-INTERPRETATION: This error message appears when a service in the
+# application expects a specific file-to-key mapping but receives a zip file
+# instead. application expects a file-to-key map but receives zip data
+# instead, advising the user to adjust their input accordingly.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:45
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} {input} uses a file-to-key "
+"{file_to_key_map} map but receives zip data instead. TIP: either pass a "
+"single file or zip file and remove the file-to-key map parameter."
+msgstr ""
+"El servicio {service_key}:{service_version} {input} utiliza un mapa de "
+"archivo a clave {file_to_key_map} pero recibe datos en formato zip en su "
+"lugar. CONSEJO: pase un solo archivo o un archivo zip y elimine el parámetro"
+" del mapa de archivo a clave."
+
+# CTX-INTERPRETATION: This string is an error message template used in the
+# application to inform users about encryption issues when a service operation
+# fails due to mismatched encryption keys or contexts.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:54
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} could not securely {operation} "
+"the {file_role} file {file_id}: {error_message}. TIP: this usually means the"
+" provided encryption key or context does not match the one used to encrypt "
+"the data."
+msgstr ""
+"El servicio {service_key}:{service_version} no pudo {operation} de manera "
+"segura el archivo {file_role} {file_id}: {error_message}. CONSEJO: esto "
+"generalmente significa que la clave de cifrado o el contexto proporcionado "
+"no coincide con el utilizado para cifrar los datos."
+
+# CTX-INTERPRETATION: This string appears in the `errors.py` file, likely
+# within a function that handles errors related to service communication,
+# specifically when decryption is required but the encryption service is
+# unavailable.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:64
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} requires decryption, but the "
+"encryption service is currently unavailable: {error_message}. Please contact"
+" support if this persists."
+msgstr ""
+"El servicio {service_key}:{service_version} requiere descifrado, pero el "
+"servicio de cifrado no está disponible: {error_message}. Por favor, contacte"
+" al soporte si esto persiste."
+
+# CTX-INTERPRETATION: This string appears in the application's log to indicate
+# the completion status of a project pipeline execution for a specific
+# iteration. the completion status of a project pipeline execution for a
+# specific iteration. the completion status of a project pipeline execution
+# for a specific iteration.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:240
+#, python-brace-format
+msgid ""
+"Project pipeline execution for iteration {iteration} has completed with "
+"status: {run_result}"
+msgstr ""
+"La ejecución del pipeline del proyecto para la iteración {iteration} se ha "
+"completado con el estado: {run_result}"
+
+# CTX-INTERPRETATION: This message is an error notification related to task
+# scheduling in the application. system to notify users of an unexpected issue
+# during the scheduling of tasks.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:861
+msgid ""
+"An unexpected error occurred during task scheduling. Please contact oSparc "
+"support if this issue persists."
+msgstr ""
+"Se produjo un error inesperado durante la programación de tareas. Por favor,"
+" contacte con el soporte de oSparc si este problema persiste."
+
+# CTX-INTERPRETATION: This log message indicates that the process of
+# scheduling a task with variable resolution has exceeded the time limit and
+# will attempt to retry. warning message when a task involving variable
+# resolution fails to complete in time and will be attempted again.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:892
+msgid "Variable resolution timed out during task scheduling, will retry."
+msgstr ""
+"La resolución variable excedió el tiempo límite durante la programación de "
+"tareas, se intentará de nuevo."
+
+# CTX-INTERPRETATION: This message is displayed to the user when the system
+# cannot allocate the necessary computational resources in time. fails to
+# allocate computational resources for their task, prompting them to retry or
+# seek support.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:960
+msgid ""
+"The system has timed out while waiting for computational resources. Please "
+"try running your project again or contact oSparc support if this issue "
+"persists."
+msgstr ""
+"El sistema ha agotado el tiempo de espera mientras esperaba recursos "
+"computacionales. Por favor, intente ejecutar su proyecto nuevamente o "
+"contacte al soporte de oSparc si este problema persiste."
+
+# CTX-INTERPRETATION: This string appears in an email template as a greeting.
+# to the user, where the user's first name is dynamically inserted.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:1
+msgid "Dear %(first_name)s,"
+msgstr "Estimado/a %(first_name)s,"
+
+# CTX-INTERPRETATION: This string appears in an email or notification message.
+# sent to a user expressing gratitude for their interest in a product and
+# providing them with a registration link.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:3
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. We are pleased to provide "
+"you with a one-time invitation link to register on the platform."
+msgstr ""
+"Gracias por su interés en %(product_name)s. Nos complace proporcionarle un "
+"enlace de invitación único para registrarse en la plataforma."
+
+# CTX-INTERPRETATION: This string is part of a web application interface that
+# informs users about the duration of their trial period. informs users about
+# the duration of their trial period. informs the user about the duration of
+# their trial period in days. informing users about the duration of their
+# trial period based on the number of days remaining.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:6
+msgid "Your account includes %(count)s day trial period."
+msgid_plural "Your account includes %(count)s days trial period."
+msgstr[0] "Su cuenta incluye un período de prueba de %(count)s día."
+msgstr[1] "Su cuenta incluye un período de prueba de %(count)s días."
+
+# CTX-INTERPRETATION: This string is used to inform the user about receiving
+# additional free credits in a web application. users are informed about
+# receiving additional free credits, possibly as a bonus or promotion.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:10
+msgid "You also receive %(extra_credits)s free credits."
+msgstr "También recibes %(extra_credits)s créditos gratis."
+
+# CTX-INTERPRETATION: This string is a prompt for users to click a hyperlink
+# to access a registration page. or application interface, directing users to
+# the registration page.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:20
+msgid "Click %(register_link)s to access the registration page."
+msgstr "Haga clic en %(register_link)s para acceder a la página de registro."
+
+# CTX-INTERPRETATION: This string appears in a paragraph providing
+# instructions for registration and contact information for support.
+# instructions for user registration and offering support contact information
+# if issues arise.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:25
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr ""
+"Por favor, siga la información en pantalla y proceda con su registro. Si "
+"ocurre algún problema, no dude en contactarnos en %(support_link)s."
+
+# CTX-INTERPRETATION: This string is a friendly message encouraging the user
+# to enjoy the product. message that is displayed to users after they have
+# completed their registration for the scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
+msgid "Enjoy %(product_name)s!"
+msgstr "¡Disfruta %(product_name)s!"
+
+# CTX-INTERPRETATION: This string appears as a closing salutation in a
+# message. or email, likely from the team responsible for the scientific
+# simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
+msgid "Best regards,"
+msgstr "Saludos cordiales,"
+
+# CTX-INTERPRETATION: This string is used to refer to the team associated with
+# the product in a closing message. or email, indicating it is sent by the
+# team responsible for the specified product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
+msgid "The %(product_name)s Team"
+msgstr "El equipo de %(product_name)s"
+
+# CTX-INTERPRETATION: This string appears as a clickable link prompt on a
+# registration page. webpage, directing users to the registration page for the
+# scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:13
+msgid "Click %(link)s to access the registration page."
+msgstr "Haga clic en %(link)s para acceder a la página de registro."
+
+# CTX-INTERPRETATION: This string appears as part of the registration process,
+# providing instructions and contact information for support. instructions on
+# the user interface of the scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:15
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr ""
+"Por favor, siga la información en pantalla y proceda con su registro. Si "
+"ocurre algún problema, no dude en contactarnos en %(support_email)s."
+
+# CTX-INTERPRETATION: This string appears in a notification message confirming
+# the acceptance of a registration request for a product. that a user's
+# registration request for a specific product has been approved.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Accepted"
+msgstr "Su solicitud de registro para %(product_name)s ha sido aceptada"
+
+# CTX-INTERPRETATION: This string appears in an email or notification message
+# informing the user about their ineligibility for a program. informing the
+# user that their registration does not qualify for a specific program related
+# to the product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. Unfortunately, your "
+"registration is not eligible for participation in this program."
+msgstr ""
+"Gracias por su interés en %(product_name)s. Desafortunadamente, su registro "
+"no es elegible para participar en este programa."
+
+# CTX-INTERPRETATION: This string appears in an email or webpage footer,
+# providing contact information for further inquiries. inviting users to
+# contact support for more information about the software solutions offered.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:12
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_link)s."
+msgstr ""
+"En caso de interés adicional en esta u otras soluciones que podamos ofrecer,"
+" por favor contáctenos en %(support_link)s."
+
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# users about account rejection and offer further assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:5
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_email)s."
+msgstr ""
+"En caso de que tengan más interés en esta o en otras soluciones que podamos "
+"ofrecer, por favor, pónganse en contacto con nosotros en %(support_email)s."
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that their registration request for a specific product has been
+# denied. the user that their request to register for the specified product
+# has been denied.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Denied"
+msgstr "Su solicitud de registro para %(product_name)s ha sido denegada"
+
+# CTX-INTERPRETATION: This string is a greeting at the beginning of an email
+# addressed to the support team. template addressed to the support team,
+# likely as a greeting.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:1
+msgid "Dear Support team,"
+msgstr "Estimado equipo de soporte,"
+
+# CTX-INTERPRETATION: This string appears in an HTML paragraph tag as part of
+# a notification to the support team about receiving a request form for an
+# account. a notification message to the support team about receiving a
+# request form for an account.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:3
+msgid "We have received the following request form for an account:"
+msgstr "Hemos recibido el siguiente formulario de solicitud para una cuenta:"
+
+# CTX-INTERPRETATION: This string appears in a web application as an
+# introductory sentence for product details. introductory sentence before
+# listing specific details about a product that has been requested by the
+# user.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:10
+msgid "Some details about the requested product follow:"
+msgstr ""
+"A continuación, se presentan algunos detalles sobre el producto solicitado:"
+
+# CTX-INTERPRETATION: This string appears on a webpage or user interface where
+# users can find additional information to validate a request form. users can
+# access additional information to ensure their request form is correctly
+# filled out.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:27
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:14
+msgid ""
+"To validate the request form, here you can get further info on this request:"
+msgstr ""
+"Para validar el formulario de solicitud, aquí puede obtener más información "
+"sobre esta solicitud:"
+
+# CTX-INTERPRETATION: This string appears as a tip or suggestion in the user
+# interface to guide users on how to obtain more information about an IP
+# address. interface of a scientific simulation application, advising users to
+# visit a specific website for additional information about an IP address.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:18
+msgid "TIP: Use https://ipinfo.io/ to find out more information on the IP."
+msgstr ""
+"CONSEJO: Utiliza https://ipinfo.io/ para obtener más información sobre la "
+"IP."
+
+# CTX-INTERPRETATION: This string appears as a prompt or button label in the
+# application interface. user interface of the application, allowing users to
+# request an account for accessing the specified product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/subject.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/subject.j2:1
+msgid "Request for an Account in %(product_name)s"
+msgstr "Solicitud de una Cuenta en %(product_name)s"
+
+# CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user who has requested to change their email address for their account. user
+# who has requested to change the email address associated with their account
+# for a specific product.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:3
+msgid ""
+"You have requested to change the email address linked to your "
+"%(product_name)s account. Please follow the on-screen information in the "
+"link below:"
+msgstr ""
+"Ha solicitado cambiar la dirección de correo electrónico vinculada a su "
+"cuenta %(product_name)s. Por favor, siga la información en pantalla en el "
+"enlace a continuación:"
+
+# CTX-INTERPRETATION: This string appears as a clickable button or link in the
+# user interface for changing the user's email address. user interface of the
+# application, allowing users to change their registered email address.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
+msgid "Change email"
+msgstr "Cambiar correo electrónico"
+
+# CTX-INTERPRETATION: This string appears in the footer of an email or support
+# message, encouraging users to reach out for assistance. webpage, offering
+# support contact information for users needing assistance with the scientific
+# simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further "
+"help."
+msgstr "No dude en contactarnos en %(support_link)s si necesita más ayuda."
+
+# CTX-INTERPRETATION: This string is used as a polite closing in an email. or
+# message from the support team of a scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:40
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:11
+msgid "Best Regards,"
+msgstr "Saludos cordiales,"
+
+# CTX-INTERPRETATION: This string is a customer support message encouraging
+# users to reach out for further assistance. application, providing users with
+# contact information for further assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need further"
+" help."
+msgstr "No dude en contactarnos en %(support_email)s si necesita más ayuda."
+
+# CTX-INTERPRETATION: This string appears in a notification or message
+# informing the user about a change in their sign-in email address for a
+# specific product. informing the user about a change to their sign-in email
+# address for the specified product.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/subject.j2:1
+msgid "Change of Your Sign-In Email Address on %(product_name)s"
+msgstr ""
+"Cambio de su dirección de correo electrónico de inicio de sesión en "
+"%(product_name)s"
+
+# CTX-INTERPRETATION: This string appears at the beginning of a message or
+# notification to address the user. notification addressed to the user within
+# the scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:1
+msgid "Dear User,"
+msgstr "Estimado usuario,"
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that their service run was affected by a platform issue and was not
+# billed. the user that their recent service run on a specific product was
+# affected by a platform issue and they were not charged for it.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:11
+msgid ""
+"We want to inform you that your service run (%(service_run)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+"Queremos informarle que su ejecución de servicio (%(service_run)s) en "
+"%(product_name)s fue afectada por un problema de la plataforma y no fue "
+"facturada."
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user about the reimbursement of credits to their account. the user that
+# a certain amount of credits has been reimbursed to their account within the
+# application.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:16
+msgid "%(credit_amount)s credits have been reimbursed to your Credit Account."
+msgstr ""
+"%(credit_amount)s créditos han sido reembolsados a su Cuenta de Créditos."
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that they do not need to take any further steps. the user that they
+# do not need to take any further steps after a credit reimbursement.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:7
+msgid "No action is needed on your part."
+msgstr "No se necesita ninguna acción de su parte."
+
+# CTX-INTERPRETATION: This string appears in a notification message to inform
+# the user about an issue with their service run that was not billed. the user
+# about an issue with their service run that resulted in no billing.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:3
+msgid ""
+"We want to inform you that your service run (%(service_run_id)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+"Queremos informarle que su ejecución de servicio (%(service_run_id)s) en "
+"%(product_name)s fue afectada por un problema de la plataforma y no fue "
+"facturada."
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user about the reimbursement of credits to their account. the user about
+# the reimbursement of credits to their account due to a platform issue.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:5
+msgid ""
+"%(reimbursed_credits)s credits have been reimbursed to your Credit Account."
+msgstr ""
+"Se han reembolsado %(reimbursed_credits)s créditos a su Cuenta de Crédito."
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that their credits have been reimbursed on a specific product. the
+# user that their credits have been reimbursed for a specific product within
+# the application.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/subject.j2:1
+msgid "Your credits have been reimbursed on %(product_name)s"
+msgstr "Tus créditos han sido reembolsados en %(product_name)s"
+
+# CTX-INTERPRETATION: This string is part of an email template informing users
+# about their Two-factor Authentication code. to provide them with a two-
+# factor authentication code for accessing their account on a specified host
+# platform.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:3
+msgid ""
+"Please find below the Two-factor Authentication sign-in code for your "
+"%(host)s account."
+msgstr ""
+"A continuación, encontrará el código de inicio de sesión de Autenticación de"
+" Dos Factores para su cuenta %(host)s."
+
+# CTX-INTERPRETATION: This string appears in a web application template where
+# a code is displayed to the user. a user's code is dynamically inserted and
+# displayed to them.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
+msgid "Your code is: %(code_display)s"
+msgstr "Su código es: %(code_display)s"
+
+# CTX-INTERPRETATION: This string appears in a notification or message sent to
+# provide a two-factor authentication code. users to provide them with a two-
+# factor authentication code for accessing their account.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
+msgid "Your code is: %(code)s"
+msgstr "Su código es: %(code)s"
+
+# CTX-INTERPRETATION: This string is used to inform the user of their two-
+# factor authentication code for a specific host. notification to inform the
+# user of their two-factor authentication code for accessing a specific host
+# or service.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/subject.j2:1
+msgid "%(code)s is Your 2FA Sign-In Code for %(host)s"
+msgstr "%(code)s es su código de acceso 2FA para %(host)s"
+
+# CTX-INTERPRETATION: The string 'Register' appears as a clickable button or
+# link for user registration. link on a webpage, likely prompting the user to
+# sign up or create an account for the scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:11
+msgid "Register"
+msgstr "Registrarse"
+
+# CTX-INTERPRETATION: This string appears as an instruction for users to
+# complete their registration by following the information displayed on the
+# screen. follow the displayed information on the screen to complete their
+# registration process.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:7
+msgid ""
+"Please follow the on-screen information and proceed with your registration."
+msgstr "Por favor, siga la información en pantalla y proceda con su registro."
+
+# CTX-INTERPRETATION: This string appears in the user interface of a
+# scientific simulation application, providing contact information for
+# support. scientific simulation application, providing users with contact
+# information for support in case they encounter any issues.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr ""
+"Si ocurre algún problema, no dude en contactarnos en %(support_link)s."
+
+# CTX-INTERPRETATION: This string appears as a hyperlink text in an email or
+# notification inviting the user to register on the platform. webpage,
+# directing the user to the registration page for the scientific simulation
+# application.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
+msgid "Click here to access the registration page: %(link)s"
+msgstr "Haga clic aquí para acceder a la página de registro: %(link)s"
+
+# CTX-INTERPRETATION: This string appears as part of an error message or help,
+# providing contact information for support. section in the application,
+# providing users with contact information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr ""
+"Si ocurre algún problema, no dude en contactarnos en %(support_email)s."
+
+# CTX-INTERPRETATION: This string appears in an email notification confirming
+# a successful payment and credit addition to a user's account. the successful
+# processing of a user's payment and the addition of credits to their account.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:10
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price)s for the purchase of %(credits)s. The credits have been added to "
+"your %(product_name)s account, and you are all set to utilize them."
+msgstr ""
+"Nos complace confirmar el procesamiento exitoso de su pago de %(price)s para"
+" la compra de %(credits)s. Los créditos se han añadido a su cuenta de "
+"%(product_name)s, y ya está listo para utilizarlos."
+
+# CTX-INTERPRETATION: This string appears in a confirmation message sent to a
+# user after a payment has been processed. users after a successful payment,
+# providing them with a link to view or download their payment receipt.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
+msgid "For more details you can view or download your %(receipt_link)s."
+msgstr "Para más detalles, puede ver o descargar su %(receipt_link)s."
+
+# CTX-INTERPRETATION: This string appears in a confirmation email sent to a
+# user after a successful payment. user after they have successfully made a
+# payment for credits in a scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:3
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price_dollars)s USD for the purchase of %(osparc_credits)s credits. The "
+"credits have been added to your %(product_name)s account, and you are all "
+"set to utilize them."
+msgstr ""
+"Nos complace confirmar el procesamiento exitoso de su pago de "
+"%(price_dollars)s USD por la compra de %(osparc_credits)s créditos. Los "
+"créditos han sido añadidos a su cuenta de %(product_name)s, y ya está listo "
+"para utilizarlos."
+
+# CTX-INTERPRETATION: This string appears in a confirmation message sent to a
+# user after a successful payment. users after a successful payment, providing
+# a link to view or download their receipt.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:5
+msgid ""
+"For more details you can view or download your receipt: %(invoice_url)s."
+msgstr "Para más detalles, puede ver o descargar su recibo: %(invoice_url)s."
+
+# CTX-INTERPRETATION: This string appears in a notification message confirming
+# a successful payment transaction. a successful payment transaction for
+# purchasing credits in the application.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/subject.j2:1
+msgid ""
+"Your Payment %(price_dollars)s USD for %(osparc_credits)s Credits Was "
+"Successful"
+msgstr ""
+"Su pago de %(price_dollars)s USD por %(osparc_credits)s créditos fue exitoso"
+
+# CTX-INTERPRETATION: This string is part of an email body, specifically the
+# 'body_html.j2' template, used to confirm a user's registration with a
+# specific product and host.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:5
+msgid ""
+"Thank you for registering with %(product_name)s. Your\n"
+"  account has been successfully created and you can now sign in to %(host)s."
+msgstr ""
+"Gracias por registrarse con %(product_name)s. Su\n"
+"  cuenta ha sido creada con éxito y ahora puede iniciar sesión en %(host)s."
+
+# CTX-INTERPRETATION: This string appears in the email body, offering support
+# contact information to the user after successful registration.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:8
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to contact\n"
+"  us at %(support_link)s."
+msgstr ""
+"Si tiene alguna pregunta o necesita asistencia, no dude en ponerse en "
+"contacto con nosotros en %(support_link)s."
+
+# CTX-INTERPRETATION: This string is part of an email template used to confirm
+# a user's registration with a specific product and the associated
+# host/service.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:3
+msgid ""
+"Thank you for registering with %(product_name)s. Your account\n"
+"has been successfully created and you can now sign in to %(host)s."
+msgstr ""
+"Gracias por registrarse con {{ product_name }}. Su cuenta\n"
+"ha sido creada con éxito y ahora puede iniciar sesión en {{ host }}."
+
+# CTX-INTERPRETATION: This string appears in an email body template, providing
+# contact information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:6
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to\n"
+"contact us at %(support_email)s."
+msgstr ""
+"Si tiene alguna pregunta o necesita asistencia, no dude en ponerse en "
+"contacto con nosotros en %(support_email)s."
+
+# CTX-INTERPRETATION: This string is part of an email subject line, welcoming
+# the user to a specific product after registration.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
+msgid "Welcome to %(product_name)s!"
+msgstr "¡Bienvenido a {{ product_name }}!"
+
+# CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user regarding a password reset request. user when a password reset request
+# is made for their account on a specific host platform.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:3
+msgid "A request to reset your %(host)s password has been made."
+msgstr ""
+"Se ha realizado una solicitud para restablecer su contraseña de %(host)s."
+
+# CTX-INTERPRETATION: This string appears in an email template prompting the
+# user to click a link to complete a password reset process. user to click a
+# link to complete a password reset process.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:5
+msgid "To complete the process, please click the link below:"
+msgstr ""
+"Para completar el proceso, por favor haga clic en el enlace a continuación:"
+
+# CTX-INTERPRETATION: This string appears as a clickable button or link in the
+# user interface for resetting a user's password. user interface of the
+# scientific simulation application, allowing users to reset their password.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:15
+msgid "Reset Password"
+msgstr "Restablecer Contraseña"
+
+# CTX-INTERPRETATION: This string appears in an error message displayed to the
+# user when a task cannot be completed. user when a task in the scientific
+# simulation application fails to complete.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:8
+msgid "It could not be completed due to the following reason:"
+msgstr "No se pudo completar debido a la siguiente razón:"
+
+# CTX-INTERPRETATION: This string is a security warning in an email or
+# notification message. to alert users about an unrequested action and provide
+# a contact link for security concerns.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:26
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_link)s for security reasons."
+msgstr ""
+"Si no solicitó esto, por favor contáctenos inmediatamente en "
+"%(support_link)s por razones de seguridad."
+
+# CTX-INTERPRETATION: This string appears in an email or notification sent to
+# users for security verification. users for security verification purposes.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:11
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_email)s for security reasons."
+msgstr ""
+"Si no solicitó esto, por favor contáctenos inmediatamente en "
+"%(support_email)s por razones de seguridad."
+
+# CTX-INTERPRETATION: This string is used to prompt the user to reset their
+# password on a specific host or platform. template where users are prompted
+# to reset their password on a specific host or server.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/subject.j2:1
+msgid "Reset Password on %(host)s"
+msgstr "Restablecer contraseña en %(host)s"
+
+# CTX-INTERPRETATION: This string appears in an email notification informing
+# the recipient that someone has shared a project with them on a specific
+# platform. the user that someone has shared a project with them on a specific
+# platform.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:3
+msgid ""
+"Great news! %(sharer_name)s has shared a project with you on "
+"%(product_name)s."
+msgstr ""
+"¡Buenas noticias! %(sharer_name)s ha compartido un proyecto contigo en "
+"%(product_name)s."
+
+# CTX-INTERPRETATION: This string appears in an email or notification message.
+# prompting the recipient to view and accept a shared project.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:5
+msgid "To view the project and accept the sharing, follow below:"
+msgstr "Para ver el proyecto y aceptar el compartir, siga a continuación:"
+
+# CTX-INTERPRETATION: The string 'Open' appears as a label for a hyperlink
+# that likely opens a new page or document. button that users can click to
+# open a new page or document within the scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:30
+msgid "Open"
+msgstr "Abrir"
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user that a project has been shared with them on a specific platform or
+# host. the user that a project has been shared with them on a specific
+# platform or service, indicated by the variable 'host'.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/subject.j2:1
+msgid "A project was shared with you on %(host)s"
+msgstr "Un proyecto fue compartido contigo en %(host)s"
+
+# CTX-INTERPRETATION: This string appears in a notification message informing
+# the user about a new reply in a support conversation. the user about a new
+# reply in a specific support conversation, with the conversation name being
+# dynamically inserted.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:8
+msgid "There is a new reply in the Support conversation %(convo_name)s."
+msgstr "Hay una nueva respuesta en la conversación de Soporte %(convo_name)s."
+
+# CTX-INTERPRETATION: This string appears as a notification message indicating
+# a new response in a support conversation. that a new response has been added
+# to a support conversation within the application.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid "There is a new reply in the Support conversation."
+msgstr "Hay una nueva respuesta en la conversación de Soporte."
+
+# CTX-INTERPRETATION: This string appears as a clickable button or link that
+# directs the user to a conversation page. directs the user to a conversation
+# page within the application.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:28
+msgid "Go to the Conversation"
+msgstr "Ir a la Conversación"
+
+# CTX-INTERPRETATION: This string appears in a notification email to inform
+# the user about a new reply in a specific support conversation. the user
+# about a new reply in a specific support conversation thread.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid ""
+"There is a new reply in the Support conversation \"%(conversation_name)s\"."
+msgstr ""
+"Hay una nueva respuesta en la conversación de Soporte "
+"\"%(conversation_name)s\"."
+
+# CTX-INTERPRETATION: This string is a prompt for users to view a conversation
+# by clicking a hyperlink. interface, allowing users to view the full
+# conversation or discussion thread related to a specific topic or task.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:8
+msgid "View the conversation: %(conversation_url)s"
+msgstr "Ver la conversación: %(conversation_url)s"
+
+# CTX-INTERPRETATION: This string appears as a notification message to inform
+# the user about a new reply in a specific conversation in their Support
+# Center. the user about a new reply in a specific conversation within the
+# Support Center.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center \"%(conversation_name)s\" conversation"
+msgstr ""
+"Nueva respuesta en la conversación \"%(conversation_name)s\" de su Centro de"
+" Soporte"
+
+# CTX-INTERPRETATION: This string appears as a notification message to inform
+# the user about a new reply in their support center conversation. users about
+# a new reply in their ongoing conversation within the Support Center of the
+# application.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center conversation"
+msgstr "Nueva respuesta en la conversación de su Centro de Soporte"
+
+# CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user who has requested to close their account. users who have requested to
+# close their account on the platform.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:3
+msgid ""
+"We have received your account closure request, and we want to say thank you "
+"for being a part of our platform. While we're sad to see you go, we respect "
+"your decision."
+msgstr ""
+"Hemos recibido su solicitud de cierre de cuenta y queremos agradecerle por "
+"ser parte de nuestra plataforma. Aunque nos entristece verlo partir, "
+"respetamos su decisión."
+
+# CTX-INTERPRETATION: This string appears in a paragraph informing users about
+# the retention and deletion policy of their projects and data. the retention
+# period of their projects and data, and the process to reactivate their
+# account via email before permanent deletion.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:10
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_link)s. Afterwards it will "
+"be completely deleted from our system."
+msgstr ""
+"Sus proyectos y datos se conservarán de forma segura durante "
+"%(retention_days)s días. Dentro de ese período, si decide regresar, puede "
+"reactivar su cuenta enviándonos un correo electrónico a %(support_link)s. "
+"Después, se eliminará completamente de nuestro sistema."
+
+# CTX-INTERPRETATION: This string appears on a webpage or application offering
+# support contact information. interface where users can find contact
+# information for customer support.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:14
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to"
+" contact us to %(support_link)s in case of questions or any required "
+"assistance."
+msgstr ""
+"Nuestro equipo de soporte está aquí para ayudar con lo que necesite. No dude"
+" en contactarnos a %(support_link)s en caso de preguntas o cualquier "
+"asistencia requerida."
+
+# CTX-INTERPRETATION: This string appears in a farewell message at the end of
+# a communication. a document or email, wishing the recipient success in their
+# future projects or career.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:9
+msgid "We wish you all the best in your future endeavors."
+msgstr "Le deseamos todo lo mejor en sus futuros proyectos."
+
+# CTX-INTERPRETATION: This string appears in a notification message sent to
+# users regarding the retention and deletion of their projects and data after
+# account closure. users who have requested to close their account, informing
+# them about the retention period of their data and the possibility of
+# reactivating their account within that time frame.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:5
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period, if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_email)s. Afterwards, it "
+"will be completely deleted from our system."
+msgstr ""
+"Sus proyectos y datos se conservarán de forma segura durante "
+"%(retention_days)s días. Dentro de ese período, si alguna vez decide "
+"regresar, puede reactivar su cuenta enviándonos un correo electrónico a "
+"%(support_email)s. Después, se eliminará completamente de nuestro sistema."
+
+# CTX-INTERPRETATION: This string appears in a user interface or email
+# communication, offering users assistance and providing contact information
+# for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:7
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to"
+" contact us at %(support_email)s in case of questions or any required "
+"assistance."
+msgstr ""
+"Nuestro equipo de soporte está aquí para ayudar con cualquier cosa que "
+"necesite. No dude en contactarnos en %(support_email)s en caso de preguntas "
+"o cualquier asistencia requerida."
+
+# CTX-INTERPRETATION: This string appears in the user interface of the
+# application when a user is closing their account. application, likely as a
+# message or notification informing the user about the process of closing
+# their account on a specific platform or service identified by the variable
+# 'host'.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/subject.j2:1
+msgid "Closing Your Account in %(host)s"
+msgstr "Cerrando su cuenta en %(host)s"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when they attempt to create an API key with a display name that is already
+# in use. when they attempt to create an API key with a display name that is
+# already in use.
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:15
+msgid "An API key with this display name already exists"
+msgstr "Ya existe una clave API con este nombre para mostrar"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a service with an API key that does not exist. attempts to
+# access the application with an API key that does not exist or is incorrect.
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:19
+msgid "The requested API key could not be found"
+msgstr "No se pudo encontrar la clave API solicitada"
+
+# CTX-INTERPRETATION: This message appears when the application cannot access
+# the catalog service. the catalog service, informing the user that the issue
+# is being addressed.
+#: services/web/server/src/simcore_service_webserver/catalog/_constants.py:9
+msgid ""
+"The catalog service is currently unavailable. This issue has been logged and"
+" will be investigated. "
+msgstr ""
+"El servicio de catálogo no está disponible actualmente. Este problema ha "
+"sido registrado y será investigado. "
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the catalog service cannot be accessed due to temporary unavailability. the
+# catalog service of the application is not accessible due to temporary
+# unavailability.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:84
+msgid ""
+"The catalog service is temporarily unavailable. Please try again later."
+msgstr ""
+"El servicio de catálogo no está disponible temporalmente. Por favor, "
+"inténtelo de nuevo más tarde."
+
+# CTX-INTERPRETATION: This error message appears when a user tries to access a
+# catalog item without the necessary permissions. catalog item in the
+# application without having the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:91
+msgid "Access denied: You don't have permission to view this catalog item."
+msgstr ""
+"Acceso denegado: No tienes permiso para ver este elemento del catálogo."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a catalog item that is unavailable. they attempt to
+# access a catalog item in the application that is either nonexistent or has
+# been deleted.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:97
+msgid "This catalog item does not exist or has been removed."
+msgstr "Este elemento del catálogo no existe o ha sido eliminado."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# tries to perform an operation without an available default pricing plan.
+# attempts to perform an operation without an available default pricing plan
+# in a scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:101
+msgid "No default pricing plan is available for this operation."
+msgstr ""
+"No hay un plan de precios predeterminado disponible para esta operación."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a service that lacks a predefined pricing unit. attempts to
+# access a service without a predefined pricing unit in a scientific
+# simulation application.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:105
+msgid "No default pricing unit is defined for this service."
+msgstr ""
+"No se ha definido una unidad de precio predeterminada para este servicio."
+
+# CTX-INTERPRETATION: This string is a user message indicating that a feature
+# is still being developed and can be enabled with a specific setting. is
+# under development and can be enabled by setting a specific environment
+# variable.
+#: services/web/server/src/simcore_service_webserver/constants.py:39
+msgid ""
+"Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current "
+"implementation"
+msgstr ""
+"En desarrollo. Use WEBSERVER_DEV_FEATURES_ENABLED=1 para habilitar la "
+"implementación actual"
+
+# CTX-INTERPRETATION: This message appears when a user encounters an error or
+# issue with the application. issue within the application, prompting them to
+# retry the action or contact support if the problem continues.
+#: services/web/server/src/simcore_service_webserver/constants.py:47
+msgid "Please try again shortly. If the issue persists, contact support."
+msgstr ""
+"Por favor, inténtelo de nuevo en breve. Si el problema persiste, contacte "
+"con el soporte."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a conversation that does not exist or cannot be found.
+# attempts to access a conversation that does not exist or cannot be found in
+# the application.
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:27
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:34
+msgid "Conversation not found."
+msgstr "Conversación no encontrada."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to use a
+# conversation type that is not supported by the application. initiate a
+# conversation with an unsupported type in the application.
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:41
+msgid "Unsupported conversation type."
+msgstr "Tipo de conversación no compatible."
+
+# CTX-INTERPRETATION: This string is a user-facing error message displayed
+# when a service is not available. when the service is unavailable due to a
+# potential issue with the director service.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:45
+msgid ""
+"This service is temporarily unavailable. The incident has been logged and "
+"will be investigated. "
+msgstr ""
+"Este servicio no está disponible temporalmente. El incidente ha sido "
+"registrado y será investigado. "
+
+# CTX-INTERPRETATION: This error message appears when the application attempts
+# to run computations but cannot find the necessary default wallet. to run
+# computations but cannot find a default wallet configuration.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:83
+msgid ""
+"A default wallet is required for running computations but could not be "
+"found."
+msgstr ""
+"Se requiere una billetera predeterminada para ejecutar cálculos, pero no se "
+"pudo encontrar."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they do not have enough credits in their wallet to perform a computation.
+# they attempt to run a computation in the application without having enough
+# credits in their wallet.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Your wallet does not have sufficient credits to run this computation: "
+"{details}"
+msgstr ""
+"Su billetera no tiene suficientes créditos para ejecutar este cálculo: "
+"{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a folder cannot be located. when a requested folder is not found in the
+# application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:35
+msgid "The requested folder could not be found."
+msgstr "No se pudo encontrar la carpeta solicitada."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a workspace is not found. when a requested workspace is not found in
+# the application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:39
+msgid "The requested workspace could not be found."
+msgstr "No se pudo encontrar el espacio de trabajo solicitado."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a folder without the necessary permissions. they
+# attempt to access a folder for which they lack the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:43
+msgid "You do not have permission to access this folder."
+msgstr "No tienes permiso para acceder a esta carpeta."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a workspace without the necessary permissions. they
+# attempt to access a workspace without the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:47
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:32
+msgid "You do not have permission to access this workspace."
+msgstr "No tienes permiso para acceder a este espacio de trabajo."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# indicating that the folder cannot be accessed in the current workspace. when
+# they attempt to access a folder that is not accessible within the current
+# workspace of the application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:51
+msgid "This folder is not available in the selected workspace."
+msgstr ""
+"Esta carpeta no está disponible en el espacio de trabajo seleccionado."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a folder operation fails. when a folder operation fails due to a
+# conflict, with details provided in the placeholder.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:55
+#, python-brace-format
+msgid "The folder operation cannot be completed: {details}"
+msgstr "La operación de la carpeta no se puede completar: {details}"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the folder configuration is incorrect. the folder configuration is
+# incorrect, with specific details provided in the placeholder.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:59
+#, python-brace-format
+msgid "The folder configuration is invalid: {details}"
+msgstr "La configuración de la carpeta es inválida: {details}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to move a project without having the necessary permissions. attempts
+# to move a project without the necessary permissions in a scientific
+# simulation application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:64
+#, python-brace-format
+msgid ""
+"You do not have permission to move the project with UUID: {project_uuid}. To"
+" locate this project, copy and paste the UUID into the search bar."
+msgstr ""
+"No tienes permiso para mover el proyecto con UUID: {project_uuid}. Para "
+"localizar este proyecto, copia y pega el UUID en la barra de búsqueda."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a folder containing active projects. delete a folder containing
+# active projects in the scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:72
+msgid ""
+"Cannot move folder to trash because it contains projects that are currently "
+"running. Please stop all running services first and try again."
+msgstr ""
+"No se puede mover la carpeta a la papelera porque contiene proyectos que "
+"están actualmente en ejecución. Por favor, detenga todos los servicios en "
+"ejecución primero y vuelva a intentarlo."
+
+# CTX-INTERPRETATION: This error message appears when an attempt to stop
+# running services in projects within a folder fails before the folder is
+# trashed. running services in projects within a folder fails before the
+# folder is moved to trash.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:79
+msgid ""
+"Something went wrong while stopping running services in projects within this"
+" folder before trashing. Aborting trash."
+msgstr ""
+"Algo salió mal al detener los servicios en ejecución en los proyectos dentro"
+" de esta carpeta antes de enviarla a la papelera. Abortando el envío a la "
+"papelera."
+
+# CTX-INTERPRETATION: This error message is displayed when the application
+# cannot find the group access rights for a specific function in a product.
+# cannot find the group access rights for a specific function within a given
+# product.
+#: services/web/server/src/simcore_service_webserver/functions/_functions_exceptions.py:23
+#, python-brace-format
+msgid ""
+"Group access rights could not be found for Function '{function_id}' in "
+"product '{product_name}'."
+msgstr ""
+"No se pudieron encontrar los derechos de acceso del grupo para la Función "
+"'{function_id}' en el producto '{product_name}'."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# cannot be found by their ID or email. with a specific ID or email cannot be
+# found in the system.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:27
+#, python-brace-format
+msgid "The user with ID {uid} or email {email} could not be found."
+msgstr ""
+"El usuario con ID {uid} o correo electrónico {email} no pudo ser encontrado."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a group
+# with a specific ID cannot be located. with a specific ID cannot be found in
+# the application.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:31
+#, python-brace-format
+msgid "The group with ID {gid} could not be found."
+msgstr "El grupo con ID {gid} no pudo ser encontrado."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user is
+# not found in a specified group. attempts to access a group they are not a
+# member of in the application.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:35
+#, python-brace-format
+msgid "The user is not a member of group {gid}."
+msgstr "El usuario no es miembro del grupo {gid}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# tries to join a group they are already a member of. attempts to join a group
+# they are already a member of in the application.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:39
+#, python-brace-format
+msgid "The user is already a member of group {gid}."
+msgstr "El usuario ya es miembro del grupo {gid}."
+
+# CTX-INTERPRETATION: This error message is displayed when a user attempts to
+# access a group without the necessary permissions. access a group without the
+# necessary permissions in the application.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:44
+#, python-brace-format
+msgid ""
+"You do not have sufficient rights for {permission} access to group {gid}."
+msgstr ""
+"No tiene suficientes derechos para el acceso de {permission} al grupo {gid}."
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the provided RRID is invalid. the provided RRID (Research Resource
+# Identifier) is not valid.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:51
+#, python-brace-format
+msgid "The RRID {rrid} is not valid."
+msgstr "El RRID {rrid} no es válido."
+
+# CTX-INTERPRETATION: This error message appears when the application tries to
+# access RRID information from scicrunch.org, but the service is down. access
+# RRID information from the scicrunch.org service, but the service is not
+# available.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:56
+msgid ""
+"Unable to retrieve RRID information because the scicrunch.org service is "
+"currently unavailable."
+msgstr ""
+"No se puede recuperar la información de RRID porque el servicio "
+"scicrunch.org no está disponible actualmente."
+
+# CTX-INTERPRETATION: This string is displayed to users when they attempt to
+# use an invitation link that is not functioning correctly. use an invitation
+# link that is not functioning correctly, possibly due to being altered or
+# missing parts.
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:9
+msgid "The invitation link appears to be corrupted or incomplete."
+msgstr "El enlace de invitación parece estar dañado o incompleto."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to use an invitation link that has already been used. attempts to use
+# an invitation link that has already been utilized in the scientific
+# simulation application.
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:11
+msgid "This invitation has already been used and cannot be used again."
+msgstr "Esta invitación ya ha sido utilizada y no se puede usar de nuevo."
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to access a market item that does not exist. tries to access a market
+# item in the application that does not exist or cannot be found.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:22
+#, python-brace-format
+msgid "The requested market item '{licensed_item_id}' could not be found."
+msgstr ""
+"El artículo de mercado solicitado '{licensed_item_id}' no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a credit account without the necessary permissions. attempts
+# to access a credit account without the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:29
+#, python-brace-format
+msgid "You do not have permission to access credit account '{wallet_id}'."
+msgstr "No tienes permiso para acceder a la cuenta de crédito '{wallet_id}'."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to make a purchase but does not have enough credits in their account.
+# attempts to make a purchase but does not have enough credits in their
+# account.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:36
+msgid ""
+"Your credit account does not have sufficient funds to complete this "
+"purchase."
+msgstr ""
+"Su cuenta de crédito no tiene fondos suficientes para completar esta compra."
+
+# CTX-INTERPRETATION: This error message appears when a user selects an
+# invalid pricing plan for a licensed item. incompatible pricing plan for a
+# licensed item in the application.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:43
+msgid ""
+"The selected pricing plan is not valid for this licensed item. Please choose"
+" a different plan."
+msgstr ""
+"El plan de precios seleccionado no es válido para este artículo con "
+"licencia. Por favor, elija un plan diferente."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to register an email that is already in the system. attempts to
+# register an email that has already been used for an account, prompting them
+# to contact support if they haven't received updates.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/_rest_exceptions.py:38
+#, python-brace-format
+msgid ""
+"An account for the email {email} was already submitted. If you haven't "
+"received any updates, please contact support."
+msgstr ""
+"Ya se ha enviado una cuenta para el correo electrónico {email}. Si no has "
+"recibido ninguna actualización, por favor contacta con el soporte."
+
+# CTX-INTERPRETATION: This string appears in an error message that is raised
+# when two-factor authentication login is not available. when the two-factor
+# authentication login feature is not available in the application.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:209
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
+msgid "2FA login is not available"
+msgstr "El inicio de sesión con 2FA no está disponible"
+
+# CTX-INTERPRETATION: The string appears as a user-facing message within a
+# registration flow, informing the user that a valid invitation code is
+# required for successful registration.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:156
+msgid "Registration requires a valid invitation code."
+msgstr "Se requiere un código de invitación válido para registrarse."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# does not have a phone number registered in the system. attempts to receive a
+# two-factor authentication code via SMS but does not have a phone number
+# registered in their account.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
+msgid "User does not have a phone number registered"
+msgstr "El usuario no tiene un número de teléfono registrado"
+
+# CTX-INTERPRETATION: This string is used in a messaging service to send a
+# verification code to a user. verification code to a user's phone number,
+# with placeholders for the user's first name and the code.
+#. @TRANSLATOR SMS message of at most 70 characters
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#, python-brace-format
+msgid "Dear {first_name}, your verification code is {code}"
+msgstr "Estimado {first_name}, su código de verificación es {code}"
+
+# CTX-INTERPRETATION: This string is a user notification message indicating
+# that a verification code has been sent to the user's phone number. that a
+# verification code has been sent to the user's phone number via SMS.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:5
+#, python-brace-format
+msgid "A verification code has been sent via SMS to {phone_number}."
+msgstr "Se ha enviado un código de verificación por SMS a {phone_number}."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to use two-factor authentication, but the service is not available.
+# attempts to use two-factor authentication, but the service is temporarily
+# down.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:7
+msgid ""
+"The two-factor authentication service is currently unavailable. Please try "
+"again in a few minutes."
+msgstr ""
+"El servicio de autenticación de dos factores no está disponible actualmente."
+" Por favor, inténtelo de nuevo en unos minutos."
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to the
+# user after their account has been activated. user after they have
+# successfully activated their account.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:10
+msgid "Your account has been successfully activated."
+msgstr "Su cuenta ha sido activada con éxito."
+
+# CTX-INTERPRETATION: This string appears as a notification message prompting
+# the user to activate their account via an email link before logging in.
+# users to activate their account via an email link before they can log in.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:12
+msgid ""
+"Please activate your account using the activation link we sent to your email"
+" before logging in."
+msgstr ""
+"Por favor, active su cuenta utilizando el enlace de activación que enviamos "
+"a su correo electrónico antes de iniciar sesión."
+
+# CTX-INTERPRETATION: This string is part of a welcome message displayed after
+# a user successfully creates an account, indicating they can now log in using
+# their email address.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:16
+#, python-brace-format
+msgid ""
+"Welcome! Your account has been created. You can now sign in as {email}."
+msgstr ""
+"¡Bienvenido! Se ha creado su cuenta. Ahora puede iniciar sesión con {email}."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# enters incorrect login details. attempts to log in with incorrect
+# credentials.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:20
+msgid ""
+"The provided credentials are incorrect. Please verify your email and "
+"password."
+msgstr ""
+"Las credenciales proporcionadas son incorrectas. Por favor, verifica tu "
+"correo electrónico y contraseña."
+
+# CTX-INTERPRETATION: This message appears when the application fails to send
+# an email. an email, prompting the user to try again later.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:24
+msgid "We're unable to send emails at this time. Please try again later."
+msgstr ""
+"No podemos enviar correos electrónicos en este momento. Por favor, inténtelo"
+" de nuevo más tarde."
+
+# CTX-INTERPRETATION: This string appears in a user interface message
+# prompting the user to verify their new email address. prompting the user to
+# verify their new email address by clicking a link sent to them.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:27
+msgid ""
+"Please check your new email address and click the verification link we sent "
+"you."
+msgstr ""
+"Por favor, revise su nueva dirección de correo electrónico y haga clic en el"
+" enlace de verificación que le enviamos."
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to the
+# user after they have updated their email address. user after they have
+# successfully updated their email address in the application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:30
+msgid "Your email address has been successfully updated."
+msgstr "Su dirección de correo electrónico ha sido actualizada con éxito."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to register with an email that is already in use. attempts to register
+# with an email address that is already linked to an existing account.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:32
+msgid ""
+"This email address is already associated with an account. Please sign in or "
+"use a different email address."
+msgstr ""
+"Esta dirección de correo electrónico ya está asociada con una cuenta. Por "
+"favor, inicie sesión o use una dirección de correo electrónico diferente."
+
+# CTX-INTERPRETATION: This message is displayed to users after they request an
+# email with further instructions. further instructions via email, such as for
+# account verification or password reset.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:35
+#, python-brace-format
+msgid "We've sent an email to {email} with further instructions."
+msgstr "Hemos enviado un correo electrónico a {email} con más instrucciones."
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to the
+# user after they have logged into the application. user after they have
+# successfully logged into the application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:36
+msgid "You have successfully signed in."
+msgstr "Has iniciado sesión con éxito."
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to the
+# user after they have logged out of the application. user after they have
+# logged out of the application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:37
+msgid "You have successfully signed out."
+msgstr "Has cerrado sesión con éxito."
+
+# CTX-INTERPRETATION: This message appears when a user has recently requested
+# a password reset. a password reset and is prompted to check their email for
+# the reset link or wait before making another request.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:39
+msgid ""
+"You've recently requested a password reset. Please check your email for the "
+"reset link or wait before requesting another one."
+msgstr ""
+"Recientemente has solicitado un restablecimiento de contraseña. Por favor, "
+"revisa tu correo electrónico para el enlace de restablecimiento o espera "
+"antes de solicitar otro."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to reset their password but lacks the necessary permissions.
+# attempts to reset their password but lacks the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:44
+#, python-brace-format
+msgid ""
+"Unable to reset password. Permissions may have expired or been removed. "
+"Please try again, or contact support if the problem continues: "
+"{support_email}"
+msgstr ""
+"No se puede restablecer la contraseña. Es posible que los permisos hayan "
+"expirado o hayan sido eliminados. Por favor, inténtelo de nuevo o contacte "
+"con el soporte si el problema continúa: {support_email}"
+
+# CTX-INTERPRETATION: This string appears as a notification message to inform
+# the user that their password has been successfully updated. the user that
+# their password change request has been successfully processed.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:48
+msgid "Your password has been updated."
+msgstr "Tu contraseña ha sido actualizada."
+
+# CTX-INTERPRETATION: This message appears when a user attempts to update
+# their password but the entered password and confirmation do not match. their
+# password but the entered password and confirmation password do not match.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:50
+msgid "Password and confirmation do not match. Please try again."
+msgstr ""
+"La contraseña y la confirmación no coinciden. Por favor, inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This message appears when a user attempts to perform an
+# action that requires a phone number, but none is linked to their account.
+# action that requires a phone number, but none is linked to their account.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:52
+msgid "No phone number is associated with this account."
+msgstr "No hay un número de teléfono asociado con esta cuenta."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to resend a verification code but is not allowed to do so anymore.
+# attempts to resend a verification code after reaching the limit during a
+# two-factor authentication process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:54
+msgid ""
+"You can no longer resend the verification code. Please restart the "
+"verification process."
+msgstr ""
+"Ya no puedes reenviar el código de verificación. Por favor, reinicia el "
+"proceso de verificación."
+
+# CTX-INTERPRETATION: This message appears when a user attempts to submit a
+# verification code after the allowed time or attempts have expired.
+# verification code after the allowed time has expired during the login
+# process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:58
+msgid ""
+"You can no longer submit a verification code. Please restart the login "
+"process."
+msgstr ""
+"Ya no puede enviar un código de verificación. Por favor, reinicie el proceso"
+" de inicio de sesión."
+
+# CTX-INTERPRETATION: This string is a user-facing error message displayed
+# when a user attempts to register a phone, which is no longer permitted. when
+# a user attempts to register a phone number, which is no longer permitted,
+# prompting them to restart the registration process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:62
+msgid ""
+"Phone registration is no longer allowed. Please restart the registration "
+"process."
+msgstr ""
+"El registro de teléfono ya no está permitido. Por favor, reinicie el proceso"
+" de registro."
+
+# CTX-INTERPRETATION: This message appears when a user attempts to submit a
+# verification code after the allowed time or attempts have expired.
+# verification code after the allowed time or attempts have expired, prompting
+# them to restart the process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:66
+msgid ""
+"You can no longer submit a verification code. Please restart the "
+"confirmation process."
+msgstr ""
+"Ya no puede enviar un código de verificación. Por favor, reinicie el proceso"
+" de confirmación."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to use an unregistered email address. attempts to log in or perform an
+# action requiring email verification with an unregistered email address.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:69
+msgid "This email address is not registered."
+msgstr "Esta dirección de correo electrónico no está registrada."
+
+# CTX-INTERPRETATION: This string appears as a notification message to users
+# informing them about the scheduled deletion of their account. whose accounts
+# are marked for deletion, providing them with instructions to contact support
+# for reactivation or more information.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:71
+#, python-brace-format
+msgid ""
+"This account is scheduled for deletion. To reactivate it or for more "
+"information, please contact support: {support_email}"
+msgstr ""
+"Esta cuenta está programada para su eliminación. Para reactivarla o para más"
+" información, por favor contacte con el soporte: {support_email}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# their account access is revoked. their account access is restricted,
+# instructing them to contact support for assistance.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:76
+#, python-brace-format
+msgid ""
+"Access to this account is no longer available. Please contact support for "
+"more information: {support_email}"
+msgstr ""
+"El acceso a esta cuenta ya no está disponible. Por favor, contacte con "
+"soporte para más información: {support_email}"
+
+# CTX-INTERPRETATION: This string is a user-facing error message displayed
+# when an account is no longer active. when an account has expired, prompting
+# the user to contact support for further assistance.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:80
+#, python-brace-format
+msgid ""
+"This account has expired and access is no longer available. Please contact "
+"support for assistance: {support_email}"
+msgstr ""
+"Esta cuenta ha expirado y el acceso ya no está disponible. Por favor, "
+"contacte con soporte para obtener asistencia: {support_email}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to register a disabled account. attempts to register an account that
+# has been previously disabled.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:85
+#, python-brace-format
+msgid ""
+"This account has been disabled and cannot be registered again. Please "
+"contact support for details: {support_email}"
+msgstr ""
+"Esta cuenta ha sido deshabilitada y no se puede registrar de nuevo. Por "
+"favor, contacte con el soporte para más detalles: {support_email}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# enters an incorrect verification code. enters an incorrect verification code
+# during the two-factor authentication process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:90
+msgid ""
+"The verification code entered is not valid. Please enter a valid "
+"verification code or generate a new one."
+msgstr ""
+"El código de verificación ingresado no es válido. Por favor, ingrese un "
+"código de verificación válido o genere uno nuevo."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# enters an expired or incorrect verification code. enters an expired or
+# incorrect verification code during the authentication process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:94
+msgid ""
+"The verification code has expired or is incorrect. Please request a new code"
+" and try again."
+msgstr ""
+"El código de verificación ha expirado o es incorrecto. Por favor, solicite "
+"un nuevo código e inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# inputs an incorrect CAPTCHA. inputs an incorrect CAPTCHA during a login or
+# verification process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:97
+msgid "The CAPTCHA entered is incorrect. Please try again."
+msgstr "El CAPTCHA ingresado es incorrecto. Por favor, inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# enters an incorrect password for their email address. enters a password that
+# does not match the one on record for their email address during login.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:99
+msgid ""
+"The password does not match the one associated with this email address. "
+"Please try again."
+msgstr ""
+"La contraseña no coincide con la asociada a esta dirección de correo "
+"electrónico. Por favor, inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# enters an incorrect password for a unified account login. attempts to log in
+# with an incorrect password, suggesting they try the password from a specific
+# account due to unified login across platforms.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:103
+#, python-brace-format
+msgid ""
+"The password does not match the one associated with this email address.TIP: "
+"Your accounts across multiple platforms have been unified into a single "
+"login. Please try using the password from your {suggested_product} account."
+msgstr ""
+"La contraseña no coincide con la asociada a esta dirección de correo "
+"electrónico. CONSEJO: Tus cuentas en múltiples plataformas se han unificado "
+"en un solo inicio de sesión. Por favor, intenta usar la contraseña de tu "
+"cuenta de {suggested_product}."
+
+# CTX-INTERPRETATION: This string is a user-facing message that appears when a
+# password does not meet the minimum length requirement. user is prompted to
+# create or update their password, indicating the minimum number of characters
+# required for security.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:109
+#, python-brace-format
+msgid ""
+"Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters "
+"for security."
+msgstr ""
+"Tu contraseña debe contener al menos {LOGIN_PASSWORD_MIN_LENGTH} caracteres "
+"por seguridad."
+
+# CTX-INTERPRETATION: This string appears as a message to users when they need
+# assistance with obtaining a new invitation. to contact support for a new
+# invitation to access the application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:113
+msgid "Please contact our support team to request a new invitation."
+msgstr ""
+"Por favor, contacte a nuestro equipo de soporte para solicitar una nueva "
+"invitación."
+
+# CTX-INTERPRETATION: This string appears in an error message template used to
+# inform the user about invalid form data. inform users that the form they
+# submitted contains invalid information, with the specific error details
+# replacing the placeholder ⟨0⟩.
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:92
+#, python-brace-format
+msgid "The form contains invalid information: '{failed}'"
+msgstr "El formulario contiene información no válida: '{failed}'"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# enters incorrect email or password while attempting to delete their account.
+# attempts to delete their account but provides incorrect email or password
+# credentials.
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:131
+msgid "Wrong email or password. Please try again to delete this account"
+msgstr ""
+"Correo electrónico o contraseña incorrectos. Por favor, inténtelo de nuevo "
+"para eliminar esta cuenta."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to send a notification but has not selected any recipients. attempts
+# to send a notification without selecting any recipients in the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:23
+msgid "No active recipients selected."
+msgstr "No se han seleccionado destinatarios activos."
+
+# CTX-INTERPRETATION: This string appears as an error message when the email
+# settings for a specific product are not set up. settings for a specific
+# product are not configured in the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:30
+#, python-brace-format
+msgid "Email settings for product '{product_name}' are not configured."
+msgstr ""
+"La configuración de correo electrónico para el producto '{product_name}' no "
+"está configurada."
+
+# CTX-INTERPRETATION: This string appears in an error message when the
+# validation of a notification template's context fails. validation of a
+# context for a notification template fails in the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:37
+#, python-brace-format
+msgid ""
+"Validation of context failed for notification template '{template_name}'."
+msgstr ""
+"La validación del contexto falló para la plantilla de notificación "
+"'{template_name}'."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a
+# notification template for a specific channel is not found. notification
+# template for a specific channel is not found in the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:44
+#, python-brace-format
+msgid ""
+"Notification template '{template_name}' for channel '{channel}' not found."
+msgstr ""
+"Plantilla de notificación '{template_name}' para el canal '{channel}' no "
+"encontrada."
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to use an unsupported notification channel. attempts to use an
+# unsupported notification channel in the application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:51
+#, python-brace-format
+msgid "Notification channel '{channel}' is not supported."
+msgstr "El canal de notificación '{channel}' no es compatible."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to send a notification to more recipients than allowed. attempts to
+# send a notification to more recipients than the allowed maximum in the
+# application.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:58
+#, python-brace-format
+msgid ""
+"The number of recipients ({num_recipients}) exceeds the maximum of "
+"{max_recipients}. Please reduce the number of recipients and try again."
+msgstr ""
+"El número de destinatarios ({num_recipients}) excede el máximo de "
+"{max_recipients}. Por favor, reduzca el número de destinatarios e intente de"
+" nuevo."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to make a payment but lacks the necessary permissions. attempts to
+# make a payment to a digital wallet without having the required permissions.
+#: services/web/server/src/simcore_service_webserver/payments/_onetime_api.py:40
+#, python-brace-format
+msgid ""
+"You do not have the necessary permissions to make payments to wallet "
+"{wallet_id}."
+msgstr ""
+"No tienes los permisos necesarios para realizar pagos a la billetera "
+"{wallet_id}."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# a requested product is not available in the system. a requested product is
+# not found in the system.
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:16
+msgid "This product could not be found."
+msgstr "Este producto no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string is displayed to users when the application
+# is not accessible due to a configuration problem. encounters a configuration
+# error that makes the service temporarily unavailable.
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:21
+msgid "This service is temporarily unavailable due to a configuration issue. "
+msgstr ""
+"Este servicio no está disponible temporalmente debido a un problema de "
+"configuración. "
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they attempt to access a folder they do not have permission to access. they
+# attempt to access a folder they do not have permission to view.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:61
+msgid "Access to this folder is forbidden."
+msgstr "El acceso a esta carpeta está prohibido."
+
+# CTX-INTERPRETATION: This string appears in an error message that is shown
+# when a user tries to access a folder that does not exist. displayed to the
+# user when a requested folder is not found on the server.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:65
+msgid "The requested folder could not be found"
+msgstr "No se pudo encontrar la carpeta solicitada"
+
+# CTX-INTERPRETATION: This string is an error message displayed when a node is
+# not found in a specified project. specific node cannot be found within a
+# given project in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:73
+#, python-brace-format
+msgid "Node '{node_uuid}' was not found in project '{project_uuid}'."
+msgstr "El nodo '{node_uuid}' no se encontró en el proyecto '{project_uuid}'."
+
+# CTX-INTERPRETATION: This error message is displayed when a requested parent
+# node cannot be located in the system. node in a hierarchical data structure
+# is not found, likely due to an incorrect or missing identifier.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:77
+#, python-brace-format
+msgid "Parent node '{node_uuid}' was not found."
+msgstr "El nodo padre '{node_uuid}' no fue encontrado."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user has
+# not provided necessary input values for a specific project node in the
+# application. attempts to run a simulation without setting necessary input
+# values for a specific project node in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:81
+msgid "Required input values for this project node have not been set."
+msgstr ""
+"No se han establecido los valores de entrada requeridos para este nodo del "
+"proyecto."
+
+# CTX-INTERPRETATION: The string appears in a REST exception handler,
+# indicating an error message when a user attempts to duplicate a project that
+# is currently in the trash.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Cannot duplicate project {project_uuid} because it is in the trash. Restore "
+"it first and try again."
+msgstr ""
+"No se puede duplicar el proyecto {project_uuid} porque está en la papelera. "
+"Restaurelo primero y vuelva a intentarlo."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a project
+# cannot be deleted due to a conflict. deletion fails due to a conflict, with
+# placeholders for the project UUID and additional details.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:97
+#, python-brace-format
+msgid "Unable to complete deletion of project '{project_uuid}': {details}"
+msgstr ""
+"No se puede completar la eliminación del proyecto '{project_uuid}': "
+"{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a project group cannot be found. when a specified project group cannot
+# be located in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:103
+#, python-brace-format
+msgid "The requested project group could not be found: {details}"
+msgstr "No se pudo encontrar el grupo de proyectos solicitado: {details}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user does
+# not have the necessary permissions to perform an action on a specific
+# project. attempts to perform an action on a project without having the
+# necessary access rights.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:108
+#, python-brace-format
+msgid ""
+"You do not have sufficient access rights to perform this action on project "
+"{project_uuid}."
+msgstr ""
+"No tienes suficientes derechos de acceso para realizar esta acción en el "
+"proyecto {project_uuid}."
+
+# CTX-INTERPRETATION: This error message appears when a user without the
+# necessary permissions attempts to update the project template type.
+# necessary permissions attempts to update the type of a project template in
+# the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:115
+msgid ""
+"You do not have sufficient permissions to update the project template type."
+msgstr ""
+"No tienes permisos suficientes para actualizar el tipo de plantilla del "
+"proyecto."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# attempts to use the project in an unsupported manner. attempts to use the
+# project in an unsupported manner within the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:121
+msgid "The project cannot be used in this way."
+msgstr "El proyecto no se puede utilizar de esta manera."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# create a project with more nodes than allowed. create a project with more
+# nodes than the allowed maximum in the scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:126
+#, python-brace-format
+msgid ""
+"The project cannot contain more than {max_num_nodes} nodes. Requested: "
+"{requested_num_nodes}."
+msgstr ""
+"El proyecto no puede contener más de {max_num_nodes} nodos. Solicitado: "
+"{requested_num_nodes}."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a project
+# cannot be located. with a specific UUID cannot be found in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:132
+#, python-brace-format
+msgid "Project {project_uuid} could not be found."
+msgstr "El proyecto {project_uuid} no se pudo encontrar."
+
+# CTX-INTERPRETATION: This error message appears when a user tries to open
+# more projects than allowed simultaneously. more projects than the allowed
+# limit in the scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:137
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_projects} project/s at once. Please close"
+" another project and retry."
+msgstr ""
+"No puede abrir más de {max_num_projects} proyecto/s a la vez. Por favor, "
+"cierre otro proyecto e inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This error message appears when a user tries to start a
+# new dynamic service but the maximum limit has already been reached. new
+# dynamic service in the application, but the maximum limit of concurrently
+# running services has already been reached.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:144
+msgid ""
+"The maximum number of concurrently running dynamic services has been "
+"reached. Please manually stop a service and retry."
+msgstr ""
+"Se ha alcanzado el número máximo de servicios dinámicos en ejecución "
+"simultánea. Por favor, detenga manualmente un servicio e inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# change the wallet while there are pending transactions in the project.
+# change the wallet associated with a project that has pending transactions in
+# a scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:152
+msgid ""
+"This project has pending transactions. Changing the wallet is currently not "
+"allowed."
+msgstr ""
+"Este proyecto tiene transacciones pendientes. Cambiar la billetera "
+"actualmente no está permitido."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to open too many sessions for the same project simultaneously.
+# attempts to open more sessions than allowed for a single project in the
+# application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:159
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_sessions} session(s) for the same project"
+" at once. Please close another session and retry."
+msgstr ""
+"No puede abrir más de {max_num_sessions} sesión(es) para el mismo proyecto a"
+" la vez. Por favor, cierre otra sesión e inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# change the credit account of a project that is currently embargoed due to a
+# negative balance from the last transaction. change the credit account linked
+# to a project that is currently embargoed due to a negative balance from a
+# previous transaction.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:167
+#, python-brace-format
+msgid ""
+"Unable to change the credit account linked to the project. The project is "
+"embargoed because the last transaction of {debt_amount} resulted in the "
+"credit account going negative."
+msgstr ""
+"No se puede cambiar la cuenta de crédito vinculada al proyecto. El proyecto "
+"está embargado porque la última transacción de {debt_amount} resultó en que "
+"la cuenta de crédito quedara en negativo."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to open
+# a project that is blocked due to insufficient funds from a previous
+# transaction. a project in the application, but the project is locked due to
+# a negative balance from the last transaction.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:176
+#, python-brace-format
+msgid ""
+"Unable to open the project. The project is embargoed because the last "
+"transaction of {debt_amount} resulted in the credit account going negative."
+msgstr ""
+"No se puede abrir el proyecto. El proyecto está embargado porque la última "
+"transacción de {debt_amount} resultó en que la cuenta de crédito quedara en "
+"negativo."
+
+# CTX-INTERPRETATION: This error message is displayed when a user submits a
+# request with incorrect tag identifiers. request with tag IDs that are not
+# recognized by the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:183
+msgid "Invalid tag IDs were provided in the request."
+msgstr ""
+"Se proporcionaron identificadores de etiquetas no válidos en la solicitud."
+
+# CTX-INTERPRETATION: This error message appears when a user tries to create a
+# project with a type and template combination that is not allowed. project
+# with a combination of project type and template type that is not supported
+# by the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:188
+msgid "The project type and template type combination is not valid"
+msgstr "La combinación del tipo de proyecto y tipo de plantilla no es válida"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# they are denied access to a specific workspace. they attempt to access a
+# workspace they do not have permission to enter.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:198
+#, python-brace-format
+msgid "Access to this workspace is forbidden: {details}"
+msgstr "El acceso a este espacio de trabajo está prohibido: {details}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a workspace that does not exist. attempts to access a
+# workspace that does not exist or cannot be located.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:202
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:36
+#, python-brace-format
+msgid "The requested workspace could not be found: {details}"
+msgstr "No se pudo encontrar el espacio de trabajo solicitado: {details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a wallet cannot be found. when a requested wallet cannot be found in
+# the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:210
+#, python-brace-format
+msgid "The requested wallet could not be found: {details}"
+msgstr "No se pudo encontrar la billetera solicitada: {details}"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a project's wallet without the necessary permissions. access a
+# feature of the application that requires payment, but they do not have
+# permission to use the project's associated payment method.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:215
+#, python-brace-format
+msgid ""
+"Payment is required, but you do not have access to the project's linked "
+"wallet: {details}"
+msgstr ""
+"Se requiere pago, pero no tienes acceso a la billetera vinculada al "
+"proyecto: {details}"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user does
+# not have enough credits in their wallet to perform an operation. attempts to
+# perform an operation in the application but lacks sufficient credits in
+# their wallet.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:222
+#, python-brace-format
+msgid ""
+"The wallet does not have enough credits to complete this operation: "
+"{details}"
+msgstr ""
+"La billetera no tiene suficientes créditos para completar esta operación: "
+"{details}"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when the default pricing plan is not available. when the application cannot
+# locate the default pricing plan.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:232
+msgid "The default pricing plan could not be found."
+msgstr "No se pudo encontrar el plan de precios predeterminado."
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# the default pricing unit is missing or unavailable. the default pricing unit
+# is missing or unavailable in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:236
+msgid "The default pricing unit could not be found."
+msgstr "La unidad de precio predeterminada no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a conversation cannot be located. when a conversation they are trying
+# to access cannot be located in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:244
+msgid "The requested conversation could not be found."
+msgstr "No se pudo encontrar la conversación solicitada."
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a specific conversation message is missing or unavailable. a specific
+# conversation message is missing or unavailable in the application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:248
+msgid "The requested conversation message could not be found."
+msgstr "No se pudo encontrar el mensaje de conversación solicitado."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the catalog service cannot be accessed. the catalog service cannot be
+# accessed due to unavailability.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:256
+msgid "The catalog service is currently unavailable."
+msgstr "El servicio de catálogo no está disponible actualmente."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# indicating that the clusters-keeper service cannot be accessed at the
+# moment. when the clusters-keeper service cannot be accessed due to it being
+# unavailable.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:260
+msgid "The clusters-keeper service is currently unavailable."
+msgstr "El servicio de clusters-keeper no está disponible actualmente."
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# lacks the necessary permissions to access a specific resource. tries to
+# access a feature or resource in the application without having the necessary
+# permissions.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:265
+#, python-brace-format
+msgid "Access denied: You do not have sufficient permissions for {name}."
+msgstr "Acceso denegado: No tienes permisos suficientes para {name}."
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to access an item that does not exist in the catalog. attempts to
+# access an item in the catalog that does not exist.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:271
+#, python-brace-format
+msgid "The requested item '{name}' was not found."
+msgstr "El elemento solicitado '{name}' no fue encontrado."
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# none of the specified items could be located. none of the specified items
+# could be located in the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:275
+#, python-brace-format
+msgid "None of these items '{name}' could be found."
+msgstr "Ninguno de estos elementos '{name}' pudo ser encontrado."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# when a dynamic service cannot be stopped. indicating that a dynamic service
+# could not be stopped. when the application fails to stop a dynamic service
+# identified by project and node IDs.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/nodes_rest.py:311
+#, python-brace-format
+msgid "Could not stop dynamic service {project_id}.{node_id}"
+msgstr "No se pudo detener el servicio dinámico {project_id}.{node_id}"
+
+# CTX-INTERPRETATION: This error message is displayed to the user when the
+# system cannot identify their session due to a missing socket ID. application
+# cannot identify their session due to a missing socket ID, prompting them to
+# refresh the page or contact support if the issue continues.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/projects_states_rest.py:115
+msgid ""
+"Data corruption detected: unable to identify your session (socket_id "
+"missing). Please refresh the page and try again. If the problem persists, "
+"contact support."
+msgstr ""
+"Se detectó corrupción de datos: no se puede identificar su sesión (falta "
+"socket_id). Por favor, actualice la página e intente de nuevo. Si el "
+"problema persiste, contacte con soporte."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a study that is currently active. delete a study that is currently
+# active. delete a study that is currently active in the scientific simulation
+# application.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:30
+#, python-brace-format
+msgid ""
+"Current study is in use and cannot be trashed [project_id={project_uuid}]. "
+"Please stop all services first and try again"
+msgstr ""
+"El estudio actual está en uso y no se puede eliminar "
+"[project_id={project_uuid}]. Por favor, detenga todos los servicios primero "
+"y vuelva a intentarlo."
+
+# CTX-INTERPRETATION: This string appears in an error message that is shown
+# when there is a failure in stopping services before they are discarded.
+# displayed when an attempt to stop services before deleting them fails.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:35
+msgid ""
+"Something went wrong while stopping services before trashing. Aborting "
+"trash."
+msgstr ""
+"Algo salió mal al detener los servicios antes de eliminarlos. Abortando "
+"eliminación."
+
+# CTX-INTERPRETATION: This string is displayed to users when the application's
+# resource usage tracking service cannot be accessed temporarily. service for
+# tracking resource usage is not accessible, prompting them to retry shortly.
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:8
+msgid ""
+"The resource usage tracking service is temporarily unavailable. Please try "
+"again in a few moments."
+msgstr ""
+"El servicio de seguimiento del uso de recursos no está disponible "
+"temporalmente. Por favor, inténtelo de nuevo en unos momentos."
+
+# CTX-INTERPRETATION: This string appears as an error message when the
+# application cannot locate the data on resource usage. application fails to
+# retrieve data about resource usage.
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:13
+msgid "The requested resource usage information could not be found."
+msgstr ""
+"No se pudo encontrar la información solicitada sobre el uso de recursos."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user does
+# not have the necessary permissions. attempts to access a feature or area of
+# the application without the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:5
+msgid "Unauthorized"
+msgstr "No autorizado"
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the authentication service cannot be accessed temporarily. the
+# authentication service is not accessible, preventing them from logging in.
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:6
+msgid "Authentication service is temporary unavailable"
+msgstr "El servicio de autenticación no está disponible temporalmente"
+
+# CTX-INTERPRETATION: This message appears when a user tries to access a study
+# without being logged in. in the application without being logged in.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:11
+msgid ""
+"You must be logged in to access this study. Please log in and try again."
+msgstr ""
+"Debe iniciar sesión para acceder a este estudio. Por favor, inicie sesión e "
+"inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a project that either does not exist or is not shared with them.
+# access a project by its ID, but the project either does not exist or is not
+# accessible to the user.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:15
+#, python-brace-format
+msgid "The project with ID '{project_id}' could not be found."
+msgstr "El proyecto con ID '{project_id}' no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a project that is either unavailable or not shared with
+# them. tries to access a project that either does not exist or is not shared
+# with them.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:19
+#, python-brace-format
+msgid "The project with ID '{project_id}' is not available or not shared."
+msgstr ""
+"El proyecto con ID '{project_id}' no está disponible o no está compartido."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a project that is not publicly available. tries to access a
+# project that is restricted to registered users only.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:24
+#, python-brace-format
+msgid ""
+"This project is only available for registered users.<br/><br/>Please log in "
+"and try again.<br/><br/>If you don't have an account, please request one at "
+"{support_email}.<br/><br/>"
+msgstr ""
+"Este proyecto solo está disponible para usuarios registrados.<br/><br/>Por "
+"favor, inicie sesión e intente de nuevo.<br/><br/>Si no tiene una cuenta, "
+"solicite una en {support_email}.<br/><br/>"
+
+# CTX-INTERPRETATION: This message appears when the platform has reached its
+# limit for anonymous users. limit for anonymous users, prompting the user to
+# try again later or log in.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:32
+msgid ""
+"We have reached the maximum number of anonymous users allowed on the "
+"platform. Please try again later or log in with a registered account."
+msgstr ""
+"Hemos alcanzado el número máximo de usuarios anónimos permitidos en la "
+"plataforma. Por favor, inténtelo de nuevo más tarde o inicie sesión con una "
+"cuenta registrada."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# an unexpected issue occurs in the application. an unexpected issue occurs in
+# the application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:38
+msgid ""
+"Sorry, something unexpected went wrong! We track these errors automatically,"
+" but if the problem persists please contact us. In the meantime, try "
+"refreshing the page."
+msgstr ""
+"Lo sentimos, algo inesperado salió mal. Registramos estos errores "
+"automáticamente, pero si el problema persiste, por favor contáctenos. "
+"Mientras tanto, intente actualizar la página."
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to the
+# user when their project cannot be opened. user when their project cannot be
+# opened. user when the application fails to open a project, with the specific
+# error detail provided in the placeholder ⟨0⟩.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:81
+#, python-brace-format
+msgid "Unable to open your project: {public_error}"
+msgstr "No se puede abrir su proyecto: {public_error}"
+
+# CTX-INTERPRETATION: This string appears as an error message displayed to
+# users who are not registered. users attempting to access the application
+# without being registered.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:109
+msgid ""
+"Access is restricted to registered users.<br/><br/>If you don't have an "
+"account, please contact support to request one.<br/><br/>"
+msgstr ""
+"El acceso está restringido a usuarios registrados.<br/><br/>Si no tienes una"
+" cuenta, por favor contacta al soporte para solicitar una.<br/><br/>"
+
+# CTX-INTERPRETATION: This string appears as an error message in the
+# application. application when a user provides an invalid link that lacks
+# necessary data or service information.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:143
+msgid ""
+"The link you provided is invalid because it doesn't contain valid "
+"information related to data or a service. Please check the link and make "
+"sure it is correct."
+msgstr ""
+"El enlace que proporcionó no es válido porque no contiene información válida"
+" relacionada con datos o un servicio. Por favor, verifique el enlace y "
+"asegúrese de que sea correcto."
+
+# CTX-INTERPRETATION: This string appears as an error message when a file type
+# is not supported by any registered service. is not supported by any of the
+# registered services in the application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:10
+#, python-brace-format
+msgid "None of the registered services can handle '{file_type}' files."
+msgstr ""
+"Ninguno de los servicios registrados puede manejar archivos de tipo "
+"'{file_type}'."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to upload a file that is too large. attempts to upload a file that is
+# too large for the application to process.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:14
+#, python-brace-format
+msgid "File size {file_size_in_mb} MB exceeds the allowed limit."
+msgstr ""
+"El tamaño del archivo {file_size_in_mb} MB excede el límite permitido."
+
+# CTX-INTERPRETATION: This error message is displayed when a requested service
+# cannot be located. with a specific key and version cannot be located by the
+# application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:18
+#, python-brace-format
+msgid "Service {service_key}:{service_version} could not be found."
+msgstr "El servicio {service_key}:{service_version} no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a link that is either incorrect or missing necessary
+# components. provides a link that is either invalid or incomplete in the
+# context of a scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:22
+msgid "The provided link is invalid or incomplete."
+msgstr "El enlace proporcionado es inválido o está incompleto."
+
+# CTX-INTERPRETATION: This string is an error message displayed when the
+# maximum number of guest users is reached, prompting the user to log in with
+# a registered account or try again later. application has reached its limit
+# for guest users, prompting the user to log in with a registered account or
+# try again later.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:27
+msgid ""
+"Maximum number of guest users has been reached. Please log in with a "
+"registered account or try again later."
+msgstr ""
+"Se ha alcanzado el número máximo de usuarios invitados. Por favor, inicie "
+"sesión con una cuenta registrada o intente nuevamente más tarde."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a guest
+# user tries to access a restricted resource. user attempts to access a
+# restricted resource in the scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:33
+msgid "Guest users are not allowed to access this resource."
+msgstr "Los usuarios invitados no tienen permitido acceder a este recurso."
+
+# CTX-INTERPRETATION: This error message is displayed when a project file in
+# the application is corrupted and cannot be accessed. the scientific
+# simulation application is detected as corrupted and cannot be accessed.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:38
+#, python-brace-format
+msgid ""
+"Project {project_uuid} appears to be corrupted and cannot be accessed "
+"properly."
+msgstr ""
+"El proyecto {project_uuid} parece estar dañado y no se puede acceder "
+"correctamente."
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to access a tag that either does not exist or they do not have
+# permission to access. attempts to access a tag in the application that
+# either does not exist or they do not have permission to access.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:40
+#, python-brace-format
+msgid "The tag '{tag_id}' could not be found or you don't have access to it."
+msgstr ""
+"La etiqueta '{tag_id}' no se pudo encontrar o no tienes acceso a ella."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# perform an operation on a tag but lacks the necessary permissions or the tag
+# does not exist. perform an operation on a tag in the application, but the
+# tag is either missing or the user lacks the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:47
+#, python-brace-format
+msgid ""
+"Unable to {operation} tag '{tag_id}'. The tag was not found or you don't "
+"have sufficient access."
+msgstr ""
+"No se puede {operation} la etiqueta '{tag_id}'. La etiqueta no fue "
+"encontrada o no tiene acceso suficiente."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to share something with everyone, which is not permitted. attempts to
+# share a tag with all users, which is restricted by the application's
+# permissions.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:53
+msgid "Sharing with everyone is not allowed."
+msgstr "No está permitido compartir con todos."
+
+# CTX-INTERPRETATION: This string appears in an error message that is shown
+# when a user tries to share something with all users but lacks the necessary
+# admin privileges. when a non-admin user attempts to share a feature with all
+# users.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:58
+msgid ""
+"Sharing with all users is only allowed for admin users (e.g. testers, POs, "
+"...)."
+msgstr ""
+"Compartir con todos los usuarios solo está permitido para usuarios "
+"administradores (por ejemplo, testers, POs, ...)."
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to share or unshare a tag without having the necessary permissions.
+# attempts to share or unshare a tag without having the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:65
+#, python-brace-format
+msgid ""
+"You don't have sufficient access rights to share (or unshare) tag "
+"'{tag_id}'."
+msgstr ""
+"No tienes suficientes derechos de acceso para compartir (o dejar de "
+"compartir) la etiqueta '{tag_id}'."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# a file with a specific identifier cannot be located. a file with a specific
+# identifier cannot be located in the system.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:26
+#, python-brace-format
+msgid "The file with identifier {file_id} could not be found"
+msgstr "El archivo con el identificador {file_id} no se pudo encontrar"
+
+# CTX-INTERPRETATION: This string appears in an error message displayed to a
+# user who lacks permission to access a specific file. users when they attempt
+# to access a file without the necessary permissions in a scientific
+# simulation application.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:31
+#, python-brace-format
+msgid ""
+"Permission denied: You (user {user_id}) don't have the necessary rights to "
+"access file {file_id} in location {location_id}"
+msgstr ""
+"Permiso denegado: Usted (usuario {user_id}) no tiene los derechos necesarios"
+" para acceder al archivo {file_id} en la ubicación {location_id}"
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a task was stopped before it was finished. a task identified by a job ID was
+# stopped before it could be completed.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:38
+#, python-brace-format
+msgid "Task {job_id} was terminated before completion"
+msgstr "La tarea {job_id} fue terminada antes de completarse"
+
+# CTX-INTERPRETATION: This string appears in an error message that is shown
+# when a task encounters an error during execution. displayed to the user when
+# a task in the scientific simulation application encounters an error.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:43
+#, python-brace-format
+msgid ""
+"Task '{job_id}' encountered an error: {exc_msg} (error type: '{exc_type}')"
+msgstr ""
+"La tarea '{job_id}' encontró un error: {exc_msg} (tipo de error: "
+"'{exc_type}')"
+
+# CTX-INTERPRETATION: This string is a user-facing error message indicating
+# that a task is still in progress and not yet finished. that a specific task
+# identified by a job ID is still in progress and has not yet finished.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:49
+#, python-brace-format
+msgid "Task {job_id} is still running and has not completed yet"
+msgstr ""
+"La tarea {job_id} todavía se está ejecutando y no se ha completado aún."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# indicating that a specific task could not be found. when a task with a
+# specific ID cannot be found in the system.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:53
+#, python-brace-format
+msgid "The requested task with ID {job_id} does not exist"
+msgstr "La tarea solicitada con ID {job_id} no existe"
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# indicating a problem with the task scheduling system. when the task
+# scheduling system fails due to an internal server error.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:58
+msgid ""
+"The task scheduling system encountered an error. Please try again later"
+msgstr ""
+"El sistema de programación de tareas encontró un error. Por favor, inténtelo"
+" de nuevo más tarde."
+
+# CTX-INTERPRETATION: This string is an error message displayed to the user
+# indicating that the application cannot retrieve the current status of a
+# specific task. when the application fails to retrieve the current status of
+# a specific task identified by a job ID.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:64
+#, python-brace-format
+msgid "Unable to get the current status for task {job_id}"
+msgstr "No se puede obtener el estado actual de la tarea {job_id}"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a project that is currently active. delete a project that is still
+# active, indicating that all running services must be stopped before
+# proceeding.
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:30
+msgid ""
+"The project is currently in use and cannot be moved to trash. Please stop "
+"all running services first and try again."
+msgstr ""
+"El proyecto está actualmente en uso y no se puede mover a la papelera. Por "
+"favor, detenga todos los servicios en ejecución primero e intente de nuevo."
+
+# CTX-INTERPRETATION: This error message appears when the application fails to
+# stop services before they are moved to trash. stop certain services before
+# attempting to delete them, resulting in the cancellation of the operation.
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:37
+msgid ""
+"An error occurred while stopping services before moving to trash. The "
+"operation has been cancelled."
+msgstr ""
+"Se produjo un error al detener los servicios antes de moverlos a la "
+"papelera. La operación ha sido cancelada."
+
+# CTX-INTERPRETATION: This string appears as an error message when the
+# application fails to create or update user preferences. application fails to
+# create or update user preferences due to a bad request.
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:19
+msgid "Could not create or modify preferences"
+msgstr "No se pudieron crear o modificar las preferencias"
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# preference is not found. preference specified by the placeholder is not
+# found in the system.
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
+#, python-brace-format
+msgid "Provided {frontend_preference_name} not found"
+msgstr "No se encontró el {frontend_preference_name} proporcionado"
+
+# CTX-INTERPRETATION: This string is an error message displayed when the API
+# token for a specific service is missing. application cannot locate the API
+# token for a specified service.
+#: services/web/server/src/simcore_service_webserver/user_tokens/_controller/rest/_rest_exceptions.py:16
+#, python-brace-format
+msgid "The API token for '{service}' could not be found."
+msgstr "No se pudo encontrar el token de API para '{service}'."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to register but no pending registration request is found for their
+# email in the specified product. attempts to register with an email that does
+# not have a pending registration request in the specified product.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:30
+#, python-brace-format
+msgid ""
+"No pending registration request found for email {email} in {product_name}."
+msgstr ""
+"No se encontró ninguna solicitud de registro pendiente para el correo "
+"electrónico {email} en {product_name}."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# a requested user cannot be found due to registration or privacy settings. a
+# requested user profile cannot be accessed due to non-registration or privacy
+# settings.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:37
+msgid ""
+"The requested user could not be found. This may be because the user is not "
+"registered or has privacy settings enabled."
+msgstr ""
+"No se pudo encontrar al usuario solicitado. Esto puede deberse a que el "
+"usuario no está registrado o tiene configuraciones de privacidad "
+"habilitadas."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to register with a username that is already taken. attempts to
+# register with a username that is already taken, suggesting an alternative
+# username.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:45
+#, python-brace-format
+msgid ""
+"The username '{user_name}' is already in use. Please try "
+"'{alternative_user_name}' instead."
+msgstr ""
+"El nombre de usuario '{user_name}' ya está en uso. Por favor, intente con "
+"'{alternative_user_name}' en su lugar."
+
+# CTX-INTERPRETATION: This string is an error message displayed when a user
+# attempts to pre-register an email that already has existing accounts.
+# attempts to pre-register an email that is already associated with one or
+# more existing accounts.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:52
+#, python-brace-format
+msgid ""
+"Found {num_found} existing account(s) for '{email}'. Unable to pre-register "
+"an existing user."
+msgstr ""
+"Se encontraron {num_found} cuenta(s) existente(s) para '{email}'. No se "
+"puede pre-registrar un usuario existente."
+
+# CTX-INTERPRETATION: This error message appears when a user tries to access a
+# product that is still being set up and is not available yet. product that is
+# still being set up and is not available for use yet.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:59
+msgid ""
+"This product is currently being configured and is not yet ready for use. "
+"Please try again later."
+msgstr ""
+"Este producto está siendo configurado actualmente y aún no está listo para "
+"su uso. Por favor, inténtelo de nuevo más tarde."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to proceed without having initiated the phone registration process.
+# attempts to proceed with a phone registration process that has not been
+# initiated.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:66
+msgid ""
+"No pending phone registration found. Please start the phone registration "
+"process first."
+msgstr ""
+"No se encontró un registro de teléfono pendiente. Por favor, inicie primero "
+"el proceso de registro de teléfono."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user's
+# phone registration session is no longer valid. phone registration session is
+# no longer valid or has expired, prompting them to restart the registration
+# process.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:73
+msgid ""
+"Your phone registration session is invalid or has expired. Please start the "
+"phone registration process again."
+msgstr ""
+"Su sesión de registro telefónico no es válida o ha expirado. Por favor, "
+"inicie el proceso de registro telefónico nuevamente."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# enters an incorrect confirmation code. inputs an incorrect confirmation code
+# during phone registration in the application.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:81
+msgid ""
+"The confirmation code you entered is incorrect. Please check and try again."
+msgstr ""
+"El código de confirmación que ingresaste es incorrecto. Por favor, verifica "
+"e inténtalo de nuevo."
+
+# CTX-INTERPRETATION: This string appears as a user-facing error message when
+# a product is not available or cannot be located in the system. a requested
+# product is not found in the system, likely due to an incorrect product ID or
+# the product being unavailable.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:88
+msgid "The requested product could not be found."
+msgstr "El producto solicitado no se pudo encontrar."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to access a pre-registration that does not exist. attempts to access a
+# pre-registration that does not exist in the system.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:95
+msgid "The requested pre-registration was not found."
+msgstr "La preinscripción solicitada no fue encontrada."
+
+# CTX-INTERPRETATION: This string appears in an error message indicating that
+# a request has already been reviewed and cannot be changed or relocated. a
+# request has already been reviewed and cannot be changed or moved to another
+# state.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:102
+msgid "This request was already reviewed and cannot be moved."
+msgstr "Esta solicitud ya fue revisada y no se puede mover."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to link
+# a request that is already associated with an existing account. a request to
+# an account that has already been associated with another account, preventing
+# further action.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:109
+msgid ""
+"This request is already linked to a created account and cannot be moved."
+msgstr ""
+"Esta solicitud ya está vinculada a una cuenta creada y no se puede mover."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# tries to register with an email that is already in use for the target
+# product. attempts to register with an email that is already associated with
+# an existing request in the product.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:116
+msgid "A request with this email already exists in the target product."
+msgstr ""
+"Ya existe una solicitud con este correo electrónico en el producto objetivo."
+
+# CTX-INTERPRETATION: This string appears in an error message when a user
+# tries to access a product that is not available. tries to access a product
+# that is not available in the list of valid product names.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:72
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:205
+#, python-brace-format
+msgid ""
+"Invalid product '{product_name}'. The specified product does not exist."
+msgstr ""
+"Producto no válido '{product_name}'. El producto especificado no existe."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user is
+# making requests too quickly in the application. makes too many requests to
+# the application in a short period of time.
+#: services/web/server/src/simcore_service_webserver/utils_rate_limiting.py:20
+msgid ""
+"Requests are being made too frequently. Please wait a moment before trying "
+"again."
+msgstr ""
+"Se están realizando solicitudes con demasiada frecuencia. Por favor, espere "
+"un momento antes de intentarlo de nuevo."
+
+# CTX-INTERPRETATION: This message appears when a user attempts to make a
+# payment for a product that does not have pricing set up. payment for a
+# product in the application, but the pricing information has not been set up
+# yet.
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:6
+msgid ""
+"Payments are not currently available for this product as pricing has not "
+"been configured."
+msgstr ""
+"Los pagos no están disponibles actualmente para este producto ya que no se "
+"ha configurado el precio."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to make
+# a payment but their account lacks necessary billing information. a payment
+# but their account lacks necessary billing information.
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:11
+msgid ""
+"Unable to process payment because required billing information (such as "
+"country for tax purposes) is missing from your account. Please contact "
+"support to complete your billing setup."
+msgstr ""
+"No se puede procesar el pago porque falta información de facturación "
+"requerida (como el país para fines fiscales) en su cuenta. Por favor, "
+"contacte con el soporte para completar la configuración de su facturación."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# the payment processing system is down. the payment processing system is
+# down, advising them to contact support for assistance.
+#: services/web/server/src/simcore_service_webserver/wallets/_handlers.py:88
+msgid ""
+"Payment processing is currently unavailable. Please hold off on retrying and"
+" contact support for help completing your payment. Our team has been "
+"notified and is already looking into it."
+msgstr ""
+"El procesamiento de pagos no está disponible actualmente. Por favor, espere "
+"antes de volver a intentarlo y contacte con el soporte para obtener ayuda "
+"para completar su pago. Nuestro equipo ha sido notificado y ya está "
+"investigando el problema."
+
+# CTX-INTERPRETATION: This string appears in an error message template used to
+# indicate invalid parameters in a request path. indicate invalid parameters
+# in a request path. inform users about invalid parameters in the request path
+# of an HTTP request.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:24
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request path"
+msgstr "Parámetro/s inválido/s '{failed}' en la ruta de solicitud"
+
+# CTX-INTERPRETATION: This string appears in an error message template used to
+# indicate invalid parameters in a request query. indicate invalid parameters
+# in a request query. inform users about invalid parameters in their request
+# query.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:25
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request query"
+msgstr "Parámetro/s inválido/s '{failed}' en la consulta de solicitud"
+
+# CTX-INTERPRETATION: This string is used to indicate that there are invalid
+# parameters in the request headers. parameters in the HTTP request headers.
+# errors, specifically when there are invalid parameters in the request
+# headers of a web request.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:26
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request headers"
+msgstr "Parámetro/s inválido/s '{failed}' en los encabezados de la solicitud"
+
+# CTX-INTERPRETATION: This string appears in an error message template used to
+# indicate invalid fields in a request body. indicate invalid fields in a
+# request body. inform the user about invalid fields in the request body of an
+# HTTP request.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:27
+#, python-brace-format
+msgid "Invalid field/s '{failed}' in request body"
+msgstr "Campo/s inválido/s '{failed}' en el cuerpo de la solicitud"
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# access a workspace group that does not exist. access a workspace group in
+# the application that does not exist or cannot be located.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:26
+#, python-brace-format
+msgid ""
+"The requested workspace {workspace_id} group {group_id} could not be found."
+msgstr ""
+"El grupo {group_id} del espacio de trabajo solicitado {workspace_id} no se "
+"pudo encontrar."
+
+# CTX-INTERPRETATION: This error message appears when a user attempts to
+# delete a workspace while projects are still running. delete a workspace in
+# the application, but the action is blocked because there are active projects
+# running that need to be stopped first.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:42
+msgid ""
+"Unable to delete workspace because one or more projects are currently "
+"running. Please stop all running services and try again."
+msgstr ""
+"No se puede eliminar el espacio de trabajo porque uno o más proyectos están "
+"actualmente en ejecución. Por favor, detenga todos los servicios en "
+"ejecución e inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This error message appears when an attempt to stop
+# running services in projects within a workspace fails before the workspace
+# is deleted. running services in projects within a workspace fails before the
+# projects are moved to trash.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:49
+msgid ""
+"Something went wrong while stopping running services in projects within this"
+" workspace before trashing. Aborting trash."
+msgstr ""
+"Algo salió mal al detener los servicios en ejecución en los proyectos dentro"
+" de este espacio de trabajo antes de eliminarlo. Abortando eliminación."
+
+# CTX-INTERPRETATION: This string is an error message displayed to users when
+# an internal error occurs. an internal error occurs in the scientific
+# simulation application.
+#: packages/service-library/src/servicelib/aiohttp/rest_middlewares.py:37
+msgid ""
+"We apologize for the inconvenience. The issue has been recorded, please "
+"report it if it persists."
+msgstr ""
+"Lamentamos las molestias. El problema ha sido registrado, por favor "
+"repórtelo si persiste."
+
+# CTX-INTERPRETATION: This string appears as a notification message prompting
+# the user to activate their account using a provided link. the user to
+# activate their account using a provided link. users to activate their
+# account via an email link before they can log in.
+#~ msgid "Please activate your account via the link below:"
+#~ msgstr "Por favor, active su cuenta mediante el enlace a continuación:"
+
+# CTX-INTERPRETATION: The string 'Activate' appears as a label for a button or
+# link that initiates an action. link that, when clicked, will perform an
+# action such as enabling a feature or starting a process in the scientific
+# simulation application.
+#~ msgid "Activate"
+#~ msgstr "Activar"
+
+# CTX-INTERPRETATION: This string appears as a confirmation message to users
+# after they have registered successfully. after they have successfully
+# registered for the scientific simulation application, instructing them to
+# verify their account via an email link.
+#, python-brace-format
+#~ msgid ""
+#~ "You are registered successfully! To activate your account, please click on "
+#~ "the verification link in the email we sent you to {email}."
+#~ msgstr ""
+#~ "¡Te has registrado con éxito! Para activar tu cuenta, haz clic en el enlace "
+#~ "de verificación en el correo electrónico que te enviamos a {email}."
+
+# CTX-INTERPRETATION: This error message appears when the application cannot
+# find the project owner in the list of users with access rights to the
+# project. locate the project owner's permissions within the project's access
+# rights settings.
+#~ msgid "The project owner could not be found in the project's access rights."
+#~ msgstr ""
+#~ "No se pudo encontrar al propietario del proyecto en los derechos de acceso "
+#~ "del proyecto."

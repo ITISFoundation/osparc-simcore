@@ -37,18 +37,20 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import ensure_ends_with, limited_gather
-from simcore_postgres_database.utils_repos import transaction_context
-from sqlalchemy.ext.asyncio import AsyncEngine
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .constants import (
     DATCORE_ID,
     EXPAND_DIR_MAX_ITEM_COUNT,
+    EXPORTS_S3_PREFIX,
     MAX_CONCURRENT_S3_TASKS,
     MAX_LINK_CHUNK_BYTE_SIZE,
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
@@ -81,6 +83,7 @@ from .modules.db.access_layer import AccessLayerRepository
 from .modules.db.file_meta_data import FileMetaDataRepository
 from .modules.db.projects import ProjectRepository
 from .modules.db.tokens import TokenRepository
+from .modules.rabbitmq import post_file_notification
 from .modules.s3 import get_s3_client
 from .utils.s3_utils import S3TransferDataCB
 from .utils.simcore_s3_dsm_utils import (
@@ -122,10 +125,15 @@ async def _add_frontend_needed_data(
 
     prj_names_mapping: dict[ProjectID | NodeID, str] = {}
 
-    async for proj_data in ProjectRepository.instance(engine).list_valid_projects_in(include_uuids=project_ids):
-        prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
-            NodeID(node_id): node_data.label for node_id, node_data in proj_data.workbench.items()
-        }
+    mapping = await ProjectRepository.instance(engine).get_project_id_and_node_id_to_names_map(
+        project_uuids=project_ids
+    )
+    for project_id, names in mapping.items():
+        for id_str, name in names.items():
+            if id_str == f"{project_id}":
+                prj_names_mapping[project_id] = name
+            else:
+                prj_names_mapping[NodeID(id_str)] = name
 
     clean_data: list[FileMetaData] = []
     for d in data:
@@ -168,7 +176,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 dataset_id=prj_data.uuid,
                 display_name=prj_data.name,
             )
-            async for prj_data in ProjectRepository.instance(get_db_engine(self.app)).list_valid_projects_in(
+            async for prj_data in ProjectRepository.instance(get_db_engine(self.app)).list_project_names(
                 include_uuids=readable_projects_ids
             )
         ]
@@ -210,12 +218,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             # NOTE: we currently do not support anything else than project_id/node_id/file_path here, sorry chap
             project_id = ProjectID(file_filter.parts[0]) if file_filter else None
 
-        accessible_projects_ids = await get_accessible_project_ids(
-            get_db_engine(self.app),
-            user_id=user_id,
-            product_name=product_name,
-            project_id=project_id,
-        )
+        access_layer_repo = AccessLayerRepository.instance(get_db_engine(self.app))
+        if project_id is not None:
+            project_access_rights = await access_layer_repo.get_project_access_rights(
+                user_id=user_id, project_id=project_id
+            )
+            if not project_access_rights.read:
+                raise ProjectAccessRightError(access_right="read", project_id=project_id)
 
         # check if the file_filter is a directory or inside one
         dir_fmd = None
@@ -237,14 +246,15 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 cursor=cursor,
             )
         else:
-            # NOTE: files are DB-based
+            # NOTE: files are DB-based.
             (
                 paths_metadata,
                 next_cursor,
                 total,
             ) = await list_child_paths_from_repository(
                 get_db_engine(self.app),
-                filter_by_project_ids=accessible_projects_ids,
+                user_id=user_id,
+                product_name=product_name,
                 filter_by_file_prefix=file_filter,
                 limit=limit,
                 cursor=cursor,
@@ -280,7 +290,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         )
 
         # use-cases:
-        # 1. path is not a valid StorageFileID (e.g. a project or project/node) --> all entries are in the DB (files and folder)
+        # 1. path is not a valid StorageFileID (e.g. a project or project/node)
+        #    --> all entries are in the DB (files and folder)
         #   2. path is valid StorageFileID and not in the DB --> entries are only in S3
         #   3. path is valid StorageFileID and in the DB --> return directly from the DB
 
@@ -558,7 +569,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             await self._update_database_from_storage(fmd)
         except S3KeyNotFoundError:
             # the file does not exist, so we delete the entry in the db
-            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete(file_ids=[fmd.file_id])
+            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete(
+                file_ids=[fmd.file_id], recursive=False
+            )
 
     async def complete_file_upload(
         self,
@@ -594,13 +607,24 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             )
         fmd = await self._update_database_from_storage(fmd)
         assert fmd  # nosec
+
+        await post_file_notification(
+            self.app,
+            event_type=FileNotificationEventType.FILE_UPLOADED,
+            user_id=user_id,
+            file_id=fmd.file_id,
+            fmd_is_directory=fmd.is_directory,
+        )
+
         return convert_db_to_model(fmd)
 
     async def create_file_download_link(self, user_id: UserID, file_id: StorageFileID, link_type: LinkType) -> AnyUrl:
         """
         Cases:
-        1. the file_id maps 1:1 to `file_meta_data` (e.g. it is not a file inside a directory)
-        2. the file_id represents a file inside a directory (its root path maps 1:1 to a `file_meta_data` defined as a directory)
+        1. the file_id maps 1:1 to `file_meta_data`
+           (e.g. it is not a file inside a directory)
+        2. the file_id represents a file inside a directory
+           (its root path maps 1:1 to a `file_meta_data` defined as a directory)
 
         3. Raises FileNotFoundError if the file does not exist
         4. Raises FileAccessRightError if the user does not have access to the file
@@ -652,7 +676,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         file_id: StorageFileID,
         *,
         enforce_access_rights: bool = True,
-    ):
+        connection: AsyncConnection | None = None,
+    ) -> None:
         #   _   _  ___ _____ _____
         #  | \ | |/ _ \_   _| ____|
         #  |  \| | | | || | |  _|
@@ -682,14 +707,14 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 # we still need to clean up the database entry (it exists)
                 # and to invalidate the size of the parent directory
 
-            async with transaction_context(get_db_engine(self.app)) as connection:
+            async with transaction_context(get_db_engine(self.app), connection) as conn:
                 file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
-                await file_meta_data_repo.delete(connection=connection, file_ids=[file_id])
+                deleted_fmds = await file_meta_data_repo.delete(connection=conn, file_ids=[file_id], recursive=True)
 
                 # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
                 if is_nested_level_file_id(file_id) and (
                     parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
-                        connection=connection,
+                        connection=conn,
                         user_or_project_filter=UserOrProjectFilter(user_id=user_id, project_ids=[]),
                         file_id_prefix=compute_file_id_prefix(file_id, 2),
                         partial_file_id=None,
@@ -698,8 +723,22 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     )
                 ):
                     parent_dir_fmd = max(parent_dir_fmds, key=lambda fmd: len(fmd.file_id))
-                    parent_dir_fmd.file_size = UNDEFINED_SIZE
-                    await file_meta_data_repo.upsert(connection=connection, fmd=parent_dir_fmd)
+                    parent_dir_fmd.file_size = UNDEFINED_SIZE  # triggers an file size update in the future
+                    await file_meta_data_repo.upsert(connection=conn, fmd=parent_dir_fmd)
+
+            await limited_gather(
+                *[
+                    post_file_notification(
+                        self.app,
+                        event_type=FileNotificationEventType.FILE_DELETED,
+                        user_id=user_id,
+                        file_id=fmd.file_id,
+                        fmd_is_directory=fmd.is_directory,
+                    )
+                    for fmd in deleted_fmds
+                ],
+                limit=MAX_CONCURRENT_S3_TASKS,
+            )
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
@@ -760,15 +799,17 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         ):
             task_progress.description = f"Collecting files of '{src_project['name']}'..."
 
-            src_project_files = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
-                project_ids=[src_project_uuid]
-            )
+            src_project_files = [
+                fmd
+                async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
+                    project_ids=[src_project_uuid]
+                )
+            ]
 
             with log_context(
                 _logger,
                 logging.INFO,
                 f"{src_project_uuid} -> {dst_project_uuid}: get total file size for {len(src_project_files)} files",
-                log_duration=True,
             ):
                 sizes_and_num_files: list[tuple[ByteSize | UNDEFINED_SIZE_TYPE, int]] = await limited_gather(
                     *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
@@ -1104,7 +1145,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             yield processed_page
 
     async def create_soft_link(
-        self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID
+        self, user_id: UserID, target_file_id: StorageFileID, link_file_id: StorageFileID
     ) -> FileMetaData:
         file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
         if await file_meta_data_repo.exists(file_id=TypeAdapter(SimcoreS3FileID).validate_python(link_file_id)):
@@ -1136,17 +1177,24 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     upload_id=fmd.upload_id,
                 )
 
-    async def _clean_expired_uploads(self) -> None:
-        """this method will check for all incomplete updates by checking
-        the upload_expires_at entry in file_meta_data table.
-        1. will try to update the entry from S3 backend if exists
-        2. will delete the entry if nothing exists in S3 backend.
-        """
-        now = datetime.datetime.utcnow()
+    async def clean_expired_uploads(self) -> None:
+        """Removes uploads that never completed.
 
-        list_of_expired_uploads = await FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
-            expired_after=now
-        )
+        Rationale: an upload starts by creating a file metadata entry with an
+        expiration timestamp and handing the client an upload link. Once the
+        client notifies completion, that entry's expiration is cleared.
+        Any entry whose expiration is set and in the past means the client
+        never completed (or notified) the upload. For each such entry, this method:
+        1. tries to recover it by refreshing its metadata from S3 (the upload might have
+           actually finished and the client just forgot to notify us);
+        2. if nothing exists in S3, deletes the file metadata entry and aborts the multipart
+           upload, if any.
+        """
+        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+
+        list_of_expired_uploads = [
+            fmd async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(expired_after=now)
+        ]
 
         if not list_of_expired_uploads:
             return
@@ -1211,8 +1259,30 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
 
-    async def clean_expired_uploads(self) -> None:
-        await self._clean_expired_uploads()
+    async def clean_expired_exports(self) -> None:
+        """Removes exported archives that have outlived their retention.
+
+        Rationale: exported archives get removed automatically from the bucket after 30 days.
+        The file_meta_data row is then orphaned and shall be removed.
+        This method looks up files under the `exports/` S3 prefix whose `created_at` is
+        older than `STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL` and removes them, S3 object first then the
+        file_meta_data entry.
+        """
+        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        retention = get_application_settings(self.app).STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL
+        threshold = now - retention
+
+        async with pass_or_acquire_connection(get_db_engine(self.app)) as conn:
+            expired_exports = [
+                fmd
+                async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(
+                    file_id_prefix=f"{EXPORTS_S3_PREFIX}/",
+                    created_before=threshold,
+                )
+            ]
+            for fmd in expired_exports:
+                with log_context(_logger, logging.INFO, f"removing {fmd.file_id}"):
+                    await self.delete_file(fmd.user_id, fmd.file_id, enforce_access_rights=False, connection=conn)
 
     async def _update_fmd_from_other(
         self,
@@ -1271,7 +1341,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         file_storage_link: dict[str, Any],
         bytes_transferred_cb: UploadedBytesTransferredCallback,
     ) -> FileMetaData:
-        session = get_client_session(self.app)
+        client = get_httpx_client(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
         api_token, api_secret = await TokenRepository.instance(get_db_engine(self.app)).get_api_token_and_secret(
             user_id=user_id
@@ -1287,7 +1357,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         with tempfile.TemporaryDirectory() as tmpdir:
             local_file_path = Path(tmpdir) / filename
             # Downloads DATCore -> local
-            await download_to_file_or_raise(session, f"{dc_link}", local_file_path)
+            await download_to_file_or_raise(client, f"{dc_link}", local_file_path)
 
             # copying will happen using aioboto3, therefore multipart might happen
             new_fmd = await self._create_fmd_for_upload(
@@ -1364,7 +1434,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
         upload_expiration_date = now + datetime.timedelta(
             seconds=get_application_settings(self.app).STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )

@@ -144,10 +144,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
-            padding: [0, 8],
+            padding: 0,
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            minWidth: this.self().MENU_BTN_DIMENSIONS,
+            minHeight: this.self().MENU_BTN_DIMENSIONS,
             maxWidth: this.self().MENU_BTN_DIMENSIONS,
             maxHeight: this.self().MENU_BTN_DIMENSIONS,
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            center: true,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
@@ -174,7 +181,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         }
         case "tick-selected": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/check/12").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/check/12").set({
             appearance: "form-button-outlined",
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
@@ -236,7 +243,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     __createOwner: function(label) {
       if (label === osparc.auth.Data.getInstance().getEmail()) {
         const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this.getResourceType(), {firstUpperCase: true});
-        return qx.locale.Manager.tr(`My ${resourceAlias}`);
+        return qx.locale.Manager.tr("My %1", resourceAlias);
       }
       return osparc.utils.Utils.getNameFromEmail(label);
     },
@@ -246,7 +253,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       if (osparc.utils.Resources.isFunction(this.getResourceData())) {
         // Functions don't have 'owner'
         const canIWrite = osparc.data.model.Function.canIWrite(this.getResourceData()["accessRights"]);
-        label.setValue(canIWrite ? "My Function" : "Read Only");
+        label.setValue(canIWrite ? this.tr("My Function") : this.tr("Read Only"));
       } else {
         const user = this.__createOwner(value);
         label.setValue(user);

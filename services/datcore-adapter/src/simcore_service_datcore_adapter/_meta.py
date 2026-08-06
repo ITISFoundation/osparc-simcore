@@ -20,4 +20,12 @@ def get_summary() -> str:
     return current_distribution.metadata.get_all("Summary", [""])[-1]
 
 
-summary: str = get_summary()
+SUMMARY: Final[str] = get_summary()
+summary: str = SUMMARY
+
+
+APP_STARTED_BANNER_MSG: Final[str] = "{:=^100}".format(f"Datcore-Adapter v{__version__}")
+
+
+APP_STARTING_BANNER_MSG: Final[str] = "{:=^100}".format(f"Starting {APP_NAME} v{__version__}")
+APP_FINISHED_BANNER_MSG: Final[str] = "{:=^100}".format(f"{PROJECT_NAME} v{__version__} SHUT DOWN")

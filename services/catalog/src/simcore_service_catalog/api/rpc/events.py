@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 
 from ...clients.rabbitmq import get_rabbitmq_rpc_client
@@ -19,3 +19,7 @@ async def rpc_api_lifespan(app: FastAPI) -> AsyncIterator[State]:
     finally:
         # No specific cleanup required for now
         pass
+
+
+def configure_rpc_api(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(rpc_api_lifespan)

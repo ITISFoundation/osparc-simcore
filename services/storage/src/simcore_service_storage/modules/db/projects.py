@@ -1,10 +1,10 @@
 from collections.abc import AsyncIterator
-from contextlib import suppress
+from typing import NamedTuple
 
 import sqlalchemy as sa
-from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
-from pydantic import ValidationError
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -12,23 +12,25 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ._base import BaseRepository
 
 
+class ProjectNameTuple(NamedTuple):
+    uuid: ProjectID
+    name: str
+
+
 class ProjectRepository(BaseRepository):
-    async def list_valid_projects_in(
+    async def list_project_names(
         self,
         *,
         connection: AsyncConnection | None = None,
         include_uuids: list[ProjectID],
-    ) -> AsyncIterator[ProjectAtDB]:
-        """
-
-        NOTE that it lists ONLY validated projects in 'project_uuids'
-        """
+    ) -> AsyncIterator[ProjectNameTuple]:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
-                sa.select(projects).where(projects.c.uuid.in_(f"{pid}" for pid in include_uuids))
+                sa.select(projects.c.uuid, projects.c.name).where(
+                    projects.c.uuid.in_(f"{pid}" for pid in include_uuids)
+                )
             ):
-                with suppress(ValidationError):
-                    yield ProjectAtDB.model_validate(row)
+                yield ProjectNameTuple(uuid=ProjectID(f"{row.uuid}"), name=row.name)
 
     async def project_exists(
         self,
@@ -50,15 +52,26 @@ class ProjectRepository(BaseRepository):
         connection: AsyncConnection | None = None,
         project_uuids: list[ProjectID],
     ) -> dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]]:
-        mapping = {}
+        mapping: dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]] = {}
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            # Get project names
             async for row in await conn.stream(
-                sa.select(projects.c.uuid, projects.c.name, projects.c.workbench).where(
+                sa.select(projects.c.uuid, projects.c.name).where(
                     projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
                 )
             ):
-                mapping[ProjectID(f"{row.uuid}")] = {f"{row.uuid}": row.name} | {
-                    f"{node_id}": node["label"] for node_id, node in row.workbench.items()
-                }
+                mapping[ProjectID(f"{row.uuid}")] = {f"{row.uuid}": row.name}
+
+            # Get node labels from projects_nodes
+            async for row in await conn.stream(
+                sa.select(
+                    projects_nodes.c.project_uuid,
+                    projects_nodes.c.node_id,
+                    projects_nodes.c.label,
+                ).where(projects_nodes.c.project_uuid.in_(f"{pid}" for pid in project_uuids))
+            ):
+                project_id = ProjectID(f"{row.project_uuid}")
+                if project_id in mapping:
+                    mapping[project_id][f"{row.node_id}"] = row.label
 
         return mapping

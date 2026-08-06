@@ -1,6 +1,6 @@
 ---
 name: run-python-tests
-description: 'Run Python tests and static analysis for any service or package in this monorepo. Use when: running pytest, executing unit tests, running integration tests, test failures, make install-dev, test setup, installing test dependencies, linting with pylint, and type checking with mypy.'
+description: 'Run Python tests for any service or package in this monorepo. Use when: running pytest, executing unit tests, running integration tests, test failures, make install-dev, test setup, installing test dependencies.'
 ---
 
 # Run Python Tests
@@ -13,7 +13,7 @@ description: 'Run Python tests and static analysis for any service or package in
 
 ## Procedure
 
-Follow these steps **in order**. Do not skip the install step — each project has its own dependencies that must be installed before tests can run.
+Follow these steps **in order**. Do not skip the install step unless you have already installed dependencies for this project in the current python virtual environment.
 
 ### Step 1: Activate the workspace virtual environment
 
@@ -47,6 +47,8 @@ This installs the package in editable mode along with all test dependencies into
 
 > **Note**: You only need to re-run `make install-dev` when switching to a different project or after dependency changes. If you already installed for this project in the current session, you can skip this step.
 
+> **Note**: In the service-library, it is `make install-dev[all]` to include all dependencies required for testing.
+
 ### Step 4: Run tests
 
 ```bash
@@ -62,11 +64,19 @@ pytest tests/unit/test_<name>.py::test_function_name -v
 
 > **Warning**: Do **NOT** use `make test*` — these targets normally include `--pdb`, which drops into an interactive debugger on failure and will block execution.
 
-Use `--keep-docker-up` flag when running integration tests to keep docker containers up between sessions.
+Use `--keep-docker-up` flag when running unit and integration tests to keep docker containers up between sessions and improve performance.
 
-### Step 4b: Static analysis (optional but recommended)
+### Step 4b: Quick static analysis
+For any code changes, run the following quick checks and fix any issues before running the full test suite. These checks are much faster than the full test run and can catch common issues early.:
 
-Before or after running tests, verify the project passes static analysis from the project directory:
+```bash
+# Type checking with ruff:
+make ruff
+```
+
+### Step 4c: Long static analysis (required before committing changes)
+
+Verify the project passes static analysis from the project directory:
 
 ```bash
 # Type checking with mypy:
@@ -76,18 +86,13 @@ make mypy
 make pylint
 ```
 
-These are fast checks that can catch issues without running the full test suite. Run them after making code changes to confirm correctness.
+These are slow checks that can catch issues without running the full test suite. Run them after making code changes to confirm correctness.
 
 ### Step 5: Troubleshooting
 
-If tests fail due to leftover docker state from previous runs:
-
-```bash
-# From the repository root:
-make down leave
-```
-
-Then retry from Step 2.
+1. If tests fail with `ModuleNotFoundError` → re-run `make install-dev` in the project directory (Step 3).
+2. If tests fail with port conflicts or connection errors (stale docker state) → run `make down leave` from the repository root, then retry from Step 2.
+3. If `command not found` or wrong Python version → ensure the venv is active: `source .venv/bin/activate`.
 
 ## Common Mistakes
 

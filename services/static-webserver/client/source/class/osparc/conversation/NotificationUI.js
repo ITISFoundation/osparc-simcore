@@ -53,26 +53,26 @@ qx.Class.define("osparc.conversation.NotificationUI", {
         .then(values => {
           const notifierUser = values[0];
           if (isMyMessage) {
-            msgContent += "You";
+            msgContent += this.tr("You");
           } else if (notifierUser) {
             msgContent += notifierUser.getLabel();
           } else {
-            msgContent += "unknown user";
+            msgContent += this.tr("unknown user");
           }
 
-          msgContent += " notified ";
+          msgContent += " " + this.tr("notified") + " ";
 
           const notifiedUser = values[1];
           if (osparc.auth.Data.getInstance().getGroupId() === notifiedUserGroupId) {
-            msgContent += "You";
+            msgContent += this.tr("You");
           } else if (notifiedUser) {
             msgContent += notifiedUser.getLabel();
           } else {
-            msgContent += "unknown user";
+            msgContent += this.tr("unknown user");
           }
         })
         .catch(() => {
-          msgContent += "unknown user notified";
+          msgContent += this.tr("unknown user notified");
         })
         .finally(() => {
           messageContent.setValue(msgContent);

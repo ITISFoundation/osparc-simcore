@@ -18,9 +18,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     const studiesLabel = osparc.product.Utils.getStudyAlias({plural: true});
     const studyLabel = osparc.product.Utils.getStudyAlias();
-    const msg = this.tr("\
-    Tags help you organize the ") + studiesLabel + this.tr(" in the Dashboard by categorizing topics, making it easier to search and filter. \
-    Once the tags are created, they can be assigned to the ") + studyLabel + this.tr("  via 'More options...' on the ") + studyLabel + this.tr(" cards.");
+    const msg = this.tr("Tags help you organize the %1 in the Dashboard by categorizing topics, making it easier to search and filter. Once the tags are created, they can be assigned to the %2 via 'More options...' on the %2 cards.", studiesLabel, studyLabel);
     const intro = new qx.ui.basic.Label(msg).set({
       font: "text-13",
       rich: true,
@@ -67,7 +65,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       const addTagButton = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("New Tag"),
-        icon: "@FontAwesome5Solid/plus/14"
+        icon: "@FontAwesomeSolid/plus/14"
       });
       osparc.utils.Utils.setIdToWidget(addTagButton, "addTagBtn");
       addTagButton.addListener("execute", () => {

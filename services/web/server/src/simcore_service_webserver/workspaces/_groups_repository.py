@@ -47,21 +47,25 @@ async def create_workspace_group(
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
+    row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
-            workspaces_access_rights.insert()
-            .values(
-                workspace_id=workspace_id,
-                gid=group_id,
-                read=read,
-                write=write,
-                delete=delete,
-                created=func.now(),
-                modified=func.now(),
+        row = await (
+            await conn.stream(
+                workspaces_access_rights.insert()
+                .values(
+                    workspace_id=workspace_id,
+                    gid=group_id,
+                    read=read,
+                    write=write,
+                    delete=delete,
+                    created=func.now(),
+                    modified=func.now(),
+                )
+                .returning(literal_column("*"))
             )
-            .returning(literal_column("*"))
-        )
-        row = await result.first()
+        ).first()
+        if row is None:
+            raise WorkspaceGroupNotFoundError(workspace_id=workspace_id, group_id=group_id)
         return WorkspaceGroupGetDB.model_validate(row)
 
 
@@ -127,20 +131,23 @@ async def update_workspace_group(
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
+    row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
-            workspaces_access_rights.update()
-            .values(
-                read=read,
-                write=write,
-                delete=delete,
+        row = await (
+            await conn.stream(
+                workspaces_access_rights.update()
+                .values(
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
+                .where(
+                    (workspaces_access_rights.c.workspace_id == workspace_id)
+                    & (workspaces_access_rights.c.gid == group_id)
+                )
+                .returning(literal_column("*"))
             )
-            .where(
-                (workspaces_access_rights.c.workspace_id == workspace_id) & (workspaces_access_rights.c.gid == group_id)
-            )
-            .returning(literal_column("*"))
-        )
-        row = await result.first()
+        ).first()
         if row is None:
             raise WorkspaceGroupNotFoundError(workspace_id=workspace_id, group_id=group_id)
         return WorkspaceGroupGetDB.model_validate(row)

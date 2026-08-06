@@ -12,46 +12,26 @@ import sys
 from collections.abc import Awaitable, Iterator
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Literal, Protocol, TypedDict
+from typing import Any, Literal
 
+import httpx
 import pytest
-import requests
 from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+from pytest_simcore.helpers.docker_registry_images import (
+    NodeRequirementsDict,
+    PushServicesCallable,
+    ServiceDescriptionDict,
+    ServiceExtrasDict,
+    ServiceInRegistryInfoDict,
+)
 from simcore_service_director.core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-class NodeRequirementsDict(TypedDict):
-    CPU: float
-    RAM: float
-
-
-class ServiceExtrasDict(TypedDict):
-    node_requirements: NodeRequirementsDict
-    build_date: str
-    vcs_ref: str
-    vcs_url: str
-
-
-class ServiceDescriptionDict(TypedDict):
-    key: str
-    version: str
-    type: Literal["computational", "dynamic"]
-
-
-class ServiceInRegistryInfoDict(TypedDict):
-    service_description: ServiceDescriptionDict
-    docker_labels: dict[str, Any]
-    image_path: str
-    internal_port: int | None
-    entry_point: str
-    service_extras: ServiceExtrasDict
 
 
 def _create_service_description(
@@ -84,7 +64,7 @@ def _create_docker_labels(service_description: ServiceDescriptionDict, *, bad_js
     return docker_labels
 
 
-async def _create_base_image(labels, tag) -> dict[str, Any]:
+async def _create_base_image(docker: Docker, labels: dict[str, Any], tag: str) -> dict[str, Any]:
     dockerfile = """
 FROM alpine
 CMD while true; do sleep 10; done
@@ -93,10 +73,7 @@ CMD while true; do sleep 10; done
     tar_obj = utils.mktar_from_dockerfile(f)
 
     # build docker base image
-    docker = Docker()
-    base_docker_image = await docker.images.build(fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag)
-    await docker.close()
-    return base_docker_image
+    return await docker.images.build(fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag)
 
 
 async def _build_and_push_image(
@@ -173,17 +150,11 @@ async def _build_and_push_image(
     docker_labels["org.label-schema.vcs-url"] = service_extras["vcs_url"]
 
     image_tag = registry_url + "/{key}:{version}".format(key=service_description["key"], version=tag)
-    await _create_base_image(docker_labels, image_tag)
+    async with Docker() as docker:
+        await _create_base_image(docker, docker_labels, image_tag)
 
-    # push image to registry
-    try:
-        docker = Docker()
+        # push image to registry
         await docker.images.push(image_tag)
-    finally:
-        await docker.close()
-
-    # remove image from host
-    # docker.images.remove(image_tag)
 
     return ServiceInRegistryInfoDict(
         service_description=service_description,
@@ -209,37 +180,31 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
             ]
         )
     }
-    for image in list_of_images:
-        service_description = image["service_description"]
-        tag = service_description["version"]
-        name = service_description["key"]
-        registry_url = image["image_path"].split("/")[0]
+    with httpx.Client(headers=request_headers, timeout=10) as client:
+        for image in list_of_images:
+            service_description = image["service_description"]
+            tag = service_description["version"]
+            name = service_description["key"]
+            registry_url = image["image_path"].split("/")[0]
 
-        url = f"http://{registry_url}/v2/{name}/manifests/{tag}"
-        response = requests.get(url, headers=request_headers, timeout=10)
-        if response.status_code == 404:
-            _logger.warning("Image %s not found in registry, skipping deletion", image["image_path"])
-            continue
-        response.raise_for_status()
+            url = f"http://{registry_url}/v2/{name}/manifests/{tag}"
+            response = client.get(url)
+            if response.status_code == 404:
+                _logger.warning("Image %s not found in registry, skipping deletion", image["image_path"])
+                continue
+            response.raise_for_status()
 
-        _logger.info("Image %s manifest response %s, headers %s", image["image_path"], response.text, response.headers)
-        docker_content_digest = response.headers["Docker-Content-Digest"]
-        # remove the image from the registry
-        delete_url = f"http://{registry_url}/v2/{name}/manifests/{docker_content_digest}"
-        delete_resp = requests.delete(delete_url, timeout=5)
-        delete_resp.raise_for_status()
-
-
-class PushServicesCallable(Protocol):
-    async def __call__(
-        self,
-        *,
-        number_of_computational_services: int,
-        number_of_interactive_services: int,
-        inter_dependent_services: bool = False,
-        bad_json_format: bool = False,
-        version="1.0.",
-    ) -> list[ServiceInRegistryInfoDict]: ...
+            _logger.debug(
+                "Image %s manifest response %s, headers %s",
+                image["image_path"],
+                response.text,
+                response.headers,
+            )
+            docker_content_digest = response.headers["Docker-Content-Digest"]
+            # remove the image from the registry
+            delete_url = f"http://{registry_url}/v2/{name}/manifests/{docker_content_digest}"
+            delete_resp = client.delete(delete_url, timeout=5)
+            delete_resp.raise_for_status()
 
 
 @pytest.fixture

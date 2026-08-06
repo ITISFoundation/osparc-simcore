@@ -38,7 +38,7 @@ qx.Class.define("osparc.study.ConversationPage", {
 
 
     this.bind("conversation", this.getChildControl("button"), "label", {
-      converter: conversation => conversation ? conversation.getName() : this.tr("new")
+      converter: conversation => conversation ? (conversation.getName() || this.tr("new")) : this.tr("new")
     });
     this.getChildControl("button").set({
       font: "text-13",
@@ -51,7 +51,6 @@ qx.Class.define("osparc.study.ConversationPage", {
       const conversation = new osparc.data.model.ConversationProject(conversationData, this.__studyData["uuid"]);
       this.setConversation(conversation);
     }
-
   },
 
   properties: {
@@ -106,12 +105,13 @@ qx.Class.define("osparc.study.ConversationPage", {
         padding: 0,
         backgroundColor: "transparent",
       };
-      const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/10").set({
+      const renameButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/pencil-alt/10").set({
         ...buttonsAesthetics,
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       renameButton.addListener("execute", () => {
-        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel()).set({
+        const title = this.tr("Rename Conversation");
+        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel(), null, title).set({
           maxChars: osparc.data.model.Conversation.MAX_TITLE_LENGTH,
         });
         titleEditor.addListener("labelChanged", e => {
@@ -139,13 +139,13 @@ qx.Class.define("osparc.study.ConversationPage", {
         column: 3
       });
 
-      const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+      const closeButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/times/12").set({
         ...buttonsAesthetics,
         paddingLeft: 4, // adds spacing between buttons
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       closeButton.addListener("execute", () => {
-      const messages = this.getChildControl("conversation").getMessages();
+        const messages = this.getChildControl("conversation").getMessages();
         if (messages.length === 0) {
           osparc.store.ConversationsProject.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
         } else {
@@ -174,7 +174,7 @@ qx.Class.define("osparc.study.ConversationPage", {
     },
 
     renameConversation: function(newName) {
-      this.getChildControl("button").setLabel(newName);
+      this.getChildControl("button").setLabel(newName || this.tr("new"));
     },
 
     __updateMessagesNumber: function() {

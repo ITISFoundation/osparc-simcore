@@ -3,26 +3,41 @@ Helper functions to convert models used in
 services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
+import base64
+import logging
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from functools import lru_cache
+from typing import Final
 
 import arrow
+from aws_library.kms import KMSNotConnectedError, KMSRuntimeError, SimcoreKMSAPI
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.projects_nodes_ui import NodeUI
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr, VersionStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
-from pydantic import TypeAdapter
+from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_layout import Position
+from pydantic import SecretStr, TypeAdapter
 
 from simcore_service_api_server.models.api_resources import JobLinks
 
+from ..exceptions.backend_errors import (
+    EncryptionMisconfiguredError,
+    EncryptionNotConfiguredError,
+    EncryptionServiceUnavailableError,
+    InvalidEncryptionInputsError,
+)
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
     ArgumentTypes,
     Job,
+    JobEncryptionInputs,
     JobInputs,
     JobStatus,
     PercentageInt,
@@ -33,6 +48,10 @@ from .director_v2 import ComputationTaskGet
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
+
+_DEFAULT_SOLVER_NODE_POSITION: Final[Position] = Position(x=633, y=229)
+
+_logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -61,7 +80,6 @@ def create_node_inputs_from_job_inputs(
     inputs: JobInputs,
 ) -> dict[InputID, InputTypes]:
     # map Job inputs with solver inputs
-    # TODO: ArgumentType -> InputTypes dispatcher
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
@@ -69,7 +87,6 @@ def create_node_inputs_from_job_inputs(
         assert TypeAdapter(KeyIDStr).validate_python(name) is not None  # nosec
 
         if isinstance(value, File):
-            # FIXME: ensure this aligns with storage policy
             node_inputs[KeyIDStr(name)] = SimCoreFileLink(
                 store=0,
                 path=f"api/{value.id}/{value.filename}",
@@ -78,8 +95,6 @@ def create_node_inputs_from_job_inputs(
             )
         else:
             node_inputs[KeyIDStr(name)] = value
-
-    # TODO: validate Inputs??
 
     return node_inputs
 
@@ -95,7 +110,6 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
         assert TypeAdapter(InputTypes).validate_python(value) == value  # nosec
 
         if isinstance(value, SimCoreFileLink):
-            # FIXME: ensure this aligns with storage policy
             _api, file_id, filename = value.path.split("/")
             assert _api == "api"  # nosec
             input_values[name] = File(
@@ -108,6 +122,49 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
             input_values[name] = value  # type: ignore [assignment]
 
     return JobInputs(values=input_values)  # raises ValidationError
+
+
+async def build_job_encryption_context(
+    encryption: JobEncryptionInputs | None,
+    *,
+    kms_client: SimcoreKMSAPI | None,
+    node_id: NodeID,
+    node_input_keys: Iterable[str],
+    encryption_context: dict[str, str] | None = None,
+) -> JobEncryptionContextMetadata | None:
+    """Validates the client-supplied flat encryption inputs, encrypts the client-supplied
+    plaintext root key via AWS KMS, and wraps the result into director-v2's per-node
+    ``JobEncryptionContextMetadata`` shape (which only ever carries the KMS ciphertext,
+    never the plaintext key).
+
+    raises InvalidEncryptionInputsError: if a port key is not an actual input of the node
+    raises EncryptionNotConfiguredError: if encryption is requested but no KMS client is configured
+    """
+    if encryption is None:
+        return None
+
+    if kms_client is None:
+        raise EncryptionNotConfiguredError
+
+    valid_keys = set(node_input_keys)
+    if set(encryption.input_port_to_file_id) - valid_keys:
+        raise InvalidEncryptionInputsError(
+            inputs=set(encryption.input_port_to_file_id) - valid_keys, node_inputs=valid_keys
+        )
+
+    root_key = base64.b64decode(encryption.root_key.get_secret_value())
+    try:
+        ciphertext = await kms_client.encrypt(root_key, encryption_context=encryption_context)
+    except KMSNotConnectedError as exc:
+        raise EncryptionServiceUnavailableError from exc
+    except KMSRuntimeError as exc:
+        _logger.exception("Unexpected error while encrypting job root key via KMS")
+        raise EncryptionMisconfiguredError from exc
+
+    return JobEncryptionContextMetadata(
+        encrypted_root_key=TypeAdapter(SecretStr).validate_python(base64.b64encode(ciphertext).decode("ascii")),
+        input_port_to_file_id={node_id: encryption.input_port_to_file_id},
+    )
 
 
 def get_node_id(project_id, solver_id) -> str:
@@ -140,8 +197,7 @@ def create_new_project_for_job(
     project_id = job.id
     solver_id = get_node_id(project_id, solver_or_program.id)
 
-    # map Job inputs with solveri nputs
-    # TODO: ArgumentType -> InputTypes dispatcher and reversed
+    # map Job inputs with solver inputs
     solver_inputs: dict[InputID, InputTypes] = create_node_inputs_from_job_inputs(inputs)
 
     solver_service = Node(
@@ -150,6 +206,7 @@ def create_new_project_for_job(
         label=solver_or_program.title,
         inputs=solver_inputs,
         inputs_units={},
+        ui=NodeUI(position=_DEFAULT_SOLVER_NODE_POSITION).model_dump(mode="json"),
     )
 
     # Ensembles project model so it can be used as input for create_project
@@ -162,14 +219,6 @@ def create_new_project_for_job(
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
         workbench={solver_id: solver_service},
         ui=StudyUI(
-            workbench={
-                f"{solver_id}": {  # type: ignore[dict-item]
-                    "position": {
-                        "x": 633,
-                        "y": 229,
-                    },
-                },
-            },
             slideshow={},
             current_node_id=solver_id,  # type: ignore[arg-type]
             annotations={},

@@ -1,5 +1,6 @@
 """Projects RPC API subclient."""
 
+from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageOffsetInt
@@ -79,3 +80,19 @@ class ProjectsRpcApi(BaseRpcApi):
                 job_parent_resource_name=job_parent_resource_name,
             ),
         )
+
+    async def batch_get_project_custom_metadata(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuids: list[ProjectID],
+    ) -> dict[ProjectID, MetadataDict]:
+        """Get custom metadata for multiple projects in a single call."""
+        result = await self._request(
+            "batch_get_project_custom_metadata",
+            product_name=product_name,
+            user_id=user_id,
+            project_uuids=project_uuids,
+        )
+        return TypeAdapter(dict[ProjectID, MetadataDict]).validate_python(result)

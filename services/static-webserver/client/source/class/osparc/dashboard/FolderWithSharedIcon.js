@@ -41,7 +41,7 @@ qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
           break;
         case "folder-icon":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/folder/26"
+            source: "@FontAwesomeSolid/folder/26"
           });
           this.getChildControl("icon-container").add(control);
           break;

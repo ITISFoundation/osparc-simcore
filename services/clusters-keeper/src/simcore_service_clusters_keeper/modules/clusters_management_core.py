@@ -4,18 +4,18 @@ from collections.abc import Iterable
 from typing import Final
 
 import arrow
-from aws_library.ec2 import AWSTagKey, EC2InstanceData
+from aws_library.ec2 import PRODUCT_NAME_TAG_KEY, EC2InstanceData
 from aws_library.ec2._models import AWSTagValue
 from fastapi import FastAPI
-from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch
+from servicelib.tracing import traced
 from servicelib.utils import limited_gather
 
 from ..constants import (
     DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY,
     DOCKER_STACK_DEPLOY_COMMAND_NAME,
+    HEARTBEAT_TAG_KEY,
     ROLE_TAG_KEY,
     USER_ID_TAG_KEY,
     WALLET_ID_TAG_KEY,
@@ -31,7 +31,6 @@ from ..modules.clusters import (
 from ..utils.clusters import create_deploy_cluster_stack_script
 from ..utils.dask import get_scheduler_auth, get_scheduler_url
 from ..utils.ec2 import (
-    HEARTBEAT_TAG_KEY,
     get_cluster_name,
     user_id_from_instance_tags,
     wallet_id_from_instance_tags,
@@ -46,9 +45,13 @@ _logger = logging.getLogger(__name__)
 def _log_instance(instance: EC2InstanceData) -> str:
     """Consistent instance identifier for log messages with enough info
     to locate the instance in AWS and in our logging facilities."""
-    user_id = instance.tags.get("user_id", "N/A")
-    wallet_id = instance.tags.get("wallet_id", "N/A")
-    return f"[id={instance.id} dns={instance.aws_private_dns} user_id={user_id} wallet_id={wallet_id}]"
+    user_id = instance.tags.get(USER_ID_TAG_KEY, "N/A")
+    wallet_id = instance.tags.get(WALLET_ID_TAG_KEY, "N/A")
+    product_name = instance.tags.get(PRODUCT_NAME_TAG_KEY, "N/A")
+    return (
+        f"[id={instance.id} dns={instance.aws_private_dns} user_id={user_id} "
+        f"wallet_id={wallet_id} product_name={product_name}]"
+    )
 
 
 def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime | None:
@@ -61,27 +64,19 @@ def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime
     return None
 
 
-_USER_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("user_id")
-_WALLET_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("wallet_id")
-
-
 async def _get_all_associated_worker_instances(
     app: FastAPI,
     primary_instances: Iterable[EC2InstanceData],
 ) -> set[EC2InstanceData]:
     worker_instances: set[EC2InstanceData] = set()
     for instance in primary_instances:
-        assert "user_id" in instance.tags  # nosec
-        user_id = TypeAdapter(UserID).validate_python(instance.tags[_USER_ID_TAG_KEY])
-        assert "wallet_id" in instance.tags  # nosec
-        # NOTE: wallet_id can be None
-        wallet_id = (
-            TypeAdapter(WalletID).validate_python(instance.tags[_WALLET_ID_TAG_KEY])
-            if instance.tags[_WALLET_ID_TAG_KEY] != "None"
-            else None
+        worker_instances.update(
+            await get_cluster_workers(
+                app,
+                user_id=user_id_from_instance_tags(instance.tags),
+                wallet_id=wallet_id_from_instance_tags(instance.tags),
+            )
         )
-
-        worker_instances.update(await get_cluster_workers(app, user_id=user_id, wallet_id=wallet_id))
     return worker_instances
 
 
@@ -121,22 +116,34 @@ async def _find_terminateable_instances(app: FastAPI, instances: Iterable[EC2Ins
     return terminateable_instances.union(worker_instances)
 
 
-async def _heartbeat_connected_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
-    """Update heartbeat for all connected clusters. Log busy ones."""
+@traced
+async def _heartbeat_connected_clusters(
+    app: FastAPI, connected_instances: set[EC2InstanceData]
+) -> set[EC2InstanceData]:
+    """Check connected clusters and heartbeat the busy ones.
+
+    Returns the set of instances that are currently busy (and were heartbeated).
+    """
+    busy_instances: set[EC2InstanceData] = set()
     for instance in connected_instances:
         with log_catch(_logger, reraise=False):
             # NOTE: a connected instance could break between these 2 calls;
             # silenced and handled next cycle
             if await is_scheduler_busy(get_scheduler_url(instance), get_scheduler_auth(app)):
                 _logger.info("%s is running tasks", _log_instance(instance))
+                busy_instances.add(instance)
                 await set_instance_heartbeat(app, instance=instance)
 
+    return busy_instances
 
+
+@traced
 async def _terminate_idle_clusters(app: FastAPI, connected_instances: set[EC2InstanceData]) -> None:
     if terminateable_instances := await _find_terminateable_instances(app, connected_instances):
         await delete_clusters(app, instances=terminateable_instances)
 
 
+@traced
 async def _handle_starting_clusters(app: FastAPI, starting_instances: set[EC2InstanceData]) -> None:
     if not starting_instances:
         return
@@ -164,6 +171,11 @@ async def _handle_starting_clusters(app: FastAPI, starting_instances: set[EC2Ins
     }
     if instances_in_need_of_deployment:
         await _deploy_to_instances(app, instances_in_need_of_deployment)
+
+
+_BACKWARDS_COMPATIBLE_PRODUCT_NAME_TAG_VALUE: Final[AWSTagValue] = TypeAdapter(AWSTagValue).validate_python(
+    "undefined-product-name"
+)
 
 
 async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) -> None:
@@ -202,6 +214,11 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
                         USER_ID_TAG_KEY: instance.tags[USER_ID_TAG_KEY],
                         WALLET_ID_TAG_KEY: instance.tags[WALLET_ID_TAG_KEY],
                         ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
+                        PRODUCT_NAME_TAG_KEY: instance.tags.get(
+                            # NOTE: necessary until https://github.com/ITISFoundation/osparc-simcore/pull/9394 is deployed to everywhere
+                            PRODUCT_NAME_TAG_KEY,
+                            _BACKWARDS_COMPATIBLE_PRODUCT_NAME_TAG_VALUE,
+                        ),
                     },
                 ),
                 command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
@@ -221,6 +238,7 @@ async def _deploy_to_instances(app: FastAPI, instances: set[EC2InstanceData]) ->
             )
 
 
+@traced
 async def _handle_broken_clusters(app: FastAPI, broken_instances: set[EC2InstanceData]) -> None:
     if not broken_instances:
         return
@@ -242,13 +260,14 @@ async def _handle_broken_clusters(app: FastAPI, broken_instances: set[EC2Instanc
         await delete_clusters(app, instances=terminateable_instances)
 
 
+@traced
 async def check_clusters(app: FastAPI) -> None:
     primary_instances = await get_all_clusters(app)
     connected = {i for i in primary_instances if await ping_scheduler(get_scheduler_url(i), get_scheduler_auth(app))}
     disconnected = primary_instances - connected
 
-    await _heartbeat_connected_clusters(app, connected)
-    await _terminate_idle_clusters(app, connected)
+    busy_instances = await _heartbeat_connected_clusters(app, connected)
+    await _terminate_idle_clusters(app, connected - busy_instances)
 
     starting = {i for i in disconnected if _get_instance_last_heartbeat(i) is None}
     await _handle_starting_clusters(app, starting)

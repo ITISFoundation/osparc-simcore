@@ -114,7 +114,7 @@ qx.Class.define("osparc.admin.Announcements", {
           widgets.push("user-menu");
         }
         if (widgets.length === 0) {
-          const msg = "Select at least one widget";
+          const msg = this.tr("Select at least one widget");
           osparc.FlashMessenger.logAs(msg, "WARNING");
         }
         const announcementData = {
@@ -150,7 +150,7 @@ qx.Class.define("osparc.admin.Announcements", {
       copyAnnouncementBtn.set({appearance: "form-button"});
       copyAnnouncementBtn.addListener("execute", () => {
         if (osparc.utils.Utils.copyTextToClipboard(JSON.stringify(announcementData))) {
-          copyAnnouncementBtn.setIcon("@FontAwesome5Solid/check/12");
+          copyAnnouncementBtn.setIcon("@FontAwesomeSolid/check/12");
         }
       });
       vBox.add(copyAnnouncementBtn);

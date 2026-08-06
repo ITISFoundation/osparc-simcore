@@ -271,10 +271,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
               loadingPage.getMessageLabels().forEach(label => label.show());
             }, 10000);
             const serviceName = node.getLabel();
-            const msg = `The service "${serviceName}" is waiting for available ` +
-              `resources. Please inform support and provide the following message ` +
-              `in case this does not resolve in a few minutes: "${nodeId}" ` +
-              `reported "${serviceMessage}"`;
+            const msg = this.tr("The service \"%1\" is waiting for available resources. Please inform support and provide the following message in case this does not resolve in a few minutes: \"%2\" reported \"%3\"", serviceName, nodeId, serviceMessage);
             const msgData = {
               nodeId: node.getNodeId(),
               msg: msg,
@@ -316,7 +313,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           break;
         case "failed": {
           status.setInteractive(serviceState);
-          const msg = "Service failed: " + data["service_message"];
+          const msg = this.tr("Service failed: %1", data["service_message"]);
           const errorMsgData = {
             nodeId: node.getNodeId(),
             msg,
@@ -393,7 +390,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       if (["idle", "failed"].includes(status)) {
         const startButton = new qx.ui.form.Button().set({
           label: this.tr("Start"),
-          icon: "@FontAwesome5Solid/play/18",
+          icon: "@FontAwesomeSolid/play/18",
           font: "text-18",
           allowGrowX: false,
           height: 32
@@ -404,7 +401,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
       if (status === "ready") {
         this.__stopNodeStateFallbackPolling();
-        const msg = `Service ${node.getLabel()} ${status}`;
+        const msg = this.tr("Service %1 %2", node.getLabel(), status);
         const msgData = {
           nodeId: node.getNodeId(),
           msg,
@@ -419,7 +416,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         }
       } else if (["idle", "failed", "stopping"].includes(status) && oldStatus) {
         this.__stopNodeStateFallbackPolling();
-        const msg = `Service ${node.getLabel()} ${status}`;
+        const msg = this.tr("Service %1 %2", node.getLabel(), status);
         const msgData = {
           nodeId: node.getNodeId(),
           msg,

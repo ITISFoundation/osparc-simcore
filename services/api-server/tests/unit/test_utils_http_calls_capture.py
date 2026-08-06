@@ -119,7 +119,8 @@ async def test_capture_http_dynamic_call(faker: Faker, httpbin_base_url: str):
 
 def test_template_capture(project_tests_dir: Path, faker: Faker):
     # parse request and search parameters
-    url_path = f"/v0/projects/{faker.uuid4()}"
+    _uuid = faker.uuid4()
+    url_path = f"/v0/projects/{_uuid}"
     pattern = re.compile(rf"/projects/(?P<project_id>{UUID_RE_BASE})$")
     found = pattern.search(url_path)
     assert found

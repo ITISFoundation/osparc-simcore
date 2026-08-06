@@ -312,7 +312,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const collaborator = qx.data.marshal.Json.createModel(collaboratorData);
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
       collaborator.button = collaboratorButton;
-      collaboratorButton.setIconSrc("@FontAwesome5Solid/envelope/14");
+      collaboratorButton.setIconSrc("@FontAwesomeSolid/envelope/14");
 
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();

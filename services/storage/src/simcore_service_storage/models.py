@@ -2,7 +2,7 @@ import datetime
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any, Literal, NamedTuple, Self, TypeAlias
+from typing import Annotated, Any, Literal, NamedTuple, Self
 from uuid import UUID
 
 import arrow
@@ -74,10 +74,10 @@ class FileMetaDataAtDB(BaseModel):
         PlainSerializer(lambda x: f"{x}" if x is not None else None, return_type=str | None),
     ] = None
     user_id: UserID
-    created_at: Annotated[datetime.datetime, PlainSerializer(lambda x: x.isoformat())]
+    created_at: datetime.datetime
     file_id: SimcoreS3FileID
     file_size: UNDEFINED_SIZE_TYPE | ByteSize
-    last_modified: Annotated[datetime.datetime, PlainSerializer(lambda x: x.isoformat())]
+    last_modified: datetime.datetime
     entity_tag: ETag | None = None
     is_soft_link: bool
     upload_id: UploadID | None = None
@@ -245,21 +245,19 @@ class FileUploadQueryParams(StorageQueryParamsBase):
 
     @property
     def is_v1_upload(self) -> bool:
-        """This returns True if the query params are missing the file_size query parameter, which was the case in the legacy services that have an old version of simcore-sdk
+        """This returns True if the query params are missing the file_size query parameter,
+            which was the case in the legacy services that have an old version of simcore-sdk
         v1 rationale:
         - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend
         - client uploads the file
-        - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
+        - storage relies on lazy update to find if the file is finished uploaded
+        (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
         """
         return self.file_size is None and self.is_directory is False
 
 
 class FileUploadResponseV1(BaseModel):
     link: AnyUrl
-
-
-class DeleteFolderQueryParams(StorageQueryParamsBase):
-    node_id: NodeID | None = None
 
 
 class SearchFilesQueryParams(StorageQueryParamsBase):
@@ -336,8 +334,8 @@ class AccessRights:
         return cls(read=False, write=False, delete=False)
 
 
-TotalNumber: TypeAlias = NonNegativeInt
-GenericCursor: TypeAlias = str | bytes
+type TotalNumber = NonNegativeInt
+type GenericCursor = str | bytes
 
 
 class PathMetaData(BaseModel):

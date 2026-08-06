@@ -29,7 +29,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_director_v2.api.dependencies.database import RepoType
+from simcore_service_director_v2.modules.db.repositories import BaseRepository
 from simcore_service_director_v2.modules.osparc_variables import substitutions
 from simcore_service_director_v2.modules.osparc_variables._errors import (
     OsparcVariableResolveError,
@@ -123,7 +123,7 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     mocked_engine = AsyncMock()
     mocked_engine.connect = _connect
 
-    def _get_repository(app: FastAPI, repo_type: type[RepoType]) -> RepoType:
+    def _get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)
 
     for target in (

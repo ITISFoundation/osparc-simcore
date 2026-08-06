@@ -36,7 +36,7 @@ class ObservationItem(BaseModel):
     is_disabled: bool
 
 
-router = APIRouter()
+router = APIRouter(prefix="/dynamic_scheduler", tags=["dynamic scheduler"])
 
 
 @retry(

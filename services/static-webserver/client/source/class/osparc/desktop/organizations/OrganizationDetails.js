@@ -90,7 +90,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
       const prevBtn = new qx.ui.form.Button().set({
         toolTipText: this.tr("Return to Organizations list"),
-        icon: "@FontAwesome5Solid/arrow-left/20",
+        icon: "@FontAwesomeSolid/arrow-left/20",
         backgroundColor: "transparent"
       });
       prevBtn.addListener("execute", () => this.fireEvent("backToOrganizations"));
@@ -152,21 +152,21 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         contentPadding: 10
       });
 
-      const membersListPage = this.self().createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
+      const membersListPage = this.self().createTabPage(this.tr("Members"), "@FontAwesomeSolid/users/14");
       const membersList = this.__membersList = new osparc.desktop.organizations.MembersList();
       membersListPage.add(membersList, {
         flex: 1
       });
       tabView.add(membersListPage);
 
-      const tutorialsTabPage = this.self().createTabPage(this.tr("Tutorials"), "@FontAwesome5Solid/copy/14");
+      const tutorialsTabPage = this.self().createTabPage(this.tr("Tutorials"), "@FontAwesomeSolid/copy/14");
       const tutorialsList = this.__tutorialsList = new osparc.desktop.organizations.TutorialsList();
       tutorialsTabPage.add(tutorialsList, {
         flex: 1
       });
       tabView.add(tutorialsTabPage);
 
-      const servicesListPage = this.self().createTabPage(this.tr("Apps"), "@FontAwesome5Solid/cogs/14");
+      const servicesListPage = this.self().createTabPage(this.tr("Apps"), "@FontAwesomeSolid/cogs/14");
       const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
       servicesListPage.add(servicesList, {
         flex: 1

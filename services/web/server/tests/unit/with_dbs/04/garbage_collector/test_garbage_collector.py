@@ -27,7 +27,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_service_webserver.garbage_collector import _core as gc_core
-from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,

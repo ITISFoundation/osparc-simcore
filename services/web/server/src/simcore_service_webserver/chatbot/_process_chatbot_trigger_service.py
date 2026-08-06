@@ -15,7 +15,7 @@ from servicelib.rabbitmq import RabbitMQClient
 
 from ..conversations import conversations_service
 from ..conversations.errors import ConversationErrorNotFoundError
-from ..groups.api import list_group_members
+from ..groups.groups_service import list_group_members
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
 from ..users import users_service

@@ -20,7 +20,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
 
   construct: function() {
     const rootData = {
-      label: "Workspaces",
+      label: qx.locale.Manager.tr("Workspaces"),
       icon: "default",
       workspaceId: -1,
       children: [],
@@ -78,7 +78,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
           if (value === "shared") {
             return osparc.store.Workspaces.iconPath(16);
           }
-          return "@FontAwesome5Solid/folder/14";
+          return "@FontAwesomeSolid/folder/14";
         },
       });
     },
@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
       parent.setLoaded(true);
 
       const myWorkspaceData = {
-        label: "My Workspace",
+        label: qx.locale.Manager.tr("My Workspace"),
         icon: "default",
         workspaceId: null,
         loaded: true,

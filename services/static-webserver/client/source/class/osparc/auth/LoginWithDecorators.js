@@ -313,37 +313,53 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
     },
 
     __getVersionLink: function() {
-      const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+      const versionLinkLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(4).set({
         alignX: "center"
       })).set({
         margin: [10, 0]
       });
 
-      versionLinkLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
+      const isOsparc = osparc.product.Utils.isProduct("osparc");
+      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink(isOsparc ? "osparc" : this.tr("Platform"));
+      let toolTipText = "";
+      if (!isOsparc) {
+        const displayName = osparc.store.StaticInfo.getDisplayName();
+        toolTipText = displayName + this.tr(" is powered by osparc.<br>");
+      }
+      toolTipText += this.tr("Click to see what's new in this release.");
+      createReleaseNotesLink.set({
+        toolTipText,
       });
-
-      const createReleaseNotesLink = osparc.utils.Utils.createReleaseNotesLink();
       createReleaseNotesLink.set({
         textColor: "text-darker"
       });
       versionLinkLayout.add(createReleaseNotesLink);
 
-      const organizationLink = new osparc.ui.basic.LinkLabel().set({
-        textColor: "text-darker"
-      });
       const vendor = osparc.store.VendorInfo.getVendor();
-      if (vendor && "url" in vendor && "copyright" in vendor) {
-        organizationLink.set({
-          value: vendor.copyright,
-          url: vendor.url
-        });
-      }
-      versionLinkLayout.add(organizationLink);
 
-      versionLinkLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
+      if (vendor && "status_page_url" in vendor) {
+        versionLinkLayout.add(new qx.ui.basic.Label("·").set({
+          textColor: "text-darker"
+        }));
+        const statusPageLink = new osparc.ui.basic.LinkLabel().set({
+          value: "Status",
+          url: vendor.status_page_url,
+          textColor: "text-darker"
+        });
+        versionLinkLayout.add(statusPageLink);
+      }
+
+      if (vendor && "url" in vendor && "name" in vendor) {
+        versionLinkLayout.add(new qx.ui.basic.Label("·").set({
+          textColor: "text-darker"
+        }));
+        const organizationLink = new osparc.ui.basic.LinkLabel().set({
+          value: vendor.name,
+          url: vendor.url,
+          textColor: "text-darker"
+        });
+        versionLinkLayout.add(organizationLink);
+      }
 
       return versionLinkLayout;
     },

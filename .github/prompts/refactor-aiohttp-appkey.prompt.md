@@ -1,7 +1,6 @@
 ---
-mode: edit
+agent: agent
 description: Converts string-based aiohttp app key constants to type-safe web.AppKey
-model: GPT-4.1
 ---
 
 Convert all string-based app key constants to use type-safe web.AppKey.

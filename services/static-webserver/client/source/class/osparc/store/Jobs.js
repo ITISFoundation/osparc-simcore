@@ -77,7 +77,7 @@ qx.Class.define("osparc.store.Jobs", {
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
-        field: "submitted_at",
+        field: "ended_at",
         direction: "desc"
       },
       resolveWResponse = false
@@ -150,9 +150,11 @@ qx.Class.define("osparc.store.Jobs", {
       let job = this.getJob(collectionRunId);
       if (!job) {
         const jobs = this.getJobs();
-        job = new osparc.data.Job({
+        const mergedData = {
           collectionRunId,
-        });
+          "projectIds": [subJobData["projectUuid"]],
+        };
+        job = new osparc.data.Job(mergedData);
         jobs.push(job);
       }
       const subJob = job.addSubJob(collectionRunId, subJobData);

@@ -8,15 +8,12 @@ from models_library.projects import ProjectID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 
 from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
+from ...web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from .. import _projects_service, _wallets_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams

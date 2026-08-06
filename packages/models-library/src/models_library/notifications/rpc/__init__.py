@@ -6,10 +6,12 @@ from ...rabbitmq_basic_types import RPCNamespace
 from ._email import (
     Addressing,
     EmailAddressing,
+    EmailAttachment,
     EmailContact,
     EmailContent,
     EmailMessage,
     Message,
+    SenderIdentity,
 )
 from ._message import (
     SendMessageFromTemplateRequest,
@@ -28,6 +30,7 @@ NOTIFICATIONS_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(RPCNamespace).val
 __all__: tuple[str, ...] = (
     "Addressing",
     "EmailAddressing",
+    "EmailAttachment",
     "EmailContact",
     "EmailContent",
     "EmailMessage",
@@ -38,5 +41,6 @@ __all__: tuple[str, ...] = (
     "SendMessageFromTemplateRequest",
     "SendMessageRequest",
     "SendMessageResponse",
+    "SenderIdentity",
     "TemplateRef",
 )

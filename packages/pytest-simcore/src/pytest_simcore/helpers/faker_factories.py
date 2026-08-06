@@ -37,11 +37,11 @@ def random_service_version(fake: Faker = DEFAULT_FAKER) -> str:
     return ".".join([str(fake.pyint(0, 100)) for _ in range(3)])
 
 
-def random_icon_url(fake: Faker):
+def random_icon_url(fake: Faker) -> str:
     return fake.image_url(width=16, height=16)
 
 
-def random_thumbnail_url(fake: Faker):
+def random_thumbnail_url(fake: Faker) -> str:
     return fake.image_url(width=32, height=32)
 
 
@@ -173,8 +173,6 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "description": fake.sentence(),
         "prj_owner": fake.pyint(),
         "thumbnail": fake.image_url(width=120, height=120),
-        "access_rights": {},
-        "workbench": {},
         "published": False,
         "product_name": "osparc",
     }
@@ -280,7 +278,6 @@ def random_product(
     group_id: int | None = None,  # group id of the product
     support_standard_group_id: int | None = None,
     support_chatbot_user_id: int | None = None,
-    registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
@@ -288,7 +285,6 @@ def random_product(
 
     Foreign keys are:
         - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
-        - registration_email_template
     """
     from simcore_postgres_database.models.products import Vendor, VendorUI, products  # noqa: PLC0415
 
@@ -316,8 +312,8 @@ def random_product(
                 logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
                 strong_color=fake.color(),
             ),
+            status_page_url=fake.url(),
         ),
-        "registration_email_template": registration_email_template,
         "created": fake.date_time_this_decade(),
         "modified": fake.date_time_this_decade(),
         "priority": fake.pyint(0, 10),

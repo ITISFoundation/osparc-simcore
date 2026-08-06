@@ -59,7 +59,7 @@ qx.Class.define("osparc.support.SupportButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Regular/question-circle/24");
+          control = new qx.ui.basic.Image("@FontAwesomeRegular/question-circle/24");
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle",
           })).set({
@@ -72,7 +72,7 @@ qx.Class.define("osparc.support.SupportButton", {
           break;
         }
         case "is-active-icon-outline":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/12").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/circle/12").set({
             textColor: osparc.navigation.NavigationBar.BG_COLOR,
           });
           this._add(control, {
@@ -81,7 +81,7 @@ qx.Class.define("osparc.support.SupportButton", {
           });
           break;
         case "is-active-icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/8").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/circle/8").set({
             textColor: "strong-main",
           });
           this._add(control, {
@@ -100,9 +100,7 @@ qx.Class.define("osparc.support.SupportButton", {
       cachedConversations.forEach(conversation => conversation.addListener(eventName, () => this.__updateButton(), this));
       conversationsStore.addListener("conversationAdded", e => {
         const conversation = e.getData();
-        conversation.addListener(eventName, e => {
-          this.__updateButton();
-        }, this);
+        conversation.addListener(eventName, () => this.__updateButton(), this);
         this.__updateButton();
       }, this);
     },
@@ -115,7 +113,11 @@ qx.Class.define("osparc.support.SupportButton", {
       this.setUnreadMessages(unread);
     },
 
-    __applyUnreadMessages: function(unread) {
+    __applyUnreadMessages: function(unread, old) {
+      if (unread && old === false) {
+        // make it blink when a new message arrives
+        osparc.utils.Utils.makeButtonBlink(this.getChildControl("icon"), 2, "textColor");
+      }
       [
         this.getChildControl("is-active-icon-outline"),
         this.getChildControl("is-active-icon"),

@@ -55,8 +55,6 @@ def model_classes_factory() -> Callable:
             POSTGRES_PASSWORD: str
 
             POSTGRES_DB: str
-            POSTGRES_MINSIZE: Annotated[int, Field(ge=1)] = 1
-            POSTGRES_MAXSIZE: Annotated[int, Field(ge=1)] = 50
             POSTGRES_MAX_POOLSIZE: int = 10
             POSTGRES_MAX_OVERFLOW: Annotated[int, Field(ge=0)] = 20
 
@@ -195,8 +193,6 @@ def test_parse_from_individual_envs(
             "POSTGRES_PORT": 5432,
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
             "POSTGRES_MAX_POOLSIZE": 10,
             "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
@@ -212,8 +208,6 @@ def test_parse_from_individual_envs(
             "POSTGRES_PORT": 5432,
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
             "POSTGRES_MAX_POOLSIZE": 10,
             "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
@@ -258,8 +252,6 @@ def test_parse_compact_env(postgres_envvars_unset: None, monkeypatch, model_clas
                 "POSTGRES_PORT": 5432,
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
                 "POSTGRES_MAX_POOLSIZE": 10,
                 "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
@@ -367,8 +359,6 @@ def test_parse_from_mixed_envs(postgres_envvars_unset: None, monkeypatch, model_
                 "POSTGRES_PORT": 5432,
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
                 "POSTGRES_MAX_POOLSIZE": 10,
                 "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,

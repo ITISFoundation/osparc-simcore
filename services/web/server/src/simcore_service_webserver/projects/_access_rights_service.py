@@ -3,12 +3,13 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from simcore_postgres_database.models.users import UserRole
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..users import users_service
-from ..users.exceptions import UserNotFoundError
-from ..workspaces.api import get_workspace
+from ..users.errors import UserNotFoundError
+from ..workspaces.workspaces_service import get_workspace
 from ._access_rights_repository import get_project_owner, is_published_project
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
@@ -16,12 +17,18 @@ from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .models import UserProjectAccessRightsWithWorkspace
 
 
-async def validate_project_ownership(app: web.Application, user_id: UserID, project_uuid: ProjectID):
+async def validate_project_ownership(
+    engine: AsyncEngine,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    *,
+    connection: AsyncConnection | None = None,
+):
     """
     Raises:
         ProjectInvalidRightsError: if 'user_id' does not own 'project_uuid'
     """
-    if await get_project_owner(get_asyncpg_engine(app), project_uuid=project_uuid) != user_id:
+    if await get_project_owner(engine, connection, project_uuid=project_uuid) != user_id:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
 
@@ -47,7 +54,7 @@ async def _has_guest_project_access(
     product_name: ProductName,
 ) -> bool:
     try:
-        await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
+        await validate_project_ownership(get_asyncpg_engine(app), user_id=user_id, project_uuid=project_uuid)
         return True
     except ProjectInvalidRightsError:
         return await _is_published_project_for_product(

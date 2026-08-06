@@ -169,7 +169,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Service Key"
             }
           },
@@ -222,7 +222,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Service Key"
             }
           },
@@ -276,8 +276,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/components/schemas/_UserIDInt"
                 },
                 {
                   "type": "null"
@@ -339,9 +338,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -360,7 +357,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^simcore/services/(?P<type>(comp|dynamic|frontend))/(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*(?P<name>[a-z0-9-_]+[a-z0-9])$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Service Key"
             }
           },
@@ -651,6 +648,10 @@
           "message"
         ],
         "title": "_ErrorMessage"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     }
   }

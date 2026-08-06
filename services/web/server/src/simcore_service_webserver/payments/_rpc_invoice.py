@@ -10,7 +10,6 @@ from servicelib.rabbitmq import RPCRouter
 
 from ..application_settings import get_application_settings
 from ..products import products_service
-from ..products.models import CreditResult
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 
@@ -25,13 +24,11 @@ async def get_invoice_data(
     dollar_amount: Decimal,
     product_name: ProductName,
 ) -> InvoiceDataGet:
-    credit_result: CreditResult = await products_service.get_credit_amount(
+    credit_result = await products_service.get_credit_amount(
         app, dollar_amount=dollar_amount, product_name=product_name
     )
     product_stripe_info = await products_service.get_product_stripe_info(app, product_name=product_name)
-    user_invoice_address: UserInvoiceAddress = await users_service.get_user_invoice_address(
-        app, product_name=product_name, user_id=user_id
-    )
+    user_invoice_address: UserInvoiceAddress = await users_service.get_user_invoice_address(app, user_id=user_id)
     user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
 
     return InvoiceDataGet(

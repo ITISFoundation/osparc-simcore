@@ -243,15 +243,11 @@ class _BaseServiceGetV2(ServiceSummary):
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None
 
-    classifiers: Annotated[
-        list[str] | None,
-        Field(default_factory=list),
-    ] = DEFAULT_FACTORY
+    classifiers: Annotated[list[str] | None, Field(default_factory=list)] = DEFAULT_FACTORY
 
-    quality: Annotated[
-        dict[str, Any],
-        Field(default_factory=dict),
-    ] = DEFAULT_FACTORY
+    quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
+
+    release_notes_url: HttpUrl | None = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -294,8 +290,10 @@ class ServiceGetV2(_BaseServiceGetV2):
         list[ServiceRelease],
         Field(
             default_factory=list,
-            description="history of releases for this service at this point in time, starting from the newest to the oldest."
-            " It includes current release.",
+            description=(
+                "history of releases for this service at this point in time, "
+                "starting from the newest to the oldest. It includes current release."
+            ),
             json_schema_extra={"default": []},
         ),
     ] = DEFAULT_FACTORY
@@ -362,24 +360,16 @@ class ServiceGetV2(_BaseServiceGetV2):
     )
 
 
-PageRpcLatestServiceGet: TypeAlias = PageRpc[
-    # WARNING: keep this definition in models_library and not in the RPC interface
-    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
-    # and will fail to serialize/deserialize these parameters when transmitted/received
-    LatestServiceGet
-]
-
-PageRpcServiceRelease: TypeAlias = PageRpc[
-    # WARNING: keep this definition in models_library and not in the RPC interface
-    # otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
-    # and will fail to serialize/deserialize these parameters when transmitted/received
-    ServiceRelease
-]
+# WARNING: keep this definition in models_library and not in the RPC interface
+# otherwise the metaclass PageRpc[*] will create *different* classes in server/client side
+# and will fail to serialize/deserialize these parameters when transmitted/received
+PageRpcLatestServiceGet: TypeAlias = PageRpc[LatestServiceGet]  # noqa: UP040
+PageRpcServiceRelease: TypeAlias = PageRpc[ServiceRelease]  # noqa: UP040
 
 # Create PageRpc types
 PageRpcServiceSummary = PageRpc[ServiceSummary]
 
-ServiceResourcesGet: TypeAlias = ServiceResourcesDict
+ServiceResourcesGet: TypeAlias = ServiceResourcesDict  # noqa: UP040
 
 
 class ServiceUpdateV2(CatalogInputSchema):
@@ -394,9 +384,11 @@ class ServiceUpdateV2(CatalogInputSchema):
     deprecated: datetime | None = None
 
     classifiers: list[str] | None = None
-    quality: dict[str, Any] = {}
+    quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
+
+    release_notes_url: HttpUrl | None = None
 
     model_config = ConfigDict(
         extra="forbid",

@@ -6,18 +6,21 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 """
 
 import asyncio
+import datetime
 import functools
 import logging
 import logging.handlers
 import queue
+import sys
 from asyncio import iscoroutinefunction
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Callable, Generator, Iterator
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from datetime import datetime
-from inspect import getframeinfo, stack
+from inspect import currentframe, getframeinfo, stack
 from pathlib import Path
+from types import FrameType
 from typing import Any, Final, TypedDict, TypeVar
+from uuid import uuid4
 
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import LogExtra
@@ -28,7 +31,7 @@ from common_library.logging.logging_utils_filtering import (
     MessageSubstring,
 )
 
-from .tracing import TracingConfig, setup_log_tracing
+from .tracing import TracingConfig, get_current_tracing_config, setup_log_tracing, traced_operation
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -102,7 +105,7 @@ _DEFAULT_FORMATTING: Final[str] = " | ".join(
     [
         "log_level=%(levelname)s",
         "log_timestamp=%(asctime)s",
-        "log_source=%(name)s:%(funcName)s(%(lineno)d)",
+        "log_source=%(name)s:%(funcName)s(%(lineno)d)[%(processName)s/%(threadName)s]",
         "log_uid=%(log_uid)s",
         "log_oec=%(log_oec)s",
         "log_trace_id=%(otelTraceID)s",
@@ -378,8 +381,18 @@ def async_loggers(
     ):
         _apply_logging_configuration(queue_handler, logger_filter_mapping)
 
-        with log_context(_logger, logging.INFO, "Asynchronous logging"):
+        # NOTE: this context is held for the entire application lifetime (i.e. until the
+        # process shuts down). Do NOT use `log_context` here: since `log_context` now creates
+        # a tracing span whenever tracing is enabled, wrapping the whole app runtime in it
+        # would create a span that never ends. Such a span never gets exported (span
+        # processors export on `on_end`), yet it would remain the ambient "current span" for
+        # everything created during the app's lifetime, so every one of its direct children
+        # would reference an unresolvable parent span ID.
+        _logger.info("Starting asynchronous logging")
+        try:
             yield
+        finally:
+            _logger.info("Finished asynchronous logging")
 
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
@@ -559,34 +572,136 @@ def _un_capitalize(s: str) -> str:
     return s[:1].lower() + s[1:] if s else ""
 
 
+def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
+    total_seconds = delta.total_seconds()
+    minutes, rem_seconds = divmod(abs(total_seconds), 60)
+    seconds, milliseconds = divmod(rem_seconds, 1)
+    result = ""
+
+    if int(minutes) != 0:
+        result += f"{int(minutes)}m "
+
+    if int(seconds) != 0:
+        result += f"{int(seconds)}s "
+
+    if int(milliseconds * 1000) != 0:
+        result += f"{int(milliseconds * 1000)}ms"
+    if not result:
+        result = "<1ms"
+
+    sign = "-" if total_seconds < 0 else ""
+
+    return f"{sign}{result.strip()}"
+
+
+_STARTING_PREFIX: Final[str] = "Starting "
+_DONE_PREFIX: Final[str] = "Finished "
+_STACK_LEVEL_OFFSET: Final[int] = 3  # 1 => log_context, 2 => contextlib, 3 => caller
+_CONTEXT_ID_LEN: Final[int] = 8
+
+
+def _get_frame(stacklevel: int) -> FrameType | None:
+    """returns the frame `stacklevel` levels up from the *caller* of this function (i.e. behaves like
+    `sys._getframe(stacklevel)` called directly at the call site), or `None` if the stack isn't that deep
+    (or on Python implementations without frame support, per `inspect.currentframe()`)"""
+    frame = currentframe()
+    for _ in range(stacklevel + 1):  # +1 to skip this function's own frame
+        if frame is None:
+            return None
+        frame = frame.f_back
+    return frame
+
+
+def _default_operation_name() -> str:
+    """returns a default operation name made of the filename and function name of the caller of `log_context()`"""
+    frame = _get_frame(_STACK_LEVEL_OFFSET)
+    if frame is None:
+        return "unknown:unknown - log_context"
+    return f"{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name} - log_context"
+
+
+def _caller_lineno() -> int:
+    """returns the line number, within the caller's function, of the `with log_context(...):` call"""
+    frame = _get_frame(_STACK_LEVEL_OFFSET)
+    return frame.f_lineno if frame is not None else 0
+
+
+def _default_operation_name_and_lineno() -> tuple[str, int]:
+    """returns a default operation name made of the filename, function name,
+    and line number of the caller of `log_context()`"""
+    frame = _get_frame(_STACK_LEVEL_OFFSET)
+    if frame is None:
+        return "unknown:unknown - log_context", 0
+    return f"{Path(frame.f_code.co_filename).stem}:{frame.f_code.co_name} - log_context", frame.f_lineno
+
+
 @contextmanager
 def log_context(
     logger: logging.Logger,
     level: LogLevelInt,
     msg: LogMessageStr,
     *args,
-    log_duration: bool = False,
     extra: LogExtra | None = None,
-):
+    operation_name: str | None = None,
+) -> Generator[None]:
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
-    start = datetime.now()  # noqa: DTZ005
-    msg = _un_capitalize(msg.strip())
+
+    context_id = uuid4().hex[:_CONTEXT_ID_LEN]
+    msg = f"[{context_id}] {_un_capitalize(msg.strip())}"
 
     kwargs: dict[str, Any] = {}
     if extra:
         kwargs["extra"] = extra
-    log_msg = f"Starting {msg} ..."
 
-    stackelvel = 3  # NOTE: 1 => log_context, 2 => contextlib, 3 => caller
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
-    yield
-    duration = (
-        f" in {(datetime.now() - start).total_seconds()}s"  # noqa: DTZ005
-        if log_duration
-        else ""
-    )
-    log_msg = f"Finished {msg}{duration}"
-    logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
+    started_time = datetime.datetime.now(tz=datetime.UTC)
+    starting_log_msg = f"{_STARTING_PREFIX}{msg}"
+
+    tracing_config = get_current_tracing_config()
+
+    with ExitStack() as stack_mgr:
+        if tracing_config is not None and tracing_config.tracing_enabled:
+            # NOTE: mirrors `logging.LogRecord.getMessage()` (only applies `%` formatting when
+            # `args` is truthy) so this matches exactly what ends up in the actual log line.
+            rendered_msg = msg % args if args else msg
+            operation_name_final, lineno = (
+                _default_operation_name_and_lineno() if operation_name is None else (operation_name, _caller_lineno())
+            )
+            stack_mgr.enter_context(
+                traced_operation(
+                    operation_name_final,
+                    tracing_config=tracing_config,
+                    attributes={
+                        "log.message": rendered_msg,
+                        "code.lineno": str(lineno),
+                    },
+                )
+            )
+
+        try:
+            logger.log(
+                level,
+                starting_log_msg,
+                *args,
+                **kwargs,
+                stacklevel=_STACK_LEVEL_OFFSET,
+            )
+            yield
+        finally:
+            potential_exception = sys.exception()
+            elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
+
+            finished_log_msg = (
+                f"{_DONE_PREFIX}{msg}"
+                f"{f' (raised exception {type(potential_exception).__name__})' if potential_exception else ''}"
+                f" - ⏳{_timedelta_as_minute_second_ms(elapsed_time)}"
+            )
+            logger.log(
+                level,
+                finished_log_msg,
+                *args,
+                **kwargs,
+                stacklevel=_STACK_LEVEL_OFFSET,
+            )
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:

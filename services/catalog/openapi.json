@@ -14,8 +14,10 @@
           "200": {
             "description": "Successful Response",
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -33,8 +35,10 @@
           "200": {
             "description": "Successful Response",
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -97,8 +101,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/components/schemas/_UserIDInt"
                 },
                 {
                   "type": "null"
@@ -285,9 +288,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -1363,10 +1364,6 @@
         "type": "array",
         "title": "GenericResources",
         "description": "User-defined resources can be either Integer resources (e.g, `SSD=3`) or\nString resources (e.g, `GPU=UUID1`)."
-      },
-      "GroupID": {
-        "type": "integer",
-        "exclusiveMinimum": 0
       },
       "HTTPValidationError": {
         "properties": {
@@ -2710,7 +2707,7 @@
               "type": "object"
             },
             "propertyNames": {
-              "$ref": "#/components/schemas/GroupID"
+              "$ref": "#/components/schemas/_GroupIDInt"
             },
             "type": "object",
             "title": "Gids With Access Rights"
@@ -2876,7 +2873,7 @@
                   "$ref": "#/components/schemas/ServiceGroupAccessRights"
                 },
                 "propertyNames": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "object"
               },
@@ -3946,6 +3943,14 @@
           "SelectBox"
         ],
         "title": "WidgetType"
+      },
+      "_GroupIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "models_library__generated_models__docker_rest_api__ContainerSpec": {
         "properties": {

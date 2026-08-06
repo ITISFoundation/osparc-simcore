@@ -19,6 +19,7 @@ from models_library.notifications.rpc import (
     SendMessageResponse,
     TemplateRef,
 )
+from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
@@ -38,7 +39,6 @@ pytest_simcore_core_services_selection = [
 def single_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
         addressing=EmailAddressing(
-            from_=EmailContact(name="Sender", email=faker.email()),
             to=[EmailContact(name="Recipient", email=faker.email())],
         ),
         content=EmailContent(
@@ -53,7 +53,6 @@ def single_recipient_email_message(faker: Faker) -> EmailMessage:
 def multi_recipient_email_message(faker: Faker) -> EmailMessage:
     return EmailMessage(
         addressing=EmailAddressing(
-            from_=EmailContact(name="Sender", email=faker.email()),
             to=[
                 EmailContact(name="First", email=faker.email()),
                 EmailContact(name="Second", email=faker.email()),
@@ -70,40 +69,39 @@ def multi_recipient_email_message(faker: Faker) -> EmailMessage:
 @pytest.fixture
 def email_addressing_single_recipient(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
-        **{
-            "from": {"name": "Sender", "email": faker.email()},
-            "to": [{"name": "Recipient", "email": faker.email()}],
-        }
+        to=[{"name": "Recipient", "email": faker.email()}],
     )
 
 
 @pytest.fixture
 def email_addressing_multiple_recipients(faker: Faker) -> EmailAddressing:
     return EmailAddressing(
-        **{
-            "from": {"name": "Sender", "email": faker.email()},
-            "to": [
-                {"name": "First Recipient", "email": faker.email()},
-                {"name": "Second Recipient", "email": faker.email()},
-            ],
-        }
+        to=[
+            {"name": "First Recipient", "email": faker.email()},
+            {"name": "Second Recipient", "email": faker.email()},
+        ],
     )
 
 
 async def test_send_message_single_recipient(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     single_recipient_email_message: EmailMessage,
 ):
     response = await send_message(
         rpc_client,
+        product_name=product_name,
         message=single_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_with_owner_metadata(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     single_recipient_email_message: EmailMessage,
     mocker: MockerFixture,
@@ -123,12 +121,13 @@ async def test_send_message_with_owner_metadata(
 
     response = await send_message(
         rpc_client,
+        product_name=product_name,
         message=single_recipient_email_message,
         owner_metadata=owner_metadata,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
     spy.assert_awaited_once()
     call_kwargs = spy.call_args.kwargs
@@ -139,20 +138,24 @@ async def test_send_message_with_owner_metadata(
 
 
 async def test_send_message_multiple_recipients(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     multi_recipient_email_message: EmailMessage,
 ):
     response = await send_message(
         rpc_client,
+        product_name=product_name,
         message=multi_recipient_email_message,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_from_template_with_empty_template(
-    fake_product_data: dict[str, Any],
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_single_recipient: EmailAddressing,
 ):
@@ -160,22 +163,23 @@ async def test_send_message_from_template_with_empty_template(
     context = {
         "subject": "Test Email",
         "body": "This is a test email.",
-        "product": fake_product_data,
     }
 
     response = await send_message_from_template(
         rpc_client,
+        product_name=product_name,
         addressing=email_addressing_single_recipient,
         template_ref=ref,
         context=context,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_from_template_with_multiple_recipients(
-    fake_product_data: dict[str, Any],
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_multiple_recipients: EmailAddressing,
 ):
@@ -183,21 +187,23 @@ async def test_send_message_from_template_with_multiple_recipients(
     context = {
         "subject": "Multi-recipient Test",
         "body": "Sent to multiple recipients.",
-        "product": fake_product_data,
     }
 
     response = await send_message_from_template(
         rpc_client,
+        product_name=product_name,
         addressing=email_addressing_multiple_recipients,
         template_ref=ref,
         context=context,
     )
     assert isinstance(response, SendMessageResponse)
     assert response.task_or_group_uuid
-    assert response.task_name == "send_email_message"
+    assert response.task_name == "send_email_message_task"
 
 
 async def test_send_message_from_template_not_found(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_single_recipient: EmailAddressing,
 ):
@@ -207,6 +213,7 @@ async def test_send_message_from_template_not_found(
     with pytest.raises(NotificationsTemplateNotFoundError):
         await send_message_from_template(
             rpc_client,
+            product_name=product_name,
             addressing=email_addressing_single_recipient,
             template_ref=ref,
             context=context,
@@ -214,7 +221,8 @@ async def test_send_message_from_template_not_found(
 
 
 async def test_send_message_from_template_invalid_context(
-    fake_product_data: dict[str, Any],
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     email_addressing_single_recipient: EmailAddressing,
 ):
@@ -222,12 +230,12 @@ async def test_send_message_from_template_invalid_context(
     # Missing required fields 'user' and 'link'
     context = {
         "invalid_key": "invalid_value",
-        "product": fake_product_data,
     }
 
     with pytest.raises(NotificationsTemplateContextValidationError):
         await send_message_from_template(
             rpc_client,
+            product_name=product_name,
             addressing=email_addressing_single_recipient,
             template_ref=ref,
             context=context,
@@ -235,13 +243,14 @@ async def test_send_message_from_template_invalid_context(
 
 
 async def test_send_message_too_many_recipients(
+    with_product: dict[str, Any],
+    product_name: ProductName,
     rpc_client: RabbitMQRPCClient,
     faker: Faker,
 ):
     too_many_recipients = [EmailContact(name=f"Recipient {i}", email=faker.email()) for i in range(21)]
     message = EmailMessage(
         addressing=EmailAddressing(
-            from_=EmailContact(name="Sender", email=faker.email()),
             to=too_many_recipients,
         ),
         content=EmailContent(
@@ -254,5 +263,6 @@ async def test_send_message_too_many_recipients(
     with pytest.raises(NotificationsTooManyRecipientsError):
         await send_message(
             rpc_client,
+            product_name=product_name,
             message=message,
         )

@@ -23,7 +23,7 @@ from ..exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..resource_usage.errors import DefaultPricingPlanNotFoundError
+from ..resource_usage.resource_usage_service import DefaultPricingPlanNotFoundError
 from ._constants import MSG_CATALOG_SERVICE_NOT_FOUND, MSG_CATALOG_SERVICE_UNAVAILABLE
 from .errors import (
     CatalogConnectionError,

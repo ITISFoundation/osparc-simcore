@@ -112,7 +112,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
 
     __addProfilePage: function() {
       const title = this.tr("Profile");
-      const iconSrc = "@FontAwesome5Solid/user/24";
+      const iconSrc = "@FontAwesomeSolid/user/24";
       const profile = new osparc.desktop.account.ProfilePage();
       const page = this.addTab(title, iconSrc, profile);
       return page;
@@ -120,7 +120,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
 
     __addUsagePage: function() {
       const title = this.tr("Usage");
-      const iconSrc = "@FontAwesome5Solid/list/22";
+      const iconSrc = "@FontAwesomeSolid/list/22";
       const usageOverview = new osparc.desktop.credits.Usage();
       const page = this.addTab(title, iconSrc, usageOverview);
       this.getChildControl("tabs-view").addListener("changeSelection", e => {
@@ -134,7 +134,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
 
     __addGeneralSettings: function() {
       const title = this.tr("Settings");
-      const iconSrc = "@FontAwesome5Solid/cogs/22";
+      const iconSrc = "@FontAwesomeSolid/cogs/22";
       const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
       if (generalPage.getChildrenCount() > 0) {
         // avoid adding the tab if there are no settings to show
@@ -144,21 +144,21 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
 
     __addConfirmationSettings: function() {
       const title = this.tr("Confirmations");
-      const iconSrc = "@FontAwesome5Solid/question-circle/22";
+      const iconSrc = "@FontAwesomeSolid/question-circle/22";
       const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
       this.addTab(title, iconSrc, confirmPage);
     },
 
     __addTokensPage: function() {
       const title = this.tr("API Keys/Tokens");
-      const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
+      const iconSrc = "@FontAwesomeSolid/exchange-alt/22";
       const tokensPage = new osparc.desktop.preferences.pages.TokensPage();
       this.addTab(title, iconSrc, tokensPage);
     },
 
     __addTagsPage: function() {
       const title = this.tr("Create/Edit Tags");
-      const iconSrc = "@FontAwesome5Solid/tags/22";
+      const iconSrc = "@FontAwesomeSolid/tags/22";
       const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
       const page = this.__tagsPage = this.addTab(title, iconSrc, tagsPage);
       osparc.utils.Utils.setIdToWidget(page.getChildControl("button"), "preferencesTagsTabBtn");

@@ -1,0 +1,36 @@
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/account_requested/subject.j2' %} {% endblock %}
+{% block content %}
+<p>{% trans %}Dear Support team,{% endtrans %}</p>
+
+<p>
+  {% trans %}We have received the following request form for an account:{% endtrans %}
+</p>
+<ol>
+  <li>Product: <b>{{ product.display_name }}</b></li>
+  <li>Host: <b>{{ host }}</b></li>
+</ol>
+
+<pre>
+{{ dumps(request_form) }}
+</pre>
+
+<p>
+  {% trans %}Some details about the requested product follow:{% endtrans %}
+</p>
+
+<pre>
+{{ dumps(product_info) }}
+</pre>
+
+<p>
+  {% trans %}To validate the request form, here you can get further info on this request:{% endtrans %}
+</p>
+
+<pre>
+{{ dumps(ipinfo) }}
+</pre>
+
+<p>{% trans %}TIP: Use https://ipinfo.io/ to find out more information on the IP.{% endtrans %}</p>
+
+{% endblock %}

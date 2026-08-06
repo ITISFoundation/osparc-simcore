@@ -13,6 +13,7 @@ from fastapi import status
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_director.constants import LEGACY_SERVICES_PINNED_OSPARC_PRODUCT
 
 
 def _assert_response_and_unwrap_envelope(got: httpx.Response):
@@ -26,7 +27,7 @@ def _assert_response_and_unwrap_envelope(got: httpx.Response):
 
 
 @pytest.mark.parametrize("save_state, expected_save_state_call", [(True, True), (False, False), (None, True)])
-async def test_running_services_post_and_delete(
+async def test_running_services_post_and_delete(  # noqa: PLR0915
     configure_swarm_stack_name: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
@@ -60,6 +61,7 @@ async def test_running_services_post_and_delete(
 
     params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
     params["service_tag"] = "1.2.3"
+    params["product_name"] = LEGACY_SERVICES_PINNED_OSPARC_PRODUCT
     resp = await client.post(
         f"/{api_version_prefix}/running_interactive_services",
         params=params,
@@ -175,7 +177,7 @@ async def test_running_services_post_and_delete(
         assert resp.encoding == "utf-8"
 
 
-async def test_running_interactive_services_list_get(
+async def test_running_interactive_services_list_get(  # noqa: PLR0915
     configure_swarm_stack_name: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
@@ -210,6 +212,7 @@ async def test_running_interactive_services_list_get(
                 params["service_key"] = service_description["key"]
                 params["service_tag"] = service_description["version"]
                 params["service_uuid"] = str(uuid.uuid4())
+                params["product_name"] = LEGACY_SERVICES_PINNED_OSPARC_PRODUCT
                 # start the service
                 resp = await client.post(
                     "/v0/running_interactive_services",

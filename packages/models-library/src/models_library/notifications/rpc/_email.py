@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -5,9 +6,19 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from .. import Channel
 
 
+class SenderIdentity(StrEnum):
+    SUPPORT = "support"
+    NO_REPLY = "no_reply"
+
+
 class EmailContact(BaseModel):
     name: str
     email: EmailStr
+
+
+class EmailAttachment(BaseModel):
+    content: bytes
+    filename: str
 
 
 class EmailContent(BaseModel):
@@ -17,14 +28,15 @@ class EmailContent(BaseModel):
 
 
 class EmailAddressing(BaseModel):
-    from_: Annotated[EmailContact, Field(alias="from")]
+    from_identity: SenderIdentity = SenderIdentity.SUPPORT
     to: list[EmailContact]
+    bcc: list[EmailContact] | None = None
     reply_to: EmailContact | None = None
+
+    attachments: list[EmailAttachment] | None = None
 
     model_config = ConfigDict(
         frozen=True,
-        validate_by_alias=True,
-        validate_by_name=True,
     )
 
 

@@ -75,14 +75,16 @@ async def get_project_id_from_node_id(engine: AsyncEngine, *, node_id: NodeID) -
 
 
 @_handle_projects_metadata_exceptions
-async def get_project_custom_metadata(engine: AsyncEngine, project_uuid: ProjectID) -> MetadataDict:
+async def get_project_custom_metadata(
+    *, engine: AsyncEngine, connection: AsyncConnection | None, project_uuid: ProjectID
+) -> MetadataDict:
     """
     Raises:
         ProjectNotFoundError
         ValidationError: illegal metadata format in the database
     """
-    async with pass_or_acquire_connection(engine) as connection:
-        metadata = await utils_projects_metadata.get(connection, project_uuid=project_uuid)
+    async with pass_or_acquire_connection(engine, connection=connection) as connection_:
+        metadata = await utils_projects_metadata.get(connection_, project_uuid=project_uuid)
         # NOTE: if no metadata in table, it returns None  -- which converts here to --> {}
         return TypeAdapter(MetadataDict).validate_python(metadata.custom or {})
 
@@ -164,5 +166,5 @@ async def list_project_uuids_by_root_parent_project_id(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(stmt)
-        return [ProjectID(row["project_uuid"]) async for row in result]
+        result = await conn.stream_scalars(stmt)
+        return [ProjectID(project_uuid) async for project_uuid in result]

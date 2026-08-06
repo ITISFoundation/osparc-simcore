@@ -9,10 +9,12 @@ openapi.json: ## creates OAS
 .PHONY: up-local
 up-local:   ## starts payments-gateway sample for local testing
 	## Docs in http://127.0.0.1:32769/docs ...
+	## NOTE: requires the simcore stack to publish payments on host port 8011
 	source $(DOT_ENV_FILE) && export PAYMENTS_USERNAME PAYMENTS_PASSWORD && \
 	docker run -it \
 		-p 32769:8000 \
-		--env "PAYMENTS_SERVICE_API_BASE_URL=http://127.0.0.1:8011" \
+		--add-host=host.docker.internal:host-gateway \
+		--env "PAYMENTS_SERVICE_API_BASE_URL=http://host.docker.internal:8011" \
 		--env "PAYMENTS_USERNAME=$$PAYMENTS_USERNAME" \
 		--env "PAYMENTS_PASSWORD=$$PAYMENTS_PASSWORD" \
 		--name "example_payment_gateway" \

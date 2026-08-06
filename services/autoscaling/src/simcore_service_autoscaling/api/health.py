@@ -14,6 +14,7 @@ from models_library.errors import (
     REDIS_CLIENT_UNHEALTHY_MSG,
 )
 from pydantic import BaseModel
+from servicelib.fastapi.health import HealthCheckError
 
 from ..modules.docker import get_docker_client
 from ..modules.ec2 import get_ec2_client
@@ -25,12 +26,8 @@ from .dependencies.application import get_app
 router = APIRouter()
 
 
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
-
-
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
-async def health_check(app: Annotated[FastAPI, Depends(get_app)]) -> str:
+async def health_check(app: Annotated[FastAPI, Depends(get_app)]):
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
 
     if not get_rabbitmq_client(app).healthy:

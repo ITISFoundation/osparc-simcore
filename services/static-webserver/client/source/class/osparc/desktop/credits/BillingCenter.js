@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __addPaymentMethodsPage: function() {
       const title = this.tr("Payment Methods");
-      const iconSrc = "@FontAwesome5Solid/credit-card/22";
+      const iconSrc = "@FontAwesomeSolid/credit-card/22";
       const paymentMethods = this.__paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
       const page = this.addTab(title, iconSrc, paymentMethods);
       return page;
@@ -97,7 +97,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __addTransactionsPage: function() {
       const title = this.tr("Payments");
-      const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
+      const iconSrc = "@FontAwesomeSolid/exchange-alt/22";
       const transactions = this.__transactionsTable = new osparc.desktop.credits.Transactions();
       const page = this.addTab(title, iconSrc, transactions);
       return page;
@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __addUsagePage: function() {
       const title = this.tr("Usage");
-      const iconSrc = "@FontAwesome5Solid/list/22";
+      const iconSrc = "@FontAwesomeSolid/list/22";
       const usage = new osparc.desktop.credits.Usage();
       const page = this.addTab(title, iconSrc, usage);
       this.getChildControl("tabs-view").addListener("changeSelection", e => {
@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __addPurchasesPage: function() {
       const title = this.tr("Purchases");
-      const iconSrc = "@FontAwesome5Solid/shopping-bag/22";
+      const iconSrc = "@FontAwesomeSolid/shopping-bag/22";
       const purchases = new osparc.desktop.credits.Purchases();
       const page = this.addTab(title, iconSrc, purchases);
       this.getChildControl("tabs-view").addListener("changeSelection", e => {
@@ -133,7 +133,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __addCheckoutsPage: function() {
       const title = this.tr("Checkouts");
-      const iconSrc = "@FontAwesome5Solid/list/22";
+      const iconSrc = "@FontAwesomeSolid/list/22";
       const purchases = new osparc.desktop.credits.Checkouts();
       const page = this.addTab(title, iconSrc, purchases);
       return page;

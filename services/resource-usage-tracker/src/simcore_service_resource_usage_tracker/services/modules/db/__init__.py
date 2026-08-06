@@ -3,13 +3,14 @@ import logging
 from fastapi import FastAPI
 from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
 from servicelib.logging_utils import log_context
+from servicelib.tracing import TracingConfig
 
 from ...._meta import APP_NAME
 
 _logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI):
+def setup(app: FastAPI, tracing_config: TracingConfig | None) -> None:
     async def on_startup() -> None:
         with log_context(
             _logger,
@@ -18,8 +19,9 @@ def setup(app: FastAPI):
         ):
             await connect_to_db(
                 app,
-                app.state.settings.RESOURCE_USAGE_TRACKER_POSTGRES,
+                settings=app.state.settings.RESOURCE_USAGE_TRACKER_POSTGRES,
                 application_name=APP_NAME,
+                tracing_config=tracing_config,
             )
 
     async def on_shutdown() -> None:

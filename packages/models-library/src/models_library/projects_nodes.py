@@ -10,7 +10,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
@@ -33,7 +32,6 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .projects_nodes_layout import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
@@ -254,18 +252,6 @@ class Node(BaseModel):
             ge=0,
             le=100,
             description="the node progress value",
-            deprecated=True,  # NOTE: still used in the File Picker (frontend nodes) and must be removed first from there before retiring it here
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    thumbnail: Annotated[
-        str | HttpUrl | None,
-        Field(
-            description="url of the latest screenshot of the node",
-            examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
@@ -325,49 +311,12 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    output_node: Annotated[
-        bool | None,
-        Field(
-            deprecated=True,
-            alias="outputNode",
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    output_nodes: Annotated[  # <-- (DEPRECATED) Can be removed
-        list[NodeID] | None,
-        Field(
-            description="Used in group-nodes. Node IDs of those connected to the output",
-            alias="outputNodes",
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    parent: Annotated[
-        NodeID | None,
-        Field(
-            description="Parent's (group-nodes') node ID s. Used to group",
-            deprecated=True,
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
-        ),
-    ] = None
-
-    position: Annotated[
-        Position | None,
-        Field(
-            deprecated=True,
-            description="Use projects_ui.WorkbenchUI.position instead",
-        ),
-    ] = None
-
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
 
-    # NOTE: requested_resources should be here! WARNING: this model is used both in database and rest api!
-    # Model for project_nodes table should NOT be Node but a different one !
+    ui: dict[str, Any] | None = None
 
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
@@ -380,13 +329,6 @@ class Node(BaseModel):
             ),
         ),
     ] = None
-
-    @field_validator("thumbnail", mode="before")
-    @classmethod
-    def _convert_empty_str_to_none(cls, v):
-        if isinstance(v, str) and v == "":
-            return None
-        return v
 
     @field_validator("state", mode="before")
     @classmethod
@@ -483,7 +425,6 @@ class Node(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="forbid",
         validate_by_name=True,
         validate_by_alias=True,
         json_schema_extra=_update_json_schema_extra,

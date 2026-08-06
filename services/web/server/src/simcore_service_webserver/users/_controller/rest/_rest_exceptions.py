@@ -8,7 +8,7 @@ from ....exception_handling import (
     to_exceptions_handlers_map,
 )
 from ....products.errors import ProductNotFoundError
-from ...exceptions import (
+from ...errors import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,

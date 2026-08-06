@@ -67,7 +67,7 @@ qx.Class.define("osparc.task.TaskUI", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/14").set({
+          control = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/14").set({
             width: 25,
             alignY: "middle"
           });
@@ -136,7 +136,7 @@ qx.Class.define("osparc.task.TaskUI", {
         if ("message" in data["task_progress"] && !this.getChildControl("subtitle").getValue()) {
           this.getChildControl("subtitle").setValue(data["task_progress"]["message"]);
         }
-        this.getChildControl("progress").setValue((osparc.data.PollTask.extractProgress(data) * 100) + "%");
+        this.getChildControl("progress").setValue(osparc.utils.Utils.safeToFixed(osparc.data.PollTask.extractProgress(data) * 100, 2) + "%");
       }
     },
 

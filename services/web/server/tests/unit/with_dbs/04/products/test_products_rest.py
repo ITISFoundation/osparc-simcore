@@ -19,7 +19,7 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.status_codes_utils import is_2xx_success
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.groups.api import auto_add_user_to_product_group
+from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
 
 
 @pytest.mark.parametrize(

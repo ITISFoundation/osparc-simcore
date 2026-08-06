@@ -6,7 +6,7 @@ from pprint import pformat
 from typing import NamedTuple
 
 from aiohttp import web
-from deepdiff import DeepDiff  # type: ignore[attr-defined]
+from deepdiff import DeepDiff
 from models_library.licenses import (
     LicensedResourceDB,
     LicensedResourceID,

@@ -37,7 +37,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     });
 
     this.getChildControl("thumbnail").set({
-      source: "@FontAwesome5Solid/credit-card/18",
+      source: "@FontAwesomeSolid/credit-card/18",
       paddingTop: 6,
     });
 
@@ -173,7 +173,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           break;
         case "details-button":
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/info/14",
+            icon: "@FontAwesomeSolid/info/14",
             marginTop: 6,
             marginBottom: 6,
           });
@@ -185,7 +185,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
           break;
         case "delete-button":
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/trash/14",
+            icon: "@FontAwesomeSolid/trash/14",
             marginTop: 6,
             marginBottom: 6,
             marginRight: 6,

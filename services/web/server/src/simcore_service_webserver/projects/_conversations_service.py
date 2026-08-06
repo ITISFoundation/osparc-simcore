@@ -18,7 +18,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..conversations import conversations_service
-from ._access_rights_service import check_user_project_permission
+from . import _access_rights_service
 
 _logger = logging.getLogger(__name__)
 
@@ -35,10 +35,10 @@ async def create_project_conversation(
     user_id: UserID,
     project_uuid: ProjectID,
     # attributes
-    name: str,
+    name: ConversationName | None,
     conversation_type: ConversationType,
 ) -> ConversationGetDB:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -66,7 +66,7 @@ async def list_project_conversations(
     offset: PositiveInt,
     limit: int,
 ) -> tuple[int, list[ConversationGetDB]]:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -89,9 +89,9 @@ async def update_project_conversation(
     project_uuid: ProjectID,
     conversation_id: ConversationID,
     # attributes
-    name: ConversationName,
+    name: ConversationName | None,
 ) -> ConversationGetDB:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -114,7 +114,7 @@ async def delete_project_conversation(
     project_uuid: ProjectID,
     conversation_id: ConversationID,
 ) -> None:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -140,7 +140,7 @@ async def get_project_conversation(
     project_uuid: ProjectID,
     conversation_id: ConversationID,
 ) -> ConversationGetDB:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -169,7 +169,7 @@ async def create_project_conversation_message(
     content: str,
     message_type: ConversationMessageType,
 ) -> ConversationMessageGetDB:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -198,7 +198,7 @@ async def list_project_conversation_messages(
     offset: PositiveInt,
     limit: int,
 ) -> tuple[int, list[ConversationMessageGetDB]]:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -224,7 +224,7 @@ async def update_project_conversation_message(
     # attributes
     content: str,
 ) -> ConversationMessageGetDB:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -250,7 +250,7 @@ async def delete_project_conversation_message(
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> None:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
@@ -276,7 +276,7 @@ async def get_project_conversation_message(
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> ConversationMessageGetDB:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,

@@ -110,7 +110,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           break;
         case "folder-up": {
           const header = this.getChildControl("header");
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/12").set({
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/arrow-up/12").set({
             enabled: false
           });
           header.addAt(control, 0);

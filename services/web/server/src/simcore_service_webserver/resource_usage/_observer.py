@@ -13,7 +13,7 @@ from servicelib.aiohttp.observer import (
 from servicelib.utils import logged_gather
 
 from ..notifications import wallet_osparc_credits
-from ..wallets import api as wallets_service
+from ..wallets.wallets_service import list_wallets_for_user
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ async def _on_user_disconnected(
     assert client_session_id  # nosec
 
     # Get all user wallets and unsubscribe
-    user_wallet = await wallets_service.list_wallets_for_user(app, user_id=user_id, product_name=product_name)
+    user_wallet = await list_wallets_for_user(app, user_id=user_id, product_name=product_name)
     disconnect_tasks = [wallet_osparc_credits.unsubscribe(app, wallet.wallet_id) for wallet in user_wallet]
     await logged_gather(*disconnect_tasks)
 
@@ -41,7 +41,7 @@ async def _on_user_connected(
 ) -> None:
     assert client_session_id  # nosec
     # Get all user wallets and subscribe
-    user_wallet = await wallets_service.list_wallets_for_user(app, user_id=user_id, product_name=product_name)
+    user_wallet = await list_wallets_for_user(app, user_id=user_id, product_name=product_name)
     _logger.debug("Connecting user %s to wallets %s", f"{user_id}", f"{user_wallet}")
     connect_tasks = [wallet_osparc_credits.subscribe(app, wallet.wallet_id) for wallet in user_wallet]
     await logged_gather(*connect_tasks)

@@ -29,8 +29,8 @@ from models_library.groups import GroupID
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.wallets import WalletID
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.wallets._groups_api import WalletGroupGet
-from simcore_service_webserver.wallets._groups_handlers import _WalletsGroupsBodyParams
+from simcore_service_webserver.wallets._schemas import _WalletsGroupsBodyParams
+from simcore_service_webserver.wallets.models import WalletGroupGet
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

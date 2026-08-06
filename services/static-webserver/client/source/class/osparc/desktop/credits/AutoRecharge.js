@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         alignX: "center",
         alignY: "middle"
       }))
-      const image = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26")
+      const image = new qx.ui.basic.Image("@FontAwesomeSolid/circle-notch/26")
       image.getContentElement().addClass("rotate")
       this.__fetchingView.add(image)
       this.add(this.__fetchingView)
@@ -189,7 +189,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         marginLeft: 15
       });
       topUpAmountTitleLayout.add(topUpAmountTitle);
-      const topUpAmountInfo = new osparc.ui.hint.InfoHint("Amount in USD payed when auto-recharge condition is satisfied.");
+      const topUpAmountInfo = new osparc.ui.hint.InfoHint("Amount in USD paid when auto-recharge condition is satisfied.");
       topUpAmountTitleLayout.add(topUpAmountInfo);
       topUpAmountLayout.add(topUpAmountTitleLayout);
       const topUpAmountField = this.__topUpAmountField = new qx.ui.form.Spinner().set({
@@ -310,7 +310,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const successfulMsg = this.tr("Changes on the Auto recharge were successfully saved");
       saveAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(this.__enabledField.getValue(), saveAutoRechargeBtn, successfulMsg));
       btnContainer.addAt(saveAutoRechargeBtn, 1)
-      const cancelBtn = new qx.ui.form.Button("Cancel").set({
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
         appearance: "appmotion-button"
       });
       cancelBtn.addListener("execute", () => this.fireEvent("close"))

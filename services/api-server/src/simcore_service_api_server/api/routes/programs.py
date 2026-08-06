@@ -9,7 +9,8 @@ from httpx import HTTPStatusError
 from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize, PositiveInt, StringConstraints, ValidationError
+from models_library.users import UserID
+from pydantic import ByteSize, StringConstraints, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
@@ -32,6 +33,7 @@ from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_job_service, get_program_service
+from ._constants import include_from_version
 
 _logger = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ router = APIRouter()
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10
+    include_in_schema=include_from_version("0.10"),
 )
 async def list_programs(
     program_service: Annotated[ProgramService, Depends(get_program_service)],
@@ -80,7 +82,7 @@ async def list_programs(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10
+    include_in_schema=include_from_version("0.10"),
 )
 async def list_program_history(
     program_key: ProgramKeyId,
@@ -146,7 +148,7 @@ async def get_program_release(
 async def create_program_job(
     program_key: ProgramKeyId,
     version: VersionStr,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     program_service: Annotated[ProgramService, Depends(get_program_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,

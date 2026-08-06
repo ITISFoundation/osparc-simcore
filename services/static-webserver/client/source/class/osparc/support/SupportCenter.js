@@ -55,7 +55,6 @@ qx.Class.define("osparc.support.SupportCenter", {
   statics: {
     WINDOW_WIDTH: 450,
     WINDOW_HEIGHT: 700,
-    REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
     getMaxHeight: function() {
       // height: max 80% of screen, or WINDOW_HEIGHT px
@@ -110,7 +109,7 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "home-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Help & Support"),
-            icon: "@FontAwesome5Solid/question-circle/18",
+            icon: "@FontAwesomeSolid/question-circle/18",
             backgroundColor: "transparent",
             iconPosition: "top",
             allowGrowX: true,
@@ -122,7 +121,7 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "conversations-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Conversations"),
-            icon: "@FontAwesome5Solid/comments/18",
+            icon: "@FontAwesomeSolid/comments/18",
             backgroundColor: "transparent",
             iconPosition: "top",
             allowGrowX: true,

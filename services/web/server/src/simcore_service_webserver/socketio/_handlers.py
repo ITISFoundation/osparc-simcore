@@ -5,7 +5,7 @@ SEE http://python-socketio.readthedocs.io/en/latest/
 """
 
 import logging
-from typing import Any
+from typing import Any, Final
 
 import socketio.exceptions  # type: ignore[import-untyped]
 from aiohttp import web
@@ -15,18 +15,18 @@ from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
-from models_library.users import UserID
-from pydantic import TypeAdapter
+from models_library.users import UserID, UserIDAdapter
 from servicelib.aiohttp.observer import emit
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.logging_utils import log_context
 
-from ..groups.api import list_user_groups_ids_with_read_access
+from ..groups.groups_service import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
-from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
+from ..resource_manager.resource_manager_service import PROJECT_ID_KEY, managed_resource
+from ._messages import send_message_to_user
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
-from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user
+from .constants import SOCKET_IO_HEARTBEAT_EVENT
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ _MSG_UNAUTHORIZED_MISSING_SESSION_INFO = "Sorry, we cannot identify you. Please 
 # 2 seconds avoids GC from removing the services to early
 # this has been tested and is working with good results
 # the previous implementation was not working as expected
-_EMIT_INTERVAL_S: int = 2
+_EMIT_INTERVAL_S: Final[int] = 2
 
 
 def auth_user_factory(socket_id: SocketID):
@@ -51,7 +51,7 @@ def auth_user_factory(socket_id: SocketID):
             web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
         """
         app = request.app
-        user_id = TypeAdapter(UserID).validate_python(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
+        user_id = UserIDAdapter.validate_python(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
         client_session_id = request.query.get("client_session_id", None)
         product = products_web.get_current_product(request)
 

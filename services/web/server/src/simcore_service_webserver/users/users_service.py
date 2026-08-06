@@ -12,6 +12,7 @@ from ._users_service import (
     get_user_fullname,
     get_user_id_from_gid,
     get_user_invoice_address,
+    get_user_language,
     get_user_name_and_email,
     get_user_primary_group_id,
     get_user_role,
@@ -24,6 +25,7 @@ from ._users_service import (
 
 __all__: tuple[str, ...] = (
     "FullNameDict",
+    # functions
     "delete_user_without_projects",
     "get_active_users_email_data",
     "get_guest_user_ids_and_names",
@@ -34,6 +36,7 @@ __all__: tuple[str, ...] = (
     "get_user_fullname",
     "get_user_id_from_gid",
     "get_user_invoice_address",
+    "get_user_language",
     "get_user_name_and_email",
     "get_user_primary_group_id",
     "get_user_role",

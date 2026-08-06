@@ -18,7 +18,7 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...users.exceptions import UserDefaultWalletNotFoundError
+from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
 from ..exceptions import DirectorV2ServiceError
 

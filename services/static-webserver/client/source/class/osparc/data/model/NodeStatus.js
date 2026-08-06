@@ -108,8 +108,9 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
   statics: {
     getValidProgress: function(value) {
-      if (value !== null && !Number.isNaN(value) && value >= 0 && value <= 100) {
-        return Number.parseFloat(value.toFixed(4));
+      const numValue = Number(value);
+      if (value !== null && !Number.isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+        return Number.parseFloat(numValue.toFixed(4));
       }
       return 0;
     },

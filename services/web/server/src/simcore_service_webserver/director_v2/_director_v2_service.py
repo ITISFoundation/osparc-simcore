@@ -2,7 +2,6 @@ import logging
 from uuid import UUID
 
 from aiohttp import web
-from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
@@ -12,8 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletID, WalletInfo
-from pydantic import TypeAdapter
+from models_library.wallets import WalletIDAdapter, WalletInfo
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.exception_utils import suppress_exceptions
@@ -29,8 +27,12 @@ from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
 from ..user_preferences import user_preferences_service
-from ..users.exceptions import UserDefaultWalletNotFoundError
-from ..wallets import api as wallets_service
+from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
+from ..users.errors import UserDefaultWalletNotFoundError
+from ..wallets.wallets_service import (
+    get_wallet_with_available_credits,
+    get_wallet_with_available_credits_by_user_and_wallet,
+)
 from ._client import DirectorV2RestClient
 from ._client_base import DataType, request_director_v2
 from .exceptions import ComputationNotFoundError, DirectorV2ServiceError
@@ -51,7 +53,10 @@ async def create_or_update_pipeline(
     project_id: ProjectID,
     product_name: ProductName,
     product_api_base_url: str,
-) -> DataType | None:
+) -> DataType:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
 
@@ -71,40 +76,18 @@ async def create_or_update_pipeline(
         ),
     }
 
-    try:
-        computation_task_out, _ = await request_director_v2(
-            app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
-        )
-        assert isinstance(computation_task_out, dict)  # nosec
-        return computation_task_out
-
-    except DirectorV2ServiceError as exc:
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                f"Could not create pipeline from project {project_id}",
-                error=exc,
-                error_context={**body, "backend_url": backend_url},
-            )
-        )
-    return None
+    computation_task_out, _ = await request_director_v2(
+        app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
+    )
+    assert isinstance(computation_task_out, dict)  # nosec
+    return computation_task_out
 
 
 @log_decorator(logger=_logger)
-async def is_pipeline_running(app: web.Application, user_id: PositiveInt, project_id: UUID) -> bool | None:
-    # NOTE: possibility to make it cheaper by /computations/{project_id}/state. First trial shows
-    # that the efficiency gain is minimal but should be considered specially if the handler
-    # gets heavier with time
-    pipeline = await get_computation_task(app, user_id, project_id)
-    if pipeline is None:
-        # NOTE: at the time of this modification, error handling in `get_computation_task`
-        # is still limited and any type of errors is transformed into a None. Therefore
-        # at this point we cannot discern whether the pipeline is running or not.
-        # In order to define the "UNKNOWN" state we return None, which in an
-        # if statement casts to False
-        return None
-
-    pipeline_state: bool | None = pipeline.state.is_running()
-    return pipeline_state
+async def is_pipeline_running(app: web.Application, user_id: UserID, project_id: UUID) -> bool:
+    if pipeline := await get_computation_task(app, user_id, project_id):
+        return pipeline.state.is_running()
+    return False
 
 
 @log_decorator(logger=_logger)
@@ -134,7 +117,10 @@ def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
     reason="silence in case the pipeline does not exist",
     predicate=_skip_if_pipeline_not_found,
 )
-async def stop_pipeline(app: web.Application, *, user_id: PositiveInt, project_id: ProjectID):
+async def stop_pipeline(app: web.Application, *, user_id: UserID, project_id: ProjectID) -> None:
+    """
+    raises DirectorV2ServiceError
+    """
     await DirectorV2RestClient(app).stop_computation(project_id=project_id, user_id=user_id)
 
 
@@ -146,6 +132,9 @@ async def delete_pipeline(
     *,
     force: bool = True,
 ) -> None:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
 
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -172,6 +161,9 @@ async def get_batch_tasks_outputs(
     project_id: ProjectID,
     selection: TasksSelection,
 ) -> TasksOutputs:
+    """
+    raises DirectorV2ServiceError
+    """
     # NOTE https://github.com/ITISFoundation/osparc-simcore/issues/7527
     settings: DirectorV2Settings = get_plugin_settings(app)
     response_payload, _ = await request_director_v2(
@@ -213,11 +205,11 @@ async def get_wallet_info(
             app,
             user_id=user_id,
             product_name=product_name,
-            preference_class=user_preferences_service.PreferredWalletIdFrontendUserPreference,
+            preference_class=PreferredWalletIdFrontendUserPreference,
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)
-        project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+        project_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
         await projects_wallets_service.connect_wallet_to_project(
             app,
             product_name=product_name,
@@ -230,7 +222,7 @@ async def get_wallet_info(
 
     if check_user_wallet_permission:
         # Check whether user has access to the wallet
-        wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+        wallet = await get_wallet_with_available_credits_by_user_and_wallet(
             app,
             user_id=user_id,
             wallet_id=project_wallet_id,
@@ -242,9 +234,7 @@ async def get_wallet_info(
         # In situations where a project is connected to a wallet, but the user does not have access to it and
         # is performing an action such as
         # upgrading the service version, we still want to retrieve the wallet info and pass it to director-v2.
-        wallet = await wallets_service.get_wallet_with_available_credits(
-            app, wallet_id=project_wallet_id, product_name=product_name
-        )
+        wallet = await get_wallet_with_available_credits(app, wallet_id=project_wallet_id, product_name=product_name)
 
     return WalletInfo(
         wallet_id=project_wallet_id,

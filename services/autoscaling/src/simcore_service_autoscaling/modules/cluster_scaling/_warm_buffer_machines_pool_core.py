@@ -16,7 +16,7 @@ Open features:
 
 import logging
 from collections import defaultdict
-from typing import TypeAlias, cast
+from typing import cast
 
 import arrow
 from aws_library.ec2 import (
@@ -33,12 +33,13 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
+from servicelib.tracing import traced
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...constants import (
     DOCKER_PULL_COMMAND,
-    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-    MACHINE_PULLING_EC2_TAG_KEY,
+    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    INSTANCE_PULLING_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
 )
 from ...core.errors import Ec2TagDeserializationError
@@ -52,6 +53,7 @@ from ...utils.buffer_machines import (
 from ...utils.warm_buffer_machines import (
     ec2_warm_buffer_startup_script,
     get_deactivated_warm_buffer_ec2_tags,
+    get_warm_buffer_ec2_instances,
 )
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
@@ -121,7 +123,8 @@ def _handle_unconnected_instance(app: FastAPI, *, buffer_pool: WarmBufferPool, i
 
     if is_broken:
         _logger.error(
-            "The machine does not connect to the SSM server after %s. It will be terminated. TIP: check the initialization phase for errors.",
+            "The machine does not connect to the SSM server after %s. It will be terminated. "
+            "TIP: check the initialization phase for errors.",
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
         )
         buffer_pool.broken_instances.add(instance)
@@ -135,7 +138,7 @@ async def _analyze_running_instance_state(
     """Analyze and categorize running instance based on its current state."""
     ssm_client = get_ssm_client(app)
 
-    if MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
+    if INSTANCE_PULLING_EC2_TAG_KEY in instance.tags:
         buffer_pool.pulling_instances.add(instance)
     elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
         await _handle_ssm_connected_instance(app, buffer_pool=buffer_pool, instance=instance)
@@ -143,14 +146,16 @@ async def _analyze_running_instance_state(
         _handle_unconnected_instance(app, buffer_pool=buffer_pool, instance=instance)
 
 
+@traced
 async def _analyse_current_state(app: FastAPI, *, auto_scaling_mode: AutoscalingProvider) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
-    all_buffer_instances = await ec2_client.get_instances(
+    all_buffer_instances = await get_warm_buffer_ec2_instances(
+        ec2_client,
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+        base_ec2_tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["stopped", "pending", "running", "stopping"],
     )
     buffers_manager = WarmBufferPoolManager()
@@ -173,6 +178,7 @@ async def _analyse_current_state(app: FastAPI, *, auto_scaling_mode: Autoscaling
     return buffers_manager
 
 
+@traced
 async def _terminate_unneeded_pools(
     app: FastAPI,
     buffers_manager: WarmBufferPoolManager,
@@ -198,6 +204,7 @@ async def _terminate_unneeded_pools(
     return buffers_manager
 
 
+@traced
 async def _terminate_instances_with_invalid_pre_pulled_images(
     app: FastAPI, buffers_manager: WarmBufferPoolManager
 ) -> WarmBufferPoolManager:
@@ -241,6 +248,7 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
     return buffers_manager
 
 
+@traced
 async def _terminate_broken_instances(app: FastAPI, buffers_manager: WarmBufferPoolManager) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     termineatable_instances = set()
@@ -253,6 +261,7 @@ async def _terminate_broken_instances(app: FastAPI, buffers_manager: WarmBufferP
     return buffers_manager
 
 
+@traced
 async def _add_remove_buffer_instances(
     app: FastAPI,
     buffers_manager: WarmBufferPoolManager,
@@ -306,8 +315,8 @@ async def _add_remove_buffer_instances(
     return buffers_manager
 
 
-InstancesToStop: TypeAlias = set[EC2InstanceData]
-InstancesToTerminate: TypeAlias = set[EC2InstanceData]
+type InstancesToStop = set[EC2InstanceData]
+type InstancesToTerminate = set[EC2InstanceData]
 
 
 async def _handle_pool_image_pulling(
@@ -325,8 +334,8 @@ async def _handle_pool_image_pulling(
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
-                MACHINE_PULLING_EC2_TAG_KEY: "true",
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+                INSTANCE_PULLING_EC2_TAG_KEY: "true",
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
             },
         )
 
@@ -334,7 +343,7 @@ async def _handle_pool_image_pulling(
     broken_instances_to_terminate: set[EC2InstanceData] = set()
     # wait for the image pulling to complete
     for instance in pool.pulling_instances:
-        if ssm_command_id := instance.tags.get(MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY):
+        if ssm_command_id := instance.tags.get(INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY):
             ssm_command = await ssm_client.get_command(instance.id, command_id=ssm_command_id)
             match ssm_command.status:
                 case "Success":
@@ -371,6 +380,7 @@ async def _handle_pool_image_pulling(
     return instances_to_stop, broken_instances_to_terminate
 
 
+@traced
 async def _handle_image_pre_pulling(app: FastAPI, buffers_manager: WarmBufferPoolManager) -> None:
     ec2_client = get_ec2_client(app)
     instances_to_stop: set[EC2InstanceData] = set()
@@ -390,8 +400,8 @@ async def _handle_image_pre_pulling(app: FastAPI, buffers_manager: WarmBufferPoo
             "pending buffer instances completed pulling of images, stopping them",
         ):
             tag_keys_to_remove = (
-                MACHINE_PULLING_EC2_TAG_KEY,
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
             )
             await ec2_client.remove_instances_tags(
                 tuple(instances_to_stop),
@@ -403,6 +413,7 @@ async def _handle_image_pre_pulling(app: FastAPI, buffers_manager: WarmBufferPoo
             await ec2_client.terminate_instances(broken_instances_to_terminate)
 
 
+@traced
 async def monitor_buffer_machines(app: FastAPI, *, auto_scaling_mode: AutoscalingProvider) -> None:
     """Buffer machine creation works like so:
     1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm

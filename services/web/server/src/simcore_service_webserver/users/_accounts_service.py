@@ -6,20 +6,21 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
+from models_library.list_operations import OrderClause
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
-from ..invitations import api as invitations_service
+from ..invitations import invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
 from ..products.errors import ProductNotFoundError
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval, PreviewRejection
-from .exceptions import (
+from .errors import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
 )
@@ -42,14 +43,13 @@ async def pre_register_user(
     ],
     product_name: ProductName,
 ) -> UserAccountGet:
-    found = await search_users_accounts(
-        app,
-        filter_by_email_glob=profile.email,
+    already_exists = await _accounts_repository.check_pre_registration_email_exists_in_product(
+        get_asyncpg_engine(app),
+        email=profile.email,
         product_name=product_name,
-        include_products=False,
     )
-    if found:
-        raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
+    if already_exists:
+        raise AlreadyPreRegisteredError(product_name=product_name, email=profile.email)
 
     details = profile.model_dump(
         include={
@@ -128,6 +128,10 @@ async def list_user_accounts(
     ] = None,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
+    sort_by: Annotated[
+        list[OrderClause] | None,
+        doc("Sort order as list of OrderClause"),
+    ] = None,
 ) -> Annotated[
     tuple[list[dict[str, Any]], int],
     doc("Tuple containing (list of user dictionaries, total count of users)"),
@@ -148,6 +152,7 @@ async def list_user_accounts(
         filter_registered=filter_registered,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
+        sort_by=sort_by,
     )
 
     # For each user, append additional information if needed
@@ -256,6 +261,10 @@ async def approve_user_account(
         dict[str, Any] | None,
         doc("Optional message content to send to the approved user"),
     ] = None,
+    bcc_emails: Annotated[
+        list[LowerCaseEmailStr] | None,
+        doc("Optional list of emails to add as blind carbon copy (BCC) of the approval message"),
+    ] = None,
 ) -> Annotated[int, doc("The ID of the approved pre-registration record")]:
     """Approve a user account based on their pre-registration email.
 
@@ -311,6 +320,7 @@ async def approve_user_account(
             group_ids=None,
             external_contacts=[EmailContact(email=pre_registration_email)],
             content=message_content,
+            bcc=([EmailContact(email=email) for email in bcc_emails] if bcc_emails else None),
         )
 
     return pre_registration_id
@@ -325,6 +335,10 @@ async def reject_user_account(
     message_content: Annotated[
         dict[str, Any] | None,
         doc("Optional message content to send to the rejected user"),
+    ] = None,
+    bcc_emails: Annotated[
+        list[LowerCaseEmailStr] | None,
+        doc("Optional list of emails to add as blind carbon copy (BCC) of the rejection message"),
     ] = None,
 ) -> Annotated[int, doc("The ID of the rejected pre-registration record")]:
     """Reject a user account based on their pre-registration email.
@@ -367,6 +381,7 @@ async def reject_user_account(
             group_ids=None,
             external_contacts=[EmailContact(email=pre_registration_email)],
             content=message_content,
+            bcc=([EmailContact(email=email) for email in bcc_emails] if bcc_emails else None),
         )
 
     return pre_registration_id

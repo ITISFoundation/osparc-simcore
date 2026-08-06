@@ -82,22 +82,22 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
     LOG_LEVEL_COLOR_MAP: {
       "INFO": {
         color: "info",
-        icon: "@FontAwesome5Solid/check/",
+        icon: "@FontAwesomeSolid/check/",
         backgroundColor: "flash-message-background"
       },
       "DEBUG": {
         color: "warning",
-        icon: "@FontAwesome5Solid/info/",
+        icon: "@FontAwesomeSolid/info/",
         backgroundColor: "flash-message-background"
       },
       "WARNING": {
         color: "warning",
-        icon: "@FontAwesome5Solid/exclamation-triangle/",
+        icon: "@FontAwesomeSolid/exclamation-triangle/",
         backgroundColor: "flash-message-background"
       },
       "ERROR": {
         color: "error",
-        icon: "@FontAwesome5Solid/exclamation/",
+        icon: "@FontAwesomeSolid/exclamation/",
         backgroundColor: "flash-message-background"
       }
     }

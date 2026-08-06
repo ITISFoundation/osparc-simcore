@@ -41,24 +41,47 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 
 
-.PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
+.PHONY: test-dev test-ci FORCE
+
+# Always out-of-date sentinel used to force pattern test targets to run.
+FORCE:
+
+.PHONY: check-test-dispatch
+check-test-dispatch: ## validates test target dispatch and mode-specific pytest options via dry-runs
+	@tmp_file=$$(mktemp); \
+	trap 'rm -f "$$tmp_file"' EXIT; \
+	$(MAKE) --no-print-directory -n test-dev-unit > "$$tmp_file"; \
+	grep -q "_run-test-dev" "$$tmp_file" || (echo "ERROR: test-dev-unit does not dispatch to _run-test-dev"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n test-ci-integration > "$$tmp_file"; \
+	grep -q "_run-test-ci" "$$tmp_file" || (echo "ERROR: test-ci-integration does not dispatch to _run-test-ci"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n _run-test-dev target=/tmp/dispatch-check > "$$tmp_file"; \
+	grep -q -- "--pdb" "$$tmp_file" || (echo "ERROR: _run-test-dev is missing development pytest options"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n _run-test-ci target=/tmp/dispatch-check > "$$tmp_file"; \
+	grep -q -- "--cov-append" "$$tmp_file" || (echo "ERROR: _run-test-ci is missing CI pytest options"; cat "$$tmp_file"; exit 1); \
+	echo "OK: test dispatch checks passed"
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
 
-test-dev-unit test-ci-unit: _check_venv_active ## run app unit tests (specifying test-path can restrict to a folder)
-	# Targets tests/unit folder
-	@make --no-print-directory _run-$(subst -unit,,$@) target=$(CURDIR)/tests/unit$(TEST_PATH)
+test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/unit folder (or an explicit target= if provided)
+	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
 
-test-dev-integration test-ci-integration: ## run app integration tests (specifying test-path can restrict to a folder)
-	# Targets tests/integration folder using local/$(image-name):production images
+test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration$(TEST_PATH)
+	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
 
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
 
 test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
+
+
+# ---------------------------------------------------------------------------
+# i18n — extract translatable strings for this service
+# ---------------------------------------------------------------------------
+include $(REPO_BASE_DIR)/scripts/makefiles/i18n.mk
 
 
 #
@@ -135,47 +158,39 @@ info: ## displays service info
 # SUBTASKS
 #
 
-.PHONY: _run-test-dev _run-test-ci
-
 TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
-_run-test-dev: _check_venv_active
-	# runs tests for development (e.g w/ pdb)
-	pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--keep-docker-up \
-		--pdb \
-		-vv \
-		$(PYTEST_ADDITIONAL_PARAMETERS) \
-		$(TEST_TARGET)
 
+PYTEST_BASE_ARGS = \
+	--asyncio-mode=auto \
+	--color=yes \
+	--cov-config=.coveragerc \
+	--cov-report=term-missing \
+	--cov-report=xml \
+	--cov=$(APP_PACKAGE_NAME) \
+	--durations=10 \
+	--junitxml=junit.xml -o junit_family=legacy \
+	--keep-docker-up
 
-_run-test-ci: _check_venv_active
-	# runs tests for CI (e.g. w/o pdb but w/ coverage)
+PYTEST_ARGS_dev = \
+	--exitfirst \
+	--failed-first \
+	--pdb \
+	-vv
+
+PYTEST_ARGS_ci = \
+	--cov-append \
+	--log-date-format="%Y-%m-%d %H:%M:%S" \
+	--log-format="%(asctime)s %(levelname)s %(message)s" \
+	--verbose \
+	-m "not heavy_load"
+
+_run-test-%: FORCE _check_venv_active
+	# runs tests for development or CI mode
+	$(if $(filter $*,dev ci),,$(error unsupported test mode '$*', expected dev or ci))
 	pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--keep-docker-up \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
-		-m "not heavy_load" \
+		$(PYTEST_BASE_ARGS) \
+		$(PYTEST_ARGS_$*) \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
 

@@ -46,7 +46,7 @@ qx.Class.define("osparc.form.ColorPicker", {
       let control;
       switch (id) {
         case "random-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/sync-alt/12");
           control.addListener("execute", () => this.setValue(osparc.utils.Utils.getRandomColor()), this);
           this.bind("value", control, "backgroundColor");
           this.bind("value", control, "textColor", {
@@ -55,7 +55,7 @@ qx.Class.define("osparc.form.ColorPicker", {
           this._add(control);
           break;
         case "selector-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye-dropper/12");
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/eye-dropper/12");
           control.addListener("execute", () => this.__openColorSelector(), this);
           this.bind("value", control, "backgroundColor");
           this.bind("value", control, "textColor", {

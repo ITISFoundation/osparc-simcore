@@ -555,3 +555,144 @@ def test_user_preferences_path_is_part_of_exiting_volume():
     }
     with pytest.raises(ValidationError, match="user_preferences_path=/tmp/outputs"):
         assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))
+
+
+# -- callbacks_mapping service validation --
+# NOTE: inactivity is intentionally NOT validated against compose_spec because
+# existing published services may have inactivity.service names that don't match
+# DEFAULT_SINGLE_SERVICE_NAME or compose_spec entries. Adding validation would
+# block those services from starting.
+
+_COMPOSE_SPEC_WITH_SERVICES: Final[dict[str, Any]] = {
+    "version": "2.3",
+    "services": {"rt-web": {"image": "foo"}, "s4l-core": {"image": "bar"}},
+}
+
+
+def _make_callbacks_labels(
+    callbacks_mapping: dict[str, Any],
+    compose_spec: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    labels: dict[str, Any] = {
+        "simcore.service.callbacks-mapping": json.dumps(callbacks_mapping),
+    }
+    if compose_spec is not None:
+        labels["simcore.service.compose-spec"] = json.dumps(compose_spec)
+        labels["simcore.service.container-http-entrypoint"] = next(iter(compose_spec["services"]))
+    return labels
+
+
+def _cmd(service: str) -> dict[str, Any]:
+    return {"service": service, "command": "ls", "timeout": 1}
+
+
+@pytest.mark.parametrize(
+    "callbacks_mapping, compose_spec",
+    [
+        pytest.param({}, None, id="empty-no-compose"),
+        pytest.param({}, _COMPOSE_SPEC_WITH_SERVICES, id="empty-with-compose"),
+        # inactivity only: NOT validated, always passes
+        pytest.param(
+            {"inactivity": _cmd("any-arbitrary-name")},
+            None,
+            id="inactivity-only-no-compose-any-name",
+        ),
+        pytest.param(
+            {"inactivity": _cmd("not-in-compose")},
+            _COMPOSE_SPEC_WITH_SERVICES,
+            id="inactivity-only-with-compose-unknown-service",
+        ),
+        # metrics valid
+        pytest.param(
+            {"metrics": _cmd(DEFAULT_SINGLE_SERVICE_NAME)},
+            None,
+            id="metrics-only-no-compose-valid",
+        ),
+        pytest.param(
+            {"metrics": _cmd("rt-web")},
+            _COMPOSE_SPEC_WITH_SERVICES,
+            id="metrics-only-with-compose-valid",
+        ),
+        # before_shutdown valid
+        pytest.param(
+            {"before_shutdown": [_cmd("rt-web")]},
+            _COMPOSE_SPEC_WITH_SERVICES,
+            id="before-shutdown-only-valid",
+        ),
+        # metrics + inactivity: only metrics validated
+        pytest.param(
+            {"metrics": _cmd("rt-web"), "inactivity": _cmd("not-in-compose")},
+            _COMPOSE_SPEC_WITH_SERVICES,
+            id="metrics-valid-inactivity-unknown-passes",
+        ),
+        # all three: metrics + before_shutdown valid, inactivity unknown
+        pytest.param(
+            {
+                "metrics": _cmd("rt-web"),
+                "before_shutdown": [_cmd("s4l-core")],
+                "inactivity": _cmd("not-in-compose"),
+            },
+            _COMPOSE_SPEC_WITH_SERVICES,
+            id="all-three-valid-inactivity-unknown-passes",
+        ),
+    ],
+)
+def test_callbacks_mapping_valid_combinations(
+    callbacks_mapping: dict[str, Any],
+    compose_spec: dict[str, Any] | None,
+):
+    labels = _make_callbacks_labels(callbacks_mapping, compose_spec)
+    assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels))
+
+
+@pytest.mark.parametrize(
+    "callbacks_mapping, compose_spec, match_error",
+    [
+        # metrics invalid
+        pytest.param(
+            {"metrics": _cmd("unknown-service")},
+            None,
+            "Expected only 1 entry",
+            id="metrics-no-compose-invalid",
+        ),
+        pytest.param(
+            {"metrics": _cmd("not-in-compose")},
+            _COMPOSE_SPEC_WITH_SERVICES,
+            "not found in",
+            id="metrics-with-compose-invalid",
+        ),
+        # before_shutdown invalid
+        pytest.param(
+            {"before_shutdown": [_cmd("not-in-compose")]},
+            _COMPOSE_SPEC_WITH_SERVICES,
+            "not found in",
+            id="before-shutdown-invalid",
+        ),
+        # metrics invalid even if inactivity is valid
+        pytest.param(
+            {"metrics": _cmd("not-in-compose"), "inactivity": _cmd("rt-web")},
+            _COMPOSE_SPEC_WITH_SERVICES,
+            "not found in",
+            id="metrics-invalid-inactivity-valid-still-fails",
+        ),
+        # before_shutdown invalid even if others are valid
+        pytest.param(
+            {
+                "metrics": _cmd("rt-web"),
+                "before_shutdown": [_cmd("not-in-compose")],
+                "inactivity": _cmd("rt-web"),
+            },
+            _COMPOSE_SPEC_WITH_SERVICES,
+            "not found in",
+            id="before-shutdown-invalid-others-valid-fails",
+        ),
+    ],
+)
+def test_callbacks_mapping_invalid_combinations(
+    callbacks_mapping: dict[str, Any],
+    compose_spec: dict[str, Any] | None,
+    match_error: str,
+):
+    labels = _make_callbacks_labels(callbacks_mapping, compose_spec)
+    with pytest.raises(ValidationError, match=match_error):
+        DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels))

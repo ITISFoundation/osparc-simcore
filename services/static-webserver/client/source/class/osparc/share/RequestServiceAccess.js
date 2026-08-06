@@ -86,11 +86,11 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
           osparc.store.Users.getInstance().getUser(userGroupId)
             .then(user => {
               userName.setValue(user ? user.getLabel() : this.tr("Unknown user"));
-              email.setValue(user ? user.getEmail() : "Unknown email");
+              email.setValue(user ? user.getEmail() : this.tr("Unknown email"));
             })
             .catch(() => {
               userName.setValue(this.tr("Unknown user"));
-              email.setValue("Unknown email");
+              email.setValue(this.tr("Unknown email"));
             });
         }
       });

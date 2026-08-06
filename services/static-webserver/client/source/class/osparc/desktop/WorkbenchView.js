@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __handleIframeStateChange: function(node, iframeLayout) {
       if (iframeLayout.classname === "osparc.viewer.NodeViewer") {
         iframeLayout._removeAll();
-      } else  {
+      } else {
         iframeLayout.removeAll();
       }
       if (node && node.getIFrame()) {
@@ -366,11 +366,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
       const nodesTabContent = this.__initNodesTab();
-      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), nodesTabContent, this.self().PRIMARY_COL_BG_COLOR);
+      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesomeSolid/list", this.tr("Nodes"), nodesTabContent, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(nodesPage);
 
       const filesTabContent = this.__initFilesTab();
-      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesome5Solid/database", this.tr("Storage"), filesTabContent, this.self().PRIMARY_COL_BG_COLOR);
+      const storagePage = this.__storagePage = this.__createTabPage("@FontAwesomeSolid/database", this.tr("Storage"), filesTabContent, this.self().PRIMARY_COL_BG_COLOR);
       tabViewPrimary.add(storagePage);
 
       this.__addTopBarSpacer(topBar);
@@ -403,7 +403,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const addNewNodeBtn = new qx.ui.form.Button().set({
         appearance: "form-button",
         label: this.tr("New Node"),
-        icon: "@FontAwesome5Solid/plus/14",
+        icon: "@FontAwesomeSolid/plus/14",
         allowGrowX: false,
         alignX: "center",
         marginLeft: 10
@@ -431,7 +431,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const reloadButton = new qx.ui.form.Button().set({
         label: this.tr("Reload"),
-        icon: "@FontAwesome5Solid/sync-alt/14",
+        icon: "@FontAwesomeSolid/sync-alt/14",
         allowGrowX: false,
       });
       filesTabContent.add(reloadButton);
@@ -474,7 +474,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       this.__addTopBarSpacer(topBar);
 
-      const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Project options"));
+      const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesomeSolid/book", this.tr("Project options"));
       studyOptionsPage.getLayout().set({
         separator: "separator-vertical",
         spacing: 10
@@ -482,11 +482,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       studyOptionsPage.exclude();
       tabViewSecondary.add(studyOptionsPage);
 
-      const fileInfoPage = this.__fileInfoPage = this.__createTabPage("@FontAwesome5Solid/info", this.tr("Information"));
+      const fileInfoPage = this.__fileInfoPage = this.__createTabPage("@FontAwesomeSolid/info", this.tr("Information"));
       fileInfoPage.exclude();
       tabViewSecondary.add(fileInfoPage);
 
-      const serviceOptionsPage = this.__serviceOptionsPage = this.__createTabPage("@FontAwesome5Solid/exchange-alt", this.tr("Service options"));
+      const serviceOptionsPage = this.__serviceOptionsPage = this.__createTabPage("@FontAwesomeSolid/exchange-alt", this.tr("Service options"));
       serviceOptionsPage.exclude();
       tabViewSecondary.add(serviceOptionsPage);
 
@@ -511,15 +511,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__workbenchUI.setStudy(study);
       this.__workbenchUI.loadModel(study.getWorkbench());
-      const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesome5Solid/object-group", this.tr("Workbench"), this.__workbenchPanel);
+      const workbenchPanelPage = this.__workbenchPanelPage = this.__createTabPage("@FontAwesomeSolid/object-group", this.tr("Workbench"), this.__workbenchPanel);
       tabViewMain.add(workbenchPanelPage);
 
-      const iframePage = this.__iframePage = this.__createTabPage("@FontAwesome5Solid/desktop", this.tr("Interactive"));
+      const iframePage = this.__iframePage = this.__createTabPage("@FontAwesomeSolid/desktop", this.tr("Interactive"));
       osparc.utils.Utils.setIdToWidget(iframePage.getChildControl("button"), "iframeTabButton");
       tabViewMain.add(iframePage);
 
       const loggerView = this.__loggerView = new osparc.widget.logger.LoggerView();
-      const loggerPage = this.__loggerPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
+      const loggerPage = this.__loggerPage = this.__createTabPage("@FontAwesomeSolid/file-alt", this.tr("Logger"), loggerView);
       osparc.utils.Utils.setIdToWidget(loggerPage.getChildControl("button"), "loggerTabButton");
       tabViewMain.add(loggerPage);
 
@@ -528,7 +528,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const conversationButton = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         toolTipText: this.tr("Conversations"),
-        icon: "@FontAwesome5Solid/comments/16",
+        icon: "@FontAwesomeSolid/comments/16",
         marginRight: 10,
         marginTop: 7,
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
@@ -862,6 +862,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__populateSecondaryColumnFilePicker(node);
       } else if (node && node.isParameter()) {
         this.__populateSecondaryColumnParameter(node);
+      } else if (node && node.isProbe()) {
+        this.__populateSecondaryColumnProbe(node);
       } else if (node) {
         this.__populateSecondaryColumnNode(node);
       }
@@ -922,7 +924,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const buttonsHeight = 28;
       const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button().set({
         label: this.tr("Edit"),
-        icon: "@FontAwesome5Solid/edit/14",
+        icon: "@FontAwesomeSolid/edit/14",
         height: buttonsHeight
       });
       editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
@@ -966,7 +968,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const addConversationBtn = new qx.ui.form.Button().set({
         label: this.tr("Conversation"),
-        icon: "@FontAwesome5Solid/comment/14",
+        icon: "@FontAwesomeSolid/comment/14",
         height: buttonsHeight
       });
       addConversationBtn.addListener("execute", () => this.__workbenchUI.startConversation(), this);
@@ -974,7 +976,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const addNoteBtn = new qx.ui.form.Button().set({
         label: this.tr("Note"),
-        icon: "@FontAwesome5Solid/sticky-note/14",
+        icon: "@FontAwesomeSolid/sticky-note/14",
         height: buttonsHeight
       });
       addNoteBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsNote(), this);
@@ -982,7 +984,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const addRectBtn = new qx.ui.form.Button().set({
         label: this.tr("Box"),
-        icon: "@FontAwesome5Regular/square/14",
+        icon: "@FontAwesomeRegular/square/14",
         height: buttonsHeight
       });
       addRectBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsRect(), this);
@@ -990,7 +992,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const addTextBtn = new qx.ui.form.Button().set({
         label: this.tr("Text"),
-        icon: "@FontAwesome5Solid/font/14",
+        icon: "@FontAwesomeSolid/font/14",
         height: buttonsHeight
       });
       addTextBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsText(), this);
@@ -1096,9 +1098,50 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
-      const view = new osparc.node.ParameterEditor(parameter);
-      view.buildForm(false);
-      this.__serviceOptionsPage.add(view, {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(16).set({
+        separator: "separator-vertical",
+      }));
+
+      const parameterLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        paddingLeft: 6,
+      });
+      parameter.bind("label", parameterLabel, "value");
+      vBox.add(parameterLabel);
+
+      const parameterEditor = new osparc.node.ParameterEditor(parameter).set({
+        paddingLeft: 6,
+      });
+      parameterEditor.buildForm();
+      vBox.add(parameterEditor, {
+        flex: 1
+      });
+      this.__serviceOptionsPage.add(vBox, {
+        flex: 1
+      });
+    },
+
+    __populateSecondaryColumnProbe: function(probe) {
+      this.__serviceOptionsPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
+
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(16).set({
+        separator: "separator-vertical",
+      }));
+
+      const parameterLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        paddingLeft: 6,
+      });
+      probe.bind("label", parameterLabel, "value");
+      vBox.add(parameterLabel);
+
+      const probeView = new osparc.node.ProbeView(probe);
+      vBox.add(probeView, {
+        flex: 1
+      });
+
+      this.__serviceOptionsPage.add(vBox, {
         flex: 1
       });
     },
@@ -1119,7 +1162,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const nodeMetadata = node.getMetadata();
       const version = osparc.store.Services.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
       const header = new qx.ui.basic.Label(`${nodeMetadata["name"]} ${version}`).set({
-        paddingLeft: 5
+        paddingLeft: 6
       });
       vBox.add(header);
 
@@ -1143,7 +1186,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         outputsBox.add(outputsForm);
       }
 
-      const nodeFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
+      const nodeFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesomeSolid/folder-open/14").set({
         allowGrowX: false,
         allowGrowY: false
       });

@@ -42,28 +42,28 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         appearance: "margined-layout"
       });
-      const copyAPIKeyBtn = new qx.ui.form.Button(this.tr("API Key"), "@FontAwesome5Solid/copy/12");
+      const copyAPIKeyBtn = new qx.ui.form.Button(this.tr("API Key"), "@FontAwesomeSolid/copy/12");
       copyAPIKeyBtn.addListener("execute", e => {
         if (osparc.utils.Utils.copyTextToClipboard(key)) {
-          copyAPIKeyBtn.setIcon("@FontAwesome5Solid/check/12");
+          copyAPIKeyBtn.setIcon("@FontAwesomeSolid/check/12");
         }
       });
       buttonsLayout.add(copyAPIKeyBtn, {
         flex: 1
       });
-      const copyAPISecretBtn = new qx.ui.form.Button(this.tr("API Secret"), "@FontAwesome5Solid/copy/12");
+      const copyAPISecretBtn = new qx.ui.form.Button(this.tr("API Secret"), "@FontAwesomeSolid/copy/12");
       copyAPISecretBtn.addListener("execute", e => {
         if (osparc.utils.Utils.copyTextToClipboard(secret)) {
-          copyAPISecretBtn.setIcon("@FontAwesome5Solid/check/12");
+          copyAPISecretBtn.setIcon("@FontAwesomeSolid/check/12");
         }
       });
       buttonsLayout.add(copyAPISecretBtn, {
         flex: 1
       });
-      const copyBaseUrlBtn = new qx.ui.form.Button(this.tr("Base URL"), "@FontAwesome5Solid/copy/12");
+      const copyBaseUrlBtn = new qx.ui.form.Button(this.tr("Base URL"), "@FontAwesomeSolid/copy/12");
       copyBaseUrlBtn.addListener("execute", e => {
         if (osparc.utils.Utils.copyTextToClipboard(baseUrl)) {
-          copyBaseUrlBtn.setIcon("@FontAwesome5Solid/check/12");
+          copyBaseUrlBtn.setIcon("@FontAwesomeSolid/check/12");
         }
       });
       buttonsLayout.add(copyBaseUrlBtn, {

@@ -75,10 +75,14 @@ def _execute_cell_and_wait_for_marker(iframe: FrameLocator, code: str, phase_lab
 
         _expect_with_dialog_dismissal(iframe, output_locator, timeout)
 
+        _dismiss_dialogs(iframe)
+
         expect(output_locator).not_to_contain_text(FAIL_MARKER)
 
         # scroll the notebook so the latest output is visible
         output_locator.scroll_into_view_if_needed()
+
+        _dismiss_dialogs(iframe)
 
 
 def _replace_line(s: str, line_start_with: str, replace_with: str) -> str:
@@ -131,3 +135,5 @@ def create_files_in_jupyter(iframe: FrameLocator, large_file_size: ByteSize, lar
                 phase_label=phase_func_name,
                 timeout=timeout,
             )
+
+        _dismiss_dialogs(iframe)

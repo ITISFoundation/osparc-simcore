@@ -22,7 +22,7 @@ from simcore_postgres_database.models.users import UserRole
 from ..folders import _folders_repository
 from ..products import products_service
 from ..users import users_service
-from ..workspaces.api import check_user_workspace_access
+from ..workspaces.workspaces_service import check_user_workspace_access
 from . import _projects_service
 from ._access_rights_repository import batch_get_project_access_rights
 from ._projects_repository import batch_get_trashed_by_primary_gid

@@ -10,7 +10,9 @@ from models_library.basic_types import IDStr
 from models_library.conversations import (
     ConversationGetDB,
     ConversationID,
+    ConversationName,
     ConversationPatchDB,
+    ConversationStatus,
     ConversationType,
     ConversationUserType,
 )
@@ -26,27 +28,28 @@ from ..conversations._socketio import (
     notify_via_socket_conversation_updated,
 )
 from ..fogbugz import FogbugzCaseCreate, get_fogbugz_rest_client
-from ..groups import api as group_service
-from ..groups.api import list_user_groups_ids_with_read_access
+from ..groups.groups_service import list_group_members, list_user_groups_ids_with_read_access
 from ..products import products_service
 from ..projects._groups_repository import list_project_groups
 from ..users import users_service
-from ..users._users_service import get_users_in_group
 from . import _conversation_repository
+from .errors import ConversationErrorNotFoundError, ConversationUnsupportedTypeError
 
 _logger = logging.getLogger(__name__)
 
 
 async def get_recipients_from_project(app: web.Application, project_id: ProjectID) -> set[UserID]:
     groups = await list_project_groups(app, project_id=project_id)
-    return {user for group in groups if group.read for user in await get_users_in_group(app, gid=group.gid)}
+    return {
+        user for group in groups if group.read for user in await users_service.get_users_in_group(app, gid=group.gid)
+    }
 
 
 async def get_recipients_from_product_support_group(app: web.Application, product_name: ProductName) -> set[UserID]:
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
     if _support_standard_group_id:
-        users = await group_service.list_group_members(app, group_id=_support_standard_group_id)
+        users = await list_group_members(app, group_id=_support_standard_group_id)
         return {user.id for user in users}
     return set()
 
@@ -58,7 +61,7 @@ async def create_conversation(
     user_id: UserID,
     project_uuid: ProjectID | None,
     # Creation attributes
-    name: str,
+    name: ConversationName | None,
     type_: ConversationType,
     extra_context: dict[str, Any],
 ) -> ConversationGetDB:
@@ -101,19 +104,6 @@ async def get_conversation(
     return await _conversation_repository.get(
         app,
         conversation_id=conversation_id,
-    )
-
-
-async def get_conversation_for_user(
-    app: web.Application,
-    *,
-    conversation_id: ConversationID,
-    user_group_id: UserID,
-) -> ConversationGetDB:
-    return await _conversation_repository.get_for_user(
-        app,
-        conversation_id=conversation_id,
-        user_group_id=user_group_id,
     )
 
 
@@ -211,6 +201,25 @@ async def list_project_conversations(
     )
 
 
+async def _get_validated_support_conversation(
+    app: web.Application, *, product_name: ProductName, conversation_id: ConversationID
+) -> ConversationGetDB:
+    """Fetches a conversation once and validates it is a SUPPORT-type conversation
+    owned by ``product_name``. Raises if not found, not matching the product, or
+    not of SUPPORT type (see ``ConversationType.is_support_type``).
+
+    NOTE: only SUPPORT-type conversations are ever validated here. Project-bound
+    conversations are managed separately under ``/projects/{project_id}/conversations``.
+    """
+    conversation = await get_conversation(app, conversation_id=conversation_id)
+    # NOTE: Intentionally validate product ownership before type to avoid cross-product information leaks (IDOR).
+    if conversation.product_name != product_name:
+        raise ConversationErrorNotFoundError(conversation_id=conversation_id)
+    if conversation.type.is_support_type() is False:
+        raise ConversationUnsupportedTypeError(conversation_type=conversation.type)
+    return conversation
+
+
 async def get_support_conversation_for_user(
     app: web.Application,
     *,
@@ -218,6 +227,12 @@ async def get_support_conversation_for_user(
     product_name: ProductName,
     conversation_id: ConversationID,
 ) -> tuple[ConversationGetDB, ConversationUserType]:
+    """Grants read/write access to a SUPPORT-type conversation for either a
+    chatbot, a support-group member, or the conversation's creator (regular user).
+    """
+    conversation = await _get_validated_support_conversation(
+        app, product_name=product_name, conversation_id=conversation_id
+    )
     # Check if user is part of support group (in that case he has access to all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
@@ -225,8 +240,6 @@ async def get_support_conversation_for_user(
 
     # Check if user is an AI bot
     if _chatbot_user_id and user_id == _chatbot_user_id:
-        conversation = await get_conversation(app, conversation_id=conversation_id)
-        assert conversation.type.is_support_type()  # nosec
         return (
             conversation,
             ConversationUserType.CHATBOT_USER,
@@ -236,8 +249,6 @@ async def get_support_conversation_for_user(
         _user_group_ids = await list_user_groups_ids_with_read_access(app, user_id=user_id)
         if _support_standard_group_id in _user_group_ids:
             # I am a support user
-            conversation = await get_conversation(app, conversation_id=conversation_id)
-            assert conversation.type.is_support_type()  # nosec
             return (
                 conversation,
                 ConversationUserType.SUPPORT_USER,
@@ -245,16 +256,33 @@ async def get_support_conversation_for_user(
 
     # I am a regular user
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
-    conversation = await get_conversation_for_user(
-        app,
-        conversation_id=conversation_id,
-        user_group_id=_user_group_id,
-    )
-    assert conversation.type.is_support_type()  # nosec
+    if conversation.user_group_id != _user_group_id:
+        raise ConversationErrorNotFoundError(conversation_id=conversation_id)
     return (
         conversation,
         ConversationUserType.REGULAR_USER,
     )
+
+
+async def get_owned_support_conversation(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    conversation_id: ConversationID,
+) -> ConversationGetDB:
+    """Enforces the creator-only rule for a SUPPORT-type conversation (e.g. for delete).
+
+    Single fetch: validates product ownership (404), support type (400), then creator ownership (404).
+    """
+    conversation = await _get_validated_support_conversation(
+        app, product_name=product_name, conversation_id=conversation_id
+    )
+
+    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+    if conversation.user_group_id != _user_group_id:
+        raise ConversationErrorNotFoundError(conversation_id=conversation_id)
+    return conversation
 
 
 async def list_support_conversations_for_user(
@@ -262,6 +290,10 @@ async def list_support_conversations_for_user(
     *,
     user_id: UserID,
     product_name: ProductName,
+    # filters
+    filter_status: ConversationStatus | None = None,
+    filter_is_read_by_user: bool | None = None,
+    filter_is_read_by_support: bool | None = None,
     # pagination
     offset: int = 0,
     limit: int = 20,
@@ -276,6 +308,9 @@ async def list_support_conversations_for_user(
             return await _conversation_repository.list_all_support_conversations_for_support_user(
                 app,
                 product_name=product_name,
+                filter_status=filter_status,
+                filter_is_read_by_user=filter_is_read_by_user,
+                filter_is_read_by_support=filter_is_read_by_support,
                 offset=offset,
                 limit=limit,
                 order_by=OrderBy(
@@ -284,11 +319,15 @@ async def list_support_conversations_for_user(
                 ),
             )
 
+    # Regular user: no status filter (they see all their conversations)
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
     return await _conversation_repository.list_support_conversations_for_user(
         app,
         user_group_id=_user_group_id,
         product_name=product_name,
+        filter_status=filter_status,
+        filter_is_read_by_user=filter_is_read_by_user,
+        filter_is_read_by_support=filter_is_read_by_support,
         offset=offset,
         limit=limit,
         order_by=OrderBy(field=IDStr("last_message_created_at"), direction=OrderDirection.DESC),

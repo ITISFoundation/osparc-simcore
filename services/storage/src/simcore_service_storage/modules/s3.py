@@ -1,11 +1,14 @@
 """Module to access s3 service"""
 
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Literal, cast
 
 from aws_library.s3 import SimcoreS3API
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from pydantic import TypeAdapter
 from tenacity import retry, wait_random_exponential
 from tenacity.asyncio import AsyncRetrying
@@ -41,9 +44,13 @@ async def _ensure_s3_bucket(client: SimcoreS3API, settings: ApplicationSettings)
     )
 
 
-def setup_s3(app: FastAPI) -> None:
-    async def _on_startup() -> None:
-        app.state.s3_client = None
+@asynccontextmanager
+async def _s3_client_lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    """Lifespan context manager for S3 client."""
+    app.state.s3_client = None
+    client = None
+
+    try:
         settings = get_application_settings(app)
 
         async for attempt in AsyncRetrying(
@@ -64,15 +71,17 @@ def setup_s3(app: FastAPI) -> None:
                 )
                 assert client  # nosec
         app.state.s3_client = client
-
+        assert client  # nosec
         await _ensure_s3_bucket(client, settings)
-
-    async def _on_shutdown() -> None:
+        yield
+    finally:
         if app.state.s3_client:
             await cast(SimcoreS3API, app.state.s3_client).close()
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+
+def configure_s3_client(app_lifespan: LifespanManager) -> None:
+    """Configure S3 client lifespan."""
+    app_lifespan.add(_s3_client_lifespan)
 
 
 def get_s3_client(app: FastAPI) -> SimcoreS3API:

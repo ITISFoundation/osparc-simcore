@@ -3,6 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 
+import base64
+
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
@@ -16,6 +18,10 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationRunRpcGetPage,
     ComputationTaskRpcGet,
     ComputationTaskRpcGetPage,
+)
+from models_library.api_schemas_directorv2.encryption import (
+    KMS_CIPHERTEXT_MAX_BYTES,
+    JobEncryptionContextMetadata,
 )
 from models_library.api_schemas_webserver.computations import (
     ComputationCollectionRunRestGet,
@@ -36,6 +42,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -97,6 +104,118 @@ async def test_start_partial_computation(
         assert data["pipeline_id"] == f"{project_id}", (
             f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
         )
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_start_computation_with_encryption(
+    director_v2_service_mock: AioResponsesMock,
+    mocker: MockerFixture,
+    client: TestClient,
+    logged_user: LoggedUser,
+    project_id: ProjectID,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+):
+    assert client.app
+
+    # Spy on DirectorV2RestClient.start_computation to capture forwarded options
+    original_start = DirectorV2RestClient.start_computation
+    captured_options: list[dict] = []
+
+    async def _spy_start(self, project_id_, user_id, product_name, product_api_base_url, **options):
+        captured_options.append(options)
+        return await original_start(self, project_id_, user_id, product_name, product_api_base_url, **options)
+
+    mocker.patch.object(DirectorV2RestClient, "start_computation", new=_spy_start)
+
+    encrypted_root_key = base64.b64encode(b"fake-kms-ciphertext-blob").decode("ascii")
+    node_id = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    encryption_body = {
+        "encrypted_root_key": encrypted_root_key,
+        "input_port_to_file_id": {node_id: {"input_1": "input_1"}},
+    }
+
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
+    rsp = await client.post(f"{url}", json={"encryption": encryption_body})
+    data, error = await assert_status(
+        rsp,
+        status.HTTP_201_CREATED if user_role == UserRole.GUEST else expected.created,
+    )
+
+    if user_role != UserRole.ANONYMOUS:
+        assert not error, f"error received: {error}"
+    if data:
+        assert "pipeline_id" in data
+        assert data["pipeline_id"] == f"{project_id}"
+
+    # Verify encryption was forwarded to director-v2
+    if user_role not in {UserRole.ANONYMOUS}:
+        assert len(captured_options) == 1
+        forwarded = captured_options[0]
+        assert "encryption" in forwarded
+        assert isinstance(forwarded["encryption"], JobEncryptionContextMetadata)
+        assert forwarded["encryption"].encrypted_root_key.get_secret_value() == encrypted_root_key
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+@pytest.mark.parametrize(
+    "invalid_encryption_body, expected_error_fragment",
+    [
+        pytest.param(
+            {"encrypted_root_key": "not-valid-base64!!!", "input_port_to_file_id": {}},
+            "encrypted_root_key must be valid base64",
+            id="non_base64_encrypted_root_key",
+        ),
+        pytest.param(
+            {
+                "encrypted_root_key": base64.b64encode(b"").decode("ascii"),
+                "input_port_to_file_id": {},
+            },
+            "encrypted_root_key must not decode to an empty ciphertext",
+            id="empty_encrypted_root_key",
+        ),
+        pytest.param(
+            {
+                "encrypted_root_key": base64.b64encode(b"0" * (KMS_CIPHERTEXT_MAX_BYTES + 1)).decode("ascii"),
+                "input_port_to_file_id": {},
+            },
+            f"encrypted_root_key ciphertext exceeds {KMS_CIPHERTEXT_MAX_BYTES} bytes",
+            id="encrypted_root_key_too_large",
+        ),
+        pytest.param(
+            {"input_port_to_file_id": {}},
+            "encrypted_root_key",
+            id="missing_encrypted_root_key",
+        ),
+        pytest.param(
+            {
+                "encrypted_root_key": base64.b64encode(b"fake-kms-ciphertext-blob").decode("ascii"),
+                "input_port_to_file_id": {"not-a-uuid": {"input_1": "input_1"}},
+            },
+            "input_port_to_file_id",
+            id="invalid_node_id_in_input_port_map",
+        ),
+    ],
+)
+async def test_start_computation_with_invalid_encryption(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
+    project_id: ProjectID,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    invalid_encryption_body: dict,
+    expected_error_fragment: str,
+):
+    assert client.app
+
+    url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
+    rsp = await client.post(f"{url}", json={"encryption": invalid_encryption_body})
+    _, error = await assert_status(
+        rsp, status.HTTP_422_UNPROCESSABLE_ENTITY if user_role == UserRole.GUEST else expected.unprocessable
+    )
+    if user_role not in {UserRole.ANONYMOUS}:
+        assert expected_error_fragment in str(error)
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -325,8 +444,8 @@ async def populated_comp_run_collection(
                 client_or_system_generated_id=collection_run_id,
                 client_or_system_generated_display_name="My Collection Run",
                 is_generated_by_system=False,
-                created=sa.func.now(),
-                modified=sa.func.now(),
+                created=sa.func.now(),  # pylint: disable=not-callable
+                modified=sa.func.now(),  # pylint: disable=not-callable
             )
             .returning(comp_runs_collections.c.collection_run_id)
         )

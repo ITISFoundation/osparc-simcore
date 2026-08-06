@@ -148,7 +148,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
 
     __handleButtonClick: function(action, row) {
       this.resetSelection();
-       // In order to make the button tappable again, the cell needs to be unfocused (blurred)
+      // In order to make the button tappable again, the cell needs to be unfocused (blurred)
       this.resetCellFocus();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
@@ -177,7 +177,13 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           }
           const logDownloadLink = subJob.getLogDownloadLink()
           if (logDownloadLink) {
-            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["name"] + ".zip");
+            osparc.utils.Utils.downloadNatively(logDownloadLink, rowData["name"] + ".zip")
+              .catch(err => {
+                if (err && err.name === "AbortError") {
+                  return;
+                }
+                osparc.FlashMessenger.logError(err);
+              });
           } else {
             osparc.FlashMessenger.logAs(this.tr("No logs available"), "WARNING");
           }

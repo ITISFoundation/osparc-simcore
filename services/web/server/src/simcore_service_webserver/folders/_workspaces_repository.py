@@ -11,10 +11,9 @@ from ..db.plugin import get_asyncpg_engine
 from ..models import ClientSessionID
 from ..projects import _folders_repository as projects_folders_repository
 from ..projects import _groups_repository as projects_groups_repository
-from ..projects._access_rights_service import check_user_project_permission
-from ..projects.api import patch_project_and_notify_users
+from ..projects.api import check_user_project_permission, patch_project_and_notify_users
 from ..users import users_service
-from ..workspaces.api import check_user_workspace_access
+from ..workspaces import workspaces_service
 from . import _folders_repository
 
 _logger = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ async def move_folder_into_workspace(
     folder_db = await _folders_repository.get(app, folder_id=folder_id, product_name=product_name)
     workspace_is_private = True
     if folder_db.workspace_id:
-        await check_user_workspace_access(
+        await workspaces_service.check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
@@ -44,7 +43,7 @@ async def move_folder_into_workspace(
 
     # 2. User needs to have write permission on destination workspace
     if workspace_id is not None:
-        await check_user_workspace_access(
+        await workspaces_service.check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=workspace_id,
@@ -107,7 +106,8 @@ async def move_folder_into_workspace(
         )
 
         # 7. Remove all records of project to folders that are not in the folders that we are moving
-        # (ex. If we are moving from private workspace, the same project can be in different folders for different users)
+        # (ex. If we are moving from private workspace, the same
+        #  project can be in different folders for different users)
         await projects_folders_repository.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
             app,
             connection=conn,

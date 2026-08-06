@@ -49,6 +49,10 @@ qx.Class.define("osparc.conversation.MessageList", {
   },
 
   statics: {
+    // consecutive messages from the same sender are only grouped when
+    // they are less than this many milliseconds apart
+    GROUPING_MAX_GAP_MS: 5 * 60 * 1000,
+
     POS: {
       SPACER_TOP: 0,
       MESSAGES_CONTAINER: 1,
@@ -60,6 +64,8 @@ qx.Class.define("osparc.conversation.MessageList", {
   },
 
   members: {
+    __atBottom: true,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -71,6 +77,7 @@ qx.Class.define("osparc.conversation.MessageList", {
           break;
         case "messages-container-scroll":
           control = new qx.ui.container.Scroll();
+          control.getChildControl("pane").addListener("scrollY", () => this.__updateAtBottom(), this);
           this._addAt(control, this.self().POS.MESSAGES_CONTAINER, {
             flex: 1
           });
@@ -138,7 +145,8 @@ qx.Class.define("osparc.conversation.MessageList", {
       loadMoreMessages.setFetching(true);
       this.getConversation().getNextMessages()
         .then(resp => {
-          if (resp["_links"]["next"] === null && loadMoreMessages) {
+          const next = resp && resp["_links"] ? resp["_links"]["next"] : null;
+          if (next === null && loadMoreMessages) {
             loadMoreMessages.exclude();
           }
         })
@@ -178,6 +186,12 @@ qx.Class.define("osparc.conversation.MessageList", {
         case "MESSAGE":
           control = this._createMessageUI(message);
           control.addListener("messageDeleted", e => this.__messageDeleted(e.getData()));
+          // markdown content resizes asynchronously (images, reflow); keep pinned to bottom
+          control.addListener("resized", () => {
+            if (this.__atBottom) {
+              this.__scrollToBottom();
+            }
+          });
           break;
         case "NOTIFICATION":
           control = new osparc.conversation.NotificationUI(message);
@@ -190,14 +204,27 @@ qx.Class.define("osparc.conversation.MessageList", {
         messagesContainer.addAt(control, insertAt);
       }
 
+      this.__recomputeGrouping();
+
       // scroll to bottom
       // add timeout to ensure the scroll happens after the UI is updated
-      setTimeout(() => {
-        const messagesScroll = this.getChildControl("messages-container-scroll");
-        messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
-      }, 50);
+      this.__atBottom = true;
+      setTimeout(() => this.__scrollToBottom(), 50);
 
       this.fireEvent("messagesChanged");
+    },
+
+    __scrollToBottom: function() {
+      // ensure pending layout changes (e.g. image-driven resize) are applied before measuring
+      qx.ui.core.queue.Manager.flush();
+      const messagesScroll = this.getChildControl("messages-container-scroll");
+      messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
+    },
+
+    __updateAtBottom: function() {
+      const pane = this.getChildControl("messages-container-scroll").getChildControl("pane");
+      // consider "at bottom" when within a small threshold to absorb sub-pixel rounding
+      this.__atBottom = pane.getScrollMaxY() - pane.getScrollY() <= 20;
     },
 
     __messageDeleted: function(message) {
@@ -208,7 +235,34 @@ qx.Class.define("osparc.conversation.MessageList", {
         messagesContainer.remove(existingMessageUI);
       }
 
+      this.__recomputeGrouping();
+
       this.fireEvent("messagesChanged");
+    },
+
+    // group consecutive messages coming from the same sender so the
+    // avatar/name/timestamp header is only shown once per run
+    __recomputeGrouping: function() {
+      const messagesContainer = this.getChildControl("messages-container");
+      let previousUserGroupId = null;
+      let previousCreated = null;
+      messagesContainer.getChildren().forEach(ctrl => {
+        if (ctrl instanceof osparc.conversation.MessageUI) {
+          const message = ctrl.getMessage();
+          const userGroupId = message.getUserGroupId();
+          const created = message.getCreated();
+          const sameSender = userGroupId === previousUserGroupId;
+          const closeInTime = previousCreated !== null &&
+            (created.getTime() - previousCreated.getTime()) <= this.self().GROUPING_MAX_GAP_MS;
+          ctrl.setGroupedWithPrevious(sameSender && closeInTime);
+          previousUserGroupId = userGroupId;
+          previousCreated = created;
+        } else {
+          // a non-message row (e.g. notification) breaks the group
+          previousUserGroupId = null;
+          previousCreated = null;
+        }
+      });
     },
   }
 });

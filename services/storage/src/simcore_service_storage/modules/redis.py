@@ -1,36 +1,31 @@
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.redis_lifespan import configure_redis_clients_manager
 from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
-from settings_library.redis import RedisDatabase
+from settings_library.redis import RedisDatabase, RedisSettings
 
 from .._meta import APP_NAME
-from ..core.settings import get_application_settings
 
 
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        redis_settings = get_application_settings(app).STORAGE_REDIS
-
-        app.state.redis_clients_manager = redis_clients_manager = RedisClientsManager(
-            databases_configs={
-                RedisManagerDBConfig(database=db)
-                for db in (
-                    RedisDatabase.LOCKS,
-                    RedisDatabase.CELERY_TASKS,
-                )
-            },
-            settings=redis_settings,
-            client_name=APP_NAME,
-        )
-        await redis_clients_manager.setup()
-
-    async def on_shutdown() -> None:
-        redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
-        await redis_clients_manager.shutdown()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+def configure_redis_clients(
+    app_lifespan: LifespanManager,
+    *,
+    settings: RedisSettings,
+) -> None:
+    configure_redis_clients_manager(
+        app_lifespan,
+        settings=settings,
+        databases_configs={
+            RedisManagerDBConfig(database=db)
+            for db in (
+                RedisDatabase.LOCKS,
+                RedisDatabase.CELERY_TASKS,
+            )
+        },
+        client_name=APP_NAME,
+    )
 
 
 def get_redis_client_manager(app: FastAPI) -> RedisClientsManager:

@@ -1,7 +1,7 @@
 from ._public_client import DirectorV0PublicClient
-from ._setup import director_v0_lifespan
+from ._setup import configure_director_v0
 
 __all__: tuple[str, ...] = (
     "DirectorV0PublicClient",
-    "director_v0_lifespan",
+    "configure_director_v0",
 )

@@ -17,8 +17,8 @@ from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ..projects._trash_service import trash_project, untrash_project
-from ..workspaces.api import check_user_workspace_access
+from ..projects import projects_trash_service
+from ..workspaces import workspaces_service
 from . import _folders_repository, _folders_service
 from .errors import FolderBatchDeleteError, FolderNotTrashedError
 
@@ -42,7 +42,7 @@ async def _check_exists_and_access(
     #  otherwise raise forbidden error
     workspace_is_private = True
     if folder_db.workspace_id:
-        await check_user_workspace_access(
+        await workspaces_service.check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
@@ -142,7 +142,7 @@ async def trash_folder(
         )
 
         for project_id in child_projects:
-            await trash_project(
+            await projects_trash_service.trash_project(
                 app,
                 # NOTE: this needs to be included in the unit-of-work, i.e. connection,
                 product_name=product_name,
@@ -186,7 +186,9 @@ async def untrash_folder(
     )
 
     for project_id in child_projects:
-        await untrash_project(app, product_name=product_name, user_id=user_id, project_id=project_id)
+        await projects_trash_service.untrash_project(
+            app, product_name=product_name, user_id=user_id, project_id=project_id
+        )
 
 
 def _can_delete(

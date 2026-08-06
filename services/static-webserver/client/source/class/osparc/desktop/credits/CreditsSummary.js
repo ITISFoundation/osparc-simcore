@@ -46,13 +46,13 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
     WIDTH: 350,
     TIME_RANGES: [{
       key: 1,
-      label: "Last 24h"
+      label: qx.locale.Manager.tr("Last 24h")
     }, {
       key: 7,
-      label: "Last week"
+      label: qx.locale.Manager.tr("Last week")
     }, {
       key: 30,
-      label: "Last month"
+      label: qx.locale.Manager.tr("Last month")
     }]
   },
 
@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
             alignX: "center",
             alignY: "middle",
             center: true,
-            icon: "@FontAwesome5Solid/ellipsis-v/12"
+            icon: "@FontAwesomeSolid/ellipsis-v/12"
           });
           // make it circular
           control.getContentElement().setStyles({

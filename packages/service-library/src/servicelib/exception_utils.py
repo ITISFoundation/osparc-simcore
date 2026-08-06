@@ -1,7 +1,7 @@
 import inspect
 import logging
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import wraps
 from typing import Any, Final, ParamSpec, TypeVar
 
@@ -53,10 +53,10 @@ class DelayedExceptionHandler(BaseModel):
 
         # first time the exception was detected
         if self._first_exception_skip is None:
-            self._first_exception_skip = datetime.utcnow()
+            self._first_exception_skip = datetime.now(tz=UTC)
 
         # raise if subsequent exception is outside of delay window
-        elif (datetime.utcnow() - self._first_exception_skip).total_seconds() > self.delay_for:
+        elif (datetime.now(tz=UTC) - self._first_exception_skip).total_seconds() > self.delay_for:
             raise exception
 
         _logger.debug("%s %s: %s", self._failure_counter, _SKIPS_MESSAGE, exception)

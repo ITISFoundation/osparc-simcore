@@ -73,14 +73,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         case "start-service-button":
           control = new qx.ui.toolbar.Button().set({
             label: this.tr("Start"),
-            icon: "@FontAwesome5Solid/play/14"
+            icon: "@FontAwesomeSolid/play/14"
           });
           this.getChildControl("dynamics-layout").add(control);
           break;
         case "stop-service-button":
           control = new qx.ui.toolbar.Button().set({
             label: this.tr("Stop"),
-            icon: "@FontAwesome5Solid/stop/14"
+            icon: "@FontAwesomeSolid/stop/14"
           });
           this.getChildControl("dynamics-layout").add(control);
           break;
@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
           this._add(control);
           break;
         case "run-button":
-          control = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
+          control = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesomeSolid/play/14");
           osparc.utils.Utils.setIdToWidget(control, "runStudyBtn");
           control.addListener("execute", () => this.fireEvent("startPipeline"), this);
           this.getChildControl("computationals-layout").add(control);
@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
           break;
         }
         case "stop-button":
-          control = new osparc.ui.toolbar.FetchButton(this.tr("Stop"), "@FontAwesome5Solid/stop/14");
+          control = new osparc.ui.toolbar.FetchButton(this.tr("Stop"), "@FontAwesomeSolid/stop/14");
           osparc.utils.Utils.setIdToWidget(control, "stopStudyBtn");
           control.addListener("execute", () => this.fireEvent("stopPipeline"), this);
           this.getChildControl("computationals-layout").add(control);
@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this.getChildControl("stop-service-button");
 
       this.getChildControl("run-button");
-      const runSelectionButton = this.__runSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesome5Solid/play/14");
+      const runSelectionButton = this.__runSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesomeSolid/play/14");
       runSelectionButton.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);
       this.getChildControl("computationals-layout").add(runSelectionButton);
       this.getChildControl("run-all-button");

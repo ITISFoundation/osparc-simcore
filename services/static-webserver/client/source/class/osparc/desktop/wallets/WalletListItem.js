@@ -216,7 +216,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         rowSpan: 2
       });
 
-      this.__shareButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/users/14").set({
+      this.__shareButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/users/14").set({
         maxHeight: 30,
         alignX: "center",
         alignY: "middle",
@@ -254,7 +254,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       this.base(arguments, accessRights);
       const buyBtn = new qx.ui.form.Button().set({
         label: this.tr("Buy Credits"),
-        icon: "@FontAwesome5Solid/dollar-sign/16",
+        icon: "@FontAwesomeSolid/dollar-sign/16",
         maxHeight: 30,
         alignY: "middle",
         visibility: this.__canIWrite() ? "visible" : "excluded",
@@ -320,7 +320,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (status) {
         const statusButton = this.getChildControl("status-button");
         statusButton.set({
-          icon: status === "ACTIVE" ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
+          icon: status === "ACTIVE" ? "@FontAwesomeSolid/toggle-on/16" : "@FontAwesomeSolid/toggle-off/16",
           label: status === "ACTIVE" ? this.tr("ON") : this.tr("OFF"),
           toolTipText: status === "ACTIVE" ? this.tr("Credit Account enabled") : this.tr("Credit Account blocked"),
           enabled: this.__canIWrite(),
@@ -339,13 +339,13 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (isPreferredWallet) {
         favouriteButton.set({
           toolTipText: this.tr("Currently being used"),
-          icon: "@FontAwesome5Solid/check-circle/20"
+          icon: "@FontAwesomeSolid/check-circle/20"
         });
         favouriteButtonIcon.setTextColor("strong-main");
       } else {
         favouriteButton.set({
           toolTipText: this.tr("Switch to this Credit Account"),
-          icon: "@FontAwesome5Solid/circle/20"
+          icon: "@FontAwesomeSolid/circle/20"
         });
         favouriteButtonIcon.setTextColor("text");
       }

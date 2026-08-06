@@ -31,7 +31,7 @@
 
 qx.Class.define("osparc.workbench.EdgeUI", {
   extend: qx.core.Object,
-  include: osparc.filter.MFilterable,
+  include: [osparc.filter.MFilterable, qx.locale.MTranslation],
   implement: osparc.filter.IFilterable,
 
   /**
@@ -76,7 +76,7 @@ qx.Class.define("osparc.workbench.EdgeUI", {
     },
 
     noPortsConnectedText: function(edge) {
-      return `Connection candidate.<br>Check the ${edge.getOutputNode().getLabel()} inputs`;
+      return qx.locale.Manager.tr("Connection candidate.<br>Check the %1 inputs", edge.getOutputNode().getLabel());
     }
   },
 
@@ -98,7 +98,7 @@ qx.Class.define("osparc.workbench.EdgeUI", {
       if (this.getEdge().isPortConnected() === false) {
         hint.setText(this.self().noPortsConnectedText(this.getEdge()));
       } else if (output === "out-of-date") {
-        hint.setText("Out-of-date");
+        hint.setText(this.tr("Out-of-date"));
       } else {
         hint.setText(null);
       }

@@ -9,6 +9,7 @@ import io
 import json
 import textwrap
 from contextlib import suppress
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypedDict
 
@@ -209,7 +210,7 @@ def mocked_backend(
 ) -> MockedBackendApiDict:
     # S3 and storage are accessed via simcore-sdk
     mock = mocker.patch("simcore_service_api_server.api.routes.files.storage_upload_path", autospec=True)
-    mock.return_value = UploadedFile(store_id=0, etag="123")
+    mock.return_value = UploadedFile(store_id=0, etag="123", last_modified=datetime.now(UTC))
 
     create_respx_mock_from_capture(
         respx_mocks=[

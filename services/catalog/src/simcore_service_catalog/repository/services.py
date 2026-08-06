@@ -338,6 +338,8 @@ class ServicesRepository(BaseRepository):
                 # tagging
                 classifiers=row.classifiers,
                 quality=row.quality,
+                # release notes
+                release_notes_url=row.release_notes_url,
                 # lifetime
                 created=row.created,
                 modified=row.modified,
@@ -470,6 +472,8 @@ class ServicesRepository(BaseRepository):
                 # tagging
                 classifiers=r.classifiers,
                 quality=r.quality,
+                # release notes
+                release_notes_url=r.release_notes_url,
                 # lifetime
                 created=r.created,
                 modified=r.modified,
@@ -615,16 +619,12 @@ class ServicesRepository(BaseRepository):
         Returns only found. If None found, then None
         """
         service_to_access_rights = defaultdict(list)
-        query = (
-            sa.select(services_access_rights)
-            .select_from(services_access_rights)
-            .where(
-                sql.tuple_(services_access_rights.c.key, services_access_rights.c.version).in_(key_versions)
-                & (services_access_rights.c.product_name == product_name)
-                if product_name
-                else True
-            )
-        )
+        where_clause = sql.tuple_(
+            services_access_rights.c.key,
+            services_access_rights.c.version,
+        ).in_(key_versions) & (services_access_rights.c.product_name == product_name if product_name else sql.true())
+
+        query = sa.select(services_access_rights).select_from(services_access_rights).where(where_clause)
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
                 service_to_access_rights[(row.key, row.version)].append(ServiceAccessRightsDB.model_validate(row))

@@ -29,7 +29,7 @@ qx.Mixin.define("osparc.ui.mixin.FetchButton", {
     _applyFetching: function(isFetching, old) {
       if (isFetching) {
         this.__icon = this.getIcon();
-        this.setIcon(`@FontAwesome5Solid/circle-notch/${this.getIconSize()}`);
+        this.setIcon(`@FontAwesomeSolid/circle-notch/${this.getIconSize()}`);
         this.getChildControl("icon").getContentElement().addClass("rotate");
       } else {
         if (isFetching !== old) {

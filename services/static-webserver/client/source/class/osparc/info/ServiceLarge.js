@@ -103,7 +103,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         vBox.add(deprecated);
       }
 
-      const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
+      const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesomeSolid/copy/12").set({
         allowGrowX: false
       });
       copyMetadataButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
@@ -116,14 +116,14 @@ qx.Class.define("osparc.info.ServiceLarge", {
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
         if (this.getNodeId()) {
           const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-          const copyStudyIdButton = new qx.ui.form.Button(this.tr(`Copy ${studyAlias} Id`), "@FontAwesome5Solid/copy/12").set({
+          const copyStudyIdButton = new qx.ui.form.Button(this.tr(`Copy ${studyAlias} Id`), "@FontAwesomeSolid/copy/12").set({
             toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
           });
           copyStudyIdButton.addListener("execute", this.__copyStudyIdToClipboard, this);
           buttonsLayout.add(copyStudyIdButton);
           vBox.add(buttonsLayout);
 
-          const copyNodeIdButton = new qx.ui.form.Button(this.tr("Copy Service Id"), "@FontAwesome5Solid/copy/12").set({
+          const copyNodeIdButton = new qx.ui.form.Button(this.tr("Copy Service Id"), "@FontAwesomeSolid/copy/12").set({
             toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
           });
           copyNodeIdButton.addListener("execute", this.__copyNodeIdToClipboard, this);
@@ -284,6 +284,18 @@ qx.Class.define("osparc.info.ServiceLarge", {
         },
       };
 
+      if (canIWrite || this.getService()["releaseNotesUrl"]) {
+        infoLayout["RELEASE_NOTES_URL"] = {
+          label: this.tr("Release Notes"),
+          view: this.__createReleaseNotesUrl(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(canIWrite, this.tr("Edit release notes URL")),
+            callback: canIWrite ? this.__openReleaseNotesUrlEditor : null,
+            ctx: this,
+          },
+        };
+      }
+
       if (this.getNodeId()) {
         infoLayout["SERVICE_ID"] = {
           label: this.tr("Service ID"),
@@ -377,7 +389,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __createDescriptionUi: function() {
       const cbAutoPorts = new qx.ui.form.CheckBox().set({
-        toolTipText: this.tr("From all the metadata shown in this view,\nonly the Description will be shown to Users."),
+        toolTipText: this.tr("From all the metadata shown in this view,") + "\n" + this.tr("only the Description will be shown to Users."),
       });
       cbAutoPorts.setValue(Boolean(this.getService()["descriptionUi"]));
       cbAutoPorts.addListener("changeValue", e => {
@@ -408,6 +420,37 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return resourcesLayout;
     },
 
+    __createReleaseNotesUrl: function() {
+      const url = this.getService()["releaseNotesUrl"];
+      if (url) {
+        const link = new osparc.ui.basic.LinkLabel(url, url).set({
+          font: "link-label-14",
+          toolTipText: url,
+          maxWidth: 220,
+          maxHeight: 20,
+          allowGrowX: false,
+        });
+        // leave ``rich`` set to true. Ellipsis will be handled here:
+        link.getContentElement().setStyles({
+          "text-overflow": "ellipsis",
+          "white-space": "nowrap",
+        });
+        return link;
+      }
+      return new qx.ui.basic.Label(this.tr("Not set"));
+    },
+
+    __openReleaseNotesUrlEditor: function() {
+      const urlEditor = new osparc.widget.Renamer(this.getService()["releaseNotesUrl"] || "", null, this.tr("Edit Release Notes URL"));
+      urlEditor.addListener("labelChanged", e => {
+        urlEditor.close();
+        const newUrl = e.getData()["newLabel"];
+        this.__patchService("releaseNotesUrl", newUrl || null);
+      }, this);
+      urlEditor.center();
+      urlEditor.open();
+    },
+
     __openIconEditor: function() {
       const iconEditor = new osparc.widget.Renamer(this.getService()["icon"], null, this.tr("Edit Icon"));
       iconEditor.addListener("labelChanged", e => {
@@ -420,7 +463,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __openTitleEditor: function() {
-      const titleEditor = new osparc.widget.Renamer(this.getService()["name"], null, this.tr("Edit Name"));
+      const titleEditor = new osparc.widget.Renamer(this.getService()["name"], null, this.tr("Rename Service"));
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];

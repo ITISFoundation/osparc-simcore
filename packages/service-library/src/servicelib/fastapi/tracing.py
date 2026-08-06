@@ -4,7 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, Request
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
@@ -16,7 +16,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import TracingConfig, get_trace_info_headers
+from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
+from ..tracing import (
+    TracingConfig,
+    get_trace_info_headers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -38,12 +42,27 @@ except ImportError:
 
 try:
     from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]
+        AiobotocoreInstrumentor,
         BotocoreInstrumentor,
     )
 
     HAS_BOTOCORE = True
 except ImportError:
     HAS_BOTOCORE = False
+
+try:
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor  # type: ignore[import-not-found]
+
+    HAS_CELERY = True
+except ImportError:
+    HAS_CELERY = False
+
+try:
+    from opentelemetry.instrumentation.threading import ThreadingInstrumentor
+
+    HAS_THREADING = True
+except ImportError:
+    HAS_THREADING = False
 
 try:
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
@@ -116,6 +135,13 @@ def _startup(
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
             AsyncPGInstrumentor().instrument(tracer_provider=tracer_provider)
+    if HAS_CELERY:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add celery opentelemetry autoinstrumentation...",
+        ):
+            CeleryInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REDIS:
         with log_context(
             _logger,
@@ -123,6 +149,15 @@ def _startup(
             msg="Attempting to add redis opentelemetry autoinstrumentation...",
         ):
             RedisInstrumentor().instrument(tracer_provider=tracer_provider)
+
+    if HAS_THREADING:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add threading opentelemetry autoinstrumentation...",
+        ):
+            ThreadingInstrumentor().instrument(tracer_provider=tracer_provider)
+
     if HAS_BOTOCORE:
         with log_context(
             _logger,
@@ -130,6 +165,7 @@ def _startup(
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
             BotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
+            AiobotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REQUESTS:
         with log_context(
             _logger,
@@ -146,6 +182,8 @@ def _startup(
         ):
             AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
 
+    TracedFunctionsInstrumentor().instrument(tracing_settings=tracing_settings, tracer_provider=tracer_provider)
+
 
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
@@ -157,18 +195,28 @@ def _shutdown() -> None:
     if HAS_ASYNCPG:
         with log_catch(_logger, reraise=False):
             AsyncPGInstrumentor().uninstrument()
+    if HAS_CELERY:
+        with log_catch(_logger, reraise=False):
+            CeleryInstrumentor().uninstrument()
     if HAS_REDIS:
         with log_catch(_logger, reraise=False):
             RedisInstrumentor().uninstrument()
     if HAS_BOTOCORE:
         with log_catch(_logger, reraise=False):
             BotocoreInstrumentor().uninstrument()
+            AiobotocoreInstrumentor().uninstrument()
+    if HAS_THREADING:
+        with log_catch(_logger, reraise=False):
+            ThreadingInstrumentor().uninstrument()
     if HAS_REQUESTS:
         with log_catch(_logger, reraise=False):
             RequestsInstrumentor().uninstrument()
     if HAS_AIOHTTP_CLIENT:
         with log_catch(_logger, reraise=False):
             AioHttpClientInstrumentor().uninstrument()
+
+    with log_catch(_logger, reraise=False):
+        TracedFunctionsInstrumentor().uninstrument()
 
 
 def initialize_fastapi_app_tracing(
@@ -180,6 +228,21 @@ def initialize_fastapi_app_tracing(
     if add_response_trace_id_header:
         app.add_middleware(ResponseTraceIdHeaderMiddleware)
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracing_config.tracer_provider)
+
+
+def configure_fastapi_app_tracing(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    tracing_config: TracingConfig,
+    add_response_trace_id_header: bool = False,
+) -> None:
+    app_lifespan.add(get_tracing_instrumentation_lifespan(tracing_config=tracing_config))
+    initialize_fastapi_app_tracing(
+        app,
+        tracing_config=tracing_config,
+        add_response_trace_id_header=add_response_trace_id_header,
+    )
 
 
 def setup_tracing(app: FastAPI, tracing_config: TracingConfig) -> None:

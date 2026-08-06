@@ -30,6 +30,7 @@ from servicelib.logging_utils import LogLevelInt
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
+from settings_library.kms import KMSSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.ssm import SSMSettings
@@ -512,6 +513,17 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             ", see https://selectfrom.dev/deep-dive-into-dask-distributed-scheduler-9fdb3b36b7c7",
         ),
     ] = "inf"
+
+    CLUSTERS_KEEPER_DASK_SIDECAR_KMS: Annotated[
+        KMSSettings | None,
+        Field(
+            description=(
+                "KMS settings forwarded to the dask-sidecar service of the "
+                "deployed on-demand cluster (None disables encryption support)"
+            ),
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     CLUSTERS_KEEPER_TRACING: Annotated[
         TracingSettings | None,

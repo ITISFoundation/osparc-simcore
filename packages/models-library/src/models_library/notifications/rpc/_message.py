@@ -1,14 +1,17 @@
 from typing import Annotated, Any
 
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ...celery import GroupUUID, OwnerMetadata, TaskUUID
+from ...products import ProductName
 from ._email import Addressing, Message
 from ._template import TemplateRef
 
 
 class SendMessageRequest(BaseModel):
+    product_name: ProductName
     message: Annotated[
         Message,
         Field(
@@ -23,13 +26,11 @@ class SendMessageRequest(BaseModel):
             {
                 "examples": [
                     {
+                        "product_name": "osparc",
                         "message": {
                             "channel": "email",
                             "addressing": {
-                                "from": {
-                                    "name": "osparc support",
-                                    "email": "support@osparc.io",
-                                },
+                                "from_identity": "support",
                                 "to": [
                                     {
                                         "name": "John Doe",
@@ -57,6 +58,7 @@ class SendMessageRequest(BaseModel):
 
 
 class SendMessageFromTemplateRequest(BaseModel):
+    product_name: ProductName
     addressing: Annotated[
         Addressing,
         Field(
@@ -73,6 +75,12 @@ class SendMessageFromTemplateRequest(BaseModel):
             description="Template context variables. Must conform to the context_schema of the referenced template.",
         ),
     ]
+    locale: Annotated[
+        SupportedLocale,
+        Field(
+            description="BCP-47-style locale used to render translated template content, e.g. 'es_ES', 'zh_CN'.",
+        ),
+    ] = DEFAULT_LOCALE
     owner_metadata: OwnerMetadata | None = None
 
     @staticmethod
@@ -81,12 +89,9 @@ class SendMessageFromTemplateRequest(BaseModel):
             {
                 "examples": [
                     {
+                        "product_name": "osparc",
                         "addressing": {
-                            "channel": "email",
-                            "from": {
-                                "name": "osparc support",
-                                "email": "support@osparc.io",
-                            },
+                            "from_identity": "support",
                             "to": [
                                 {
                                     "name": "John Doe",

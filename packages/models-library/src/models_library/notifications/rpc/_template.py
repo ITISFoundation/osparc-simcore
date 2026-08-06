@@ -2,6 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+from ...products import ProductName
 from .. import Channel, TemplateName
 
 
@@ -22,6 +23,7 @@ class SearchTemplatesResponse(BaseModel):
 
 
 class PreviewTemplateRequest(BaseModel):
+    product_name: ProductName
     ref: TemplateRef
     context: dict[str, Any]
 

@@ -33,6 +33,7 @@ PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
         "simcore-models-library",
+        "simcore-postgres-database",
         "simcore-service-library",
         "simcore-settings-library",
     }
@@ -52,6 +53,14 @@ SETUP = {
         "": "src",
     },
     "include_package_data": True,
+    "package_data": {
+        "": [
+            "templates/**/*.j2",
+            "templates/**/*.jinja2",
+            "templates/**/*.html",
+            "templates/**/*.txt",
+        ]
+    },
     "install_requires": PROD_REQUIREMENTS,
     "test_suite": "tests",
     "tests_require": TEST_REQUIREMENTS,

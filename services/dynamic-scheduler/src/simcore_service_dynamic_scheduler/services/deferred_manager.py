@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.deferred_tasks import DeferredManager
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase
@@ -9,7 +9,7 @@ from settings_library.redis import RedisDatabase
 from .redis import get_redis_client
 
 
-async def deferred_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def _deferred_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     rabbit_settings: RabbitSettings = app.state.settings.DYNAMIC_SCHEDULER_RABBITMQ
 
     redis_client_sdk = get_redis_client(app, RedisDatabase.DEFERRED_TASKS)
@@ -21,3 +21,7 @@ async def deferred_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     yield {}
 
     await manager.shutdown()
+
+
+def configure_deferred_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_deferred_manager_lifespan)

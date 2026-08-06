@@ -256,6 +256,18 @@ def mock_dependency_get_celery_task_manager(app: FastAPI, mock_task_manager_obje
     app.dependency_overrides.pop(get_task_manager, None)
 
 
+@pytest.fixture
+def mock_dependency_get_kms_client(app: FastAPI, mocker: MockerFixture) -> MockType:
+    from simcore_service_api_server.clients.kms import get_kms_client  # noqa: PLC0415
+
+    mock_kms_client = mocker.AsyncMock()
+    mock_kms_client.encrypt.return_value = b"fake-kms-ciphertext"
+
+    app.dependency_overrides[get_kms_client] = lambda: mock_kms_client
+    yield mock_kms_client
+    app.dependency_overrides.pop(get_kms_client, None)
+
+
 # MOCKED res/web APIs from simcore services ------------------------------------------
 
 
@@ -378,9 +390,13 @@ def mocked_directorv2_rest_api_base(
         assert openapi
         assert openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
 
+        health_response_content = openapi["paths"]["/"]["get"]["responses"]["200"]["content"]
+        assert set(health_response_content) == {"text/plain"}
+        assert health_response_content["text/plain"]["schema"] == {"type": "string"}
+
         respx_mock.get(path="/", name="check_service_health__get").respond(
             status.HTTP_200_OK,
-            json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
+            text="healthy",
         )
 
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
@@ -718,6 +734,32 @@ def storage_rpc_side_effects(request) -> Any:
     if "param" in dir(request) and request.param is not None:
         return request.param
     return StorageSideEffects()
+
+
+@pytest.fixture
+def mocked_storage_rpc_api(
+    mocker: MockerFixture,
+    mock_dependency_get_celery_task_manager: MockType,
+) -> dict[str, MockType]:
+    """
+    Mocks the api-server's storage "RPC" client (StorageService) for testing purposes.
+
+    NOTE: unlike catalog/webserver, storage calls in the api-server are routed through
+    the celery task manager rather than RabbitMQ RPC, so here we mock the StorageService
+    methods directly instead of RabbitMQRPCClient.request.
+    """
+    from simcore_service_api_server.services_rpc.storage import (  # noqa: PLC0415
+        StorageService,
+    )
+
+    return {
+        "delete_project_s3_assets": mocker.patch.object(
+            StorageService,
+            "delete_project_s3_assets",
+            autospec=True,
+            return_value=None,
+        ),
+    }
 
 
 #

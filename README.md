@@ -13,6 +13,7 @@
 [![doc_badge]](https://itisfoundation.github.io/)
 [![dockerhub_badge]](https://hub.docker.com/u/itisfoundation)
 [![license_badge]](./LICENSE)
+[![renovate_badge]](https://github.com/ITISFoundation/osparc-simcore/issues/9336)
 [![sonarcloud_badge]](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
 [![osparc_status]](https://status.osparc.io)
 [![s4l_status]](https://s4llite.statuspage.io)
@@ -23,7 +24,8 @@
 [codecov_badge]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic
 [doc_badge]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [dockerhub_badge]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=docker%20images&up_color=blue
-[license_badge]:https://img.shields.io/github/license/ITISFoundation/osparc-simcore
+[license_badge]:https://img.shields.io/badge/license-MIT-green
+[renovate_badge]:https://img.shields.io/badge/renovate-enabled-brightgreen.svg
 [sonarcloud_badge]:https://sonarcloud.io/api/project_badges/measure?project=ITISFoundation_osparc-simcore&metric=alert_status
 [s4l_status]:https://img.shields.io/badge/dynamic/json?label=s4l-lite.io&query=%24.status.description&url=https%3A%2F%2Fdfrzcpn4jp96.statuspage.io%2Fapi%2Fv2%2Fstatus.json
 [osparc_status]:https://img.shields.io/badge/dynamic/json?label=osparc.io&query=%24.status.description&url=https%3A%2F%2Fstatus.osparc.io%2Fapi%2Fv2%2Fstatus.json

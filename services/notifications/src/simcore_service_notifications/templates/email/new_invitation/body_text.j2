@@ -1,0 +1,14 @@
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
+
+{% trans product_name=product.display_name %}Thank you for your interest in {{ product_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.{% endtrans %}
+
+{% trans link=link %}Click here to access the registration page: {{ link }}{% endtrans %}
+
+{% trans %}Please follow the on-screen information and proceed with your registration.{% endtrans %}
+
+{% trans support_email=product.support_email %}If any problem should occur, please feel free to contact us at {{ support_email }}.{% endtrans %}
+
+{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}
+
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

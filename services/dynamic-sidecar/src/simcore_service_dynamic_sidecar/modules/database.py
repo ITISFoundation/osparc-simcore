@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from servicelib.db_asyncpg_utils import check_postgres_liveness, with_async_pg_engine
+from servicelib.fastapi.tracing import get_tracing_config
 from settings_library.postgres import PostgresSettings
 
 from .._meta import APP_NAME
@@ -21,6 +22,7 @@ async def wait_for_database_liveness(app: FastAPI) -> None:
     async with with_async_pg_engine(
         postgres_settings,
         application_name=f"{APP_NAME}-{app_settings.DY_SIDECAR_NODE_ID}",
+        tracing_config=get_tracing_config(app),
     ) as engine:
         await wait_for_service_liveness(
             check_postgres_liveness,

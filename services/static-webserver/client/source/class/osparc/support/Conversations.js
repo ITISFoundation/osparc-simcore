@@ -28,8 +28,13 @@ qx.Class.define("osparc.support.Conversations", {
     this.__filterButtons = [];
     this.__filterButtons.push(this.getChildControl("filter-all-button"));
     this.__filterButtons.push(this.getChildControl("filter-unread-button"));
+    if (osparc.store.Groups.getInstance().amIASupportUser()) {
+      this.__filterButtons.push(this.getChildControl("filter-active-button"));
+      this.__filterButtons.push(this.getChildControl("filter-archived-button"));
+    }
 
-    this.__fetchConversations();
+    this.__fetchConversationCounts();
+    this.__fetchConversations(this.getCurrentFilter());
 
     this.__listenToNewConversations();
     this.__listenToConversationDeleted();
@@ -40,10 +45,12 @@ qx.Class.define("osparc.support.Conversations", {
       check: [
         "all",
         "unread",
-        "open",
+        "active",
+        "archived",
       ],
       init: "all",
       event: "changeCurrentFilter",
+      apply: "__applyCurrentFilter",
     },
   },
 
@@ -62,6 +69,9 @@ qx.Class.define("osparc.support.Conversations", {
 
   members: {
     __conversationListItems: null,
+    __totalConversations: null,
+    __isFetchingMore: false,
+    __fetchRequestId: 0,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -77,10 +87,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show all conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("all");
-            this.__applyCurrentFilter("all");
-          });
+          control.addListener("execute", () => this.setCurrentFilter("all"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-unread-button":
@@ -89,14 +96,32 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only unread conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("unread");
-            this.__applyCurrentFilter("unread");
+          control.addListener("execute", () => this.setCurrentFilter("unread"));
+          this.getChildControl("filters-layout").add(control);
+          break;
+        case "filter-active-button":
+          control = new qx.ui.form.ToggleButton(this.tr("Active"));
+          control.set({
+            toolTipText: this.tr("Show only active (unarchived) conversations"),
+            ...this.self().FILTER_BUTTON_AESTHETIC,
           });
+          control.addListener("execute", () => this.setCurrentFilter("active"));
+          this.getChildControl("filters-layout").add(control);
+          break;
+        case "filter-archived-button":
+          control = new qx.ui.form.ToggleButton(this.tr("Archived"));
+          control.set({
+            toolTipText: this.tr("Show only archived conversations"),
+            ...this.self().FILTER_BUTTON_AESTHETIC,
+          });
+          control.addListener("execute", () => this.setCurrentFilter("archived"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "loading-button":
-          control = new osparc.ui.form.FetchButton();
+          control = new osparc.ui.form.FetchButton().set({
+            backgroundColor: "transparent",
+            iconSize: 24,
+          });
           this._addAt(control, 1);
           break;
         case "no-messages-label":
@@ -106,11 +131,23 @@ qx.Class.define("osparc.support.Conversations", {
           });
           this._addAt(control, 2);
           break;
-        case "conversations-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+        case "scroll-container":
+          control = new qx.ui.container.Scroll();
+          control.getChildControl("pane").addListener("scrollY", () => this.__onScroll(), this);
           this._addAt(control, 3, {
             flex: 1
           });
+          break;
+        case "conversations-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this.getChildControl("scroll-container").add(control);
+          break;
+        case "loading-spinner":
+          control = new osparc.ui.form.FetchButton(this.tr("Loading more...")).set({
+            alignX: "center",
+            visibility: "excluded",
+          });
+          control.setFetching(true);
           break;
       }
 
@@ -119,10 +156,20 @@ qx.Class.define("osparc.support.Conversations", {
 
     __applyCurrentFilter: function(filter) {
       this.getChildControl("no-messages-label").exclude();
+      this.__highlightCurrentFilter(filter);
+      this.__clearConversationsList();
+      this.__fetchConversations(filter);
+    },
 
-      this.__filterButtons.forEach(button => {
-        button.setValue(false);
-      });
+    __clearConversationsList: function() {
+      this.__conversationListItems = [];
+      this.__totalConversations = null;
+      this.__isFetchingMore = false;
+      this.getChildControl("conversations-layout").removeAll();
+    },
+
+    __highlightCurrentFilter: function(filter) {
+      this.__filterButtons.forEach(button => button.setValue(false));
       switch (filter) {
         case "all":
           this.getChildControl("filter-all-button").setValue(true);
@@ -130,20 +177,22 @@ qx.Class.define("osparc.support.Conversations", {
         case "unread":
           this.getChildControl("filter-unread-button").setValue(true);
           break;
+        case "active":
+          this.getChildControl("filter-active-button").setValue(true);
+          break;
+        case "archived":
+          this.getChildControl("filter-archived-button").setValue(true);
+          break;
       }
+    },
 
+    __updateBadgesVisibility: function(filter) {
       this.__conversationListItems.forEach(conversationItem => {
-        const conversation = conversationItem.getConversation();
-        switch (filter) {
-          case "all":
-            conversationItem.show();
-            break;
-          case "unread":
-            conversation.getReadBy() ? conversationItem.exclude() : conversationItem.show();
-            break;
-        }
+        conversationItem.getChildControl("badges-layout").setVisibility(filter === "all" ? "visible" : "excluded");
       });
+    },
 
+    __showNoMessagesLabelIfNeeded: function(filter) {
       const hasVisibleConversations = this.__conversationListItems.some(conversationItem => conversationItem.isVisible());
       if (!hasVisibleConversations) {
         let msg = "";
@@ -153,6 +202,12 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             msg = this.tr("No unread conversations");
+            break;
+          case "active":
+            msg = this.tr("No active conversations");
+            break;
+          case "archived":
+            msg = this.tr("No archived conversations");
             break;
         }
         this.getChildControl("no-messages-label").set({
@@ -166,22 +221,118 @@ qx.Class.define("osparc.support.Conversations", {
       return this.__conversationListItems.find(conversation => conversation.getConversation().getConversationId() === conversationId);
     },
 
-    __fetchConversations: function() {
+    __fetchConversationCounts: function() {
+      osparc.store.ConversationsSupport.getInstance().fetchConversationCounts()
+        .then(counts => {
+          if (counts.all !== undefined) {
+            this.getChildControl("filter-all-button").setLabel(this.tr("All") + ` (${counts.all})`);
+          }
+          if (counts.unread !== undefined) {
+            this.getChildControl("filter-unread-button").setLabel(this.tr("Unread") + ` (${counts.unread})`);
+          }
+          if (counts.active !== undefined) {
+            this.getChildControl("filter-active-button").setLabel(this.tr("Active") + ` (${counts.active})`);
+          }
+          if (counts.archived !== undefined) {
+            this.getChildControl("filter-archived-button").setLabel(this.tr("Archived") + ` (${counts.archived})`);
+          }
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __fetchConversations: function(filter) {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
+      loadMoreButton.show();
 
-      osparc.store.ConversationsSupport.getInstance().fetchConversations()
-        .then(conversations => {
-          if (conversations.length) {
-            conversations.forEach(conversation => this.__addConversation(conversation));
+      const requestId = ++this.__fetchRequestId;
+      osparc.store.ConversationsSupport.getInstance().fetchConversations(filter)
+        .then(resp => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
           }
+          if (resp && resp.conversations && resp.conversations.length) {
+            resp.conversations.forEach(conversation => this.__addConversation(conversation));
+          }
+          this.__totalConversations = resp ? resp.total : null;
           this.__sortConversations();
+          this.__updateBadgesVisibility(filter);
+          this.__updateLoadingSpinner();
         })
         .finally(() => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
-          this.__applyCurrentFilter(this.getCurrentFilter());
+          this.__showNoMessagesLabelIfNeeded(filter);
         });
+    },
+
+    __fetchMoreConversations: function() {
+      if (this.__isFetchingMore) {
+        return;
+      }
+      this.__isFetchingMore = true;
+      this.__showLoadingSpinner(true);
+
+      const requestId = this.__fetchRequestId;
+      const filter = this.getCurrentFilter();
+      const offset = this.__conversationListItems.length;
+      osparc.store.ConversationsSupport.getInstance().fetchConversations(filter, offset)
+        .then(resp => {
+          if (requestId !== this.__fetchRequestId) {
+            return;
+          }
+          if (resp && resp.conversations && resp.conversations.length) {
+            resp.conversations.forEach(conversation => this.__addConversation(conversation));
+          }
+          this.__totalConversations = resp ? resp.total : null;
+          this.__sortConversations();
+          this.__updateBadgesVisibility(filter);
+          this.__updateLoadingSpinner();
+        })
+        .finally(() => {
+          this.__isFetchingMore = false;
+        });
+    },
+
+    __onScroll: function() {
+      if (!this.__hasMoreConversations()) {
+        return;
+      }
+      const scroll = this.getChildControl("scroll-container");
+      const pane = scroll.getChildControl("pane");
+      const scrollTop = pane.getScrollY();
+      const scrollHeight = pane.getScrollSize().height;
+      const clientHeight = pane.getBounds() ? pane.getBounds().height : 0;
+      if (scrollTop + clientHeight >= scrollHeight - 50) {
+        this.__fetchMoreConversations();
+      }
+    },
+
+    __hasMoreConversations: function() {
+      if (this.__totalConversations === null) {
+        return false;
+      }
+      return this.__conversationListItems.length < this.__totalConversations;
+    },
+
+    __updateLoadingSpinner: function() {
+      this.__showLoadingSpinner(this.__hasMoreConversations());
+    },
+
+    __showLoadingSpinner: function(show) {
+      const spinner = this.getChildControl("loading-spinner");
+      const conversationsLayout = this.getChildControl("conversations-layout");
+      if (show) {
+        if (conversationsLayout.indexOf(spinner) === -1) {
+          conversationsLayout.add(spinner);
+        }
+        spinner.show();
+      } else {
+        spinner.exclude();
+      }
     },
 
     __listenToNewConversations: function() {
@@ -189,6 +340,8 @@ qx.Class.define("osparc.support.Conversations", {
         const conversation = e.getData();
         this.__addConversation(conversation);
         this.__sortConversations();
+        this.__applyCurrentFilter(this.getCurrentFilter());
+        this.__fetchConversationCounts();
       });
     },
 
@@ -196,6 +349,7 @@ qx.Class.define("osparc.support.Conversations", {
       osparc.store.ConversationsSupport.getInstance().addListener("conversationDeleted", e => {
         const conversationId = e.getData()["conversationId"];
         this.__removeConversationPage(conversationId);
+        this.__fetchConversationCounts();
       });
     },
 
@@ -212,8 +366,14 @@ qx.Class.define("osparc.support.Conversations", {
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
       conversation.addListener("changeLastMessageCreatedAt", () => this.__sortConversations(), this);
       const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
-      conversation.addListener(eventName, () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
-      conversation.addListener("changeResolved", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
+      conversation.addListener(eventName, () => {
+        this.__applyCurrentFilter(this.getCurrentFilter());
+        this.__fetchConversationCounts();
+      }, this);
+      conversation.addListener("changeArchived", () => {
+        this.__applyCurrentFilter(this.getCurrentFilter());
+        this.__fetchConversationCounts();
+      }, this);
       this.__conversationListItems.push(conversationListItem);
       return conversationListItem;
     },

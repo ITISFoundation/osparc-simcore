@@ -2,7 +2,7 @@ from ..errors import WebServerBaseError
 
 
 class BaseCatalogError(WebServerBaseError):
-    msg_template = "Unexpected error occured in catalog submodule"
+    msg_template = "Unexpected error occurred in catalog submodule"
 
     def __init__(self, msg=None, **ctx):
         super().__init__(**ctx)

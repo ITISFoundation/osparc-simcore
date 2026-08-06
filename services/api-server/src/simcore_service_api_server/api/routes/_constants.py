@@ -1,5 +1,9 @@
 from typing import Final
 
+from packaging.version import Version
+
+from ..._meta import VERSION
+
 #
 # CHANGELOG formatted-messages for API routes
 #
@@ -27,6 +31,10 @@ FMSG_DEPRECATED_ROUTE_NOTICE: Final[str] = (
 )
 
 DEFAULT_MAX_STRING_LENGTH: Final[int] = 500
+
+# Extension key to mark routes as OpenAI API compatible.
+# Used to filter the OpenAPI spec for openai-compatible-openapi.json.
+OPENAI_COMPATIBLE_OPENAPI_EXTRA: Final[dict] = {"x-openai-compatible": True}
 
 
 def create_route_description(
@@ -60,3 +68,7 @@ def create_route_description(
         parts.append("\n".join(changelog))
 
     return "\n\n".join(parts)
+
+
+def include_from_version(version: str) -> bool:
+    return Version(version) <= VERSION

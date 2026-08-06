@@ -9,68 +9,18 @@
 """
 
 import logging
-from typing import Annotated, Any, Final, Literal, TypeAlias
+from typing import Any, Literal
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
-from pydantic import (
-    BaseModel,
-    Field,
-    HttpUrl,
-    StringConstraints,
-    TypeAdapter,
-    ValidationError,
-    field_validator,
-)
+from pydantic import TypeAdapter, ValidationError
 
+from ..scicrunch import scicrunch_service
 from ..scicrunch.errors import ScicrunchError
-from ..scicrunch.scicrunch_service import SCICRUNCH_SERVICE_APPKEY
+from . import models
 from ._classifiers_repository import GroupClassifierRepository
 
 _logger = logging.getLogger(__name__)
-MAX_SIZE_SHORT_MSG: Final[int] = 100
-
-
-# DOMAIN MODELS ---
-
-
-TreePath: TypeAlias = Annotated[
-    # Examples 'a::b::c
-    str,
-    StringConstraints(pattern=r"[\w:]+"),
-]
-
-
-class ClassifierItem(BaseModel):
-    classifier: str = Field(..., description="Unique identifier used to tag studies or services")
-    display_name: str
-    short_description: str | None
-    url: Annotated[
-        HttpUrl | None,
-        Field(
-            description="Link to more information",
-            examples=["https://scicrunch.org/resources/Any/search?q=osparc&l=osparc"],
-        ),
-    ] = None
-
-    @field_validator("short_description", mode="before")
-    @classmethod
-    def truncate_to_short(cls, v):
-        if v and len(v) >= MAX_SIZE_SHORT_MSG:
-            return v[:MAX_SIZE_SHORT_MSG] + "…"
-        return v
-
-
-class Classifiers(BaseModel):
-    # meta
-    vcs_url: str | None
-    vcs_ref: str | None
-
-    # data
-    classifiers: dict[TreePath, ClassifierItem]
-
-
-# SERVICE LAYER --------
 
 
 class GroupClassifiersService:
@@ -85,11 +35,14 @@ class GroupClassifiersService:
             if bundle:
                 try:
                     # truncate bundle to what is needed and drop the rest
-                    return Classifiers(**bundle).model_dump(exclude_unset=True, exclude_none=True)
+                    return models.Classifiers(**bundle).model_dump(exclude_unset=True, exclude_none=True)
                 except ValidationError as err:
                     _logger.exception(
                         **create_troubleshooting_log_kwargs(
-                            f"DB corrupt data in 'groups_classifiers' table. Invalid classifier for gid={gid}. Returning empty bundle.",
+                            (
+                                f"DB corrupt data in 'groups_classifiers' table. "
+                                f"Invalid classifier for gid={gid}. Returning empty bundle."
+                            ),
                             error=err,
                             error_context={
                                 "gid": gid,
@@ -111,19 +64,21 @@ class GroupClassifiersService:
             msg = "Currently only 'std' option for the classifiers tree view is implemented"
             raise NotImplementedError(msg)
 
-        service = self.app[SCICRUNCH_SERVICE_APPKEY]
+        service = self.app[scicrunch_service.SCICRUNCH_SERVICE_APPKEY]
 
-        flat_tree_view: dict[TreePath, ClassifierItem] = {}
+        flat_tree_view: dict[models.TreePath, models.ClassifierItem] = {}
         for resource in await service.list_research_resources():
             try:
-                validated_item = ClassifierItem(
+                validated_item = models.ClassifierItem(
                     classifier=resource.rrid,
                     display_name=resource.name.title(),
                     short_description=resource.description,
                     url=service.get_resolver_web_url(resource.rrid),
                 )
 
-                node = TypeAdapter(TreePath).validate_python(validated_item.display_name.replace(":", " "))
+                node: models.TreePath = TypeAdapter(models.TreePath).validate_python(
+                    validated_item.display_name.replace(":", " ")
+                )
                 flat_tree_view[node] = validated_item
 
             except ValidationError as err:
@@ -132,4 +87,4 @@ class GroupClassifiersService:
                     err,
                 )
 
-        return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(exclude_unset=True)
+        return models.Classifiers.model_construct(classifiers=flat_tree_view).model_dump(exclude_unset=True)

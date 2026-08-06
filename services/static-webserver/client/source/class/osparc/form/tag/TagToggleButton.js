@@ -22,7 +22,7 @@ qx.Class.define("osparc.form.tag.TagToggleButton", {
       minHeight: 35,
       appearance: "tagbutton"
     });
-    this.setIcon("@FontAwesome5Solid/square/14");
+    this.setIcon("@FontAwesomeSolid/square/14");
     this.getChildControl("icon").setTextColor(tag.getColor());
     if (tag.getDescription()) {
       this.setLabel(tag.getName() + " : " + tag.getDescription());
@@ -74,8 +74,8 @@ qx.Class.define("osparc.form.tag.TagToggleButton", {
           this.bind("fetching", control, "source", {
             converter: isFetching =>
               isFetching ?
-                "@FontAwesome5Solid/circle-notch/14" :
-                "@FontAwesome5Solid/check/14"
+                "@FontAwesomeSolid/circle-notch/14" :
+                "@FontAwesomeSolid/check/14"
           });
           break;
       }

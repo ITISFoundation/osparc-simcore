@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=R6301
+# ruff: noqa: ARG002, DTZ005, PERF402, PLC0206, RUF018, S311, SLF001
 
 import asyncio
 import logging
@@ -266,7 +267,7 @@ async def test_log_distributor_multiple_streams(
     produce_logs: Callable,
     faker: Faker,
 ):
-    job_ids: Final[list[JobID]] = [JobID(faker.uuid4()) for _ in range(2)]
+    job_ids: Final[list[JobID]] = [UUID(faker.uuid4()) for _ in range(2)]
 
     collected_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
 

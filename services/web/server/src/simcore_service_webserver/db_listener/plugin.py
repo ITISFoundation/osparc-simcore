@@ -10,7 +10,7 @@ from aiohttp import web
 from ..application_setup import ModuleCategory, app_setup_func
 from ..db.plugin import setup_db
 from ..projects._projects_repository_legacy import setup_projects_db
-from ..socketio.plugin import setup_socketio
+from ..socketio.socketio_service import setup_socketio
 from ._db_comp_tasks_listening_task import create_comp_tasks_listening_task
 
 _logger = logging.getLogger(__name__)

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Final
 
 from aiohttp import web
 from models_library.api_schemas_directorv2.comp_runs import (
@@ -14,6 +15,8 @@ from models_library.computations import (
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -31,10 +34,12 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.utils import limited_gather
 
 from ..products.products_service import is_product_billable
+from ..projects._projects_nodes_repository import (
+    get_by_projects,
+)
 from ..projects.api import (
     batch_get_project_name,
     check_user_project_permission,
-    get_project_dict_legacy,
 )
 from ..projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
@@ -42,6 +47,8 @@ from ..projects.projects_metadata_service import (
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ._comp_runs_collections_service import get_comp_run_collection_or_none_by_id
+
+_UNKNOWN_LABEL: Final[str] = "Unknown"
 
 
 async def _get_projects_metadata(
@@ -228,13 +235,9 @@ async def list_computations_latest_iteration_tasks(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
     # Fetch projects metadata concurrently
-    # NOTE: MD: can be improved with a single batch call
-    project_dicts = await limited_gather(
-        *[get_project_dict_legacy(app, project_uuid=project_uuid) for project_uuid in unique_project_uuids],
-        limit=20,
+    projects_to_nodes: dict[ProjectID, dict[NodeID, Node]] = await get_by_projects(
+        app, project_ids=unique_project_uuids
     )
-    # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench = {prj["uuid"]: prj["workbench"] for prj in project_dicts}
 
     _service_run_ids = [item.service_run_id for item in _tasks_get.items]
     _is_product_billable = await is_product_billable(app, product_name=product_name)
@@ -262,7 +265,7 @@ async def list_computations_latest_iteration_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            node_name=project_uuid_to_workbench[f"{item.project_uuid}"][f"{item.node_id}"].get("label", ""),
+            node_name=projects_to_nodes[item.project_uuid][item.node_id].label or _UNKNOWN_LABEL,
             osparc_credits=credits_or_none,
         )
         for item, credits_or_none in zip(_tasks_get.items, _service_run_osparc_credits, strict=True)
@@ -375,13 +378,10 @@ async def list_computation_collection_run_tasks(
 
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
-    # NOTE: MD: can be improved with a single batch call
-    project_dicts = await limited_gather(
-        *[get_project_dict_legacy(app, project_uuid=project_uuid) for project_uuid in unique_project_uuids],
-        limit=20,
+
+    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = await get_by_projects(
+        app, project_ids=unique_project_uuids
     )
-    # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench = {prj["uuid"]: prj["workbench"] for prj in project_dicts}
 
     # Fetch projects metadata concurrently
     _projects_metadata = await _get_projects_metadata(
@@ -416,7 +416,7 @@ async def list_computation_collection_run_tasks(
             log_download_link=item.log_download_link,
             name=(
                 custom_metadata.get("job_name")
-                or project_uuid_to_workbench[f"{item.project_uuid}"][f"{item.node_id}"].get("label")
+                or project_uuid_to_workbench[item.project_uuid][item.node_id].label
                 or "Unknown"
             ),
             osparc_credits=credits_or_none,

@@ -246,7 +246,7 @@ async def _start_mount_if_required(
     async with progress_bar.sub_progress(steps=2, description=f"starting mount of {destination_path.name}") as sub_prog:
         s3_object = __create_s3_object_key(project_id, node_id, destination_path)
 
-        await filemanager.create_r_clone_mounted_directory_entry(
+        mount_s3_link = await filemanager.get_directory_mount_s3_link(
             user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
         )
         await sub_prog.update(1)
@@ -257,6 +257,7 @@ async def _start_mount_if_required(
             node_id=node_id,
             remote_type=MountRemoteType.S3,
             remote_path=s3_object,
+            mount_s3_link=mount_s3_link,
         )
 
 

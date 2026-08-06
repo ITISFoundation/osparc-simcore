@@ -47,7 +47,9 @@ class UserRole(Enum):
 
 
 class UserStatus(str, Enum):
-    # This is a transition state. The user is registered but not confirmed. NOTE that state is optional depending on LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
+    # This is a transition state. The user is registered but not confirmed. NOTE that this
+    # state is currently unused by the registration flow (no confirmation step), but stays
+    # part of the lifecycle for legacy/other flows (e.g. `check_other_registrations`).
     CONFIRMATION_PENDING = "CONFIRMATION_PENDING"
     # This user can now operate the platform
     ACTIVE = "ACTIVE"

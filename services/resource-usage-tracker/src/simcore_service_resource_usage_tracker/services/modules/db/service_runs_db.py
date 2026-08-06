@@ -34,9 +34,9 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ....exceptions.errors import ServiceRunNotCreatedDBError
 from ....models.service_runs import (
     OsparcCreditsAggregatedByServiceKeyDB,
     ServiceRunCreate,
@@ -55,10 +55,11 @@ async def create_service_run(
     connection: AsyncConnection | None = None,
     *,
     data: ServiceRunCreate,
-) -> ServiceRunID:
+) -> ServiceRunID | None:
+    """Returns None when the record already exists (duplicate start event): nothing was inserted."""
     async with transaction_context(engine, connection) as conn:
         insert_stmt = (
-            resource_tracker_service_runs.insert()
+            pg_insert(resource_tracker_service_runs)
             .values(
                 product_name=data.product_name,
                 service_run_id=data.service_run_id,
@@ -91,12 +92,18 @@ async def create_service_run(
                 modified=sa.func.now(),
                 last_heartbeat_at=data.last_heartbeat_at,
             )
+            .on_conflict_do_nothing(
+                index_elements=[
+                    resource_tracker_service_runs.c.product_name,
+                    resource_tracker_service_runs.c.service_run_id,
+                ]
+            )
             .returning(resource_tracker_service_runs.c.service_run_id)
         )
         result = await conn.execute(insert_stmt)
     row = result.first()
     if row is None:
-        raise ServiceRunNotCreatedDBError(data=data)
+        return None
     return cast(ServiceRunID, row[0])
 
 
@@ -106,23 +113,24 @@ async def update_service_run_last_heartbeat(
     *,
     data: ServiceRunLastHeartbeatUpdate,
 ) -> ServiceRunDB | None:
+    row: object | None
     async with transaction_context(engine, connection) as conn:
-        update_stmt = (
-            resource_tracker_service_runs.update()
-            .values(
-                modified=sa.func.now(),
-                last_heartbeat_at=data.last_heartbeat_at,
-                missed_heartbeat_counter=0,
+        row = (
+            await conn.execute(
+                resource_tracker_service_runs.update()
+                .values(
+                    modified=sa.func.now(),
+                    last_heartbeat_at=data.last_heartbeat_at,
+                    missed_heartbeat_counter=0,
+                )
+                .where(
+                    (resource_tracker_service_runs.c.service_run_id == data.service_run_id)
+                    & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
+                    & (resource_tracker_service_runs.c.last_heartbeat_at <= data.last_heartbeat_at)
+                )
+                .returning(sa.literal_column("*"))
             )
-            .where(
-                (resource_tracker_service_runs.c.service_run_id == data.service_run_id)
-                & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
-                & (resource_tracker_service_runs.c.last_heartbeat_at <= data.last_heartbeat_at)
-            )
-            .returning(sa.literal_column("*"))
-        )
-        result = await conn.execute(update_stmt)
-    row = result.first()
+        ).first()
     if row is None:
         return None
     return ServiceRunDB.model_validate(row)
@@ -134,23 +142,24 @@ async def update_service_run_stopped_at(
     *,
     data: ServiceRunStoppedAtUpdate,
 ) -> ServiceRunDB | None:
+    row: object | None
     async with transaction_context(engine, connection) as conn:
-        update_stmt = (
-            resource_tracker_service_runs.update()
-            .values(
-                modified=sa.func.now(),
-                stopped_at=data.stopped_at,
-                service_run_status=data.service_run_status,
-                service_run_status_msg=data.service_run_status_msg,
+        row = (
+            await conn.execute(
+                resource_tracker_service_runs.update()
+                .values(
+                    modified=sa.func.now(),
+                    stopped_at=data.stopped_at,
+                    service_run_status=data.service_run_status,
+                    service_run_status_msg=data.service_run_status_msg,
+                )
+                .where(
+                    (resource_tracker_service_runs.c.service_run_id == data.service_run_id)
+                    & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
+                )
+                .returning(sa.literal_column("*"))
             )
-            .where(
-                (resource_tracker_service_runs.c.service_run_id == data.service_run_id)
-                & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
-            )
-            .returning(sa.literal_column("*"))
-        )
-        result = await conn.execute(update_stmt)
-    row = result.first()
+        ).first()
     if row is None:
         return None
     return ServiceRunDB.model_validate(row)
@@ -305,7 +314,7 @@ async def list_service_runs_by_product_and_user_and_wallet(
         result = await conn.stream(list_query.offset(offset).limit(limit))
         items: list[ServiceRunWithCreditsDB] = [ServiceRunWithCreditsDB.model_validate(row) async for row in result]
 
-        return cast(int, total_count), items
+        return total_count, items
 
 
 async def get_osparc_credits_aggregated_by_service(
@@ -397,7 +406,7 @@ async def get_osparc_credits_aggregated_by_service(
         list_result = await conn.execute(list_query)
 
     return (
-        cast(int, count_result),
+        count_result,
         [OsparcCreditsAggregatedByServiceKeyDB.model_validate(row) for row in list_result.fetchall()],
     )
 
@@ -631,23 +640,23 @@ async def update_service_missed_heartbeat_counter(
     last_heartbeat_at: datetime,
     missed_heartbeat_counter: int,
 ) -> ServiceRunDB | None:
+    row: object | None
     async with transaction_context(engine, connection) as conn:
-        update_stmt = (
-            resource_tracker_service_runs.update()
-            .values(
-                modified=sa.func.now(),
-                missed_heartbeat_counter=missed_heartbeat_counter,
+        row = (
+            await conn.execute(
+                resource_tracker_service_runs.update()
+                .values(
+                    modified=sa.func.now(),
+                    missed_heartbeat_counter=missed_heartbeat_counter,
+                )
+                .where(
+                    (resource_tracker_service_runs.c.service_run_id == service_run_id)
+                    & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
+                    & (resource_tracker_service_runs.c.last_heartbeat_at == last_heartbeat_at)
+                )
+                .returning(sa.literal_column("*"))
             )
-            .where(
-                (resource_tracker_service_runs.c.service_run_id == service_run_id)
-                & (resource_tracker_service_runs.c.service_run_status == ServiceRunStatus.RUNNING)
-                & (resource_tracker_service_runs.c.last_heartbeat_at == last_heartbeat_at)
-            )
-            .returning(sa.literal_column("*"))
-        )
-
-        result = await conn.execute(update_stmt)
-    row = result.first()
+        ).first()
     if row is None:
         return None
     return ServiceRunDB.model_validate(row)

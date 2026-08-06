@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "charliermarsh.ruff",
+    "dbaeumer.vscode-eslint",
     "DevSoft.svg-viewer-vscode",
     "eamodio.gitlens",
     "exiasr.hadolint",

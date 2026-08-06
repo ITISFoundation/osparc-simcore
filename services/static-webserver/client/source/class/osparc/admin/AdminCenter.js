@@ -34,21 +34,21 @@ qx.Class.define("osparc.admin.AdminCenter", {
   members: {
     __addPricingPlansPage: function() {
       const title = this.tr("Pricing Plans");
-      const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
+      const iconSrc = "@FontAwesomeSolid/dollar-sign/22";
       const pricingPlans = new osparc.pricing.PlanManager();
       this.addTab(title, iconSrc, pricingPlans);
     },
 
     __addMaintenancePage: function() {
       const title = this.tr("Maintenance");
-      const iconSrc = "@FontAwesome5Solid/wrench/22";
+      const iconSrc = "@FontAwesomeSolid/wrench/22";
       const maintenance = new osparc.admin.Maintenance();
       this.addTab(title, iconSrc, maintenance);
     },
 
     __addAnnouncementsPage: function() {
       const title = this.tr("Announcements");
-      const iconSrc = "@FontAwesome5Solid/bullhorn/22";
+      const iconSrc = "@FontAwesomeSolid/bullhorn/22";
       const announcements = new osparc.admin.Announcements();
       this.addTab(title, iconSrc, announcements);
     },

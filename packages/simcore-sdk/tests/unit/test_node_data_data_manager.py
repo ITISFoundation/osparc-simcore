@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterator
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive
+from unittest import mock
 
 import pytest
 from faker import Faker
@@ -221,15 +222,16 @@ async def test_pull_legacy_archive(
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     mock_temporary_directory.assert_called_once()
+    archive_stem = f"{test_folder.stem}_legacy" if create_legacy_archive else test_folder.stem
     mock_filemanager.download_path_from_s3.assert_called_once_with(
         user_id=user_id,
         local_path=test_compression_folder,
-        s3_object=f"{project_id}/{node_uuid}/{f'{test_folder.stem}_legacy' if create_legacy_archive else test_folder.stem}.zip",
+        s3_object=f"{project_id}/{node_uuid}/{archive_stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         io_log_redirect_cb=mock_io_log_redirect_cb,
         r_clone_settings=None,
-        progress_bar=progress_bar._children[0],  # noqa: SLF001
+        progress_bar=mock.ANY,
     )
 
     matches, mismatches, errors = cmpfiles(

@@ -57,7 +57,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
             appearance: "form-button",
             label: this.tr("Add Service"),
             alignX: "center",
-            icon: "@FontAwesome5Solid/plus/14",
+            icon: "@FontAwesomeSolid/plus/14",
             allowGrowX: false
           });
           control.addListener("execute", () => this.__openAddServiceToPlan());
@@ -107,7 +107,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
       servicesList.setModel(serviceModels);
 
       if (failedServices.length) {
-        let msg = "Could not retrieve data from some services:<br>";
+        let msg = this.tr("Could not retrieve data from some services:") + "<br>";
         failedServices.forEach(failedService => {
           msg+= `- ${failedService.key}:${failedService.version}<br>`;
         });

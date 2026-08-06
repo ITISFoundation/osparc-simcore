@@ -44,7 +44,6 @@ from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import InputsState
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
-from simcore_service_dynamic_sidecar.services.containers import _INACTIVE_FOR_LONG_TIME
 from utils import get_lrt_result
 
 pytest_simcore_core_services_selection = [
@@ -483,7 +482,7 @@ async def test_containers_activity_command_failed(
     containers_activity = await containers.get_containers_activity(
         rpc_client, node_id=app_state.settings.DY_SIDECAR_NODE_ID
     )
-    assert containers_activity == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+    assert containers_activity is None
 
 
 async def test_containers_activity_no_inactivity_defined(
@@ -546,7 +545,29 @@ async def test_containers_activity_unexpected_response(
     containers_activity = await containers.get_containers_activity(
         rpc_client, node_id=app_state.settings.DY_SIDECAR_NODE_ID
     )
-    assert containers_activity == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+    assert containers_activity is None
+
+
+@pytest.fixture
+def define_inactivity_command_unknown_service(define_inactivity_command: None, app: FastAPI) -> None:
+    """Overrides shared_store so inactivity.service doesn't match any container."""
+    shared_store: SharedStore = app.state.shared_store
+    shared_store.original_to_container_names.clear()
+    shared_store.original_to_container_names["other_service"] = "other_service"
+
+
+async def test_containers_activity_service_not_in_container_names(
+    define_inactivity_command_unknown_service: None,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+):
+    """Regression: inactivity.service referencing a name not present in
+    original_to_container_names should return None, not crash with KeyError."""
+    app_state = AppState(app)
+    containers_activity = await containers.get_containers_activity(
+        rpc_client, node_id=app_state.settings.DY_SIDECAR_NODE_ID
+    )
+    assert containers_activity is None
 
 
 def _get_entrypoint_container_name(app: FastAPI) -> str:

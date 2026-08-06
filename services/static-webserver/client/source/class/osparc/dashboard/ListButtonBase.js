@@ -129,7 +129,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
 
     _applyIcon: function(value, old) {
       if (value) {
-        if (value.includes("@FontAwesome5Solid/")) {
+        if (value.includes("@FontAwesomeSolid/")) {
           value += "22";
         }
         const image = this.getChildControl("icon").getChildControl("image");

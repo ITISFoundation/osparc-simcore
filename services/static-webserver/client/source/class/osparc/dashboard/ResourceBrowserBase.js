@@ -133,68 +133,68 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           osparc.store.Study.getInstance().getWallet(studyId),
           osparc.store.Study.getInstance().getOne(studyId),
         ]).then(([wallet, latestStudyData]) => {
-            const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(latestStudyData["state"]);
-            if (
-              isStudyCreation ||
-              wallet === null ||
-              (osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null && currentUserGroupIds.length === 0)
-            ) {
-              // pop up StudyOptions if:
-              // - the study was just created
-              // - it has no wallet assigned
-              // - I do not have access to it and the project is not being used
-              const resourceSelector = new osparc.study.StudyOptions(studyId);
-              if (isStudyCreation) {
-                resourceSelector.getChildControl("open-button").setLabel(qx.locale.Manager.tr("New"));
+          const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(latestStudyData["state"]);
+          if (
+            isStudyCreation ||
+            wallet === null ||
+            (osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null && currentUserGroupIds.length === 0)
+          ) {
+            // pop up StudyOptions if:
+            // - the study was just created
+            // - it has no wallet assigned
+            // - I do not have access to it and the project is not being used
+            const resourceSelector = new osparc.study.StudyOptions(studyId);
+            if (isStudyCreation) {
+              resourceSelector.getChildControl("open-button").setLabel(qx.locale.Manager.tr("New"));
+            }
+            const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
+            win.moveItUp();
+            resourceSelector.addListener("startStudy", () => {
+              win.close();
+              openStudy();
+            });
+            win.addListener("cancel", () => {
+              if (cancelCB) {
+                cancelCB();
               }
-              const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
-              win.moveItUp();
-              resourceSelector.addListener("startStudy", () => {
-                win.close();
-                openStudy();
-              });
-              win.addListener("cancel", () => {
-                if (cancelCB) {
-                  cancelCB();
-                }
-              });
-              resourceSelector.addListener("cancel", () => {
-                win.close();
-                if (cancelCB) {
-                  cancelCB();
-                }
-              });
-              // listen to "tap" instead of "execute": the "execute" is not propagated
-              win.getChildControl("close-button").addListener("tap", () => {
-                if (cancelCB) {
-                  cancelCB();
-                }
-              });
+            });
+            resourceSelector.addListener("cancel", () => {
+              win.close();
+              if (cancelCB) {
+                cancelCB();
+              }
+            });
+            // listen to "tap" instead of "execute": the "execute" is not propagated
+            win.getChildControl("close-button").addListener("tap", () => {
+              if (cancelCB) {
+                cancelCB();
+              }
+            });
+          } else {
+            const found = osparc.store.Store.getInstance().getWallets().find(w => w.getWalletId() === wallet["walletId"]);
+            if (found) {
+              // I have access to the wallet
+              if (osparc.store.Store.getInstance().getContextWallet() !== found) {
+                // switch to that wallet and inform the user that the context wallet has changed
+                const text = qx.locale.Manager.tr("Switched to Credit Account") + " '" + found.getName() + "'";
+                osparc.FlashMessenger.logAs(text);
+              }
+              osparc.store.Store.getInstance().setActiveWallet(found);
+              openStudy();
             } else {
-              const found = osparc.store.Store.getInstance().getWallets().find(w => w.getWalletId() === wallet["walletId"]);
-              if (found) {
-                // I have access to the wallet
-                if (osparc.store.Store.getInstance().getContextWallet() !== found) {
-                  // switch to that wallet and inform the user that the context wallet has changed
-                  const text = qx.locale.Manager.tr("Switched to Credit Account") + " '" + found.getName() + "'";
-                  osparc.FlashMessenger.logAs(text);
-                }
-                osparc.store.Store.getInstance().setActiveWallet(found);
-                openStudy();
-              } else {
-                // I do not have access to the wallet or it's being used
-                // cancel and explain the user why
-                const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
-                const msg = isRTCEnabled ?
-                  qx.locale.Manager.tr("You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner.") :
-                  qx.locale.Manager.tr("You can't join the project because it's already open by another user.");
-                osparc.FlashMessenger.logAs(msg, "ERROR");
-                if (cancelCB) {
-                  cancelCB();
-                }
+              // I do not have access to the wallet or it's being used
+              // cancel and explain the user why
+              const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
+              const msg = isRTCEnabled ?
+                qx.locale.Manager.tr("You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner.") :
+                qx.locale.Manager.tr("You can't join the project because it's already open by another user.");
+              osparc.FlashMessenger.logAs(msg, "ERROR");
+              if (cancelCB) {
+                cancelCB();
               }
             }
-          });
+          }
+        });
       } else {
         openStudy();
       }
@@ -442,7 +442,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const groupByMenu = new qx.ui.menu.Menu().set({
         font: "text-14"
       });
-      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesome5Solid/chevron-down/10", groupByMenu);
+      const groupByButton = new qx.ui.form.MenuButton(this.tr("Group"), "@FontAwesomeSolid/chevron-down/10", groupByMenu);
       groupByButton.set({
         appearance: "form-button-outlined",
         marginRight: 14
@@ -488,10 +488,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addViewModeButton: function() {
-      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"), "left");
+      const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesomeSolid/th/14", this.tr("Grid view"), "left");
       gridBtn.addListener("execute", () => this.__viewModeChanged("grid"));
 
-      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"), "right");
+      const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesomeSolid/bars/14", this.tr("List view"), "right");
       listBtn.addListener("execute", () => this.__viewModeChanged("list"));
 
       const viewModeLayout = this.__viewModeLayout;
@@ -596,6 +596,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         curatedFilters.appType = value.appType ? value["appType"]["id"] : null;
         curatedFilters.text = value.text ? value["text"]["id"] : "";
         // this will trigger the UIFilter's mechanism to filter the shown cards
+        // eslint-disable-next-line no-underscore-dangle
         this._searchBarFilter._filterChange(curatedFilters);
       }
     },
@@ -783,7 +784,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/12");
       deleteButton.set({
         appearance: "menu-button"
       });
@@ -1143,7 +1144,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesomeSolid/share-alt/12");
       shareButton.addListener("tap", () => card.openAccessRights(), this);
       return shareButton;
     },
@@ -1155,7 +1156,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return null;
       }
 
-      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."), "@FontAwesome5Solid/tags/12");
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags..."), "@FontAwesomeSolid/tags/12");
       tagsButton.addListener("tap", () => card.openTags(), this);
       return tagsButton;
     }

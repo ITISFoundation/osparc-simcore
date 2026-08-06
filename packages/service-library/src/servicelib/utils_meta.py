@@ -73,3 +73,6 @@ class PackageInfo:
 
     def get_finished_banner(self) -> str:
         return "{:=^100}".format(f"🎉 App {self.project_name}=={self.__version__} shutdown completed 🎉")
+
+    def get_starting_banner(self) -> str:
+        return "{:=^100}".format(f"🚀 Starting {self.project_name}=={self.__version__} ... 🚀")

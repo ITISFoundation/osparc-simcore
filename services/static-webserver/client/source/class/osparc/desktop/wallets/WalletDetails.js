@@ -67,7 +67,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
 
       const prevBtn = new qx.ui.form.Button().set({
         toolTipText: this.tr("Return to Credit Accounts list"),
-        icon: "@FontAwesome5Solid/arrow-left/20",
+        icon: "@FontAwesomeSolid/arrow-left/20",
         backgroundColor: "transparent"
       });
       prevBtn.addListener("execute", () => this.fireEvent("backToWallets"));
@@ -156,7 +156,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
         backgroundColor: "transparent"
       });
 
-      const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
+      const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesomeSolid/users/14");
       const membersList = this.__membersList = new osparc.desktop.wallets.MembersList();
       membersListPage.add(membersList, {
         flex: 1

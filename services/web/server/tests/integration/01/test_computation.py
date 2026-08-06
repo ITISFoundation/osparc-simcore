@@ -31,14 +31,14 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.status_codes_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
-from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
-    comp_pipeline,
     comp_tasks,
 )
 from simcore_service_webserver._meta import API_VTAG
@@ -56,7 +56,7 @@ from simcore_service_webserver.resource_manager.plugin import setup_resource_man
 from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
-from simcore_service_webserver.socketio.messages import SOCKET_IO_NODE_UPDATED_EVENT
+from simcore_service_webserver.socketio.constants import SOCKET_IO_NODE_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -255,10 +255,10 @@ async def _get_project_workbench_from_db(
     # this check is only there to check the comp_pipeline is there
     print(f"--> looking for project {project_id=} in projects table...")
     async with sqlalchemy_async_engine.connect() as conn:
-        project_in_db = (await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))).one()
+        result = await conn.execute(sa.select(projects_nodes).where(projects_nodes.c.project_uuid == project_id))
+        rows = result.mappings().all()
 
-    print(f"<-- found following workbench: {json_dumps(project_in_db.workbench, indent=2)}")
-    return project_in_db.workbench
+    return {row["node_id"]: dict(row) for row in rows}
 
 
 async def _assert_and_wait_for_pipeline_state(
@@ -324,14 +324,15 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
 
                 # if this one is in, the other should also be but let's check it carefully
                 assert node_values.run_hash
-                assert "runHash" in node_in_project_table
-                assert node_values.run_hash == node_in_project_table["runHash"]
+                assert "run_hash" in node_in_project_table
+                assert node_values.run_hash == node_in_project_table["run_hash"]
 
                 assert node_values.state
                 assert "state" in node_in_project_table
                 assert "currentStatus" in node_in_project_table["state"]
                 # NOTE: beware that the comp_tasks has StateType and Workbench has RunningState (sic)
                 assert DB_TO_RUNNING_STATE[node_values.state].value == node_in_project_table["state"]["currentStatus"]
+
             print(
                 "--> tasks were properly transferred! "
                 f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
@@ -648,18 +649,25 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     )
 
     # check that a node update was sent for each computational node at the end that unlocks the node
-    node_id_data_map: dict[NodeID, list[Node]] = {}
-    for mock_call in mock_node_updated_handler.call_args_list:
-        node_id = NodeID(mock_call[0][0]["node_id"])
-        node_data = TypeAdapter(Node).validate_python(mock_call[0][0]["data"])
-        node_id_data_map.setdefault(node_id, []).append(node_data)
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(30),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            node_id_data_map: dict[NodeID, list[Node]] = {}
+            for mock_call in mock_node_updated_handler.call_args_list:
+                node_id = NodeID(mock_call[0][0]["node_id"])
+                node_data = TypeAdapter(Node).validate_python(mock_call[0][0]["data"])
+                node_id_data_map.setdefault(node_id, []).append(node_data)
 
-    for node_id, node_data_list in node_id_data_map.items():
-        # find the last update for this node
-        last_node_data = node_data_list[-1]
-        assert last_node_data.state
-        assert last_node_data.state.current_status == RunningState.SUCCESS
-        assert last_node_data.state.lock_state
-        assert last_node_data.state.lock_state.locked is False, (
-            f"expected node {node_id} to be unlocked at the end of the pipeline, but it is still locked."
-        )
+            for node_id, node_data_list in node_id_data_map.items():
+                # find the last update for this node
+                last_node_data = node_data_list[-1]
+                assert last_node_data.state
+                assert last_node_data.state.current_status == RunningState.SUCCESS
+                assert last_node_data.state.lock_state
+                assert last_node_data.state.lock_state.locked is False, (
+                    f"expected node {node_id} to be unlocked at the end of the pipeline, but it is still locked."
+                )

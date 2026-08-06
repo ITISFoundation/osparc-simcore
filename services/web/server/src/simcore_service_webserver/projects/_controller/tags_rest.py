@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.users import UserID
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 
 from ..._meta import API_VTAG
@@ -22,7 +23,7 @@ routes = web.RouteTableDef()
 @permission_required("project.tag.*")
 @handle_plugin_requests_exceptions
 async def add_project_tag(request: web.Request):
-    user_id: int = request[RQT_USERID_KEY]
+    user_id: UserID = request[RQT_USERID_KEY]
 
     try:
         tag_id, project_uuid = (
@@ -49,7 +50,7 @@ async def add_project_tag(request: web.Request):
 @permission_required("project.tag.*")
 @handle_plugin_requests_exceptions
 async def remove_project_tag(request: web.Request):
-    user_id: int = request[RQT_USERID_KEY]
+    user_id: UserID = request[RQT_USERID_KEY]
 
     tag_id, project_uuid = (
         request.match_info["tag_id"],

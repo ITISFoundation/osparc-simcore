@@ -11,7 +11,9 @@ from models_library.basic_regex import (
 )
 from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
+from models_library.groups import GroupID
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
+from models_library.users import UserID
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -33,8 +35,17 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
+from sqlalchemy import Column, DefaultClause
 
 from ..constants import FRONTEND_APPS_AVAILABLE
+
+__all__ = (
+    "CreditResult",
+    "PaymentFields",
+    "Product",
+    "ProductName",
+    "ProductStripeInfo",
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -126,15 +137,12 @@ class Product(BaseModel):
     login_settings: Annotated[
         ProductLoginSettingsDict,
         Field(
-            description="Product customization of login settings. "
-            "Note that these are NOT the final plugin settings but those are "
-            "obtained from login.settings.get_plugin_settings",
+            description=(
+                "Product customization of login settings. Note that these are NOT the final "
+                "plugin settings but those are obtained from login.settings.get_plugin_settings"
+            ),
         ),
     ]
-
-    registration_email_template: Annotated[
-        str | None, Field(json_schema_extra={"x_template_name": "registration_email"})
-    ] = None
 
     max_open_studies_per_user: Annotated[
         PositiveInt | None,
@@ -143,13 +151,13 @@ class Product(BaseModel):
         ),
     ] = None
 
-    group_id: Annotated[int | None, Field(description="Groups associated to this product")] = None
+    group_id: Annotated[GroupID | None, Field(description="Groups associated to this product")] = None
     support_standard_group_id: Annotated[
-        int | None, Field(description="Support standard group ID, None if disabled")
+        GroupID | None, Field(description="Support standard group ID, None if disabled")
     ] = None
-    support_chatbot_user_id: Annotated[int | None, Field(description="Support chatbot user ID, None if disabled")] = (
-        None
-    )
+    support_chatbot_user_id: Annotated[
+        UserID | None, Field(description="Support chatbot user ID, None if disabled")
+    ] = None
     support_assigned_fogbugz_person_id: Annotated[
         int | None,
         Field(description="Support assigned Fogbugz person ID, None if disabled"),
@@ -215,8 +223,6 @@ class Product(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        from sqlalchemy import Column
-
         schema.update(
             {
                 "examples": [
@@ -226,15 +232,16 @@ class Product(BaseModel):
                         "host_regex": r"([\.-]{0,1}osparc[\.-])",
                         "base_url": "https://osparc.io",
                         "twilio_messaging_sid": "1" * 34,
-                        "registration_email_template": "osparc_registration_email",
                         "login_settings": {
                             "LOGIN_2FA_REQUIRED": False,
                         },
                         # defaults from sqlalchemy table
                         **{
-                            str(c.name): c.server_default.arg  # type: ignore[union-attr]
+                            f"{c.name}": c.server_default.arg
                             for c in products.columns
-                            if isinstance(c, Column) and c.server_default and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
+                            if isinstance(c, Column)
+                            and isinstance(c.server_default, DefaultClause)
+                            and isinstance(c.server_default.arg, str)
                         },
                     },
                     # Example of data in the database with a url set with blanks
@@ -271,6 +278,7 @@ class Product(BaseModel):
                                 "logo_url": "https://acme.com/logo",
                                 "strong_color": "#123456",
                             },
+                            "status_page_url": "https://status.acme.com",
                         },
                         "issues": [
                             {
@@ -332,7 +340,7 @@ class Product(BaseModel):
         """
         Selects **public** fields from product's info
         and prefixes it with its name to produce
-        items for statics.json (reachable by front-end)
+        items for static-frontend-data.json (reachable by front-end)
         """
 
         # SECURITY WARNING: do not expose sensitive information here
@@ -352,17 +360,6 @@ class Product(BaseModel):
             exclude_none=True,
             exclude_unset=True,
         )
-
-    def get_template_name_for(self, filename: str) -> str | None:
-        """Checks for field marked with 'x_template_name' that fits the argument"""
-        template_name = filename.removesuffix(".jinja2")
-        for name, field in self.__class__.model_fields.items():
-            if (
-                field.json_schema_extra and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
-            ):
-                template_name_attribute: str = getattr(self, name)
-                return template_name_attribute
-        return None
 
 
 class ProductBaseUrl(BaseModel):

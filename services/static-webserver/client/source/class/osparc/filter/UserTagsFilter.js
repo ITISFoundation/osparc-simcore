@@ -21,7 +21,7 @@ qx.Class.define("osparc.filter.UserTagsFilter", {
       osparc.store.Tags.getInstance().getTags()
         .forEach(tag => {
           const menuButton = this._addOption(tag.getName());
-          menuButton.setIcon("@FontAwesome5Solid/square/12");
+          menuButton.setIcon("@FontAwesomeSolid/square/12");
           menuButton.getChildControl("icon").setTextColor(tag.getColor());
         });
     },

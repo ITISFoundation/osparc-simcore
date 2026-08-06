@@ -73,7 +73,7 @@ qx.Class.define("osparc.ui.message.NodeLockedPage", {
       const conversationButton = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         toolTipText: this.tr("Conversations"),
-        icon: "@FontAwesome5Solid/comments/16",
+        icon: "@FontAwesomeSolid/comments/16",
       });
       conversationButton.addListener("execute", () => {
         if (this.getNode()) {
@@ -94,10 +94,10 @@ qx.Class.define("osparc.ui.message.NodeLockedPage", {
     __lockedChanged: function() {
       const lockState = this.getNode().getStatus().getLockState();
       if (lockState.isLocked()) {
-        this._setHeaderIcon("@FontAwesome5Solid/lock/20");
+        this._setHeaderIcon("@FontAwesomeSolid/lock/20");
         this._setHeaderTitle(this.tr("The application is being used"));
       } else {
-        this._setHeaderIcon("@FontAwesome5Solid/lock-open/20");
+        this._setHeaderIcon("@FontAwesomeSolid/lock-open/20");
         this._setHeaderTitle(this.tr("The application is not being used"));
       }
     },

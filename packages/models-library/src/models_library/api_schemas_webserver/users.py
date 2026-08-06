@@ -1,11 +1,12 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
+from common_library.gettext_support import SupportedLocale
 from common_library.users_enums import AccountRequestStatus, UserStatus
 from pydantic import (
     AfterValidator,
@@ -26,6 +27,7 @@ from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, Primar
 from ..products import ProductName
 from ..rest_base import RequestParameters
 from ..rest_filters import Filters
+from ..rest_ordering import OrderingQueryParams
 from ..rest_pagination import PageQueryParameters
 from ..string_types import (
     GlobPatternSafeStr,
@@ -81,6 +83,17 @@ class MyProfileAddressGet(OutputSchema):
     country: str | None
 
 
+class MyProfileAddressPatch(InputSchema):
+    """Billing address: a property of the user, editable independently of pre-registration"""
+
+    institution: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")] = None
+    postal_code: str | None = None
+    country: str | None = None
+
+
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[IDStr, Field(description="Unique username identifier", alias="userName")]
@@ -88,6 +101,10 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
     phone: str | None = None
+    language: Annotated[
+        SupportedLocale | None,
+        Field(description="Persisted UI/communications language. None means no persisted choice."),
+    ] = None
 
     role: Literal[
         "ANONYMOUS",
@@ -190,6 +207,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
                     "email",
                     "role",
                     "phone",
+                    "language",
                     "privacy",
                     "expiration_date",
                 },
@@ -226,8 +244,16 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     last_name: LastNameSafeStr | None = None
     user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     # NOTE: phone is updated via a dedicated endpoint!
+    language: Annotated[
+        SupportedLocale | None,
+        Field(description="Persisted UI/communications language. The user owns and can edit it directly."),
+    ] = None
 
     privacy: MyProfilePrivacyPatch | None = None
+    contact: Annotated[
+        MyProfileAddressPatch | None,
+        Field(description="Billing address. The user owns and can edit it directly."),
+    ] = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -321,7 +347,31 @@ class UsersForAdminListFilter(Filters):
     model_config = ConfigDict(extra="forbid")
 
 
-class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
+type UserAccountSortableField = Literal[
+    "name",
+    "email",
+    "status",
+    "accountRequestReviewedAt",
+    "preRegistrationCreated",
+]
+
+
+class UsersAccountListOrderParams(
+    OrderingQueryParams[UserAccountSortableField],
+):
+    _default_order_by: ClassVar[str] = "email"
+    _field_name_map: ClassVar[dict[str, str]] = {
+        "name": "first_name",
+        "accountRequestReviewedAt": "account_request_reviewed_at",
+        "preRegistrationCreated": "created",
+    }
+
+
+class UsersAccountListQueryParams(
+    UsersForAdminListFilter,
+    PageQueryParameters,
+    UsersAccountListOrderParams,
+): ...
 
 
 class _InvitationDetails(InputSchema):
@@ -336,6 +386,7 @@ class _InvitationDetails(InputSchema):
 
 class UserAccountApprove(InputSchema):
     email: EmailStr
+    bcc_emails: list[EmailStr] | None = None
     invitation_url: HttpUrl
     message_content: MessageContent | None = None
 
@@ -357,6 +408,7 @@ class UserAccountPreviewApprovalGet(OutputSchema):
 
 class UserAccountReject(InputSchema):
     email: EmailStr
+    bcc_emails: list[EmailStr] | None = None
     message_content: MessageContent | None = None
 
 

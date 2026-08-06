@@ -1,0 +1,21 @@
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
+
+{% trans product_name=product.display_name %}Thank you for your interest in {{ product_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.{% endtrans %}
+
+{% if trial_account_days is defined and trial_account_days %}
+{% trans count=trial_account_days %}Your account includes {{ count }} day trial period.{% pluralize %}Your account includes {{ count }} days trial period.{% endtrans %}
+{% endif %}
+
+{% if extra_credits is defined and extra_credits %}
+{% trans extra_credits=extra_credits %}You also receive {{ extra_credits }} free credits.{% endtrans %}
+{% endif %}
+
+{% trans link=link %}Click {{ link }} to access the registration page.{% endtrans %}
+
+{% trans support_email=product.support_email %}Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ support_email }}.{% endtrans %}
+
+{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}
+
+{% trans %}Best regards,{% endtrans %}
+
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

@@ -43,7 +43,6 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
-from simcore_service_dynamic_sidecar.services.containers import _INACTIVE_FOR_LONG_TIME
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -675,7 +674,7 @@ async def test_containers_activity_command_failed(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
-    assert response.json() == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
+    assert response.json() is None
 
 
 async def test_containers_activity_no_inactivity_defined(test_client: TestClient, mock_shared_store: None):
@@ -728,4 +727,25 @@ async def test_containers_activity_unexpected_response(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
-    assert response.json() == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
+    assert response.json() is None
+
+
+@pytest.fixture
+def define_inactivity_command_unknown_service(define_inactivity_command: None, app: FastAPI) -> None:
+    """Overrides shared_store so inactivity.service doesn't match any container."""
+    shared_store: SharedStore = app.state.shared_store
+    shared_store.original_to_container_names.clear()
+    shared_store.original_to_container_names["other_service"] = "other_service"
+
+
+async def test_containers_activity_service_not_in_container_names(
+    define_inactivity_command_unknown_service: None,
+    test_client: TestClient,
+):
+    """Regression: inactivity.service referencing a name not present in
+    original_to_container_names should return None and log a warning,
+    not crash with KeyError."""
+    response = await test_client.get(f"/{API_VTAG}/containers/activity")
+
+    assert response.status_code == 200, response.text
+    assert response.json() is None

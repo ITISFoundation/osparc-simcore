@@ -8,7 +8,7 @@ from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceWithAccessRights
 
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
-from ._access_rights_service import check_user_project_permission
+from . import _access_rights_service, _projects_repository
 from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict
 
@@ -18,8 +18,8 @@ _logger = logging.getLogger(__name__)
 async def add_tag(app: web.Application, user_id: UserID, project_uuid: ProjectID, tag_id: int) -> ProjectDict:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
-    product_name = await db.get_project_product(project_uuid)
-    await check_user_project_permission(
+    product_name = await _projects_repository.get_project_product(app, project_uuid=project_uuid)
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,
@@ -45,7 +45,7 @@ async def remove_tag(app: web.Application, user_id: UserID, project_uuid: Projec
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     product_name = await db.get_project_product(project_uuid)
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_uuid,
         user_id=user_id,

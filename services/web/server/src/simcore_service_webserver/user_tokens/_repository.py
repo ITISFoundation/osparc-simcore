@@ -9,12 +9,12 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import and_, literal_column
+from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.base_repository import BaseRepository
 from ..db.models import tokens
-from ..users.exceptions import TokenNotFoundError
+from ..users.errors import TokenNotFoundError
 
 
 class UserTokensRepository(BaseRepository):
@@ -43,7 +43,7 @@ class UserTokensRepository(BaseRepository):
     ) -> list[UserThirdPartyToken]:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id))
-            return [UserThirdPartyToken.model_construct(**row["token_data"]) for row in result.fetchall()]
+            return [UserThirdPartyToken.model_construct(**token_data) for token_data in result.scalars().all()]
 
     async def get_token(
         self,
@@ -61,8 +61,8 @@ class UserTokensRepository(BaseRepository):
                     )
                 )
             )
-            if row := result.one_or_none():
-                return UserThirdPartyToken.model_construct(**row["token_data"])
+            if token_data := result.scalar_one_or_none():
+                return UserThirdPartyToken.model_construct(**token_data)
             raise TokenNotFoundError(service_id=service_id)
 
     async def update_token(
@@ -83,16 +83,16 @@ class UserTokensRepository(BaseRepository):
             if not row:
                 raise TokenNotFoundError(service_id=service_id)
 
-            data = dict(row["token_data"])
-            tid = row["token_id"]
+            data = dict(row.token_data)
+            tid = row.token_id
             data.update(token_data)
 
             result = await conn.execute(
-                tokens.update().where(tokens.c.token_id == tid).values(token_data=data).returning(literal_column("*"))
+                tokens.update().where(tokens.c.token_id == tid).values(token_data=data).returning(tokens.c.token_data)
             )
             updated_token = result.one()
             assert updated_token  # nosec
-            return UserThirdPartyToken.model_construct(**updated_token["token_data"])
+            return UserThirdPartyToken.model_construct(**updated_token.token_data)
 
     async def delete_token(
         self,

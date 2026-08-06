@@ -39,7 +39,7 @@ from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 
 
 @pytest.fixture

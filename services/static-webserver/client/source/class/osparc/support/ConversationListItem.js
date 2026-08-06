@@ -57,7 +57,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
   members: {
     _createChildControlImpl: function(id, hash) {
       let control;
-      switch(id) {
+      switch (id) {
         case "sub-subtitle":
           control = new qx.ui.basic.Label().set({
             font: "text-12",
@@ -69,6 +69,22 @@ qx.Class.define("osparc.support.ConversationListItem", {
             column: 1
           });
           break;
+        case "bottom-right-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: "right",
+            alignY: "middle",
+          }));
+          this.getChildControl("third-column-layout").addAt(control, 1, {
+            flex: 1
+          });
+          break;
+        case "badges-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: "right",
+            alignY: "middle",
+          }));
+          this.getChildControl("bottom-right-layout").add(control);
+          break;
         case "unread-badge":
           control = new osparc.ui.basic.Chip(this.tr("Unread")).set({
             statusColor: "success",
@@ -76,10 +92,27 @@ qx.Class.define("osparc.support.ConversationListItem", {
             allowGrowY: false,
             alignX: "right",
           });
-          this.getChildControl("third-column-layout").addAt(control, 1, {
-            flex: 1
-          });
+          this.getChildControl("badges-layout").add(control);
           break;
+        case "archived-badge":
+          control = new osparc.ui.basic.Chip(this.tr("Archived")).set({
+            statusColor: "success",
+            font: "text-12",
+            allowGrowY: false,
+            alignX: "right",
+          });
+          this.getChildControl("badges-layout").add(control);
+          break;
+        case "menu-button": {
+          control = osparc.support.ConversationOptionsMenu.createMenuButton();
+          this.getChildControl("bottom-right-layout").add(control);
+          break;
+        }
+        case "options-menu": {
+          control = new osparc.support.ConversationOptionsMenu();
+          this.getChildControl("menu-button").setMenu(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -104,6 +137,15 @@ qx.Class.define("osparc.support.ConversationListItem", {
       conversation.bind(propName, unreadBadge, "visibility", {
         converter: val => val === false ? "visible" : "excluded"
       });
+
+      const archivedBadge = this.getChildControl("archived-badge");
+      const amIASupportUser = osparc.store.Groups.getInstance().amIASupportUser();
+      conversation.bind("archived", archivedBadge, "visibility", {
+        converter: val => val && amIASupportUser ? "visible" : "excluded"
+      });
+
+      this.getChildControl("menu-button");
+      this.getChildControl("options-menu").setConversation(conversation);
     },
 
     __lastMessageChanged: function() {

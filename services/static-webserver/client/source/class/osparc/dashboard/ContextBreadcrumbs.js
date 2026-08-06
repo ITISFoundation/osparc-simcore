@@ -112,8 +112,8 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
           this.__changeFolder(folderId);
         }, this);
         folderButton.set({
-          backgroundColor: "transparent",
-          textColor: "text",
+          appearance: "form-button-transparent",
+          font: "text-14",
           gap: 5
         });
         return folderButton;
@@ -122,7 +122,9 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     },
 
     __createArrow: function() {
-      return new qx.ui.basic.Label("/");
+      return new qx.ui.basic.Label("/").set({
+        font: "text-14",
+      });
     }
   }
 });

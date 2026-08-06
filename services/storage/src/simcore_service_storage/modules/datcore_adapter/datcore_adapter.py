@@ -1,5 +1,5 @@
 import logging
-from typing import Any, TypeAlias, cast
+from typing import Any, cast
 
 import httpx
 from fastapi import FastAPI, status
@@ -20,7 +20,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.users import UserID
 from pydantic import AnyUrl, BaseModel, ByteSize, NonNegativeInt, TypeAdapter
-from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.httpx_client import get_httpx_client
 from servicelib.utils import logged_gather
 
 from ...constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
@@ -49,9 +49,9 @@ _logger = logging.getLogger(__file__)
 async def check_service_health(app: FastAPI) -> bool:
     datcore_adapter_settings = get_application_settings(app).DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + "/ready"
-    session = get_client_session(app)
+    client = get_httpx_client(app)
     try:
-        response = await session.get(url)
+        response = await client.get(url)
         response.raise_for_status()
     except (TimeoutError, httpx.HTTPStatusError):
         return False
@@ -136,8 +136,8 @@ async def list_all_files_metadatas_in_dataset(
     ]
 
 
-_Size: TypeAlias = NonNegativeInt
-_Page: TypeAlias = NonNegativeInt
+type _Size = NonNegativeInt
+type _Page = NonNegativeInt
 
 
 class CursorParameters(BaseModel):

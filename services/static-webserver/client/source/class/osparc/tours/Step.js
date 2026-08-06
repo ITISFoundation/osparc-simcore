@@ -152,7 +152,7 @@ qx.Class.define("osparc.tours.Step", {
         case "next-button": {
           control = new qx.ui.form.Button().set({
             label: this.tr("Next"),
-            icon: "@FontAwesome5Solid/arrow-right/16",
+            icon: "@FontAwesomeSolid/arrow-right/16",
             iconPosition: "right",
             appearance: "strong-button",
             allowGrowX: false,

@@ -16,7 +16,6 @@ from .errors import (
     MissingStripeConfigError,
     ProductNotFoundError,
     ProductPriceNotDefinedError,
-    ProductTemplateNotFoundError,
 )
 
 
@@ -124,14 +123,6 @@ async def get_product_stripe_info(app: web.Application, *, product_name: Product
         exc.add_note("Probably stripe side is not configured")
         raise exc
     return product_stripe_info
-
-
-async def get_template_content(app: web.Application, *, template_name: str):
-    repo = ProductRepository.create_from_app(app)
-    content = await repo.get_template_content(template_name)
-    if not content:
-        raise ProductTemplateNotFoundError(template_name=template_name)
-    return content
 
 
 async def auto_create_products_groups(

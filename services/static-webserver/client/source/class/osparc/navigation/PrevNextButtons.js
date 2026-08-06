@@ -36,11 +36,11 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       allowGrowY: false
     },
 
-    PREV_BUTTON: "@FontAwesome5Solid/arrow-left/32",
-    NEXT_BUTTON: "@FontAwesome5Solid/arrow-right/32",
-    RUN_BUTTON: "@FontAwesome5Solid/play/32",
-    BUSY_BUTTON: "@FontAwesome5Solid/circle-notch/32",
-    SELECT_FILE_BUTTON: "@FontAwesome5Solid/file-medical/32"
+    PREV_BUTTON: "@FontAwesomeSolid/arrow-left/32",
+    NEXT_BUTTON: "@FontAwesomeSolid/arrow-right/32",
+    RUN_BUTTON: "@FontAwesomeSolid/play/32",
+    BUSY_BUTTON: "@FontAwesomeSolid/circle-notch/32",
+    SELECT_FILE_BUTTON: "@FontAwesomeSolid/file-medical/32"
   },
 
   properties: {

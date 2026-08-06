@@ -12,7 +12,7 @@ import logging
 import secrets
 import string
 from contextlib import suppress
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Final
 
 import redis.asyncio as aioredis
@@ -29,14 +29,14 @@ from simcore_postgres_database.utils_users import UsersRepo
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..db.plugin import get_asyncpg_engine
-from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
-from ..groups import api as groups_service
+from ..garbage_collector.garbage_collector_service import GUEST_USER_RC_LOCK_FORMAT
+from ..groups.groups_service import auto_add_user_to_product_group
 from ..login._login_service import GUEST
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client
 from ..security import security_service, security_web
 from ..users import users_service
-from ..users.exceptions import UserNotFoundError
+from ..users.errors import UserNotFoundError
 from ._errors import GuestUserNotAllowedError, GuestUsersLimitError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 
 
 class UserInfo(BaseModel):
-    id: int
+    id: UserID
     name: str
     email: LowerCaseEmailStr
     primary_gid: int
@@ -106,7 +106,8 @@ async def create_temporary_guest_user(request: web.Request):
     random_user_name = "".join(secrets.choice(string.ascii_lowercase) for _ in range(10))
     email: LowerCaseEmailStr = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
-    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME  # noqa: DTZ003
+    # NOTE: expires_at is currently set as offset-naive
+    expires_at = (datetime.now(UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME).replace(tzinfo=None)
 
     user_id: UserID | None = None
 
@@ -125,10 +126,10 @@ async def create_temporary_guest_user(request: web.Request):
                 role=UserRole.GUEST,
                 expires_at=expires_at,
             )
-            user_id = user_row.id
+            user_id = UserID(user_row.id)
 
             user = await users_service.get_user(request.app, user_id)
-            await groups_service.auto_add_user_to_product_group(request.app, user_id=user_id, product_name=product_name)
+            await auto_add_user_to_product_group(request.app, user_id=user_id, product_name=product_name)
 
             # (2) read details above
             await redis_locks_client.lock(

@@ -227,9 +227,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       let view;
       if (node.isParameter()) {
         view = osparc.node.slideshow.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-        const renderer = new osparc.node.ParameterEditor(node);
-        renderer.buildForm(false);
-        view.add(renderer);
+        const parameterEditor = new osparc.node.ParameterEditor(node);
+        parameterEditor.buildForm();
+        view.add(parameterEditor);
       } else if (node.isFilePicker()) {
         view = new osparc.node.slideshow.FilePickerView();
         view.getOutputsButton().hide();

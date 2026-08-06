@@ -98,8 +98,10 @@ async def _cluster_dask_client(
     """
     cluster: BaseCluster = scheduler.settings.default_cluster
     if use_on_demand_clusters:
+        product_name = run_metadata.get("product_name", "undefined-product-name")
         cluster = await get_or_create_on_demand_cluster(
             scheduler.rabbitmq_rpc_client,
+            product_name=product_name,
             user_id=user_id,
             wallet_id=run_metadata.get("wallet_id"),
         )
@@ -283,22 +285,18 @@ class DaskScheduler(BaseCompScheduler):
             limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
 
-    async def _release_resources(self, comp_run: CompRunsAtDB) -> None:
+    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: Iteration) -> None:
         """release resources used by the scheduler for a given user and project"""
         with (
             log_catch(_logger, reraise=False),
             log_context(
                 _logger,
                 logging.INFO,
-                msg=f"releasing resources for {comp_run.user_id=}, {comp_run.project_uuid=}, {comp_run.run_id=}",
+                msg=f"releasing resources for {user_id=}, {project_id=}, {run_id=}",
             ),
         ):
             await self.dask_clients_pool.release_client_ref(
-                ref=_DASK_CLIENT_RUN_REF.format(
-                    user_id=comp_run.user_id,
-                    project_id=comp_run.project_uuid,
-                    run_id=comp_run.run_id,
-                )
+                ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id)
             )
 
     async def _stop_tasks(self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB) -> None:

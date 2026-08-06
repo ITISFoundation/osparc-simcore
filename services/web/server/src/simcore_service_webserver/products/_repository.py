@@ -6,7 +6,6 @@ import sqlalchemy as sa
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
-from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
     get_default_product_name,
@@ -51,7 +50,6 @@ _PRODUCTS_COLUMNS = [
     products.c.manuals,
     products.c.support,
     products.c.login_settings,
-    products.c.registration_email_template,
     products.c.max_open_studies_per_user,
     products.c.group_id,
     products.c.support_standard_group_id,
@@ -158,36 +156,6 @@ class ProductRepository(BaseRepository):
             stripe_price_id, stripe_tax_rate_id = latest_stripe_info
             return ProductStripeInfo(stripe_price_id=stripe_price_id, stripe_tax_rate_id=stripe_tax_rate_id)
 
-    async def get_template_content(self, template_name: str, connection: AsyncConnection | None = None) -> str | None:
-        query = sa.select(jinja2_templates.c.content).where(jinja2_templates.c.name == template_name)
-
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
-            template_content: str | None = await conn.scalar(query)
-            return template_content
-
-    async def get_product_template_content(
-        self,
-        product_name: str,
-        product_template: sa.Column = products.c.registration_email_template,
-        connection: AsyncConnection | None = None,
-    ) -> str | None:
-        query = (
-            sa.select(jinja2_templates.c.content)
-            .select_from(
-                sa.join(
-                    products,
-                    jinja2_templates,
-                    product_template == jinja2_templates.c.name,
-                    isouter=True,
-                )
-            )
-            .where(products.c.name == product_name)
-        )
-
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
-            template_content: str | None = await conn.scalar(query)
-            return template_content
-
     async def get_product_ui(
         self, product_name: ProductName, connection: AsyncConnection | None = None
     ) -> dict[str, Any] | None:
@@ -208,7 +176,7 @@ class ProductRepository(BaseRepository):
         for product_name in product_names:
             # NOTE: transaction is per product. fail-fast!
             async with transaction_context(self.engine, connection) as conn:
-                product_group_id: GroupID = await get_or_create_product_group(conn, product_name)
+                product_group_id: GroupID = GroupID(await get_or_create_product_group(conn, product_name))
                 product_groups_map[product_name] = product_group_id
 
         return product_groups_map

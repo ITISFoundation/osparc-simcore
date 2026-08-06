@@ -1,5 +1,6 @@
 import logging
-from typing import cast
+from datetime import datetime
+from typing import NamedTuple, cast
 
 from aiohttp import ClientError, ClientSession
 from models_library.api_schemas_storage.storage_schemas import (
@@ -39,7 +40,7 @@ async def _get_location_id_from_location_name(
         if location.name == store:
             return cast(LocationID, location.id)  # mypy wants it
     # location id not found
-    raise exceptions.S3InvalidStore(store)
+    raise exceptions.S3InvalidStoreError(store)
 
 
 def _get_https_link_if_storage_secure(url: str) -> str:
@@ -54,19 +55,24 @@ def _get_https_link_if_storage_secure(url: str) -> str:
     return url
 
 
+class CompletedUpload(NamedTuple):
+    e_tag: ETag
+    last_modified: datetime
+
+
 async def complete_upload(
     session: ClientSession,
     upload_completion_link: AnyUrl,
     parts: list[UploadedPart],
     *,
     is_directory: bool,
-) -> ETag | None:
+) -> CompletedUpload | None:
     """completes a potentially multipart upload in AWS
     NOTE: it can take several minutes to finish, see [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
     it can take several minutes
     :raises ValueError: _description_
     :raises exceptions.S3TransferError: _description_
-    :rtype: ETag
+    :return: the file's S3 e_tag and last modification timestamp, or None for directories
     """
     async with session.post(
         _get_https_link_if_storage_secure(f"{upload_completion_link}"),
@@ -104,12 +110,17 @@ async def complete_upload(
                 return None
 
             assert future_enveloped.data.e_tag  # nosec
+            assert future_enveloped.data.last_modified is not None  # nosec
             _logger.info(
-                "multipart upload completed in %s, received %s",
+                "multipart upload completed in %s, received %s %s",
                 attempt.retry_state.retry_object.statistics,
                 f"{future_enveloped.data.e_tag=}",
+                f"{future_enveloped.data.last_modified=}",
             )
-            return future_enveloped.data.e_tag
+            return CompletedUpload(
+                e_tag=future_enveloped.data.e_tag,
+                last_modified=future_enveloped.data.last_modified,
+            )
     msg = f"Could not complete the upload using the upload_completion_link={upload_completion_link!r}"
     raise exceptions.S3TransferError(msg)
 
@@ -122,7 +133,7 @@ async def resolve_location_id(
 ) -> LocationID:
     if store_name is None and store_id is None:
         msg = f"both {store_name=} and {store_id=} are None"
-        raise exceptions.NodeportsException(msg)
+        raise exceptions.NodeportsError(msg)
 
     if store_name is not None:
         store_id = await _get_location_id_from_location_name(user_id, store_name, client_session)

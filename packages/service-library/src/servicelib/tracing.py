@@ -1,7 +1,11 @@
+import functools
+import inspect
 import logging
-from contextlib import contextmanager
-from contextvars import Token
-from typing import Final, Self
+from collections.abc import Callable, Coroutine, Iterator
+from contextlib import contextmanager, suppress
+from contextvars import ContextVar, Token
+from enum import auto
+from typing import Any, Final, Self, overload
 
 import pyinstrument
 import pyinstrument.renderers
@@ -9,7 +13,9 @@ from httpx import AsyncClient, Client
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import DynamicServiceKey, ServiceRunID, ServiceVersion
 from models_library.users import UserID
+from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
 from opentelemetry import trace
@@ -23,11 +29,24 @@ from opentelemetry.trace import Link
 from pydantic import BaseModel, ConfigDict, model_validator
 from settings_library.tracing import TracingSettings
 
+from .utils import get_callable_namespaced_name
+
 type TracingContext = otcontext.Context | None
 
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
+
+# NOTE: holds the TracingConfig set up for this process/context so that utilities such as
+# `log_context` can automatically create spans without threading `TracingConfig` through every
+# call site. Set once by `setup_log_tracing()` (see `logging_utils.setup_loggers`/`async_loggers`).
+_current_tracing_config: ContextVar["TracingConfig | None"] = ContextVar("current_tracing_config", default=None)
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
+_OTEL_NAMESPACE: Final[str] = "simcore"
+
+
+class SourceOrigin(StrAutoEnum):
+    PLATFORM = auto()
+    USER_SERVICE = auto()
 
 
 _logger = logging.getLogger(__name__)
@@ -90,7 +109,17 @@ def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: Tra
     HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
+def get_current_tracing_config() -> TracingConfig | None:
+    """Returns the `TracingConfig` set by the last call to `setup_log_tracing()`, if any.
+
+    Used by `log_context()` to automatically create spans without requiring every call site to
+    explicitly pass a `TracingConfig`.
+    """
+    return _current_tracing_config.get()
+
+
 def setup_log_tracing(tracing_config: TracingConfig):
+    _current_tracing_config.set(tracing_config)
     if tracing_config.tracing_enabled:
         LoggingInstrumentor().instrument(
             set_logging_format=True,
@@ -180,7 +209,7 @@ def traced_operation(
     tracing_config: TracingConfig,
     attributes: dict[str, str] | None = None,
     links: list[Link] | None = None,
-):
+) -> Iterator[None]:
     """Generic context manager for creating traced spans.
 
     Creates a span with the given operation name and attributes. Automatically detects
@@ -209,12 +238,30 @@ def traced_operation(
     # Only use provided links at root level; child spans inherit parent context automatically
     current_span = trace.get_current_span()
     is_root_span = not current_span.is_recording()
-    span_links = links if is_root_span else []
+    span_links = list(links) if links else []
+
+    # NOTE: a non-recording "current" span is not necessarily *absent* from the ambient
+    # context (e.g. a long-lived asyncio.Task - such as a periodic background task -
+    # copies the context once at creation time; the span it captured back then keeps
+    # being reported as "current" forever, even long after it ended). If we let
+    # `start_as_current_span` use that ambient context as-is, every single execution
+    # would be chained as a child of that same, already-finished span/trace, which
+    # eventually breaks clock-skew adjustment in the tracing backend once that old
+    # trace is no longer retrievable. So for root spans we explicitly detach from the
+    # ambient context and, if that stale span had a valid context, keep a `Link` to it
+    # instead so it remains navigable without corrupting the parent/child relationship.
+    start_context: otcontext.Context | None = None
+    if is_root_span:
+        stale_span_context = current_span.get_span_context()
+        if stale_span_context.is_valid:
+            span_links.append(Link(stale_span_context))
+        start_context = otcontext.Context()
 
     # Create a span with proper attributes and links
     # If tracing is disabled, this creates a no-op span
     with tracer.start_as_current_span(
         operation_name,
+        context=start_context,
         links=span_links,
         attributes=span_attributes,
     ) as span:
@@ -227,6 +274,211 @@ def traced_operation(
                 is_root_span,
             )
         yield
+
+
+AIOHTTP_TRACING_CONFIG_KEY: Final[str] = "tracing_config"
+
+
+class _AppType(StrAutoEnum):
+    FASTAPI = auto()
+    AIOHTTP = auto()
+
+
+def _check_annotation_app_type(annotation: Any) -> _AppType | None:  # noqa: PLR0911 # pylint: disable=too-many-return-statements
+    """Check if an annotation corresponds to FastAPI or aiohttp Application."""
+    if annotation is inspect.Parameter.empty:
+        return None
+
+    # Handle string annotations (forward references)
+    if isinstance(annotation, str):
+        if "FastAPI" in annotation:
+            return _AppType.FASTAPI
+        if "Application" in annotation:
+            return _AppType.AIOHTTP
+        return None
+
+    # Handle actual type objects
+    with suppress(ImportError):
+        from aiohttp.web import Application as AiohttpApp  # pyright: ignore[reportMissingImports] # noqa: PLC0415
+
+        if annotation is AiohttpApp or (isinstance(annotation, type) and issubclass(annotation, AiohttpApp)):
+            return _AppType.AIOHTTP
+
+    with suppress(ImportError):
+        from fastapi import FastAPI  # pyright: ignore[reportAttributeAccessIssue] # noqa: PLC0415
+
+        if annotation is FastAPI or (isinstance(annotation, type) and issubclass(annotation, FastAPI)):
+            return _AppType.FASTAPI
+
+    return None
+
+
+def _detect_app_type(func: Callable) -> _AppType | None:
+    """Find a parameter named 'app' (positional or keyword) and determine its type.
+
+    Searches all parameters for one named 'app' with a type annotation
+    of FastAPI or aiohttp.web.Application.
+    """
+    sig = inspect.signature(func)
+    for param in sig.parameters.values():
+        if param.name == "app":
+            return _check_annotation_app_type(param.annotation)
+    return None
+
+
+def _resolve_tracing_config_fastapi(app: Any) -> TracingConfig | None:
+    if hasattr(app, "state") and hasattr(app.state, "tracing_config"):
+        config = app.state.tracing_config
+        assert isinstance(config, TracingConfig)  # nosec
+        return config
+    return None
+
+
+def _resolve_tracing_config_aiohttp(app: Any) -> TracingConfig | None:
+    try:
+        config = app[AIOHTTP_TRACING_CONFIG_KEY]
+        assert isinstance(config, TracingConfig)  # nosec
+        return config
+    except (KeyError, TypeError):
+        return None
+
+
+def _resolve_tracing_config(
+    func_name: str,
+    app_type: _AppType,
+    args: tuple,
+    kwargs: dict,
+    *,
+    warned: list[bool],
+) -> TracingConfig | None:
+    app = kwargs.get("app") or args[0]
+
+    config: TracingConfig | None = None
+    if app_type == _AppType.FASTAPI:
+        config = _resolve_tracing_config_fastapi(app)
+    elif app_type == _AppType.AIOHTTP:
+        config = _resolve_tracing_config_aiohttp(app)
+
+    if config is not None:
+        return config
+
+    if not warned[0]:
+        warned[0] = True
+        _logger.warning(
+            "Tracing not configured for '%s'. Spans will not be recorded.",
+            func_name,
+        )
+    return None
+
+
+@overload
+def traced[**P, R](
+    _func: Callable[P, Coroutine[Any, Any, R]],
+) -> Callable[P, Coroutine[Any, Any, R]]: ...
+
+
+@overload
+def traced[**P, R](
+    _func: Callable[P, R],
+) -> Callable[P, R]: ...
+
+
+@overload
+def traced(
+    *,
+    operation_name: str | None = ...,
+    tracing_config_getter: Callable[..., TracingConfig] | None = ...,
+    attributes: dict[str, str] | None = ...,
+    links: list[Link] | None = ...,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]: ...
+
+
+def traced(  # noqa: C901
+    _func=None,
+    *,
+    operation_name: str | None = None,
+    tracing_config_getter: Callable[..., TracingConfig] | None = None,
+    attributes: dict[str, str] | None = None,
+    links: list[Link] | None = None,
+):
+    """Decorator to trace async and sync operations.
+
+    Extracts TracingConfig via `tracing_config_getter` (called with the same
+    args/kwargs as the decorated function). If not provided, the first positional
+    argument must be type-annotated as `FastAPI` or `aiohttp.web.Application`.
+
+    Uses a namespaced name derived from the function (see
+    `get_callable_namespaced_name`) as span name unless `operation_name` is provided.
+
+    Can be used with or without arguments:
+        @traced
+        async def my_func(app: FastAPI, ...): ...
+
+        @traced(operation_name="custom_name", attributes={"key": "val"})
+        async def my_func(app: web.Application, ...): ...
+
+        @traced(tracing_config_getter=my_getter)
+        async def my_func(cfg: TracingConfig, ...): ...
+    """
+
+    def _decorator(func):
+        span_name = operation_name or get_callable_namespaced_name(func)
+        warned: list[bool] = [False]
+
+        # Validate at decoration time: first arg must be FastAPI or web.Application,
+        # unless a custom getter is provided
+        app_type = _detect_app_type(func)
+        if app_type is None and tracing_config_getter is None:
+            msg = (
+                f"Cannot apply @traced to '{func.__module__}.{func.__name__}': "
+                f"the first parameter must be type-annotated as 'FastAPI' or "
+                f"'aiohttp.web.Application', or provide a 'tracing_config_getter'."
+            )
+            raise TypeError(msg)
+
+        if inspect.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                if tracing_config_getter:
+                    tracing_config = tracing_config_getter(*args, **kwargs)
+                else:
+                    assert app_type is not None  # nosec
+                    tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)  # type: ignore[assignment]
+                if tracing_config is None:
+                    return await func(*args, **kwargs)
+                with traced_operation(
+                    span_name,
+                    tracing_config=tracing_config,
+                    attributes=attributes,
+                    links=links,
+                ):
+                    return await func(*args, **kwargs)
+
+            return async_wrapper
+
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            if tracing_config_getter:
+                tracing_config = tracing_config_getter(*args, **kwargs)
+            else:
+                assert app_type is not None  # nosec
+                tracing_config = _resolve_tracing_config(func.__name__, app_type, args, kwargs, warned=warned)  # type: ignore[assignment]
+            if tracing_config is None:
+                return func(*args, **kwargs)
+            with traced_operation(
+                span_name,
+                tracing_config=tracing_config,
+                attributes=attributes,
+                links=links,
+            ):
+                return func(*args, **kwargs)
+
+        return sync_wrapper
+
+    if _func is not None:
+        return _decorator(_func)
+    return _decorator
 
 
 @contextmanager
@@ -271,6 +523,10 @@ def create_standard_attributes(
     node_id: NodeID | str | None = None,
     product_name: ProductName | None = None,
     wallet_id: WalletID | str | None = None,
+    service_key: DynamicServiceKey | None = None,
+    service_version: ServiceVersion | None = None,
+    run_id: ServiceRunID | None = None,
+    source_origin: SourceOrigin | None = SourceOrigin.PLATFORM,
 ) -> dict[str, str]:
     """Helper function to create standard span attributes like user ID..."""
     attributes = {}
@@ -284,4 +540,12 @@ def create_standard_attributes(
         attributes["product_name"] = f"{product_name}"
     if wallet_id:
         attributes["wallet_id"] = f"{wallet_id}"
-    return attributes
+    if service_key:
+        attributes["service_key"] = f"{service_key}"
+    if service_version:
+        attributes["service_version"] = f"{service_version}"
+    if run_id:
+        attributes["run_id"] = f"{run_id}"
+    if source_origin:
+        attributes["source_origin"] = source_origin.value.lower()
+    return {f"{_OTEL_NAMESPACE}.{k}": v for k, v in attributes.items()}

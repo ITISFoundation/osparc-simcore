@@ -22,6 +22,7 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
+from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
@@ -78,6 +79,8 @@ from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ..core.settings import WebServerSettings
 from ..exceptions.backend_errors import (
+    BatchJobForbiddenAccessError,
+    BatchJobNotFoundError,
     CanNotCheckoutServiceIsNotRunningError,
     ConfigurationError,
     InsufficientNumberOfSeatsError,
@@ -269,6 +272,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_limit: int = 50,
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
+        filter_all_custom_metadata: list[NameValueTuple] | None,
+        filter_by_project_uuids: list[ProjectID] | None,
     ):
         pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 
@@ -279,6 +284,12 @@ class WbApiRpcClient(SingletonInAppStateMixin):
                 if filter_any_custom_metadata
                 else None
             ),
+            all_custom_metadata=(
+                [MetadataFilterItem(name=name, pattern=pattern) for name, pattern in filter_all_custom_metadata]
+                if filter_all_custom_metadata
+                else None
+            ),
+            project_uuids=filter_by_project_uuids,
         )
 
         return await self._rpc_client.projects.list_projects_marked_as_jobs(
@@ -286,6 +297,25 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             filters=filters,
             **pagination_kwargs,
+        )
+
+    @_exception_mapper(
+        rpc_exception_map={
+            ProjectForbiddenRpcError: BatchJobForbiddenAccessError,
+            ProjectNotFoundRpcError: BatchJobNotFoundError,
+        }
+    )
+    async def batch_get_project_custom_metadata(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuids: list[ProjectID],
+    ) -> dict[ProjectID, MetadataDict]:
+        return await self._rpc_client.projects.batch_get_project_custom_metadata(
+            product_name=product_name,
+            user_id=user_id,
+            project_uuids=project_uuids,
         )
 
     async def register_function(

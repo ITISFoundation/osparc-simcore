@@ -146,7 +146,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         ):
             return await self._registry.find_resources(
-                UserSession(user_id=self.user_id, client_session_id="*"),  #  <-- this one checks for all user tabs
+                UserSession(user_id=self.user_id, client_session_id="*"),  # checks for all user tabs
                 key,
             )
 
@@ -161,7 +161,7 @@ class UserSessionResourcesRegistry:
 
         return await self._registry.find_resources(
             self.resource_key,
-            resource_name,  # <-- when initialized with specific tab (client_session_id), checks only that tab otherwise all tabs
+            resource_name,  # when initialized with specific tab (client_session_id), checks only that tab (not all)
         )
 
     async def add(self, key: str, value: str) -> None:
@@ -214,3 +214,10 @@ def managed_resource(
             extra=get_log_record_extra(user_id=user_id),
         )
         raise
+
+
+async def is_user_connected(app: web.Application, user_id: UserID) -> bool:
+    """Check if a user has any active socketio connections."""
+    with managed_resource(user_id, None, app) as user_session:
+        socket_ids = await user_session.find_socket_ids()
+        return len(socket_ids) > 0

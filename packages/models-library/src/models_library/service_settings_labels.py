@@ -1,9 +1,10 @@
 # pylint: disable=unsubscriptable-object
 
-from enum import Enum
+import logging
+from enum import StrEnum
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.json_serialization import json_dumps
@@ -26,6 +27,8 @@ from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
 from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+
+_logger = logging.getLogger(__name__)
 
 _BaseConfig = ConfigDict(
     extra="forbid",
@@ -173,7 +176,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     },
                     # environments
                     {"name": "env", "type": "string", "value": ["DISPLAY=:0"]},
-                    # SEE 'simcore.service.settings' label annotations for simcore/services/dynamic/jupyter-octave-python-math:1.6.5
+                    # SEE 'simcore.service.settings' label annotations for
+                    #   simcore/services/dynamic/jupyter-octave-python-math:1.6.5
                     {"name": "ports", "type": "int", "value": 8888},
                     {
                         "name": "resources",
@@ -278,7 +282,10 @@ class PathMappingsLabel(BaseModel):
             state_paths: list[Path] | None = info.data.get("state_paths")
             path = Path(path_str)
             if not (path in (inputs_path, outputs_path) or (state_paths is not None and path in state_paths)):
-                msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
+                msg = (
+                    f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, "
+                    f"state_paths={state_paths!r}"
+                )
                 raise ValueError(msg)
         output: str | None = v
         return output
@@ -338,10 +345,10 @@ class PathMappingsLabel(BaseModel):
     model_config = _BaseConfig | ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-ComposeSpecLabelDict: TypeAlias = dict[str, Any]
+type ComposeSpecLabelDict = dict[str, Any]
 
 
-class RestartPolicy(str, Enum):
+class RestartPolicy(StrEnum):
     """Content of "simcore.service.restart-policy" label"""
 
     NO_RESTART = "no-restart"
@@ -441,6 +448,14 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     ] = DEFAULT_FACTORY
 
+    tracing: Annotated[
+        bool,
+        Field(
+            alias="simcore.service.tracing",
+            description="if True, enables OTEL trace collection for this service",
+        ),
+    ] = False
+
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
@@ -510,12 +525,12 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v.metrics:
             defined_services.add(v.metrics.service)
 
-        if len(defined_services) == 0:
+        if len(defined_services) == 0 and v.inactivity is None:
             return v
 
         compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
-            if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
+            if defined_services and {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
                 err_msg = f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{defined_services}'"
                 raise ValueError(err_msg)
         else:
@@ -524,6 +539,20 @@ class DynamicSidecarServiceLabels(BaseModel):
                 if service_name not in containers_in_compose_spec:
                     err_msg = f"{service_name=} not found in {compose_spec=}"
                     raise ValueError(err_msg)
+
+        # Warn (not reject) if inactivity.service is misconfigured.
+        # Rejecting would break existing deployed services; ooil catches this at build time.
+        if v.inactivity:
+            inactivity_service = v.inactivity.service
+            expected = {DEFAULT_SINGLE_SERVICE_NAME} if compose_spec is None else containers_in_compose_spec
+            if inactivity_service not in expected:
+                _logger.warning(
+                    "callbacks_mapping.inactivity.service='%s' not found in "
+                    "expected services %s. Inactivity detection will fail at runtime.",
+                    inactivity_service,
+                    expected,
+                )
+
         return v
 
     @field_validator("user_preferences_path", mode="before")
@@ -655,13 +684,17 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                                 "version": "2.3",
                                 "services": {
                                     "rt-web": {
-                                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
+                                        "image": (
+                                            "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}"
+                                        ),
                                         "init": True,
                                         "depends_on": ["s4l-core"],
                                         "storage_opt": {"size": "10M"},
                                     },
                                     "s4l-core": {
-                                        "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
+                                        "image": (
+                                            "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}"
+                                        ),
                                         "runtime": "nvidia",
                                         "storage_opt": {"size": "5G"},
                                         "init": True,

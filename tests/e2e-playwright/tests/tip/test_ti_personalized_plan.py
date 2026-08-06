@@ -13,6 +13,22 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
+from _tip_steps import (
+    POST_PRO_AUTOSCALED_MAX_STARTUP_TIME,
+    POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+    POST_PRO_LOAD_APPEARANCE_TIME,
+    POST_PRO_LOAD_RESULT_MAX_TIME,
+    POST_PRO_MAX_STARTUP_TIME,
+    POST_PRO_REPORTING_MAX_TIME,
+    POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+    POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+    get_node_id_from_service_key,
+    raise_if_button_spinner_running,
+    run_optimization_and_load_analysis,
+    set_fast_optimization_settings,
+    wait_and_select_target_tissue,
+    wait_for_export_complete,
+)
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import FrameLocator, Locator, Page, WebSocket, expect
 from pydantic import AnyUrl
@@ -24,7 +40,7 @@ from pytest_simcore.helpers.playwright import (
     app_mode_trigger_next_app,
     expected_service_running,
 )
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, stop_after_delay, wait_fixed
 
 _OPEN_PROJECT_WAIT_TIME: Final[int] = 20 * SECOND
 
@@ -38,8 +54,7 @@ _JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _JLAB_DOCKER_PULLING_MAX_TIME + _JLAB_MAX_STARTUP_MAX_TIME
 )
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME: Final[int] = 2 * MINUTE
-_JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 4 * MINUTE
-_JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
+
 
 _PERSONALIZATION_MAX_TIME: Final[int] = 10 * MINUTE
 
@@ -49,6 +64,7 @@ _MODELING_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
 _MODELING_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _MODELING_DOCKER_PULLING_MAX_TIME + _MODELING_MAX_STARTUP_TIME
 )
+
 
 _SIMULATOR_MAX_STARTUP_TIME: Final[int] = 3 * MINUTE
 _SIMULATOR_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
@@ -62,13 +78,14 @@ _SIM_COLOR_PENDING: Final[str] = "#FFA07A"
 _SIM_COLOR_STARTED: Final[str] = "#6969ff"
 _SIM_COLOR_SUCCESS: Final[str] = "#0090D0"
 _SIM_COLOR_FAILED: Final[str] = "#FF0000"
-_SIMULATION_MAX_TIME: Final[int] = 42 * MINUTE
+_SIMULATION_MAX_TIME: Final[int] = 60 * MINUTE
 _SIMULATION_EXPORT_MAX_TIME: Final[int] = 5 * MINUTE
 
-_POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
-_POST_PRO_DOCKER_PULLING_MAX_TIME: Final[int] = 12 * MINUTE
-_POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
-    _EC2_STARTUP_MAX_WAIT_TIME + _POST_PRO_DOCKER_PULLING_MAX_TIME + _POST_PRO_MAX_STARTUP_TIME
+
+_SIM4LIFE_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
+_SIM4LIFE_DOCKER_PULLING_MAX_TIME: Final[int] = 15 * MINUTE
+_SIM4LIFE_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + _SIM4LIFE_DOCKER_PULLING_MAX_TIME + _SIM4LIFE_MAX_STARTUP_TIME
 )
 
 
@@ -136,37 +153,23 @@ def _log_simulation_progress(simulator_iframe: FrameLocator) -> None:
 
 
 @retry(
-    stop=stop_after_attempt(_SIMULATION_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_SIMULATION_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),  # wait 1 minute between retries to avoid spamming the page with checks
     reraise=True,
 )
 def _wait_for_simulation_complete(setup_button: Locator, simulator_iframe: FrameLocator) -> None:
     _log_simulation_progress(simulator_iframe)
-    try:
-        icon_class = setup_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Setup button icon not found — simulation likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation still running: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(setup_button, description="Simulation")
 
 
 @retry(
-    stop=stop_after_attempt(_SIMULATION_EXPORT_MAX_TIME // (60 * SECOND)),
+    stop=stop_after_delay(_SIMULATION_EXPORT_MAX_TIME / 1000),  # seconds
     wait=wait_fixed(60),
     reraise=True,
 )
 def _wait_for_export_simulation_results(export_button: Locator) -> None:
     # Wait for the export to complete, spinner is on the button while exporting
-    try:
-        icon_class = export_button.locator("i").first.evaluate("el => el.className")
-    except PlaywrightError:
-        logging.info("Export button icon not found — export likely completed")
-        return
-    if "fa-spinner" in icon_class:
-        msg = f"Simulation is being exported: {icon_class=}"
-        raise ValueError(msg)
+    raise_if_button_spinner_running(export_button, description="Simulation export")
 
 
 def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
@@ -205,6 +208,175 @@ def _run_simulations(simulator_iframe: FrameLocator, page: Page) -> None:
         _wait_for_export_simulation_results(export_button)
 
 
+def _run_ti_postpro(ti_postpro_iframe: FrameLocator, page: Page) -> None:
+    with log_context(logging.INFO, "Run TI and generate report"):
+        wait_and_select_target_tissue(
+            ti_postpro_iframe,
+            label_timeout=POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+            select_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+        )
+
+        # make it faster
+        set_fast_optimization_settings(ti_postpro_iframe)
+
+        run_optimization_and_load_analysis(
+            ti_postpro_iframe,
+            click_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+            optimization_timeout=POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
+            optimization_start_timeout=POST_PRO_LOAD_APPEARANCE_TIME,
+            analysis_timeout=POST_PRO_LOAD_ANALYSIS_MAX_TIME,
+            result_timeout=POST_PRO_LOAD_RESULT_MAX_TIME,
+        )
+
+        with log_context(
+            logging.INFO,
+            f"Click button - `Add to Report (0)` and wait for {POST_PRO_REPORTING_MAX_TIME}",
+        ):
+            ti_postpro_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
+            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
+        with log_context(
+            logging.INFO,
+            f"Click button - `Export to S4L` and wait for {POST_PRO_REPORTING_MAX_TIME}",
+        ):
+            export_s4l_button = ti_postpro_iframe.get_by_role("button", name="Export to S4L")
+            export_s4l_button.click()
+            wait_for_export_complete(export_s4l_button)
+        with log_context(
+            logging.INFO,
+            f"Click button - `Add to Report (1)` and wait for {POST_PRO_REPORTING_MAX_TIME}",
+        ):
+            ti_postpro_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
+            page.wait_for_timeout(POST_PRO_REPORTING_MAX_TIME)
+        with log_context(
+            logging.INFO,
+            f"Click button - `Export Report` and wait for {POST_PRO_REPORTING_MAX_TIME}",
+        ):
+            export_report_button = ti_postpro_iframe.get_by_role("button", name="Export Report")
+            export_report_button.click()
+            wait_for_export_complete(export_report_button)
+
+
+@dataclass(frozen=True)
+class _ServiceStepParams:
+    page: Page
+    websocket: RobustWebSocket
+    is_autoscaled: bool
+    product_url: AnyUrl
+    is_service_legacy: bool
+
+
+def _run_personalizer_step(
+    params: _ServiceStepParams,
+    node_id: str,
+) -> None:
+    with params.page.expect_websocket(
+        _JLabWaitForWebSocket(),
+        timeout=_OUTER_EXPECT_TIMEOUT_RATIO
+        * (_JLAB_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
+    ) as ws_info:
+        with expected_service_running(
+            page=params.page,
+            node_id=node_id,
+            websocket=params.websocket,
+            timeout=(_JLAB_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
+            press_start_button=False,
+            product_url=params.product_url,
+            is_service_legacy=params.is_service_legacy,
+        ) as service_running:
+            app_mode_trigger_next_app(params.page)
+        personalizer_iframe = service_running.iframe_locator
+        assert personalizer_iframe
+
+    assert not ws_info.value.is_closed()
+    _run_personalization(personalizer_iframe, params.page)
+
+
+def _run_model_inspector_step(
+    params: _ServiceStepParams,
+    node_id: str,
+) -> None:
+    with expected_service_running(
+        page=params.page,
+        node_id=node_id,
+        websocket=params.websocket,
+        timeout=(_MODELING_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _MODELING_MAX_STARTUP_TIME),
+        press_start_button=False,
+        product_url=params.product_url,
+        is_service_legacy=params.is_service_legacy,
+    ) as service_running:
+        app_mode_trigger_next_app(params.page)
+    assert service_running.iframe_locator
+
+
+def _run_simulator_step(
+    params: _ServiceStepParams,
+    node_id: str,
+) -> None:
+    with params.page.expect_websocket(
+        _JLabWaitForWebSocket(),
+        timeout=_OUTER_EXPECT_TIMEOUT_RATIO
+        * (_SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _SIMULATOR_MAX_STARTUP_TIME),
+    ) as ws_info:
+        with expected_service_running(
+            page=params.page,
+            node_id=node_id,
+            websocket=params.websocket,
+            timeout=(_SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _SIMULATOR_MAX_STARTUP_TIME),
+            press_start_button=False,
+            product_url=params.product_url,
+            is_service_legacy=params.is_service_legacy,
+        ) as service_running:
+            app_mode_trigger_next_app(params.page)
+        simulator_iframe = service_running.iframe_locator
+        assert simulator_iframe
+
+    assert not ws_info.value.is_closed()
+    _run_simulations(simulator_iframe, params.page)
+
+
+def _run_classic_ti_step(
+    params: _ServiceStepParams,
+    node_id: str,
+) -> None:
+    with params.page.expect_websocket(
+        _JLabWaitForWebSocket(),
+        timeout=_OUTER_EXPECT_TIMEOUT_RATIO
+        * (POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else POST_PRO_MAX_STARTUP_TIME),
+    ) as ws_info:
+        with expected_service_running(
+            page=params.page,
+            node_id=node_id,
+            websocket=params.websocket,
+            timeout=(POST_PRO_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else POST_PRO_MAX_STARTUP_TIME),
+            press_start_button=False,
+            product_url=params.product_url,
+            is_service_legacy=params.is_service_legacy,
+        ) as service_running:
+            app_mode_trigger_next_app(params.page)
+        ti_postpro_iframe = service_running.iframe_locator
+        assert ti_postpro_iframe
+
+    assert not ws_info.value.is_closed()
+    _run_ti_postpro(ti_postpro_iframe, params.page)
+
+
+def _run_exposure_analysis_step(
+    params: _ServiceStepParams,
+    node_id: str,
+) -> None:
+    with expected_service_running(
+        page=params.page,
+        node_id=node_id,
+        websocket=params.websocket,
+        timeout=(_SIM4LIFE_AUTOSCALED_MAX_STARTUP_TIME if params.is_autoscaled else _SIM4LIFE_MAX_STARTUP_TIME),
+        press_start_button=False,
+        product_url=params.product_url,
+        is_service_legacy=params.is_service_legacy,
+    ) as service_running:
+        app_mode_trigger_next_app(params.page)
+    assert service_running.iframe_locator
+
+
 def test_personalized_classic_ti_plan(
     page: Page,
     log_in_and_out: RobustWebSocket,
@@ -226,8 +398,7 @@ def test_personalized_classic_ti_plan(
         page.get_by_test_id("userMenuBtn").click()
 
     # testing purposes
-    # start_project_uuid = "72235252-329b-11f1-be19-0242ac171744"
-    # start_project_uuid = "a169f104-1df8-11f1-93c4-0242ac100552"
+    # start_project_uuid = "313682b0-4a0f-11f1-adc2-0242ac170029"
     start_project_uuid = None
     if start_project_uuid:
         project_data = _open_project_from_dashboard(page, start_project_uuid)
@@ -235,9 +406,10 @@ def test_personalized_classic_ti_plan(
         # press + button
         project_data = create_tip_plan_from_dashboard("newPTIPlanButton")
 
+    assert project_data
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
-    node_ids: list[str] = list(project_data["workbench"])
+    workbench: dict = project_data["workbench"]
 
     # count the number of elements with test id matching the pattern
     # 0. File Picker with the test_data already uploaded (file-picker) - it is not exposed
@@ -252,74 +424,36 @@ def test_personalized_classic_ti_plan(
     assert step_buttons.count() == expected_number_of_steps, (
         f"Expected {expected_number_of_steps} step buttons, found {step_buttons.count()}"
     )
-    assert len(node_ids) >= expected_number_of_steps, (
+    assert len(workbench) >= expected_number_of_steps, (
         f"Expected at least {expected_number_of_steps} nodes in the workbench"
     )
 
+    params = _ServiceStepParams(
+        page=page,
+        websocket=log_in_and_out,
+        is_autoscaled=is_autoscaled,
+        product_url=product_url,
+        is_service_legacy=is_service_legacy,
+    )
+
     with log_context(logging.INFO, "File Picker step (1/%s)", expected_number_of_steps):
-        # in the testing project the file is already uploaded, so just check the file is already there
         file_picker_step = page.get_by_test_id("AppMode_StepBtn_1")
-        # wait 2 seconds to show the File in the tracer
         page.wait_for_timeout(2 * SECOND)
         expect(file_picker_step).not_to_contain_text("Select a file", timeout=10 * SECOND)
 
     with log_context(logging.INFO, "Personalizer step (2/%s)", expected_number_of_steps):
-        with page.expect_websocket(
-            _JLabWaitForWebSocket(),
-            timeout=_OUTER_EXPECT_TIMEOUT_RATIO
-            * (_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
-        ) as ws_info:
-            with expected_service_running(
-                page=page,
-                node_id=node_ids[2],
-                websocket=log_in_and_out,
-                timeout=(_JLAB_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _JLAB_MAX_STARTUP_MAX_TIME),
-                press_start_button=False,
-                product_url=product_url,
-                is_service_legacy=is_service_legacy,
-            ) as service_running:
-                app_mode_trigger_next_app(page)
-            personalizer_iframe = service_running.iframe_locator
-            assert personalizer_iframe
-
-        assert not ws_info.value.is_closed()
-
-        _run_personalization(personalizer_iframe, page)
+        _run_personalizer_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-pers"))
 
     with log_context(logging.INFO, "Model Inspector step (3/%s)", expected_number_of_steps):
-        with expected_service_running(
-            page=page,
-            node_id=node_ids[3],
-            websocket=log_in_and_out,
-            timeout=(_MODELING_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _MODELING_MAX_STARTUP_TIME),
-            press_start_button=False,
-            product_url=product_url,
-            is_service_legacy=is_service_legacy,
-        ) as service_running:
-            app_mode_trigger_next_app(page)
-        modeling_iframe = service_running.iframe_locator
-        assert modeling_iframe
+        _run_model_inspector_step(
+            params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui-modeling")
+        )
 
     with log_context(logging.INFO, "Simulator step (4/%s)", expected_number_of_steps):
-        with page.expect_websocket(
-            _JLabWaitForWebSocket(),
-            timeout=_OUTER_EXPECT_TIMEOUT_RATIO
-            * (_SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _SIMULATOR_MAX_STARTUP_TIME),
-        ) as ws_info:
-            with expected_service_running(
-                page=page,
-                node_id=node_ids[4],
-                websocket=log_in_and_out,
-                timeout=(_SIMULATOR_AUTOSCALED_MAX_STARTUP_TIME if is_autoscaled else _SIMULATOR_MAX_STARTUP_TIME),
-                press_start_button=False,
-                product_url=product_url,
-                is_service_legacy=is_service_legacy,
-            ) as service_running:
-                if not start_project_uuid:
-                    app_mode_trigger_next_app(page)
-            simulator_iframe = service_running.iframe_locator
-            assert simulator_iframe
+        _run_simulator_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-simu"))
 
-        assert not ws_info.value.is_closed()
+    with log_context(logging.INFO, "Classic TI step (5/%s)", expected_number_of_steps):
+        _run_classic_ti_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-postpro"))
 
-        _run_simulations(simulator_iframe, page)
+    with log_context(logging.INFO, "Exposure Analysis step (6/%s)", expected_number_of_steps):
+        _run_exposure_analysis_step(params, get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui"))

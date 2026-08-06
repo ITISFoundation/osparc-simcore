@@ -13,8 +13,7 @@ from models_library.users import UserID
 from pydantic import BaseModel, EmailStr, TypeAdapter
 
 from ..users import users_service
-from . import _groups_repository
-from ._access_rights_service import check_user_project_permission
+from . import _access_rights_service, _groups_repository
 from ._groups_models import ProjectGroupGetDB
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -42,7 +41,7 @@ async def create_project_group(
     delete: bool,
     product_name: ProductName,
 ) -> ProjectGroupGet:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -70,7 +69,7 @@ async def list_project_groups_by_user_and_project(
     project_id: ProjectID,
     product_name: ProductName,
 ) -> list[ProjectGroupGet]:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -100,7 +99,7 @@ async def replace_project_group(
     delete: bool,
     product_name: ProductName,
 ) -> ProjectGroupGet:
-    await check_user_project_permission(
+    await _access_rights_service.check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
@@ -144,7 +143,7 @@ async def delete_project_group(
 ) -> None:
     user: dict = await users_service.get_user(app, user_id=user_id)
     if user["primary_gid"] != group_id:
-        await check_user_project_permission(
+        await _access_rights_service.check_user_project_permission(
             app,
             project_id=project_id,
             user_id=user_id,
@@ -210,7 +209,7 @@ async def create_confirmation_action_to_share_project(
     return TypeAdapter(IDStr).validate_python(f"fake{fake_code}")
 
 
-### Operations without checking permissions
+# Operations without checking permissions
 
 
 async def delete_project_group_without_checking_permissions(

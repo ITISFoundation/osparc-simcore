@@ -93,8 +93,7 @@ def extract_service_port_from_settings(
     raise ValueError(msg)
 
 
-# pylint: disable=too-many-branches
-def update_service_params_from_settings(
+def update_service_params_from_settings(  # pylint: disable=too-many-branches # noqa: C901
     labels_service_settings: SimcoreServiceSettingsLabel,
     create_service_params: dict[str, Any],
 ) -> None:
@@ -252,6 +251,7 @@ def _merge_resources_in_settings(
     service_resources: ServiceResourcesDict,
     *,
     placement_substitutions: dict[str, DockerPlacementConstraint],
+    has_machine_specific_resources: bool,
 ) -> deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
     log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
@@ -302,15 +302,19 @@ def _merge_resources_in_settings(
                     }
                 }
                 empty_resource_entry.value["Reservations"]["GenericResources"].extend([generic_resource])
-    # since some services do not define CPU limitations, by default 0.1% CPU is assigned
-    # ensuring limit is at least 1.0 CPUs otherwise the dynamic-sidecar is not able to work
-    # properly
-    empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
-        empty_resource_entry.value["Limits"]["NanoCPUs"], CPU_100_PERCENT
-    )
-    empty_resource_entry.value["Limits"]["MemoryBytes"] = max(
-        empty_resource_entry.value["Limits"]["MemoryBytes"], MEMORY_1GB
-    )
+    if not has_machine_specific_resources:
+        # When no machine type is explicitly selected, services may not define CPU/RAM
+        # limitations (defaulting to 0.1 CPU, i.e. 10%). Enforce a minimum so the dynamic-sidecar
+        # can actually run. When a machine type IS selected the webserver already computed
+        # the correct values; applying a floor here would make the service unschedulable
+        # on the very node it was pinned to (e.g. 0.6 CPU on t3.large would be raised to
+        # 1.0 CPU, exceeding the node's available capacity after overhead).
+        empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
+            empty_resource_entry.value["Limits"]["NanoCPUs"], CPU_100_PERCENT
+        )
+        empty_resource_entry.value["Limits"]["MemoryBytes"] = max(
+            empty_resource_entry.value["Limits"]["MemoryBytes"], MEMORY_1GB
+        )
 
     result.append(empty_resource_entry)
 
@@ -401,6 +405,7 @@ async def merge_settings_before_use(
     service_user_selection_boot_options: dict[EnvVarKey, str],
     service_resources: ServiceResourcesDict,
     placement_substitutions: dict[str, DockerPlacementConstraint],
+    has_machine_specific_resources: bool,
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
         catalog_client=catalog_client,
@@ -438,7 +443,10 @@ async def merge_settings_before_use(
         )
 
     settings = _merge_resources_in_settings(
-        settings, service_resources, placement_substitutions=placement_substitutions
+        settings,
+        service_resources,
+        placement_substitutions=placement_substitutions,
+        has_machine_specific_resources=has_machine_specific_resources,
     )
     settings = _patch_target_service_into_env_vars(settings)
 

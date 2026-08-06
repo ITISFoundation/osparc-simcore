@@ -122,7 +122,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
           control = new qx.ui.form.TextField().set({
             required: true
           });
-          osparc.utils.Utils.disableAutocomplete(control);
           this.__validationManager.add(control);
           break;
         case "description-input":
@@ -144,7 +143,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
           this.__validationManager.add(control, osparc.utils.Validators.hexColor);
           break;
         case "color-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
+          control = new qx.ui.form.Button(null, "@FontAwesomeSolid/sync-alt/12");
           control.addListener("execute", () => {
             this.getChildControl("color-input").setValue(osparc.utils.Utils.getRandomColor());
           }, this);
@@ -244,7 +243,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       buttonContainer.add(sharedIcon);
 
       const editButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/pencil-alt/12",
+        icon: "@FontAwesomeSolid/pencil-alt/12",
         toolTipText: this.tr("Edit tag"),
         appearance: "form-button-transparent",
         opacity: canIWrite ? 1 : null,
@@ -254,7 +253,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
 
       const deleteButton = new osparc.ui.form.FetchButton().set({
-        icon: "@FontAwesome5Solid/trash/12",
+        icon: "@FontAwesomeSolid/trash/12",
         toolTipText: this.tr("Delete"),
         appearance: "danger-button-transparent",
         enabled: canIDelete,
@@ -275,12 +274,12 @@ qx.Class.define("osparc.form.tag.TagItem", {
      */
     __tagItemEditButtons: function() {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const saveButton = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/check/12").set({
+      const saveButton = new osparc.ui.form.FetchButton(null, "@FontAwesomeSolid/check/12").set({
         appearance: "link-button",
         paddingTop: 15, // avoid buddy text
         alignY: "middle"
       });
-      const cancelButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+      const cancelButton = new qx.ui.form.Button(null, "@FontAwesomeSolid/times/12").set({
         appearance: "link-button",
         paddingTop: 15, // avoid buddy text
         alignY: "middle"

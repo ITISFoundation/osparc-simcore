@@ -53,7 +53,7 @@ async def test_payment_method_workflow(
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
     send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_message_to_user",
+        "simcore_service_webserver.socketio.socketio_service.send_message_to_user",
         autospec=True,
     )
 
@@ -318,18 +318,18 @@ async def wallet_payment_method_id(
 def mock_payment_dependencies(
     mocker: MockerFixture,
     latest_osparc_price: Decimal,  # product is billable
-    setup_user_pre_registration_details_db: None,  # user is pre-registered to have billable information
+    setup_user_billing_details_db: None,  # user has billing information on file
 ):
-    """Fixture that mocks common payment dependencies; ensures that product is billable and user pre-registered with billable information"""
+    """Fixture that mocks common payment dependencies; ensures that product is billable and user pre-registered with billable information"""  # noqa: E501
 
     assert latest_osparc_price > 0, "current product should be billable"
 
     send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_message_to_user",
+        "simcore_service_webserver.socketio.socketio_service.send_message_to_user",
         autospec=True,
     )
     mock_rut_add_credits_to_wallet = mocker.patch(
-        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        "simcore_service_webserver.resource_usage.resource_usage_service.add_credits_to_wallet",
         autospec=True,
     )
     return {

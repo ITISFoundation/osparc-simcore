@@ -66,7 +66,7 @@ qx.Class.define("osparc.product.quickStart.SlidesBase", {
       const arrowsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
 
       const prevBtn = this.__prevBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/arrow-left/20",
+        icon: "@FontAwesomeSolid/arrow-left/20",
         allowGrowX: true,
         backgroundColor: "transparent",
         iconPosition: "left",
@@ -91,7 +91,7 @@ qx.Class.define("osparc.product.quickStart.SlidesBase", {
       });
 
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/arrow-right/20",
+        icon: "@FontAwesomeSolid/arrow-right/20",
         allowGrowX: true,
         backgroundColor: "transparent",
         iconPosition: "right",

@@ -25,7 +25,7 @@ from simcore_service_webserver.projects.exceptions import (
     ProjectNotFoundError,
     ProjectTooManyProjectOpenedError,
 )
-from simcore_service_webserver.users.exceptions import UserDefaultWalletNotFoundError
+from simcore_service_webserver.users.errors import UserDefaultWalletNotFoundError
 from simcore_service_webserver.wallets.errors import WalletNotEnoughCreditsError
 
 router = APIRouter(

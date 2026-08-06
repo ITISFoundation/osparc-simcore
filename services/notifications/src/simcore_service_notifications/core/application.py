@@ -1,26 +1,78 @@
-import logging
-
+from celery_library.basic_types import BootServerMode
 from fastapi import FastAPI
-from servicelib.fastapi.lifespan_utils import Lifespan
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.monitoring import (
-    initialize_prometheus_instrumentation,
+    configure_prometheus_instrumentation,
 )
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import (
-    initialize_fastapi_app_tracing,
-    setup_tracing,
-)
+from servicelib.fastapi.postgres_lifespan import configure_postgres_database
+from servicelib.fastapi.tracing import configure_fastapi_app_tracing
 from servicelib.tracing import TracingConfig
 
-from .._meta import API_VTAG, APP_NAME, SUMMARY, VERSION
-from ..api.rest.routes import initialize_rest_api
-from . import events
+from .._meta import (
+    API_VTAG,
+    APP_NAME,
+    APP_SHUTDOWN_BANNER_MSG,
+    APP_STARTING_BANNER_MSG,
+    SUMMARY,
+    VERSION,
+    get_started_banner,
+)
+from ..api.rest.routes import configure_rest_api
+from ..api.rpc.routes import configure_rpc_api
+from ..clients.celery import configure_task_manager
+from ..clients.postgres import configure_postgres_liveness
+from ..clients.rabbitmq import configure_rabbitmq_client
+from ..clients.redis import configure_redis_client
+from ..services import configure_smtp_config_check
 from .settings import ApplicationSettings
 
-_logger = logging.getLogger(__name__)
+
+def _configure_plugins(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> None:
+    if settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        configure_prometheus_instrumentation(app, app_lifespan)
+
+    if tracing_config.tracing_enabled:
+        configure_fastapi_app_tracing(
+            app,
+            app_lifespan,
+            tracing_config=tracing_config,
+        )
+
+    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
+
+    configure_redis_client(
+        app_lifespan,
+        settings=settings.NOTIFICATIONS_CELERY.CELERY_REDIS_RESULT_BACKEND,
+    )
+    configure_task_manager(app_lifespan)
+
+    mode = settings.NOTIFICATIONS_BOOT_SERVER_MODE
+
+    if mode is BootServerMode.AS_REST_API_SERVER:
+        configure_postgres_database(
+            app_lifespan,
+            settings=settings.NOTIFICATIONS_POSTGRES,
+            tracing_config=tracing_config,
+        )
+        configure_postgres_liveness(app_lifespan)
+
+        configure_smtp_config_check(app_lifespan)
+
+        configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
+        configure_rpc_api(app_lifespan)
+        configure_rest_api(app)
+    else:
+        assert mode is BootServerMode.AS_CELERY_WORKER  # nosec
 
 
 def create_app(
@@ -34,28 +86,25 @@ def create_app(
     )
 
     assert settings.SC_BOOT_MODE  # nosec
-    app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
-        title=APP_NAME,
-        description=SUMMARY,
-        version=f"{VERSION}",
-        openapi_url=f"/api/{API_VTAG}/openapi.json",
-        lifespan=events.create_app_lifespan(settings=settings, logging_lifespan=logging_lifespan),
-        **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
-    )
-    override_fastapi_openapi_method(app)
-    app.state.settings = settings
-    app.state.tracing_config = tracing_config
+    with configure_app_lifespan(
+        logging_lifespan=logging_lifespan,
+        starting_banner=APP_STARTING_BANNER_MSG,
+        started_banner=get_started_banner(settings.NOTIFICATIONS_BOOT_SERVER_MODE),
+        shutdown_complete_banner=APP_SHUTDOWN_BANNER_MSG,
+    ) as app_lifespan:
+        app = FastAPI(
+            debug=settings.SC_BOOT_MODE.is_devel_mode(),
+            title=APP_NAME,
+            description=SUMMARY,
+            version=f"{VERSION}",
+            openapi_url=f"/api/{API_VTAG}/openapi.json",
+            lifespan=app_lifespan,
+            **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
+        )
+        override_fastapi_openapi_method(app)
+        app.state.settings = settings
+        app.state.tracing_config = tracing_config
 
-    if tracing_config.tracing_enabled:
-        setup_tracing(app, tracing_config=tracing_config)
-
-    initialize_rest_api(app)
-
-    if settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        initialize_prometheus_instrumentation(app)
-
-    if tracing_config.tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
+        _configure_plugins(app, app_lifespan, settings, tracing_config)
 
     return app

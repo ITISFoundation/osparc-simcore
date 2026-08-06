@@ -11,16 +11,13 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG, REDIS_CLIENT_UNHEALTHY_MSG
 from pydantic import BaseModel
+from servicelib.fastapi.health import HealthCheckError
 
 from ..modules.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client, is_rabbitmq_enabled
 from ..modules.redis import get_redis_client
 from .dependencies.application import get_app
 
 router = APIRouter()
-
-
-class HealthCheckError(RuntimeError):
-    """Failed a health check"""
 
 
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)

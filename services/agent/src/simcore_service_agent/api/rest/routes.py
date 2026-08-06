@@ -3,6 +3,7 @@ from servicelib.fastapi.exceptions_utils import (
     handle_errors_as_500,
     http_exception_as_json_response,
 )
+from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 
 from . import _health
 
@@ -10,5 +11,6 @@ from . import _health
 def setup_rest_api(app: FastAPI):
     app.include_router(_health.router)
 
+    app.add_exception_handler(HealthCheckError, health_check_error_handler)
     app.add_exception_handler(Exception, handle_errors_as_500)
     app.add_exception_handler(HTTPException, http_exception_as_json_response)

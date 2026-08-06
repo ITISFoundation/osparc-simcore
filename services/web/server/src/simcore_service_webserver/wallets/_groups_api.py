@@ -1,31 +1,18 @@
 import logging
-from datetime import datetime
 
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletID
-from pydantic import BaseModel, ConfigDict
 
 from ..users import users_service
 from . import _db as wallets_db
 from . import _groups_db as wallets_groups_db
-from ._groups_db import WalletGroupGetDB
+from ._groups_models import WalletGroupGet, WalletGroupGetDB
 from .errors import WalletAccessForbiddenError
 
 log = logging.getLogger(__name__)
-
-
-class WalletGroupGet(BaseModel):
-    gid: GroupID
-    read: bool
-    write: bool
-    delete: bool
-    created: datetime
-    modified: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 async def create_wallet_group(

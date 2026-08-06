@@ -61,12 +61,9 @@ def app_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest
     envs = mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "True",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "False",
             "POSTGRES_DB": "simcoredb",
             "POSTGRES_HOST": "postgres",
-            "POSTGRES_MAXSIZE": "10",
-            "POSTGRES_MINSIZE": "10",
             "POSTGRES_MAX_POOLSIZE": "10",
             "POSTGRES_MAX_OVERFLOW": "20",
             "POSTGRES_PASSWORD": "simcore",
@@ -77,8 +74,6 @@ def app_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest
             "PROMETHEUS_USERNAME": "fake",
             "PROMETHEUS_VTAG": "v1",
             "SESSION_SECRET_KEY": "REPLACE_ME_with_result__Fernet_generate_key=",
-            "SMTP_HOST": "mail.foo.com",
-            "SMTP_PORT": "25",
             "STORAGE_HOST": "storage",
             "STORAGE_PORT": "11111",
             "STORAGE_VTAG": "v0",

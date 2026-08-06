@@ -19,7 +19,7 @@ qx.Class.define("osparc.dashboard.SharedWithMenuButton", {
   extend: qx.ui.form.MenuButton,
 
   construct: function(resource = "study") {
-    this.base(arguments, this.tr("Shared with"), "@FontAwesome5Solid/chevron-down/10");
+    this.base(arguments, this.tr("Shared with"), "@FontAwesomeSolid/chevron-down/10");
 
     osparc.utils.Utils.setIdToWidget(this, "sharedWithButton");
 

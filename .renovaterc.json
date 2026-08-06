@@ -1,0 +1,108 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboardApproval"
+  ],
+  "dependencyDashboard": true,
+  "prCreation": "approval",
+  "platformAutomerge": false,
+  "automerge": false,
+  "commitMessageSuffix": " [Renovate]",
+  "labels": [
+    "t:maintenance"
+  ],
+  "vulnerabilityAlerts": {
+    "dependencyDashboardApproval": true
+  },
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "schedule": [
+    "before 3am on monday"
+  ],
+  "timezone": "Europe/Zurich",
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/(^|/)requirements/_[^/]+\\.txt$/",
+      "/(^|/)api/tests/requirements\\.txt$/",
+      "/(^|/)ci/helpers/requirements/requirements\\.txt$/",
+      "/(^|/)tests/e2e-playwright/requirements/_[^/]+\\.txt$/",
+      "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
+    ]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 3am on the first day of the month"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "pip-compile lockfiles (e.g. _test.txt, _tools.txt) reference _base.txt as a --constraint, so packages only pinned there (not required directly by their own .in file) are classified by Renovate as 'indirect' deps and ignored by default. Force-enable them so they don't silently drift out of sync (e.g. stay on an old, vulnerable version) whenever _base.txt is bumped.",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "enabled": true
+    },
+    {
+      "description": "Group all pip-compile outputs (_base.txt, _test.txt, _tools.txt, ...) of the same requirements/ directory into a single branch/PR, so they are always updated atomically instead of drifting apart",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "groupName": "{{packageFileDir}}",
+      "groupSlug": "{{packageFileDir}}"
+    },
+    {
+      "description": "Shared packages: upgrade faster (smaller blast radius)",
+      "matchFileNames": [
+        "packages/**/requirements/**"
+      ],
+      "groupName": "packages deps",
+      "schedule": [
+        "before 3am on monday"
+      ],
+      "minimumReleaseAge": "3 days",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "description": "Services: upgrade slower / more conservative",
+      "matchFileNames": [
+        "services/**/requirements/**"
+      ],
+      "groupName": "services deps",
+      "schedule": [
+        "before 3am on the first day of the month"
+      ],
+      "minimumReleaseAge": "14 days",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    },
+    {
+      "description": "These requirements.txt are pip-compile outputs; let pip-compile own them (avoid double updates)",
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "api/tests/requirements.txt",
+        "ci/helpers/requirements/requirements.txt",
+        "tests/environment-setup/requirements/requirements.txt"
+      ],
+      "enabled": false
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "groupName": "docker images",
+      "dependencyDashboardApproval": true,
+      "prCreation": "approval",
+      "automerge": false
+    }
+  ]
+}

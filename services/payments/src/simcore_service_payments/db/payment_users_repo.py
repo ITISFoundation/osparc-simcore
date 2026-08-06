@@ -1,10 +1,8 @@
 import sqlalchemy as sa
 from models_library.api_schemas_webserver.wallets import PaymentID
-from models_library.groups import GroupID
+from models_library.groups import GroupID, GroupIDAdapter
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from simcore_postgres_database.models.payments_transactions import payments_transactions
-from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 
 from .base import BaseRepository
@@ -27,7 +25,7 @@ class PaymentsUsersRepo(BaseRepository):
                 users.c.primary_gid,
             ).where(users.c.id == user_id)
         ):
-            return TypeAdapter(GroupID).validate_python(row.primary_gid)
+            return GroupIDAdapter.validate_python(row.primary_gid)
 
         msg = f"{user_id=} not found"
         raise ValueError(msg)
@@ -37,23 +35,18 @@ class PaymentsUsersRepo(BaseRepository):
         if row := await self._get(
             sa.select(
                 payments_transactions.c.payment_id,
+                payments_transactions.c.product_name,
+                users.c.name.label("user_name"),
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
-                products.c.name.label("product_name"),
-                products.c.display_name,
-                products.c.vendor,
-                products.c.support_email,
+                users.c.language,
             )
             .select_from(
                 sa.join(
-                    sa.join(
-                        payments_transactions,
-                        users,
-                        payments_transactions.c.user_id == users.c.id,
-                    ),
-                    products,
-                    payments_transactions.c.product_name == products.c.name,
+                    payments_transactions,
+                    users,
+                    payments_transactions.c.user_id == users.c.id,
                 )
             )
             .where((payments_transactions.c.payment_id == payment_id) & (payments_transactions.c.user_id == user_id))

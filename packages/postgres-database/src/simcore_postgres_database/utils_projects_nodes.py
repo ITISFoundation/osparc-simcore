@@ -48,24 +48,39 @@ class ProjectNodeCreate(BaseModel):
     version: str
     label: str
     progress: float | None = None
-    thumbnail: str | None = None
     input_access: dict[str, Any] | None = None
     input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None
     inputs_required: list[str] | None = None
     inputs_units: dict[str, Any] | None = None
-    output_nodes: list[str] | None = None
     outputs: dict[str, Any] | None = None
     run_hash: str | None = None
     state: dict[str, Any] | None = None
-    parent: str | None = None
     boot_options: dict[str, Any] | None = None
+    ui: dict[str, Any] | None = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
         return cls.model_fields.keys() - exclude
 
     model_config = ConfigDict(frozen=True)
+
+
+def _snake_to_camel(s: str) -> str:
+    head, *tail = s.split("_")
+    return head + "".join(p.title() for p in tail)
+
+
+# Mapping from workbench-JSON camelCase keys to projects_nodes snake_case columns.
+# Derived from ProjectNodeCreate to keep a single source of truth.
+WORKBENCH_NODE_ALIAS_TO_COLUMN: dict[str, str] = {
+    _snake_to_camel(name): name
+    for name in ProjectNodeCreate.model_fields  # pylint: disable=not-an-iterable
+    if "_" in name
+}
+
+# Reverse mapping: snake_case column names → camelCase workbench-JSON keys.
+COLUMN_TO_WORKBENCH_NODE_ALIAS: dict[str, str] = {v: k for k, v in WORKBENCH_NODE_ALIAS_TO_COLUMN.items()}
 
 
 class ProjectNode(ProjectNodeCreate):

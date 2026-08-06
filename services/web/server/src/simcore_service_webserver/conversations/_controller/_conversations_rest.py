@@ -8,8 +8,11 @@ from models_library.api_schemas_webserver.conversations import (
     ConversationRestGet,
 )
 from models_library.conversations import (
+    ConversationName,
     ConversationPatchDB,
+    ConversationStatus,
     ConversationType,
+    ConversationUserType,
 )
 from models_library.rest_pagination import (
     Page,
@@ -18,19 +21,18 @@ from models_library.rest_pagination import (
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import ConfigDict, field_validator
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
-from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
+from ...web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .. import _conversation_service, conversations_service
 from ._common import ConversationPathParams, raise_unsupported_type
 from ._rest_exceptions import _handle_exceptions
@@ -42,6 +44,9 @@ routes = web.RouteTableDef()
 
 class _ListConversationsQueryParams(PageQueryParameters):
     type: ConversationType
+    status: ConversationStatus | None = None
+    is_read_by_user: bool | None = None
+    is_read_by_support: bool | None = None
     model_config = ConfigDict(extra="forbid")
 
     @field_validator("type")
@@ -54,7 +59,7 @@ class _ListConversationsQueryParams(PageQueryParameters):
 
 
 class _ConversationsCreateBodyParams(InputSchema):
-    name: str
+    name: ConversationName | None = None
     type: ConversationType
     extra_context: dict[str, Any] | None = None
 
@@ -106,6 +111,9 @@ async def list_conversations(request: web.Request):
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        filter_status=query_params.status,
+        filter_is_read_by_user=query_params.is_read_by_user,
+        filter_is_read_by_support=query_params.is_read_by_support,
         offset=query_params.offset,
         limit=query_params.limit,
     )
@@ -132,15 +140,9 @@ async def list_conversations(request: web.Request):
 @login_required
 @_handle_exceptions
 async def get_conversation(request: web.Request):
-    """Get a specific conversation"""
+    """Get a specific conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
-
-    conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if conversation.type.is_support_type() is False:
-        raise_unsupported_type(conversation.type)
 
     conversation, _ = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
@@ -160,23 +162,21 @@ async def get_conversation(request: web.Request):
 @login_required
 @_handle_exceptions
 async def update_conversation(request: web.Request):
-    """Update a conversation"""
+    """Update a conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     body_params = await parse_request_body_as(ConversationPatch, request)
 
-    conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if conversation.type.is_support_type() is False:
-        raise_unsupported_type(conversation.type)
-
-    await _conversation_service.get_support_conversation_for_user(
+    _, user_type = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
     )
+
+    # Only support group members can change the conversation status
+    if body_params.status is not None and user_type == ConversationUserType.REGULAR_USER:
+        raise web.HTTPForbidden(reason="Only support group members can change conversation status")
 
     conversation = await conversations_service.update_conversation(
         app=request.app,
@@ -196,22 +196,16 @@ async def update_conversation(request: web.Request):
 @login_required
 @_handle_exceptions
 async def delete_conversation(request: web.Request):
-    """Delete a conversation"""
+    """Delete a conversation (supports only type='support' conversations)"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
 
-    conversation = await _conversation_service.get_conversation(
-        request.app, conversation_id=path_params.conversation_id
-    )
-    if conversation.type.is_support_type() is False:
-        raise_unsupported_type(conversation.type)
-
     # Only support conversation creator can delete conversation
-    _user_group_id = await users_service.get_user_primary_group_id(request.app, user_id=req_ctx.user_id)
-    await _conversation_service.get_conversation_for_user(
+    conversation = await _conversation_service.get_owned_support_conversation(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=_user_group_id,
     )
 
     await conversations_service.delete_conversation(

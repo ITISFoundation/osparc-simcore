@@ -14,6 +14,7 @@ from ..application_setup import ModuleCategory, app_setup_func
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..projects.plugin import register_projects_long_running_tasks
+from ..studies_dispatcher._dispatch_task import register_dispatch_study_task
 from . import settings as long_running_tasks_settings
 
 _logger = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ def webserver_request_context_decorator(handler: Handler):
 def setup_long_running_tasks(app: web.Application) -> None:
     # register all long-running tasks from different modules
     register_projects_long_running_tasks(app)
+    register_dispatch_study_task(app)
 
     settings = long_running_tasks_settings.get_plugin_settings(app)
 

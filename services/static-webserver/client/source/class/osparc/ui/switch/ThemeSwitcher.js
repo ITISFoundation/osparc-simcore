@@ -74,7 +74,7 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       const theme = themeManager.getTheme();
       const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
       const idx = validThemes.findIndex(validTheme => validTheme.name === theme.name);
-      widget.setIcon((idx === 0 ? "@FontAwesome5Solid/moon/" : "@FontAwesome5Solid/sun/") + buttonImageSize);
+      widget.setIcon((idx === 0 ? "@FontAwesomeSolid/moon/" : "@FontAwesomeSolid/sun/") + buttonImageSize);
     }
   }
 });

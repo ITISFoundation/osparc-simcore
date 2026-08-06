@@ -1,6 +1,7 @@
 from typing import Literal
 from uuid import UUID
 
+import sqlalchemy as sa
 from aiohttp import web
 from models_library.functions import (
     FunctionAccessRightsDB,
@@ -54,7 +55,6 @@ from simcore_postgres_database.utils_repos import (
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups.api import list_all_user_groups_ids
 from ._functions_exceptions import _ERRORS_MAP
 from ._functions_table_cols import (
     _FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS,
@@ -97,21 +97,18 @@ async def _internal_get_group_permissions(
             rows = [
                 row
                 async for row in await conn.stream(
-                    access_rights_table.select().where(
+                    sa.select(
+                        access_rights_table.c.group_id,
+                        access_rights_table.c.read,
+                        access_rights_table.c.write,
+                        access_rights_table.c.execute,
+                    ).where(
                         getattr(access_rights_table.c, field_name) == object_id,
                         access_rights_table.c.product_name == product_name,
                     )
                 )
             ]
-            group_permissions = [
-                FunctionGroupAccessRights(
-                    group_id=row.group_id,
-                    read=row.read,
-                    write=row.write,
-                    execute=row.execute,
-                )
-                for row in rows
-            ]
+            group_permissions = [FunctionGroupAccessRights.model_validate(row) for row in rows]
             access_rights_list.append((object_id, group_permissions))
 
         return access_rights_list
@@ -122,6 +119,7 @@ async def check_user_permissions(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     object_id: UUID,
     object_type: Literal["function", "function_job", "function_job_collection"],
@@ -134,6 +132,7 @@ async def check_user_permissions(
         app,
         connection=connection,
         user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         api_access_rights=api_access_rights,
     )
@@ -141,7 +140,7 @@ async def check_user_permissions(
     user_permissions = await get_user_permissions(
         app,
         connection=connection,
-        user_id=user_id,
+        user_groups=user_groups,
         product_name=product_name,
         object_id=object_id,
         object_type=object_type,
@@ -190,6 +189,7 @@ async def get_group_permissions(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
     object_ids: list[UUID],
@@ -200,6 +200,7 @@ async def get_group_permissions(
                 app,
                 connection=conn,
                 user_id=user_id,
+                user_groups=user_groups,
                 product_name=product_name,
                 object_id=object_id,
                 object_type=object_type,
@@ -247,7 +248,11 @@ async def _internal_set_group_permissions(
         for object_id in object_ids:
             # Check if the group already has access rights for the function
             result = await transaction.execute(
-                access_rights_table.select().where(
+                sa.select(
+                    access_rights_table.c.read,
+                    access_rights_table.c.write,
+                    access_rights_table.c.execute,
+                ).where(
                     getattr(access_rights_table.c, field_name) == object_id,
                     access_rights_table.c.group_id == permission_group_id,
                 )
@@ -274,13 +279,18 @@ async def _internal_set_group_permissions(
                     )
                 )
                 row = result.one()
-                access_rights_list.append((object_id, FunctionGroupAccessRights(**row)))
+                access_rights_list.append(
+                    (
+                        object_id,
+                        FunctionGroupAccessRights.model_validate(row),
+                    )
+                )
             else:
                 # Update existing access rights only for non-None values
                 update_values = {
-                    "read": read if read is not None else row["read"],
-                    "write": write if write is not None else row["write"],
-                    "execute": execute if execute is not None else row["execute"],
+                    "read": read if read is not None else row.read,
+                    "write": write if write is not None else row.write,
+                    "execute": execute if execute is not None else row.execute,
                 }
 
                 update_result = await transaction.execute(
@@ -298,16 +308,22 @@ async def _internal_set_group_permissions(
                     )
                 )
                 updated_row = update_result.one()
-                access_rights_list.append((object_id, FunctionGroupAccessRights(**updated_row)))
+                access_rights_list.append(
+                    (
+                        object_id,
+                        FunctionGroupAccessRights.model_validate(updated_row),
+                    )
+                )
 
         return access_rights_list
 
 
-async def set_group_permissions(
+async def set_group_permissions(  # pylint: disable=too-many-arguments # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     permission_group_id: GroupID,
     product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
@@ -322,6 +338,7 @@ async def set_group_permissions(
                 app,
                 connection=conn,
                 user_id=user_id,
+                user_groups=user_groups,
                 product_name=product_name,
                 object_id=object_id,
                 object_type=object_type,
@@ -382,6 +399,7 @@ async def remove_group_permissions(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     permission_group_id: GroupID,
     product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
@@ -393,6 +411,7 @@ async def remove_group_permissions(
                 app,
                 connection=conn,
                 user_id=user_id,
+                user_groups=user_groups,
                 product_name=product_name,
                 object_id=object_id,
                 object_type=object_type,
@@ -414,11 +433,10 @@ async def get_user_api_access_rights(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
 ) -> FunctionUserApiAccessRights:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
-
         # Initialize combined permissions with False values
         combined_permissions = FunctionUserApiAccessRights(
             user_id=user_id,
@@ -490,7 +508,7 @@ async def get_user_permissions(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     object_id: UUID,
     object_type: Literal["function", "function_job", "function_job_collection"],
@@ -515,8 +533,6 @@ async def get_user_permissions(
             access_rights_table = function_job_collections_access_rights_table
             cols = _FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS
         assert access_rights_table is not None  # nosec
-
-        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
 
         # Initialize combined permissions with False values
         combined_permissions = FunctionAccessRightsDB(read=False, write=False, execute=False)
@@ -543,11 +559,12 @@ async def check_user_api_access_rights(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
+    user_groups: list[GroupID],
     product_name: ProductName,
     api_access_rights: list[FunctionsApiAccessRights],
 ) -> bool:
     user_api_access_rights = await get_user_api_access_rights(
-        app, connection=connection, user_id=user_id, product_name=product_name
+        app, connection=connection, user_id=user_id, user_groups=user_groups, product_name=product_name
     )
 
     for api_access_right in api_access_rights:

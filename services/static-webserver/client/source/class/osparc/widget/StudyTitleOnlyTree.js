@@ -36,7 +36,7 @@ qx.Class.define("osparc.widget.StudyTitleOnlyTree", {
         ...this._getDelegate(study),
         createItem: () => {
           const studyTreeItem = new osparc.widget.NodeTreeItem();
-          studyTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData()));
+          studyTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData(), studyTreeItem));
           studyTreeItem.addListener("infoNode", () => this.__openStudyInfo());
           return studyTreeItem;
         }

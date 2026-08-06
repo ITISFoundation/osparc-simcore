@@ -1,16 +1,19 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any
 
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
+from models_library.products import ProductName
 from pydantic import ValidationError
 
 from ..models.template import Template, TemplatePreview, TemplateRef
 from ..renderers import Renderer
-from ..repositories import TemplateRepository
+from ..repositories.product import ProductRepository
+from ..repositories.template import TemplateRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -19,8 +22,18 @@ _logger = logging.getLogger(__name__)
 class TemplateService:
     repository: TemplateRepository
     renderer: Renderer
+    product_repository: ProductRepository
 
-    def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> TemplatePreview:
+    async def preview_template(
+        self,
+        product_name: ProductName,
+        ref: TemplateRef,
+        context: dict[str, Any],
+        locale: SupportedLocale = DEFAULT_LOCALE,
+    ) -> TemplatePreview:
+        product_data = await self.product_repository.get_product(product_name)
+        context_with_product = {**context, "product": asdict(product_data)}
+
         templates = self.repository.search_templates(
             channel=ref.channel,
             template_name=ref.template_name,
@@ -33,7 +46,7 @@ class TemplateService:
 
         try:
             # validates incoming variables against the template's variables model
-            validated_context = template.context_model.model_validate(context)
+            validated_context = template.context_model.model_validate(context_with_product)
         except ValidationError as e:
             _logger.warning(
                 "Context validation error for template %s with context %s: %s",
@@ -49,6 +62,7 @@ class TemplateService:
         return self.renderer.preview_template(
             template=template,
             context=validated_context.model_dump(),
+            locale=locale,
         )
 
     def search_templates(self, channel: str | None, template_name: str | None) -> list[Template]:

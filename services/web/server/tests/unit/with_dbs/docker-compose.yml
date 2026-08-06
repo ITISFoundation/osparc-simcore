@@ -46,11 +46,11 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "11",
+        "12",
         "--appendonly",
         "yes",
         "--requirepass",
-        "${TEST_REDIS_PASSWORD}"
+        "${TEST_REDIS_PASSWORD}",
       ]
   rabbit:
     image: itisfoundation/rabbitmq:4.1.6-management

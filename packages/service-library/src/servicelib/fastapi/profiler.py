@@ -91,6 +91,6 @@ class ProfilerMiddleware:
             _profiler.reset()
 
 
-def initialize_profiler(app: FastAPI) -> None:
+def configure_profiler(app: FastAPI) -> None:
     # NOTE: this cannot be ran once the application is started
     app.add_middleware(ProfilerMiddleware)

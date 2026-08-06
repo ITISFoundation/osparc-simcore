@@ -66,7 +66,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
   members: {
     __getRoleInfo: function(id) {
-      let roleInfo = undefined;
+      let roleInfo = null;
       const resource = this.getResourceType();
       switch (resource) {
         case "study":
@@ -110,13 +110,13 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         const collabType = this.getCollabType();
         switch (collabType) {
           case osparc.store.Groups.COLLAB_TYPE.EVERYONE:
-            value = "@FontAwesome5Solid/globe/28";
+            value = "@FontAwesomeSolid/globe/28";
             break;
           case osparc.store.Groups.COLLAB_TYPE.ORGANIZATION:
-            value = "@FontAwesome5Solid/users/28";
+            value = "@FontAwesomeSolid/users/28";
             break;
           case osparc.store.Groups.COLLAB_TYPE.USER:
-            value = "@FontAwesome5Solid/user/28";
+            value = "@FontAwesomeSolid/user/28";
             break;
         }
       }

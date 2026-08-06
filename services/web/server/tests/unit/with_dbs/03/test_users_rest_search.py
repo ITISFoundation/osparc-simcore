@@ -10,7 +10,7 @@ from collections.abc import AsyncIterable
 
 import pytest
 from aiohttp.test_utils import TestClient
-from common_library.users_enums import UserRole
+from common_library.users_enums import UserRole, UserStatus
 from models_library.api_schemas_webserver.groups import GroupUserGet
 from models_library.api_schemas_webserver.users import (
     UserGet,
@@ -270,6 +270,47 @@ async def test_search_users_by_partial_username(
     assert found[index].email is None
     assert found[index].first_name == semi_private_user.get("first_name")
     assert found[index].last_name == semi_private_user.get("last_name")
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "non_active_status",
+    [s for s in UserStatus if s != UserStatus.ACTIVE],
+)
+async def test_search_excludes_non_active_users(
+    user_role: UserRole,
+    non_active_status: UserStatus,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    partial_username: str,
+):
+    assert client.app
+    assert user_role == logged_user["role"]
+
+    async with NewUser(
+        app=client.app,
+        user_data={
+            "name": f"inactive{partial_username}",
+            "first_name": "Inactive",
+            "last_name": "User",
+            "email": "inactive@acme.com",
+            # Fully public
+            "privacy_hide_username": False,
+            "privacy_hide_email": False,
+            "privacy_hide_fullname": False,
+            # but not ACTIVE
+            "status": non_active_status.name,
+        },
+    ) as non_active_user:
+        assert non_active_user["status"] == non_active_status
+
+        url = client.app.router["search_users"].url_for()
+        resp = await client.post(f"{url}", json={"match": partial_username})
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        found = TypeAdapter(list[UserGet]).validate_python(data)
+        # the non-active user is not returned
+        assert non_active_user["id"] not in [u.user_id for u in found]
 
 
 async def test_search_myself(

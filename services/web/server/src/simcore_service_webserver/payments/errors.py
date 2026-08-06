@@ -27,4 +27,4 @@ class PaymentCompletedError(PaymentsPluginError):
 
 
 class PaymentUniqueViolationError(PaymentsPluginError):
-    msg_template = "Payment transaction '{payment_id}' aready exists"
+    msg_template = "Payment transaction '{payment_id}' already exists"

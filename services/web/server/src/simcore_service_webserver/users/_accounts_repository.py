@@ -5,6 +5,7 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
+from models_library.list_operations import OrderClause
 from models_library.products import ProductName
 from models_library.users import (
     UserID,
@@ -15,6 +16,11 @@ from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
+from simcore_postgres_database.utils_ordering import (
+    OrderByDict,
+    OrderDirection,
+    create_ordering_clauses,
+)
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -23,7 +29,7 @@ from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
-from .exceptions import (
+from .errors import (
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,
@@ -136,7 +142,7 @@ async def list_user_pre_registrations(
         Tuple of (list of pre-registration records, total count)
     """
     # Base query conditions
-    where_conditions = []
+    where_conditions: list[sa.ColumnElement[bool]] = []
 
     # Apply filters if provided
     if filter_by_pre_email is not None:
@@ -418,12 +424,12 @@ def _build_left_outer_join_query(
     product_name: ProductName | None,
     columns: tuple,
 ) -> sa.sql.Select | None:
-    left_where_conditions = []
+    left_where_conditions: list[sa.ColumnElement[bool]] = []
     if email_like is not None:
         left_where_conditions.append(users_pre_registration_details.c.pre_email.like(email_like))
-    join_condition = users.c.id == users_pre_registration_details.c.user_id
     if product_name:
-        join_condition = join_condition & (users_pre_registration_details.c.product_name == product_name)
+        left_where_conditions.append(users_pre_registration_details.c.product_name == product_name)
+    join_condition = users.c.id == users_pre_registration_details.c.user_id
     left_outer_join = sa.select(*columns).select_from(users_pre_registration_details.outerjoin(users, join_condition))
 
     return left_outer_join.where(sa.and_(*left_where_conditions)) if left_where_conditions else None
@@ -436,7 +442,7 @@ def _build_right_outer_join_query(
     product_name: ProductName | None,
     columns: tuple,
 ) -> sa.sql.Select | None:
-    right_where_conditions = []
+    right_where_conditions: list[sa.ColumnElement[bool]] = []
     if email_like is not None:
         right_where_conditions.append(users.c.email.like(email_like))
     if user_name_like is not None:
@@ -537,7 +543,7 @@ async def search_merged_pre_and_registered_users(
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.execute(final_query)
-        return result.fetchall()
+        return list(result.fetchall())
 
 
 async def list_merged_pre_and_registered_users(
@@ -550,6 +556,7 @@ async def list_merged_pre_and_registered_users(
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
+    sort_by: list[OrderClause] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
@@ -680,17 +687,52 @@ async def list_merged_pre_and_registered_users(
 
     filtered_query_subq = filtered_query.subquery()
 
-    # Add distinct on email to eliminate duplicates
-    distinct_query = (
-        sa.select(filtered_query_subq)
-        .select_from(filtered_query_subq)
-        .distinct(filtered_query_subq.c.email)
-        .order_by(
-            filtered_query_subq.c.email,
-            # Prioritize pre-registration records if duplicate emails exist
+    # De-duplicate by email first while preserving the previous preference for
+    # pre-registered rows and the newest record per email.
+    dedupe_rank = sa.func.row_number().over(
+        partition_by=filtered_query_subq.c.email,
+        order_by=(
             filtered_query_subq.c.is_pre_registered.desc(),
             filtered_query_subq.c.created.desc(),
-        )
+            filtered_query_subq.c.user_id.asc().nullsfirst(),
+        ),
+    )
+    deduped_rows_subq = (
+        sa.select(filtered_query_subq, dedupe_rank.label("email_rank")).select_from(filtered_query_subq).subquery()
+    )
+    deduped_query_subq = (
+        sa.select(*[deduped_rows_subq.c[column.name] for column in filtered_query_subq.c])
+        .where(deduped_rows_subq.c.email_rank == 1)
+        .subquery()
+    )
+
+    # Apply the requested ordering after de-duplication.
+    if sort_by:
+        order_by_dicts: list[OrderByDict] = [
+            {"field": c.field, "direction": OrderDirection(c.direction.value)} for c in sort_by
+        ]
+        column_map = {
+            "first_name": deduped_query_subq.c.first_name,
+            "email": deduped_query_subq.c.email,
+            "status": deduped_query_subq.c.status,
+            "account_request_reviewed_at": deduped_query_subq.c.account_request_reviewed_at,
+            "created": deduped_query_subq.c.created,
+        }
+        primary_clauses = create_ordering_clauses(order_by_dicts, column_map)
+        sort_fields = {c.field for c in sort_by}
+    else:
+        primary_clauses = [deduped_query_subq.c.email.asc()]
+        sort_fields = {"email"}
+
+    final_order_by_clauses = list(primary_clauses)
+    if "email" not in sort_fields:
+        final_order_by_clauses.append(deduped_query_subq.c.email.asc())
+    final_order_by_clauses.append(deduped_query_subq.c.user_id.asc().nullsfirst())
+
+    distinct_query = (
+        sa.select(deduped_query_subq)
+        .select_from(deduped_query_subq)
+        .order_by(*final_order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )

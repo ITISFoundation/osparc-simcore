@@ -48,10 +48,8 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
 
     // overridden to play with it's visibility
     createDataCellHtml: function(cellInfo, htmlArr) {
-      const shouldShow = this.__shouldShowFn
-        ?
-        this.__shouldShowFn(cellInfo)
-        :
+      const shouldShow = this.__shouldShowFn ?
+        this.__shouldShowFn(cellInfo) :
         true;
       if (!shouldShow) {
         return ""; // Hide button

@@ -172,6 +172,21 @@ async def test_patch_project_node(
         data=json.dumps(_patch_outputs),
     )
     await assert_status(resp, expected)
+    # ui
+    _patch_ui = {"ui": {"position": {"x": 10, "y": 20}, "marker": {"color": "#123456"}}}
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_ui),
+    )
+    await assert_status(resp, expected)
+    # ui partial patch: only `position` is sent, the previously set `marker` must be preserved (merge semantics)
+    _patch_ui_position = {"ui": {"position": {"x": 33, "y": 44}}}
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(_patch_ui_position),
+    )
+    await assert_status(resp, expected)
+    _expected_ui = {"position": {"x": 33, "y": 44}, "marker": {"color": "#123456"}}
 
     # Get project
     get_url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
@@ -187,6 +202,41 @@ async def test_patch_project_node(
     assert _tested_node["inputNodes"] == _patch_input_nodes["inputNodes"]
     assert _tested_node["bootOptions"] == _patch_boot_options["bootOptions"]
     assert _tested_node["outputs"] == _patch_outputs["outputs"]
+    assert not DeepDiff(_tested_node["ui"], _expected_ui)
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+async def test_patch_project_node_ui_remove_marker(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_rpc_check_for_service: None,
+):
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+
+    # set both position and marker
+    _patch_ui = {"ui": {"position": {"x": 10, "y": 20}, "marker": {"color": "#123456"}}}
+    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui))
+    await assert_status(resp, expected)
+
+    # remove the marker by sending `marker: null`, `position` must be preserved (merge semantics)
+    _patch_remove_marker = {"ui": {"marker": None}}
+    resp = await client.patch(f"{base_url}", data=json.dumps(_patch_remove_marker))
+    await assert_status(resp, expected)
+
+    get_url = client.app.router["get_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.get(f"{get_url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    _tested_node_ui = data["workbench"][node_id]["ui"]
+
+    assert _tested_node_ui["position"] == {"x": 10, "y": 20}
+    # the marker key must be removed from the stored ui, not persisted as null
+    assert "marker" not in _tested_node_ui
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])

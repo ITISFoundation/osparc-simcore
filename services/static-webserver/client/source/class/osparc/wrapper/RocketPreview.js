@@ -67,7 +67,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
     openWindow: function() {
       const win = new osparc.ui.window.Window();
       win.set({
-        caption: "Rocket Preview",
+        caption: qx.locale.Manager.tr("Rocket Preview"),
         width: 800,
         height: 600,
         minWidth: 400,
@@ -107,7 +107,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "iframe":
+        case "iframe": {
           const src = qx.util.ResourceManager.getInstance().toUri(this.self().INDEX_HTML);
           control = new qx.ui.embed.Html("<iframe></iframe>");
           control.set({
@@ -127,6 +127,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
 
           this._add(control);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },

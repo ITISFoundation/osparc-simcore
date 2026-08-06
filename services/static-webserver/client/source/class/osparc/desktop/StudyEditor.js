@@ -285,6 +285,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
+      workbench.addListener("nodeAddedToBackend", e => this.__markNodeAsSynced(e.getData()), this);
+
       study.listenToChanges(); // this includes the listener on the workbench and ui
       study.addListener("projectDocumentChanged", e => this.__projectDocumentChanged(e.getData()), this);
 
@@ -302,6 +304,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           delete this.__lastSyncedProjectDocument["workbench"][nodeId]["runHash"];
         }
       });
+    },
+
+    __markNodeAsSynced: function(node) {
+      if (!this.__lastSyncedProjectDocument) {
+        return;
+      }
+      this.__lastSyncedProjectDocument["workbench"][node.getNodeId()] = {
+        key: node.getKey(),
+        version: node.getVersion(),
+      };
     },
 
     __attachSocketEventHandlers: function() {
@@ -350,6 +362,73 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               return;
             }
             this.__projectDocumentReceived(data);
+          }
+        }, this);
+      }
+
+      // Show real-time feedback in the navigation bar when the dynamic-sidecar backend
+      // is syncing/uploading files to S3 via rclone.
+      //
+      // The backend emits periodic "statePaths" socket events with these statuses:
+      //   - FILES_UPLOAD_QUEUED: rclone is waiting (--vfs-write-back) before uploading.
+      //     The field `vfs_write_back_s` contains the configured write-back delay in seconds.
+      //   - FILES_UPLOAD_UPLOADING / FILES_UPLOAD_QUEUED_AND_UPLOADING: rclone is actively uploading.
+      //   - FILES_UPLOAD_ENDED: the upload cycle is complete.
+      //
+      // UX goal: avoid showing "Queued" for the full write-back period (~30s) so the user
+      // doesn't feel they need to stop working. Instead, delay displaying "Queued" so it
+      // only appears briefly (~SHOW_QUEUED_LAST_SECS) right before the upload starts.
+      // Each new QUEUED event resets the timer, so continuous editing keeps the UI clean.
+      if (!socket.slotExists("statePaths")) {
+        const SHOW_QUEUED_LAST_SECS = 5;
+
+        let queuedTimerId = null;
+        const showQueued = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending("Queued");
+          }
+        };
+        const showUploading = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending("Uploading");
+          }
+        };
+        const clearStatus = () => {
+          if (this.getStudy()) {
+            this.getStudy().setSaveFilesPending(null);
+          }
+        };
+        const cancelQueuedTimer = () => {
+          if (queuedTimerId !== null) {
+            clearTimeout(queuedTimerId);
+            queuedTimerId = null;
+          }
+        };
+
+        socket.on("statePaths", data => {
+          if (!this.getStudy() || data["project_id"] !== this.getStudy().getUuid()) {
+            return;
+          }
+          const status = data["status"];
+          if (status === "FILES_UPLOAD_QUEUED") {
+            // Delay showing "Queued" so it only appears for the last ~SHOW_QUEUED_LAST_SECS
+            // before rclone starts uploading. Each new QUEUED resets the timer, so while
+            // the user keeps editing, the label never appears.
+            cancelQueuedTimer();
+            const vfsWriteBackS = data["vfs_write_back_s"];
+            const delay = Math.max(0, vfsWriteBackS - SHOW_QUEUED_LAST_SECS) * 1000;
+            queuedTimerId = setTimeout(() => {
+              queuedTimerId = null;
+              showQueued();
+            }, delay);
+          } else if (["FILES_UPLOAD_UPLOADING", "FILES_UPLOAD_QUEUED_AND_UPLOADING"].includes(status)) {
+            cancelQueuedTimer();
+            showUploading();
+          } else if (status === "FILES_UPLOAD_ENDED") {
+            // Upload finished — clear any displayed status.
+            // "Queued" disappearing on its own signals the upload completed successfully.
+            cancelQueuedTimer();
+            clearStatus();
           }
         }, this);
       }
@@ -412,16 +491,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbenchPatches = [];
       const studyPatches = [];
       for (const jsonPatch of jsonPatches) {
-        if (jsonPatch.path.startsWith('/ui/')) {
+        if (jsonPatch.path.startsWith("/ui/")) {
           uiPatches.push(jsonPatch);
-        } else if (jsonPatch.path.startsWith('/workbench/')) {
+        } else if (jsonPatch.path.startsWith("/workbench/")) {
           workbenchPatches.push(jsonPatch);
         } else {
           studyPatches.push(jsonPatch);
         }
       }
       if (workbenchPatches.length > 0) {
-        this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches, uiPatches);
+        this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches);
       }
       if (uiPatches.length > 0) {
         this.getStudy().getUi().updateUiFromPatches(uiPatches);
@@ -525,8 +604,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           ttlMap.addOrUpdateEntry(walletId);
           const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
           const walletName = usedWallet.getName();
-          const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
-          osparc.FlashMessenger.logError(this.tr(text), null, flashMessageDisplayDuration);
+          const text = this.tr("Wallet \"%1\", running your service(s) has run out of credits. Stopping service(s) gracefully.", walletName);
+          osparc.FlashMessenger.logError(text, null, flashMessageDisplayDuration);
         }, this);
       }
     },
@@ -549,7 +628,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               const workbench = this.getStudy().getWorkbench();
               const node = workbench.getNode(nodeId);
               const label = node.getLabel();
-              const text = `New inputs for service ${label}. Please reload to refresh service.`;
+              const text = this.tr("New inputs for service %1. Please reload to refresh service.", label);
               osparc.FlashMessenger.logAs(text, "INFO");
             }
           }

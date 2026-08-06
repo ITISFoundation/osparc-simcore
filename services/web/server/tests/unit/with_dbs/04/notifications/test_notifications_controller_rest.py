@@ -340,50 +340,6 @@ async def test_preview_template_success(
     assert preview.message_content
 
 
-@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
-async def test_preview_template_enriches_context_with_product_data(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    mocked_notifications_rpc_client: MockerFixture,
-    mocker: MockerFixture,
-    fake_email_content: dict[str, Any],
-):
-    """Test that preview_template enriches context with product data"""
-    assert client.app
-
-    # Spy on the RPC call to verify the enriched context
-    mock_rpc_call = mocker.patch(
-        f"{_service.__name__}.remote_preview_template",
-        return_value=PreviewTemplateResponse(
-            ref=TemplateRef(
-                channel=Channel.email,
-                template_name="test",
-            ),
-            message_content={"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
-        ),
-    )
-
-    url = client.app.router["preview_template"].url_for()
-
-    body = {
-        "ref": {
-            "channel": "email",
-            "templateName": "test_template",
-        },
-        "context": fake_email_content,
-    }
-
-    response = await client.post(url.path, json=body)
-    await assert_status(response, status.HTTP_200_OK)
-
-    # Verify RPC was called with enriched context including product data
-    assert mock_rpc_call.called
-    call_args = mock_rpc_call.call_args
-    assert "context" in call_args.kwargs
-    context = call_args.kwargs["context"]
-    assert "product" in context
-
-
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [

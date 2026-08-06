@@ -67,12 +67,17 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
-            padding: [0, 8],
+            padding: 0,
+            width: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            height: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            minWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            minHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
             maxWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
             maxHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            center: true,
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesomeSolid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
@@ -96,7 +101,7 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       });
       osparc.utils.Utils.setIdToWidget(this, "fileItem_" + id);
 
-      this.setIcon(file.getIsDirectory() ? "@FontAwesome5Solid/folder/" : "@FontAwesome5Solid/file/");
+      this.setIcon(file.getIsDirectory() ? "@FontAwesomeSolid/folder/" : "@FontAwesomeSolid/file/");
       this.getChildControl("icon").getChildControl("image").set({
         paddingTop: 5,
       });
@@ -123,7 +128,7 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
         position: "bottom-right",
       });
 
-      const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/folder/12");
+      const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesomeSolid/folder/12");
       openLocationButton.addListener("execute", () => this.fireDataEvent("openLocation", {
         projectId: file.getProjectId(),
         path: file.getPath()
@@ -131,6 +136,8 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       menu.add(openLocationButton);
 
       menuButton.setMenu(menu);
+      this._keepRevealedWhileMenuOpen(menu);
+      this._setHoverRevealWidget(menuButton);
     },
   }
 });

@@ -1,6 +1,7 @@
 import functools
 import logging
 import os
+from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 from typing import Final
@@ -9,9 +10,9 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType, FileNotificationMessage
 from servicelib.container_utils import run_command_in_container
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.progress_bar import ProgressBarData
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import QueueName, RabbitMQClient
 from simcore_sdk.node_ports_common import filemanager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePathError
@@ -23,15 +24,26 @@ from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 
 _logger = logging.getLogger(__name__)
 
+
+@dataclass
+class _FileNotificationState:
+    queue_name: QueueName
+    can_process: bool = field(default=False, init=False)
+
+
 _MIN_STORAGE_PATH_PARTS: Final[int] = 3
 _TIMEOUT_REMOVAL: Final[timedelta] = timedelta(seconds=5)
 
 
-def _resolve_local_path_from_storage_id(
-    mounted_volumes: MountedVolumes,
-    storage_path: StorageFileID,
-) -> Path | None:
-    """Maps a StorageFileID to a local disk path within mounted volumes."""
+def _resolve_local_path_from_storage_id(mounted_volumes: MountedVolumes, storage_path: StorageFileID) -> Path | None:
+    """Maps a StorageFileID to a local disk path within mounted volumes.
+
+    Only state volumes are resolved. Inputs and outputs are intentionally ignored:
+    - outputs are produced by this node; reacting to a notification about them would
+      rewrite the file under the outputs watcher and trigger an upload loop
+      (see also the rclone path which only acts on explicitly registered mounts).
+    - inputs are handled via the rclone mount path when applicable.
+    """
     path_parts = storage_path.split("/")
     if len(path_parts) < _MIN_STORAGE_PATH_PARTS:
         return None
@@ -39,20 +51,18 @@ def _resolve_local_path_from_storage_id(
     volume_name = path_parts[2]
     relative_parts = path_parts[_MIN_STORAGE_PATH_PARTS:]
 
-    local_base: Path | None = None
-    if volume_name == mounted_volumes.inputs_path.name:
-        local_base = mounted_volumes.disk_inputs_path
-    elif volume_name == mounted_volumes.outputs_path.name:
-        local_base = mounted_volumes.disk_outputs_path
-    else:
-        for state_path, disk_state_path in zip(
-            mounted_volumes.state_paths,
-            mounted_volumes.disk_state_paths_iter(),
-            strict=True,
-        ):
-            if volume_name == state_path.name:
-                local_base = disk_state_path
-                break
+    local_base: Path | None = next(
+        (
+            disk
+            for state_path, disk in zip(
+                mounted_volumes.state_paths,
+                mounted_volumes.disk_state_paths_iter(),
+                strict=True,
+            )
+            if volume_name == state_path.name
+        ),
+        None,
+    )
 
     if local_base is None:
         return None
@@ -122,7 +132,7 @@ async def _notify_path_change(
     Informs that a path inside S3 changed and that an action needs to be taken in the container.
     """
     try:
-        await get_r_clone_mount_manager(app).refresh_path(f"{Path(path).parent}", recursive=recursive)
+        await get_r_clone_mount_manager(app).refresh_path(path, recursive=recursive)
     except NoMountFoundForRemotePathError:
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
         match event_type:
@@ -134,10 +144,35 @@ async def _notify_path_change(
                 _logger.warning("Received unsupported event type '%s' for path '%s'", event_type, path)
 
 
+def _get_file_notification_state(app: FastAPI) -> _FileNotificationState:
+    state: _FileNotificationState = app.state.file_notification_state
+    return state
+
+
 async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
     message = FileNotificationMessage.model_validate_json(data)
+
+    if not _get_file_notification_state(app).can_process:
+        _logger.debug(
+            "notifications processing is not enabled. Skipping notification: %s for file_id=%s",
+            message.event_type,
+            message.file_id,
+        )
+        return True
+
+    is_root_directory = len(message.file_id.split("/")) == _MIN_STORAGE_PATH_PARTS
+    if message.fmd_is_directory and is_root_directory:
+        _logger.debug(
+            "notification processing ignored for root directory. Skipping notification: %s for file_id=%s",
+            message.event_type,
+            message.file_id,
+        )
+        return True
+
     _logger.debug("Received file notification: %s for file_id=%s", message.event_type, message.file_id)
-    await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
+    with log_catch(_logger, reraise=False):
+        await _notify_path_change(app=app, event_type=message.event_type, path=message.file_id, recursive=False)
+
     return True
 
 
@@ -145,7 +180,6 @@ def setup_file_notification_subscriber(app: FastAPI) -> None:
     async def _startup() -> None:
         settings: ApplicationSettings = app.state.settings
         topic = f"{settings.DY_SIDECAR_PROJECT_ID}.{settings.DY_SIDECAR_NODE_ID}"
-        app.state.file_notification_queue = None
 
         with log_context(_logger, logging.INFO, msg=f"subscribing to file notifications with topic={topic}"):
             rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
@@ -155,14 +189,17 @@ def setup_file_notification_subscriber(app: FastAPI) -> None:
                 exclusive_queue=True,
                 topics=[topic],
             )
-            app.state.file_notification_queue = subscribed_queue
+            app.state.file_notification_state = _FileNotificationState(queue_name=subscribed_queue)
 
     async def _stop() -> None:
-        queue_name: str | None = app.state.file_notification_queue
+        queue_name = _get_file_notification_state(app).queue_name
         with log_context(_logger, logging.INFO, msg=f"unsubscribing from file notifications with queue={queue_name}"):
             rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-            if queue_name is not None:
-                await rabbit_client.unsubscribe(queue_name)
+            await rabbit_client.unsubscribe(queue_name)
 
     app.add_event_handler("startup", _startup)
     app.add_event_handler("shutdown", _stop)
+
+
+def enable_notifications_processing(app: FastAPI) -> None:
+    _get_file_notification_state(app).can_process = True

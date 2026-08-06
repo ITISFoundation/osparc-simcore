@@ -409,7 +409,7 @@ async def test_state_paths_notifier_send_state_paths_status(
         on_state_paths_events: list[AsyncMock] = [_get_on_state_paths_spy(c) for c in frontend_clients]
 
         state_paths_notifier = StatePathsNotifier(app, user_id, project_id, node_id)
-        await state_paths_notifier.send_state_paths_status(mount_activity_status)
+        await state_paths_notifier.send_state_paths_status(mount_activity_status, vfs_write_back_s=30)
 
         # check that all clients received it
         for on_state_paths_event in on_state_paths_events:
@@ -420,6 +420,7 @@ async def test_state_paths_notifier_send_state_paths_status(
                         project_id=project_id,
                         node_id=node_id,
                         status=mount_activity_status,
+                        vfs_write_back_s=30,
                     )
                 )
             )

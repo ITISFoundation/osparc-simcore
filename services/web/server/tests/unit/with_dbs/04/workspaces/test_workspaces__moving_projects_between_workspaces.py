@@ -229,7 +229,7 @@ async def test_moving_between_workspaces_check_removed_from_folder(
 
     # Check project_to_folders DB is not empty
     with postgres_db.connect() as con:
-        count_query = sa.select(sa.func.count()).select_from(projects_to_folders)
+        count_query = sa.select(sa.func.count()).select_from(projects_to_folders)  # pylint: disable=not-callable
         result = con.execute(count_query).scalar()
     assert result == 1
 
@@ -252,6 +252,6 @@ async def test_moving_between_workspaces_check_removed_from_folder(
 
     # Check project_to_folders DB is empty
     with postgres_db.connect() as con:
-        count_query = sa.select(sa.func.count()).select_from(projects_to_folders)
+        count_query = sa.select(sa.func.count()).select_from(projects_to_folders)  # pylint: disable=not-callable
         result = con.execute(count_query).scalar()
     assert result == 0

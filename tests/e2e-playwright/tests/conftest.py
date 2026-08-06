@@ -133,6 +133,20 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="e2e-playwright",
         help="defines a specific user agent osparc header",
     )
+    group.addoption(
+        "--basic-auth-user",
+        action="store",
+        type=str,
+        default=None,
+        help="basic auth user name, for portals protected by HTTP basic auth",
+    )
+    group.addoption(
+        "--basic-auth-password",
+        action="store",
+        type=str,
+        default=None,
+        help="basic auth password, for portals protected by HTTP basic auth",
+    )
 
 
 # Dictionary to store start times of tests
@@ -149,10 +163,12 @@ def pytest_runtest_setup(item):
 _FORMAT: Final = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-def _construct_graylog_url(product_url: str | None, start_time: datetime.datetime, end_time: datetime.datetime) -> str:
+def _construct_graylog_url(
+    product_url: AnyUrl | None, start_time: datetime.datetime, end_time: datetime.datetime
+) -> str:
     # Deduce monitoring url
     if product_url:
-        scheme, tail = product_url.split("://", 1)
+        scheme, tail = f"{product_url}".split("://", 1)
     else:
         scheme, tail = "https", "<UNDEFINED>"
     monitoring_url = f"{scheme}://monitoring.{tail}".rstrip("/")
@@ -171,7 +187,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
     if call.when == "call" and call.excinfo is not None:
         test_name = item.name
         test_location = item.location
-        product_url = f"{item.config.getoption('--product-url', default=None)}"
+        product_url = item.config.getoption("--product-url", default=None)
         is_billable = item.config.getoption("--product-billable", default=None)
 
         diagnostics = {
@@ -217,7 +233,10 @@ def api_request_context(context: BrowserContext) -> APIRequestContext:
 def product_url(request: pytest.FixtureRequest) -> AnyUrl:
     if passed_product_url := request.config.getoption("--product-url"):
         return TypeAdapter(AnyUrl).validate_python(passed_product_url)
-    return TypeAdapter(AnyUrl).validate_python(os.environ["PRODUCT_URL"])
+    if env_product_url := os.environ.get("PRODUCT_URL"):
+        return TypeAdapter(AnyUrl).validate_python(env_product_url)
+    msg = "missing --product-url option or PRODUCT_URL env var"
+    raise AssertionError(msg)
 
 
 @pytest.fixture
@@ -300,15 +319,43 @@ def user_agent(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
+def basic_auth_user(request: pytest.FixtureRequest) -> str | None:
+    if user := request.config.getoption("--basic-auth-user"):
+        assert isinstance(user, str)
+        return user
+    return None
+
+
+@pytest.fixture(scope="session")
+def basic_auth_password(request: pytest.FixtureRequest) -> str | None:
+    if password := request.config.getoption("--basic-auth-password"):
+        assert isinstance(password, str)
+        return password
+    return None
+
+
+@pytest.fixture(scope="session")
 def browser_context_args(
-    browser_context_args: dict[str, dict[str, str] | str], user_agent: str
-) -> dict[str, dict[str, str] | str]:
+    browser_context_args: dict[str, dict[str, Any] | str],
+    user_agent: str,
+    basic_auth_user: str | None,
+    basic_auth_password: str | None,
+) -> dict[str, dict[str, Any] | str]:
     # Override browser context options, see https://playwright.dev/python/docs/test-runners#fixtures
-    return {
+    context_args: dict[str, dict[str, Any] | str] = {
         **browser_context_args,
         "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
         "viewport": {"width": 1600, "height": 900},  # HD+
     }
+    assert bool(basic_auth_user) == bool(basic_auth_password), (
+        "--basic-auth-user and --basic-auth-password must be provided together"
+    )
+    if basic_auth_user and basic_auth_password:
+        context_args["http_credentials"] = {
+            "username": basic_auth_user,
+            "password": basic_auth_password,
+        }
+    return context_args
 
 
 @pytest.fixture
@@ -562,9 +609,9 @@ def create_new_project_and_delete(
             # Enhanced context for better debugging when timeout occurs
             operation_type = "template" if template_id is not None else "new project"
             ctx.logger.info(
-                "Waiting for project to open: %s (timeout: %s seconds, expected_states: %s)",
+                "Waiting for project to open: %s (timeout: %s, expected_states: %s)",
                 operation_type,
-                (timeout + 10 * SECOND) / 1000,
+                datetime.timedelta(milliseconds=timeout + 10 * SECOND),
                 expected_states,
             )
 
@@ -618,12 +665,17 @@ def create_new_project_and_delete(
             logging.INFO,
             f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
-            for attempt in range(10):
+            _max_delete_attempts = 24
+            for attempt in range(_max_delete_attempts):
                 response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
-                if response.status == 204:
+                if response.status in {204, 404}:
+                    # NOTE: 404 means the project was already deleted (e.g. by another
+                    # fixture/test step that also owns/tracks this project, such as
+                    # `create_function_from_project`'s teardown deleting the source
+                    # study of a project-based function). Treat it as already achieved.
                     break
-                if response.status == 409 and attempt < 9:
-                    time.sleep(3)
+                if response.status == 409 and attempt < _max_delete_attempts - 1:
+                    time.sleep(5)
                     continue
                 assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 
@@ -813,3 +865,23 @@ def playwright_test_results_dir() -> Path:
     results_dir = Path.cwd() / "test-results"
     results_dir.mkdir(parents=True, exist_ok=True)
     return results_dir
+
+
+@pytest.fixture
+def api_key_and_secret(
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+) -> Iterator[tuple[str, str]]:
+    """Creates a temporary API key/secret pair and deletes it on teardown."""
+    resp = api_request_context.post(
+        f"{product_url}v0/auth/api-keys",
+        data=json.dumps({"displayName": "e2e-temp-api-key"}),
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.ok, f"Failed to create API key: {resp.status} {resp.text()}"
+    data = resp.json()["data"]
+    api_key_id = data["id"]
+
+    yield data["apiKey"], data["apiSecret"]
+
+    api_request_context.delete(f"{product_url}v0/auth/api-keys/{api_key_id}")

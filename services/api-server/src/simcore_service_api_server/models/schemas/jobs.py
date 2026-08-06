@@ -2,9 +2,10 @@ import datetime
 import hashlib
 import logging
 from pathlib import Path
-from typing import Annotated, TypeAlias
+from typing import Annotated
 from uuid import UUID, uuid4
 
+from models_library.api_schemas_directorv2.encryption import FileIDStr, RootKeyStr
 from models_library.basic_types import SHA256Str
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -38,7 +39,6 @@ from ..api_resources import (
 from ..basic_types import VersionStr
 from ..domain.files import File as DomainFile
 from ..domain.files import FileInProgramJobData
-from ..schemas.files import UserFile
 from .base import ApiServerInputSchema
 from .programs import ProgramKeyId
 
@@ -49,22 +49,19 @@ from .programs import ProgramKeyId
 #  - custom metadata
 #
 
-JobID: TypeAlias = UUID
+type JobID = UUID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
-ArgumentTypes: TypeAlias = File | StrictFloat | StrictInt | StrictBool | str | list | None
-KeywordArguments: TypeAlias = dict[str, ArgumentTypes]
-PositionalArguments: TypeAlias = list[ArgumentTypes]
+type ArgumentTypes = File | StrictFloat | StrictInt | StrictBool | str | list | None
+type KeywordArguments = dict[str, ArgumentTypes]
+type PositionalArguments = list[ArgumentTypes]
 
 
 def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     _dump_str = ""
     for key in sorted(kwargs.keys()):
         value = kwargs[key]
-        if isinstance(value, File):
-            value = _compute_keyword_arguments_checksum(value.model_dump())
-        else:
-            value = str(value)
+        value = _compute_keyword_arguments_checksum(value.model_dump()) if isinstance(value, File) else str(value)
         _dump_str += f"{key}:{value}"
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 
@@ -106,10 +103,7 @@ assert set(UserFile.model_fields.keys()).issubset(set(UserFileToProgramJob.model
 
 
 class JobInputs(BaseModel):
-    # NOTE: this is different from the resource JobInput (TBD)
     values: KeywordArguments
-
-    # TODO: gibt es platz fuer metadata?
 
     model_config = ConfigDict(
         frozen=True,
@@ -133,16 +127,32 @@ class JobInputs(BaseModel):
         return _compute_keyword_arguments_checksum(self.values)
 
 
+class JobEncryptionInputs(ApiServerInputSchema):
+    """Optional encryption context supplied at job-start time."""
+
+    root_key: RootKeyStr
+    input_port_to_file_id: Annotated[
+        dict[str, FileIDStr],
+        Field(
+            default_factory=dict,
+            description="Maps each encrypted input port key to the file_id used to derive its key",
+        ),
+    ]
+
+    model_config = ConfigDict(
+        frozen=True,
+        json_schema_extra={
+            "example": {
+                "root_key": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+                "input_port_to_file_id": {"input_file": "input_file"},
+            }
+        },
+    )
+
+
 class JobOutputs(BaseModel):
-    # TODO: JobOutputs is a resources!
-
     job_id: JobID = Field(..., description="Job that produced this output")
-
-    # TODO: an output could be computed before than the others? has a state? not-ready/ready?
     results: KeywordArguments
-
-    # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
-    # on one specific output.
 
     model_config = ConfigDict(
         frozen=True,
@@ -209,6 +219,10 @@ class JobMetadata(BaseModel):
             }
         }
     )
+
+
+class BatchGetJobMetadataResponse(BaseModel):
+    items: list[JobMetadata] = Field(..., description="List of job metadata results")
 
 
 # JOBS ----------

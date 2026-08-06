@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 from decimal import Decimal
-from typing import Any, TypeAlias
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -38,7 +38,7 @@ from simcore_service_webserver.wallets._constants import (
     MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
 )
 
-OpenApiDict: TypeAlias = dict[str, Any]
+type OpenApiDict = dict[str, Any]
 
 
 async def test_payment_on_invalid_wallet(
@@ -74,7 +74,7 @@ async def test_one_time_payment_workflow(
     mocker: MockerFixture,
     faker: Faker,
     mock_rpc_payments_service_api: dict[str, MagicMock],
-    setup_user_pre_registration_details_db: None,
+    setup_user_billing_details_db: None,
     amount_usd: int,
     expected_status: int,
 ):
@@ -84,11 +84,11 @@ async def test_one_time_payment_workflow(
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
     send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_message_to_user",
+        "simcore_service_webserver.socketio.socketio_service.send_message_to_user",
         autospec=True,
     )
     mock_rut_add_credits_to_wallet = mocker.patch(
-        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        "simcore_service_webserver.resource_usage.resource_usage_service.add_credits_to_wallet",
         autospec=True,
     )
 
@@ -162,7 +162,7 @@ async def test_multiple_payments(
     mocker: MockerFixture,
     faker: Faker,
     mock_rpc_payments_service_api: dict[str, MagicMock],
-    setup_user_pre_registration_details_db: None,
+    setup_user_billing_details_db: None,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -170,11 +170,11 @@ async def test_multiple_payments(
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
     send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_message_to_user",
+        "simcore_service_webserver.socketio.socketio_service.send_message_to_user",
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
+        "simcore_service_webserver.resource_usage.resource_usage_service.add_credits_to_wallet",
         autospec=True,
     )
 
@@ -257,11 +257,11 @@ async def test_complete_payment_errors(
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
     mock_rpc_payments_service_api: dict[str, MagicMock],
-    setup_user_pre_registration_details_db: None,
+    setup_user_billing_details_db: None,
 ):
     assert client.app
     send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_message_to_user",
+        "simcore_service_webserver.socketio.socketio_service.send_message_to_user",
         autospec=True,
     )
 
@@ -279,7 +279,7 @@ async def test_complete_payment_errors(
     payment = WalletPaymentInitiated.model_validate(data)
 
     # Cannot complete as PENDING
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         await _ack_creation_of_wallet_payment(
             client.app,
             payment_id=payment.payment_id,
@@ -310,7 +310,7 @@ async def test_billing_info_missing_error(
     client: TestClient,
     logged_user_wallet: WalletGet,
 ):
-    # NOTE: setup_user_pre_registration_details_db is not setup to emulate missing pre-registration
+    # NOTE: setup_user_billing_details_db is not setup to emulate missing billing details
 
     assert client.app
     wallet = logged_user_wallet

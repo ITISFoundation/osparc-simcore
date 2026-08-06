@@ -52,16 +52,25 @@ from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
+from ..modules.file_notification_subscriber import enable_notifications_processing
 from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
-from ..modules.outputs import OutputsManager, event_propagation_disabled
+from ..modules.outputs import (
+    OutputsManager,
+    event_propagation_disabled,
+)
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
 )
 from .resource_tracking import send_service_started, send_service_stopped
+from .user_services_tracing import (
+    create_user_services_trace_collector,
+    is_user_services_tracing_enabled,
+    remove_user_services_trace_collector,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -204,6 +213,9 @@ async def create_user_services(
         _logger.debug(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
+
+        if is_user_services_tracing_enabled(app):
+            await create_user_services_trace_collector(app)
     else:
         application_health.is_healthy = False
         application_health.error_message = message
@@ -263,6 +275,9 @@ async def remove_user_services(
 
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
+
+        if is_user_services_tracing_enabled(app):
+            await remove_user_services_trace_collector(app)
 
         await progress.update(message="stopping logs", percent=0.9)
         for container_name in shared_store.container_names:
@@ -378,7 +393,7 @@ async def restore_user_services_state_paths(
                     state_path=path,
                     index=k,
                 )
-                for k, path in enumerate(mounted_volumes.disk_state_paths_iter())
+                for k, path in enumerate(sorted(state_paths))
             ),
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
             reraise=True,  # this should raise if there is an issue
@@ -387,6 +402,9 @@ async def restore_user_services_state_paths(
     await post_sidecar_log_message(app, "Finished state downloading", log_level=logging.INFO)
 
     size = await _get_state_folders_size_async(state_paths)
+
+    enable_notifications_processing(app)
+
     await progress.update(message="state restored", percent=0.99)
     return size
 
