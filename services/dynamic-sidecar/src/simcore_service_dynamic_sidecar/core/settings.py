@@ -34,9 +34,8 @@ from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
 )
 from settings_library.tracing import TracingSettings
+from settings_library.user_services_tracing import UserServicesTracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
-
-from ..modules.user_services_tracing import UserServicesTracingSettings
 
 
 class ResourceTrackingSettings(BaseApplicationSettings):

@@ -68,9 +68,8 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
-    )
+    example = dict(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0])
+    return TypeAdapter(ServiceResourcesDict).validate_python(example)
 
 
 @pytest.fixture

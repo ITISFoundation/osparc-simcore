@@ -17,12 +17,9 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_director import producer
-from simcore_service_director.constants import (
-    CPU_RESOURCE_LIMIT_KEY,
-    MEM_RESOURCE_LIMIT_KEY,
-)
 from simcore_service_director.core.errors import (
     DirectorRuntimeError,
     ServiceNotAvailableError,
@@ -231,8 +228,8 @@ async def test_service_assigned_env_variables(
         assert "SIMCORE_HOST_NAME" in envs_dict
         assert envs_dict["SIMCORE_HOST_NAME"] == docker_service.name
 
-        assert MEM_RESOURCE_LIMIT_KEY in envs_dict
-        assert CPU_RESOURCE_LIMIT_KEY in envs_dict
+        assert USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY in envs_dict
+        assert USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY in envs_dict
 
 
 async def test_interactive_service_published_port(

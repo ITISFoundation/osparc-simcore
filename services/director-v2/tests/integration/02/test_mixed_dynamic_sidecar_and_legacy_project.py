@@ -89,7 +89,7 @@ def mock_env(
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
-            "PROXY_EXPOSE_PORT": "true",
+            "DYNAMIC_SIDECAR_PROXY_EXPOSE_PORT": "true",
             "SIMCORE_SERVICES_NETWORK_NAME": network_name,
             "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
             "POSTGRES_HOST": f"{get_localhost_ip()}",

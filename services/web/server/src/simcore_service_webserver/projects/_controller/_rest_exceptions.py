@@ -31,7 +31,10 @@ from ...workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoun
 from ..exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
+    InsufficientResourcesForHelperContainersError,
     InsufficientRoleForProjectTemplateTypeUpdateError,
+    InvalidEC2TypeInResourcesSpecsError,
+    InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
     ProjectCopyingTrashedProjectError,
@@ -79,6 +82,33 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
     ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message("Required input values for this project node have not been set.", _version=1),
+    ),
+}
+
+
+_NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
+    InvalidEC2TypeInResourcesSpecsError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "Invalid EC2 instance type(s) selected: {ec2_types}. TIP: adjust the product configuration.",
+            _version=1,
+        ),
+    ),
+    InvalidKeysInResourcesSpecsError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "The service is missing required RAM/CPU resource keys ({missing_key}).",
+            _version=1,
+        ),
+    ),
+    InsufficientResourcesForHelperContainersError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "After reserving resources for helper containers (egress-proxy/tracing/rclone), the selected EC2"
+            " instance does not leave enough capacity for the service itself ({cpus} CPUs, {ram} RAM). TIP:"
+            " select a larger EC2 instance type.",
+            _version=1,
+        ),
     ),
 }
 
@@ -281,6 +311,7 @@ _ERRORS = [
     _CONVERSATION_ERRORS,
     _FOLDER_ERRORS,
     _NODE_ERRORS,
+    _NODE_RESOURCES_ERRORS,
     _OTHER_ERRORS,
     _PRICING_ERRORS,
     _PROJECT_ERRORS,

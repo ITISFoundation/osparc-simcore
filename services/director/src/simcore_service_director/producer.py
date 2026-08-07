@@ -18,6 +18,7 @@ from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
 from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
@@ -25,9 +26,7 @@ from tenacity.stop import stop_after_attempt
 
 from . import docker_utils
 from .constants import (
-    CPU_RESOURCE_LIMIT_KEY,
     LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
-    MEM_RESOURCE_LIMIT_KEY,
     SERVICE_REVERSE_PROXY_SETTINGS,
     SERVICE_RUNTIME_BOOTSETTINGS,
     SERVICE_RUNTIME_SETTINGS,
@@ -413,8 +412,8 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
 
     # and make the container aware of them via env variables
     resource_limits = {
-        CPU_RESOURCE_LIMIT_KEY: nano_cpus_limit,
-        MEM_RESOURCE_LIMIT_KEY: mem_limit,
+        USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY: nano_cpus_limit,
+        USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY: mem_limit,
     }
     docker_params["task_template"]["ContainerSpec"]["Env"].update(resource_limits)
 

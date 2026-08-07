@@ -9,6 +9,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
@@ -96,14 +97,21 @@ def fake_mounted_volumes(tmp_path: Path, faker: Faker) -> MountedVolumes:
 
 @pytest.fixture
 def simple_compose_spec() -> str:
-    return """
-services:
-  jupyter-lab:
-    image: registry.osparc.org/simcore/services/dynamic/jupyter-lab:3.0.0
-  data-processor:
-    image: registry.osparc.org/simcore/services/dynamic/data-processor:1.0.0
-version: '3.7'
-    """
+    return yaml.dump(
+        inject_container_resources(
+            {
+                "version": "3.7",
+                "services": {
+                    "jupyter-lab": {
+                        "image": "registry.osparc.org/simcore/services/dynamic/jupyter-lab:3.0.0",
+                    },
+                    "data-processor": {
+                        "image": "registry.osparc.org/simcore/services/dynamic/data-processor:1.0.0",
+                    },
+                },
+            }
+        )
+    )
 
 
 def _get_env_str(svc_data: dict) -> str:

@@ -36,6 +36,8 @@ from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 from .settings import (
     extract_service_port_from_settings,
+    get_max_rclone_container_memory_limit,
+    get_max_user_service_container_memory,
     update_service_params_from_settings,
 )
 
@@ -95,6 +97,17 @@ def _get_environment_variables(
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     redis_settings = app_settings.REDIS
     r_clone_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
+    r_clone_mount_settings = r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
+    if scheduler_data.requires_data_mounting:
+        max_user_service_container_memory = get_max_user_service_container_memory(scheduler_data.service_resources)
+        r_clone_mount_settings = r_clone_mount_settings.model_copy(
+            update={
+                "R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MAX": get_max_rclone_container_memory_limit(
+                    r_clone_mount_settings, max_user_service_container_memory
+                )
+            }
+        )
+    tracing_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
 
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -142,8 +155,9 @@ def _get_environment_variables(
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
-        "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.model_dump_json(),
+        "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": r_clone_mount_settings.model_dump_json(),
         "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": r_clone_settings.R_CLONE_SIMCORE_SDK_SYNC_SETTINGS.model_dump_json(),
+        "DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG": tracing_settings.model_dump_json(),
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",

@@ -73,9 +73,25 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
         ),
     ] = False
 
-    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT: Annotated[
-        ByteSize, Field(description="memory limit for the rclone mount container")
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MIN: Annotated[
+        ByteSize,
+        Field(description="low cap: the rclone mount container's memory limit will never go below this value"),
+    ] = TypeAdapter(ByteSize).validate_python("0.5GiB")
+
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MAX: Annotated[
+        ByteSize,
+        Field(description="high cap: the rclone mount container's memory limit will never exceed this value"),
     ] = TypeAdapter(ByteSize).validate_python("10GiB")
+
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_PERCENT_OF_MAX_USER_SERVICE: Annotated[
+        NonNegativeFloat,
+        Field(
+            description=(
+                "fraction of the largest user-service container's memory limit used as the "
+                "rclone mount container's memory limit, before clamping to the min/max caps above"
+            ),
+        ),
+    ] = 0.1
 
     R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS: Annotated[
         NonNegativeInt, Field(description="CPU limit for the rclone mount container")
