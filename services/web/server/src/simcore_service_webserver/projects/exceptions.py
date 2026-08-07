@@ -228,6 +228,19 @@ class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
     msg_template = "Invalid EC2 type name selected {ec2_types}. TIP: adjust product configuration"
 
 
+class InsufficientResourcesForHelperContainersError(ProjectNodeResourcesInvalidError):
+    msg_template = (
+        "After reserving resources for helper containers (egress-proxy/tracing/rclone), the selected EC2 instance"
+        " does not leave enough capacity for the service itself ({cpus} CPUs, {ram} RAM). TIP: select a larger"
+        " EC2 instance type."
+    )
+
+    def __init__(self, *, cpus: float, ram: int, **ctx):
+        super().__init__(**ctx)
+        self.cpus = cpus
+        self.ram = ram
+
+
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError): ...
 
 

@@ -19,7 +19,6 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import ServiceRunID
 from models_library.services_resources import (
-    GIGA,
     HELPER_CONTAINERS_RESOURCE_KEY,
     ImageResources,
     ResourceValue,
@@ -60,7 +59,7 @@ from ...docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
 from ...docker_service_specs.settings import (
-    get_max_rclone_container_memory_limit,
+    compute_helper_containers_resources,
     get_max_user_service_container_memory,
     merge_settings_before_use,
 )
@@ -110,25 +109,13 @@ def _add_helper_containers_resources_to_service_resources(
     is excluded: it already runs as its own separate Swarm service with its own
     dedicated resources.
     """
-    cpu = 0.0
-    ram = 0
-
-    egress_proxy_settings = dynamic_services_settings.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
-    cpu += egress_proxy_count * egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT
-    ram += egress_proxy_count * int(egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT)
-
-    if with_tracing:
-        tracing_settings = dynamic_services_settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
-        # otel collector (injected in compose) + otel forwarder (created via docker API)
-        cpu += 2 * tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT
-        ram += 2 * int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT)
-
-    if with_rclone:
-        r_clone_settings = dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
-        mount_settings = r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
-        max_user_service_container_memory = get_max_user_service_container_memory(service_resources)
-        cpu += mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS / GIGA
-        ram += int(get_max_rclone_container_memory_limit(mount_settings, max_user_service_container_memory))
+    cpu, ram = compute_helper_containers_resources(
+        dynamic_services_settings=dynamic_services_settings,
+        egress_proxy_count=egress_proxy_count,
+        with_tracing=with_tracing,
+        with_rclone=with_rclone,
+        max_user_service_container_memory=get_max_user_service_container_memory(service_resources),
+    )
 
     if cpu <= 0 and ram <= 0:
         return
