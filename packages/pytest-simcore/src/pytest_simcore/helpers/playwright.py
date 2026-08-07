@@ -15,11 +15,10 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from types import TracebackType
-from typing import Annotated, Any, Final
+from typing import Any, Final
 
 import arrow
 import pytest
-from annotated_types import doc
 from playwright._impl._sync_base import EventContextManager, EventInfo
 from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request, WebSocket
 from playwright.sync_api import Error as PlaywrightError
@@ -137,7 +136,7 @@ class SocketIOEvent:
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 _SOCKET_CLOSED_ERROR_MESSAGE: Final[str] = "Socket closed"
-_MAX_REATTACH_WINDOW: Final[timedelta] = timedelta(seconds=30)
+_MAX_REATTACH_ATTEMPTS: Final[int] = 100
 
 
 @dataclass
@@ -152,26 +151,11 @@ class _ReconnectableEventWaiter:
     timeout: float | None
 
     _deadline: datetime | None = field(init=False, default=None)
-    _reattach_deadline: datetime | None = field(init=False, default=None)
+    _reattach_attempts: int = field(init=False, default=0)
 
-    _ctx: Annotated[
-        EventContextManager | None,
-        doc(
-            "populated by _attach() below",
-        ),
-    ] = field(init=False, default=None)
-    _event_info: Annotated[
-        EventInfo | None,
-        doc(
-            "EventContextManager itself has no `.value`; only the EventInfo returned by entering it does",
-        ),
-    ] = field(init=False, default=None)
-    _bound_ws: Annotated[
-        WebSocket,
-        doc(
-            "populated by _attach() below",
-        ),
-    ] = field(init=False)
+    _ctx: EventContextManager | None = field(init=False, default=None)
+    _event_info: EventInfo | None = field(init=False, default=None)
+    _bound_ws: WebSocket = field(init=False)
 
     def __post_init__(self) -> None:
         if self.timeout is not None:
@@ -182,28 +166,16 @@ class _ReconnectableEventWaiter:
         return self
 
     def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
     ) -> None:
-        # NOTE: mirrors EventContextManager.__exist__'s behaviour
-
-        # If the `with` block raised, do not block waiting for the event -
-        # let the original exception propagate instead of masking/hanging on it.
-        if exc_val is not None and self._ctx is not None:
+        if self._ctx is not None:
             self._ctx.__exit__(exc_type, exc_val, exc_tb)
-        else:
-            _ = self.value
 
     @property
     def value(self) -> typing.Any:
-        # NOTE: public - used externally as `event.value` (mirrors EventInfo.value)
-        return self._value_reattaching_on_stale_socket()
+        """returns the same value as `EventInfo.value` making the result of `socket.expect_event` behave similarly"""
 
-    def _value_reattaching_on_stale_socket(self) -> typing.Any:
-        assert self._event_info is not None  # nosec - always set by _attach(), called before this is reachable
-
+        assert self._event_info is not None  # nosec
         while True:
             try:
                 return self._event_info.value
@@ -211,24 +183,20 @@ class _ReconnectableEventWaiter:
                 if _SOCKET_CLOSED_ERROR_MESSAGE not in f"{exc}" or self.robust_websocket.ws is self._bound_ws:
                     raise
 
-                self._enforce_reattach_window(exc)
+                self._enforce_reattach_limit(exc)
                 with log_context(
                     logging.INFO,
                     msg=f"Reattaching wait for {self.event!r} to newly reconnected websocket",
                 ):
                     self._attach()
 
-    def _enforce_reattach_window(self, exc: PlaywrightError) -> None:
-        # Safety net for unbounded (timeout=None) waits only - a caller-supplied
-        # timeout already bounds the whole wait via `_remaining_timeout()` in `_attach()`.
-        if self.timeout is not None:
-            return
-
-        now = datetime.now(UTC)
-        if self._reattach_deadline is None:
-            self._reattach_deadline = now + _MAX_REATTACH_WINDOW
-        elif now >= self._reattach_deadline:
-            msg = f"Giving up reattaching after {_MAX_REATTACH_WINDOW} while waiting for {self.event!r}."
+    def _enforce_reattach_limit(self, exc: PlaywrightError) -> None:
+        self._reattach_attempts += 1
+        if self._reattach_attempts > _MAX_REATTACH_ATTEMPTS:
+            msg = (
+                f"Giving up reattaching after {_MAX_REATTACH_ATTEMPTS} attempts while waiting for {self.event!r}. "
+                "TIP: please check for networking issues"
+            )
             raise PlaywrightError(msg) from exc
 
     def _remaining_timeout(self) -> float | None:
