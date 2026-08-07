@@ -177,3 +177,28 @@ def test_robust_websocket_reconnects_while_wait_is_pending(robust_ws: RobustWebS
     assert robust_ws._num_reconnections >= 1, (  # noqa: SLF001
         "Expected at least one reconnection to have happened while the wait was in flight"
     )
+
+
+def test_robust_websocket_reconnects_when_wait_is_never_read_explicitly(robust_ws: RobustWebSocket, real_page: Page):
+    """Regression test for `_ReconnectableEventWaiter.__exit__`: some callers (e.g.
+    `expected_service_running`/`wait_for_service_running` in `playwright.py`, via
+    `stack.enter_context(websocket.expect_event(...))`) never read `.value` themselves
+    and instead rely on exiting the `with` block to perform the wait. If `__exit__`
+    stops going through `.value` on a clean exit, this raises a stale
+    `Error: Socket closed` instead of reattaching, even though this test never touches
+    `.value`.
+    """
+    with robust_ws.expect_event("framereceived", timeout=20000):
+        with log_context(logging.INFO, msg="Simulating a reconnect while a wait is in-flight") as ctx:
+            ctx.logger.info("Disconnecting network while the wait is still pending")
+            _simulate_network_blip(real_page, offline_ms=2000)
+            _wait_for_connected(real_page)
+
+        ctx.logger.info("Sending message only after reconnection has completed")
+        real_page.evaluate("window.ws.send('SurvivedExitOnlyWait')")  # Send a message via WebSocket
+        # NOTE: `.value` is deliberately never read here - exiting the `with` block below
+        # must perform the wait (and reattach) on its own.
+
+    assert robust_ws._num_reconnections >= 1, (  # noqa: SLF001
+        "Expected at least one reconnection to have happened while the wait was in flight"
+    )
