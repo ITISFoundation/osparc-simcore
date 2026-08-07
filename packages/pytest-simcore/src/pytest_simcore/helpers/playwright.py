@@ -168,8 +168,14 @@ class _ReconnectableEventWaiter:
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
     ) -> None:
-        if self._ctx is not None:
-            self._ctx.__exit__(exc_type, exc_val, exc_tb)
+        # NOTE: This pattern avoids `Error: Socked closed` from being raised.
+        # If nothing went wrong, read `.value` here so a dropped connection is retried
+        # even if the caller never reads `.value` themselves.
+        if exc_val is not None:
+            if self._ctx is not None:
+                self._ctx.__exit__(exc_type, exc_val, exc_tb)
+        else:
+            _ = self.value
 
     @property
     def value(self) -> typing.Any:
