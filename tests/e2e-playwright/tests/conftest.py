@@ -193,7 +193,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         diagnostics = {
             "test_name": test_name,
             "test_location": test_location,
-            "product_url": product_url,
+            "product_url": f"{product_url}",
             "is_billable": is_billable,
         }
 
