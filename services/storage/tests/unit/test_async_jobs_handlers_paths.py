@@ -360,3 +360,59 @@ async def test_delete_paths(
         expected_total_size=expected_total_size - len(selected_paths) * project_params.allowed_file_sizes[0],
         product_name=product_name,
     )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=3,
+        )
+    ],
+    ids=str,
+)
+@pytest.mark.parametrize("delete_node_folder", [False, True], ids=["project-folder", "node-folder"])
+async def test_delete_paths_of_folder(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    location_id: LocationID,
+    project_with_seeded_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    product_name: ProductName,
+    delete_node_folder: bool,
+):
+    """folders are not valid file identifiers and are authorized at project level"""
+    project, list_of_files = project_with_seeded_files
+
+    path = Path(project["uuid"])
+    if delete_node_folder:
+        path /= f"{next(iter(list_of_files))}"
+
+    await _assert_delete_paths(
+        task_manager,
+        location_id,
+        user_id,
+        product_name,
+        paths={path},
+    )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=0,
+        product_name=product_name,
+    )
