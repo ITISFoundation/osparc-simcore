@@ -10,7 +10,7 @@
 import datetime
 import random
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import pytest
 from celery.worker.worker import WorkController
@@ -35,6 +35,8 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
+
+_NUM_NODES: Final[int] = 2
 
 type _IsFile = bool
 
@@ -372,7 +374,7 @@ async def test_delete_paths(
     "project_params",
     [
         ProjectWithFilesParams(
-            num_nodes=2,
+            num_nodes=_NUM_NODES,
             allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
             workspace_files_count=3,
         )
@@ -395,10 +397,12 @@ async def test_delete_paths_of_folder(
 ):
     """folders are not valid file identifiers and are authorized at project level"""
     project, list_of_files = project_with_seeded_files
+    assert len(list_of_files) == _NUM_NODES, "test preconditions are not filled! two nodes are needed for this test"
+    deleted_node_id, kept_node_id = list(list_of_files)
 
     path = Path(project["uuid"])
     if delete_node_folder:
-        path /= f"{next(iter(list_of_files))}"
+        path /= f"{deleted_node_id}"
 
     await _assert_delete_paths(
         task_manager,
@@ -414,5 +418,15 @@ async def test_delete_paths_of_folder(
         user_id,
         path=path,
         expected_total_size=0,
+        product_name=product_name,
+    )
+
+    # deleting a node folder must not touch the sibling node
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        user_id,
+        path=Path(project["uuid"]) / f"{kept_node_id}",
+        expected_total_size=(len(list_of_files[kept_node_id]) if delete_node_folder else 0),
         product_name=product_name,
     )
