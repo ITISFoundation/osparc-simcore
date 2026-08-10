@@ -764,7 +764,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 project_id=project_id
             )
         else:
-            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete_all_from_node(node_id=node_id)
+            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete_all_from_node(
+                project_id=project_id, node_id=node_id
+            )
 
         await get_s3_client(self.app).delete_objects_recursively(
             bucket=self.simcore_bucket_name,
