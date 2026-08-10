@@ -35,13 +35,13 @@ async def delete_paths(
     task: Task,
     task_key: TaskKey,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     paths: set[Path],
 ) -> None:
     assert task_key  # nosec
-    with log_context(_logger, logging.INFO, msg=f"delete {paths=} in {location_id=} for {user_id=}"):
-        app = get_app_server(task.app).app
-        dsm = get_dsm_provider(app).get(location_id)
+    with log_context(_logger, logging.INFO, msg=f"delete {paths=} in {location_id=} for {user_id=}, {product_name=}"):
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
         files_ids: set[StorageFileID] = {TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths}
         await limited_gather(
             *[dsm.delete_file(user_id, file_id) for file_id in files_ids], limit=MAX_CONCURRENT_S3_TASKS
