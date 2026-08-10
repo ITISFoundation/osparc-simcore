@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, NonNegativeInt
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 
 from .models import (
     DatasetMetaData,
@@ -107,7 +107,8 @@ class BaseDataManager(ABC):
         sha256_checksum: SHA256Str | None,
         is_directory: bool,
     ) -> UploadLinks:
-        """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
+        """creates one or more upload file links if user has the rights to,
+        expects the client to complete/abort upload"""
 
     @abstractmethod
     async def complete_file_upload(
@@ -130,6 +131,10 @@ class BaseDataManager(ABC):
     @abstractmethod
     async def delete_file(self, user_id: UserID, file_id: StorageFileID) -> None:
         """deletes file if user has the rights to"""
+
+    async def delete_path(self, user_id: UserID, path: Path) -> None:
+        """deletes an arbitrary path if user has the rights to"""
+        await self.delete_file(user_id, TypeAdapter(StorageFileID).validate_python(f"{path}"))
 
 
 @dataclass

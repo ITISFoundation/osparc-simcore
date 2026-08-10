@@ -108,6 +108,7 @@ from .utils.utils import (
 
 _NO_CONCURRENCY: Final[int] = 1
 _MAX_PARALLEL_S3_CALLS: Final[NonNegativeInt] = 10
+_PROJECT_FOLDER_MAX_PARTS: Final[int] = 2
 
 
 _logger = logging.getLogger(__name__)
@@ -739,6 +740,15 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 ],
                 limit=MAX_CONCURRENT_S3_TASKS,
             )
+
+    async def delete_path(self, user_id: UserID, path: Path) -> None:
+        # NOTE: a project or project/node folder is not a file identifier, it is authorized at project level
+        if 0 < len(path.parts) <= _PROJECT_FOLDER_MAX_PARTS:
+            node_id = NodeID(path.parts[1]) if len(path.parts) == _PROJECT_FOLDER_MAX_PARTS else None
+            await self.delete_project_simcore_s3(user_id, ProjectID(path.parts[0]), node_id)
+            return
+
+        await super().delete_path(user_id, path)
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
