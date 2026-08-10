@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
+from models_library.api_schemas_async_jobs.exceptions import JobError
 from models_library.celery import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
@@ -430,3 +431,32 @@ async def test_delete_paths_of_folder(
         expected_total_size=(len(list_of_files[kept_node_id]) if delete_node_folder else 0),
         product_name=product_name,
     )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize("path", [Path("not-a-uuid"), Path("not-a-uuid/neither-is-this")], ids=str)
+async def test_delete_paths_of_invalid_short_path_fails(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    location_id: LocationID,
+    product_name: ProductName,
+    path: Path,
+):
+    """short paths that are neither project[/node] folders nor file identifiers are rejected, not silently ignored"""
+    with pytest.raises(JobError) as exc:
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            user_id,
+            product_name,
+            paths={path},
+        )
+
+    assert exc.value.exc_type == "ValueError"
