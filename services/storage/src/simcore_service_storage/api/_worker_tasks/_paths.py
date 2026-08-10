@@ -5,9 +5,9 @@ from celery import Task  # type: ignore[import-untyped]
 from celery_library.worker.app_server import get_app_server
 from models_library.celery import TaskKey
 from models_library.products import ProductName
-from models_library.projects_nodes_io import LocationID, StorageFileID
+from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
@@ -42,7 +42,4 @@ async def delete_paths(
     assert task_key  # nosec
     with log_context(_logger, logging.INFO, msg=f"delete {paths=} in {location_id=} for {user_id=}, {product_name=}"):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
-        files_ids: set[StorageFileID] = {TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths}
-        await limited_gather(
-            *[dsm.delete_file(user_id, file_id) for file_id in files_ids], limit=MAX_CONCURRENT_S3_TASKS
-        )
+        await limited_gather(*[dsm.delete_path(user_id, path) for path in paths], limit=MAX_CONCURRENT_S3_TASKS)
