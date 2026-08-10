@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, ByteSize, NonNegativeInt
 
 from .models import (
     DatasetMetaData,
@@ -131,10 +131,6 @@ class BaseDataManager(ABC):
     @abstractmethod
     async def delete_file(self, user_id: UserID, file_id: StorageFileID) -> None:
         """deletes file if user has the rights to"""
-
-    async def delete_path(self, user_id: UserID, path: Path) -> None:
-        """deletes an arbitrary path if user has the rights to"""
-        await self.delete_file(user_id, TypeAdapter(StorageFileID).validate_python(f"{path}"))
 
 
 @dataclass

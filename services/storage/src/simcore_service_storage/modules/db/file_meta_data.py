@@ -384,13 +384,6 @@ class FileMetaDataRepository(BaseRepository):
         async with transaction_context(self.db_engine, connection) as conn:
             await conn.execute(file_meta_data.delete().where(file_meta_data.c.project_id == f"{project_id}"))
 
-    async def delete_all_from_node(
-        self, *, connection: AsyncConnection | None = None, project_id: ProjectID, node_id: NodeID
-    ) -> None:
-        # NOTE: filtering by project_id too, since the caller only authorizes project_id
+    async def delete_all_from_node(self, *, connection: AsyncConnection | None = None, node_id: NodeID) -> None:
         async with transaction_context(self.db_engine, connection) as conn:
-            await conn.execute(
-                file_meta_data.delete().where(
-                    (file_meta_data.c.project_id == f"{project_id}") & (file_meta_data.c.node_id == f"{node_id}")
-                )
-            )
+            await conn.execute(file_meta_data.delete().where(file_meta_data.c.node_id == f"{node_id}"))
