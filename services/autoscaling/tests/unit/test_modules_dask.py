@@ -149,7 +149,7 @@ async def test_list_processing_tasks(
     assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {
         next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
             DaskTask(
-                task_id=DaskTaskId(future_queued_task.key),
+                task_id=TypeAdapter(DaskTaskId).validate_python(future_queued_task.key),
                 required_resources=DaskTaskResources(threads=1),  # type: ignore
             )
         ]

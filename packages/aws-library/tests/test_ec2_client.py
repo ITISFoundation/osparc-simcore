@@ -125,8 +125,9 @@ async def test_get_ec2_instance_capabilities_returns_all_options(
 ):
     instance_types = await simcore_ec2_api.get_ec2_instance_capabilities("ALL")
     assert instance_types
-    # NOTE: this might need adaptation when moto is updated
-    assert 850 < len(instance_types) < 1188, f"received {len(instance_types)}, the test might need adaptation"
+    # NOTE: moto's instance catalog grows over time, so only assert a conservative lower bound.
+    assert len(instance_types) > 850, f"received {len(instance_types)}, the test might need adaptation"
+    assert [instance.name for instance in instance_types] == sorted({instance.name for instance in instance_types})
 
 
 async def test_get_ec2_instance_capabilities_raise_with_empty_set(

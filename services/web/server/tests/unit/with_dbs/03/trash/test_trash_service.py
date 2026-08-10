@@ -9,10 +9,12 @@
 from copy import deepcopy
 from unittest.mock import MagicMock
 
+import arrow
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -23,14 +25,17 @@ from pytest_simcore.helpers.webserver_login import (
 )
 from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces as workspaces_table
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.models import projects as projects_table
+from simcore_service_webserver.folders import _folders_service
 from simcore_service_webserver.projects import _projects_service_delete, _trash_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.trash import trash_service
+from simcore_service_webserver.workspaces import _workspaces_service
 from sqlalchemy.ext.asyncio import AsyncEngine
-from tenacity import stop_after_delay, wait_fixed
+from tenacity import stop_after_attempt, wait_none
 
 
 @pytest.fixture
@@ -106,6 +111,146 @@ async def test_trash_service__delete_expired_trash(
         await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
+async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_projects(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    fake_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_director_v2: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocked_storage: None,
+    asyncpg_engine: AsyncEngine,
+):
+    """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
+    `batch_delete_trashed_projects_as_admin` used to raise a RuntimeError (aborting the whole
+    GC run) as soon as more than one page (`MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE`) of trashed
+    projects had to be deleted, because deleting a page's projects changes the count of the
+    very collection `iter_pagination_params` was iterating over.
+    """
+    assert client.app
+
+    num_projects = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 10  # forces more than one page
+
+    created_project_ids: list[str] = []
+    for _ in range(num_projects):
+        project = await create_project(
+            client.app, deepcopy(fake_project), user_id=logged_user["id"], product_name="osparc"
+        )
+        created_project_ids.append(project["uuid"])
+
+    # TRASH all projects directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
+    already_expired = arrow.utcnow().shift(days=-1).datetime
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            projects_table.update()
+            .where(projects_table.c.uuid.in_(created_project_ids))
+            .values(trashed=already_expired, trashed_explicitly=True, trashed_by=logged_user["id"])
+        )
+
+    # UNDER TEST: a single GC cycle must delete ALL of them, without raising
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    # ASSERT: none of the projects remain in the DB
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(projects_table.c.uuid).where(projects_table.c.uuid.in_(created_project_ids))
+        )
+        remaining_uuids = {row.uuid for row in result}
+    assert not remaining_uuids
+
+
+async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_folders(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    asyncpg_engine: AsyncEngine,
+):
+    """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
+    `batch_delete_trashed_folders_as_admin` had the same multi-page pagination bug as
+    `batch_delete_trashed_projects_as_admin` (see the sibling projects test above).
+    """
+    assert client.app
+
+    num_folders = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 10  # forces more than one page
+
+    created_folder_ids: list[int] = []
+    for i in range(num_folders):
+        folder = await _folders_service.create_folder(
+            client.app,
+            user_id=logged_user["id"],
+            name=f"folder-{i}",
+            parent_folder_id=None,
+            product_name="osparc",
+            workspace_id=None,
+        )
+        created_folder_ids.append(folder.folder_db.folder_id)
+
+    # TRASH all folders directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
+    already_expired = arrow.utcnow().shift(days=-1).datetime
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            folders_v2.update()
+            .where(folders_v2.c.folder_id.in_(created_folder_ids))
+            .values(trashed=already_expired, trashed_explicitly=True, trashed_by=logged_user["id"])
+        )
+
+    # UNDER TEST: a single GC cycle must delete ALL of them, without raising
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    # ASSERT: none of the folders remain in the DB
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(folders_v2.c.folder_id).where(folders_v2.c.folder_id.in_(created_folder_ids))
+        )
+        remaining_ids = {row.folder_id for row in result}
+    assert not remaining_ids
+
+
+async def test_trash_service__delete_expired_trash_for_more_than_one_page_of_workspaces(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    asyncpg_engine: AsyncEngine,
+):
+    """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
+    `batch_delete_trashed_workspaces_as_admin` had the same multi-page pagination bug as
+    `batch_delete_trashed_projects_as_admin` (see the sibling projects test above).
+    """
+    assert client.app
+
+    num_workspaces = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE + 10  # forces more than one page
+
+    created_workspace_ids: list[int] = []
+    for i in range(num_workspaces):
+        workspace = await _workspaces_service.create_workspace(
+            client.app,
+            user_id=logged_user["id"],
+            name=f"workspace-{i}",
+            description=None,
+            thumbnail=None,
+            product_name="osparc",
+        )
+        created_workspace_ids.append(workspace.workspace_id)
+
+    # TRASH all workspaces directly in the DB (bulk), already expired to bypass TRASH_RETENTION_DAYS timing
+    already_expired = arrow.utcnow().shift(days=-1).datetime
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            workspaces_table.update()
+            .where(workspaces_table.c.workspace_id.in_(created_workspace_ids))
+            .values(trashed=already_expired, trashed_by=logged_user["id"])
+        )
+
+    # UNDER TEST: a single GC cycle must delete ALL of them, without raising
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
+
+    # ASSERT: none of the workspaces remain in the DB
+    async with asyncpg_engine.connect() as conn:
+        result = await conn.execute(
+            sa.select(workspaces_table.c.workspace_id).where(workspaces_table.c.workspace_id.in_(created_workspace_ids))
+        )
+        remaining_ids = {row.workspace_id for row in result}
+    assert not remaining_ids
+
+
 async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_succeeds(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -122,9 +267,13 @@ async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_suc
     """
     assert client.app
 
-    # speed up the tenacity retry so the test does not wait up to 60s
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_fixed(0.05))  # noqa: SLF001
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_delay(2))  # noqa: SLF001
+    # speed up the tenacity retry so the test does not wait up to 60s.
+    # NOTE: use an attempt-count bound (not `stop_after_delay`) so the retry isn't at the
+    # mercy of wall-clock timing on a busy/slow CI runner (a wall-clock bound previously
+    # caused flakiness: only 1 of the 3 expected calls happened before the bound elapsed).
+    # 3 attempts exactly matches the `side_effect` list below.
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_none())  # noqa: SLF001
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_attempt(3))  # noqa: SLF001
 
     mocker.patch(
         "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
@@ -154,7 +303,8 @@ async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_suc
     # UNDER TEST: a single GC cycle must retry internally until the pipeline is confirmed stopped
     await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
-    assert mock_is_pipeline_running.call_count >= 3
+    # exactly 3: matches the `side_effect` list above (2 "still running" + 1 "stopped")
+    assert mock_is_pipeline_running.call_count == 3
 
     resp = await client.get(f"/v0/projects/{user_project_id}")
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
@@ -192,9 +342,12 @@ async def test_trash_service__delete_expired_trash_retries_across_gc_cycles_when
         return_value=True,
     )
 
-    # speed up the retry so a stuck GC cycle gives up quickly instead of waiting up to 60s
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_fixed(0.05))  # noqa: SLF001
-    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_delay(0.3))  # noqa: SLF001
+    # speed up the retry so a stuck GC cycle gives up quickly instead of waiting up to 60s.
+    # NOTE: use an attempt-count bound (not `stop_after_delay`) to avoid wall-clock timing
+    # flakiness on a busy/slow CI runner: the pipeline is stuck (always "running"), so the
+    # exact attempt count just needs to be small, not timing-dependent.
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_none())  # noqa: SLF001
+    mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_attempt(3))  # noqa: SLF001
 
     user_project_id = user_project["uuid"]
     await _trash_service.trash_project(

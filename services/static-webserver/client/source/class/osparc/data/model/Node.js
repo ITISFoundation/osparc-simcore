@@ -1216,7 +1216,7 @@ qx.Class.define("osparc.data.model.Node", {
     checkState: function() {
       if (this.isDynamic()) {
         const metadata = this.getMetadata();
-        const msg = "Starting " + metadata.key + ":" + metadata.version + "...";
+        const msg = this.tr("Starting %1:%2...", metadata.key, metadata.version);
         const msgData = {
           nodeId: this.getNodeId(),
           msg,
@@ -1235,7 +1235,7 @@ qx.Class.define("osparc.data.model.Node", {
     stopDynamicService: function() {
       if (this.isDynamic()) {
         const metadata = this.getMetadata();
-        const msg = "Stopping " + metadata.key + ":" + metadata.version + "...";
+        const msg = this.tr("Stopping %1:%2...", metadata.key, metadata.version);
         const msgData = {
           nodeId: this.getNodeId(),
           msg,

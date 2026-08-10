@@ -22,7 +22,7 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.13.9"
-ARG UV_VERSION="0.9"
+ARG UV_VERSION="0.12"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
 

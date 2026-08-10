@@ -11,7 +11,10 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
     AioHttpClientInstrumentor,
 )
-from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor, create_aiohttp_middleware
+from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
+    AioHttpServerInstrumentor,
+    create_aiohttp_middleware,
+)
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import get_current_span

@@ -18,6 +18,7 @@ from pydantic import (
 from settings_library.base import BaseCustomSettings
 from settings_library.celery import CelerySettings
 from settings_library.director_v2 import DirectorV2Settings
+from settings_library.kms import KMSSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.storage import StorageSettings
@@ -141,6 +142,17 @@ class ApplicationSettings(BasicSettings):
     ] = None
 
     API_SERVER_CELERY: Annotated[CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})] = None
+
+    API_SERVER_KMS: Annotated[
+        KMSSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description=(
+                "AWS KMS client used to encrypt job root keys supplied by clients "
+                "(None disables the encryption feature)"
+            ),
+        ),
+    ] = None
 
     API_SERVER_POSTGRES: Annotated[
         PostgresSettings | None,

@@ -22,7 +22,7 @@ dependencies = [
   "orjson>=3.11.7",
 ]
 name = "autoscaled-monitor"
-version = "1.0.0"
+version = "1.1.0"
 authors = [
   { name = "Sylvain Anderegg", email = "35365065+sanderegg@users.noreply.github.com" },
 ]

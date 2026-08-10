@@ -1,6 +1,8 @@
 import datetime
 import logging
+from typing import Annotated, Final
 
+from annotated_types import doc
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.rabbitmq_messages import DynamicServiceRunningMessage
@@ -19,9 +21,14 @@ from ..services.modules.redis import get_redis_lock_client
 
 _logger = logging.getLogger(__name__)
 
+_ACKED: Final[bool] = True
 
-async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> bool:
+
+async def process_dynamic_service_running_message(
+    app: FastAPI, data: bytes
+) -> Annotated[bool, doc("ACKs whether message was processed")]:
     assert app  # nosec
+
     rabbit_message: DynamicServiceRunningMessage = DynamicServiceRunningMessage.model_validate_json(data)
     _logger.debug(
         "Process dynamic service running msg, project ID: %s node ID: %s, current user: %s",
@@ -43,7 +50,7 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
             rabbit_message.node_id,
             rabbit_message.user_id,
         )
-        return True
+        return _ACKED  # NOSONAR
 
     size = await efs_manager.get_project_node_data_size(rabbit_message.project_id, node_id=rabbit_message.node_id)
     _logger.debug(
@@ -70,7 +77,12 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
     )
 
     if size > settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES:
-        msg = f"Removing write permissions inside of EFS starts for project ID: {rabbit_message.project_id}, node ID: {rabbit_message.node_id}, current user: {rabbit_message.user_id}, size: {size}, upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"
+        msg = (
+            f"Removing write permissions inside of EFS starts for project ID: "
+            f"{rabbit_message.project_id}, node ID: {rabbit_message.node_id}, "
+            f"current user: {rabbit_message.user_id}, size: {size}, "
+            f"upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"
+        )
         with log_context(_logger, logging.WARNING, msg=msg):
             redis = get_redis_lock_client(app)
             await exclusive(
@@ -82,4 +94,4 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
                 project_id=rabbit_message.project_id, node_id=rabbit_message.node_id
             )
 
-    return True
+    return _ACKED  # NOSONAR

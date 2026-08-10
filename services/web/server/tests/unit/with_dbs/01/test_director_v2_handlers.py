@@ -19,7 +19,10 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationTaskRpcGet,
     ComputationTaskRpcGetPage,
 )
-from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
+from models_library.api_schemas_directorv2.encryption import (
+    KMS_CIPHERTEXT_MAX_BYTES,
+    JobEncryptionContextMetadata,
+)
 from models_library.api_schemas_webserver.computations import (
     ComputationCollectionRunRestGet,
     ComputationCollectionRunTaskRestGet,
@@ -125,10 +128,10 @@ async def test_start_computation_with_encryption(
 
     mocker.patch.object(DirectorV2RestClient, "start_computation", new=_spy_start)
 
-    root_key = base64.b64encode(b"0123456789abcdef0123456789abcdef").decode("ascii")
+    encrypted_root_key = base64.b64encode(b"fake-kms-ciphertext-blob").decode("ascii")
     node_id = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
     encryption_body = {
-        "root_key": root_key,
+        "encrypted_root_key": encrypted_root_key,
         "input_port_to_file_id": {node_id: {"input_1": "input_1"}},
     }
 
@@ -151,7 +154,7 @@ async def test_start_computation_with_encryption(
         forwarded = captured_options[0]
         assert "encryption" in forwarded
         assert isinstance(forwarded["encryption"], JobEncryptionContextMetadata)
-        assert forwarded["encryption"].root_key.get_secret_value() == root_key
+        assert forwarded["encryption"].encrypted_root_key.get_secret_value() == encrypted_root_key
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -159,26 +162,34 @@ async def test_start_computation_with_encryption(
     "invalid_encryption_body, expected_error_fragment",
     [
         pytest.param(
-            {"root_key": "not-valid-base64!!!", "input_port_to_file_id": {}},
-            "root_key must be valid base64",
-            id="non_base64_root_key",
+            {"encrypted_root_key": "not-valid-base64!!!", "input_port_to_file_id": {}},
+            "encrypted_root_key must be valid base64",
+            id="non_base64_encrypted_root_key",
         ),
         pytest.param(
             {
-                "root_key": base64.b64encode(b"tooshort").decode("ascii"),
+                "encrypted_root_key": base64.b64encode(b"").decode("ascii"),
                 "input_port_to_file_id": {},
             },
-            "root_key must decode to 32 bytes",
-            id="root_key_wrong_size",
+            "encrypted_root_key must not decode to an empty ciphertext",
+            id="empty_encrypted_root_key",
+        ),
+        pytest.param(
+            {
+                "encrypted_root_key": base64.b64encode(b"0" * (KMS_CIPHERTEXT_MAX_BYTES + 1)).decode("ascii"),
+                "input_port_to_file_id": {},
+            },
+            f"encrypted_root_key ciphertext exceeds {KMS_CIPHERTEXT_MAX_BYTES} bytes",
+            id="encrypted_root_key_too_large",
         ),
         pytest.param(
             {"input_port_to_file_id": {}},
-            "root_key",
-            id="missing_root_key",
+            "encrypted_root_key",
+            id="missing_encrypted_root_key",
         ),
         pytest.param(
             {
-                "root_key": base64.b64encode(b"0123456789abcdef0123456789abcdef").decode("ascii"),
+                "encrypted_root_key": base64.b64encode(b"fake-kms-ciphertext-blob").decode("ascii"),
                 "input_port_to_file_id": {"not-a-uuid": {"input_1": "input_1"}},
             },
             "input_port_to_file_id",

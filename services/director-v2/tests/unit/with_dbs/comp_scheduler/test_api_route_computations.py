@@ -743,9 +743,9 @@ async def test_start_computation_with_encryption_propagates_context_to_pipeline(
         )
     )
     # NOTE: the SecretStr root_key would be masked by jsonable_encoder, so we inject the
-    # encryption payload as a raw JSON dict carrying the base64-encoded root_key
+    # encryption payload as a raw JSON dict carrying the base64-encoded (fake) ciphertext
     body["encryption"] = {
-        "root_key": root_key_b64,
+        "encrypted_root_key": root_key_b64,
         "input_port_to_file_id": {encrypted_node_id: node_input_port_to_file_id},
     }
     response = await async_client.post(create_computation_url, json=body)
@@ -754,7 +754,7 @@ async def test_start_computation_with_encryption_propagates_context_to_pipeline(
     mocked_run_new_pipeline.assert_called_once()
     run_metadata = mocked_run_new_pipeline.call_args.kwargs["run_metadata"]
     stored_encryption = run_metadata["encryption"]
-    assert stored_encryption["root_key"] == root_key_b64
+    assert stored_encryption["encrypted_root_key"] == root_key_b64
     reparsed = JobEncryptionContextMetadata.model_validate(stored_encryption)
     assert reparsed.input_port_to_file_id == {NodeID(encrypted_node_id): node_input_port_to_file_id}
 

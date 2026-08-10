@@ -18,6 +18,7 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import setup_task_manager
+from ..clients.kms import setup_kms
 from ..clients.postgres import setup_postgres
 from ..services_http import director_v2, storage, webserver
 from ..services_http.chatbot import setup as setup_chatbot
@@ -102,6 +103,8 @@ def create_app(  # noqa: C901
 
     if settings.API_SERVER_CELERY:
         setup_task_manager(app, settings.API_SERVER_CELERY)
+
+    setup_kms(app)
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)

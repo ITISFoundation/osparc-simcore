@@ -1,8 +1,13 @@
-from typing import Any
+from typing import Any, Final
 
 from pydantic.errors import PydanticErrorMixin
 
 from .error_codes import create_error_code
+
+# NOTE: guards against runaway messages (e.g. a large batch of errors, or an
+# accidentally embedded traceback/blob) blowing up log lines beyond what
+# log aggregators (Loki, journald, etc.) can reasonably handle.
+_MAX_MESSAGE_LENGTH: Final[int] = 2000
 
 
 class _DefaultDict(dict):
@@ -26,9 +31,23 @@ class OsparcErrorMixin(PydanticErrorMixin):
     def __str__(self) -> str:
         return self._build_message()
 
+    def __repr__(self) -> str:
+        # NOTE: Exception.__repr__ (the default) shows `ClassName(*self.args)`.
+        # Since OsparcErrorMixin/PydanticErrorMixin never populate `args`, that
+        # default repr is always the useless, information-less `ClassName()`.
+        # This matters because containers (list/tuple/dict) format their items
+        # using repr(), not str() -- e.g. when an error ends up nested inside
+        # another error's msg_template context. Overriding __repr__ here keeps
+        # the actual message visible in those cases too.
+        return f"{type(self).__name__}({self._build_message()!r})"
+
     def _build_message(self) -> str:
         # NOTE: safe. Does not raise KeyError
-        return self.msg_template.format_map(_DefaultDict(**self.__dict__))
+        message = self.msg_template.format_map(_DefaultDict(**self.__dict__))
+        if len(message) > _MAX_MESSAGE_LENGTH:
+            omitted = len(message) - _MAX_MESSAGE_LENGTH
+            message = f"{message[:_MAX_MESSAGE_LENGTH]}... [truncated, {omitted} more chars]"
+        return message
 
     @classmethod
     def _get_full_class_name(cls) -> str:
