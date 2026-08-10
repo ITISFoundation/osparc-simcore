@@ -221,7 +221,7 @@ pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-pygments==2.19.2
+pygments==2.20.0
     # via rich
 pyinstrument==5.1.2
     # via -r requirements/_base.in

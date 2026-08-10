@@ -164,14 +164,9 @@ propcache==0.4.1
     #   yarl
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pygments==2.19.2
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
-    #   pytest
 pyleak==0.2.0
     # via -r requirements/_test.in
-pytest==9.0.2
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp

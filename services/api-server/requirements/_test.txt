@@ -290,17 +290,13 @@ pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pygments==2.18.0
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 pyinstrument==5.1.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 pyparsing==3.3.2
     # via moto
-pytest==9.0.2
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

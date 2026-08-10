@@ -142,7 +142,7 @@ googleapis-common-protos==1.70.0
     #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.2.4
     # via sqlalchemy
-grpcio==1.70.0
+grpcio==1.83.0
     # via opentelemetry-exporter-otlp-proto-grpc
 h11==0.16.0
     # via
@@ -370,7 +370,7 @@ pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
-pygments==2.19.1
+pygments==2.20.0
     # via rich
 pyinstrument==5.1.1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -480,6 +480,7 @@ typing-extensions==4.14.1
     #   fastapi
     #   fastapi-pagination
     #   faststream
+    #   grpcio
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http

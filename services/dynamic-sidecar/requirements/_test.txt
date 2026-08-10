@@ -110,11 +110,7 @@ propcache==0.3.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pygments==2.19.1
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
-pytest==9.0.2
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

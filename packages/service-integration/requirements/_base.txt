@@ -89,7 +89,7 @@ pydantic-extra-types==2.11.1
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 pydantic-settings==2.14.2
     # via -r requirements/../../../packages/models-library/requirements/_base.in
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   pytest
     #   rich

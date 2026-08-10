@@ -222,15 +222,11 @@ pydantic-core==2.46.4
     #   pydantic
 pyftpdlib==2.2.0
     # via pytest-localftpserver
-pygments==2.19.2
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 pyopenssl==26.4.0
     # via pytest-localftpserver
 pyparsing==3.3.2
     # via moto
-pytest==9.0.2
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

@@ -131,11 +131,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pygments==2.19.1
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
-pytest==9.0.2
+pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -160,7 +156,6 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications
