@@ -108,7 +108,7 @@ googleapis-common-protos==1.70.0
     #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.2.4
     # via sqlalchemy
-grpcio==1.70.0
+grpcio==1.83.0
     # via opentelemetry-exporter-otlp-proto-grpc
 h11==0.16.0
     # via
@@ -132,7 +132,7 @@ httpx==0.28.1
     #   fastapi-cloud-cli
 hyperframe==6.1.0
     # via h2
-idna==3.10
+idna==3.15
     # via
     #   anyio
     #   email-validator
@@ -412,6 +412,7 @@ typing-extensions==4.14.1
     #   faststream
     #   flexcache
     #   flexparser
+    #   grpcio
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http

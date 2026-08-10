@@ -156,7 +156,7 @@ httpx==0.28.1
     #   -r requirements/_base.in
 hyperframe==6.1.0
     # via h2
-idna==3.3
+idna==3.15
     # via
     #   anyio
     #   email-validator

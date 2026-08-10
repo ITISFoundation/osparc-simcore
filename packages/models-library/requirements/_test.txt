@@ -16,10 +16,6 @@ flexparser==0.4
     # via pint
 icdiff==2.0.10
     # via pytest-icdiff
-idna==3.11
-    # via
-    #   -c requirements/_base.txt
-    #   yarl
 iniconfig==2.3.0
     # via pytest
 multidict==6.7.1
@@ -36,8 +32,6 @@ pluggy==1.6.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.4.1
-    # via yarl
 psutil==7.2.2
     # via -r requirements/_test.in
 pygments==2.19.2
@@ -75,7 +69,6 @@ pyyaml==6.0.3
     #   -r requirements/_test.in
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   types-jsonschema
 rpds-py==0.30.0
@@ -94,5 +87,5 @@ typing-extensions==4.15.0
     #   flexcache
     #   flexparser
     #   pint
-yarl==1.24.5
+yarl==0.16.0
     # via -r requirements/_test.in
