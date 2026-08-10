@@ -107,8 +107,7 @@ class BaseDataManager(ABC):
         sha256_checksum: SHA256Str | None,
         is_directory: bool,
     ) -> UploadLinks:
-        """creates one or more upload file links if user has the rights to,
-        expects the client to complete/abort upload"""
+        """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
 
     @abstractmethod
     async def complete_file_upload(
