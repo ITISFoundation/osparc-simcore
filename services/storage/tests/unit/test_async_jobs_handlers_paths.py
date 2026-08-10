@@ -107,6 +107,7 @@ async def _assert_delete_paths(
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         location_id=location_id,
         user_id=user_id,
+        product_name=product_name,
         paths=paths,
     )
     async for job_composed_result in wait_and_get_job_result(
