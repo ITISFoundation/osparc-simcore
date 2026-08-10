@@ -29,10 +29,9 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from servicelib.celery.async_jobs.storage.paths import submit_delete_paths_task
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
-
-from services.storage.tests.unit.test_async_jobs_handlers_simcore_s3 import submit_delete_paths_task
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
