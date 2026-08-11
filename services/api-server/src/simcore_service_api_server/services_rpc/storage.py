@@ -4,17 +4,18 @@ from functools import partial
 from pathlib import Path
 from typing import Final
 
-from celery_library.async_jobs import submit_job, wait_and_get_job_result
+from celery_library.async_jobs import wait_and_get_job_result
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata
+from models_library.celery import OwnerMetadata
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from servicelib.celery.async_jobs.storage.paths import submit_delete_paths_task
+from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
 from servicelib.celery.task_manager import TaskManager
 
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -38,15 +39,15 @@ class StorageService:
         self,
         paths_to_export: list[PathToExport],
     ) -> AsyncJobGet:
-        return await submit_job(
+        return await submit_export_data(
             self._task_manager,
-            execution_metadata=TaskExecutionMetadata(name="export_data_as_download_link"),
-            owner_metadata=OwnerMetadata.model_validate(
+            OwnerMetadata.model_validate(
                 ApiServerOwnerMetadata(user_id=self._user_id, product_name=self._product_name).model_dump()
             ),
             user_id=self._user_id,
             product_name=self._product_name,
             paths_to_export=paths_to_export,
+            export_as="download_link",
         )
 
     @_exception_mapper(rpc_exception_map={})
