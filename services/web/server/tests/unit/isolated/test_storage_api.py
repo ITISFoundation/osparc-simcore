@@ -17,10 +17,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.task_manager import TaskManager
+from simcore_service_webserver.storage import api as storage_api
 from simcore_service_webserver.storage.api import (
     delete_project_data_folders,
     delete_project_node_data_folders,
-    get_task_manager,
 )
 
 
@@ -65,8 +65,9 @@ def _mock_task_manager(
         progress_report=ProgressReport(actual_value=1.0, total=1.0),
     )
     task_manager.get_result.return_value = task_result
-    mocker.patch(
-        get_task_manager.__name__,
+    mocker.patch.object(
+        storage_api,
+        storage_api.get_task_manager.__name__,
         autospec=True,
         return_value=task_manager,
     )
