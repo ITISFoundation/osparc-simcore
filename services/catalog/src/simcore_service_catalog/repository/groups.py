@@ -58,13 +58,10 @@ class GroupsRepository(BaseRepository):
         gids: set[PositiveInt],
         connection: AsyncConnection | None = None,
     ) -> dict[PositiveInt, LowerCaseEmailStr | None]:
-        service_owners: dict[PositiveInt, LowerCaseEmailStr | None] = {}
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 sa.select(users.c.primary_gid, users.c.email).where(users.c.primary_gid.in_(gids))
             )
-            for row in result:
-                service_owners[row.primary_gid] = (
-                    TypeAdapter(LowerCaseEmailStr).validate_python(row.email) if row.email else None
-                )
-        return service_owners
+            return TypeAdapter(dict[PositiveInt, LowerCaseEmailStr | None]).validate_python(
+                {row.primary_gid: row.email for row in result}
+            )
