@@ -62,10 +62,12 @@ class StorageService:
             location_id=_SIMCORE_LOCATION,
             paths={Path(f"{project_id}")},
         )
-        async for _ in wait_and_get_job_result(
+        async for job_result_update in wait_and_get_job_result(
             self._task_manager,
             owner_metadata=owner_metadata,
             job_id=job_id,
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
-            pass
+            if job_result_update.done:
+                # NOTE: raises if the task failed
+                await job_result_update.result()

@@ -171,13 +171,16 @@ async def delete_project_data_folders(
             location_id=_SIMCORE_LOCATION,
             paths={Path(f"{project_id}")},
         )
-        async for _ in wait_and_get_job_result(
+        async for job_result_update in wait_and_get_job_result(
             get_task_manager(app),
             owner_metadata=owner_metadata,
             job_id=job_id,
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
             _logger.info("waiting for deletion of project %s data folders to complete", project_id)
+            if job_result_update.done:
+                # NOTE: raises if
+                await job_result_update.result()
 
 
 async def delete_project_node_data_folders(
@@ -204,13 +207,16 @@ async def delete_project_node_data_folders(
             location_id=_SIMCORE_LOCATION,
             paths={Path(f"{project_id}/{node_id}")},
         )
-        async for _ in wait_and_get_job_result(
+        async for job_result_update in wait_and_get_job_result(
             get_task_manager(app),
             owner_metadata=owner_metadata,
             job_id=job_id,
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
             _logger.info("waiting for deletion of project %s node %s data folders to complete", project_id, node_id)
+            if job_result_update.done:
+                # raises if the task failed
+                await job_result_update.result()
 
 
 async def is_healthy(app: web.Application) -> bool:
