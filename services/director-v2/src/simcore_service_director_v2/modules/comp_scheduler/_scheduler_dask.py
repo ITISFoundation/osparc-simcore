@@ -411,15 +411,19 @@ class DaskScheduler(BaseCompScheduler):
             # dask-scheduler cannot leak this pipeline-scheduling slot (see _releaser.py).
             # All the job_ids completed in this batch are sent as a single message so the
             # releaser only needs one client acquire/release for the whole batch.
-            await request_task_result_release(
-                self.rabbitmq_client,
-                user_id=user_id,
-                project_id=comp_run.project_uuid,
-                run_id=comp_run.run_id,
-                use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                run_metadata=comp_run.metadata,
-                job_ids=releasable_job_ids,
-            )
+            # NOTE: best effort: a publish failure here is only logged (not retried) so a
+            # transient RabbitMQ issue does not also break the rest of the pipeline scheduling
+            # (heartbeat, run result, resources release).
+            with log_catch(_logger, reraise=False):
+                await request_task_result_release(
+                    self.rabbitmq_client,
+                    user_id=user_id,
+                    project_id=comp_run.project_uuid,
+                    run_id=comp_run.run_id,
+                    use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                    run_metadata=comp_run.metadata,
+                    job_ids=releasable_job_ids,
+                )
 
     async def _handle_successful_run(
         self,
