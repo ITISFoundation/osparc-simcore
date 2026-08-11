@@ -70,5 +70,4 @@ class StorageService:
             stop_after=_PROJECT_DELETION_MAX_TIMEOUT,
         ):
             if job_result_update.done:
-                # NOTE: raises if the task failed
                 await job_result_update.result()

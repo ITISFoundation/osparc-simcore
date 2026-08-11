@@ -179,7 +179,6 @@ async def delete_project_data_folders(
         ):
             _logger.info("waiting for deletion of project %s data folders to complete", project_id)
             if job_result_update.done:
-                # NOTE: raises if the task failed
                 await job_result_update.result()
 
 
@@ -215,7 +214,6 @@ async def delete_project_node_data_folders(
         ):
             _logger.info("waiting for deletion of project %s node %s data folders to complete", project_id, node_id)
             if job_result_update.done:
-                # NOTE: raises if the task failed
                 await job_result_update.result()
 
 
