@@ -40,9 +40,10 @@ async def test_submit_task_cleans_up_when_publishing_fails(
     expected_error: type[Exception],
 ):
     celery_app.send_task.side_effect = publish_error
+    execution_metadata = TaskExecutionMetadata(name="a_task")
 
     with pytest.raises(expected_error):
-        await task_manager.submit_task(TaskExecutionMetadata(name="a_task"), owner_metadata=fake_owner_metadata)
+        await task_manager.submit_task(execution_metadata, owner_metadata=fake_owner_metadata)
 
     task_store.create_task.assert_awaited_once()
     task_store.remove_task.assert_awaited_once()
