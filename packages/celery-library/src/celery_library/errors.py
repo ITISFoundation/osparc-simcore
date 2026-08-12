@@ -51,7 +51,6 @@ class TaskManagerError(OsparcErrorMixin, Exception):
     msg_template = "An internal error occurred"
 
 
-# NOTE: BackendError and OperationalError do not inherit from CeleryError
 _TASK_MANAGER_ERRORS: Final[tuple[type[Exception], ...]] = (
     BackendError,
     CeleryError,
