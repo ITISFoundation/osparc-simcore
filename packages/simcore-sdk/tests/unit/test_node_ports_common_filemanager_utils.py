@@ -61,13 +61,23 @@ def completion_link() -> AnyUrl:
     return TypeAdapter(AnyUrl).validate_python(_COMPLETION_LINK)
 
 
+@pytest.mark.parametrize(
+    "transient_status",
+    [
+        status.HTTP_429_TOO_MANY_REQUESTS,
+        status.HTTP_502_BAD_GATEWAY,
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        status.HTTP_504_GATEWAY_TIMEOUT,
+    ],
+)
 async def test_complete_upload_retries_on_transient_server_error(
     aioresponses_mocker: aioresponses,
     session: ClientSession,
     completion_link: AnyUrl,
+    transient_status: int,
 ):
     aioresponses_mocker.post(_COMPLETION_LINK, status=status.HTTP_202_ACCEPTED, payload=_COMPLETION_PAYLOAD)
-    aioresponses_mocker.post(_STATE_LINK, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    aioresponses_mocker.post(_STATE_LINK, status=transient_status)
     aioresponses_mocker.post(_STATE_LINK, status=status.HTTP_200_OK, payload=_STATE_OK_PAYLOAD)
 
     completed = await complete_upload(session, completion_link, [], is_directory=False)
@@ -76,19 +86,27 @@ async def test_complete_upload_retries_on_transient_server_error(
     assert completed.e_tag == _E_TAG
 
 
-async def test_complete_upload_does_not_retry_on_internal_server_error(
+@pytest.mark.parametrize(
+    "permanent_status",
+    [
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        status.HTTP_501_NOT_IMPLEMENTED,
+    ],
+)
+async def test_complete_upload_does_not_retry_on_permanent_server_error(
     aioresponses_mocker: aioresponses,
     session: ClientSession,
     completion_link: AnyUrl,
+    permanent_status: int,
 ):
     aioresponses_mocker.post(_COMPLETION_LINK, status=status.HTTP_202_ACCEPTED, payload=_COMPLETION_PAYLOAD)
     # NOTE: a single mock is registered, a retry would fail to match it
-    aioresponses_mocker.post(_STATE_LINK, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    aioresponses_mocker.post(_STATE_LINK, status=permanent_status)
 
     with pytest.raises(ClientResponseError) as exc_info:
         await complete_upload(session, completion_link, [], is_directory=False)
 
-    assert exc_info.value.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert exc_info.value.status == permanent_status
 
 
 async def test_complete_upload_gives_up_on_persistent_transient_error(
