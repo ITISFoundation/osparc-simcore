@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from celery import Celery, group, signature  # type: ignore[import-untyped]
-from celery.exceptions import CeleryError  # type: ignore[import-untyped]
+from celery.exceptions import CeleryError, OperationalError  # type: ignore[import-untyped]
 from celery.result import GroupResult  # type: ignore[import-untyped]
 from celery.utils.time import rate as celery_rate  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
@@ -166,6 +166,10 @@ class CeleryTaskManager:
                     expiry=group_expiry,
                 )
 
+            except OperationalError:
+                for task_key, _ in created:
+                    await self._cleanup_task(task_key)
+                raise
             except CeleryError as exc:
                 for task_key, _ in created:
                     await self._cleanup_task(task_key)
@@ -203,6 +207,9 @@ class CeleryTaskManager:
                     kwargs={"task_key": task_key} | task_params,
                     queue=execution_metadata.queue,
                 )
+            except OperationalError:
+                await self._cleanup_task(task_key)
+                raise
             except CeleryError as exc:
                 await self._cleanup_task(task_key)
                 raise TaskSubmissionError(
