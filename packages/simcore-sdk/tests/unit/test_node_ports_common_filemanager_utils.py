@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Iterable
 from typing import Any, Final
 
 import pytest
@@ -27,8 +27,13 @@ _STATE_OK_PAYLOAD: Final[dict[str, Any]] = {
 }
 
 
+def _clear_caches() -> None:
+    storage_endpoint.is_storage_secure.cache_clear()
+    storage_endpoint.get_basic_auth.cache_clear()
+
+
 @pytest.fixture
-def mock_node_ports_env(monkeypatch: pytest.MonkeyPatch) -> None:
+def mock_node_ports_env(monkeypatch: pytest.MonkeyPatch) -> Iterable[None]:
     setenvs_from_dict(
         monkeypatch,
         {
@@ -40,8 +45,9 @@ def mock_node_ports_env(monkeypatch: pytest.MonkeyPatch) -> None:
         },
     )
     # NOTE: these read the environment once and cache it for the whole process
-    storage_endpoint.is_storage_secure.cache_clear()
-    storage_endpoint.get_basic_auth.cache_clear()
+    _clear_caches()
+    yield
+    _clear_caches()
 
 
 @pytest.fixture
