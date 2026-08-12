@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime
-from typing import NamedTuple, cast
+from typing import Final, NamedTuple, cast
 
-from aiohttp import ClientError, ClientSession
+from aiohttp import ClientError, ClientResponseError, ClientSession
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadCompleteFutureResponse,
@@ -16,10 +16,11 @@ from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, TypeAdapter
+from servicelib.aiohttp import status
 from settings_library.node_ports import NodePortsSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception_type
+from tenacity.retry import retry_if_exception, retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
@@ -60,6 +61,20 @@ class CompletedUpload(NamedTuple):
     last_modified: datetime
 
 
+_RETRYABLE_STATUS_CODES: Final[frozenset[int]] = frozenset(
+    {
+        status.HTTP_429_TOO_MANY_REQUESTS,
+        status.HTTP_502_BAD_GATEWAY,
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        status.HTTP_504_GATEWAY_TIMEOUT,
+    }
+)
+
+
+def _is_transient_server_error(exception: BaseException) -> bool:
+    return isinstance(exception, ClientResponseError) and exception.status in _RETRYABLE_STATUS_CODES
+
+
 async def complete_upload(
     session: ClientSession,
     upload_completion_link: AnyUrl,
@@ -92,7 +107,7 @@ async def complete_upload(
         reraise=True,
         wait=wait_fixed(1),
         stop=stop_after_delay(NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S),
-        retry=retry_if_exception_type(ValueError),
+        retry=retry_if_exception_type(ValueError) | retry_if_exception(_is_transient_server_error),
         before_sleep=before_sleep_log(_logger, logging.DEBUG),
     ):
         with attempt:

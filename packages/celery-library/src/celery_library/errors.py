@@ -2,10 +2,15 @@ import base64
 import pickle
 from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import Any, Final
 
-from celery.exceptions import CeleryError  # type: ignore[import-untyped]
+from celery.exceptions import (  # type: ignore[import-untyped]
+    BackendError,
+    CeleryError,
+    OperationalError,
+)
 from common_library.errors_classes import OsparcErrorMixin
+from redis.exceptions import RedisError
 
 
 class TransferableCeleryError(Exception):
@@ -46,12 +51,21 @@ class TaskManagerError(OsparcErrorMixin, Exception):
     msg_template = "An internal error occurred"
 
 
+# NOTE: BackendError and OperationalError do not inherit from CeleryError
+_TASK_MANAGER_ERRORS: Final[tuple[type[Exception], ...]] = (
+    BackendError,
+    CeleryError,
+    OperationalError,
+    RedisError,
+)
+
+
 def handle_celery_errors[F: Callable[..., Any]](func: F) -> F:
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return await func(*args, **kwargs)
-        except CeleryError as exc:
+        except _TASK_MANAGER_ERRORS as exc:
             raise TaskManagerError from exc
 
     return wrapper  # type: ignore[return-value]
