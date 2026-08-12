@@ -13,6 +13,8 @@ from celery_library.errors import (
 )
 from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import DataError as RedisDataError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 
 
 @pytest.mark.parametrize(
@@ -41,6 +43,7 @@ def test_error(original_error: Exception):
         CeleryError("celery is unhappy"),
         OperationalError("broker is unreachable"),
         RedisConnectionError("Connection reset by peer"),
+        RedisTimeoutError("Timeout reading from socket"),
     ],
 )
 async def test_handle_celery_errors_wraps_transport_errors(raised_error: Exception):
@@ -52,10 +55,17 @@ async def test_handle_celery_errors_wraps_transport_errors(raised_error: Excepti
         await _raises()
 
 
-async def test_handle_celery_errors_lets_domain_errors_through():
+@pytest.mark.parametrize(
+    "raised_error",
+    [
+        RedisDataError("invalid input"),
+        TaskOrGroupNotFoundError(task_uuid="a-uuid", owner_metadata={}),
+    ],
+)
+async def test_handle_celery_errors_lets_non_transient_errors_through(raised_error: Exception):
     @handle_celery_errors
     async def _raises() -> None:
-        raise TaskOrGroupNotFoundError(task_uuid="a-uuid", owner_metadata={})
+        raise raised_error
 
-    with pytest.raises(TaskOrGroupNotFoundError):
+    with pytest.raises(type(raised_error)):
         await _raises()

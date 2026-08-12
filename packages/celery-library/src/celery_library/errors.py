@@ -10,7 +10,8 @@ from celery.exceptions import (  # type: ignore[import-untyped]
     OperationalError,
 )
 from common_library.errors_classes import OsparcErrorMixin
-from redis.exceptions import RedisError
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 
 
 class TransferableCeleryError(Exception):
@@ -55,7 +56,8 @@ _TASK_MANAGER_ERRORS: Final[tuple[type[Exception], ...]] = (
     BackendError,
     CeleryError,
     OperationalError,
-    RedisError,
+    RedisConnectionError,
+    RedisTimeoutError,
 )
 
 
