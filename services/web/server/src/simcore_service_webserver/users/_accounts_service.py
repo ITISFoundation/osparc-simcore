@@ -1,3 +1,4 @@
+import difflib
 import logging
 from typing import Annotated, Any
 
@@ -445,6 +446,24 @@ async def get_registered_user_id_for_pending_request(
     return existing_user_id
 
 
+def _find_closest_product_display_name(
+    target_product_display_name: str, candidate_display_names: list[str]
+) -> str | None:
+    """Picks the existing product whose *display* name is most similar to the one being granted.
+
+    e.g. if the user already has ["Sim4Life Lite", "o²S²PARC"] and is being granted "Sim4Life",
+    "Sim4Life Lite" wins (users perceive each product as an independent website, identified by its
+    display name, so referencing the wrong "family" confuses them, and internal name identifiers
+    are meaningless to them).
+    """
+    if not candidate_display_names:
+        return None
+    return max(
+        candidate_display_names,
+        key=lambda candidate: difflib.SequenceMatcher(None, target_product_display_name, candidate).ratio(),
+    )
+
+
 async def preview_grant_product_access_user_account(
     app: web.Application,
     *,
@@ -460,7 +479,7 @@ async def preview_grant_product_access_user_account(
         app,
         filter_by_email_glob=approval_email,
         product_name=product_name,
-        include_products=False,
+        include_products=True,
     )
 
     if not found:
@@ -468,6 +487,15 @@ async def preview_grant_product_access_user_account(
 
     user_account = found[0]
     assert user_account.email == approval_email  # nosec
+
+    # NOTE: Users perceive each product as an independent website, identified by its display name: reference
+    # the existing one closest to the product they are being granted access to
+    target_display_name = products_service.get_product(app, product_name).display_name
+    existing_display_names = [
+        products_service.get_product(app, other_product_name).display_name
+        for other_product_name in (user_account.products or [])
+    ]
+    existing_product_display_name = _find_closest_product_display_name(target_display_name, existing_display_names)
 
     preview = await notifications_service.preview_template(
         app=app,
@@ -480,6 +508,7 @@ async def preview_grant_product_access_user_account(
             "user": {
                 "first_name": user_account.first_name,
             },
+            "existing_product": existing_product_display_name,
         },
     )
 

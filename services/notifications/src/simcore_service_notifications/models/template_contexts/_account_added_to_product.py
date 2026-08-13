@@ -13,3 +13,5 @@ class User(BaseModel):
 @register_template_context(channel=Channel.email, template_name="account_added_to_product")
 class AccountAddedToProductTemplateContext(BaseTemplateContext):
     user: User
+    # display name of the existing product closest to the one being granted, if any
+    existing_product: str | None = None

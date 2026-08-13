@@ -8,14 +8,21 @@
   }}.{% endtrans %}
 </p>
 
-<p>
-  {% trans %}Since you already have an account on our platform, there is nothing else to do: please continue logging in
-  with your existing email and password.{% endtrans %}
-</p>
-
 {% set login_link %}<a href="{{ product.homepage_url }}">{{ product.homepage_url }}</a>{% endset %}
 <p>
-  {% trans login_link=login_link %}You can access it here: {{ login_link }}{% endtrans %}
+  {% if existing_product %}
+  {% trans existing_product=existing_product, product_name=product.display_name %}Since you already have an account on
+  {{ existing_product }}, please continue logging in to {{ product_name }} with the same email and password.{% endtrans
+  %}
+  {% else %}
+  {% trans product_name=product.display_name %}Since you already have an account, please continue logging in to {{
+  product_name }} with the same email and password.{% endtrans %}
+  {% endif %}
+</p>
+
+<p>
+  {% trans login_link=login_link, product_name=product.display_name %}You can access {{ product_name }} here: {{
+  login_link }}{% endtrans %}
 </p>
 
 {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
