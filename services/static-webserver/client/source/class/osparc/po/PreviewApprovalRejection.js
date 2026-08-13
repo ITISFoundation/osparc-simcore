@@ -18,7 +18,7 @@
 qx.Class.define("osparc.po.PreviewApprovalRejection", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function () {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(5));
@@ -43,7 +43,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
 
     invitationUrl: {
       check: "String",
-      nullable: false,
+      nullable: true,
       init: null,
       apply: "__applyInvitationUrl",
     },
@@ -69,7 +69,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
+    _createChildControlImpl: function (id) {
       let control;
       switch (id) {
         case "email-editor": {
@@ -165,7 +165,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
+    __buildLayout: function () {
       this.getChildControl("email-editor");
       this.getChildControl("invitation-url");
       this.getChildControl("copy-invitation-url-button");
@@ -175,25 +175,29 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       this.getChildControl("reject-with-email-button");
     },
 
-    __applyEmailAddress: function(value) {
+    __applyEmailAddress: function (value) {
       const emailEditor = this.getChildControl("email-editor");
       const chip = emailEditor.addChip(value, value);
       chip.setEnabled(false);
       emailEditor.getChildControl("add-recipient-button").exclude();
     },
 
-    __applyInvitationUrl: function(value) {
-      const invitationUrlField = this.getChildControl("invitation-url");
-      invitationUrlField.setValue(value);
+    __applyInvitationUrl: function (value) {
+      const invitationUrlContainer = this.getChildControl("invitation-url-container");
+      invitationUrlContainer.setVisibility(value ? "visible" : "excluded");
+      if (value) {
+        const invitationUrlField = this.getChildControl("invitation-url");
+        invitationUrlField.setValue(value);
+      }
     },
 
-    __applySubject: function(value) {
+    __applySubject: function (value) {
       const emailEditor = this.getChildControl("email-editor");
       const subjectField = emailEditor.getChildControl("subject-field");
       subjectField.setValue(value);
     },
 
-    __applyBodyHtml: function(value) {
+    __applyBodyHtml: function (value) {
       const emailEditor = this.getChildControl("email-editor");
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       emailContentEditor.setTemplateEmail(value);
@@ -202,7 +206,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       emailContentEditor.makePreviewActive();
     },
 
-    __sendEmailClicked: function() {
+    __sendEmailClicked: function () {
       const emailEditor = this.getChildControl("email-editor");
 
       // make sure subject is not empty
@@ -227,7 +231,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       }
     },
 
-    __approveWithEmail: function() {
+    __approveWithEmail: function () {
       const email = this.getEmail();
       const invitationUrl = this.getInvitationUrl();
       const emailEditor = this.getChildControl("email-editor");
@@ -257,7 +261,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __rejectWithEmail: function() {
+    __rejectWithEmail: function () {
       const email = this.getEmail();
       const emailEditor = this.getChildControl("email-editor");
       const subjectField = emailEditor.getChildControl("subject-field");
@@ -285,7 +289,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __approveWithoutEmail: function() {
+    __approveWithoutEmail: function () {
       const email = this.getEmail();
       const invitationUrl = this.getInvitationUrl();
       const params = {
@@ -303,7 +307,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __rejectWithoutEmail: function() {
+    __rejectWithoutEmail: function () {
       const email = this.getEmail();
       const params = {
         data: {

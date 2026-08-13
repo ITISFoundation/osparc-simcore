@@ -11,8 +11,11 @@ from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt
+from simcore_postgres_database.models.users import UserStatus
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
+from ..groups import groups_service
 from ..invitations import invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact, TemplateRef
@@ -22,11 +25,30 @@ from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval, PreviewRejection
 from .errors import (
     AlreadyPreRegisteredError,
+    InvitationUrlRequiredError,
     PendingPreRegistrationNotFoundError,
+    UserAccountNotActiveError,
 )
 from .schemas import UserAccountRestPreRegister
 
 _logger = logging.getLogger(__name__)
+
+
+async def _get_pending_pre_registration(
+    engine: AsyncEngine, *, email: LowerCaseEmailStr, product_name: ProductName
+) -> dict[str, Any]:
+    pre_registrations, _ = await _accounts_repository.list_user_pre_registrations(
+        engine,
+        filter_by_pre_email=email,
+        filter_by_product_name=product_name,
+        filter_by_account_request_status=AccountRequestStatus.PENDING,
+    )
+    if not pre_registrations:
+        raise PendingPreRegistrationNotFoundError(email=email, product_name=product_name)
+
+    # There should be only one registration matching these criteria
+    return pre_registrations[0]
+
 
 #
 # PRE-REGISTRATION
@@ -268,38 +290,69 @@ async def approve_user_account(
 ) -> Annotated[int, doc("The ID of the approved pre-registration record")]:
     """Approve a user account based on their pre-registration email.
 
+    If the email is already linked to a registered account (e.g. an existing
+    user requesting access to an additional product), the invitation step is
+    skipped entirely: the user is granted access to the product directly and
+    keeps using their existing password (SEE decision in pre-registration wiki
+    open-questions: invitation-based password redefinition confused users who
+    already had an account).
+
     Returns:
         The ID of the approved pre-registration record
 
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
+        UserAccountNotActiveError: If the email is linked to an account that is not ACTIVE
     """
     engine = get_asyncpg_engine(app)
 
-    # First, find the pre-registration entry matching the email and product
-    pre_registrations, _ = await _accounts_repository.list_user_pre_registrations(
-        engine,
-        filter_by_pre_email=pre_registration_email,
-        filter_by_product_name=product_name,
-        filter_by_account_request_status=AccountRequestStatus.PENDING,
+    pre_registration = await _get_pending_pre_registration(
+        engine, email=pre_registration_email, product_name=product_name
     )
-
-    if not pre_registrations:
-        raise PendingPreRegistrationNotFoundError(email=pre_registration_email, product_name=product_name)
-
-    # There should be only one registration matching these criteria
-    pre_registration = pre_registrations[0]
     pre_registration_id: int = pre_registration["id"]
+    existing_user_id: UserID | None = pre_registration["user_id"]
 
-    # Extract invitation data if URL is provided
-    invitation_extras: dict[str, Any] | None = None
-    if invitation_url:
-        invitation_result = await invitations_service.extract_invitation(
-            app,
-            invitation_url,
+    if existing_user_id is not None:
+        user = await _users_repository.get_user_or_raise(
+            engine, user_id=existing_user_id, return_column_names=["status"]
         )
-        if invitation_result:
-            invitation_extras = {"invitation": invitation_result.model_dump(mode="json")}
+        if user["status"] != UserStatus.ACTIVE:
+            raise UserAccountNotActiveError(user_id=existing_user_id, status=f"{user['status']}")
+
+        await groups_service.auto_add_user_to_product_group(app, user_id=existing_user_id, product_name=product_name)
+
+        await _accounts_repository.review_user_pre_registration(
+            engine,
+            pre_registration_id=pre_registration_id,
+            reviewed_by=reviewer_id,
+            new_status=AccountRequestStatus.APPROVED,
+        )
+
+        if message_content:
+            await notifications_service.send_message(
+                app,
+                user_id=reviewer_id,
+                product_name=product_name,
+                channel=Channel.email,
+                group_ids=None,
+                external_contacts=[EmailContact(email=pre_registration_email)],
+                content=message_content,
+                bcc=([EmailContact(email=email) for email in bcc_emails] if bcc_emails else None),
+            )
+
+        return pre_registration_id
+
+    if not invitation_url:
+        raise InvitationUrlRequiredError(email=pre_registration_email)
+
+    # Extract invitation data from the URL
+    invitation_extras: dict[str, Any] | None = None
+    invitation_result = await invitations_service.extract_invitation(
+        app,
+        invitation_url,
+    )
+    if invitation_result:
+        invitation_extras = {"invitation": invitation_result.model_dump(mode="json")}
 
     # Update the pre-registration status to APPROVED using the reviewer's ID
     await _accounts_repository.review_user_pre_registration(
@@ -348,19 +401,9 @@ async def reject_user_account(
     """
     engine = get_asyncpg_engine(app)
 
-    # First, find the pre-registration entry matching the email and product
-    pre_registrations, _ = await _accounts_repository.list_user_pre_registrations(
-        engine,
-        filter_by_pre_email=pre_registration_email,
-        filter_by_product_name=product_name,
-        filter_by_account_request_status=AccountRequestStatus.PENDING,
+    pre_registration = await _get_pending_pre_registration(
+        engine, email=pre_registration_email, product_name=product_name
     )
-
-    if not pre_registrations:
-        raise PendingPreRegistrationNotFoundError(email=pre_registration_email, product_name=product_name)
-
-    # There should be only one registration matching these criteria
-    pre_registration = pre_registrations[0]
     pre_registration_id: int = pre_registration["id"]
 
     # Update the pre-registration status to REJECTED using the reviewer's ID
@@ -385,6 +428,62 @@ async def reject_user_account(
         )
 
     return pre_registration_id
+
+
+async def get_registered_user_id_for_pending_request(
+    app: web.Application,
+    *,
+    email: LowerCaseEmailStr,
+    product_name: ProductName,
+) -> Annotated[UserID | None, doc("user_id if the pending request's email already has an account, else None")]:
+    """Raises:
+    PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
+    """
+    engine = get_asyncpg_engine(app)
+    pre_registration = await _get_pending_pre_registration(engine, email=email, product_name=product_name)
+    existing_user_id: UserID | None = pre_registration["user_id"]
+    return existing_user_id
+
+
+async def preview_grant_product_access_user_account(
+    app: web.Application,
+    *,
+    approval_email: str,
+    product_name: ProductName,
+) -> PreviewApproval:
+    """Preview the notification sent to an already-registered user granted access to a new product.
+
+    Raises:
+        PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
+    """
+    found = await search_users_accounts(
+        app,
+        filter_by_email_glob=approval_email,
+        product_name=product_name,
+        include_products=False,
+    )
+
+    if not found:
+        raise PendingPreRegistrationNotFoundError(email=approval_email, product_name=product_name)
+
+    user_account = found[0]
+    assert user_account.email == approval_email  # nosec
+
+    preview = await notifications_service.preview_template(
+        app=app,
+        product_name=product_name,
+        ref=TemplateRef(
+            channel=Channel.email,
+            template_name="account_added_to_product",
+        ),
+        context={
+            "user": {
+                "first_name": user_account.first_name,
+            },
+        },
+    )
+
+    return PreviewApproval(invitation_url=None, message_content=preview.message_content)
 
 
 async def preview_approval_user_account(

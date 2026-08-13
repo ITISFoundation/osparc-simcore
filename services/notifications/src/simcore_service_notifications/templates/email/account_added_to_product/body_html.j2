@@ -1,0 +1,33 @@
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/account_added_to_product/subject.j2' %} {% endblock %}
+{% block content %}
+<p>{% trans first_name=user.first_name or "User" %}Dear {{ first_name }},{% endtrans %}</p>
+
+<p>
+  {% trans product_name=product.display_name %}Your request has been approved and you now have access to {{ product_name
+  }}.{% endtrans %}
+</p>
+
+<p>
+  {% trans %}Since you already have an account on our platform, there is nothing else to do: please continue logging in
+  with your existing email and password.{% endtrans %}
+</p>
+
+{% set login_link %}<a href="{{ product.homepage_url }}">{{ product.homepage_url }}</a>{% endset %}
+<p>
+  {% trans login_link=login_link %}You can access it here: {{ login_link }}{% endtrans %}
+</p>
+
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+<p>
+  {% trans support_link=support_link %}If any problem should occur, please feel free to contact us at {{ support_link
+  }}.{% endtrans %}
+</p>
+
+<p>{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}</p>
+
+<p>{% trans %}Best regards,{% endtrans %}</p>
+
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+{% endblock %}

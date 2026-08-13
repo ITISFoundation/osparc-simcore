@@ -1,0 +1,18 @@
+{% trans first_name=user.first_name or "User" %}Dear {{ first_name }},{% endtrans %}
+
+{% trans product_name=product.display_name %}Your request has been approved and you now have access to {{ product_name
+}}.{% endtrans %}
+
+{% trans %}Since you already have an account on our platform, there is nothing else to do: please continue logging in
+with your existing email and password.{% endtrans %}
+
+{% trans link=product.homepage_url %}You can access it here: {{ link }}{% endtrans %}
+
+{% trans support_email=product.support_email %}If any problem should occur, please feel free to contact us at {{
+support_email }}.{% endtrans %}
+
+{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}
+
+{% trans %}Best regards,{% endtrans %}
+
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

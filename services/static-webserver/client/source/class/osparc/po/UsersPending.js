@@ -20,7 +20,7 @@ qx.Class.define("osparc.po.UsersPending", {
   extend: osparc.po.BaseView,
 
   statics: {
-    createInvitationForm: function(withEmail = false) {
+    createInvitationForm: function (withEmail = false) {
       const form = new qx.ui.form.Form();
 
       if (withEmail) {
@@ -57,7 +57,7 @@ qx.Class.define("osparc.po.UsersPending", {
       return form;
     },
 
-    createResendEmailButton: function(email) {
+    createResendEmailButton: function (email) {
       const button = new osparc.ui.form.FetchButton(null, "@MaterialIcons/send/14").set({
         toolTipText: qx.locale.Manager.tr("Resend Email"),
       });
@@ -78,7 +78,7 @@ qx.Class.define("osparc.po.UsersPending", {
       return button;
     },
 
-    createInfoButton: function(infoMetadata) {
+    createInfoButton: function (infoMetadata) {
       const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
       infoButton.addListener("execute", () => {
         const container = new qx.ui.container.Scroll();
@@ -88,7 +88,7 @@ qx.Class.define("osparc.po.UsersPending", {
       return infoButton;
     },
 
-    extractDate: function(pendingUser) {
+    extractDate: function (pendingUser) {
       if (pendingUser.accountRequestStatus === "PENDING" && pendingUser.preRegistrationCreated) {
         return pendingUser.preRegistrationCreated;
       } else if (pendingUser.accountRequestReviewedAt) {
@@ -111,7 +111,7 @@ qx.Class.define("osparc.po.UsersPending", {
     __currentFilterText: "",
     __pendingUsers: null,
 
-    _createChildControlImpl: function(id) {
+    _createChildControlImpl: function (id) {
       let control;
       switch (id) {
         case "header-layout":
@@ -169,14 +169,14 @@ qx.Class.define("osparc.po.UsersPending", {
       return control || this.base(arguments, id);
     },
 
-    _buildLayout: function() {
+    _buildLayout: function () {
       this.getChildControl("reload-button");
       this.getChildControl("intro-text");
       this.getChildControl("loading-spinner");
       this.addListenerOnce("appear", () => this.__populatePendingUsersLayout());
     },
 
-    __addHeader: function() {
+    __addHeader: function () {
       const pendingUsersLayout = this.getChildControl("pending-users-layout");
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Name")).set({
@@ -222,7 +222,7 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __addRows: function(pendingUsers) {
+    __addRows: function (pendingUsers) {
       const pendingUsersLayout = this.getChildControl("pending-users-layout");
       const grid = pendingUsersLayout.getLayout();
 
@@ -278,7 +278,7 @@ qx.Class.define("osparc.po.UsersPending", {
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
             statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.WARNING);
-            const approveButton = this.__createApproveButton(pendingUser.email);
+            const approveButton = this.__createApproveButton(pendingUser);
             buttonsLayout.add(approveButton);
             const rejectButton = this.__createRejectButton(pendingUser.email);
             buttonsLayout.add(rejectButton);
@@ -288,7 +288,7 @@ qx.Class.define("osparc.po.UsersPending", {
           }
           case "REJECTED": {
             statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.ERROR);
-            const approveButton = this.__createApproveButton(pendingUser.email);
+            const approveButton = this.__createApproveButton(pendingUser);
             approveButton.setEnabled(false); // avoid changing decision for now
             buttonsLayout.add(approveButton);
             break;
@@ -309,7 +309,7 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __populatePendingUsersLayout: function() {
+    __populatePendingUsersLayout: function () {
       this.getChildControl("loading-spinner").show();
       this.getChildControl("filter-users").exclude();
 
@@ -343,18 +343,18 @@ qx.Class.define("osparc.po.UsersPending", {
         .finally(() => this.getChildControl("loading-spinner").exclude());
     },
 
-    __reload: function() {
+    __reload: function () {
       this.getChildControl("pending-users-layout").removeAll();
       this.__populatePendingUsersLayout();
     },
 
-    __onFilterChange: function(msg) {
+    __onFilterChange: function (msg) {
       const data = msg ? msg.getData() : null;
       this.__currentFilterText = data && data.text ? data.text : "";
       this.__renderPendingUsers();
     },
 
-    __filterPendingUsers: function() {
+    __filterPendingUsers: function () {
       if (!this.__pendingUsers) {
         return [];
       }
@@ -373,22 +373,22 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __renderPendingUsers: function() {
+    __renderPendingUsers: function () {
       const pendingUsersLayout = this.getChildControl("pending-users-layout");
       pendingUsersLayout.removeAll();
       this.__addHeader();
       this.__addRows(this.__filterPendingUsers());
     },
 
-    __createApproveButton: function(email) {
+    __createApproveButton: function (pendingUser) {
       const button = new qx.ui.form.Button(null, "@MaterialIcons/check/14").set({
         toolTipText: qx.locale.Manager.tr("Approve"),
       });
-      button.addListener("execute", () => this.__openApproveDialog(email));
+      button.addListener("execute", () => this.__openApproveDialog(pendingUser));
       return button;
     },
 
-    __createRejectButton: function(email) {
+    __createRejectButton: function (email) {
       const button = new qx.ui.form.Button(null, "@MaterialIcons/close/14").set({
         toolTipText: qx.locale.Manager.tr("Reject"),
       });
@@ -396,7 +396,15 @@ qx.Class.define("osparc.po.UsersPending", {
       return button;
     },
 
-    __openApproveDialog: function(email) {
+    __openApproveDialog: function (pendingUser) {
+      const email = pendingUser.email;
+      if (pendingUser.registered) {
+        // Already has an account (e.g. requesting access to an additional product):
+        // skip the invitation altogether, they keep using their existing password.
+        this.__previewApproval(email, {});
+        return;
+      }
+
       const form = this.self().createInvitationForm(false);
       const approveBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Preview Approve")).set({
         appearance: "form-button"
@@ -429,7 +437,7 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __previewApproval: function(email, invitationData) {
+    __previewApproval: function (email, invitationData) {
       const params = {
         data: {
           email,
@@ -445,7 +453,7 @@ qx.Class.define("osparc.po.UsersPending", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __openApprovalPreview: function(email, invitationUrl, messageContent) {
+    __openApprovalPreview: function (email, invitationUrl, messageContent) {
       const previewApproval = new osparc.po.PreviewApprovalRejection();
       previewApproval.set({
         invitationUrl,
@@ -460,7 +468,7 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __createMoveButton: function(pendingUser) {
+    __createMoveButton: function (pendingUser) {
       const button = new qx.ui.form.Button(null, "@MaterialIcons/swap_horiz/14").set({
         toolTipText: qx.locale.Manager.tr("Move to another product"),
       });
@@ -468,7 +476,7 @@ qx.Class.define("osparc.po.UsersPending", {
       return button;
     },
 
-    __openMoveUserDialog: function(pendingUser) {
+    __openMoveUserDialog: function (pendingUser) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         padding: 10,
       });
@@ -540,12 +548,12 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __updateMoveButtonState: function(selectBox, moveBtn) {
+    __updateMoveButtonState: function (selectBox, moveBtn) {
       const selected = selectBox.getSelection()[0];
       moveBtn.setEnabled(selected ? !selected.getUserData("isCurrent") : false);
     },
 
-    __previewRejection: function(email) {
+    __previewRejection: function (email) {
       const params = {
         data: {
           email,
@@ -559,7 +567,7 @@ qx.Class.define("osparc.po.UsersPending", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __openRejectionPreview: function(email, messageContent) {
+    __openRejectionPreview: function (email, messageContent) {
       const previewRejection = new osparc.po.PreviewApprovalRejection().set({
         actionMode: "reject",
       });
