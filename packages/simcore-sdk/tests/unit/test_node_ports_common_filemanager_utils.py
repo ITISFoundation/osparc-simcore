@@ -18,6 +18,7 @@ _STATE_LINK: Final[str] = "http://storage:8080/v0/locations/0/files/a-file:compl
 _E_TAG: Final[str] = "an-e-tag"
 
 _COMPLETION_PAYLOAD: Final[dict[str, Any]] = {"data": {"links": {"state": _STATE_LINK}}}
+_STATE_NOK_PAYLOAD: Final[dict[str, Any]] = {"data": {"state": "nok"}}
 _STATE_OK_PAYLOAD: Final[dict[str, Any]] = {
     "data": {
         "state": "ok",
@@ -59,6 +60,21 @@ async def session(mock_node_ports_env: None) -> AsyncIterable[ClientSession]:
 @pytest.fixture
 def completion_link() -> AnyUrl:
     return TypeAdapter(AnyUrl).validate_python(_COMPLETION_LINK)
+
+
+async def test_complete_upload_retries_while_completion_is_pending(
+    aioresponses_mocker: aioresponses,
+    session: ClientSession,
+    completion_link: AnyUrl,
+):
+    aioresponses_mocker.post(_COMPLETION_LINK, status=status.HTTP_202_ACCEPTED, payload=_COMPLETION_PAYLOAD)
+    aioresponses_mocker.post(_STATE_LINK, status=status.HTTP_200_OK, payload=_STATE_NOK_PAYLOAD)
+    aioresponses_mocker.post(_STATE_LINK, status=status.HTTP_200_OK, payload=_STATE_OK_PAYLOAD)
+
+    completed = await complete_upload(session, completion_link, [], is_directory=False)
+
+    assert completed is not None
+    assert completed.e_tag == _E_TAG
 
 
 @pytest.mark.parametrize(

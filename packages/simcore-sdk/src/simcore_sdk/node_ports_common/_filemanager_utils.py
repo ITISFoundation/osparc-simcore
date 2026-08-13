@@ -18,6 +18,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, TypeAdapter
 from servicelib.aiohttp import status
 from settings_library.node_ports import NodePortsSettings
+from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception, retry_if_exception_type
@@ -85,7 +86,6 @@ async def complete_upload(
     """completes a potentially multipart upload in AWS
     NOTE: it can take several minutes to finish, see [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
     it can take several minutes
-    :raises ValueError: _description_
     :raises exceptions.S3TransferError: _description_
     :return: the file's S3 e_tag and last modification timestamp, or None for directories
     """
@@ -107,7 +107,7 @@ async def complete_upload(
         reraise=True,
         wait=wait_fixed(1),
         stop=stop_after_delay(NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S),
-        retry=retry_if_exception_type(ValueError) | retry_if_exception(_is_transient_server_error),
+        retry=retry_if_exception_type(TryAgain) | retry_if_exception(_is_transient_server_error),
         before_sleep=before_sleep_log(_logger, logging.DEBUG),
     ):
         with attempt:
@@ -119,7 +119,7 @@ async def complete_upload(
                 assert future_enveloped.data  # nosec
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
                     msg = "upload not ready yet (FileUploadCompleteState.NOK)"
-                    raise ValueError(msg)
+                    raise TryAgain(msg)
             if is_directory:
                 assert future_enveloped.data.e_tag is None  # nosec
                 return None
