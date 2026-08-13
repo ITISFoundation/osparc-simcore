@@ -169,14 +169,14 @@ qx.Class.define("osparc.po.UsersPending", {
       return control || this.base(arguments, id);
     },
 
-    _buildLayout: function () {
+    _buildLayout: function() {
       this.getChildControl("reload-button");
       this.getChildControl("intro-text");
       this.getChildControl("loading-spinner");
       this.addListenerOnce("appear", () => this.__populatePendingUsersLayout());
     },
 
-    __addHeader: function () {
+    __addHeader: function() {
       const pendingUsersLayout = this.getChildControl("pending-users-layout");
 
       pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Name")).set({
@@ -309,7 +309,7 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __populatePendingUsersLayout: function () {
+    __populatePendingUsersLayout: function() {
       this.getChildControl("loading-spinner").show();
       this.getChildControl("filter-users").exclude();
 
@@ -343,7 +343,7 @@ qx.Class.define("osparc.po.UsersPending", {
         .finally(() => this.getChildControl("loading-spinner").exclude());
     },
 
-    __reload: function () {
+    __reload: function() {
       this.getChildControl("pending-users-layout").removeAll();
       this.__populatePendingUsersLayout();
     },
@@ -354,7 +354,7 @@ qx.Class.define("osparc.po.UsersPending", {
       this.__renderPendingUsers();
     },
 
-    __filterPendingUsers: function () {
+    __filterPendingUsers: function() {
       if (!this.__pendingUsers) {
         return [];
       }
@@ -373,7 +373,7 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __renderPendingUsers: function () {
+    __renderPendingUsers: function() {
       const pendingUsersLayout = this.getChildControl("pending-users-layout");
       pendingUsersLayout.removeAll();
       this.__addHeader();
