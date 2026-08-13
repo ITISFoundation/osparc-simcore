@@ -446,7 +446,9 @@ qx.Class.define("osparc.po.UsersPending", {
       };
       osparc.data.Resources.fetch("poUsers", "previewApproval", params)
         .then(data => {
-          const invitationUrl = data["invitationUrl"];
+          // the "already registered" flow omits invitationUrl entirely; qooxdoo's
+          // nullable property rejects `undefined`, only `null` is accepted
+          const invitationUrl = data["invitationUrl"] || null;
           const messageContent = data["messageContent"];
           this.__openApprovalPreview(email, invitationUrl, messageContent);
         })
