@@ -14,6 +14,11 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
         "broker_connection_retry_on_startup": True,
         "broker_connection_retry": True,
         "broker_heartbeat": 30,
+        # Redis is in-cluster, so start at 50 ms to recover quickly from a brief
+        # disconnect. Three retries limit one operation to four backend calls and,
+        # with Celery's full-jitter exponential backoff, add at most 700 ms of sleep
+        # (about 350 ms on average). The 500 ms cap bounds each wait if the retry
+        # count is increased later.
         "result_backend_always_retry": True,
         "result_backend_max_retries": 3,
         "result_backend_base_sleep_between_retries_ms": 50,
