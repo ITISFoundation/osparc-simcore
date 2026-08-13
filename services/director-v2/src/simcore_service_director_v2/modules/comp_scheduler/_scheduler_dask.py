@@ -16,6 +16,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
+from dask_task_models_library.models import DaskJobID
 from models_library.clusters import BaseCluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -40,7 +41,7 @@ from ...core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
     PortsValidationError,
 )
-from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, Iteration, RunID, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
@@ -296,10 +297,10 @@ class DaskScheduler(BaseCompScheduler):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        run_id: PositiveInt,
+        run_id: RunID,
         use_on_demand_clusters: bool,
         run_metadata: RunMetadataDict,
-        job_ids: list[str],
+        job_ids: list[DaskJobID],
     ) -> None:
         """unpublish task results/datasets for a given cluster.
 
@@ -419,7 +420,7 @@ class DaskScheduler(BaseCompScheduler):
                     self.rabbitmq_client,
                     user_id=user_id,
                     project_id=comp_run.project_uuid,
-                    run_id=comp_run.run_id,
+                    run_id=RunID(comp_run.run_id),
                     use_on_demand_clusters=comp_run.use_on_demand_clusters,
                     run_metadata=comp_run.metadata,
                     job_ids=releasable_job_ids,

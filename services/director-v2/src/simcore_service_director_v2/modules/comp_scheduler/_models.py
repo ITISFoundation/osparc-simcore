@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from dask_task_models_library.models import DaskJobID
 from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import RabbitMessageBase
 from models_library.users import UserID
-from pydantic import PositiveInt
 
-from ...models.comp_runs import Iteration, RunMetadataDict
+from ...models.comp_runs import Iteration, RunID, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 
 
@@ -26,10 +26,10 @@ class ReleaseTaskResultRabbitMessage(RabbitMessageBase):
     )
     user_id: UserID
     project_id: ProjectID
-    run_id: PositiveInt
+    run_id: RunID
     use_on_demand_clusters: bool
     run_metadata: RunMetadataDict
-    job_ids: list[str]
+    job_ids: list[DaskJobID]
 
     def routing_key(self) -> str | None:  # pylint: disable=no-self-use # abstract
         return None

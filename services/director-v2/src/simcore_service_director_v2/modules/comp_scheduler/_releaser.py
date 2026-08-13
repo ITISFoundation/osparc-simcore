@@ -25,15 +25,16 @@ def _get_scheduler_worker(app: FastAPI) -> DaskScheduler:
 
 @traced
 async def _handle_release_task_result(app: FastAPI, data: bytes) -> bool:
+    """Policy: exceptions propagate so the rabbitmq client nacks and retries the
+    message (with backoff, up to a max number of attempts) instead of silently
+    dropping a failed release.
+    """
     message = ReleaseTaskResultRabbitMessage.model_validate_json(data)
     with log_context(
         _logger,
         logging.DEBUG,
         msg=f"releasing task results for {message.job_ids}",
     ):
-        # NOTE: let exceptions propagate: the rabbitmq client will nack and retry the
-        # message (with backoff, up to a max number of attempts) instead of silently
-        # dropping a failed release.
         await _get_scheduler_worker(app).release_task_result(
             user_id=message.user_id,
             project_id=message.project_id,

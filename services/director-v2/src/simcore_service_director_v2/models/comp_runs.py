@@ -1,6 +1,7 @@
 import datetime
 from contextlib import suppress
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    NewType,
     TypedDict,
 )
 
@@ -48,6 +49,9 @@ class RunMetadataDict(TypedDict, total=False):
 
 
 type Iteration = PositiveInt
+type _RunIDInt = PositiveInt
+# NewType (not a `type` alias) so the checker flags accidental mix-ups with Iteration
+RunID = NewType("RunID", _RunIDInt)
 
 
 class CompRunsAtDB(BaseModel):

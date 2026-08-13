@@ -1,10 +1,10 @@
+from dask_task_models_library.models import DaskJobID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import PositiveInt
 from servicelib.rabbitmq import RabbitMQClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ...models.comp_runs import Iteration, RunMetadataDict
+from ...models.comp_runs import Iteration, RunID, RunMetadataDict
 from ..db.repositories.comp_runs import CompRunsRepository
 from ._models import ReleaseTaskResultRabbitMessage, SchedulePipelineRabbitMessage
 
@@ -36,10 +36,10 @@ async def request_task_result_release(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    run_id: PositiveInt,
+    run_id: RunID,
     use_on_demand_clusters: bool,
     run_metadata: RunMetadataDict,
-    job_ids: list[str],
+    job_ids: list[DaskJobID],
 ) -> None:
     await rabbitmq_client.publish(
         ReleaseTaskResultRabbitMessage.get_channel_name(),
