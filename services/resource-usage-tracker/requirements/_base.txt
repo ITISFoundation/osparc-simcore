@@ -310,7 +310,7 @@ pamqp==3.3.0
     # via aiormq
 pandas==2.3.3
     # via prometheus-api-client
-pillow==12.0.0
+pillow==12.2.0
     # via matplotlib
 prometheus-api-client==0.6.0
     # via -r requirements/_base.in
@@ -444,7 +444,7 @@ tenacity==8.5.0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 toolz==0.12.1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.66.2
+tqdm==4.66.3
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 typer==0.16.1
     # via

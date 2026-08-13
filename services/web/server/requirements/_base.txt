@@ -320,7 +320,7 @@ passlib==1.7.4
     # via -r requirements/_base.in
 phonenumbers==9.0.9
     # via -r requirements/_base.in
-pillow==12.0.0
+pillow==12.2.0
     # via captcha
 pint==0.25
     # via
@@ -448,7 +448,7 @@ tenacity==8.5.0
     #   -r requirements/_base.in
 toolz==0.12.0
     # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.64.0
+tqdm==4.66.3
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in

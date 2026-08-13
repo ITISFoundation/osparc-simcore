@@ -329,6 +329,9 @@ class DatCoreDataManager(BaseDataManager):
             fmd_is_directory=False,
         )
 
+    async def delete_path(self, user_id: UserID, path: Path) -> None:
+        await self.delete_file(user_id, TypeAdapter(StorageFileID).validate_python(f"{path}"))
+
 
 def create_datcore_data_manager(app: FastAPI) -> DatCoreDataManager:
     return DatCoreDataManager(app)

@@ -130,6 +130,9 @@ async def get_folder(
     )
 
 
+type TotalCount = int
+
+
 async def list_folders(
     app: web.Application,
     user_id: UserID,
@@ -140,7 +143,7 @@ async def list_folders(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> tuple[list[FolderTuple], int]:
+) -> tuple[list[FolderTuple], TotalCount]:
     # NOTE: Folder access rights for listing are checked within the listing DB function.
 
     total_count, folders = await _folders_repository.list_(
