@@ -50,7 +50,6 @@ class RunMetadataDict(TypedDict, total=False):
 
 type _IterationInt = PositiveInt
 type _RunIDInt = PositiveInt
-# NewType (not a `type` alias) so the checker flags accidental mix-ups between Iteration and RunID
 Iteration = NewType("Iteration", _IterationInt)
 RunID = NewType("RunID", _RunIDInt)
 
