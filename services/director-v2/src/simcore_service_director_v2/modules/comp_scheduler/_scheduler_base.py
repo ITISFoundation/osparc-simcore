@@ -31,7 +31,6 @@ from models_library.services import ServiceType
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
-from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
@@ -52,7 +51,7 @@ from ...core.errors import (
 )
 from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, Iteration, RunID, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.rabbitmq import (
@@ -266,7 +265,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         dag: nx.DiGraph,
         tasks: dict[NodeIDStr, CompTaskAtDB],
-        run_id: PositiveInt,
+        run_id: RunID,
     ) -> dict[NodeIDStr, CompTaskAtDB]:
         # Perform a reverse topological sort to ensure tasks are ordered from last to first
         sorted_node_ids = list(reversed(list(nx.topological_sort(dag))))
@@ -296,7 +295,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        run_id: PositiveInt,
+        run_id: RunID,
         iteration: Iteration,
         dag: nx.DiGraph,
     ) -> None:
@@ -364,7 +363,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
         run_metadata: RunMetadataDict,
-        run_id: PositiveInt,
+        run_id: RunID,
     ) -> None:
         utc_now = arrow.utcnow().datetime
 
@@ -442,7 +441,7 @@ class BaseCompScheduler(ABC):
             started_time=utc_now,
         )
 
-    async def _process_waiting_tasks(self, tasks: list[TaskStateTracker], run_id: PositiveInt) -> None:
+    async def _process_waiting_tasks(self, tasks: list[TaskStateTracker], run_id: RunID) -> None:
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         for task in tasks:
             await comp_tasks_repo.update_project_tasks_state(
@@ -552,7 +551,7 @@ class BaseCompScheduler(ABC):
         """process executing tasks from the 3rd party backend"""
 
     @abstractmethod
-    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: Iteration) -> None:
+    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: RunID) -> None:
         """release resources used by the scheduler for a given user and project"""
 
     async def apply(
@@ -638,7 +637,7 @@ class BaseCompScheduler(ABC):
                         tip="Check that the project still exists",
                     )
                 )
-                await self._safe_release_resources(user_id, project_id, iteration)
+                # NOTE: comp_run was never fetched, so there is no run_id to release resources for
             except PipelineNotFoundError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
@@ -655,7 +654,7 @@ class BaseCompScheduler(ABC):
                 )
 
                 # NOTE: no need to update task states here as pipeline is already broken
-                await self._safe_release_resources(user_id, project_id, iteration)
+                await self._safe_release_resources(user_id, project_id, comp_run.run_id)
                 await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except InvalidPipelineError as exc:
                 _logger.exception(
@@ -671,7 +670,7 @@ class BaseCompScheduler(ABC):
                     ),
                 )
                 # NOTE: no need to update task states here as pipeline is already broken
-                await self._safe_release_resources(user_id, project_id, iteration)
+                await self._safe_release_resources(user_id, project_id, comp_run.run_id)
                 await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except ComputationalSchedulerChangedError as exc:
                 _logger.exception(

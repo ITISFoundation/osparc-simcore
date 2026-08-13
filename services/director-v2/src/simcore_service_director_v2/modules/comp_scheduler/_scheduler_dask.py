@@ -25,7 +25,6 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
-from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis._semaphore_decorator import (
@@ -82,7 +81,7 @@ async def _cluster_dask_client(
     *,
     use_on_demand_clusters: bool,
     project_id: ProjectID,
-    run_id: PositiveInt,
+    run_id: RunID,
     run_metadata: RunMetadataDict,
     ref: str | None = None,
 ) -> AsyncGenerator[DaskClient]:
@@ -334,7 +333,7 @@ class DaskScheduler(BaseCompScheduler):
         finally:
             await self.dask_clients_pool.release_client_ref(ref=pool_ref)
 
-    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: Iteration) -> None:
+    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: RunID) -> None:
         """release resources used by the scheduler for a given user and project"""
         with (
             log_catch(_logger, reraise=False),
@@ -420,7 +419,7 @@ class DaskScheduler(BaseCompScheduler):
                     self.rabbitmq_client,
                     user_id=user_id,
                     project_id=comp_run.project_uuid,
-                    run_id=RunID(comp_run.run_id),
+                    run_id=comp_run.run_id,
                     use_on_demand_clusters=comp_run.use_on_demand_clusters,
                     run_metadata=comp_run.metadata,
                     job_ids=releasable_job_ids,

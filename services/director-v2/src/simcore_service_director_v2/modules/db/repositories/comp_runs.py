@@ -17,7 +17,6 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -35,7 +34,7 @@ from ....core.errors import (
     ProjectNotFoundError,
     UserNotFoundError,
 )
-from ....models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ....models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ....utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
@@ -51,14 +50,14 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[dict[sa.Column, tuple[type[DirectorError
 }
 
 
-async def _get_next_iteration(conn: AsyncConnection, user_id: UserID, project_id: ProjectID) -> PositiveInt:
+async def _get_next_iteration(conn: AsyncConnection, user_id: UserID, project_id: ProjectID) -> Iteration:
     """Calculate the next iteration number for a project"""
     last_iteration = await conn.scalar(
         sa.select(comp_runs.c.iteration)
         .where((comp_runs.c.user_id == user_id) & (comp_runs.c.project_uuid == f"{project_id}"))
         .order_by(desc(comp_runs.c.iteration))
     )
-    return cast(PositiveInt, (last_iteration or 0) + 1)
+    return cast(Iteration, (last_iteration or 0) + 1)
 
 
 def _handle_foreign_key_violation(exc: sql_exc.IntegrityError, **error_keys: Any) -> None:
@@ -111,7 +110,7 @@ class CompRunsRepository(BaseRepository):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt | None = None,
+        iteration: Iteration | None = None,
     ) -> CompRunsAtDB:
         """returns the run defined by user_id, project_id and iteration
         In case iteration is None then returns the last iteration
@@ -454,7 +453,7 @@ class CompRunsRepository(BaseRepository):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt | None = None,
+        iteration: Iteration | None = None,
         metadata: RunMetadataDict,
         use_on_demand_clusters: bool,
         dag_adjacency_list: dict[str, list[str]],
@@ -486,7 +485,7 @@ class CompRunsRepository(BaseRepository):
             raise DirectorError from exc
 
     async def update(
-        self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
+        self, user_id: UserID, project_id: ProjectID, iteration: Iteration, **values
     ) -> CompRunsAtDB | None:
         async with transaction_context(self.db_engine) as conn:
             result: CursorResult = await conn.execute(
@@ -507,7 +506,7 @@ class CompRunsRepository(BaseRepository):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         result_state: RunningState,
         final_state: bool | None = False,
     ) -> CompRunsAtDB | None:
@@ -544,7 +543,7 @@ class CompRunsRepository(BaseRepository):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         started_time: datetime.datetime,
     ) -> CompRunsAtDB | None:
         return await self.update(
@@ -555,7 +554,7 @@ class CompRunsRepository(BaseRepository):
         )
 
     async def mark_for_cancellation(
-        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+        self, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
     ) -> CompRunsAtDB | None:
         return await self.update(
             user_id,
@@ -565,7 +564,7 @@ class CompRunsRepository(BaseRepository):
         )
 
     async def mark_for_scheduling(
-        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+        self, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
     ) -> CompRunsAtDB | None:
         return await self.update(
             user_id,
@@ -576,7 +575,7 @@ class CompRunsRepository(BaseRepository):
         )
 
     async def mark_as_processed(
-        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+        self, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
     ) -> CompRunsAtDB | None:
         return await self.update(
             user_id,

@@ -55,7 +55,7 @@ RunID = NewType("RunID", _RunIDInt)
 
 
 class CompRunsAtDB(BaseModel):
-    run_id: PositiveInt
+    run_id: RunID
     project_uuid: ProjectID
     user_id: UserID
     iteration: Iteration
