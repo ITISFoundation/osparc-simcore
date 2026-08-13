@@ -48,9 +48,10 @@ class RunMetadataDict(TypedDict, total=False):
     encryption: JobEncryptionRunMetadataDict
 
 
-type Iteration = PositiveInt
+type _IterationInt = PositiveInt
 type _RunIDInt = PositiveInt
-# NewType (not a `type` alias) so the checker flags accidental mix-ups with Iteration
+# NewType (not a `type` alias) so the checker flags accidental mix-ups between Iteration and RunID
+Iteration = NewType("Iteration", _IterationInt)
 RunID = NewType("RunID", _RunIDInt)
 
 
