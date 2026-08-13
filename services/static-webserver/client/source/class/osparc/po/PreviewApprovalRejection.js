@@ -69,7 +69,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
   },
 
   members: {
-    _createChildControlImpl: function (id) {
+    _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "email-editor": {
@@ -175,14 +175,14 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       this.getChildControl("reject-with-email-button");
     },
 
-    __applyEmailAddress: function (value) {
+    __applyEmailAddress: function(value) {
       const emailEditor = this.getChildControl("email-editor");
       const chip = emailEditor.addChip(value, value);
       chip.setEnabled(false);
       emailEditor.getChildControl("add-recipient-button").exclude();
     },
 
-    __applyInvitationUrl: function (value) {
+    __applyInvitationUrl: function(value) {
       const invitationUrlContainer = this.getChildControl("invitation-url-container");
       invitationUrlContainer.setVisibility(value ? "visible" : "excluded");
       if (value) {
@@ -191,13 +191,13 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       }
     },
 
-    __applySubject: function (value) {
+    __applySubject: function(value) {
       const emailEditor = this.getChildControl("email-editor");
       const subjectField = emailEditor.getChildControl("subject-field");
       subjectField.setValue(value);
     },
 
-    __applyBodyHtml: function (value) {
+    __applyBodyHtml: function(value) {
       const emailEditor = this.getChildControl("email-editor");
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       emailContentEditor.setTemplateEmail(value);
