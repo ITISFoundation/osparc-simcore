@@ -103,39 +103,47 @@ async def complete_upload(
     state_url = _get_https_link_if_storage_secure(f"{file_upload_complete_response.data.links.state}")
     _logger.info("required upload completion of %s", f"{len(parts)} parts, received {state_url}")
 
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        wait=wait_fixed(1),
-        stop=stop_after_delay(NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S),
-        retry=retry_if_exception_type(TryAgain) | retry_if_exception(_is_transient_server_error),
-        before_sleep=before_sleep_log(_logger, logging.DEBUG),
-    ):
-        with attempt:
-            async with session.post(state_url, auth=get_basic_auth()) as resp:
-                resp.raise_for_status()
-                future_enveloped = TypeAdapter(Envelope[FileUploadCompleteFutureResponse]).validate_python(
-                    await resp.json()
-                )
-                assert future_enveloped.data  # nosec
-                if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                    msg = "upload not ready yet (FileUploadCompleteState.NOK)"
-                    raise TryAgain(msg)
-            if is_directory:
-                assert future_enveloped.data.e_tag is None  # nosec
-                return None
+    try:
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            wait=wait_fixed(1),
+            stop=stop_after_delay(
+                NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S
+            ),
+            retry=retry_if_exception_type(TryAgain) | retry_if_exception(_is_transient_server_error),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        ):
+            with attempt:
+                async with session.post(state_url, auth=get_basic_auth()) as resp:
+                    resp.raise_for_status()
+                    future_enveloped = TypeAdapter(Envelope[FileUploadCompleteFutureResponse]).validate_python(
+                        await resp.json()
+                    )
+                    assert future_enveloped.data  # nosec
+                    if future_enveloped.data.state == FileUploadCompleteState.NOK:
+                        msg = "upload not ready yet (FileUploadCompleteState.NOK)"
+                        raise TryAgain(msg)
+                if is_directory:
+                    assert future_enveloped.data.e_tag is None  # nosec
+                    return None
 
-            assert future_enveloped.data.e_tag  # nosec
-            assert future_enveloped.data.last_modified is not None  # nosec
-            _logger.info(
-                "multipart upload completed in %s, received %s %s",
-                attempt.retry_state.retry_object.statistics,
-                f"{future_enveloped.data.e_tag=}",
-                f"{future_enveloped.data.last_modified=}",
-            )
-            return CompletedUpload(
-                e_tag=future_enveloped.data.e_tag,
-                last_modified=future_enveloped.data.last_modified,
-            )
+                assert future_enveloped.data.e_tag  # nosec
+                assert future_enveloped.data.last_modified is not None  # nosec
+                _logger.info(
+                    "multipart upload completed in %s, received %s %s",
+                    attempt.retry_state.retry_object.statistics,
+                    f"{future_enveloped.data.e_tag=}",
+                    f"{future_enveloped.data.last_modified=}",
+                )
+                return CompletedUpload(
+                    e_tag=future_enveloped.data.e_tag,
+                    last_modified=future_enveloped.data.last_modified,
+                )
+    except ClientResponseError as exc:
+        if _is_transient_server_error(exc):
+            msg = f"Storage upload completion polling failed after retries: HTTP {exc.status} {exc.message}"
+            raise exceptions.S3TransferError(msg) from exc
+        raise
     msg = f"Could not complete the upload using the upload_completion_link={upload_completion_link!r}"
     raise exceptions.S3TransferError(msg)
 

@@ -10,8 +10,10 @@ from aioresponses import aioresponses
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from servicelib.aiohttp import status
+from servicelib.long_running_tasks._serialization import dumps, loads
 from simcore_sdk.node_ports_common import storage_endpoint
 from simcore_sdk.node_ports_common._filemanager_utils import complete_upload
+from simcore_sdk.node_ports_common.exceptions import S3TransferError
 
 _COMPLETION_LINK: Final[str] = "http://storage:8080/v0/locations/0/files/a-file:complete"
 _STATE_LINK: Final[str] = "http://storage:8080/v0/locations/0/files/a-file:complete/futures/a-future"
@@ -133,7 +135,11 @@ async def test_complete_upload_gives_up_on_persistent_transient_error(
     aioresponses_mocker.post(_COMPLETION_LINK, status=status.HTTP_202_ACCEPTED, payload=_COMPLETION_PAYLOAD)
     aioresponses_mocker.post(_STATE_LINK, status=status.HTTP_503_SERVICE_UNAVAILABLE, repeat=True)
 
-    with pytest.raises(ClientResponseError) as exc_info:
+    with pytest.raises(S3TransferError) as exc_info:
         await complete_upload(session, completion_link, [], is_directory=False)
 
-    assert exc_info.value.status == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert f"HTTP {status.HTTP_503_SERVICE_UNAVAILABLE}" in f"{exc_info.value}"
+    serialized_error = dumps(exc_info.value)
+    deserialized_error = loads(serialized_error)
+    assert isinstance(deserialized_error, S3TransferError)
+    assert f"{deserialized_error}" == f"{exc_info.value}"
