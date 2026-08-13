@@ -49,6 +49,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessages,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
+    SimcorePlatformStatus,
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -1486,6 +1487,14 @@ def with_disabled_unknown_max_time(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.fixture
+def with_disabled_task_resubmission(scheduler_api: BaseCompScheduler) -> None:
+    # disables resubmission backoff so apply() goes straight to the FAILED branch (settings are frozen, so we copy)
+    scheduler_api.settings = scheduler_api.settings.model_copy(
+        update={"COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS": 0}
+    )
+
+
 @dataclass(frozen=True, kw_only=True)
 class RebootState:
     dask_task_status: RunningState
@@ -1572,6 +1581,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
     with_disabled_unknown_max_time: None,
+    with_disabled_task_resubmission: None,
     mocked_dask_client: mock.MagicMock,
     sqlalchemy_async_engine: AsyncEngine,
     running_project: RunningProject,
@@ -1663,6 +1673,79 @@ async def test_handling_scheduled_tasks_after_director_reboots(
         reboot_state.expected_pipeline_state_notification,
         ComputationalPipelineStatusMessage.model_validate_json,
     )
+
+
+async def test_handle_task_not_found_error_resubmission_and_backoff(
+    sqlalchemy_async_engine: AsyncEngine,
+    running_project: RunningProject,
+    scheduler_api: BaseCompScheduler,
+    mocker: MockerFixture,
+):
+    """Verifies the backoff delay before resubmitting a lost task, and eventual failure after max resubmissions."""
+    settings = scheduler_api.settings
+    task = running_project.tasks[1]
+    comp_run = running_project.runs
+    result = ComputationalBackendTaskNotFoundError(job_id=task.job_id)
+
+    # control time deterministically instead of really sleeping through the backoff delays
+    fake_now = {"value": arrow.utcnow()}
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.arrow.utcnow",
+        side_effect=lambda: fake_now["value"],
+    )
+
+    async def _handle_task_not_found(
+        task: CompTaskAtDB,
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool] | None:
+        return await cast(DaskScheduler, scheduler_api)._handle_task_not_found_error(  # noqa: SLF001
+            task, result, {}, comp_run
+        )
+
+    # 1st occurrence ever: too early to tell if this is transient, must NOT resubmit yet
+    outcome = await _handle_task_not_found(task)
+    assert outcome is not None
+    task_state, _platform_status, errors, completed = outcome
+    assert task_state is RunningState.STARTED
+    assert completed is False
+    assert errors[0]["ctx"]["resubmissions"] == 0
+    task = task.model_copy(update={"errors": errors})
+
+    for expected_resubmissions in range(1, settings.COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS + 1):
+        # advance time past the (exponentially growing) backoff delay for this attempt
+        backoff_delay = min(
+            settings.COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_INITIAL_DELAY * (2 ** (expected_resubmissions - 1)),
+            settings.COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_MAX_DELAY,
+        )
+        fake_now["value"] = fake_now["value"].shift(seconds=backoff_delay.total_seconds() + 1)
+
+        # backoff elapsed: the task must now actually be resubmitted
+        outcome = await _handle_task_not_found(task)
+        assert outcome is None, "task should have been reset for resubmission"
+        persisted_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+            sqlalchemy_async_engine,
+            project_uuid=running_project.project.uuid,
+            task_ids=[task.node_id],
+            expected_state=RunningState.WAITING_FOR_CLUSTER,
+            expected_processing_state_has_job_id=False,
+            expected_progress=None,
+            run_id=comp_run.run_id,
+        )
+        task = persisted_tasks[0]
+        assert task.errors is not None
+        assert task.errors[0]["ctx"]["resubmissions"] == expected_resubmissions
+
+        # right after resubmitting: waits again, or fails for good once resubmissions are exhausted
+        outcome = await _handle_task_not_found(task)
+        assert outcome is not None
+        task_state, _platform_status, errors, completed = outcome
+        if expected_resubmissions < settings.COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS:
+            assert task_state is RunningState.STARTED
+            assert completed is False
+            assert errors[0]["ctx"]["resubmissions"] == expected_resubmissions
+            task = task.model_copy(update={"errors": errors})
+        else:
+            assert task_state is RunningState.FAILED
+            assert completed is True
 
 
 async def test_handling_cancellation_of_jobs_after_reboot(

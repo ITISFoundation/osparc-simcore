@@ -236,6 +236,26 @@ class CompTasksRepository(BaseRepository):
     async def update_project_task_job_id(self, project_id: ProjectID, task: NodeID, run_id: RunID, job_id: str) -> None:
         await self._update_task(project_id, task, run_id, job_id=job_id)
 
+    async def reset_task_for_resubmission(
+        self,
+        project_id: ProjectID,
+        task: NodeID,
+        run_id: PositiveInt,
+        errors: list[ErrorDict] | None = None,
+    ) -> None:
+        """clears the backend job reference so the scheduler picks the task up again"""
+        await self._update_task(
+            project_id,
+            task,
+            run_id,
+            state=RUNNING_STATE_TO_DB[RunningState.WAITING_FOR_CLUSTER],
+            job_id=None,
+            progress=None,
+            start=None,
+            end=None,
+            errors=errors,
+        )
+
     async def update_project_tasks_state(
         self,
         project_id: ProjectID,
