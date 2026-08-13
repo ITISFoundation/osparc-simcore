@@ -6,7 +6,12 @@ import pytest
 from celery.exceptions import CeleryError, OperationalError  # type: ignore[import-untyped]
 from celery_library import CeleryTaskManager
 from celery_library.errors import TaskManagerError, TaskSubmissionError
-from models_library.celery import OwnerMetadata, TaskExecutionMetadata
+from models_library.celery import (
+    GroupExecutionMetadata,
+    GroupTaskExecutionMetadata,
+    OwnerMetadata,
+    TaskExecutionMetadata,
+)
 
 
 @pytest.fixture
@@ -29,6 +34,7 @@ def task_manager(celery_app: MagicMock, task_store: AsyncMock) -> CeleryTaskMana
     [
         (OperationalError("broker is unreachable"), TaskManagerError),
         (CeleryError("celery is unhappy"), TaskSubmissionError),
+        (RuntimeError("unexpected publish failure"), RuntimeError),
     ],
 )
 async def test_submit_task_cleans_up_when_publishing_fails(
@@ -44,6 +50,24 @@ async def test_submit_task_cleans_up_when_publishing_fails(
 
     with pytest.raises(expected_error):
         await task_manager.submit_task(execution_metadata, owner_metadata=fake_owner_metadata)
+
+    task_store.create_task.assert_awaited_once()
+    task_store.remove_task.assert_awaited_once()
+
+
+async def test_submit_group_cleans_up_when_unexpected_error_occurs(
+    task_manager: CeleryTaskManager,
+    task_store: AsyncMock,
+    fake_owner_metadata: OwnerMetadata,
+):
+    task_store.create_task.side_effect = RuntimeError("unexpected metadata failure")
+    execution_metadata = GroupExecutionMetadata(
+        name="a_group",
+        tasks=[(GroupTaskExecutionMetadata(name="a_task"), {})],
+    )
+
+    with pytest.raises(RuntimeError, match="unexpected metadata failure"):
+        await task_manager.submit_group(execution_metadata, owner_metadata=fake_owner_metadata)
 
     task_store.create_task.assert_awaited_once()
     task_store.remove_task.assert_awaited_once()
