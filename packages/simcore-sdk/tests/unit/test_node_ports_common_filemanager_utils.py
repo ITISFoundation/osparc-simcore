@@ -140,6 +140,6 @@ async def test_complete_upload_gives_up_on_persistent_transient_error(
 
     assert f"HTTP {status.HTTP_503_SERVICE_UNAVAILABLE}" in f"{exc_info.value}"
     serialized_error = dumps(exc_info.value)
-    deserialized_error = loads(serialized_error)
-    assert isinstance(deserialized_error, S3TransferError)
-    assert f"{deserialized_error}" == f"{exc_info.value}"
+    with pytest.raises(S3TransferError) as deserialized_exc_info:
+        loads(serialized_error)
+    assert f"{deserialized_exc_info.value}" == f"{exc_info.value}"
