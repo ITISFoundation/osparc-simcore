@@ -475,18 +475,19 @@ async def preview_grant_product_access_user_account(
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
     """
+    approval_email_lc = approval_email.lower()
     found = await search_users_accounts(
         app,
-        filter_by_email_glob=approval_email,
+        filter_by_email_glob=approval_email_lc,
         product_name=product_name,
         include_products=True,
     )
 
     if not found:
-        raise PendingPreRegistrationNotFoundError(email=approval_email, product_name=product_name)
+        raise PendingPreRegistrationNotFoundError(email=approval_email_lc, product_name=product_name)
 
     user_account = found[0]
-    assert user_account.email == approval_email  # nosec
+    assert user_account.email == approval_email_lc  # nosec
 
     # NOTE: Users perceive each product as an independent website, identified by its display name: reference
     # the existing one closest to the product they are being granted access to
