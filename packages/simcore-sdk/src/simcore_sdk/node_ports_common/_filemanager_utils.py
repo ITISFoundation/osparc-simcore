@@ -21,7 +21,7 @@ from settings_library.node_ports import NodePortsSettings
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception, retry_if_exception_type
+from tenacity.retry import retry_if_exception
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
@@ -110,7 +110,7 @@ async def complete_upload(
             stop=stop_after_delay(
                 NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S
             ),
-            retry=retry_if_exception_type(TryAgain) | retry_if_exception(_is_transient_server_error),
+            retry=retry_if_exception(_is_transient_server_error),
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         ):
             with attempt:
