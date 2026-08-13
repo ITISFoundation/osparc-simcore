@@ -732,7 +732,7 @@ msgstr "Estimado/a %(first_name)s,"
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
 msgid ""
 "Your request has been approved and you now have access to %(product_name)s."
-msgstr "Su solicitud ha sido aprobada y ahora tiene acceso a ."
+msgstr "Su solicitud ha sido aprobada y ahora tiene acceso a %(product_name)s."
 
 # CTX-INTERPRETATION: This string is part of an email template used to guide
 # users who have an existing account to log in to a specific product.
@@ -761,7 +761,7 @@ msgstr ""
 # the product.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
 msgid "You can access %(product_name)s here: %(login_link)s"
-msgstr "Puede acceder a {{ product_name }} aquí: {{ login_link }}"
+msgstr "Puede acceder a %(product_name)s aquí: %(login_link)s"
 
 # CTX-INTERPRETATION: This string appears in the user interface of a
 # scientific simulation application, providing contact information for
@@ -848,7 +848,7 @@ msgstr ""
 # the product's homepage.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
 msgid "You can access %(product_name)s here: %(link)s"
-msgstr "Puede acceder a {{ product_name }} aquí: {{ link }}"
+msgstr "Puede acceder a %(product_name)s aquí: %(link)s"
 
 # CTX-INTERPRETATION: This string appears as part of an error message or help,
 # providing contact information for support. section in the application,
@@ -1341,8 +1341,8 @@ msgid ""
 "Thank you for registering with %(product_name)s. Your account\n"
 "has been successfully created and you can now sign in to %(host)s."
 msgstr ""
-"Gracias por registrarse con {{ product_name }}. Su cuenta\n"
-"ha sido creada con éxito y ahora puede iniciar sesión en {{ host }}."
+"Gracias por registrarse con %(product_name)s. Su cuenta\n"
+"ha sido creada con éxito y ahora puede iniciar sesión en %(host)s}."
 
 # CTX-INTERPRETATION: This string appears in an email body template, providing
 # contact information for support.
@@ -1358,7 +1358,7 @@ msgstr ""
 # the user to a specific product after registration.
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
 msgid "Welcome to %(product_name)s!"
-msgstr "¡Bienvenido a {{ product_name }}!"
+msgstr "¡Bienvenido a %(product_name)s!"
 
 # CTX-INTERPRETATION: This string appears in an email notification sent to a
 # user regarding a password reset request. user when a password reset request

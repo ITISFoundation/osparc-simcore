@@ -617,7 +617,7 @@ msgstr "亲爱的 %(first_name)s，"
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
 msgid ""
 "Your request has been approved and you now have access to %(product_name)s."
-msgstr "您的请求已批准，您现在可以访问 {{ product_name }}"
+msgstr "您的请求已批准，您现在可以访问 %(product_name)s。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to guide
 # users who have already created an account to log in to a specific product.
@@ -625,7 +625,7 @@ msgstr "您的请求已批准，您现在可以访问 {{ product_name }}"
 msgid ""
 "Since you already have an account on\n"
 "  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
-msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 {{ product_name }}。"
+msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to guide
 # users who have already created an account to log in to a specific product
@@ -642,7 +642,7 @@ msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密
 # link to access the product.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
 msgid "You can access %(product_name)s here: %(login_link)s"
-msgstr "您可以在这里访问：{{ product_name }}。"
+msgstr "您可以在这里访问：%(product_name)s。"
 
 # CTX-INTERPRETATION: This string appears in an email body, providing contact
 # information for support in case of registration issues.
@@ -706,7 +706,7 @@ msgstr "%(product_name)s 团队"
 msgid ""
 "Since you already have an account on %(existing_product)s, please continue "
 "logging in to %(product_name)s with the same email and password."
-msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 {{ product_name }}."
+msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s."
 
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # a user that they have been added to a product, providing a link to access
@@ -728,7 +728,7 @@ msgstr "如果在任何问题发生时，请随时通过 %(support_email)s 联�
 # the user that they have been granted access to a specific product.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/subject.j2:1
 msgid "You Now Have Access to %(product_name)s"
-msgstr "您现在可以访问 {{ product_name }}"
+msgstr "您现在可以访问 %(product_name)s"
 
 # CTX-INTERPRETATION: This string is part of an email template used to thank
 # users for their interest and provide them with a registration link.
@@ -883,7 +883,7 @@ msgid ""
 "You have requested to change the email address linked to your "
 "%(product_name)s account. Please follow the on-screen information in the "
 "link below:"
-msgstr "您已成功更改与您的{{ product_name }} 帐户关联的电子邮件地址。请按照屏幕上的信息，点击以下链接以完成操作："
+msgstr "您已成功更改与您的%(product_name)s 帐户关联的电子邮件地址。请按照屏幕上的信息，点击以下链接以完成操作："
 
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
 msgid "Change email"
@@ -952,7 +952,7 @@ msgid ""
 "We want to inform you that your service run (%(service_run)s) on "
 "%(product_name)s was affected by a platform issue and was not billed."
 msgstr ""
-"我们想通知您，您在（{{ service_run }}）上的服务运行（{{ product_name }}）由于平台问题而中断，因此未收取费用。"
+"我们想通知您，您在（%(service_run)s）上的服务运行（%(product_name)s）由于平台问题而中断，因此未收取费用。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that credits have been reimbursed to their credit account.
@@ -1104,7 +1104,7 @@ msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_link
 msgid ""
 "Thank you for registering with %(product_name)s. Your account\n"
 "has been successfully created and you can now sign in to %(host)s."
-msgstr "感谢您使用 {{ product_name }} 注册。您的帐户已成功创建，您现在可以登录到 {{ host }}。"
+msgstr "感谢您使用 %(product_name)s 注册。您的帐户已成功创建，您现在可以登录到 %(host)s。"
 
 # CTX-INTERPRETATION: This string appears in an email body template, providing
 # contact information for support.
@@ -1119,7 +1119,7 @@ msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_emai
 # surrounding code.
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
 msgid "Welcome to %(product_name)s!"
-msgstr "欢迎使用 {{ product_name }}！"
+msgstr "欢迎使用 %(product_name)s！"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that a password reset request has been submitted for their specified
@@ -1280,8 +1280,8 @@ msgid ""
 "your account by sending us an email to %(support_email)s. Afterwards, it "
 "will be completely deleted from our system."
 msgstr ""
-"您的项目和数据将在{{ retention_days }}天内安全地保留。在此期间，如果您决定退回，可以通过发送电子邮件至 {{ "
-"support_email }} 来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
+"您的项目和数据将在%(retention_days)s天内安全地保留。在此期间，如果您决定退回，可以通过发送电子邮件至 "
+"%(support_email)s 来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # users about contacting support for assistance, specifically mentioning the
