@@ -19,6 +19,8 @@ alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+annotated-doc==0.0.5
+    # via fastapi
 annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
@@ -84,18 +86,20 @@ faker==19.6.1
     #   -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-fastapi==0.116.1
+fastapi==0.141.1
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
-fastapi-cli==0.0.24
+fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.15.0
     # via fastapi-cli
 fastapi-pagination==0.15.16
     # via -r requirements/_test.in
-fastar==0.8.0
-    # via fastapi-cloud-cli
+fastar==0.11.0
+    # via
+    #   fastapi
+    #   fastapi-cloud-cli
 flaky==3.8.1
     # via -r requirements/_test.in
 frozenlist==1.4.1
@@ -226,10 +230,20 @@ pydantic==2.13.4
     #   fastapi
     #   fastapi-cloud-cli
     #   fastapi-pagination
+    #   pydantic-extra-types
+    #   pydantic-settings
 pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
+pydantic-extra-types==2.11.1
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
+pydantic-settings==2.14.2
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
 pygments==2.15.1
     # via
     #   -c requirements/_base.txt
@@ -275,6 +289,7 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+    #   pydantic-settings
     #   uvicorn
 python-multipart==0.0.32
     # via fastapi
@@ -381,6 +396,7 @@ typing-extensions==4.14.1
     #   mypy
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   rich-toolkit
     #   sqlalchemy
     #   typer
@@ -388,7 +404,9 @@ typing-extensions==4.14.1
 typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
+    #   fastapi
     #   pydantic
+    #   pydantic-settings
 urllib3==2.7.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
