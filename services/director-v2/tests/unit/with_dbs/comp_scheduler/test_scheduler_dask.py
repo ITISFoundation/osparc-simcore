@@ -77,6 +77,9 @@ from simcore_service_director_v2.modules.comp_scheduler._manager import (
     run_new_pipeline,
     stop_pipeline,
 )
+from simcore_service_director_v2.modules.comp_scheduler._models import (
+    ReleaseTaskResultRabbitMessage,
+)
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
     BaseCompScheduler,
 )
@@ -377,6 +380,18 @@ async def computational_pipeline_rabbit_client_parser(
     await client.unsubscribe(queue_name)
 
 
+@pytest.fixture
+async def release_task_result_rabbit_client_parser(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+) -> AsyncIterator[mock.AsyncMock]:
+    # NOTE: observes the same fanout messages as the app's own _releaser.py consumer
+    client = create_rabbitmq_client("release_task_result_pytest_consumer")
+    mock = mocker.AsyncMock(return_value=True)
+    queue_name, _ = await client.subscribe(ReleaseTaskResultRabbitMessage.get_channel_name(), mock)
+    yield mock
+    await client.unsubscribe(queue_name)
+
+
 async def _assert_message_received(
     mocked_message_parser: mock.AsyncMock,
     expected_call_count: int,
@@ -481,6 +496,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     instrumentation_rabbit_client_parser: mock.AsyncMock,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    release_task_result_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
     fake_collection_run_id: CollectionRunID,
 ):
@@ -701,6 +717,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
 
     completed_tasks = [exp_started_task]
+    released_job_ids = [completed_tasks[0].job_id]
     next_pending_task = published_project.tasks[2]
     expected_pending_tasks.append(next_pending_task)
     updated_pending_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
@@ -858,6 +875,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_task_result.reset_mock()
     mocked_parse_output_data_fct.assert_not_called()
     expected_pending_tasks.remove(exp_started_task)
+    released_job_ids.append(exp_started_task.job_id)
     messages = await _assert_message_received(
         instrumentation_rabbit_client_parser,
         1,
@@ -937,6 +955,30 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
     assert isinstance(messages[0], RabbitResourceTrackingStartedMessage)
     assert isinstance(messages[1], RabbitResourceTrackingStoppedMessage)
+
+    # -------------------------------------------------------------------------------
+    # 9. now that the pipeline completed (FAILED is a completed state), the scheduler must
+    # have requested the release of every completed task's Dask results, and since there
+    # is no more comp_run using it, the underlying Dask client itself must be deleted
+    # (i.e. no leaked resources, which is the whole point of this pipeline scheduling).
+    released_job_ids.append(exp_started_task.job_id)
+    await _assert_message_received(
+        release_task_result_rabbit_client_parser,
+        len(released_job_ids),
+        ReleaseTaskResultRabbitMessage.model_validate_json,
+    )
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            mocked_dask_client.release_task_result.assert_has_calls(
+                calls=[mock.call(job_id) for job_id in released_job_ids],
+                any_order=True,
+            )
+            mocked_dask_client.delete.assert_called_once()
 
 
 @pytest.fixture
@@ -3036,7 +3078,7 @@ async def test_invalid_pipeline_error_aborts_scheduling(
     )
 
 
-async def test_computational_run_not_found_error_releases_resources(
+async def test_computational_run_not_found_error_does_not_release_resources(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
@@ -3050,7 +3092,8 @@ async def test_computational_run_not_found_error_releases_resources(
     fake_collection_run_id: CollectionRunID,
 ):
     """When the comp_run row is missing, ComputationalRunNotFoundError is raised.
-    Resources are released but no run-result update is attempted (there is no run to update)."""
+    There is no run to release resources for (comp_run was never fetched), so
+    resources must not be released and no run-result update is attempted."""
     _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     run_in_db, _ = await _assert_start_pipeline(
         initialized_app,
@@ -3072,10 +3115,6 @@ async def test_computational_run_not_found_error_releases_resources(
         iteration=run_in_db.iteration,
     )
 
-    # resources must be released even though the run is missing;
-    # note: iteration is used (not run_id) because comp_run was never fetched
-    mocked_safe_release_resources.assert_called_once_with(
-        run_in_db.user_id, run_in_db.project_uuid, run_in_db.iteration
-    )
+    mocked_safe_release_resources.assert_not_called()
     # no comp_run row should exist (was deleted before apply)
     await assert_comp_runs_empty(sqlalchemy_async_engine)

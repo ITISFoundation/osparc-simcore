@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Callable, Coroutine
+from contextlib import suppress
 from datetime import timedelta
 from functools import wraps
 from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
@@ -53,16 +54,22 @@ def _async_task_wrapper(
                         async_io_task = tg.create_task(
                             coro(task, *args, **kwargs),
                         )
+                        task_completed = asyncio.Event()
+                        async_io_task.add_done_callback(lambda _: task_completed.set())
 
-                        async def _abort_monitor():
-                            while not async_io_task.done():
+                        async def _abort_monitor() -> None:
+                            while not task_completed.is_set():
                                 if not await app_server.task_manager.task_or_group_exists(task_key):
                                     await cancel_wait_task(
                                         async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                     )
                                     raise TaskAbortedError
-                                await asyncio.sleep(_DEFAULT_ABORT_TASK_TIMEOUT.total_seconds())
+                                with suppress(TimeoutError):
+                                    await asyncio.wait_for(
+                                        task_completed.wait(),
+                                        timeout=_DEFAULT_ABORT_TASK_TIMEOUT.total_seconds(),
+                                    )
 
                         tg.create_task(_abort_monitor())
 
