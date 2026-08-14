@@ -7,11 +7,12 @@ Usage:
 """
 
 from collections.abc import Sequence
-from typing import Generic, TypeAlias, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 from fastapi import Query
-from fastapi_pagination.customization import CustomizedPage, UseName, UseParamsFields
-from fastapi_pagination.links import LimitOffsetPage as _LimitOffsetPage
+from fastapi_pagination.customization import ClsNamespace, CustomizedPage, PageCls, UseName, UseParamsFields
+from fastapi_pagination.limit_offset import LimitOffsetPage as _LimitOffsetPage
+from fastapi_pagination.links import UseLimitOffsetLinks
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -23,13 +24,33 @@ from pydantic import (
     Field,
     NonNegativeInt,
     ValidationInfo,
+    computed_field,
     field_validator,
 )
 
 T = TypeVar("T")
 
+
+class _RequiredLinks(BaseModel):
+    first: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=0"])
+    last: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=10"])
+    next: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=2"])
+    prev: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=0"])
+    self: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=1"])
+
+
+class _UseRequiredLimitOffsetLinks(UseLimitOffsetLinks):
+    def customize_page_ns(self, page_cls: PageCls, ns: ClsNamespace) -> None:
+        def _resolve_required_links(page: _LimitOffsetPage[Any]) -> _RequiredLinks:
+            return _RequiredLinks.model_validate(self.resolve_links(page), from_attributes=True)
+
+        assert issubclass(page_cls, _LimitOffsetPage)  # nosec
+        ns[self.field] = computed_field(return_type=_RequiredLinks)(_resolve_required_links)
+
+
 Page = CustomizedPage[
     _LimitOffsetPage[T],
+    _UseRequiredLimitOffsetLinks(),
     # Customizes the default and maximum to fit those of the web-server. It simplifies interconnection
     UseParamsFields(
         limit=Query(
@@ -44,10 +65,11 @@ Page = CustomizedPage[
     UseName(name="Page"),
 ]
 
-PaginationParams: TypeAlias = Page.__params_type__  # type: ignore
+# FastAPI Depends requires the concrete runtime class instead of a lazy TypeAliasType.
+PaginationParams: TypeAlias = Page.__params_type__  # type: ignore  # noqa: UP040
 
 
-class OnePage(BaseModel, Generic[T]):
+class OnePage[T](BaseModel):
     """
     A single page is used to envelope a small sequence that does not require
     pagination

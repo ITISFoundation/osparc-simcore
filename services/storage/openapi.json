@@ -144,7 +144,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -203,7 +204,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -281,7 +283,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -377,7 +380,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -385,7 +389,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -461,7 +474,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -469,7 +483,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -526,7 +549,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -534,7 +558,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -646,7 +679,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -654,7 +688,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -696,7 +739,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -704,7 +748,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -746,7 +799,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -754,7 +808,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -813,7 +876,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -821,7 +885,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -879,7 +952,16 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileID"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+                },
+                {
+                  "$ref": "#/components/schemas/DatCoreFileID"
+                }
+              ],
+              "title": "File Id"
             }
           },
           {
@@ -939,7 +1021,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -1052,7 +1135,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -2484,6 +2568,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

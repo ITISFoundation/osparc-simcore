@@ -123,6 +123,7 @@ fastapi==0.141.1
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
+    #   fastapi-pagination
 fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.1.5
@@ -131,10 +132,8 @@ fastapi-lifespan-manager==0.1.4
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fastapi-pagination==0.12.34
-    # via
-    #   -c requirements/./constraints.txt
-    #   -r requirements/_base.in
+fastapi-pagination==0.15.16
+    # via -r requirements/_base.in
 fastar==0.11.0
     # via fastapi
 faststream==0.6.7
