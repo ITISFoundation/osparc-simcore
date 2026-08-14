@@ -107,12 +107,12 @@ email-validator==2.3.0
     #   pydantic
 fast-depends==3.0.3
     # via faststream
-fastapi==0.121.2
+fastapi==0.141.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
-fastapi-cli==0.0.16
+fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.3.1
     # via fastapi-cli
@@ -120,6 +120,8 @@ fastapi-lifespan-manager==0.1.4
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+fastar==0.11.0
+    # via fastapi
 faststream==0.6.7
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.8.0
@@ -354,10 +356,12 @@ pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   fastapi
 pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   fastapi
 pygments==2.19.2
     # via rich
 pyinstrument==5.1.1
@@ -486,6 +490,7 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via
+    #   fastapi
     #   pydantic
     #   pydantic-settings
 tzdata==2025.2

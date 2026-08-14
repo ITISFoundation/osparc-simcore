@@ -63,7 +63,6 @@ propcache==0.4.1
     #   yarl
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 rpds-py==0.30.0

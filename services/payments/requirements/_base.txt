@@ -22,6 +22,8 @@ aiosignal==1.4.0
     # via aiohttp
 alembic==1.14.0
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+annotated-doc==0.0.5
+    # via fastapi
 annotated-types==0.7.0
     # via pydantic
 anyio==4.6.2.post1
@@ -78,16 +80,18 @@ email-validator==2.2.0
     #   pydantic
 fast-depends==3.0.8
     # via faststream
-fastapi==0.116.1
+fastapi==0.141.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
-fastapi-cli==0.0.8
+fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.1.5
     # via fastapi-cli
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+fastar==0.11.0
+    # via fastapi
 faststream==0.6.7
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.5.0
@@ -298,10 +302,12 @@ pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   fastapi
 pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   fastapi
 pygments==2.18.0
     # via rich
 pyinstrument==5.1.1
@@ -416,6 +422,7 @@ typing-extensions==4.14.1
     #   typing-inspection
 typing-inspection==0.4.2
     # via
+    #   fastapi
     #   pydantic
     #   pydantic-settings
 urllib3==2.7.0

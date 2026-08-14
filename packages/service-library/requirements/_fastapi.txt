@@ -32,18 +32,20 @@ email-validator==2.3.0
     # via
     #   fastapi
     #   pydantic
-fastapi==0.135.1
+fastapi==0.141.1
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-lifespan-manager
-fastapi-cli==0.0.24
+fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.15.0
     # via fastapi-cli
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/_fastapi.in
-fastar==0.8.0
-    # via fastapi-cloud-cli
+fastar==0.11.0
+    # via
+    #   fastapi
+    #   fastapi-cloud-cli
 h11==0.16.0
     # via
     #   httpcore

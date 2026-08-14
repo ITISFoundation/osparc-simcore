@@ -78,7 +78,7 @@ docker==7.1.0
     # via moto
 faker==40.11.0
     # via -r requirements/_test.in
-fastapi==0.137.2
+fastapi==0.141.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
