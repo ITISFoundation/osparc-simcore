@@ -1,7 +1,6 @@
 {% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
 
-{% trans host=host %}Please find below the Two-factor Authentication sign-in code for your {{ host }} account.{%
-endtrans %}
+{% trans host=host %}Please find below the Two-factor Authentication sign-in code for your {{ host }} account.{% endtrans %}
 
 {% trans code=code %}Your code is: {{ code }}{% endtrans %}
 
