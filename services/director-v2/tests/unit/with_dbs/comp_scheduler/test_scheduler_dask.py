@@ -3078,7 +3078,7 @@ async def test_invalid_pipeline_error_aborts_scheduling(
     )
 
 
-async def test_computational_run_not_found_error_releases_resources(
+async def test_computational_run_not_found_error_does_not_release_resources(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
@@ -3092,7 +3092,8 @@ async def test_computational_run_not_found_error_releases_resources(
     fake_collection_run_id: CollectionRunID,
 ):
     """When the comp_run row is missing, ComputationalRunNotFoundError is raised.
-    Resources are released but no run-result update is attempted (there is no run to update)."""
+    There is no run to release resources for (comp_run was never fetched), so
+    resources must not be released and no run-result update is attempted."""
     _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     run_in_db, _ = await _assert_start_pipeline(
         initialized_app,
@@ -3114,10 +3115,6 @@ async def test_computational_run_not_found_error_releases_resources(
         iteration=run_in_db.iteration,
     )
 
-    # resources must be released even though the run is missing;
-    # note: iteration is used (not run_id) because comp_run was never fetched
-    mocked_safe_release_resources.assert_called_once_with(
-        run_in_db.user_id, run_in_db.project_uuid, run_in_db.iteration
-    )
+    mocked_safe_release_resources.assert_not_called()
     # no comp_run row should exist (was deleted before apply)
     await assert_comp_runs_empty(sqlalchemy_async_engine)
