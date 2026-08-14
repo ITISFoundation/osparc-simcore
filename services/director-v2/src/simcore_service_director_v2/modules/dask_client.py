@@ -8,6 +8,7 @@ loads(dumps(my_object))
 
 """
 
+import asyncio
 import logging
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -73,6 +74,7 @@ from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
+    ComputationalBackendTaskResultsReleaseError,
     TaskSchedulingError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
@@ -544,11 +546,15 @@ class DaskClient:
 
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
-        try:
+
+        async def _get_and_unpublish_dataset() -> None:
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(self.backend.client.get_dataset(name=job_id))
-
             await dask_utils.wrap_client_async_routine(self.backend.client.unpublish_dataset(name=job_id))
 
+        try:
+            await asyncio.wait_for(_get_and_unpublish_dataset(), timeout=_DASK_DEFAULT_TIMEOUT_S)
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
+        except TimeoutError as exc:
+            raise ComputationalBackendTaskResultsReleaseError(job_id=job_id) from exc

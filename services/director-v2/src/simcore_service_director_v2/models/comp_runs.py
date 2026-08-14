@@ -1,6 +1,7 @@
 import datetime
 from contextlib import suppress
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    NewType,
     TypedDict,
 )
 
@@ -47,11 +48,14 @@ class RunMetadataDict(TypedDict, total=False):
     encryption: JobEncryptionRunMetadataDict
 
 
-type Iteration = PositiveInt
+type _IterationInt = PositiveInt
+type _RunIDInt = PositiveInt
+Iteration = NewType("Iteration", _IterationInt)
+RunID = NewType("RunID", _RunIDInt)
 
 
 class CompRunsAtDB(BaseModel):
-    run_id: PositiveInt
+    run_id: RunID
     project_uuid: ProjectID
     user_id: UserID
     iteration: Iteration
