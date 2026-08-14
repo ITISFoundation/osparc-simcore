@@ -11,7 +11,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import PositiveInt, TypeAdapter
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.utils import logged_gather
@@ -19,6 +19,7 @@ from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from .....core.errors import ComputationalTaskNotFoundError
+from .....models.comp_runs import RunID
 from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.computations import to_node_class
@@ -206,9 +207,7 @@ class CompTasksRepository(BaseRepository):
                 )
             return inserted_comp_tasks_db, insufficient_credits
 
-    async def _update_task(
-        self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, **task_kwargs
-    ) -> CompTaskAtDB:
+    async def _update_task(self, project_id: ProjectID, task: NodeID, run_id: RunID, **task_kwargs) -> CompTaskAtDB:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -235,15 +234,13 @@ class CompTasksRepository(BaseRepository):
                 row = result.one()
                 return CompTaskAtDB.model_validate(row)
 
-    async def update_project_task_job_id(
-        self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, job_id: str
-    ) -> None:
+    async def update_project_task_job_id(self, project_id: ProjectID, task: NodeID, run_id: RunID, job_id: str) -> None:
         await self._update_task(project_id, task, run_id, job_id=job_id)
 
     async def update_project_tasks_state(
         self,
         project_id: ProjectID,
-        run_id: PositiveInt,
+        run_id: RunID,
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
@@ -276,7 +273,7 @@ class CompTasksRepository(BaseRepository):
         self,
         project_id: ProjectID,
         node_id: NodeID,
-        run_id: PositiveInt,
+        run_id: RunID,
         progress: float,
     ) -> None:
         await self._update_task(project_id, node_id, run_id, progress=progress)
@@ -285,7 +282,7 @@ class CompTasksRepository(BaseRepository):
         self,
         project_id: ProjectID,
         node_id: NodeID,
-        run_id: PositiveInt,
+        run_id: RunID,
         heartbeat_time: datetime,
     ) -> None:
         await self._update_task(project_id, node_id, run_id, last_heartbeat=heartbeat_time)
