@@ -459,10 +459,13 @@ def _log_before_call(logger_obj: logging.Logger, level: LogLevelInt, func: Calla
 
     extra_args = {"func_name_override": func.__name__}
     frame = _get_frame(1)
-    if frame is None:
-        logger_obj.warning("Cannot determine log caller filename; filename override will be omitted")
-    else:
-        extra_args["file_name_override"] = Path(frame.f_code.co_filename).name
+    try:
+        if frame is None:
+            logger_obj.warning("Cannot determine log caller filename; filename override will be omitted")
+        else:
+            extra_args["file_name_override"] = Path(frame.f_code.co_filename).name
+    finally:
+        del frame
 
     #  Before to the function execution, log function details.
     logger_obj.log(
