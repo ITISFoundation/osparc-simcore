@@ -459,14 +459,19 @@ def _log_before_call(logger_obj: logging.Logger, level: LogLevelInt, func: Calla
 
     frame = currentframe()
     try:
-        caller_frame = frame.f_back if frame is not None else None
-        file_name_override = Path(getframeinfo(caller_frame).filename).name if caller_frame is not None else "unknown"
+        if frame is None:
+            msg = "Cannot determine log caller: this Python implementation does not provide stack frames"
+            raise RuntimeError(msg)
+        if frame.f_back is None:
+            msg = "Cannot determine log caller: the caller stack frame is missing"
+            raise RuntimeError(msg)
+        py_file_caller = getframeinfo(frame.f_back)
     finally:
         del frame
 
     extra_args = {
         "func_name_override": func.__name__,
-        "file_name_override": file_name_override,
+        "file_name_override": Path(py_file_caller.filename).name,
     }
 
     #  Before to the function execution, log function details.
