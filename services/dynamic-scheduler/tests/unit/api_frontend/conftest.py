@@ -78,7 +78,8 @@ def reset_nicegui_app() -> None:
         app.remove_route(path)
 
     app.routes[:] = [route for route in app.routes if not isinstance(route, _IncludedRouter)]
-    app.router._mark_routes_changed()
+    # FastAPI 0.141 caches lazy included routes; direct route removal must invalidate that cache.
+    app.router._mark_routes_changed()  # pylint: disable=protected-access
 
     for route in list(app.routes):
         if (
