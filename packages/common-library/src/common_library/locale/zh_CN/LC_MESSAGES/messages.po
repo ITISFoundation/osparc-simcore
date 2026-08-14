@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 17:53+0200\n"
+"POT-Creation-Date: 2026-08-14 18:43+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-08-14T15:56:38Z\n"
+"X-Translation-Date: 2026-08-14T16:43:10Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -681,8 +681,8 @@ msgstr "此致敬礼，"
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:19
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
@@ -902,8 +902,8 @@ msgstr "如需进一步帮助，请随时通过 %(support_link)s 联系我们。
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:17
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:12
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
@@ -996,34 +996,34 @@ msgstr "请查阅以下两步验证登录代码，用于您的账户。"
 
 # CTX-INTERPRETATION: This string appears in an email body, informing the user
 # of their two-factor authentication (2FA) code.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
 msgid "Your code is: %(code_display)s"
 msgstr "您的验证码是：%(code_display)s"
 
 # CTX-INTERPRETATION: This string appears in an email template, indicating the
 # validity period of a two-factor authentication (2FA) code.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
 msgid "This code is valid for %(ttl)s seconds."
 msgstr "此代码在%(ttl)s秒内有效。"
 
 # CTX-INTERPRETATION: This string appears in an email body, specifically
 # within a template for sending a new 2FA code, providing contact information
 # for support.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
 msgid ""
 "Please don't hesitate to contact us at %(support_link)s if you need further\n"
 "  help."
 msgstr "如果您需要进一步的帮助，请随时通过 %(support_link)s 联系我们。"
 
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
 msgid "Your code is: %(code)s"
 msgstr "您的验证码是：%(code)s"
 
 # CTX-INTERPRETATION: This string is part of an email body template,
 # specifically for sending a new 2FA code to a user, and provides the
 # recipient's support email address.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
 msgid ""
 "Please don't hesitate to contact us at %(support_email)s if you need\n"
 "further help."

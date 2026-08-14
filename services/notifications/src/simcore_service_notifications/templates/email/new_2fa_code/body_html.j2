@@ -2,8 +2,7 @@
 {% block title %} {% include 'email/new_2fa_code/subject.j2' %} {% endblock %}
 {% block content %}
 <p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
-<p>{% trans host=host %}Please find below the Two-factor Authentication sign-in code for your {{ host }} account.{%
-  endtrans %}</p>
+<p>{% trans host=host %}Please find below the Two-factor Authentication sign-in code for your {{ host }} account.{% endtrans %}</p>
 
 {% set code_display %}<b> {{ code }} </b>{% endset %}
 <p>
