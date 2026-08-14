@@ -92,7 +92,7 @@ fastapi-cli==0.0.24
     # via fastapi
 fastapi-cloud-cli==0.15.0
     # via fastapi-cli
-fastapi-pagination==0.15.10
+fastapi-pagination==0.15.16
     # via -r requirements/_test.in
 fastar==0.8.0
     # via fastapi-cloud-cli
