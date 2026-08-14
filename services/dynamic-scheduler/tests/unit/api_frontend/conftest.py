@@ -9,6 +9,7 @@ from contextlib import suppress
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI, status
+from fastapi.routing import _IncludedRouter
 from helpers import SCREENSHOT_SUFFIX, SCREENSHOTS_PATH
 from httpx import AsyncClient
 from hypercorn.asyncio import serve
@@ -64,10 +65,6 @@ def server_host_port() -> str:
 
 @pytest.fixture
 def reset_nicegui_app() -> None:
-    # forces rebuild of middleware stack on next test
-
-    # below is based on nicegui.testing.general_fixtures.nicegui_reset_globals
-
     from nicegui import Client, app
     from starlette.routing import Route
 
@@ -80,6 +77,9 @@ def reset_nicegui_app() -> None:
     for path in all_page_routes:
         app.remove_route(path)
 
+    app.routes[:] = [route for route in app.routes if not isinstance(route, _IncludedRouter)]
+    app.router._mark_routes_changed()
+
     for route in list(app.routes):
         if (
             isinstance(route, Route)
@@ -89,6 +89,7 @@ def reset_nicegui_app() -> None:
         ):
             app.remove_route(route.path)
 
+    Client.instances.clear()
     app.middleware_stack = None
     app.user_middleware.clear()
 
