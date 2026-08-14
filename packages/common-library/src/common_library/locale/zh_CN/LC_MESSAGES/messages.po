@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 16:55+0200\n"
+"POT-Creation-Date: 2026-08-14 17:53+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-08-13T14:55:52Z\n"
+"X-Translation-Date: 2026-08-14T15:56:38Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -551,7 +551,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string is a log message indicating the completion
 # status of a project pipeline execution for a specific iteration in a
 # scientific simulation application.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:240
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:239
 #, python-brace-format
 msgid ""
 "Project pipeline execution for iteration {iteration} has completed with "
@@ -560,7 +560,7 @@ msgstr "项目管道执行的第{iteration}次迭代已完成，状态为：{run
 
 # CTX-INTERPRETATION: This string is an error message displayed to the user
 # when a task scheduling issue occurs in the application.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:861
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:860
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -569,14 +569,14 @@ msgstr "在任务调度过程中发生了意外错误。如果此问题仍然存
 # CTX-INTERPRETATION: This string appears in the application's log system when
 # a task involving variable resolution fails to complete in time and will be
 # attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:892
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:891
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr "在任务调度期间，变量分辨率超时，将重试。"
 
 # CTX-INTERPRETATION: This message appears when the system fails to allocate
 # computational resources for a task, prompting the user to retry or seek
 # support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:960
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:959
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
@@ -681,8 +681,8 @@ msgstr "此致敬礼，"
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
@@ -891,7 +891,6 @@ msgstr "更改邮箱"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
 msgid ""
@@ -903,8 +902,8 @@ msgstr "如需进一步帮助，请随时通过 %(support_link)s 联系我们。
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
@@ -924,7 +923,6 @@ msgstr "此致敬礼，"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
 msgid ""
@@ -951,8 +949,7 @@ msgstr "尊敬的用户,"
 msgid ""
 "We want to inform you that your service run (%(service_run)s) on "
 "%(product_name)s was affected by a platform issue and was not billed."
-msgstr ""
-"我们想通知您，您在（%(service_run)s）上的服务运行（%(product_name)s）由于平台问题而中断，因此未收取费用。"
+msgstr "我们想通知您，您在（%(service_run)s）上的服务运行（%(product_name)s）由于平台问题而中断，因此未收取费用。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that credits have been reimbursed to their credit account.
@@ -999,13 +996,38 @@ msgstr "请查阅以下两步验证登录代码，用于您的账户。"
 
 # CTX-INTERPRETATION: This string appears in an email body, informing the user
 # of their two-factor authentication (2FA) code.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:10
 msgid "Your code is: %(code_display)s"
 msgstr "您的验证码是：%(code_display)s"
 
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
+# CTX-INTERPRETATION: This string appears in an email template, indicating the
+# validity period of a two-factor authentication (2FA) code.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:8
+msgid "This code is valid for %(ttl)s seconds."
+msgstr "此代码在%(ttl)s秒内有效。"
+
+# CTX-INTERPRETATION: This string appears in an email body, specifically
+# within a template for sending a new 2FA code, providing contact information
+# for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:15
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further\n"
+"  help."
+msgstr "如果您需要进一步的帮助，请随时通过 %(support_link)s 联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:6
 msgid "Your code is: %(code)s"
 msgstr "您的验证码是：%(code)s"
+
+# CTX-INTERPRETATION: This string is part of an email body template,
+# specifically for sending a new 2FA code to a user, and provides the
+# recipient's support email address.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need\n"
+"further help."
+msgstr "如果您需要进一步帮助，请随时通过 %(support_email)s 联系我们。"
 
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/subject.j2:1
 msgid "%(code)s is Your 2FA Sign-In Code for %(host)s"
@@ -1611,7 +1633,7 @@ msgstr "电子邮件{email}的账户已提交。如果您没有收到任何更�
 # CTX-INTERPRETATION: This string appears in an error message that is raised
 # when the two-factor authentication login feature is not available in the
 # application.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:209
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:210
 #: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
 msgid "2FA login is not available"
 msgstr "双因素认证登录不可用"
