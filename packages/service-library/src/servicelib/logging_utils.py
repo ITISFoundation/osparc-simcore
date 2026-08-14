@@ -16,7 +16,7 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable, Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from inspect import currentframe, getframeinfo
+from inspect import currentframe
 from pathlib import Path
 from types import FrameType
 from typing import Any, Final, TypedDict, TypeVar
@@ -457,22 +457,15 @@ def _log_before_call(logger_obj: logging.Logger, level: LogLevelInt, func: Calla
     # The lists of positional and keyword arguments is joined together to form final string
     formatted_arguments = ", ".join(args_passed_in_function + kwargs_passed_in_function)
 
+    extra_args = {"func_name_override": func.__name__}
     frame = currentframe()
     try:
-        if frame is None:
-            msg = "Cannot determine log caller: this Python implementation does not provide stack frames"
-            raise RuntimeError(msg)
-        if frame.f_back is None:
-            msg = "Cannot determine log caller: the caller stack frame is missing"
-            raise RuntimeError(msg)
-        py_file_caller = getframeinfo(frame.f_back)
+        if frame is None or frame.f_back is None:
+            logger_obj.warning("Cannot determine log caller filename; filename override will be omitted")
+        else:
+            extra_args["file_name_override"] = Path(frame.f_back.f_code.co_filename).name
     finally:
         del frame
-
-    extra_args = {
-        "func_name_override": func.__name__,
-        "file_name_override": Path(py_file_caller.filename).name,
-    }
 
     #  Before to the function execution, log function details.
     logger_obj.log(
