@@ -15,7 +15,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.create_index(
         "ix_comp_run_snapshot_tasks_run_id_node_id", "comp_run_snapshot_tasks", ["run_id", "node_id"], unique=False
     )
