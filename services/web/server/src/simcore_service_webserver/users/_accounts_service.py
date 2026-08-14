@@ -294,9 +294,8 @@ async def approve_user_account(
     If the email is already linked to a registered account (e.g. an existing
     user requesting access to an additional product), the invitation step is
     skipped entirely: the user is granted access to the product directly and
-    keeps using their existing password (SEE decision in pre-registration wiki
-    open-questions: invitation-based password redefinition confused users who
-    already had an account).
+    keeps using their existing password (SEE decision in
+    https://github.com/ITISFoundation/private-issues/issues/461#issuecomment-4981796351).
 
     Returns:
         The ID of the approved pre-registration record
