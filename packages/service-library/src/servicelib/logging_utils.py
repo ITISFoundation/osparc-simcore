@@ -16,7 +16,7 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable, Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from inspect import currentframe
+from inspect import currentframe, getframeinfo
 from pathlib import Path
 from types import FrameType
 from typing import Any, Final, TypedDict, TypeVar
@@ -460,7 +460,7 @@ def _log_before_call(logger_obj: logging.Logger, level: LogLevelInt, func: Calla
     frame = currentframe()
     try:
         caller_frame = frame.f_back if frame is not None else None
-        file_name_override = Path(caller_frame.f_code.co_filename).name if caller_frame is not None else "unknown"
+        file_name_override = Path(getframeinfo(caller_frame).filename).name if caller_frame is not None else "unknown"
     finally:
         del frame
 
