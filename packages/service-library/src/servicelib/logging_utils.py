@@ -16,7 +16,7 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable, Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from inspect import currentframe, getframeinfo, stack
+from inspect import currentframe, getfile
 from pathlib import Path
 from types import FrameType
 from typing import Any, Final, TypedDict, TypeVar
@@ -457,14 +457,9 @@ def _log_before_call(logger_obj: logging.Logger, level: LogLevelInt, func: Calla
     # The lists of positional and keyword arguments is joined together to form final string
     formatted_arguments = ", ".join(args_passed_in_function + kwargs_passed_in_function)
 
-    # Generate file name and function name for calling function. __func.name__ will give the name of the
-    #     caller function ie. wrapper_log_info and caller file name ie log-decorator.py
-    # - In order to get actual function and file name we will use 'extra' parameter.
-    # - To get the file name we are using in-built module inspect.getframeinfo which returns calling file name
-    py_file_caller = getframeinfo(stack()[1][0])
     extra_args = {
         "func_name_override": func.__name__,
-        "file_name_override": Path(py_file_caller.filename).name,
+        "file_name_override": Path(getfile(func)).name,
     }
 
     #  Before to the function execution, log function details.
