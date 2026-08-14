@@ -100,7 +100,7 @@ async def test_error_regression_async_def(
     assert result == 0
     assert len(caplog.records) == 2
     info_record = caplog.records[0]
-    assert info_record.__dict__["file_name_override"] == Path(__file__).name
+    assert info_record.__dict__["file_name_override"] == Path(log_decorator.__code__.co_filename).name
     assert info_record.levelno == logging.INFO
     assert (
         f"{_not_raising_fct.__module__.split('.')[-1]}:"

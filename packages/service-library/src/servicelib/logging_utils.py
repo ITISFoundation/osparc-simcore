@@ -16,7 +16,7 @@ from asyncio import iscoroutinefunction
 from collections.abc import Callable, Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from inspect import currentframe, getfile
+from inspect import currentframe
 from pathlib import Path
 from types import FrameType
 from typing import Any, Final, TypedDict, TypeVar
@@ -457,9 +457,16 @@ def _log_before_call(logger_obj: logging.Logger, level: LogLevelInt, func: Calla
     # The lists of positional and keyword arguments is joined together to form final string
     formatted_arguments = ", ".join(args_passed_in_function + kwargs_passed_in_function)
 
+    frame = currentframe()
+    try:
+        caller_frame = frame.f_back if frame is not None else None
+        file_name_override = Path(caller_frame.f_code.co_filename).name if caller_frame is not None else "unknown"
+    finally:
+        del frame
+
     extra_args = {
         "func_name_override": func.__name__,
-        "file_name_override": Path(getfile(func)).name,
+        "file_name_override": file_name_override,
     }
 
     #  Before to the function execution, log function details.
