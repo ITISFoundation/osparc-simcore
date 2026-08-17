@@ -110,7 +110,7 @@ email-validator==2.3.0
     # via pydantic
 fast-depends==3.0.3
     # via faststream
-fastapi==0.139.2
+fastapi==0.141.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   fastapi-lifespan-manager

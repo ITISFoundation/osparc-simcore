@@ -50,7 +50,6 @@ pytest-sugar==1.1.1
     # via -r requirements/_test.in
 referencing==0.35.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   types-jsonschema
 rpds-py==0.30.0
