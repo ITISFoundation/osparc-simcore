@@ -4,9 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import starlette.routing
 from fastapi.applications import FastAPI
-from fastapi.routing import APIRouter
 from openapi_spec_validator.shortcuts import (
     get_validator_cls,  # pylint: disable=no-name-in-module
 )
@@ -19,13 +17,10 @@ from servicelib.fastapi.openapi import (
 def test_naming_operation_id(app: FastAPI):
     set_operation_id_as_handler_function_name(app.router)
 
-    for route in app.router.routes:
-        if isinstance(route, APIRouter):
-            assert route.operation_id
-            assert "handler" not in route.operation_id
-        else:
-            # e.g. /docs etc
-            assert isinstance(route, starlette.routing.Route)
+    operation_ids = {
+        operation["operationId"] for path in app.openapi()["paths"].values() for operation in path.values()
+    }
+    assert operation_ids == {"_get_data", "_get_root"}
 
 
 def test_exclusive_min_openapi_issue(app: FastAPI):
