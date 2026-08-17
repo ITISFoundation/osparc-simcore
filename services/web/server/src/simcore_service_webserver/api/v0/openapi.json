@@ -960,7 +960,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -999,7 +1001,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -1021,7 +1025,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -1052,7 +1058,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -1091,7 +1099,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1142,7 +1152,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1150,7 +1162,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -1189,7 +1203,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1197,7 +1213,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -1219,7 +1237,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1227,7 +1247,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -1258,7 +1280,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -1266,7 +1290,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -9377,7 +9403,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9427,7 +9455,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9460,7 +9490,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9502,7 +9534,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           }
         ],
@@ -9552,7 +9586,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9617,7 +9653,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9625,7 +9663,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -9675,7 +9715,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9683,7 +9725,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -9716,7 +9760,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
             }
           },
           {
@@ -9724,7 +9770,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ConversationMessageID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
             }
           }
         ],
@@ -11967,7 +12015,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12044,7 +12093,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12086,7 +12136,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           }
         ],
@@ -12134,7 +12185,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           }
         ],
@@ -12166,7 +12218,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12220,7 +12273,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12273,7 +12327,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12281,7 +12336,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12321,7 +12377,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12329,7 +12386,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -12368,7 +12426,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12376,7 +12435,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -12454,7 +12514,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12462,7 +12523,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12487,7 +12549,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12495,7 +12558,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12520,7 +12584,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12528,7 +12593,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           }
         ],
@@ -12570,7 +12636,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           },
           {
@@ -12578,7 +12645,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/StorageFileIDStr"
+              "type": "string",
+              "title": "File Id"
             }
           },
           {
@@ -12619,7 +12687,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           }
         ],
@@ -12701,7 +12770,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/LocationID"
+              "type": "integer",
+              "title": "Location Id"
             }
           }
         ],
@@ -28420,9 +28490,6 @@
             "$ref": "#/components/schemas/DatCoreFileID"
           }
         ]
-      },
-      "StorageFileIDStr": {
-        "type": "string"
       },
       "Structure": {
         "properties": {
