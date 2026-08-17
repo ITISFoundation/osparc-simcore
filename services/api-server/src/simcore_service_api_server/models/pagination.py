@@ -31,7 +31,7 @@ from pydantic import (
 T = TypeVar("T")
 
 
-class _RequiredLinks(BaseModel):
+class Links(BaseModel):
     first: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=0"])
     last: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=10"])
     next: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=2"])
@@ -41,11 +41,11 @@ class _RequiredLinks(BaseModel):
 
 class _UseRequiredLimitOffsetLinks(UseLimitOffsetLinks):
     def customize_page_ns(self, page_cls: PageCls, ns: ClsNamespace) -> None:
-        def _resolve_required_links(page: _LimitOffsetPage[Any]) -> _RequiredLinks:
-            return _RequiredLinks.model_validate(self.resolve_links(page), from_attributes=True)
+        def _resolve_required_links(page: _LimitOffsetPage[Any]) -> Links:
+            return Links.model_validate(self.resolve_links(page), from_attributes=True)
 
         assert issubclass(page_cls, _LimitOffsetPage)  # nosec
-        ns[self.field] = computed_field(return_type=_RequiredLinks)(_resolve_required_links)
+        ns[self.field] = computed_field(return_type=Links)(_resolve_required_links)
 
 
 Page = CustomizedPage[
