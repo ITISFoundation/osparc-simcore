@@ -218,7 +218,7 @@ async def upload_file(
         UploadFile,
         FileParam(
             ...,
-            json_schema_extra=_restore_openapi_binary_file_schema,  # type: ignore[arg-type]
+            json_schema_extra=_restore_openapi_binary_file_schema,
         ),
     ],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
