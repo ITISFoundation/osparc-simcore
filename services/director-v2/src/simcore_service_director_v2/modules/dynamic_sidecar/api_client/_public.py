@@ -504,8 +504,10 @@ async def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsCl
     return client
 
 
-def remove_sidecars_client(app: FastAPI, node_id: NodeID) -> None:
-    app.state.sidecars_api_clients.pop(f"{node_id}", None)
+async def remove_sidecars_client(app: FastAPI, node_id: NodeID) -> None:
+    # NOTE: must close the underlying httpx.AsyncClient, otherwise its connection pool leaks
+    if sidecars_client := app.state.sidecars_api_clients.pop(f"{node_id}", None):
+        await sidecars_client.teardown()
 
 
 async def get_dynamic_sidecar_service_health(
