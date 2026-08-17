@@ -26,6 +26,7 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from respx.models import Route
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
@@ -232,7 +233,7 @@ def mock_director_v2_service_run(
     service_status_new_style: DynamicServiceGet,
     service_status_legacy: NodeGet,
     fake_director_v0_base_url: str,
-) -> Iterator[None]:
+) -> Iterator[Route]:
     with respx.mock(
         base_url="http://director-v2:8000/v2",
         assert_all_called=False,
@@ -249,18 +250,26 @@ def mock_director_v2_service_run(
                 status.HTTP_201_CREATED,
                 text=service_status_new_style.model_dump_json(),
             )
-        yield None
+        yield request
 
 
 @pytest.mark.parametrize("is_legacy", [True, False])
 async def test_run_dynamic_service(
     mock_director_v0_service_run: None,
-    mock_director_v2_service_run: None,
+    mock_director_v2_service_run: Route,
     rpc_client: RabbitMQRPCClient,
     dynamic_service_start: DynamicServiceStart,
     is_legacy: bool,
 ):
     result = await services.run_dynamic_service(rpc_client, dynamic_service_start=dynamic_service_start)
+
+    sent_request = mock_director_v2_service_run.calls.last.request
+    assert sent_request.headers["Content-Type"] == "application/json"
+    sent_body = json.loads(sent_request.content)
+    assert isinstance(sent_body, dict)
+    assert sent_body["basepath"] == f"/x/{dynamic_service_start.node_uuid}"
+    assert sent_body["key"] == dynamic_service_start.key
+    assert sent_body["project_id"] == f"{dynamic_service_start.project_id}"
 
     if is_legacy:
         assert isinstance(result, NodeGet)
