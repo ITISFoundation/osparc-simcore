@@ -382,18 +382,109 @@ class SocketIOWaitNodeForOutputs:
     node_id: str
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.NODE_UPDATED:
                     assert "data" in decoded_message.obj
                     assert "node_id" in decoded_message.obj
                     if decoded_message.obj["node_id"] == self.node_id:
-                        assert "outputs" in decoded_message.obj["data"]
-
-                        return len(decoded_message.obj["data"]["outputs"]) == self.expected_number_of_outputs
+                        # NOTE: NodeUpdated is also sent for state-only changes (e.g. PUBLISHED),
+                        # which carry no "outputs" key at all
+                        outputs = decoded_message.obj["data"].get("outputs")
+                        if outputs is not None:
+                            is_complete = len(outputs) == self.expected_number_of_outputs
+                            if is_complete:
+                                ctx.logger.info(
+                                    "📤 outputs push received for node %s (%d/%d)",
+                                    self.node_id,
+                                    len(outputs),
+                                    self.expected_number_of_outputs,
+                                )
+                            return is_complete
 
         return False
+
+
+@dataclass
+class SocketIOWaitNodesForOutputs:
+    """Like `SocketIOWaitNodeForOutputs`, but resolves only once *every* node in
+    `node_id_to_expected_number_of_outputs` has reported its expected number of outputs
+    (e.g. several nodes completing concurrently in the same pipeline run).
+    """
+
+    node_id_to_expected_number_of_outputs: dict[str, int]
+    _pending_node_ids: set[str] = field(init=False)
+    _received_number_of_outputs: dict[str, int] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self._pending_node_ids = set(self.node_id_to_expected_number_of_outputs)
+        self._received_number_of_outputs = {}
+
+    def __call__(self, message: str) -> bool:
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+                decoded_message = decode_socketio_42_message(message)
+                if decoded_message.name == _OSparcMessages.NODE_UPDATED:
+                    assert "data" in decoded_message.obj
+                    assert "node_id" in decoded_message.obj
+                    node_id = decoded_message.obj["node_id"]
+                    if node_id in self._pending_node_ids:
+                        # NOTE: NodeUpdated is also sent for state-only changes (e.g. PUBLISHED),
+                        # which carry no "outputs" key at all
+                        outputs = decoded_message.obj["data"].get("outputs")
+                        if outputs is not None:
+                            self._received_number_of_outputs[node_id] = len(outputs)
+                            expected = self.node_id_to_expected_number_of_outputs[node_id]
+                            if len(outputs) == expected:
+                                self._pending_node_ids.discard(node_id)
+                                ctx.logger.info(
+                                    "📤 outputs push received for node %s (%d/%d), %d node(s) left",
+                                    node_id,
+                                    len(outputs),
+                                    expected,
+                                    len(self._pending_node_ids),
+                                )
+
+        return not self._pending_node_ids
+
+    def missing_outputs_report(self) -> str:
+        """Reports, for each node still pending, how many outputs were received vs expected."""
+        return ", ".join(
+            f"{node_id}: {self._received_number_of_outputs.get(node_id, 0)}/{expected}"
+            for node_id, expected in self.node_id_to_expected_number_of_outputs.items()
+            if node_id in self._pending_node_ids
+        )
+
+
+@contextlib.contextmanager
+def wait_for_nodes_outputs_updated(
+    websocket: RobustWebSocket,
+    *,
+    node_id_to_expected_number_of_outputs: dict[str, int],
+    timeout: int | None = None,
+) -> Generator[None]:
+    """Asserts that a `NodeUpdated` websocket message with the expected number of outputs is
+    received for every node in `node_id_to_expected_number_of_outputs` while the wrapped block
+    runs. Unlike `check_node_outputs` (which only polls the REST API after the fact), this
+    verifies the websocket push actually happened.
+    """
+    waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
+    with (
+        log_context(
+            logging.INFO,
+            msg=ContextMessages(
+                starting=f"⏳ waiting for outputs push for nodes {list(node_id_to_expected_number_of_outputs)}",
+                done="✅ received outputs push for all expected nodes",
+                raised=lambda: (
+                    f"❌ missing outputs push for: {waiter.missing_outputs_report()}. "
+                    "TIP: check that the webserver's db-listener service is running properly!"
+                ),
+            ),
+        ),
+        websocket.expect_event("framereceived", waiter, timeout=timeout),
+    ):
+        yield
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("failed",)

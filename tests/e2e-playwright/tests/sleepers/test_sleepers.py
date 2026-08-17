@@ -30,6 +30,7 @@ from pytest_simcore.helpers.playwright import (
     check_node_outputs,
     retrieve_project_state_from_decoded_message,
     wait_for_computation_done,
+    wait_for_nodes_outputs_updated,
 )
 
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
@@ -95,6 +96,13 @@ def test_sleepers(
             workbench_selector.click()
         break
 
+    # collect all sleeper node ids upfront, so we can watch their websocket updates below
+    sleeper_node_ids: list[str] = []
+    for sleeper in page.get_by_test_id("nodeTreeItem").all()[1:]:
+        node_id = sleeper.get_attribute("osparc-test-key")
+        assert node_id
+        sleeper_node_ids.append(node_id)
+
     # set inputs if needed
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
@@ -112,19 +120,26 @@ def test_sleepers(
     # sometimes they may jump
     # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] ->
     # (PENDING) -> STARTED -> SUCCESS/FAILED
-    socket_io_event = start_and_stop_pipeline()
-    current_state = retrieve_project_state_from_decoded_message(socket_io_event)
-    test_logger.info("pipeline is in %s", f"{current_state=}")
+    # NOTE: asserts every sleeper actually pushes a NodeUpdated websocket message with its
+    # outputs, instead of only relying on the after-the-fact REST check below
+    with wait_for_nodes_outputs_updated(
+        log_in_and_out,
+        node_id_to_expected_number_of_outputs=dict.fromkeys(sleeper_node_ids, len(sleeper_expected_output_files)),
+        timeout=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
+    ):
+        socket_io_event = start_and_stop_pipeline()
+        current_state = retrieve_project_state_from_decoded_message(socket_io_event)
+        test_logger.info("pipeline is in %s", f"{current_state=}")
 
-    # handles the autoscaled-deployment state machine (cold cluster/worker scale-up can take
-    # several minutes without the pipeline actually being stuck)
-    current_state = wait_for_computation_done(
-        current_state,
-        websocket=log_in_and_out,
-        stage_timeouts=PipelineStageTimeouts(
-            started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
-        ),
-    )
+        # handles the autoscaled-deployment state machine (cold cluster/worker scale-up can take
+        # several minutes without the pipeline actually being stuck)
+        current_state = wait_for_computation_done(
+            current_state,
+            websocket=log_in_and_out,
+            stage_timeouts=PipelineStageTimeouts(
+                started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
+            ),
+        )
 
     # check the outputs (the first item is the title, so we skip it)
     with log_context(
