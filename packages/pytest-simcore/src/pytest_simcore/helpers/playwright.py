@@ -776,6 +776,13 @@ class PipelineStageTimeouts:
     waiting_for_resources_ms: int = 5 * MINUTE
     started_ms: int = 5 * MINUTE
 
+    @property
+    def total_ms(self) -> int:
+        """Upper bound covering every stage sequentially, for wrappers spanning the whole wait."""
+        return (
+            self.published_or_pending_ms + self.waiting_for_cluster_ms + self.waiting_for_resources_ms + self.started_ms
+        )
+
 
 def wait_for_computation_done(
     current_state: RunningState,

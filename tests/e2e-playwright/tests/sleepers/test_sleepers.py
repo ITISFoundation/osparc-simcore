@@ -23,6 +23,7 @@ from pytest_simcore.helpers.logging_tools import (
 )
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    SECOND,
     PipelineStageTimeouts,
     RobustWebSocket,
     ServiceType,
@@ -34,6 +35,8 @@ from pytest_simcore.helpers.playwright import (
 )
 
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
+# NOTE: small grace budget for stages a non-autoscaled deployment should never actually enter
+_NON_AUTOSCALED_STAGE_GRACE_TIME: Final[int] = 30 * SECOND
 
 _VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
     parse_version("1.0.0"): ["logs.zip", "single_number.txt"],
@@ -55,6 +58,7 @@ def test_sleepers(
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     num_sleepers: int,
     input_sleep_time: int | None,
+    is_autoscaled: bool,
 ):
     project_data = create_project_from_service_dashboard(ServiceType.COMPUTATIONAL, "sleeper", "itis", None)
 
@@ -122,10 +126,18 @@ def test_sleepers(
     # (PENDING) -> STARTED -> SUCCESS/FAILED
     # NOTE: asserts every sleeper actually pushes a NodeUpdated websocket message with its
     # outputs, instead of only relying on the after-the-fact REST check below
+    # on non-autoscaled deployments the cluster/resources stages are never entered, so keep
+    # their budget minimal instead of the full 5 min each (would otherwise slow down failures)
+    stage_timeouts = PipelineStageTimeouts(
+        waiting_for_cluster_ms=(5 * MINUTE) if is_autoscaled else _NON_AUTOSCALED_STAGE_GRACE_TIME,
+        waiting_for_resources_ms=(5 * MINUTE) if is_autoscaled else _NON_AUTOSCALED_STAGE_GRACE_TIME,
+        started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
+    )
     with wait_for_nodes_outputs_updated(
         log_in_and_out,
         node_id_to_expected_number_of_outputs=dict.fromkeys(sleeper_node_ids, len(sleeper_expected_output_files)),
-        timeout=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
+        # NOTE: covers every autoscaling stage (cold cluster/worker scale-up), not just STARTED
+        timeout=stage_timeouts.total_ms,
     ):
         socket_io_event = start_and_stop_pipeline()
         current_state = retrieve_project_state_from_decoded_message(socket_io_event)
@@ -136,9 +148,7 @@ def test_sleepers(
         current_state = wait_for_computation_done(
             current_state,
             websocket=log_in_and_out,
-            stage_timeouts=PipelineStageTimeouts(
-                started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
-            ),
+            stage_timeouts=stage_timeouts,
         )
 
     # check the outputs (the first item is the title, so we skip it)
