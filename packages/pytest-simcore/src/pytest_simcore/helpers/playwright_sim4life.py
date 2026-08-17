@@ -165,6 +165,11 @@ def wait_for_launched_s4l(
 
 
 def interact_with_s4l(page: Page, s4l_iframe: FrameLocator) -> None:
+    # close welcome page if present
+    welcome_tab = s4l_iframe.locator(".custom-tab").filter(has_text="Welcome")
+    if welcome_tab.count() > 0:
+        welcome_tab.locator(".custom-tab-close").click()
+
     # Wait until grid is shown
     # NOTE: the startup screen should disappear very fast after the websocket was acquired
     with log_context(logging.INFO, "Interact with S4l"):
