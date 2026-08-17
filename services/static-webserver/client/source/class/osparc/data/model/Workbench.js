@@ -604,6 +604,15 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __addNode: function(node) {
       const nodeId = node.getNodeId();
+      const existingNode = this.__nodes[nodeId];
+      if (existingNode && existingNode !== node) {
+        // A node with this id already exists. This happens when the
+        // real-time-collaboration sync emits a spurious "add /workbench/<nodeId>"
+        // patch for a node that is already present (see __addNodesFromPatches).
+        // Dispose it before replacing it, else we end up with two
+        // identical iframes for the same node (which is a Playwright strict-mode violation).
+        existingNode.removeIFrame();
+      }
       this.__nodes[nodeId] = node;
       const nodeAdded = () => {
         this.fireEvent("pipelineChanged");
