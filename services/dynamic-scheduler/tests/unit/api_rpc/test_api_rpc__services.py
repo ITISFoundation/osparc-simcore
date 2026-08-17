@@ -523,28 +523,32 @@ async def test_restart_user_services(
 
 
 @pytest.fixture
-def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[None]:
+def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[Route]:
     with respx.mock(
         base_url="http://director-v2:8000/v2",
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        mock.post(f"/dynamic_services/{node_id}:retrieve").respond(
+        request = mock.post(f"/dynamic_services/{node_id}:retrieve").respond(
             status.HTTP_200_OK,
             text=TypeAdapter(RetrieveDataOutEnveloped)
             .validate_python(RetrieveDataOutEnveloped.model_json_schema()["examples"][0])
             .model_dump_json(),
         )
 
-        yield None
+        yield request
 
 
 async def test_retrieve_inputs(
-    mock_director_v2_service_retrieve_inputs: None,
+    mock_director_v2_service_retrieve_inputs: Route,
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
 ):
     results = await services.retrieve_inputs(rpc_client, node_id=node_id, port_keys=[], timeout_s=10)
+
+    sent_request = mock_director_v2_service_retrieve_inputs.calls.last.request
+    assert sent_request.headers["Content-Type"] == "application/json"
+    assert json.loads(sent_request.content) == {"port_keys": []}
     assert results.model_dump(mode="python") == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
 
 
