@@ -30,8 +30,8 @@ from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.utils_projects_metadata import (
     get as get_db_project_metadata,
 )
-from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.trash import trash_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -89,11 +89,9 @@ async def test_custom_metadata_handlers(
     response = await client.delete(f"{url}")
     await assert_status(response, expected_status_code=expected.no_content)
 
-    async def _wait_until_deleted():
-        tasks = _crud_api_delete.get_scheduled_tasks(project_uuid=user_project["uuid"], user_id=logged_user["id"])
-        await tasks[0]
-
-    await _wait_until_deleted()
+    # NOTE: delete only marks the project for immediate deletion; actual removal happens
+    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
     # no metadata -> project not found
     url = client.app.router["get_project_metadata"].url_for(project_id=user_project["uuid"])

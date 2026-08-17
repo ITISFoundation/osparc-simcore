@@ -1,21 +1,21 @@
-Dear {{ user.first_name or user.user_name }},
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
 
-Thank you for your interest in {{ product.display_name }} . We are pleased to provide you with a one-time invitation link to register on the platform.
+{% trans product_name=product.display_name %}Thank you for your interest in {{ product_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.{% endtrans %}
 
 {% if trial_account_days is defined and trial_account_days %}
-Your account includes {{ trial_account_days }} day{{ "s" if trial_account_days > 1 }} trial period.
+{% trans count=trial_account_days %}Your account includes {{ count }} day trial period.{% pluralize %}Your account includes {{ count }} days trial period.{% endtrans %}
 {% endif %}
 
 {% if extra_credits is defined and extra_credits %}
-You also receive {{ extra_credits }} free credits.
+{% trans extra_credits=extra_credits %}You also receive {{ extra_credits }} free credits.{% endtrans %}
 {% endif %}
 
-Click {{ link }} to access the registration page.
+{% trans link=link %}Click {{ link }} to access the registration page.{% endtrans %}
 
-Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ product.support_email }}.
+{% trans support_email=product.support_email %}Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ support_email }}.{% endtrans %}
 
-Enjoy {{ product.display_name }} !
+{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}
 
-Best regards,
+{% trans %}Best regards,{% endtrans %}
 
-The {{ product.display_name }} Team
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

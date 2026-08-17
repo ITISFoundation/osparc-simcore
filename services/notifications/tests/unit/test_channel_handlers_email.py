@@ -97,7 +97,7 @@ def test_interleave_many_domains_one_each():
 
 def _make_message(
     *,
-    bcc: EmailContact | None = None,
+    bcc: list[EmailContact] | None = None,
     attachments: list[EmailAttachment] | None = None,
 ) -> EmailMessage:
     return EmailMessage(
@@ -148,14 +148,25 @@ def _mock_settings() -> MagicMock:
     return settings
 
 
-def test_prepare_messages_includes_bcc():
-    bcc = EmailContact(name="Billing", email="billing@example.com")
+@pytest.mark.parametrize(
+    "bcc_emails",
+    [
+        pytest.param([], id="no_bcc"),
+        pytest.param(["billing@example.com"], id="single_bcc"),
+        pytest.param(["billing@example.com", "finance@example.com"], id="two_bcc"),
+    ],
+)
+def test_prepare_messages_includes_bcc(bcc_emails: list[str]):
+    bcc = [EmailContact(name=email.split("@")[0], email=email) for email in bcc_emails]
     payloads = EmailChannelHandler.prepare_messages(
-        _make_message(bcc=bcc), product=_TEST_PRODUCT, settings=_mock_settings()
+        _make_message(bcc=bcc or None), product=_TEST_PRODUCT, settings=_mock_settings()
     )
 
     assert len(payloads) == 1
-    assert payloads[0]["bcc"]["email"] == "billing@example.com"
+    if bcc_emails:
+        assert [c["email"] for c in payloads[0]["bcc"]] == bcc_emails
+    else:
+        assert "bcc" not in payloads[0]
 
 
 def test_prepare_messages_includes_attachments():

@@ -171,7 +171,7 @@ qx.Class.define("osparc.study.CreateFunction", {
             if (newValue === oldValue) {
               return;
             }
-            const curatedValue = (!isNaN(parseFloat(newValue))) ? parseFloat(newValue) : parseFloat(oldValue);
+            const curatedValue = isNaN(parseFloat(newValue)) ? parseFloat(oldValue) : parseFloat(newValue);
             defaultInputs[parameterKey] = curatedValue;
             parameterDefaultValue.setValue(String(curatedValue));
           });

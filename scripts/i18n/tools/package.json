@@ -1,0 +1,8 @@
+{
+  "name": "i18n-tools",
+  "private": true,
+  "description": "Node dependency for i18n_extractor.py's TypeScriptAstExtractor: provides the TypeScript compiler API used to parse .js/.jsx/.ts/.tsx sources (e.g. qooxdoo this.tr()/qx.locale.Manager.tr() calls) via --node-cwd.",
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

@@ -75,6 +75,11 @@ qx.Class.define("osparc.store.Store", {
       init: null,
       nullable: true
     },
+    currentDispatchStudyId: {
+      check: "String",
+      init: null,
+      nullable: true
+    },
     studyBrowserContext: {
       check: [
         "studiesAndFolders",      // osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,

@@ -98,7 +98,7 @@ class TagGroupGet(OutputSchema):
     @classmethod
     def from_domain_model(cls, data: TagAccessRightsDict) -> Self:
         return cls(
-            gid=data["group_id"],
+            gid=GroupID(data["group_id"]),
             read=data["read"],
             write=data["write"],
             delete=data["delete"],

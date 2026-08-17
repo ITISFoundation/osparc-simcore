@@ -11,6 +11,7 @@ import sys
 from collections.abc import AsyncGenerator, Callable, Iterable
 from pathlib import Path
 from typing import TypedDict
+from urllib.parse import quote_plus
 
 import httpx
 import pytest
@@ -95,7 +96,15 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> P
         "database": environ["POSTGRES_DB"],
     }
 
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**config)
+    user = quote_plus(config["user"])
+    password = quote_plus(config["password"])
+    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+        user=user,
+        password=password,
+        host=config["host"],
+        port=config["port"],
+        database=config["database"],
+    )
 
     def _create_checker() -> Callable:
         def is_postgres_responsive() -> bool:

@@ -27,7 +27,7 @@ reqs: ## compiles pip requirements (.in -> .txt)
 
 
 define _create_and_validate_openapi
-	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
+	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'officially released'!)
 	set -o allexport; \
 	source .env; \
 	set +o allexport; \
@@ -51,6 +51,9 @@ openapi.json: .env ## Creates OAS (API_SERVER_DEV_FEATURES_ENABLED=0)
 
 openapi-dev.json: .env ## Creates OAS under development (API_SERVER_DEV_FEATURES_ENABLED=1)
 	@$(call _create_and_validate_openapi,1)
+
+openapi-openai-compatible.json: _check_venv_active ## Creates OAS containing only OpenAI-compatible endpoints
+	./scripts/openapi_openai_compat.py > $@
 
 
 CLIENT_RELEASE=0.5.0
@@ -97,3 +100,13 @@ test-api: ## Runs schemathesis against development server (NOTE: make up-devel f
 
 test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BROKER_URL _check_venv_active ## Test pacts. Usage: PACT_BROKER_USERNAME=your_username PACT_BROKER_PASSWORD=your_password PACT_BROKER_URL=your_broker_url make test-pacts
 	pytest tests/unit/pact_broker/test*
+
+
+.PHONY: test-openai-api-compatibility
+test-openai-api-compatibility: openapi-openai-compatible.json ## Tests that the OpenAI-compatible endpoints are indeed compatible with the OpenAI API. Usage: make test-openai-api-compatibility
+	$(SCRIPTS_DIR)/openapi-diff.bash breaking \
+		--strip-prefix-base="/v0" \
+		--fail-on ERR \
+		--flatten-allof \
+		"/specs/openapi-openai-compatible.json" \
+		"https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml"

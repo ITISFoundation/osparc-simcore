@@ -127,7 +127,8 @@ def test_create_deploy_cluster_stack_script(
     assert "docker swarm init --default-addr-pool" in deploy_script
     # we have commands to deploy a stack
     assert "docker stack deploy --with-registry-auth --compose-file=/docker-compose.yml dask_stack" in deploy_script
-    # before that we have commands that setup ENV variables, let's check we have all of them as defined in the docker-compose
+    # before that we have commands that setup ENV variables, let's check we have all of them
+    # as defined in the docker-compose
     # let's get what was set in the startup script and compare with the expected one of the docker-compose
     startup_script_envs_definition = deploy_script.splitlines()[-1].split("docker stack deploy")[0].strip()
     assert startup_script_envs_definition
@@ -173,6 +174,9 @@ def test_create_deploy_cluster_stack_script(
 
     # check that the RabbitMQ settings are null since rabbit is disabled
     assert re.search(r"AUTOSCALING_RABBITMQ=null", deploy_script)
+
+    # check that the KMS settings are null since KMS is disabled by default
+    assert re.search(r"DASK_SIDECAR_KMS=null", deploy_script)
 
     # check the additional tags are in
     assert all(f'"{key}": "{value}"' in deploy_script for key, value in additional_custom_tags.items())

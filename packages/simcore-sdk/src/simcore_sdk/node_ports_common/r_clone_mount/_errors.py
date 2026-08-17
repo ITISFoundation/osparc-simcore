@@ -17,16 +17,23 @@ class WaitingForQueueToBeEmptyError(_BaseRcloneMountError):
     msg_template: str = "Waiting for VFS queue to be empty: queue={queue}"
 
 
-class MountAlreadyStartedError(_BaseRcloneMountError):
-    msg_template: str = "Mount already started for local path='{local_mount_path}'"
-
-
 class NoMountFoundForRemotePathError(_BaseRcloneMountError):
     msg_template: str = "Could not find tracked mount for remote path '{remote_path}'"
 
 
 class InvalidRemotePathError(_BaseRcloneMountError):
     msg_template: str = "Invalid remote_path '{remote_path}'. Expected '{{project_id}}/{{node_id}}/DIRECTORY_PATH'"
+
+
+class InvalidContainerLabelsError(_BaseRcloneMountError):
+    msg_template: str = "Found a problem with the labels for '{container_name}', errors: {errors}"
+
+
+class MountPathConflictError(_BaseRcloneMountError):
+    msg_template: str = (
+        "Mount for '{local_mount_path}' is already tracked with remote_path='{existing_remote_path}'"
+        " but was called again with a different remote_path='{new_remote_path}'"
+    )
 
 
 class PortNotAssignedError(_BaseRcloneMountError):

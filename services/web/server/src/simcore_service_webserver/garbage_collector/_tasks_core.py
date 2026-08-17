@@ -4,22 +4,15 @@
 Specifics of the gc implementation should go into garbage_collector_core.py
 """
 
-import logging
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
 from aiohttp import web
-from servicelib.background_task_utils import exclusive_periodic
-from servicelib.logging_utils import log_context
 
-from ..redis import get_redis_lock_manager_client_sdk
 from ._core import collect_garbage
-from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
+from ._healthcheck import run_monitored_periodic_task
+from ._tasks_utils import CleanupContextFunc
 from .settings import GarbageCollectorSettings, get_plugin_settings
-
-_logger = logging.getLogger(__name__)
-
-_GC_TASK_NAME = f"{__name__}._collect_garbage_periodically"
 
 
 def create_background_task_for_garbage_collection() -> CleanupContextFunc:
@@ -27,17 +20,7 @@ def create_background_task_for_garbage_collection() -> CleanupContextFunc:
         settings: GarbageCollectorSettings = get_plugin_settings(app)
         interval = timedelta(seconds=settings.GARBAGE_COLLECTOR_INTERVAL_S)
 
-        @exclusive_periodic(
-            # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
-            get_redis_lock_manager_client_sdk(app),
-            task_interval=interval,
-            retry_after=min(timedelta(seconds=10), interval / 10),
-        )
-        async def _collect_garbage_periodically() -> None:
-            with log_context(_logger, logging.INFO, "Garbage collect cycle"):
-                await collect_garbage(app)
-
-        async for _ in periodic_task_lifespan(app, _collect_garbage_periodically, task_name=_GC_TASK_NAME):
+        async with run_monitored_periodic_task(app, collect_garbage, task_interval=interval):
             yield
 
     return _cleanup_ctx_fun

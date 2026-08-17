@@ -4,7 +4,7 @@
 # pylint: disable=too-many-return-statements
 
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Literal, get_args, get_origin
 
 import pytest
 from aiohttp import web
@@ -98,6 +98,10 @@ def _get_non_default_value(  # noqa: PLR0911
             return 0
         if value_type is str:
             return ""
+        # Handle TypeAliasType (e.g. `type SupportedLocale = Literal[...]`)
+        resolved_type = getattr(value_type, "__value__", value_type)
+        if get_origin(resolved_type) is Literal:
+            return get_args(resolved_type)[0]
 
     pytest.fail(f"case type={type(value)}, {value=} {value_type=} not implemented. Please add it.")
 

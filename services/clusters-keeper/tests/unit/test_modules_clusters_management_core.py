@@ -15,6 +15,7 @@ from attr import dataclass
 from aws_library.ec2 import EC2InstanceData
 from faker import Faker
 from fastapi import FastAPI
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_mock import MockerFixture
@@ -126,12 +127,18 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     disable_clusters_management_background_task: None,
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID | None,
     initialized_app: FastAPI,
     mocked_dask_ping_scheduler: MockedDaskModule,
 ):
-    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+    created_clusters = await create_cluster(
+        initialized_app,
+        product_name=product_name,
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
     assert len(created_clusters) == 1
 
     # running the cluster management task shall not remove anything
@@ -165,13 +172,19 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
     disable_clusters_management_background_task: None,
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID | None,
     initialized_app: FastAPI,
     mocked_dask_ping_scheduler: MockedDaskModule,
     create_ec2_workers: Callable[[int], Awaitable[list[str]]],
 ):
-    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+    created_clusters = await create_cluster(
+        initialized_app,
+        product_name=product_name,
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
     assert len(created_clusters) == 1
 
     # running the cluster management task shall not remove anything
@@ -200,6 +213,7 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     disable_clusters_management_background_task: None,
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID | None,
     initialized_app: FastAPI,
@@ -207,7 +221,12 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     app_settings: ApplicationSettings,
     mocker: MockerFixture,
 ):
-    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+    created_clusters = await create_cluster(
+        initialized_app,
+        product_name=product_name,
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
     assert len(created_clusters) == 1
 
     # simulate unresponsive dask-scheduler
@@ -250,6 +269,7 @@ async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stal
     disable_clusters_management_background_task: None,
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID | None,
     initialized_app: FastAPI,
@@ -271,7 +291,12 @@ async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stal
     5. BUG: the cluster is terminated despite being busy because the in-memory
        instance data has a stale heartbeat tag
     """
-    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+    created_clusters = await create_cluster(
+        initialized_app,
+        product_name=product_name,
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
     assert len(created_clusters) == 1
 
     # Give the cluster an initial heartbeat so it is considered "connected" (has heartbeat tag)
@@ -289,7 +314,7 @@ async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stal
         return_value={
             dataclasses.replace(
                 the_cluster,
-                tags=the_cluster.tags | {"last_heartbeat": stale_heartbeat_time},
+                tags=the_cluster.tags | {"io.simcore.clusters-keeper.last_heartbeat": stale_heartbeat_time},
             )
         },
     )
@@ -310,6 +335,7 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     disable_clusters_management_background_task: None,
     _base_configuration: None,
     ec2_client: EC2Client,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID | None,
     initialized_app: FastAPI,
@@ -318,7 +344,12 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     app_settings: ApplicationSettings,
     mocker: MockerFixture,
 ):
-    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
+    created_clusters = await create_cluster(
+        initialized_app,
+        product_name=product_name,
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
     assert len(created_clusters) == 1
 
     # simulate a responsive dask-scheduler

@@ -1,11 +1,15 @@
+import warnings
+from datetime import timedelta
 from typing import Any, Final
 
 import boto3
 import orjson
+import rich
 from aiocache import cached
 from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
+from mypy_boto3_ec2.service_resource import Instance
 from mypy_boto3_ec2.type_defs import FilterTypeDef
+from pydantic import TypeAdapter
 
 from .models import AppState
 from .utils import get_instance_name, to_async
@@ -19,7 +23,7 @@ def _list_running_ec2_instances(
     user_id: int | None,
     wallet_id: int | None,
     instance_id: str | None,
-) -> ServiceResourceInstancesCollection:
+) -> list[Instance]:
     # get all the running instances
 
     ec2_filters: list[FilterTypeDef] = [
@@ -30,19 +34,50 @@ def _list_running_ec2_instances(
         ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
 
     if user_id:
-        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+        warnings.warn(
+            "The tag 'user_id' is deprecated and will be removed in the future. "
+            'Please use ec2_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]}) '
+            "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if wallet_id:
-        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+        warnings.warn(
+            "The tag 'wallet_id' is deprecated and will be removed in the future. "
+            'Please use ec2_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]}) '
+            "once https://github.com/ITISFoundation/osparc-simcore/pull/9404 is in production.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if instance_id:
         ec2_filters.append({"Name": "instance-id", "Values": [f"{instance_id}"]})
-    return ec2_resource.instances.filter(Filters=ec2_filters)
+    if user_id is None and wallet_id is None:
+        return list(ec2_resource.instances.filter(Filters=ec2_filters))
+
+    legacy_filters: list[FilterTypeDef] = [*ec2_filters]
+    new_filters: list[FilterTypeDef] = [*ec2_filters]
+
+    if user_id is not None:
+        legacy_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+        new_filters.append({"Name": "tag:io.simcore.user_id", "Values": [f"{user_id}"]})
+    if wallet_id is not None:
+        legacy_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+        new_filters.append({"Name": "tag:io.simcore.wallet_id", "Values": [f"{wallet_id}"]})
+
+    # Transitional rollout: query both legacy and inverted-URL tag keys.
+    legacy_instances = list(ec2_resource.instances.filter(Filters=legacy_filters))
+    new_instances = list(ec2_resource.instances.filter(Filters=new_filters))
+
+    merged_instances_by_id = {inst.id: inst for inst in legacy_instances}
+    merged_instances_by_id.update({inst.id: inst for inst in new_instances})
+    return list(merged_instances_by_id.values())
 
 
 async def list_computational_instances_from_ec2(
     state: AppState,
     user_id: int | None,
     wallet_id: int | None,
-) -> ServiceResourceInstancesCollection:
+) -> list[Instance]:
     assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
     assert state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
     assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"] == state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"], (
@@ -72,7 +107,7 @@ async def list_dynamic_instances_from_ec2(
     filter_by_user_id: int | None,
     filter_by_wallet_id: int | None,
     filter_by_instance_id: str | None,
-) -> ServiceResourceInstancesCollection:
+) -> list[Instance]:
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     custom_tags = {}
     if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
@@ -192,3 +227,104 @@ def _describe_instance_type(ec2_resource: EC2ServiceResource, instance_type: str
 
 async def get_instance_type_info(ec2_resource: EC2ServiceResource, instance_type: str) -> dict[str, Any]:
     return await _describe_instance_type(ec2_resource, instance_type)
+
+
+def get_clusters_keeper_task_interval(state: AppState) -> timedelta:
+    """Parse CLUSTERS_KEEPER_TASK_INTERVAL from environment and return as timedelta."""
+    task_interval_str = state.environment.get("CLUSTERS_KEEPER_TASK_INTERVAL", "30")
+    return TypeAdapter(timedelta).validate_python(task_interval_str)
+
+
+@to_async
+def _check_cluster_instances_exist(
+    ec2_resource: EC2ServiceResource,
+    key_name: str,
+    custom_tags: dict[str, str],
+    _user_id: int,
+    _wallet_id: int | None,
+    original_primary_id: str,
+    original_worker_ids: set[str],
+) -> bool:
+    """
+    Check if the original cluster instances still exist in EC2.
+
+    Returns True if any of the original instances are still in running/pending state.
+    """
+    original_instance_ids = {original_primary_id, *original_worker_ids}
+    ec2_filters: list[FilterTypeDef] = [
+        {"Name": "instance-state-name", "Values": ["running", "pending"]},
+        {"Name": "key-name", "Values": [key_name]},
+        {"Name": "instance-id", "Values": sorted(original_instance_ids)},
+    ]
+    if custom_tags:
+        ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
+
+    instances = ec2_resource.instances.filter(Filters=ec2_filters)
+    running_ids = {inst.id for inst in instances}
+
+    # Check if original primary or any workers are still running
+    return original_primary_id in running_ids or bool(original_worker_ids & running_ids)
+
+
+async def cluster_is_running(
+    state: AppState,
+    user_id: int,
+    wallet_id: int | None,
+    original_primary_instance_id: str,
+    original_worker_instance_ids: set[str],
+) -> bool:
+    """Check if the original cluster instances still exist in EC2."""
+    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
+    custom_tags = {}
+    if state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]:
+        custom_tags = orjson.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
+    assert state.ec2_resource_clusters_keeper
+
+    return await _check_cluster_instances_exist(
+        state.ec2_resource_clusters_keeper,
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+        custom_tags,
+        user_id,
+        wallet_id,
+        original_primary_instance_id,
+        original_worker_instance_ids,
+    )
+
+
+@to_async
+def _terminate_instances_by_ids(ec2_resource: EC2ServiceResource, instance_ids: list[str]) -> None:
+    instances_by_id = {inst.id: inst for inst in ec2_resource.instances.filter(InstanceIds=instance_ids)}
+    if not instances_by_id:
+        rich.print("[yellow]No matching instances found in EC2 for forceful termination.[/yellow]")
+        return
+
+    terminateable_ids: list[str] = []
+    for instance_id in instance_ids:
+        instance = instances_by_id.get(instance_id)
+        if instance is None:
+            rich.print(f"[yellow]Instance {instance_id} not found, skipping[/yellow]")
+            continue
+
+        state_name = instance.state["Name"]
+        if state_name in ("running", "pending", "stopping", "stopped"):
+            rich.print(f"Terminating instance {instance.id} ({get_instance_name(instance)})")
+            terminateable_ids.append(instance.id)
+        else:
+            rich.print(f"Instance {instance.id} already {state_name}, skipping")
+
+    if not terminateable_ids:
+        rich.print("[yellow]No instances in a terminateable state.[/yellow]")
+        return
+
+    ec2_resource.meta.client.terminate_instances(InstanceIds=terminateable_ids)
+
+
+async def terminate_cluster_instances_forcefully(
+    ec2_resource: EC2ServiceResource,
+    primary_instance_id: str,
+    worker_instance_ids: set[str],
+) -> None:
+    rich.print("\n[bold yellow]Initiating direct EC2 termination as fallback...[/bold yellow]")
+    instance_ids = [primary_instance_id, *sorted(worker_instance_ids)]
+    await _terminate_instances_by_ids(ec2_resource, instance_ids)
+    rich.print("[green]Direct EC2 termination initiated.[/green]")

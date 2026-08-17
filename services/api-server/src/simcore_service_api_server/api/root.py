@@ -22,6 +22,7 @@ from .routes import (
     users,
     wallets,
 )
+from .routes import responses as _responses
 
 _SOLVERS_PREFIX: Final[str] = "/solvers"
 _FUNCTIONS_PREFIX: Final[str] = "/functions"
@@ -60,6 +61,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(_credits.router, tags=["credits"], prefix="/credits")
     router.include_router(licensed_items.router, tags=["licensed-items"], prefix="/licensed-items")
     router.include_router(functions_routes.function_router, tags=["functions"], prefix=_FUNCTIONS_PREFIX)
+    router.include_router(_responses.router, tags=["responses"], prefix="/responses")
     router.include_router(tasks.router, tags=["tasks"], prefix="/tasks")
 
     # NOTE: multiple-files upload is currently disabled

@@ -16,6 +16,7 @@ from pydantic import SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from settings_library.basic_types import IDStr
 from settings_library.ec2 import EC2Settings
+from settings_library.kms import KMSSettings
 from settings_library.s3 import S3Settings
 from settings_library.ssm import SSMSettings
 
@@ -134,6 +135,41 @@ def mocked_s3_server_envs(
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = model_dump_with_secrets(
         mocked_s3_server_settings,
+        show_secrets=True,
+        exclude_unset=True,
+    )
+    return setenvs_from_dict(monkeypatch, {**changed_envs})
+
+
+@pytest.fixture
+def mocked_kms_server_settings(mocked_aws_server: ThreadedMotoServer, reset_aws_server_state: None) -> KMSSettings:
+    import boto3  # noqa: PLC0415
+
+    endpoint_url = f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}"  # pylint: disable=protected-access # noqa: SLF001
+    kms_client = boto3.client(
+        "kms",
+        endpoint_url=endpoint_url,
+        region_name="us-east-1",
+        aws_access_key_id="xxx",
+        aws_secret_access_key="xxx",  # noqa: S106
+    )
+    key_id = kms_client.create_key(Description="pytest kms key")["KeyMetadata"]["KeyId"]
+    return KMSSettings(
+        KMS_ACCESS_KEY_ID=SecretStr("xxx"),
+        KMS_ENDPOINT=endpoint_url,  # type: ignore[arg-type]
+        KMS_KEY_ID=key_id,
+        KMS_REGION_NAME="us-east-1",
+        KMS_SECRET_ACCESS_KEY=SecretStr("xxx"),
+    )
+
+
+@pytest.fixture
+def mocked_kms_server_envs(
+    mocked_kms_server_settings: KMSSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    changed_envs: EnvVarsDict = model_dump_with_secrets(
+        mocked_kms_server_settings,
         show_secrets=True,
         exclude_unset=True,
     )

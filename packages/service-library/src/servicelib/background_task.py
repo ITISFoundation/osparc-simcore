@@ -11,6 +11,7 @@ from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
 from .logging_utils import log_catch, log_context
+from .utils import get_callable_namespaced_name
 
 _logger = logging.getLogger(__name__)
 
@@ -87,12 +88,31 @@ def create_periodic_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
-    task_name: str,
+    task_name: str | None = None,
     raise_on_error: bool = False,
     wait_before_running: datetime.timedelta = datetime.timedelta(0),
     early_wake_up_event: asyncio.Event | None = None,
     **kwargs,
 ) -> asyncio.Task:
+    """Creates an :class:`asyncio.Task` that runs ``task`` periodically until cancelled.
+
+    The caller owns the returned task and is responsible for cancelling it (e.g. via
+    ``cancel_wait_task``); prefer :func:`periodic_task` when a managed lifetime is enough.
+
+    Arguments:
+        task -- the coroutine function to run on every iteration
+        interval -- the interval between two consecutive runs
+        task_name -- name given to the underlying asyncio task. If omitted, a namespaced
+            name is derived from the callable (see
+            :func:`servicelib.utils.get_callable_namespaced_name`)
+        raise_on_error -- if True, an exception raised by ``task`` stops the periodic
+            loop; if False (default) the task is retried indefinitely until cancelled
+        wait_before_running -- delay before the first run (default: no delay)
+        early_wake_up_event -- when set, wakes up the task before ``interval`` elapses
+        **kwargs -- forwarded to ``task`` on every call
+    """
+    resolved_task_name = task_name or get_callable_namespaced_name(task)
+
     @delayed_start(wait_before_running)
     @periodic(
         interval=interval,
@@ -102,8 +122,8 @@ def create_periodic_task(
     async def _() -> None:
         await task(**kwargs)
 
-    with log_context(_logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"):
-        return asyncio.create_task(_(), name=task_name)
+    with log_context(_logger, logging.DEBUG, msg=f"create periodic background task '{resolved_task_name}'"):
+        return asyncio.create_task(_(), name=resolved_task_name)
 
 
 @contextlib.asynccontextmanager
@@ -111,11 +131,27 @@ async def periodic_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
-    task_name: str,
+    task_name: str | None = None,
     stop_timeout: float = _DEFAULT_STOP_TIMEOUT_S,
     raise_on_error: bool = False,
     **kwargs,
 ) -> AsyncIterator[asyncio.Task]:
+    """Async context manager that runs ``task`` periodically and cancels it on exit.
+
+    Wraps :func:`create_periodic_task` and guarantees the task is stopped when the
+    context is left, even if an exception occurs. Yields the underlying asyncio task.
+
+    Arguments:
+        task -- the coroutine function to run on every iteration
+        interval -- the interval between two consecutive runs
+        task_name -- name given to the underlying asyncio task. If omitted, a namespaced
+            name is derived from the callable (see
+            :func:`servicelib.utils.get_callable_namespaced_name`)
+        stop_timeout -- maximum time to wait for the task to stop on exit
+        raise_on_error -- if True, an exception raised by ``task`` stops the periodic
+            loop; if False (default) the task is retried indefinitely until cancelled
+        **kwargs -- forwarded to ``task`` on every call
+    """
     asyncio_task: asyncio.Task | None = None
     try:
         asyncio_task = create_periodic_task(
@@ -128,6 +164,4 @@ async def periodic_task(
         yield asyncio_task
     finally:
         if asyncio_task is not None:
-            # NOTE: this stopping is shielded to prevent the cancellation to propagate
-            # into the stopping procedure
             await cancel_wait_task(asyncio_task, max_delay=stop_timeout)

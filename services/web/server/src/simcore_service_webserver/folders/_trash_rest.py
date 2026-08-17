@@ -2,15 +2,12 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import get_user_id, login_required
 from ..products import products_web
 from ..security.decorators import permission_required
+from ..web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from . import _trash_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import FoldersPathParams, FolderTrashQueryParams

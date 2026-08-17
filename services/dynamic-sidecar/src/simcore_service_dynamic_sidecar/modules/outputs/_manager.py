@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
 from contextlib import suppress
 from datetime import timedelta
@@ -8,6 +7,10 @@ from functools import partial
 
 from common_library.async_tools import cancel_wait_task
 from common_library.errors_classes import OsparcErrorMixin
+from common_library.logging.logging_errors import (
+    create_troubleshooting_log_kwargs,
+    format_exception_as_string,
+)
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
@@ -115,8 +118,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_scheduler_worker: Task | None = None
         self._schedule_all_ports_for_upload: bool = False
 
-        # keep track if a port was uploaded and there was an error, remove said error if
-        self._last_upload_error_tracker: dict[str, Exception | None] = {}
+        # keep track if a port was uploaded and there was an error, remove said error if last upload was ok
+        self._last_upload_error_tracker: dict[str, str | None] = {}
 
     async def _uploading_task_start(self) -> None:
         port_keys = await self._port_key_tracker.get_uploading()
@@ -141,18 +144,17 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_uploading = create_task(_upload_ports(), name=task_name)
 
         def _remove_downloads(future: Future) -> None:
-            # pylint: disable=protected-access
-            if future._exception is not None:
-                formatted_traceback = (
-                    "\n" + "".join(traceback.format_exception(future._exception))
-                    if future._exception.__traceback__
-                    else ""
-                )
+            exception = future._exception  # noqa: SLF001 # pylint: disable=protected-access
+            if exception is not None:
                 _logger.warning(
-                    "%s ended with exception: %s%s",
-                    task_name,
-                    future._exception,
-                    formatted_traceback,
+                    **create_troubleshooting_log_kwargs(
+                        f"{task_name} ended with exception: {exception}\n{format_exception_as_string(exception)}",
+                        error=exception,
+                        error_context={
+                            "port_keys": port_keys,
+                            "outputs_path": self.outputs_context.outputs_path,
+                        },
+                    )
                 )
 
             # keep track of the last result for each port
@@ -161,7 +163,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     future.result()
                     self._last_upload_error_tracker[port_key] = None
                 except Exception as e:  # pylint: disable=broad-except
-                    self._last_upload_error_tracker[port_key] = e
+                    self._last_upload_error_tracker[port_key] = format_exception_as_string(e)
 
             self._task_uploading_followup = create_task(self._port_key_tracker.remove_all_uploading())
 
@@ -236,7 +238,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 await self.port_key_content_changed(file_port_key)
 
         _logger.info("Port status before waiting %s", f"{self._port_key_tracker}")
-        while not await self._port_key_tracker.no_tracked_ports():
+        while not await self._port_key_tracker.no_tracked_ports():  # noqa: ASYNC110
             await asyncio.sleep(self.task_monitor_interval_s)
         _logger.info("Port status after waiting %s", f"{self._port_key_tracker}")
 

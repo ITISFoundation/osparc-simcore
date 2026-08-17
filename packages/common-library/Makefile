@@ -10,9 +10,15 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
+install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
+
+install-dev: _check_venv_active ## install app in development mode (editable) and compile locale .mo files
+	# installing in dev mode
+	@uv pip sync requirements/dev.txt
+	# compiling locale .po -> .mo in-place (editable install bypasses build_py hook)
+	@python -c "import polib; from pathlib import Path; [polib.pofile(str(p)).save_as_mofile(str(p.with_suffix('.mo'))) for p in Path('src/common_library/locale').glob('*/LC_MESSAGES/messages.po')]"
 
 
 .PHONY: tests tests-ci

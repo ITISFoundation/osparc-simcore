@@ -61,7 +61,6 @@ def app_environment(mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest
     envs = mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "True",
             "LOGIN_REGISTRATION_INVITATION_REQUIRED": "False",
             "POSTGRES_DB": "simcoredb",
             "POSTGRES_HOST": "postgres",

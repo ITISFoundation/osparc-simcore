@@ -2,20 +2,19 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
-import importlib
 import logging
 import secrets
 import string
 from collections.abc import Callable
 from functools import partial
 
-import pip
 import pytest
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.testclient import TestClient
+from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
@@ -56,6 +55,7 @@ def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch, tracing_set
         monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{port}")
     if sampling_probability:
         monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{sampling_probability}")
+    monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION", "0.144.0")
 
 
 @pytest.mark.parametrize(
@@ -115,58 +115,6 @@ async def test_invalid_tracing_settings(
         async for _ in get_tracing_instrumentation_lifespan(
             tracing_config=tracing_config,
         )(app=app):
-            pass
-
-
-def install_package(package):
-    pip.main(["install", package])
-
-
-def uninstall_package(package):
-    pip.main(["uninstall", "-y", package])
-
-
-@pytest.fixture()
-def manage_package(request):
-    package, importname = request.param
-    install_package(package)
-    yield importname
-    uninstall_package(package)
-
-
-@pytest.mark.skip(reason="this test installs always the latest version of the package which creates conflicts.")
-@pytest.mark.parametrize(
-    "tracing_settings_in, manage_package",
-    [
-        (
-            ("http://opentelemetry-collector", 4318, 1.0),
-            (
-                "opentelemetry-instrumentation-botocore",
-                "opentelemetry.instrumentation.botocore",
-            ),
-        ),
-    ],
-    indirect=True,
-)
-async def test_tracing_setup_package_detection(
-    faker: Faker,
-    mocked_app: FastAPI,
-    mock_otel_collector: InMemorySpanExporter,
-    set_and_clean_settings_env_vars: None,
-    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
-    manage_package,
-):
-    package_name = manage_package
-    importlib.import_module(package_name)
-    tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
-    async for _ in get_tracing_instrumentation_lifespan(
-        tracing_config=tracing_config,
-    )(app=mocked_app):
-        # idempotency check
-        async for _ in get_tracing_instrumentation_lifespan(
-            tracing_config=tracing_config,
-        )(app=mocked_app):
             pass
 
 
@@ -670,11 +618,12 @@ def test_create_standard_attributes():
         wallet_id="wallet321",
     )
     assert attributes == {
-        "user_id": "13",
-        "project_id": "project456",
-        "node_id": "node789",
-        "product_name": "product123",
-        "wallet_id": "wallet321",
+        "simcore.user_id": "13",
+        "simcore.project_id": "project456",
+        "simcore.node_id": "node789",
+        "simcore.product_name": "product123",
+        "simcore.wallet_id": "wallet321",
+        "simcore.source_origin": "platform",
     }
 
 
@@ -707,7 +656,7 @@ async def test_traced_decorator_async(
         assert result == "async_result"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_my_async_operation"]
+        matching = [s for s in spans if "_my_async_operation" in s.name]
         assert len(matching) == 1
 
 
@@ -740,7 +689,7 @@ async def test_traced_decorator_sync(
         assert result == "sync_result"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_my_sync_operation"]
+        matching = [s for s in spans if "_my_sync_operation" in s.name]
         assert len(matching) == 1
 
 
@@ -861,7 +810,7 @@ async def test_traced_decorator_with_tracing_config_getter(
         assert result == "custom"
 
         spans = mock_otel_collector.get_finished_spans()
-        matching = [s for s in spans if s.name == "_func_with_custom_getter"]
+        matching = [s for s in spans if "_func_with_custom_getter" in s.name]
         assert len(matching) == 1
 
 
@@ -919,6 +868,67 @@ def test_traced_decorator_raises_on_missing_app_param():
         @traced
         async def _no_app_param(x: int) -> None:
             pass
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_operation_links_to_stale_ambient_span_instead_of_chaining_onto_it(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
+):
+    """Reproduces the scenario of a long-lived `asyncio.Task` (e.g. a periodic background task)
+    that copied the ambient context once, while some span was open, at task-creation time.
+    Long after that captured span has ended, `trace.get_current_span()` inside the task still
+    returns it (non-recording). `traced_operation` must NOT chain new spans onto it as a parent
+    (that ancestor may never be exported again, e.g. it belongs to a completed/evicted trace) -
+    instead it should start a brand new root trace and keep a `Link` back to it.
+    """
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        # 1. Create and immediately end a span - simulates the span that was "current" at the
+        #    moment a background asyncio.Task copied the ambient context.
+        with traced_operation("stale_ancestor_operation", tracing_config=tracing_config):
+            stale_span = trace.get_current_span()
+            stale_trace_id = stale_span.get_span_context().trace_id
+            stale_span_id = stale_span.get_span_context().span_id
+        assert not stale_span.is_recording()  # confirms it is indeed stale/ended by now
+
+        # 2. Simulate a frozen Task context: `stale_span` is still "current", even though ended.
+        stale_context = trace.set_span_in_context(stale_span)
+        token = otel_context.attach(stale_context)
+        try:
+            with traced_operation("child_of_stale_operation", tracing_config=tracing_config):
+                new_span = trace.get_current_span()
+                new_trace_id = new_span.get_span_context().trace_id
+        finally:
+            otel_context.detach(token)
+
+        spans = mock_otel_collector.get_finished_spans()
+        child_spans = [s for s in spans if s.name == "child_of_stale_operation"]
+        assert len(child_spans) == 1
+        child_span = child_spans[0]
+
+        # New trace root: NOT chained onto the stale span (different trace_id, no parent)
+        assert new_trace_id != stale_trace_id
+        assert child_span.parent is None
+
+        # ... but still navigable back to where it originated via a Link
+        assert child_span.links is not None
+        assert len(child_span.links) == 1
+        assert child_span.links[0].context.trace_id == stale_trace_id
+        assert child_span.links[0].context.span_id == stale_span_id
 
 
 def test_traced_decorator_raises_on_wrong_app_type():

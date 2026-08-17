@@ -325,7 +325,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           paramsMenuBtn
         ].forEach(btn => {
           studyUI.bind("mode", btn, "visibility", {
-          converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
+            converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
           });
         });
       }

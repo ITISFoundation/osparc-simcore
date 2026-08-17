@@ -48,7 +48,12 @@ _REACT_BLUR_SETTLE_MS: Final[int] = 500
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
-_SAMPLING_TIMEOUT: Final[int] = 10 * MINUTE
+
+# Heuristically 10 minutes is enough for these jobs to run
+# However, when the dv2 / dask restarts during the run, things get delayed
+# Add factor 2 to handle this case
+_SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
+
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
 _NUM_SAMPLING_POINTS: Final[int] = 40
@@ -107,6 +112,13 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
 
 class _TeardownDeleteError(Exception):
     """Raised when a resource DELETE request fails (non-ok, non-404 status)."""
+
+
+class _SamplingFailedError(Exception):
+    """Raised when a sampling job reaches a terminal failed state.
+
+    Raise an exception that is not an assert to let tenacity stop polling
+    """
 
 
 @retry(
@@ -373,7 +385,9 @@ def _assert_sampling_completed(
     check_sampling_status: Callable[[Any, Page], str],
 ) -> None:
     status = check_sampling_status(service_iframe, page)
-    assert status != "failed", "Sampling job failed! Check the deployment logs."
+    if status == "failed":
+        msg = "Sampling job failed! Check the deployment logs."
+        raise _SamplingFailedError(msg)
     assert status == "complete", "Sampling is still running"
 
 
@@ -904,6 +918,22 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 plotly_graph = service_iframe.locator(".js-plotly-plot")
                 plotly_graph.wait_for(state="visible", timeout=2 * MINUTE)
             page.wait_for_timeout(2000)
+
+        if EXPECTED_MOGA_KEY in local_service_key.lower():
+            with log_context(logging.INFO, "Verifying MOGA Pareto optimization produced some results..."):
+                moga_pareto_container = service_iframe.locator('[mmux-testid="moga-pareto-plot"]')
+                moga_pareto_container.wait_for(state="visible", timeout=2 * MINUTE)
+                moga_pareto_plot = moga_pareto_container.locator(".js-plotly-plot")
+                moga_pareto_plot.wait_for(state="visible", timeout=2 * MINUTE)
+
+                moga_trace_lengths = moga_pareto_plot.evaluate(
+                    "el => (el.data || []).map(trace => Math.max((trace.x || []).length, (trace.y || []).length))"
+                )
+                total_moga_points = sum(moga_trace_lengths)
+                assert total_moga_points > 0, (
+                    f"MOGA Pareto plot rendered but contains no data points (traces={moga_trace_lengths})"
+                )
+                logging.info("MOGA Pareto plot traces: %s", moga_trace_lengths)
 
         with log_context(logging.INFO, f"Verifying sampling results for {local_service_key}..."):
             api_server_url = _get_api_server_url(product_url)

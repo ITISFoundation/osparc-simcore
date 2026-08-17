@@ -448,6 +448,14 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     ] = DEFAULT_FACTORY
 
+    tracing: Annotated[
+        bool,
+        Field(
+            alias="simcore.service.tracing",
+            description="if True, enables OTEL trace collection for this service",
+        ),
+    ] = False
+
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""

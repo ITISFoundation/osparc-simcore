@@ -29,6 +29,30 @@ class InvalidInputError(BaseBackEndError):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+class InvalidEncryptionInputsError(BaseBackEndError):
+    msg_template = user_message(
+        "The provided encryption inputs {inputs} are not valid. Available node inputs '{node_inputs}'", _version=1
+    )
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+class EncryptionNotConfiguredError(BaseBackEndError):
+    msg_template = user_message("Encryption is not available on this deployment. Please contact support.", _version=1)
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
+class EncryptionServiceUnavailableError(BaseBackEndError):
+    msg_template = user_message(
+        "The encryption service is temporarily unavailable. Please try again shortly.", _version=1
+    )
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
+class EncryptionMisconfiguredError(BaseBackEndError):
+    msg_template = user_message("Encryption is not available on this deployment. Please contact support.", _version=1)
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+
 class ListSolversOrStudiesError(BaseBackEndError):
     msg_template = user_message("Unable to retrieve the list of solvers and projects.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
@@ -168,6 +192,11 @@ class LicensedItemCheckoutNotFoundError(BaseBackEndError):
 class JobAssetsMissingError(BaseBackEndError):
     msg_template = user_message("The assets for job {job_id} are missing.", _version=1)
     status_code = status.HTTP_409_CONFLICT
+
+
+class ChatbotNotAvailableError(BaseBackEndError):
+    msg_template = user_message("The chatbot service is not enabled.", _version=1)
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 class CeleryTaskNotFoundError(BaseBackEndError):

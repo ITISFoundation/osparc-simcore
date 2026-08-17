@@ -22,18 +22,15 @@ depends_on = None
 def upgrade():
     # Reassign items from two_factor_enabled -> LOGIN_2FA_REQUIRED
     conn = op.get_bind()
-    rows = conn.execute(sa.DDL("SELECT name, login_settings FROM products")).fetchall()
+    rows = conn.execute(sa.text("SELECT name, login_settings FROM products")).mappings().all()
     for row in rows:
         data = row["login_settings"] or {}
         if "two_factor_enabled" in data:
             data["LOGIN_2FA_REQUIRED"] = data.pop("two_factor_enabled")
             data = json.dumps(data)
             conn.execute(
-                sa.DDL(
-                    "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
-                        data, row["name"]
-                    )
-                )
+                sa.text("UPDATE products SET login_settings = CAST(:login_settings AS jsonb) WHERE name = :name"),
+                {"login_settings": data, "name": row["name"]},
             )
 
     # change to nullable=True and remove the server default to
@@ -48,17 +45,14 @@ def upgrade():
 def downgrade():
     # Reassign items from LOGIN_2FA_REQUIRED -> two_factor_enabled=false
     conn = op.get_bind()
-    rows = conn.execute(sa.DDL("SELECT name, login_settings FROM products")).fetchall()
+    rows = conn.execute(sa.text("SELECT name, login_settings FROM products")).mappings().all()
     for row in rows:
         data = row["login_settings"] or {}
         data["two_factor_enabled"] = data.pop("LOGIN_2FA_REQUIRED", False)  # back to default
         data = json.dumps(data)
         conn.execute(
-            sa.DDL(
-                "UPDATE products SET login_settings = '{}' WHERE name = '{}'".format(  # nosec
-                    data, row["name"]
-                )
-            )
+            sa.text("UPDATE products SET login_settings = CAST(:login_settings AS jsonb) WHERE name = :name"),
+            {"login_settings": data, "name": row["name"]},
         )
 
     # revert to nullable=False and add default

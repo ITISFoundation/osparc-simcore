@@ -78,7 +78,9 @@ def _create_simple_error_redirect(
 
     WARNING: note that the `public_error` is exposed as-is in the user-message
     """
-    user_error_msg = user_message(f"Unable to open your project: {public_error}", _version=1)
+    user_error_msg = user_message("Unable to open your project: {public_error}", _version=1).format(
+        public_error=public_error
+    )
     return _create_redirect_response_to_error_page(
         request.app,
         message=user_error_msg,

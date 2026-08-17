@@ -19,6 +19,9 @@ from dask_task_models_library.container_tasks.protocol import (
 from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.computations import TaskLogFileGet
+from models_library.api_schemas_directorv2.encryption import (
+    JobEncryptionContextMetadata,
+)
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.docker import DockerLabelKey
 from models_library.errors import ErrorDict
@@ -580,3 +583,17 @@ def compute_task_owner(
         parent_node_id=project_metadata.get("parent_node_id"),
         parent_project_id=project_metadata.get("parent_project_id"),
     )
+
+
+def get_job_encryption_context_metadata(
+    metadata: RunMetadataDict,
+) -> JobEncryptionContextMetadata | None:
+    """Parses the job encryption context stored in the run metadata, or None when absent.
+
+    Per-task conversion to ``dask_task_models_library...JobEncryptionContext`` is done via
+    ``JobEncryptionContext.from_metadata(...)``.
+    """
+    encryption = metadata.get("encryption")
+    if not encryption:
+        return None
+    return JobEncryptionContextMetadata.model_validate(encryption)

@@ -76,10 +76,15 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     ROW_HEIGHT: 28,
 
     updateUnitLabelPrefix: function(item) {
+      const labels = osparc.utils.Units.getLabels(item.unit, item.unitPrefix);
+      if (labels === null) {
+        // the unit is not registered (e.g. a unitless port): nothing to update
+        return;
+      }
       const {
         unitShort,
         unitLong
-      } = osparc.utils.Units.getLabels(item.unit, item.unitPrefix);
+      } = labels;
       if ("unitLabel" in item) {
         const unitLabel = item["unitLabel"];
         unitLabel.set({

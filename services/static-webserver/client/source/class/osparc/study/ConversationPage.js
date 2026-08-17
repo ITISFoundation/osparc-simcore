@@ -51,7 +51,6 @@ qx.Class.define("osparc.study.ConversationPage", {
       const conversation = new osparc.data.model.ConversationProject(conversationData, this.__studyData["uuid"]);
       this.setConversation(conversation);
     }
-
   },
 
   properties: {
@@ -146,7 +145,7 @@ qx.Class.define("osparc.study.ConversationPage", {
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       closeButton.addListener("execute", () => {
-      const messages = this.getChildControl("conversation").getMessages();
+        const messages = this.getChildControl("conversation").getMessages();
         if (messages.length === 0) {
           osparc.store.ConversationsProject.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
         } else {

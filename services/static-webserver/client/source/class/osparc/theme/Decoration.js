@@ -34,10 +34,17 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "chat-bubble": {
       style: {
-        radius: 4,
+        radius: 8,
         // width: 1,
         // color: "text-disabled",
         backgroundColor: "background-main-2",
+      }
+    },
+
+    "chat-bubble-mine": {
+      include: "chat-bubble",
+      style: {
+        backgroundColor: "strong-main",
       }
     },
 
@@ -370,7 +377,20 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "pb-listitem": {
       style: {
-        radius: 4
+        radius: 4,
+        inset: true,
+        shadowLength: 0,
+        shadowSpreadRadius: 300,
+        shadowColor: "transparent",
+        transitionProperty: ["box-shadow"],
+        transitionDuration: "0.15s"
+      }
+    },
+
+    "pb-listitem-hovered": {
+      include: "pb-listitem",
+      style: {
+        shadowColor: "pb-hovered"
       }
     },
 

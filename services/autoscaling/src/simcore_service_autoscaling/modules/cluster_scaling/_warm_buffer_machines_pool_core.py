@@ -38,8 +38,8 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...constants import (
     DOCKER_PULL_COMMAND,
-    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-    MACHINE_PULLING_EC2_TAG_KEY,
+    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    INSTANCE_PULLING_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
 )
 from ...core.errors import Ec2TagDeserializationError
@@ -53,6 +53,7 @@ from ...utils.buffer_machines import (
 from ...utils.warm_buffer_machines import (
     ec2_warm_buffer_startup_script,
     get_deactivated_warm_buffer_ec2_tags,
+    get_warm_buffer_ec2_instances,
 )
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
@@ -137,7 +138,7 @@ async def _analyze_running_instance_state(
     """Analyze and categorize running instance based on its current state."""
     ssm_client = get_ssm_client(app)
 
-    if MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
+    if INSTANCE_PULLING_EC2_TAG_KEY in instance.tags:
         buffer_pool.pulling_instances.add(instance)
     elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
         await _handle_ssm_connected_instance(app, buffer_pool=buffer_pool, instance=instance)
@@ -151,9 +152,10 @@ async def _analyse_current_state(app: FastAPI, *, auto_scaling_mode: Autoscaling
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
-    all_buffer_instances = await ec2_client.get_instances(
+    all_buffer_instances = await get_warm_buffer_ec2_instances(
+        ec2_client,
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+        base_ec2_tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["stopped", "pending", "running", "stopping"],
     )
     buffers_manager = WarmBufferPoolManager()
@@ -332,8 +334,8 @@ async def _handle_pool_image_pulling(
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
-                MACHINE_PULLING_EC2_TAG_KEY: "true",
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+                INSTANCE_PULLING_EC2_TAG_KEY: "true",
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
             },
         )
 
@@ -341,7 +343,7 @@ async def _handle_pool_image_pulling(
     broken_instances_to_terminate: set[EC2InstanceData] = set()
     # wait for the image pulling to complete
     for instance in pool.pulling_instances:
-        if ssm_command_id := instance.tags.get(MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY):
+        if ssm_command_id := instance.tags.get(INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY):
             ssm_command = await ssm_client.get_command(instance.id, command_id=ssm_command_id)
             match ssm_command.status:
                 case "Success":
@@ -398,8 +400,8 @@ async def _handle_image_pre_pulling(app: FastAPI, buffers_manager: WarmBufferPoo
             "pending buffer instances completed pulling of images, stopping them",
         ):
             tag_keys_to_remove = (
-                MACHINE_PULLING_EC2_TAG_KEY,
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
             )
             await ec2_client.remove_instances_tags(
                 tuple(instances_to_stop),

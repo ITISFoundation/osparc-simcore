@@ -3,7 +3,6 @@
 import logging
 
 from aiohttp import web
-from common_library.pagination_tools import iter_pagination_params
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.products import ProductName
@@ -16,9 +15,11 @@ from models_library.workspaces import (
     WorkspaceID,
     WorkspaceUpdates,
 )
+from servicelib.logging_utils import log_context
 
 from ..folders.folders_service import delete_folder_with_all_content, list_folders
-from ..projects.api import delete_project_by_user, list_projects
+from ..projects import projects_trash_service
+from ..projects.api import list_projects
 from ..projects.models import ProjectTypeAPI
 from ..users import users_service
 from . import _workspaces_repository as db
@@ -98,11 +99,8 @@ async def delete_workspace_with_all_content(
     )
 
     # Get all root projects
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
-        (
-            projects,
-            page_params.total_number_of_items,
-        ) = await list_projects(
+    while True:
+        projects, total_number_projects = await list_projects(
             app,
             user_id=user_id,
             product_name=product_name,
@@ -112,44 +110,61 @@ async def delete_workspace_with_all_content(
             template_type=None,
             folder_id=None,
             trashed=None,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=0,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             order_by=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         )
+        if not projects:
+            break
 
         workspace_root_projects: list[ProjectID] = [Project(**project).uuid for project in projects]
 
         # Delete projects properly
-        for project_uuid in workspace_root_projects:
-            await delete_project_by_user(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name)
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Deleting %d root projects out of %d",
+            len(workspace_root_projects),
+            total_number_projects,
+        ):
+            for project_uuid in workspace_root_projects:
+                await projects_trash_service.delete_project_as_user(
+                    app, project_id=project_uuid, user_id=user_id, product_name=product_name
+                )
 
     # Get all root folders
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
-        (
-            folders,
-            page_params.total_number_of_items,
-        ) = await list_folders(
+    while True:
+        folders, folders_total_count = await list_folders(
             app,
             user_id=user_id,
             product_name=product_name,
             workspace_id=workspace_id,
             folder_id=None,
             trashed=None,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=0,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             order_by=OrderBy(field=IDStr("folder_id"), direction=OrderDirection.ASC),
         )
+        if not folders:
+            break
 
         workspace_root_folders: list[FolderID] = [folder.folder_db.folder_id for folder in folders]
 
         # Delete folders properly
-        for folder_id in workspace_root_folders:
-            await delete_folder_with_all_content(
-                app,
-                user_id=user_id,
-                product_name=product_name,
-                folder_id=folder_id,
-            )
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Deleting %d root folders out of %d",
+            len(workspace_root_folders),
+            folders_total_count,
+        ):
+            for folder_id in workspace_root_folders:
+                await delete_folder_with_all_content(
+                    app,
+                    user_id=user_id,
+                    product_name=product_name,
+                    folder_id=folder_id,
+                )
 
     await db.delete_workspace(
         app,

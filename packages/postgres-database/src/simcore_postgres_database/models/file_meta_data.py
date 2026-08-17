@@ -1,7 +1,6 @@
 import sqlalchemy as sa
 
-from simcore_postgres_database.models._common import RefActions
-
+from ._common import RefActions
 from .base import metadata
 
 file_meta_data = sa.Table(
@@ -37,8 +36,8 @@ file_meta_data = sa.Table(
         doc="The user id with which the run entry is associated",
     ),
     sa.Column("file_id", sa.String(), primary_key=True),
-    sa.Column("created_at", sa.String()),
-    sa.Column("last_modified", sa.String()),
+    sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("last_modified", sa.DateTime(timezone=True), nullable=False),
     sa.Column("file_size", sa.BigInteger()),
     sa.Column(
         "entity_tag",

@@ -6,7 +6,7 @@
 from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
-from typing import Any, Protocol, Self
+from typing import Protocol, Self, TypedDict, cast
 
 import pytest
 import sqlalchemy as sa
@@ -33,13 +33,34 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from simcore_postgres_database.utils_users import UsersRepo
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+class ProductRowDict(TypedDict):
+    name: str
+
+
+class ProductOwnerUserRowDict(TypedDict):
+    id: int
+
+
+class PreRegistrationDetailsDict(TypedDict):
+    pre_email: str
+    state: str | None
+    postal_code: str | None
+    country: str
+    account_request_reviewed_by: int | None
+
+
+type PreRegisteredEmail = str
+type PreRegisteredUserData = tuple[PreRegisteredEmail, PreRegistrationDetailsDict]
 
 
 class CreateProductCallable(Protocol):
     """Callable that creates a product and returns its row."""
 
-    async def __call__(self, name: str) -> dict[str, Any]: ...
+    async def __call__(self, name: str) -> ProductRowDict: ...
 
 
 @pytest.fixture
@@ -53,7 +74,7 @@ async def product_factory(
     """
     async with AsyncExitStack() as exit_stack:
 
-        async def _create_product(name: str) -> dict[str, Any]:
+        async def _create_product(name: str) -> ProductRowDict:
             # 1. create a product group
             product_group_row = await exit_stack.enter_async_context(
                 insert_and_get_row_lifespan(
@@ -66,7 +87,7 @@ async def product_factory(
 
             # 2. create the product using that group
             product_name = name or faker.pystr(min_chars=3, max_chars=10)
-            return await exit_stack.enter_async_context(
+            product_row = await exit_stack.enter_async_context(
                 insert_and_get_row_lifespan(
                     asyncpg_engine,
                     table=products,
@@ -78,12 +99,13 @@ async def product_factory(
                     pk_col=products.c.name,
                 )
             )
+            return cast(ProductRowDict, product_row)
 
         yield _create_product
 
 
 @pytest.fixture
-async def product(product_factory: CreateProductCallable) -> dict[str, Any]:
+async def product(product_factory: CreateProductCallable) -> ProductRowDict:
     """Returns a single product for backward compatibility."""
     return await product_factory("s4l")
 
@@ -92,7 +114,7 @@ async def product(product_factory: CreateProductCallable) -> dict[str, Any]:
 async def product_owner_user(
     faker: Faker,
     asyncpg_engine: AsyncEngine,
-) -> AsyncIterable[dict[str, Any]]:
+) -> AsyncIterable[ProductOwnerUserRowDict]:
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         asyncpg_engine,
         table=users,
@@ -104,7 +126,7 @@ async def product_owner_user(
         ),
         pk_col=users.c.id,
     ) as row:
-        yield row
+        yield cast(ProductOwnerUserRowDict, row)
 
 
 @dataclass
@@ -118,7 +140,7 @@ class UserAddress:
     country: str
 
     @classmethod
-    def create_from_db(cls, row) -> Self:
+    def create_from_db(cls, row: Row) -> Self:
         parts = (getattr(row, col_name) for col_name in ("institution", "address") if getattr(row, col_name))
         return cls(
             line1=". ".join(parts),
@@ -133,16 +155,19 @@ class UserAddress:
 async def pre_registered_user(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
-    product: dict[str, Any],
-) -> tuple[str, dict[str, Any]]:
+    product_owner_user: ProductOwnerUserRowDict,
+    product: ProductRowDict,
+) -> PreRegisteredUserData:
     """Creates a pre-registered user and returns the email and registration data."""
     product_name = product["name"]
-    fake_pre_registration_data = random_pre_registration_details(
-        faker,
-        pre_email="pre-registered@user.com",
-        created_by=product_owner_user["id"],
-        product_name=product_name,
+    fake_pre_registration_data = cast(
+        PreRegistrationDetailsDict,
+        random_pre_registration_details(
+            faker,
+            pre_email="pre-registered@user.com",
+            created_by=product_owner_user["id"],
+            product_name=product_name,
+        ),
     )
 
     async with transaction_context(asyncpg_engine) as connection:
@@ -152,15 +177,44 @@ async def pre_registered_user(
             .returning(users_pre_registration_details.c.pre_email)
         )
 
-    assert pre_email == fake_pre_registration_data["pre_email"]
-    return pre_email, fake_pre_registration_data
+    assert pre_email is not None
+    typed_pre_email = cast(str, pre_email)
+    assert typed_pre_email == fake_pre_registration_data["pre_email"]
+    return typed_pre_email, fake_pre_registration_data
+
+
+@pytest.fixture
+async def registered_user(
+    asyncpg_engine: AsyncEngine,
+    pre_registered_user: PreRegisteredUserData,
+) -> Row:
+    """Creates the real user account and links it to the existing pre-registration.
+
+    Use this fixture when the create+link step is pure setup, not the subject under test.
+    """
+    pre_email, _ = pre_registered_user
+    async with transaction_context(asyncpg_engine) as connection:
+        repo = UsersRepo(asyncpg_engine)
+        new_user = await repo.new_user(
+            connection,
+            email=pre_email,
+            password_hash="123456",  # noqa: S106
+            status=UserStatus.ACTIVE,
+            expires_at=None,
+        )
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
+        )
+    return new_user
 
 
 async def test_user_requests_account_and_is_approved(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
-    product: dict[str, Any],
+    product_owner_user: ProductOwnerUserRowDict,
+    product: ProductRowDict,
 ):
     product_name = product["name"]
 
@@ -215,8 +269,8 @@ async def test_user_requests_account_and_is_approved(
 async def test_create_pre_registration_link(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
-    product: dict[str, Any],
+    product_owner_user: ProductOwnerUserRowDict,
+    product: ProductRowDict,
 ):
     """Test that a PO can create a pre-registration link for a user."""
     product_name = product["name"]
@@ -245,7 +299,7 @@ async def test_create_pre_registration_link(
 )
 async def test_create_and_link_user_from_pre_registration(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: tuple[str, dict[str, Any]],
+    pre_registered_user: PreRegisteredUserData,
 ):
     """Test that a user can be created from a pre-registration link and is linked properly."""
     pre_email, pre_registration_data = pre_registered_user
@@ -289,30 +343,16 @@ async def test_create_and_link_user_from_pre_registration(
 )
 async def test_get_billing_details_from_pre_registration(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: tuple[str, dict[str, Any]],
-    product: dict[str, Any],
+    pre_registered_user: PreRegisteredUserData,
+    registered_user: Row,
 ):
-    """Test that billing details can be retrieved from pre-registration data."""
-    pre_email, fake_pre_registration_data = pre_registered_user
+    """Test that the billing address is seeded once (on account creation) from the
+    most recent pre-registration data and can be retrieved from `users_billing_details`.
+    """
+    _, fake_pre_registration_data = pre_registered_user
 
-    # Create the user
-    async with transaction_context(asyncpg_engine) as connection:
-        repo = UsersRepo(asyncpg_engine)
-        new_user = await repo.new_user(
-            connection,
-            email=pre_email,
-            password_hash="123456",  # noqa: S106
-            status=UserStatus.ACTIVE,
-            expires_at=None,
-        )
-        await repo.link_and_update_user_from_pre_registration(
-            connection,
-            new_user_id=new_user.id,
-            new_user_email=new_user.email,
-        )
-
-    # Get billing details
-    invoice_data = await repo.get_billing_details(user_id=new_user.id, product_name=product["name"])
+    repo = UsersRepo(asyncpg_engine)
+    invoice_data = await repo.get_billing_details(user_id=registered_user.id)
     assert invoice_data is not None
 
     # Test UserAddress model conversion
@@ -326,18 +366,35 @@ async def test_get_billing_details_from_pre_registration(
 
 
 @pytest.mark.acceptance_test(
-    "pre-registration user update in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
+    "skip seeding when the most recent pre-registration lacks a country "
+    "in https://github.com/ITISFoundation/private-issues/issues/600"
 )
-async def test_update_user_from_pre_registration(
+async def test_get_billing_details_returns_none_when_most_recent_pre_registration_lacks_country(
     asyncpg_engine: AsyncEngine,
-    pre_registered_user: tuple[str, dict[str, Any]],
+    pre_registered_user: PreRegisteredUserData,
+    faker: Faker,
+    product_factory: CreateProductCallable,
 ):
-    """Test that pre-registration details override manual updates when re-linking."""
+    """The billing address is seeded only from the most recent pre-registration row
+    at account-creation time (no fallback across older rows). If that most recent
+    row lacks a country, no address is seeded.
+    """
     pre_email, _ = pre_registered_user
 
-    # Create the user and link to pre-registration
+    other_product = await product_factory("other-product")
+    # inserted after `pre_registered_user`, so this is the most recent row
+    incomplete_pre_registration = random_pre_registration_details(
+        faker,
+        pre_email=pre_email,
+        product_name=other_product["name"],
+        country=None,
+    )
+
     async with transaction_context(asyncpg_engine) as connection:
         repo = UsersRepo(asyncpg_engine)
+
+        await connection.execute(sa.insert(users_pre_registration_details).values(**incomplete_pre_registration))
+
         new_user = await repo.new_user(
             connection,
             email=pre_email,
@@ -350,6 +407,67 @@ async def test_update_user_from_pre_registration(
             new_user_id=new_user.id,
             new_user_email=new_user.email,
         )
+
+    invoice_data = await repo.get_billing_details(user_id=new_user.id)
+    assert invoice_data is None
+
+
+async def test_billing_details_not_updated_by_later_pre_registration(
+    asyncpg_engine: AsyncEngine,
+    pre_registered_user: PreRegisteredUserData,
+    registered_user: Row,
+    faker: Faker,
+    product_owner_user: ProductOwnerUserRowDict,
+    product_factory: CreateProductCallable,
+):
+    """Once seeded, the billing address belongs to the user: a later pre-registration
+    (e.g. requesting access to a different product with a different address) must not
+    overwrite it.
+    """
+    _, fake_pre_registration_data = pre_registered_user
+
+    repo = UsersRepo(asyncpg_engine)
+    invoice_data_before = await repo.get_billing_details(user_id=registered_user.id)
+    assert invoice_data_before is not None
+
+    # user requests access to a different product, with a different address
+    other_product = await product_factory("other-product")
+    async with transaction_context(asyncpg_engine) as connection:
+        await connection.execute(
+            sa.insert(users_pre_registration_details).values(
+                **random_pre_registration_details(
+                    faker,
+                    pre_email=registered_user.email,
+                    created_by=product_owner_user["id"],
+                    product_name=other_product["name"],
+                    country="Wonderland",
+                )
+            )
+        )
+        # this is only ever invoked upon *new* user creation, but re-invoking it here
+        # (e.g. simulating the reconciliation of the new pre-registration) must not
+        # touch the already-seeded billing address
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=registered_user.id,
+            new_user_email=registered_user.email,
+        )
+
+    invoice_data_after = await repo.get_billing_details(user_id=registered_user.id)
+    assert invoice_data_after is not None
+    assert invoice_data_after.country == fake_pre_registration_data["country"]
+    assert invoice_data_after.country != "Wonderland"
+
+
+@pytest.mark.acceptance_test(
+    "pre-registration user update in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
+)
+async def test_update_user_from_pre_registration(
+    asyncpg_engine: AsyncEngine,
+    registered_user: Row,
+):
+    """Test that pre-registration details override manual updates when re-linking."""
+    new_user = registered_user
 
     # Update the user manually
     async with transaction_context(asyncpg_engine) as connection:
@@ -382,7 +500,7 @@ async def test_update_user_from_pre_registration(
 async def test_user_preregisters_for_multiple_products_with_different_outcomes(
     asyncpg_engine: AsyncEngine,
     faker: Faker,
-    product_owner_user: dict[str, Any],
+    product_owner_user: ProductOwnerUserRowDict,
     product_factory: CreateProductCallable,
 ):
     """Test scenario where a user pre-registers for multiple products and gets different approval outcomes."""

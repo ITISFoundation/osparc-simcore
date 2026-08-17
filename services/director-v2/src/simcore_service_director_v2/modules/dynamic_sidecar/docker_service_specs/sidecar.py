@@ -177,10 +177,9 @@ def _get_environment_variables(
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
         "DYNAMIC_SIDECAR_TRACING": (
-            app_settings.DIRECTOR_V2_TRACING.json() if app_settings.DIRECTOR_V2_TRACING else "null"
+            "null" if app_settings.DIRECTOR_V2_TRACING is None else app_settings.DIRECTOR_V2_TRACING.model_dump_json()
         ),
-        # For background info on this special env-var above, see
-        # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
+        "DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN": f"{scheduler_data.tracing}",
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "STORAGE_HOST": storage_config.host,
         "STORAGE_PASSWORD": storage_config.password,
@@ -195,6 +194,7 @@ def _get_environment_variables(
     }
     if r_clone_settings.R_CLONE_S3.S3_ENDPOINT is not None:
         envs["S3_ENDPOINT"] = f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}"
+
     return envs
 
 
@@ -223,6 +223,7 @@ async def _get_mounts(
     has_quota_support: bool,
     rpc_client: RabbitMQRPCClient,
     user_extra_properties: UserExtraProperties,
+    tracing_enabled: bool,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
@@ -349,6 +350,18 @@ async def _get_mounts(
                 has_quota_support=has_quota_support,
             )
         )
+
+    if tracing_enabled:
+        mounts.append(
+            DynamicSidecarVolumesPathsResolver.mount_traces(
+                swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                node_uuid=scheduler_data.node_uuid,
+                service_run_id=scheduler_data.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
+            )
+        )
+
     return mounts
 
 
@@ -412,6 +425,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         has_quota_support=has_quota_support,
         rpc_client=rpc_client,
         user_extra_properties=user_extra_properties,
+        tracing_enabled=app_settings.DIRECTOR_V2_TRACING is not None and scheduler_data.tracing,
     )
 
     ports = _get_ports(dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings)

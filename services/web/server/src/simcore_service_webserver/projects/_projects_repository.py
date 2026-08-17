@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Callable, Iterable
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -53,6 +53,9 @@ def _to_sql_expression(table: sa.Table, order_by: OrderBy):
     return direction_func(table.columns[order_by.field])
 
 
+type TotalCount = int
+
+
 async def list_projects_db_get_as_admin(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -66,7 +69,7 @@ async def list_projects_db_get_as_admin(
     limit: PositiveInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     # order
     order_by: OrderBy,
-) -> tuple[int, list[ProjectDBGet]]:
+) -> tuple[TotalCount, list[ProjectDBGet]]:
     base_query = sql.select(*PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
 
     if is_set(trashed_explicitly):
@@ -89,10 +92,10 @@ async def list_projects_db_get_as_admin(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
-
+        assert isinstance(total_count, int)  # nosec
         result = await conn.stream(list_query)
         projects_list: list[ProjectDBGet] = [ProjectDBGet.model_validate(row) async for row in result]
-        return cast(int, total_count), projects_list
+        return total_count, projects_list
 
 
 async def get_project(
@@ -332,3 +335,27 @@ async def copy_allow_guests_to_push_states_and_output_ports(
     # set same setting in new project if True
     if allow_guests:
         await _set_allow_guests_to_push_states_and_output_ports(app, connection, project_uuid=to_project_uuid)
+
+
+async def count_projects_in_product(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuids: set[str],
+    product_name: ProductName,
+) -> int:
+    """Returns how many of the given project UUIDs belong to the specified product."""
+    if not project_uuids:
+        return 0
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.scalar(
+            sa.select(sa.func.count())
+            .select_from(projects)
+            .where(
+                sa.and_(
+                    projects.c.uuid.in_(project_uuids),
+                    projects.c.product_name == product_name,
+                )
+            )
+        )
+        return result or 0

@@ -23,7 +23,7 @@ from models_library.basic_types import IDStr
 from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
-from models_library.wallets import WalletID
+from models_library.wallets import WalletID, WalletIDAdapter
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -34,7 +34,7 @@ from .helpers.faker_factories import random_payment_transaction
 
 @pytest.fixture
 def wallet_id(faker: Faker) -> WalletID:
-    return TypeAdapter(WalletID).validate_python(faker.pyint())
+    return WalletIDAdapter.validate_python(faker.pyint())
 
 
 @pytest.fixture

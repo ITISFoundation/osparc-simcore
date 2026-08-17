@@ -452,6 +452,10 @@ qx.Class.define("osparc.product.Utils", {
       return osparc.utils.Utils.isDevelopmentPlatform();
     },
 
+    isLocaleEnabled: function() {
+      return osparc.utils.Utils.isDevelopmentPlatform();
+    },
+
     getOsparcOImageSource: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
@@ -462,46 +466,46 @@ qx.Class.define("osparc.product.Utils", {
     S4L_TOPICS: [
       {
         id: "other",
-        label: "Other"
+        label: qx.locale.Manager.tr("Other")
       }, {
         id: "Antenna_Design_for_Wireless_Communication",
-        label: "Antenna Design for Wireless Communication"
+        label: qx.locale.Manager.tr("Antenna Design for Wireless Communication")
       }, {
         id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
-        label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
+        label: qx.locale.Manager.tr("Bioelectronics, Electroceuticals & Neuroprosthetics")
       }, {
         id: "Safety_and_Efficacy_Assessment",
-        label: "Safety & Efficacy Assessment"
+        label: qx.locale.Manager.tr("Safety & Efficacy Assessment")
       }, {
         id: "Exposure_and_Compliance",
-        label: "Exposure & Compliance"
+        label: qx.locale.Manager.tr("Exposure & Compliance")
       }, {
         id: "Focused_Ultrasound",
-        label: "Focused Ultrasound"
+        label: qx.locale.Manager.tr("Focused Ultrasound")
       }, {
         id: "In_Silico_Trials",
-        label: "In <i>Silico</i> Trials"
+        label: qx.locale.Manager.tr("In <i>Silico</i> Trials")
       }, {
         id: "Implant_Design",
-        label: "Implant Design"
+        label: qx.locale.Manager.tr("Implant Design")
       }, {
         id: "Magnetic_Resonance_Imaging",
-        label: "Magnetic Resonance Imaging"
+        label: qx.locale.Manager.tr("Magnetic Resonance Imaging")
       }, {
         id: "Neurostimulation",
-        label: "Neurostimulation"
+        label: qx.locale.Manager.tr("Neurostimulation")
       }, {
         id: "Personalized_Medicine",
-        label: "Personalized Medicine"
+        label: qx.locale.Manager.tr("Personalized Medicine")
       }, {
         id: "Thermal_Therapies",
-        label: "Thermal Therapies"
+        label: qx.locale.Manager.tr("Thermal Therapies")
       }, {
         id: "Wireless_Power_Transfer_Systems",
-        label: "Wireless Power Transfer Systems"
+        label: qx.locale.Manager.tr("Wireless Power Transfer Systems")
       }, {
         id: "Vascular_Flow_and_Perfusion",
-        label: "Vascular Flow & Perfusion"
+        label: qx.locale.Manager.tr("Vascular Flow & Perfusion")
       }
     ],
   }

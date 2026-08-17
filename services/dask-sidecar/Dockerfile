@@ -1,17 +1,16 @@
 # syntax=docker/dockerfile:1
 
 # Define arguments in the global scope
-ARG PYTHON_VERSION="3.13.9"
-ARG UV_VERSION="0.9"
-FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
-# we docker image is built based on debian
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
+ARG DOCKER_REGISTRY="itisfoundation"
+ARG BASE_TAG="latest"
+
+# -------------------------- Base stage -------------------
+# Shared minimal runtime (see services/_base_images/Dockerfile) + iputils-ping + curl
+#
+FROM ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG} AS base
 #
 #  USAGE:
-#     cd sercices/dask-sidecar
+#     cd services/dask-sidecar
 #     docker build -f Dockerfile -t dask-sidecar:prod --target production ../../
 #     docker run dask-sidecar:prod
 #
@@ -19,48 +18,14 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 
 LABEL maintainer=sanderegg
 
-# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
-RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
-  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  fd-find \
   iputils-ping \
   curl \
-  gosu \
   && apt-get clean -y \
-  && rm -rf /var/lib/apt/lists/* \
-  # verify that the binary works
-  && gosu nobody true
-
-
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
-  SC_BOOT_MODE=default
-
-RUN adduser \
-  --uid ${SC_USER_ID} \
-  --disabled-password \
-  --gecos "" \
-  --shell /bin/sh \
-  --home /home/${SC_USER_NAME} \
-  ${SC_USER_NAME}
-
-
-ENV LANG=C.UTF-8 \
-  PYTHONDONTWRITEBYTECODE=1 \
-  VIRTUAL_ENV=/home/scu/.venv
-
-ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
-
-# for ARM architecture this helps a lot VS building packages
-# NOTE: remove as this might create bad caching behaviour
-# ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
-
+  && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 EXPOSE 8786
@@ -70,33 +35,11 @@ EXPOSE 8787
 RUN mkdir --parents /home/scu/.config/dask \
   && chown -R scu:scu /home/scu/.config
 
+
 # -------------------------- Build stage -------------------
-# Installs build/package management tools and third party dependencies
+# Shared build toolchain + empty virtualenv (see services/_base_images/Dockerfile)
 #
-# + /build             WORKDIR
-#
-FROM base AS build
-
-ENV SC_BUILD_TARGET=build
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential
-
-# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
-COPY --from=uv_build /uv /uvx /bin/
-
-# NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN uv venv "${VIRTUAL_ENV}"
-
-
-
-
-
-WORKDIR /build
-
+FROM ${DOCKER_REGISTRY}/simcore-build-base:${BASE_TAG} AS build
 
 
 # --------------------------Prod-depends-only stage -------------------
@@ -121,6 +64,7 @@ RUN \
   uv pip sync \
   requirements/prod.txt \
   && uv pip list
+
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup

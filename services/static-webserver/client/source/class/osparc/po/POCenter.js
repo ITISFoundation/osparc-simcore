@@ -93,7 +93,7 @@ qx.Class.define("osparc.po.POCenter", {
     __openPage: function(openPage) {
       const tabsView = this.getChildControl("tabs-view");
       const pages = tabsView.getChildren();
-      const page = pages.find(page => page.pageId && page.pageId === openPage);
+      const page = pages.find(pge => pge.pageId && pge.pageId === openPage);
       if (page) {
         tabsView.setSelection([page]);
       }

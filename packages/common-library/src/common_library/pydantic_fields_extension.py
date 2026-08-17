@@ -1,23 +1,27 @@
 from types import UnionType
-from typing import Annotated, Any, Literal, Union, get_args, get_origin
+from typing import Annotated, Any, Literal, TypeAliasType, Union, get_args, get_origin
 
 from pydantic.fields import FieldInfo
 
 NoneType: type = type(None)
 
 
+def _unwrap_annotation(ann):
+    """Peel off Annotated wrappers and PEP 695 type aliases (`type X = ...`) until reaching the core type."""
+    while True:
+        if get_origin(ann) is Annotated:
+            ann = get_args(ann)[0]
+        elif isinstance(ann, TypeAliasType):
+            ann = ann.__value__
+        else:
+            return ann
+
+
 def get_type(info: FieldInfo) -> Any:
-    field_type = info.annotation
-    if args := get_args(info.annotation):
+    field_type = _unwrap_annotation(info.annotation)
+    if args := get_args(field_type):
         field_type = next(a for a in args if a is not NoneType)
     return field_type
-
-
-def _unwrap_annotation(ann):
-    """Peel off Annotated wrappers until reaching the core type."""
-    while get_origin(ann) is Annotated:
-        ann = get_args(ann)[0]
-    return ann
 
 
 def is_literal(info: FieldInfo) -> bool:

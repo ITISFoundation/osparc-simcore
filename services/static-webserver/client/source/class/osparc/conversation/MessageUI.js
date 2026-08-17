@@ -41,6 +41,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   events: {
     "messageUpdated": "qx.event.type.Data",
     "messageDeleted": "qx.event.type.Data",
+    "resized": "qx.event.type.Event",
   },
 
   properties: {
@@ -49,6 +50,13 @@ qx.Class.define("osparc.conversation.MessageUI", {
       init: null,
       nullable: false,
       apply: "_applyMessage",
+    },
+
+    groupedWithPrevious: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "__applyGroupedWithPrevious",
     },
   },
 
@@ -91,20 +99,33 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "message-bubble":
+        case "bubble-row":
+          // holds the bubble and, for my messages, the hover menu to its left
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(4).set({
+            alignX: isMyMessage ? "right" : "left",
+            alignY: "top",
+          }));
+          this.getChildControl("main-layout").addAt(control, 1);
+          break;
+        case "message-bubble": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
             alignX: isMyMessage ? "right" : "left"
           })).set({
-            decorator: "chat-bubble",
+            decorator: isMyMessage ? "chat-bubble-mine" : "chat-bubble",
             allowGrowX: false,
             padding: 8,
           });
           const bubbleStyle = isMyMessage ? { "border-top-right-radius": "0px" } : { "border-top-left-radius": "0px" };
           control.getContentElement().setStyles(bubbleStyle);
-          this.getChildControl("main-layout").addAt(control, 1);
+          this.getChildControl("bubble-row").add(control);
           break;
+        }
         case "message-content":
           control = new osparc.ui.markdown.MarkdownChat();
+          if (isMyMessage) {
+            control.setTextColor("white");
+          }
+          control.addListener("resized", () => this.fireEvent("resized"));
           this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {
@@ -116,10 +137,17 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowY: false,
             marginTop: 4,
             alignY: "top",
+            backgroundColor: "transparent",
+            textColor: "text",
+            center: true,
             icon: "@FontAwesomeSolid/ellipsis-v/12",
             focusable: false
           });
-          this._addAt(control, 2);
+          // hidden until the message is hovered (see __applyMessage)
+          control.setOpacity(0);
+          control.getContentElement().setStyles({ "transition": "opacity 0.12s ease" });
+          // sit just left of the bubble, in the empty gutter (revealed on hover)
+          this.getChildControl("bubble-row").addAt(control, 0);
           break;
         }
       }
@@ -148,21 +176,29 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const avatar = this.getChildControl("avatar");
       const userName = this.getChildControl("user-name");
       if (osparc.data.model.Message.isSupportMessage(message)) {
-        userName.setValue("Support");
+        userName.setValue(this.tr("Support"));
       } else {
         osparc.store.Users.getInstance().getUser(message.getUserGroupId())
           .then(user => {
             avatar.setUser(user);
-            userName.setValue(user ? user.getLabel() : "Unknown user");
+            userName.setValue(user ? user.getLabel() : this.tr("Unknown user"));
           })
           .catch(() => {
             avatar.setSource(osparc.utils.Avatar.emailToThumbnail());
-            userName.setValue("Unknown user");
+            userName.setValue(this.tr("Unknown user"));
           });
       }
 
       if (osparc.data.model.Message.isMyMessage(message)) {
         const menuButton = this.getChildControl("menu-button");
+
+        // reveal the menu button only while hovering this message
+        this.addListener("pointerover", () => menuButton.setOpacity(1), this);
+        this.addListener("pointerout", e => {
+          if (!this.__isInside(e.getRelatedTarget())) {
+            menuButton.setOpacity(0);
+          }
+        }, this);
 
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right",
@@ -178,6 +214,32 @@ qx.Class.define("osparc.conversation.MessageUI", {
         deleteButton.addListener("execute", () => this.__deleteMessage(), this);
         menu.add(deleteButton);
       }
+    },
+
+    // true when the given widget is this message or one of its descendants
+    __isInside: function(widget) {
+      while (widget) {
+        if (widget === this) {
+          return true;
+        }
+        widget = widget.getLayoutParent();
+      }
+      return false;
+    },
+
+    __applyGroupedWithPrevious: function(grouped) {
+      // consecutive messages from the same sender are visually grouped:
+      // hide the repeated avatar/name/timestamp and tighten the spacing
+      const isMyMessage = osparc.data.model.Message.isMyMessage(this.getMessage());
+      this.getChildControl("avatar").setVisibility(grouped ? "hidden" : "visible");
+      this.getChildControl("header-layout").setVisibility(grouped ? "excluded" : "visible");
+      this.setPaddingTop(grouped ? 0 : 5);
+      // only the first bubble in a group keeps the "tail" corner
+      const bubble = this.getChildControl("message-bubble");
+      const corner = isMyMessage ? "border-top-right-radius" : "border-top-left-radius";
+      const styles = {};
+      styles[corner] = grouped ? "" : "0px";
+      bubble.getContentElement().setStyles(styles);
     },
 
     __updateMessageMaxWidth: function() {

@@ -43,6 +43,10 @@ class ProjectNotFoundError(DirectorError):
     msg_template: str = "project {project_id} not found"
 
 
+class ProjectNodeNotFoundError(DirectorError):
+    msg_template: str = "node {node_id} in project {project_id} not found"
+
+
 class ProjectNetworkNotFoundError(DirectorError):
     msg_template: str = "no networks found for project {project_id}"
 
@@ -148,6 +152,10 @@ class ComputationalBackendTaskNotFoundError(ComputationalSchedulerError):
 
 class ComputationalBackendTaskResultsNotReadyError(ComputationalSchedulerError):
     msg_template = "The task result is not ready yet for job '{job_id}'"
+
+
+class ComputationalBackendTaskResultsReleaseError(ComputationalSchedulerError):
+    msg_template = "Releasing the task result for job '{job_id}' timed-out"
 
 
 class ClustersKeeperNotAvailableError(ComputationalSchedulerError):

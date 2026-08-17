@@ -12,7 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
-from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
+from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletIDAdapter, WalletStatus
 from pydantic import TypeAdapter
 
 from ..resource_usage import resource_usage_service
@@ -146,7 +146,7 @@ async def get_user_default_wallet_with_available_credits(
     )
     if user_default_wallet_preference is None:
         raise UserDefaultWalletNotFoundError(uid=user_id)
-    default_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+    default_wallet_id = WalletIDAdapter.validate_python(user_default_wallet_preference.value)
     return await get_wallet_with_available_credits_by_user_and_wallet(
         app, user_id=user_id, wallet_id=default_wallet_id, product_name=product_name
     )

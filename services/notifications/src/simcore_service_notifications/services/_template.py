@@ -2,6 +2,7 @@ import logging
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
 from models_library.notifications.errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -24,7 +25,11 @@ class TemplateService:
     product_repository: ProductRepository
 
     async def preview_template(
-        self, product_name: ProductName, ref: TemplateRef, context: dict[str, Any]
+        self,
+        product_name: ProductName,
+        ref: TemplateRef,
+        context: dict[str, Any],
+        locale: SupportedLocale = DEFAULT_LOCALE,
     ) -> TemplatePreview:
         product_data = await self.product_repository.get_product(product_name)
         context_with_product = {**context, "product": asdict(product_data)}
@@ -57,6 +62,7 @@ class TemplateService:
         return self.renderer.preview_template(
             template=template,
             context=validated_context.model_dump(),
+            locale=locale,
         )
 
     def search_templates(self, channel: str | None, template_name: str | None) -> list[Template]:

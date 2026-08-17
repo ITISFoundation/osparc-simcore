@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     fitToContainer: function(card, container) {
-      const __fitToContainer = () => {
+      const fitToContainerImpl = () => {
         const bounds = container.getBounds() || container.getSizeHint();
         card.setWidth(bounds.width);
       };
@@ -142,9 +142,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "appear",
         "resize",
       ].forEach(ev => {
-        container.addListener(ev, () => __fitToContainer());
+        container.addListener(ev, () => fitToContainerImpl());
       });
-      __fitToContainer();
+      fitToContainerImpl();
     },
   },
 
@@ -398,16 +398,16 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __rebuildLayout: function(resourceType) {
       this.__cleanAll();
       if (this.getGroupBy()) {
-        let groupTitle = "No Group";
+        let groupTitle = this.tr("No Group");
         switch (this.getGroupBy()) {
           case "tags":
-            groupTitle = "Not Tagged";
+            groupTitle = this.tr("Not Tagged");
             break;
           case "shared":
-            groupTitle = "Not Shared";
+            groupTitle = this.tr("Not Shared");
             break;
           case "groupedServices":
-            groupTitle = "Misc";
+            groupTitle = this.tr("Misc");
             break;
         }
         const noGroupContainer = this.__createGroupContainer("no-group", groupTitle, "text");

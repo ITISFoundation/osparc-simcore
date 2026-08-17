@@ -276,8 +276,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/components/schemas/_UserIDInt"
                 },
                 {
                   "type": "null"
@@ -339,9 +338,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           },
           {
@@ -629,6 +626,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",
@@ -651,6 +655,10 @@
           "message"
         ],
         "title": "_ErrorMessage"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       }
     }
   }

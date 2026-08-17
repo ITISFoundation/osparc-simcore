@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Final
 
 import arrow
 from aiohttp import web
@@ -11,6 +12,7 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
+from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
@@ -107,6 +109,52 @@ async def untrash_project(
         project_uuid=project_id,
         project_patch=ProjectPatchInternalExtended(trashed_at=None, trashed_explicitly=False, trashed_by=None),
         client_session_id=None,
+    )
+
+
+_IMMEDIATE_TRASH_EPOCH: Final[datetime] = datetime(1970, 1, 1, tzinfo=UTC)
+
+
+async def trash_project_for_immediate_deletion(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+) -> None:
+    """Hides the project and stamps it as trashed (using an epoch sentinel) so
+    that the next run of the periodic garbage-collector (`safe_delete_expired_trash_as_admin`)
+    picks it up and deletes it right away, bypassing `TRASH_RETENTION_DAYS`.
+
+    This replaces the former in-process fire-and-forget deletion workflow: the actual
+    removal (stop services, delete pipeline, delete storage, delete DB row) is now
+    performed exclusively by `_projects_service_delete.delete_project_as_admin`,
+    invoked by the garbage collector. This makes deletion durable across webserver
+    restarts, since nothing here depends on an in-memory asyncio task surviving.
+
+    ::raises ProjectInvalidRightsError
+    ::raises ProjectNotFoundError
+    """
+    await _access_rights_service.check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="delete",
+    )
+
+    # NOTE: if the steps performed later by the GC fail, it might result in a
+    # services/projects/data that might be inconsistent. The GC retries every cycle
+    # until it succeeds (see `delete_project_as_admin`).
+    await _projects_repository.patch_project(
+        app,
+        project_uuid=project_id,
+        new_partial_project_data={
+            "hidden": True,
+            "trashed": _IMMEDIATE_TRASH_EPOCH,
+            "trashed_explicitly": True,
+            "trashed_by": user_id,
+        },
     )
 
 
@@ -208,11 +256,11 @@ async def delete_explicitly_trashed_project(
             details="Cannot delete trashed project since it does not fit current criteria",
         )
 
-    await _projects_service.delete_project_by_user(
+    await trash_project_for_immediate_deletion(
         app,
-        user_id=user_id,
-        project_uuid=project_id,
         product_name=product_name,
+        user_id=user_id,
+        project_id=project_id,
     )
 
 
@@ -225,33 +273,48 @@ async def batch_delete_trashed_projects_as_admin(
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    offset = 0
+    while True:
         (
-            page_params.total_number_of_items,
+            projects_count,
             expired_trashed_projects,
         ) = await _projects_repository.list_projects_db_get_as_admin(
             app,
             # both implicit and explicitly trashed
             trashed_before=trashed_before,
-            offset=page_params.offset,
-            limit=page_params.limit,
-            order_by=_projects_repository.OLDEST_TRASHED_FIRST,
+            offset=offset,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+            order_by=OrderBy(field=IDStr("id")),
         )
-        # BATCH delete
-        for project in expired_trashed_projects:
-            assert project.trashed  # nosec
+        if not expired_trashed_projects:
+            break
 
-            try:
-                await _projects_service_delete.delete_project_as_admin(
-                    app,
-                    project_uuid=project.uuid,
-                    product_name=project.product_name,
-                )
-                deleted_project_ids.append(project.uuid)
-            except Exception as err:  # pylint: disable=broad-exception-caught
-                if fail_fast:
-                    raise
-                errors.append((project.uuid, err))
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Deleting %d trashed projects out of %d [trashed_at < %s will be deleted]",
+            len(expired_trashed_projects),
+            projects_count,
+            trashed_before,
+        ):
+            newly_failed = 0
+            for project in expired_trashed_projects:
+                assert project.trashed  # nosec
+
+                try:
+                    await _projects_service_delete.delete_project_as_admin(
+                        app,
+                        project_uuid=project.uuid,
+                        product_name=project.product_name,
+                    )
+                    deleted_project_ids.append(project.uuid)
+                except Exception as err:  # pylint: disable=broad-exception-caught
+                    if fail_fast:
+                        raise
+                    errors.append((project.uuid, err))
+                    newly_failed += 1
+
+            offset += newly_failed
 
     if errors:
         raise ProjectsBatchDeleteError(
@@ -278,30 +341,45 @@ async def batch_delete_projects_in_root_workspace_as_admin(
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    offset = 0
+    while True:
         (
-            page_params.total_number_of_items,
+            projects_count,
             projects_for_deletion,
         ) = await _projects_repository.list_projects_db_get_as_admin(
             app,
             shared_workspace_id=workspace_id,  # <-- Workspace filter
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=offset,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             order_by=OrderBy(field=IDStr("id")),
         )
-        # BATCH delete
-        for project in projects_for_deletion:
-            try:
-                await _projects_service_delete.delete_project_as_admin(
-                    app,
-                    project_uuid=project.uuid,
-                    product_name=project.product_name,
-                )
-                deleted_project_ids.append(project.uuid)
-            except Exception as err:  # pylint: disable=broad-exception-caught
-                if fail_fast:
-                    raise
-                errors.append((project.uuid, err))
+        if not projects_for_deletion:
+            break
+
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Deleting %d projects in workspace %s out of %d",
+            len(projects_for_deletion),
+            workspace_id,
+            projects_count,
+        ):
+            newly_failed = 0
+            for project in projects_for_deletion:
+                try:
+                    await _projects_service_delete.delete_project_as_admin(
+                        app,
+                        project_uuid=project.uuid,
+                        product_name=project.product_name,
+                    )
+                    deleted_project_ids.append(project.uuid)
+                except Exception as err:  # pylint: disable=broad-exception-caught
+                    if fail_fast:
+                        raise
+                    errors.append((project.uuid, err))
+                    newly_failed += 1
+
+            offset += newly_failed
 
     if errors:
         raise ProjectsBatchDeleteError(

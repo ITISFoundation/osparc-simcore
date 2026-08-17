@@ -203,6 +203,7 @@ qx.Class.define("osparc.service.StatusUI", {
           return "workbench-edge";
         case "out-of-date":
           return "failed-red";
+        // eslint-disable-next-line no-duplicate-case
         case "up-to-date":
           return "ready-green";
 

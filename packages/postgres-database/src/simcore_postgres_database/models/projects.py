@@ -93,14 +93,6 @@ projects = sa.Table(
         nullable=True,
         default=None,
     ),
-    # CHILDREN/CONTENT--------------------------
-    sa.Column(
-        "workbench",
-        sa.JSON,
-        nullable=True,
-        server_default=sa.text("'{}'::json"),
-        doc="DEPRECATED: kept as safety-net. Use projects_nodes table instead.",
-    ),
     # FRONT-END ----------------------------
     sa.Column(
         "ui",
@@ -173,14 +165,6 @@ projects = sa.Table(
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
         doc="Free JSON with quality assessment based on TSR",
-    ),
-    # DEPRECATED ----------------------------
-    sa.Column(
-        "access_rights",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
     ),
     sa.Column(
         "product_name",

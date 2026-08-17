@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
+from models_library.users import UserID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import handle_aiohttp_web_http_error
 
@@ -13,6 +14,7 @@ from ....exception_handling import (
     to_exceptions_handlers_map,
 )
 from ....groups import groups_service
+from ....locale import translate_message
 from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
 from ....users.errors import AlreadyPreRegisteredError
@@ -50,7 +52,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 async def _try_show_login_fallbacks_on_wrong_password(
-    app: web.Application, *, user_id: int, product_name: str
+    app: web.Application, *, user_id: UserID, product_name: str
 ) -> str | None:
     """Returns the suggested product display name when a login tip should be shown.
 
@@ -102,13 +104,13 @@ async def _handle_legacy_error_response(request: web.Request, exception: Excepti
     user_id = exception.error_context().get("user_id")
     assert user_id is not None, "user_id must be present in error context"  # nosec
 
-    msg = MSG_WRONG_PASSWORD
+    msg = translate_message(MSG_WRONG_PASSWORD, request)
     product_name = products_web.get_product_name(request)
     suggested_product = await _try_show_login_fallbacks_on_wrong_password(
         request.app, user_id=user_id, product_name=product_name
     )
     if suggested_product:
-        msg = MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product=suggested_product)
+        msg = translate_message(MSG_WRONG_PASSWORD_MERGED_ACCOUNTS.format(suggested_product=suggested_product), request)
 
     return handle_aiohttp_web_http_error(
         request=request,

@@ -110,7 +110,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this.self().decorateListItem(control.getChildControl("atom"));
           const searchBarFilter = this.getChildControl("search-bar-filter");
-          searchBarFilter._addAt(control, 3); //"search-icon", "active-filter-chips", "text-field", "reset-button"
+          // eslint-disable-next-line no-underscore-dangle
+          searchBarFilter._addAt(control, 3); // "search-icon", "active-filter-chips", "text-field", "reset-button"
           break;
         }
         case "my-projects-button": {

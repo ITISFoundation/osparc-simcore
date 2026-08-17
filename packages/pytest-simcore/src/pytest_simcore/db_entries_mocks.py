@@ -128,7 +128,6 @@ async def create_project(
                     "type": ProjectType.STANDARD.name,
                     "description": faker.text(),
                     "prj_owner": user["id"],
-                    "access_rights": {"1": {"read": True, "write": True, "delete": True}},
                     "thumbnail": "",
                     "product_name": product_name,
                     **project_overrides,

@@ -68,6 +68,8 @@ qx.Class.define("osparc.support.Conversation", {
                   return this.tr("thinking...");
                 case "idle":
                   return "";
+                default:
+                  return "";
               }
             }
           });
@@ -122,19 +124,19 @@ qx.Class.define("osparc.support.Conversation", {
             .then(data => {
               const newConversation = new osparc.data.model.ConversationSupport(data);
               this.setConversation(newConversation);
-              let prePostMessagePromise = new Promise((resolve) => resolve());
+              let prePostMessagePromise = new Promise(resolve => resolve());
               if (bookACallInfo) {
                 // add a first message
-                let msg = "Book a Call";
+                let msg = this.tr("Book a Call");
                 if (bookACallInfo) {
-                  msg += `\n- Topic: ${bookACallInfo["topic"]}`;
+                  msg += this.tr("\n- Topic: %1", bookACallInfo["topic"]);
                   if ("extraInfo" in bookACallInfo) {
-                    msg += `\n- Extra Info: ${bookACallInfo["extraInfo"]}`;
+                    msg += this.tr("\n- Extra Info: %1", bookACallInfo["extraInfo"]);
                   }
                 }
                 prePostMessagePromise = this.__postMessage(msg);
                 // rename the conversation
-                newConversation.renameConversation("Book a Call");
+                newConversation.renameConversation(this.tr("Book a Call"));
                 // share project if needed
                 if (bookACallInfo["share-project"] && currentStudy) {
                   this.__shareProjectWithSupport(true);
@@ -323,19 +325,19 @@ qx.Class.define("osparc.support.Conversation", {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
       let msg = null;
-      const greet = "Hi " + osparc.auth.Data.getInstance().getFriendlyUserName() + ",\n";
+      const greet = this.tr("Hi %1,\n", osparc.auth.Data.getInstance().getFriendlyUserName());
       switch (type) {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
-          msg = greet + "Have a question or feedback?\nWe are happy to assist!";
+          msg = greet + this.tr("Have a question or feedback?\nWe are happy to assist!");
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
-          msg = greet + "Let us know what your availability is and we will get back to you shortly to schedule a meeting.";
+          msg = greet + this.tr("Let us know what your availability is and we will get back to you shortly to schedule a meeting.");
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
-          msg = greet + "Our support team will take it from here — please confirm or edit your question below to get started.";
+          msg = greet + this.tr("Our support team will take it from here — please confirm or edit your question below to get started.");
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
-          msg = "A support ticket has been created.\nOur team will review your request and contact you soon.";
+          msg = this.tr("A support ticket has been created.\nOur team will review your request and contact you soon.");
           break;
       }
       if (msg) {

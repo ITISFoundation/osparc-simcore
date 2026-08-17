@@ -189,7 +189,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         } else if (metadata) {
           // up to date
           compatibleVersionChip.setLabel(metadata["version"]);
-            this.self().paintChip(compatibleVersionChip, metadata);
+          this.self().paintChip(compatibleVersionChip, metadata);
         } else {
           compatibleVersionChip.setLabel(this.tr("Unknown"));
         }

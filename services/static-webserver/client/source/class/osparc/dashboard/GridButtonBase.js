@@ -314,14 +314,14 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
      * Event handler for the pointer over event.
      */
     _onPointerOver: function() {
-      this.addState("hovered");
+      this.base(arguments);
     },
 
     /**
      * Event handler for the pointer out event.
      */
     _onPointerOut : function() {
-      this.removeState("hovered");
+      this.base(arguments);
     },
 
     /**

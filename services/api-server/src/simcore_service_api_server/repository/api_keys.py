@@ -4,7 +4,7 @@ from typing import NamedTuple
 import sqlalchemy as sa
 from aiocache import cached  # type: ignore[import-untyped]
 from models_library.products import ProductName
-from pydantic.types import PositiveInt
+from models_library.users import UserID
 from simcore_postgres_database.models.api_keys import api_keys as auth_api_keys_table
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 
 class UserAndProductTuple(NamedTuple):
-    user_id: PositiveInt
+    user_id: UserID
     product_name: ProductName
 
 

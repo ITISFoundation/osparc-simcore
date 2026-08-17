@@ -151,6 +151,7 @@ def test_running_service_details_make_status(
         "user_id": scheduler_data.user_id,
         "service_port": scheduler_data.service_port,
         "is_collaborative": scheduler_data.is_collaborative,
+        "product_name": scheduler_data.product_name,
     }
 
     assert running_service_details_dict == expected_running_service_details
@@ -216,6 +217,7 @@ def test_regression_legacy_service_compatibility() -> None:
         "service_message": "",
         "user_id": "1",
         "project_id": "b1ec5c8e-f5bb-11eb-b1d5-02420a000006",
+        "product_name": "osparc",
     }
     service_details = RunningDynamicServiceDetails.model_validate(api_response)
 

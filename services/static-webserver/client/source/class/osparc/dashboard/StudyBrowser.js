@@ -133,9 +133,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.getChildControl("resources-layout");
           this.__attachEventHandlers();
+          const store = osparc.store.Store.getInstance();
+          // A study dispatch (clone from a published template) was requested via /#/dispatch?study_id=...
+          const dispatchStudyId = store.getCurrentDispatchStudyId();
           // set by the url or active study
-          const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
-          if (loadStudyId) {
+          const loadStudyId = store.getCurrentStudyId();
+          if (dispatchStudyId) {
+            store.setCurrentStudyId(null);
+            store.setCurrentDispatchStudyId(null);
+            osparc.desktop.MainPageHandler.getInstance().dispatchStudy(dispatchStudyId);
+          } else if (loadStudyId) {
             const cancelCB = () => this.reloadResources();
             const isStudyCreation = false;
             this._startStudyById(loadStudyId, null, cancelCB, isStudyCreation);
@@ -222,7 +229,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       request
         .then(workspaces => {
           if (filterEnabled) {
-            return Promise.resolve();
+            return;
           }
           this.__setWorkspacesToList(workspaces);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
@@ -248,7 +255,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         ].includes(this.getCurrentContext()) ||
         this.__loadingFolders
       ) {
-        return;
+        return Promise.resolve();
       }
 
       let filterEnabled = false;
@@ -277,7 +284,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return request
         .then(folders => {
           if (filterEnabled) {
-            return Promise.resolve();
+            return;
           }
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
@@ -302,7 +309,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES || // all but workspaces
         this._loadingResourcesBtn.isFetching()
       ) {
-        return;
+        return Promise.resolve();
       }
 
       this.__tasksToCards();
@@ -869,7 +876,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const lastIdx = studiesCont.getLastSelectedIndex();
           const currentIdx = studiesCont.getIndex(item);
           const minMax = [Math.min(lastIdx, currentIdx), Math.max(lastIdx, currentIdx)];
-          for (let i=minMax[0]; i<=minMax[1]; i++) {
+          for (let i = minMax[0]; i <= minMax[1]; i++) {
             const card = studiesCont.getChildren()[i];
             if (card.isVisible()) {
               card.setSelected(true);
@@ -1228,7 +1235,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               if (hypertools) {
                 const newPlans = new osparc.dashboard.NewPlans(newStudiesConfig);
                 const winTitle = this.tr("New Plan");
-                const win = osparc.ui.window.Window.popUpInWindow(newPlans, winTitle, osparc.dashboard.NewPlans.WIDTH+40, 300).set({
+                const win = osparc.ui.window.Window.popUpInWindow(newPlans, winTitle, osparc.dashboard.NewPlans.WIDTH + 40, 300).set({
                   clickAwayClose: false,
                   resizable: true
                 });
@@ -1485,7 +1492,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
@@ -1493,13 +1500,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES:
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           // workspaces can't be sorted and don't support list view
           this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1511,7 +1518,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES) {
             this._searchBarFilter.resetFilters();
           }
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Templates");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
@@ -1521,7 +1528,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES) {
             this._searchBarFilter.resetFilters();
           }
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Public Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Public Projects"));
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
@@ -1531,7 +1538,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS) {
             this._searchBarFilter.resetFilters();
           }
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
           // functions don't support all options yet
           this.__sortByButton.hideOptionButton("name");
           this.__sortByButton.hideOptionButton("prj_owner");
@@ -1540,7 +1547,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__reloadStudies();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search Files");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search Files"));
           // Files can't be sorted and don't support list view
           this._toolbar.exclude();
           this._loadingResourcesBtn.setFetching(false);
@@ -1549,7 +1556,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My Projects"));
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1663,7 +1670,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const size = file.size;
           const maxSize = 10 * 1000 * 1000 * 1000; // 10 GB
           if (size > maxSize) {
-            osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            osparc.FlashMessenger.logAs(this.tr("The file is too big. Maximum size is %1MB. Please provide with a smaller file or a repository URL.", maxSize), "ERROR");
             return;
           }
           this.__importStudy(file);
@@ -2451,13 +2458,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "remove": {
           const myGid = osparc.auth.Data.getInstance().getGroupId();
           osparc.store.Study.getInstance().removeCollaborator(studyData, myGid)
-          .then(() => {
-            this.__removeFromList(studyData.uuid);
-            const msg = this.tr("Successfully removed");
-            osparc.FlashMessenger.logAs(msg, "INFO");
-          })
-          .catch(err => osparc.FlashMessenger.logError(err))
-          .finally(() => this.resetSelection());
+            .then(() => {
+              this.__removeFromList(studyData.uuid);
+              const msg = this.tr("Successfully removed");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+            })
+            .catch(err => osparc.FlashMessenger.logError(err))
+            .finally(() => this.resetSelection());
           break;
         }
         case "trash":
@@ -2487,9 +2494,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (deleteAccess) {
         if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && Boolean(studyData["trashedAt"])) {
           return "delete";
-        } else {
-          return "trash";
         }
+        return "trash";
       }
       // check if I'm collaborator
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
@@ -2551,13 +2557,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createConfirmTrashWindow: function(studyNames) {
       let msg = this.tr("Are you sure you want to delete");
       if (studyNames.length > 1) {
-        const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
+        const studiesText = osparc.product.Utils.getStudyAlias({ plural: true });
         msg += ` ${studyNames.length} ${studiesText}?`;
       } else {
         msg += ` '${studyNames[0]}'?`;
       }
       const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
-      msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
+      if (studyNames.length > 1) {
+        msg += "<br><br>" + this.tr("They will be permanently deleted after %1 days.", trashDays);
+      } else {
+        msg += "<br><br>" + this.tr("It will be permanently deleted after %1 days.", trashDays);
+      }
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),
@@ -2568,7 +2578,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmRemoveForMeWindow: function(studyName) {
-      const msg = `'${studyName}' ` + this.tr("will be removed from your list. Collaborators will still have access.");
+      const msg = this.tr("'%1' will be removed from your list. Collaborators will still have access.", studyName);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Remove"),
         confirmText: this.tr("Remove"),
@@ -2580,7 +2590,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createConfirmDeleteWindow: function(studyNames) {
       let msg = this.tr("Are you sure you want to delete");
-      const studyAlias = osparc.product.Utils.getStudyAlias({plural: studyNames.length > 1});
+      const studyAlias = osparc.product.Utils.getStudyAlias({ plural: studyNames.length > 1 });
       msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studyAlias}?` : ` <b>${studyNames[0]}</b>?`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete") + " " + studyAlias,

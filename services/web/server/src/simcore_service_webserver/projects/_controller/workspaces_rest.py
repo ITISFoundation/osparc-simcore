@@ -7,15 +7,12 @@ from models_library.utils.common_validators import null_or_none_str_to_none_vali
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_headers_as,
-    parse_request_path_parameters_as,
-)
 
-from ..._meta import api_version_prefix as VTAG
+from ..._meta import api_version_prefix as VTAG  # noqa: N812
 from ...login.decorators import login_required
 from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
+from ...web_requests_validation import parse_request_headers_as, parse_request_path_parameters_as
 from .. import _workspaces_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext

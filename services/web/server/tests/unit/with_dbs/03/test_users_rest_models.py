@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
+from pydantic import ValidationError
 from pytest_simcore.helpers.faker_factories import random_pre_registration_details
 from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.users._controller.rest._rest_schemas import (
@@ -113,3 +114,31 @@ def test_preuserprofile_pre_given_names(
     print(pre_user_profile.model_dump_json(indent=1))
     assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
     assert pre_user_profile.first_name == pre_user_profile.last_name
+
+
+@pytest.mark.parametrize("field_name", ["address", "city", "institution"])
+def test_preuserprofile_rejects_xss_payload_in_address_fields(
+    account_request_form: dict[str, Any],
+    field_name: str,
+):
+    data = deepcopy(account_request_form)
+    data[field_name] = "<script>alert(1)</script>"
+
+    with pytest.raises(ValidationError, match="string_unsafe_content"):
+        UserAccountRestPreRegister(**data)
+
+
+def test_preuserprofile_rejects_invalid_country(account_request_form: dict[str, Any]):
+    data = deepcopy(account_request_form)
+    data["country"] = "Not-A-Real-Country"
+
+    with pytest.raises(ValidationError):
+        UserAccountRestPreRegister(**data)
+
+
+def test_preuserprofile_rejects_invalid_postal_code(account_request_form: dict[str, Any]):
+    data = deepcopy(account_request_form)
+    data["postalCode"] = "a" * 21  # exceeds max length and charset
+
+    with pytest.raises(ValidationError):
+        UserAccountRestPreRegister(**data)

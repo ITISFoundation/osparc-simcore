@@ -11,7 +11,7 @@ from .dsm_factory import DataManagerProvider
 from .exceptions.errors import ConfigurationError
 from .simcore_s3_dsm import SimcoreS3DataManager, create_simcore_s3_data_manager
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager

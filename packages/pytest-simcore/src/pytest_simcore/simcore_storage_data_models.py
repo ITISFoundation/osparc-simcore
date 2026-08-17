@@ -12,8 +12,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
-from pydantic import TypeAdapter
+from models_library.users import UserID, UserIDAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects, users
@@ -33,7 +32,7 @@ async def _user_context(sqlalchemy_async_engine: AsyncEngine, *, name: str) -> A
     # in time, the webserver service would bring more dependencies to other services
     # which would turn this test too complex.
     async with insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, name=name) as user:
-        yield TypeAdapter(UserID).validate_python(user["id"])
+        yield UserIDAdapter.validate_python(user["id"])
 
 
 @pytest.fixture
@@ -179,7 +178,7 @@ async def collaborator_id(
     sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[UserID]:
     async with _user_context(sqlalchemy_async_engine, name="collaborator") as new_user_id:
-        yield TypeAdapter(UserID).validate_python(new_user_id)
+        yield UserIDAdapter.validate_python(new_user_id)
 
 
 @pytest.fixture
@@ -198,25 +197,18 @@ def share_with_collaborator(
 
     async def _() -> None:
         async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(sa.select(projects.c.access_rights).where(projects.c.uuid == f"{project_id}"))
-            row = result.fetchone()
-            assert row
-            access_rights: dict[str | int, Any] = row.access_rights
-
-            access_rights[await _get_user_group(conn, user_id)] = {
-                "read": True,
-                "write": True,
-                "delete": True,
+            access_rights: dict[int, dict[str, bool]] = {
+                await _get_user_group(conn, user_id): {
+                    "read": True,
+                    "write": True,
+                    "delete": True,
+                },
+                await _get_user_group(conn, collaborator_id): {
+                    "read": True,
+                    "write": True,
+                    "delete": False,
+                },
             }
-            access_rights[await _get_user_group(conn, collaborator_id)] = {
-                "read": True,
-                "write": True,
-                "delete": False,
-            }
-
-            await conn.execute(
-                projects.update().where(projects.c.uuid == f"{project_id}").values(access_rights=access_rights)
-            )
 
             # project_to_groups needs to be updated
             for group_id, permissions in access_rights.items():

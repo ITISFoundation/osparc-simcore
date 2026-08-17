@@ -4,6 +4,7 @@
 # pylint:disable=protected-access
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock
@@ -155,7 +156,7 @@ def e_tag() -> str:
 async def mock_upload_path(mocker: MockFixture, e_tag: str) -> MockFixture:
     return mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.upload_path",
-        return_value=UploadedFile(0, e_tag),
+        return_value=UploadedFile(0, e_tag, datetime.now(UTC)),
         autospec=True,
     )
 

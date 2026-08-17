@@ -1,12 +1,12 @@
-Dear User,
+{% trans %}Dear User,{% endtrans %}
 
-We want to inform you that your service run ({{ service_run_id }}) on {{ product.display_name }} was affected by a platform issue and was not billed.
+{% trans service_run_id=service_run_id, product_name=product.display_name %}We want to inform you that your service run ({{ service_run_id }}) on {{ product_name }} was affected by a platform issue and was not billed.{% endtrans %}
 
-{{ reimbursed_credits }} credits have been reimbursed to your Credit Account.
+{% trans reimbursed_credits=reimbursed_credits %}{{ reimbursed_credits }} credits have been reimbursed to your Credit Account.{% endtrans %}
 
-No action is needed on your part.
+{% trans %}No action is needed on your part.{% endtrans %}
 
-Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+{% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need further help.{% endtrans %}
 
-Best Regards,
-The {{ product.display_name }} Team
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

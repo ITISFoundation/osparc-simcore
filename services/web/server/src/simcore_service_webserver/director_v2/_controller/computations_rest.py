@@ -22,10 +22,6 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -33,6 +29,10 @@ from ..._meta import API_VTAG as VTAG
 from ...constants import RQ_PRODUCT_KEY
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
+from ...web_requests_validation import (
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .. import _computations_service
 
 _logger = logging.getLogger(__name__)

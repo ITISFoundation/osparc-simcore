@@ -32,20 +32,25 @@ async def create_wallet_group(
     delete: bool,
 ) -> WalletGroupGetDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
-        result = await conn.execute(
-            wallet_to_groups.insert()
-            .values(
-                wallet_id=wallet_id,
-                gid=group_id,
-                read=read,
-                write=write,
-                delete=delete,
-                created=func.now(),
-                modified=func.now(),
+        row = (
+            (
+                await conn.execute(
+                    wallet_to_groups.insert()
+                    .values(
+                        wallet_id=wallet_id,
+                        gid=group_id,
+                        read=read,
+                        write=write,
+                        delete=delete,
+                        created=func.now(),
+                        modified=func.now(),
+                    )
+                    .returning(literal_column("*"))
+                )
             )
-            .returning(literal_column("*"))
+            .mappings()
+            .one()
         )
-        row = result.mappings().one()
         return WalletGroupGetDB.model_validate(row)
 
 
@@ -108,17 +113,22 @@ async def update_wallet_group(
     delete: bool,
 ) -> WalletGroupGetDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
-        result = await conn.execute(
-            wallet_to_groups.update()
-            .values(
-                read=read,
-                write=write,
-                delete=delete,
+        row = (
+            (
+                await conn.execute(
+                    wallet_to_groups.update()
+                    .values(
+                        read=read,
+                        write=write,
+                        delete=delete,
+                    )
+                    .where((wallet_to_groups.c.wallet_id == wallet_id) & (wallet_to_groups.c.gid == group_id))
+                    .returning(literal_column("*"))
+                )
             )
-            .where((wallet_to_groups.c.wallet_id == wallet_id) & (wallet_to_groups.c.gid == group_id))
-            .returning(literal_column("*"))
+            .mappings()
+            .one_or_none()
         )
-        row = result.mappings().one_or_none()
         if row is None:
             raise WalletGroupNotFoundError(details=f"Wallet {wallet_id} group {group_id} not found")
         return WalletGroupGetDB.model_validate(row)

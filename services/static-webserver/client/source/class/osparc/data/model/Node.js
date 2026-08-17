@@ -239,9 +239,9 @@ qx.Class.define("osparc.data.model.Node", {
       // "inputConnected", // frontend only
       // "outputConnected", // frontend only
       // "logger", // frontend only
-     "inputNodes", // !! not a property but goes into the model
-     "inputsRequired", // !! not a property but goes into the model
-     "progress", // !! not a property but goes into the model
+      "inputNodes", // !! not a property but goes into the model
+      "inputsRequired", // !! not a property but goes into the model
+      "progress", // !! not a property but goes into the model
     ],
 
     getProperties: function() {
@@ -465,10 +465,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __getInputUnits: function() {
       if (this.hasPropsForm()) {
-        const changedUnits = this.getPropsForm().getChangedXUnits();
-        if (Object.keys(changedUnits).length) {
-          return changedUnits;
-        }
+        return this.getPropsForm().getChangedXUnits();
       }
       return null;
     },
@@ -504,9 +501,7 @@ qx.Class.define("osparc.data.model.Node", {
         .then(serviceMetadata => {
           this.setMetadata(serviceMetadata);
           this.populateNodeData(nodeData);
-          // old place to store the position
-          this.populateNodeUIData(nodeData);
-          // new place to store the position and marker
+          // node ui (position, marker) is stored per-node under workbench[nodeId].ui
           this.populateNodeUIData(nodeUiData);
           this.listenToChanges();
         })
@@ -769,23 +764,23 @@ qx.Class.define("osparc.data.model.Node", {
       if (marker) {
         this.fireDataEvent("projectDocumentChanged", {
           "op": "add",
-          "path": `/ui/workbench/${this.getNodeId()}/marker`,
-          "value": marker.getColor(),
-          "osparc-resource": "ui",
+          "path": `/workbench/${this.getNodeId()}/ui/marker`,
+          "value": {color: marker.getColor()},
+          "osparc-resource": "node",
         });
         marker.addListener("changeColor", e => {
           this.fireDataEvent("projectDocumentChanged", {
             "op": "replace",
-            "path": `/ui/workbench/${this.getNodeId()}/marker`,
+            "path": `/workbench/${this.getNodeId()}/ui/marker/color`,
             "value": e.getData(),
-            "osparc-resource": "ui",
+            "osparc-resource": "node",
           });
         });
       } else {
         this.fireDataEvent("projectDocumentChanged", {
           "op": "remove",
-          "path": `/ui/workbench/${this.getNodeId()}/marker`,
-          "osparc-resource": "ui",
+          "path": `/workbench/${this.getNodeId()}/ui/marker`,
+          "osparc-resource": "node",
         });
       }
     },
@@ -795,9 +790,13 @@ qx.Class.define("osparc.data.model.Node", {
         const inputLinks = {};
         const inputData = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
+        const metadataInputs = this.getMetadata() ? this.getMetadata()["inputs"] : null;
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {
             inputLinks[key] = inputsCopy[key];
+          } else if (osparc.utils.Ports.isDataMustached(inputsCopy[key]) && metadataInputs && metadataInputs[key] && metadataInputs[key].defaultValue !== undefined) {
+            // resolve template placeholder (e.g. "{{stimulation_mode}}") to the service metadata's default value
+            inputData[key] = metadataInputs[key].defaultValue;
           } else {
             inputData[key] = inputsCopy[key];
           }
@@ -1217,7 +1216,7 @@ qx.Class.define("osparc.data.model.Node", {
     checkState: function() {
       if (this.isDynamic()) {
         const metadata = this.getMetadata();
-        const msg = "Starting " + metadata.key + ":" + metadata.version + "...";
+        const msg = this.tr("Starting %1:%2...", metadata.key, metadata.version);
         const msgData = {
           nodeId: this.getNodeId(),
           msg,
@@ -1236,7 +1235,7 @@ qx.Class.define("osparc.data.model.Node", {
     stopDynamicService: function() {
       if (this.isDynamic()) {
         const metadata = this.getMetadata();
-        const msg = "Stopping " + metadata.key + ":" + metadata.version + "...";
+        const msg = this.tr("Stopping %1:%2...", metadata.key, metadata.version);
         const msgData = {
           nodeId: this.getNodeId(),
           msg,
@@ -1338,12 +1337,12 @@ qx.Class.define("osparc.data.model.Node", {
       const nodeId = this.getNodeId();
       this.fireDataEvent("projectDocumentChanged", {
         "op": "replace",
-        "path": `/ui/workbench/${nodeId}/position`,
+        "path": `/workbench/${nodeId}/ui/position`,
         "value": {
           "x": this.__posX,
           "y": this.__posY,
         },
-        "osparc-resource": "ui",
+        "osparc-resource": "node",
       });
 
       this.fireDataEvent("changePosition", {
@@ -1613,21 +1612,50 @@ qx.Class.define("osparc.data.model.Node", {
             console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
             break;
           case "outputs": {
-            const updatedPortKey = path.split("/")[4];
+            const pathParts = path.split("/"); // ["", "workbench", nodeId, "outputs", portKey, ...subKeys]
+            const updatedPortKey = pathParts[4];
+            // a path of length <= 5 targets the whole outputs object or a whole port value
+            const isPortValuePath = pathParts.length <= 5;
             // "remove" ops have no value field, so value is undefined.
-            if (op === "remove" && this.isFilePicker()) {
+            if (op === "remove" && this.isFilePicker() && isPortValuePath) {
               // Reset File Picker
               osparc.file.FilePicker.resetOutputValue(this);
             } else {
               const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
-              currentOutputs[updatedPortKey] = value;
+              if (isPortValuePath) {
+                if (updatedPortKey === undefined) {
+                  // the whole outputs object was added/replaced
+                  Object.keys(value || {}).forEach(portKey => {
+                    currentOutputs[portKey] = value[portKey];
+                  });
+                } else {
+                  currentOutputs[updatedPortKey] = value;
+                }
+              } else if (currentOutputs[updatedPortKey] && typeof currentOutputs[updatedPortKey] === "object") {
+                // deep path: only a sub-field of the port value changed (e.g. .../outputs/outFile/store).
+                // Merge it into the existing value instead of replacing the whole port, which
+                // would corrupt/clear the output (e.g. "store":"0" vs "store":0 mismatches).
+                let target = currentOutputs[updatedPortKey];
+                for (let i = 5; i < pathParts.length - 1; i++) {
+                  if (target[pathParts[i]] === undefined || target[pathParts[i]] === null) {
+                    target[pathParts[i]] = {};
+                  }
+                  target = target[pathParts[i]];
+                }
+                const leafKey = pathParts[pathParts.length - 1];
+                if (op === "remove") {
+                  delete target[leafKey];
+                } else {
+                  target[leafKey] = value;
+                }
+              }
               this.setOutputData(currentOutputs);
             }
             break;
           }
           case "progress":
             if (this.isFilePicker()) {
-              if (value ===  undefined) {
+              if (value === undefined) {
                 console.debug("Ignoring undefined value for progress");
                 return;
               }
@@ -1635,6 +1663,9 @@ qx.Class.define("osparc.data.model.Node", {
             } else {
               console.warn(`Progress patches are not sent via this channel`);
             }
+            break;
+          case "ui":
+            this.__updateUIFromPatch(op, path, value);
             break;
           default:
             if (nodePropertyKeys.includes(nodeProperty)) {
@@ -1650,6 +1681,61 @@ qx.Class.define("osparc.data.model.Node", {
       });
     },
 
+    __updateUIFromPatch: function(op, path, value) {
+      const uiProperty = path.split("/")[4]; // /workbench/{nodeId}/ui/{uiProperty}
+      switch (uiProperty) {
+        case "position": {
+          if (op === "replace" || op === "add") {
+            const newPos = this.getPosition();
+            if (path.includes("/position/x")) {
+              newPos.x = value;
+            } else if (path.includes("/position/y")) {
+              newPos.y = value;
+            } else if (value) {
+              newPos.x = value.x;
+              newPos.y = value.y;
+            }
+            this.setPosition(newPos);
+          }
+          break;
+        }
+        case "marker": {
+          if (op === "remove" || value === null) {
+            this.setMarker(null);
+          } else if (op === "add") {
+            // value is the marker object: {color}
+            this.addMarker(value);
+          } else if (op === "replace") {
+            const color = path.includes("/color") ? value : (value ? value.color : null);
+            if (this.getMarker()) {
+              this.getMarker().setColor(color);
+            } else if (color) {
+              this.addMarker({color});
+            }
+          }
+          break;
+        }
+        default: {
+          // whole ui object replaced/added
+          if (value) {
+            if (value.position) {
+              this.setPosition(value.position);
+            }
+            if (value.marker) {
+              if (this.getMarker()) {
+                this.getMarker().setColor(value.marker.color);
+              } else {
+                this.addMarker(value.marker);
+              }
+            } else {
+              this.setMarker(null);
+            }
+          }
+          break;
+        }
+      }
+    },
+
     serialize: function() {
       // node generic
       let nodeEntry = {
@@ -1660,9 +1746,9 @@ qx.Class.define("osparc.data.model.Node", {
         inputsUnits: this.__getInputUnits(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
-        bootOptions: this.getBootOptions()
+        bootOptions: this.getBootOptions(),
+        ui: this.serializeUI(),
       };
-
       if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();

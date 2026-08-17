@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from aiohttp import web
+from models_library.users import UserID
 from servicelib.archiving_utils import archive_dir
 
 from ..exceptions import SDSException
@@ -21,7 +22,7 @@ async def _compress_dir(folder_to_zip: Path, destination_folder: Path, project_i
 
 
 async def get_sds_archive_path(
-    app: web.Application, tmp_dir: str, project_id: str, user_id: int, product_name: str
+    app: web.Application, tmp_dir: str, project_id: str, user_id: UserID, product_name: str
 ) -> Path:
     """
     returns: the Path to an archive containing the SDS data from the study

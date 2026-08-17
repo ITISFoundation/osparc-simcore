@@ -25,6 +25,7 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
+from models_library.products import ProductName
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import traced
@@ -33,8 +34,10 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...constants import (
     DOCKER_PULL_COMMAND,
-    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-    MACHINE_PULLING_EC2_TAG_KEY,
+    HOT_BUFFER_MACHINE_EC2_TAGS,
+    HOT_BUFFER_MACHINE_TAG_KEY,
+    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    INSTANCE_PULLING_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
 )
 from ...core.errors import (
@@ -72,7 +75,7 @@ from ...utils.rabbitmq import (
 )
 from ...utils.warm_buffer_machines import (
     get_activated_warm_buffer_ec2_tags,
-    get_deactivated_warm_buffer_ec2_tags,
+    get_warm_buffer_ec2_instances,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
@@ -164,9 +167,10 @@ async def _analyze_current_cluster(
     )
 
     warm_buffer_ec2_instances = _adjust_instances_resources(
-        await get_ec2_client(app).get_instances(
+        await get_warm_buffer_ec2_instances(
+            get_ec2_client(app),
             key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-            tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+            base_ec2_tags=auto_scaling_mode.get_ec2_tags(app),
             state_names=["stopped"],
         ),
         adjusted_resources_by_type,
@@ -407,14 +411,14 @@ async def _cancel_previous_pulling_command_if_any(
     instance: EC2InstanceData,
 ) -> None:
     if not (
-        (MACHINE_PULLING_EC2_TAG_KEY in instance.tags) and (MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY in instance.tags)
+        (INSTANCE_PULLING_EC2_TAG_KEY in instance.tags) and (INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY in instance.tags)
     ):
         # nothing to do
         return
 
     ssm_client = get_ssm_client(app)
     ec2_client = get_ec2_client(app)
-    command_id = instance.tags[MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY]
+    command_id = instance.tags[INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY]
     command = await ssm_client.get_command(instance.id, command_id=command_id)
     if command.status in ("Pending", "InProgress"):
         with log_context(
@@ -426,8 +430,8 @@ async def _cancel_previous_pulling_command_if_any(
         await ec2_client.remove_instances_tags(
             [instance],
             tag_keys=[
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-                MACHINE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
                 *list_pre_pulled_images_tag_keys(instance.tags),
             ],
         )
@@ -560,6 +564,9 @@ async def _try_start_warm_buffer_instances(
             activation_tags = get_activated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app))
             if required_labels := non_associated_instance.tasks_required_pending_labels():
                 activation_tags |= utils_ec2.dump_task_required_node_labels_as_tags(required_labels)
+            activation_tags |= utils_ec2.dump_product_name_as_tag(
+                non_associated_instance.assigned_task_product_name_if_uniform()
+            )
             # update the instance tags to activate warm buffer
             await get_ec2_client(app).set_instances_tags(
                 [instance],
@@ -591,6 +598,7 @@ def _try_assign_task_to_ec2_instance(
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
     task_required_docker_node_labels: dict[DockerLabelKey, str],
+    task_product_name: ProductName | None,
 ) -> bool:
     for instance in instances:
         # Check EC2 instance type
@@ -613,7 +621,7 @@ def _try_assign_task_to_ec2_instance(
 
         # Check resources
         if instance.has_resources_for_task(task_required_resources):
-            instance.assign_task(task, task_required_resources, task_required_docker_node_labels)
+            instance.assign_task(task, task_required_resources, task_required_docker_node_labels, task_product_name)
             _logger.debug(
                 "%s",
                 f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, "
@@ -631,6 +639,7 @@ def _try_assign_task_to_ec2_instance_type(
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
     task_required_labels: dict[DockerLabelKey, str],
+    task_product_name: ProductName | None = None,
 ) -> bool:
     """Try to assign task to an existing instance being created.
 
@@ -651,7 +660,7 @@ def _try_assign_task_to_ec2_instance_type(
             continue
 
         # Compatible! Assign task and merge labels
-        instance.assign_task(task, task_required_resources, task_required_labels)
+        instance.assign_task(task, task_required_resources, task_required_labels, task_product_name)
         _logger.debug(
             "%s",
             f"assigned task with {task_required_resources=}, {task_required_ec2_instance=},"
@@ -696,6 +705,7 @@ async def _assign_tasks_to_current_cluster(
         task_required_resources = auto_scaling_mode.get_task_required_resources(task)
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(app, task)
         task_required_labels = await auto_scaling_mode.get_task_instance_required_docker_tags(app, task)
+        task_product_name = auto_scaling_mode.get_task_product_name(task)
 
         if any(
             is_assigned(
@@ -703,6 +713,7 @@ async def _assign_tasks_to_current_cluster(
                 task_required_ec2_instance=task_required_ec2_instance,
                 task_required_resources=task_required_resources,
                 task_required_docker_node_labels=task_required_labels,
+                task_product_name=task_product_name,
             )
             for is_assigned in assignment_predicates
         ):
@@ -736,6 +747,7 @@ async def _find_needed_instances(
             task_required_resources = auto_scaling_mode.get_task_required_resources(task)
             task_required_ec2 = await auto_scaling_mode.get_task_defined_instance(app, task)
             task_required_labels = await auto_scaling_mode.get_task_instance_required_docker_tags(app, task)
+            task_product_name = auto_scaling_mode.get_task_product_name(task)
 
             # first check if we can assign the task to one of the newly tobe created instances
             if _try_assign_task_to_ec2_instance_type(
@@ -744,6 +756,7 @@ async def _find_needed_instances(
                 task_required_ec2_instance=task_required_ec2,
                 task_required_resources=task_required_resources,
                 task_required_labels=task_required_labels,
+                task_product_name=task_product_name,
             ):
                 continue
 
@@ -763,6 +776,7 @@ async def _find_needed_instances(
                             assigned_tasks=[task],
                             available_resources=defined_ec2.resources - task_required_resources,
                             osparc_custom_node_labels=task_required_labels,
+                            _assigned_task_product_names={task_product_name} if task_product_name else set(),
                         )
                     )
                 else:
@@ -778,6 +792,7 @@ async def _find_needed_instances(
                             assigned_tasks=[task],
                             available_resources=best_ec2_instance.resources - task_required_resources,
                             osparc_custom_node_labels=task_required_labels,
+                            _assigned_task_product_names={task_product_name} if task_product_name else set(),
                         )
                     )
             except TaskBestFittingInstanceNotFoundError:
@@ -803,6 +818,7 @@ async def _find_needed_instances(
         InstanceToLaunch(
             instance_type=assigned_instance.instance_type,
             node_labels=assigned_instance.osparc_custom_node_labels.copy(),
+            product_name=assigned_instance.assigned_task_product_name_if_uniform(),
         )
         for assigned_instance in needed_new_instance_types_for_tasks
     )
@@ -877,6 +893,7 @@ async def _launch_instances(
                             if instance_batch.node_labels
                             else {}
                         )
+                        | utils_ec2.dump_product_name_as_tag(instance_batch.product_name)
                     ),
                     startup_script=await ec2_startup_script(
                         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
@@ -1326,12 +1343,12 @@ async def _notify_autoscaling_status(app: FastAPI, cluster: Cluster, auto_scalin
 
 
 async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> AssociatedInstance:
-    if MACHINE_PULLING_EC2_TAG_KEY not in node.ec2_instance.tags:
+    if INSTANCE_PULLING_EC2_TAG_KEY not in node.ec2_instance.tags:
         return node
 
     ssm_client = get_ssm_client(app)
     ec2_client = get_ec2_client(app)
-    ssm_command_id = node.ec2_instance.tags.get(MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY)
+    ssm_command_id = node.ec2_instance.tags.get(INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY)
 
     async def _remove_tags_and_return(node: AssociatedInstance, tag_keys: list[AWSTagKey]) -> AssociatedInstance:
         await ec2_client.remove_instances_tags(
@@ -1347,14 +1364,14 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             "%s has '%s' tag key set but no associated command id '%s' tag key, "
             "this is unexpected but will be cleaned now. Pre-pulling will be retried again later.",
             node.ec2_instance.id,
-            MACHINE_PULLING_EC2_TAG_KEY,
-            MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+            INSTANCE_PULLING_EC2_TAG_KEY,
+            INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
         )
         return await _remove_tags_and_return(
             node,
             [
-                MACHINE_PULLING_EC2_TAG_KEY,
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                 *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
             ],
         )
@@ -1372,8 +1389,8 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
         return await _remove_tags_and_return(
             node,
             [
-                MACHINE_PULLING_EC2_TAG_KEY,
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                INSTANCE_PULLING_EC2_TAG_KEY,
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                 *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
             ],
         )
@@ -1383,8 +1400,8 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             return await _remove_tags_and_return(
                 node,
                 [
-                    MACHINE_PULLING_EC2_TAG_KEY,
-                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                    INSTANCE_PULLING_EC2_TAG_KEY,
+                    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                 ],
             )
         case "Failed" | "TimedOut":
@@ -1396,8 +1413,8 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
             return await _remove_tags_and_return(
                 node,
                 [
-                    MACHINE_PULLING_EC2_TAG_KEY,
-                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                    INSTANCE_PULLING_EC2_TAG_KEY,
+                    INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                     *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
                 ],
             )
@@ -1412,6 +1429,38 @@ async def _handle_pre_pull_status(app: FastAPI, node: AssociatedInstance) -> Ass
 
 
 @traced
+async def _sync_hot_buffer_ec2_tags(app: FastAPI, cluster: Cluster) -> None:
+    """Keeps the HOT_BUFFER_MACHINE_TAG_KEY EC2 tag in sync with the current hot buffer
+    classification, so hot buffer machines can be easily identified (e.g. in the AWS console).
+
+    The tag reflects the machine's *current* role only: it is added to instances currently
+    classified as hot buffer (idle, reserved), and removed once they are no longer so
+    (e.g. activated to run a task).
+    """
+    ec2_client = get_ec2_client(app)
+
+    to_tag = [
+        n.ec2_instance
+        for n in cluster.hot_buffer_drained_nodes
+        if HOT_BUFFER_MACHINE_TAG_KEY not in n.ec2_instance.tags
+    ]
+    if to_tag:
+        await ec2_client.set_instances_tags(to_tag, tags=HOT_BUFFER_MACHINE_EC2_TAGS)
+        for instance in to_tag:
+            instance.tags.update(HOT_BUFFER_MACHINE_EC2_TAGS)
+
+    to_untag = [
+        n.ec2_instance
+        for n in itertools.chain(cluster.active_nodes, cluster.drained_nodes, cluster.terminating_nodes)
+        if HOT_BUFFER_MACHINE_TAG_KEY in n.ec2_instance.tags
+    ]
+    if to_untag:
+        await ec2_client.remove_instances_tags(to_untag, tag_keys=[HOT_BUFFER_MACHINE_TAG_KEY])
+        for instance in to_untag:
+            instance.tags.pop(HOT_BUFFER_MACHINE_TAG_KEY, None)
+
+
+@traced
 async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Cluster) -> None:
     if not cluster.hot_buffer_drained_nodes:
         return
@@ -1423,7 +1472,7 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Clu
     hot_buffer_nodes_needing_pre_pull = []
     for node in cluster.hot_buffer_drained_nodes:
         updated_node = await _handle_pre_pull_status(app, node)
-        if MACHINE_PULLING_EC2_TAG_KEY in updated_node.ec2_instance.tags:
+        if INSTANCE_PULLING_EC2_TAG_KEY in updated_node.ec2_instance.tags:
             continue  # skip this one as it is still pre-pulling
 
         # check what they have
@@ -1479,8 +1528,8 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(app: FastAPI, cluster: Clu
         await ec2_client.set_instances_tags(
             (node.ec2_instance,),
             tags={
-                MACHINE_PULLING_EC2_TAG_KEY: "true",
-                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+                INSTANCE_PULLING_EC2_TAG_KEY: "true",
+                INSTANCE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
             }
             | dump_pre_pulled_images_as_tags(desired_pre_pulled_images),
         )
@@ -1505,6 +1554,9 @@ async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProv
 
     # desired state
     cluster = await _autoscale_cluster(app, cluster, auto_scaling_mode, allowed_instance_types)
+
+    # keep hot buffer EC2 tag in sync for easy identification
+    await _sync_hot_buffer_ec2_tags(app, cluster)
 
     # take care of hot buffer pre-pulling
     await _pre_pull_docker_images_on_idle_hot_buffers(app, cluster)

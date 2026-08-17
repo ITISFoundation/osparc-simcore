@@ -1,10 +1,10 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/account_requested/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear Support team,</p>
+<p>{% trans %}Dear Support team,{% endtrans %}</p>
 
 <p>
-  We have received the following request form for an account:
+  {% trans %}We have received the following request form for an account:{% endtrans %}
 </p>
 <ol>
   <li>Product: <b>{{ product.display_name }}</b></li>
@@ -16,7 +16,7 @@
 </pre>
 
 <p>
-  Some details about the requested product follow:
+  {% trans %}Some details about the requested product follow:{% endtrans %}
 </p>
 
 <pre>
@@ -24,13 +24,13 @@
 </pre>
 
 <p>
-  To validate the request form, here you can get further info on this request:
+  {% trans %}To validate the request form, here you can get further info on this request:{% endtrans %}
 </p>
 
 <pre>
 {{ dumps(ipinfo) }}
 </pre>
 
-<p>TIP: Use https://ipinfo.io/ to find out more information on the IP.</p>
+<p>{% trans %}TIP: Use https://ipinfo.io/ to find out more information on the IP.{% endtrans %}</p>
 
 {% endblock %}

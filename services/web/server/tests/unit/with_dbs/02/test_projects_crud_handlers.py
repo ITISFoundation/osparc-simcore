@@ -460,22 +460,22 @@ async def test_create_get_and_patch_project_ui_field(
     )
     project_id = new_project["uuid"]
 
-    # Step 2: Get the project and check the ui.icon
+    # Step 2: Get the project and check the ui is empty
     url = client.app.router["get_project"].url_for(project_id=project_id)
     resp = await client.get(f"{url}")
     got_project, _ = await assert_status(resp, status.HTTP_200_OK)
     assert got_project["ui"] == {}
 
-    # Step 3: Patch the project to set ui.icon to null
-    patch_data = {"ui": {"icon": "https://example.com/icon.png"}}
+    # Step 3: Patch the project to set ui.mode
+    patch_data = {"ui": {"mode": "app"}}
     url = client.app.router["patch_project"].url_for(project_id=project_id)
     resp = await client.patch(f"{url}", json=patch_data)
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # Step 4: Get the project again and check the ui.icon is now null
+    # Step 4: Get the project again and check the ui.mode was persisted
     resp = await client.get(f"{url}")
     got_project, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert got_project["ui"]["icon"] == "https://example.com/icon.png"
+    assert got_project["ui"]["mode"] == "app"
 
     # Step 5: Delete project
     resp = await client.delete(f"{url}")

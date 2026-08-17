@@ -1,25 +1,24 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/unregister/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name or user.user_name }},</p>
+<p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
 <p>
-  We have received your account closure request, and we want to say thank you for being a part of our platform. While
-  we're sad to see you go, we respect your decision.
+  {% trans %}We have received your account closure request, and we want to say thank you for being a part of our platform. While we're sad to see you go, we respect your decision.{% endtrans %}
 </p>
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
 <p>
-  Your projects and data will be securely retained for {{ retention_days }} days.
-  Within that period if you ever decide to return, you can reactivate your account by sending us an email to <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>. Afterwards it will be completely deleted from our system.
-</p>
-
-<p>
-  Our support team is here to help with anything you need. Please feel free to contact us to <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>
-  in case of questions or any required assistance.
+  {% trans retention_days=retention_days, support_link=support_link %}Your projects and data will be securely retained for {{ retention_days }} days. Within that period if you ever decide to return, you can reactivate your account by sending us an email to {{ support_link }}. Afterwards it will be completely deleted from our system.{% endtrans %}
 </p>
 
 <p>
-  We wish you all the best in your future endeavors.
+  {% trans support_link=support_link %}Our support team is here to help with anything you need. Please feel free to contact us to {{ support_link }} in case of questions or any required assistance.{% endtrans %}
 </p>
 
-<p>Best Regards,</p>
-<p>The <i>{{ product.display_name }}</i> Team</p>
+<p>
+  {% trans %}We wish you all the best in your future endeavors.{% endtrans %}
+</p>
+
+<p>{% trans %}Best Regards,{% endtrans %}</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
 {% endblock %}

@@ -17,10 +17,12 @@ Therefore,
 
 import contextlib
 import logging
-from datetime import timedelta
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, cast
 
+from annotated_types import doc
 import networkx as nx
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.serialization import model_dump_with_secrets
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
@@ -28,7 +30,7 @@ from models_library.api_schemas_directorv2.computations import (
     ComputationGet,
     ComputationStop,
 )
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
@@ -48,18 +50,23 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
-    ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
-    ComputationalSchedulerError,
     ConfigurationError,
     EC2InstanceTypeNotFoundError,
     PipelineTaskMissingError,
     PricingPlanUnitNotFoundError,
+    ProjectNodeNotFoundError,
     ProjectNotFoundError,
     WalletNotEnoughCreditsError,
 )
-from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
+from ...models.comp_runs import (
+    CompRunsAtDB,
+    JobEncryptionRunMetadataDict,
+    ProjectMetadataDict,
+    RunMetadataDict,
+)
+from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
@@ -67,6 +74,7 @@ from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_metadata import ProjectsMetadataRepository
+from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
@@ -83,11 +91,9 @@ from ..dependencies.database import get_repository
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
 
-_PIPELINE_ABORT_TIMEOUT_S: Final[timedelta] = timedelta(seconds=30)
-
 _logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/computations", tags=["computations"])
 
 
 async def _check_pipeline_not_running_or_raise_409(
@@ -131,6 +137,7 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 async def _get_project_metadata(
     project_id: ProjectID,
     project_repo: ProjectsRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> ProjectMetadataDict:
     try:
@@ -144,17 +151,31 @@ async def _get_project_metadata(
         assert project_ancestors.root_node_id is not None  # nosec
 
         async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
-            prj = await project_repo.get_project(project_uuid)
-            node_id_str = f"{node_id}"
-            if node_id_str not in prj.workbench:
-                _logger.error(
-                    "%s not found in %s. it is an ancestor of %s. Please check!",
-                    f"{node_id=}",
-                    f"{prj.uuid=}",
-                    f"{project_id=}",
+            project = await project_repo.get(project_uuid)
+
+            try:
+                node = await projects_nodes_repo.get(project_uuid, node_id)
+            except ProjectNodeNotFoundError as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        f"Node {node_id} not found in project {project.uuid}",
+                        error=exc,
+                        error_context={
+                            "node_id": node_id,
+                            "project_uuid": project.uuid,
+                            "ancestor_of_project_id": project_id,
+                        },
+                        tip=(
+                            "This node is registered as an ancestor of the project "
+                            "but is missing from its project's nodes. This likely "
+                            "indicates a data inconsistency, e.g. the node was removed "
+                            "from the project while still being referenced as a "
+                            "parent/root node."
+                        ),
+                    )
                 )
-                return prj.name, _UNKNOWN_NODE
-            return prj.name, prj.workbench[node_id_str].label
+                return project.name, _UNKNOWN_NODE
+            return project.name, node.label
 
         parent_project_name, parent_node_name = await _get_project_node_names(
             project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
@@ -181,7 +202,7 @@ async def _get_project_metadata(
     return {}
 
 
-def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
+def _raise_insufficient_credits_error(computation: ComputationCreate) -> None:
     assert computation.wallet_info  # nosec
     raise WalletNotEnoughCreditsError(
         wallet_name=computation.wallet_info.wallet_name,
@@ -195,13 +216,18 @@ def _raise_if_insufficient_credits(computation: ComputationCreate) -> None:
 async def _try_start_pipeline(
     app: FastAPI,
     *,
-    project_repo: ProjectsRepository,
+    projects_repo: ProjectsRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
     computation: ComputationCreate,
     minimal_dag: nx.DiGraph,
     project: ProjectAtDB,
+    project_nodes: NodesDict,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
-) -> bool:
+) -> Annotated[
+    bool,
+    doc("True if the pipeline was submitted to run; False if there was nothing to run"),
+]:
     if not minimal_dag.nodes():
         # there is nothing else to be run here (up-to-date or no computational services)
         return False
@@ -218,27 +244,131 @@ async def _try_start_pipeline(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Project {computation.project_id} has no collection run ID",
         )
+    run_metadata = RunMetadataDict(
+        node_id_names_map={NodeID(node_idstr): node_data.label for node_idstr, node_data in project_nodes.items()},
+        product_name=computation.product_name,
+        project_name=project.name,
+        simcore_user_agent=computation.simcore_user_agent,
+        user_email=await users_repo.get_user_email(computation.user_id),
+        wallet_id=wallet_id,
+        wallet_name=wallet_name,
+        project_metadata=await _get_project_metadata(
+            computation.project_id, projects_repo, projects_nodes_repo, projects_metadata_repo
+        ),
+    )
+    if computation.encryption:
+        # PoC: the base64 root_key is persisted in plaintext in the run metadata so the scheduler can
+        # re-read it at async submission time and derive per-task contexts. The vault phase replaces
+        # this plaintext-at-rest storage with a key reference.
+        run_metadata["encryption"] = cast(
+            JobEncryptionRunMetadataDict,
+            model_dump_with_secrets(computation.encryption, show_secrets=True),
+        )
     await run_new_pipeline(
         app,
         user_id=computation.user_id,
         project_id=computation.project_id,
-        run_metadata=RunMetadataDict(
-            node_id_names_map={
-                NodeID(node_idstr): node_data.label for node_idstr, node_data in project.workbench.items()
-            },
-            product_name=computation.product_name,
-            project_name=project.name,
-            simcore_user_agent=computation.simcore_user_agent,
-            user_email=await users_repo.get_user_email(computation.user_id),
-            wallet_id=wallet_id,
-            wallet_name=wallet_name,
-            project_metadata=await _get_project_metadata(computation.project_id, project_repo, projects_metadata_repo),
-        )
-        or {},
+        run_metadata=run_metadata or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
         collection_run_id=computation.collection_run_id,
     )
     return True
+
+
+def _raise_if_pipeline_has_computational_cycles(complete_dag: nx.DiGraph, computation: ComputationCreate) -> None:
+    if not computation.start_pipeline:
+        return
+    if computational_cycles := find_computational_node_cycles(complete_dag):
+        cycle_descriptions = [[complete_dag.nodes[n].get("name", n) for n in cycle] for cycle in computational_cycles]
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Project {computation.project_id} contains cycles with "
+            "computational services which are currently not supported: "
+            f"{cycle_descriptions}. Please remove them.",
+        )
+
+
+async def _get_latest_run_state(
+    comp_runs_repo: CompRunsRepository, project_id: ProjectID
+) -> tuple[CompRunsAtDB | None, RunningState]:
+    last_run: CompRunsAtDB | None = None
+    pipeline_state = RunningState.NOT_STARTED
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+        pipeline_state = last_run.result
+    return last_run, pipeline_state
+
+
+async def _start_pipeline_if_requested(  # noqa: PLR0913
+    request: Request,
+    response: Response,
+    *,
+    computation: ComputationCreate,
+    insufficient_credits: bool,
+    minimal_computational_dag: nx.DiGraph,
+    project: ProjectAtDB,
+    project_nodes: NodesDict,
+    projects_repo: ProjectsRepository,
+    projects_nodes_repo: ProjectsNodesRepository,
+    users_repo: UsersRepository,
+    projects_metadata_repo: ProjectsMetadataRepository,
+) -> Annotated[
+    bool,
+    doc("True if the pipeline was actually started; False if start was not requested or nothing to run"),
+]:
+    if not computation.start_pipeline:
+        return False
+
+    if insufficient_credits:
+        _raise_insufficient_credits_error(computation)
+
+    pipeline_started = await _try_start_pipeline(
+        request.app,
+        projects_repo=projects_repo,
+        projects_nodes_repo=projects_nodes_repo,
+        computation=computation,
+        minimal_dag=minimal_computational_dag,
+        project=project,
+        project_nodes=project_nodes,
+        users_repo=users_repo,
+        projects_metadata_repo=projects_metadata_repo,
+    )
+    if not pipeline_started:
+        response.status_code = status.HTTP_200_OK
+    return pipeline_started
+
+
+async def _create_computation_get(
+    computation: ComputationCreate,
+    request: Request,
+    *,
+    complete_dag: nx.DiGraph,
+    minimal_computational_dag: nx.DiGraph,
+    comp_tasks: list[CompTaskAtDB],
+    last_run: CompRunsAtDB | None,
+    pipeline_state: RunningState,
+    pipeline_started: bool,
+) -> ComputationGet:
+    return ComputationGet(
+        id=computation.project_id,
+        state=pipeline_state,
+        pipeline_details=await compute_pipeline_details(complete_dag, minimal_computational_dag, comp_tasks),
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{request.url}/{computation.project_id}?user_id={computation.user_id}",
+        ),
+        stop_url=(
+            TypeAdapter(AnyHttpUrl).validate_python(
+                f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
+            )
+            if computation.start_pipeline and pipeline_started
+            else None
+        ),
+        iteration=last_run.iteration if last_run else None,
+        result=None,
+        started=last_run.started if last_run and pipeline_started else None,
+        stopped=last_run.ended if last_run and pipeline_started else None,
+        submitted=last_run.created if last_run else None,
+    )
 
 
 @router.post(
@@ -262,15 +392,18 @@ async def _try_start_pipeline(
             "description": "Invalid computation request (e.g. missing collection_run_id)",
         },
     },
+    # NOTE: This endpoint is historically used for CREATE, UPDATE or START a computation!
 )
-# NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
-@run_sequentially_in_context(target_args=["computation.project_id"])
-# NOTE: This endpoint is historically used for CREATE, UPDATE or START a computation!
+@run_sequentially_in_context(
+    target_args=["computation.project_id"]
+    # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
+)
 async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
     computation: ComputationCreate,
     request: Request,
     response: Response,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_nodes_repo: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
@@ -286,28 +419,16 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         f"{computation.project_id=}",
     )
     try:
-        # get the project
-        project: ProjectAtDB = await project_repo.get_project(computation.project_id)
+        project = await projects_repo.get(computation.project_id)
 
-        # check if current state allow to modify the computation
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
-        # create the complete DAG graph
-        complete_dag = create_complete_dag(project.workbench)
+        project_nodes = await projects_nodes_repo.get_all(computation.project_id)
+        complete_dag = create_complete_dag(project_nodes)
 
         # reject cycles involving computational nodes early (before catalog checks)
-        if computation.start_pipeline and (computational_cycles := find_computational_node_cycles(complete_dag)):
-            cycle_descriptions = [
-                [complete_dag.nodes[n].get("name", n) for n in cycle] for cycle in computational_cycles
-            ]
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Project {computation.project_id} contains cycles with "
-                "computational services which are currently not supported: "
-                f"{cycle_descriptions}. Please remove them.",
-            )
+        _raise_if_pipeline_has_computational_cycles(complete_dag, computation)
 
-        # find the minimal viable graph to be run
         minimal_computational_dag: nx.DiGraph = await create_minimal_computational_graph_based_on_selection(
             complete_dag=complete_dag,
             selected_nodes=computation.subgraph or [],
@@ -317,7 +438,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         if computation.start_pipeline:
             await _check_pipeline_startable(minimal_computational_dag, computation, catalog_client)
 
-        # ok so put the tasks in the db
         await comp_pipelines_repo.upsert_pipeline(
             project.uuid,
             minimal_computational_dag,
@@ -327,6 +447,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
         comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
+            project_nodes=project_nodes,
             catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
@@ -336,54 +457,34 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
             rabbitmq_rpc_client=rpc_client,
         )
 
-        pipeline_started = False
-        if computation.start_pipeline:
-            if insufficient_credits:
-                _raise_if_insufficient_credits(computation)
+        pipeline_started = await _start_pipeline_if_requested(
+            request,
+            response,
+            computation=computation,
+            insufficient_credits=insufficient_credits,
+            minimal_computational_dag=minimal_computational_dag,
+            project=project,
+            project_nodes=project_nodes,
+            projects_repo=projects_repo,
+            projects_nodes_repo=projects_nodes_repo,
+            users_repo=users_repo,
+            projects_metadata_repo=projects_metadata_repo,
+        )
 
-            pipeline_started = await _try_start_pipeline(
-                request.app,
-                project_repo=project_repo,
-                computation=computation,
-                minimal_dag=minimal_computational_dag,
-                project=project,
-                users_repo=users_repo,
-                projects_metadata_repo=projects_metadata_repo,
-            )
-            if not pipeline_started:
-                response.status_code = status.HTTP_200_OK
+        last_run, pipeline_state = await _get_latest_run_state(comp_runs_repo, computation.project_id)
 
-        # get run details if any
-        last_run: CompRunsAtDB | None = None
-        pipeline_state = RunningState.NOT_STARTED
-        with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get_latest_run_by_project(project_id=computation.project_id)
-            pipeline_state = last_run.result
-
-        return ComputationGet(
-            id=computation.project_id,
-            state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, minimal_computational_dag, comp_tasks),
-            url=TypeAdapter(AnyHttpUrl).validate_python(
-                f"{request.url}/{computation.project_id}?user_id={computation.user_id}",
-            ),
-            stop_url=(
-                TypeAdapter(AnyHttpUrl).validate_python(
-                    f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
-                )
-                if computation.start_pipeline and pipeline_started
-                else None
-            ),
-            iteration=last_run.iteration if last_run else None,
-            result=None,
-            started=last_run.started if last_run and pipeline_started else None,
-            stopped=last_run.ended if last_run and pipeline_started else None,
-            submitted=last_run.created if last_run else None,
+        return await _create_computation_get(
+            computation,
+            request,
+            complete_dag=complete_dag,
+            minimal_computational_dag=minimal_computational_dag,
+            comp_tasks=comp_tasks,
+            last_run=last_run,
+            pipeline_state=pipeline_state,
+            pipeline_started=pipeline_started,
         )
 
     except (
-        ProjectNotFoundError,
-        ClusterNotFoundError,
         PricingPlanUnitNotFoundError,
         EC2InstanceTypeNotFoundError,
     ) as e:
@@ -419,9 +520,8 @@ async def get_computation(
         f"{user_id=}",
         f"{project_id=}",
     )
-
-    # check that project actually exists
-    await project_repo.get_project(project_id)
+    if not await project_repo.exists(project_id):
+        raise ProjectNotFoundError(project_id=project_id)
 
     try:
         pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
@@ -480,7 +580,6 @@ async def stop_computation(
     computation_stop: ComputationStop,
     project_id: ProjectID,
     request: Request,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
@@ -490,42 +589,34 @@ async def stop_computation(
         computation_stop.user_id,
         project_id,
     )
-    try:
-        # check the project exists
-        await project_repo.get_project(project_id)
-        # get the project pipeline
-        pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
-        pipeline_dag = pipeline_at_db.get_graph()
-        # get the project task states
-        tasks = await comp_tasks_repo.list_tasks(project_id)
-        # create the complete DAG graph
-        complete_dag = create_complete_dag_from_tasks(tasks)
-        # stop the pipeline if it is running
-        last_run: CompRunsAtDB | None = None
-        pipeline_state = RunningState.UNKNOWN
-        with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-            pipeline_state = last_run.result
-            if utils.is_pipeline_running(last_run.result):
-                await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+    # get the project pipeline
+    pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
+    pipeline_dag = pipeline_at_db.get_graph()
+    # get the project task states
+    tasks = await comp_tasks_repo.list_tasks(project_id)
+    # create the complete DAG graph
+    complete_dag = create_complete_dag_from_tasks(tasks)
+    # stop the pipeline if it is running
+    last_run: CompRunsAtDB | None = None
+    pipeline_state = RunningState.NOT_STARTED  # default state if no run exists
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+        pipeline_state = last_run.result
+        if utils.is_pipeline_running(last_run.result):
+            await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
 
-        return ComputationGet(
-            id=project_id,
-            state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag, tasks),
-            url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
-            stop_url=None,
-            iteration=last_run.iteration if last_run else None,
-            result=None,
-            started=last_run.started if last_run else None,
-            stopped=last_run.ended if last_run else None,
-            submitted=last_run.created if last_run else None,
-        )
-
-    except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ComputationalSchedulerError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    return ComputationGet(
+        id=project_id,
+        state=pipeline_state,
+        pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag, tasks),
+        url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
+        stop_url=None,
+        iteration=last_run.iteration if last_run else None,
+        result=None,
+        started=last_run.started if last_run else None,
+        stopped=last_run.ended if last_run else None,
+        submitted=last_run.created if last_run else None,
+    )
 
 
 @router.delete(
@@ -533,69 +624,62 @@ async def stop_computation(
     description="Deletes a computation pipeline",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={status.HTTP_409_CONFLICT: {"description": "Pipeline could not be stopped in time"}},
 )
 async def delete_computation(
     computation_stop: ComputationDelete,
     project_id: ProjectID,
     request: Request,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
 ) -> None:
-    try:
-        # get the project
-        project: ProjectAtDB = await project_repo.get_project(project_id)
-        # check if current state allow to stop the computation
-        pipeline_state = RunningState.UNKNOWN
-        with contextlib.suppress(ComputationalRunNotFoundError):
+    """Deletes a computation pipeline if it is not running, otherwise stops it first
+        and waits for it to stop before deleting it.
+        Calling this endpoint multiple times is idempotent, it will not raise an error
+        if the pipeline is already stopped or deleted.
+    Raises:
+        HTTPException: if the pipeline could not be stopped in time"""
+    # check if current state allow to stop the computation
+    pipeline_state = RunningState.UNKNOWN
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
+        pipeline_state = last_run.result
+    if utils.is_pipeline_running(pipeline_state):
+        if not computation_stop.force:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Project {project_id} is currently running and cannot be deleted, "
+                f"current state is {pipeline_state}",
+            )
+        # abort the pipeline first
+        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+
+        def return_last_value(retry_state: Any) -> Any:
+            """return the result of the last call attempt"""
+            return retry_state.outcome.result()
+
+        @retry(
+            stop=stop_after_delay(computation_stop.wait_for),
+            wait=wait_random(0, 2),
+            retry_error_callback=return_last_value,
+            retry=retry_if_result(lambda result: result is False),
+            reraise=False,
+            before_sleep=before_sleep_log(_logger, logging.INFO),
+        )
+        async def check_pipeline_stopped() -> bool:
             last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
             pipeline_state = last_run.result
-        if utils.is_pipeline_running(pipeline_state):
-            if not computation_stop.force:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Project {project_id} is currently running and cannot be deleted, "
-                    f"current state is {pipeline_state}",
-                )
-            # abort the pipeline first
-            try:
-                await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
-            except ComputationalSchedulerError as e:
-                _logger.warning(
-                    "Project %s could not be stopped properly.\n reason: %s",
-                    project_id,
-                    e,
-                )
+            return utils.is_pipeline_stopped(pipeline_state)
 
-            def return_last_value(retry_state: Any) -> Any:
-                """return the result of the last call attempt"""
-                return retry_state.outcome.result()
-
-            @retry(
-                stop=stop_after_delay(_PIPELINE_ABORT_TIMEOUT_S.total_seconds()),
-                wait=wait_random(0, 2),
-                retry_error_callback=return_last_value,
-                retry=retry_if_result(lambda result: result is False),
-                reraise=False,
-                before_sleep=before_sleep_log(_logger, logging.INFO),
+        # wait for the pipeline to be stopped
+        if not await check_pipeline_stopped():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Pipeline {project_id} could not be stopped properly "
+                f"after {computation_stop.wait_for.total_seconds()}s. ",
             )
-            async def check_pipeline_stopped() -> bool:
-                last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-                pipeline_state = last_run.result
-                return utils.is_pipeline_stopped(pipeline_state)
 
-            # wait for the pipeline to be stopped
-            if not await check_pipeline_stopped():
-                _logger.error(
-                    "pipeline %s could not be stopped properly after %s",
-                    project_id,
-                    _PIPELINE_ABORT_TIMEOUT_S,
-                )
-
-        # delete the pipeline now
-        await comp_tasks_repo.delete_tasks_from_project(project.uuid)
-        await comp_pipelines_repo.delete_pipeline(project_id)
-
-    except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    # delete the pipeline now
+    await comp_tasks_repo.delete_tasks_from_project(project_id)
+    await comp_pipelines_repo.delete_pipeline(project_id)

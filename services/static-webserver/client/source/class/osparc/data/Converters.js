@@ -38,7 +38,7 @@ qx.Class.define("osparc.data.Converters", {
 
     createLoadingEntry: function() {
       return {
-        label: "Loading...",
+        label: qx.locale.Manager.tr("Loading..."),
         location: null,
         path: null,
         children: [],

@@ -14,6 +14,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -33,18 +34,18 @@ _LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
 _logger = logging.getLogger(__name__)
 
 
-async def _get_project_owner(conn: AsyncConnection, project_uuid: ProjectID) -> PositiveInt:
+async def _get_project_owner(conn: AsyncConnection, project_uuid: ProjectID) -> UserID:
     the_project_owner: PositiveInt | None = (
         await conn.execute(select(projects.c.prj_owner).where(projects.c.uuid == f"{project_uuid}"))
     ).scalar_one_or_none()
     if not the_project_owner:
         raise exceptions.ProjectOwnerNotFoundError(project_uuid=project_uuid)
-    return the_project_owner
+    return UserID(the_project_owner)
 
 
 async def _update_project_state(
     app: web.Application,
-    user_id: PositiveInt,
+    user_id: UserID,
     project_uuid: ProjectID,
     node_uuid: NodeID,
     new_state: RunningState,

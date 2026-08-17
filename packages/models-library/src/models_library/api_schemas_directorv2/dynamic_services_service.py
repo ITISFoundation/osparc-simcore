@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from ..basic_types import PortInt
+from ..products import ProductName
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..services import DynamicServiceKey, ServiceVersion
@@ -90,6 +91,11 @@ class RunningDynamicServiceDetails(ServiceDetails):
         bool, Field(description="True if service allows collaboration (multi-tenant access)")
     ] = False
 
+    product_name: Annotated[
+        ProductName,
+        Field(description="Product upon which this service is scheduled."),
+    ]
+
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(
@@ -108,6 +114,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
                         "entry_point": "",
                         "service_state": "running",
                         "service_message": "",
+                        "product_name": "osparc",
                     },
                     # new style
                     {
@@ -121,6 +128,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
                         "service_port": 8888,
                         "service_state": "running",
                         "service_message": "",
+                        "product_name": "osparc",
                     },
                 ]
             }

@@ -21,10 +21,23 @@ POST_PRO_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 )
 POST_PRO_TARGET_TISSUE_APPEARANCE_TIME: Final[int] = 10 * MINUTE
 POST_PRO_LOAD_APPEARANCE_TIME: Final[int] = 5 * MINUTE
-POST_PRO_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 25 * MINUTE
+POST_PRO_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 45 * MINUTE
 POST_PRO_LOAD_ANALYSIS_MAX_TIME: Final[int] = 5 * MINUTE
 POST_PRO_LOAD_RESULT_MAX_TIME: Final[int] = 30 * SECOND
 POST_PRO_REPORTING_MAX_TIME: Final[int] = 30 * SECOND
+
+
+def get_node_id_from_service_key(workbench: dict, service_key: str) -> str:
+    """Returns the node id of the node whose service key equals ``service_key``.
+
+    The nodes' position in the workbench is not guaranteed, so steps must be
+    resolved by their service key instead of by their index.
+    """
+    matches = [node_id for node_id, node_data in workbench.items() if node_data.get("key", "") == service_key]
+    if len(matches) != 1:
+        msg = f"Expected exactly 1 node with service key {service_key!r} in the workbench, found {len(matches)}"
+        raise ValueError(msg)
+    return matches[0]
 
 
 def raise_if_button_spinner_running(button: Locator, *, description: str) -> None:

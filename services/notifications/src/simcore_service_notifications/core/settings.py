@@ -1,5 +1,6 @@
 from typing import Annotated, Self
 
+from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import LogLevel
@@ -230,7 +231,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    NOTIFICATIONS_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
+    NOTIFICATIONS_BOOT_SERVER_MODE: Annotated[
+        BootServerMode,
+        Field(description="Boot mode: REST API server or Celery worker"),
+    ] = BootServerMode.AS_REST_API_SERVER
 
     NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
         int,
@@ -284,10 +288,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @model_validator(mode="after")
     def _worker_requires_smtp_settings(self) -> "ApplicationSettings":
-        if self.NOTIFICATIONS_WORKER_MODE and self.NOTIFICATIONS_SMTP_SETTINGS is None:
+        if (
+            self.NOTIFICATIONS_BOOT_SERVER_MODE is BootServerMode.AS_CELERY_WORKER
+            and self.NOTIFICATIONS_SMTP_SETTINGS is None
+        ):
             msg = (
                 "NOTIFICATIONS_SMTP_SETTINGS must be configured when "
-                "NOTIFICATIONS_WORKER_MODE is enabled "
+                "NOTIFICATIONS_BOOT_SERVER_MODE is AS_CELERY_WORKER "
                 "(per-product SMTP settings are required by the worker)."
             )
             raise ValueError(msg)

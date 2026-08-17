@@ -31,7 +31,7 @@ async def get_project_owner(engine: AsyncEngine, connection: AsyncConnection | N
         if owner_id is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         assert isinstance(owner_id, int)
-        return owner_id
+        return UserID(owner_id)
 
 
 def published_project_read_condition(

@@ -8,8 +8,6 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.progress_bar import ProgressReport
-from models_library.projects import ProjectAtDB
-from models_library.projects_nodes import Node
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     ProgressRabbitMessageNode,
@@ -28,6 +26,7 @@ from .....core.dynamic_services_settings.scheduler import (
 from .....core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
 )
+from .....core.errors import ProjectNotFoundError
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import NetworkId, SchedulerData
 from .....utils.db import get_repository
@@ -35,6 +34,7 @@ from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
+from ....db.repositories.projects_nodes import ProjectsNodesRepository
 from ...docker_api import (
     constrain_service_to_node,
     create_network,
@@ -161,10 +161,13 @@ class CreateSidecars(DynamicSchedulerEvent):
         # fetching project form DB and fetching user settings
         projects_repository = get_repository(app, ProjectsRepository)
 
-        project: ProjectAtDB = await projects_repository.get_project(project_id=scheduler_data.project_id)
+        if not await projects_repository.exists(project_id=scheduler_data.project_id):
+            raise ProjectNotFoundError(project_id=scheduler_data.project_id)
 
-        node_uuid_str = f"{scheduler_data.node_uuid}"
-        node: Node | None = project.workbench.get(node_uuid_str)
+        projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
+        node = await projects_nodes_repository.get(
+            project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
+        )
         boot_options = node.boot_options if node is not None and node.boot_options is not None else {}
         _logger.info("%s", f"{boot_options=}")
 

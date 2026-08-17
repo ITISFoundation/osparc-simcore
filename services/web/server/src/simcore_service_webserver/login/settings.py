@@ -20,57 +20,56 @@ class LoginSettings(BaseCustomSettings):
     LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: Annotated[
         PositiveInt,
         Field(
-            default=30,
             description=(
                 "Retention time (in days) of all the data after a user has "
                 "requested the deletion of their account. "
                 "NOTE: exposed to the front-end as `to_client_statics`"
             ),
         ),
+    ] = 30
+
+    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool
+
+    LOGIN_TWILIO: Annotated[
+        TwilioSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="Twilio service settings. Used to send SMS for 2FA",
+        ),
     ]
 
-    LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
-        default=True,
-    )
-
-    LOGIN_REGISTRATION_INVITATION_REQUIRED: bool = Field(
-        ...,
-    )
-
-    LOGIN_TWILIO: TwilioSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True},
-        description="Twilio service settings. Used to send SMS for 2FA",
-    )
-
-    LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(default=120, description="Expiration time for code [sec]")
+    LOGIN_2FA_CODE_EXPIRATION_SEC: Annotated[
+        PositiveInt,
+        Field(description="Expiration time for code [sec]"),
+    ] = 120
 
     LOGIN_2FA_REQUIRED: Annotated[
         bool,
         Field(
-            default=False,
             description="If true, it enables two-factor authentication (2FA)",
         ),
-    ]
+    ] = False
 
-    LOGIN_PASSWORD_MIN_LENGTH: PositiveInt = Field(
-        default=12,
-        description="Minimum length of password",
-    )
-
-    @field_validator("LOGIN_2FA_REQUIRED")
-    @classmethod
-    def _login_2fa_needs_email_registration(cls, v, info: ValidationInfo):
-        # NOTE: this constraint ensures that a phone is registered in current workflow
-        if v and not info.data.get("LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False):
-            msg = "Cannot enable 2FA w/o email confirmation"
-            raise ValueError(msg)
-        return v
+    LOGIN_PASSWORD_MIN_LENGTH: Annotated[
+        PositiveInt,
+        Field(
+            description="Minimum length of password",
+        ),
+    ] = 12
 
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
     def _login_2fa_needs_sms_service(cls, v, info: ValidationInfo):
         if v and info.data.get("LOGIN_TWILIO") is None:
             msg = "Cannot enable 2FA w/o twilio settings which is used to send SMS"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("LOGIN_2FA_REQUIRED")
+    @classmethod
+    def _login_2fa_needs_confirmed_email(cls, v, info: ValidationInfo):
+        if v and not info.data.get("LOGIN_REGISTRATION_INVITATION_REQUIRED"):
+            msg = "Cannot enable 2FA w/o invitation required since this is how we confirm email to send 2FA"
             raise ValueError(msg)
         return v
 

@@ -156,7 +156,9 @@ async def _close_unhealthy_service(
         try:
             await notify_user_of_credit_reimbursement(
                 rabbitmq_rpc_client,
+                db_engine,
                 product_name=running_service.product_name,
+                user_id=running_service.user_id,
                 user_email=running_service.user_email,
                 service_run_id=service_run_id,
                 reimbursed_credits=computed_credits,

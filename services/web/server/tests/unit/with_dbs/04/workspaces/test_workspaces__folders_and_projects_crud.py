@@ -12,8 +12,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
-from models_library.groups import GroupID
-from pydantic import TypeAdapter
+from models_library.groups import GroupIDAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
@@ -134,7 +133,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
         await update_or_insert_workspace_group(
             client.app,
             workspace_id=added_workspace.workspace_id,
-            group_id=TypeAdapter(GroupID).validate_python(new_logged_user["primary_gid"]),
+            group_id=GroupIDAdapter.validate_python(new_logged_user["primary_gid"]),
             read=True,
             write=True,
             delete=False,
@@ -196,7 +195,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
         await update_or_insert_workspace_group(
             client.app,
             workspace_id=added_workspace.workspace_id,
-            group_id=TypeAdapter(GroupID).validate_python(new_logged_user["primary_gid"]),
+            group_id=GroupIDAdapter.validate_python(new_logged_user["primary_gid"]),
             read=True,
             write=False,
             delete=False,
@@ -228,11 +227,20 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.director_v2_service.delete_pipeline",
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
+        autospec=True,
+        return_value=False,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
         autospec=True,
     )
     return mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._projects_service_delete.storage_service.delete_project_data_folders",
         return_value=None,
     )
 
@@ -380,7 +388,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
             "workspaceId": f"{added_workspace_1['workspaceId']}",
         },
     )
-    first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    await assert_status(resp, status.HTTP_201_CREATED)
 
     # create a new WORKSPACE
     url = client.app.router["create_workspace"].url_for()
@@ -414,7 +422,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
             "workspaceId": f"{added_workspace_2['workspaceId']}",
         },
     )
-    first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    await assert_status(resp, status.HTTP_201_CREATED)
 
     # List PROJECTS in workspace 1
     url = (

@@ -2,6 +2,7 @@ import os
 from collections.abc import AsyncGenerator, Generator, Iterator
 from functools import cached_property
 from pathlib import Path
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
@@ -11,6 +12,8 @@ from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
 from ..core.docker_utils import get_volume_by_label
 from ..core.settings import ApplicationSettings
+
+_TRACES_PATH: Final[Path] = Path("/traces")
 
 
 def _ensure_path(path: Path) -> Path:
@@ -90,6 +93,13 @@ class MountedVolumes:
             f"_{_name_from_full_path(self.user_preferences_path)[::-1]}"
         )
 
+    @cached_property
+    def volume_name_traces(self) -> str:
+        return (
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
+            f"_{_name_from_full_path(_TRACES_PATH)[::-1]}"
+        )
+
     def volume_name_state_paths(self) -> Generator[str]:
         for state_path in self.state_paths:
             yield (
@@ -108,6 +118,10 @@ class MountedVolumes:
     @cached_property
     def vfs_cache_path(self) -> Path:
         return _ensure_path(self._dy_volumes / DEFAULT_VFS_CACHE_PATH.relative_to("/"))
+
+    @cached_property
+    def disk_traces_path(self) -> Path:
+        return _ensure_path(self._dy_volumes / _TRACES_PATH.relative_to("/"))
 
     def disk_state_paths_iter(self) -> Iterator[Path]:
         for state_path in self.state_paths:
@@ -143,6 +157,10 @@ class MountedVolumes:
     async def get_vfs_cache_docker_volume(self, service_run_id: ServiceRunID) -> str:
         bind_path: Path = await self._get_bind_path_from_label(self.volume_name_vfs_cache, service_run_id)
         return f"{bind_path}:{self.vfs_cache_path}"
+
+    async def get_traces_docker_volume(self, service_run_id: ServiceRunID) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_traces, service_run_id)
+        return f"{bind_path}:{_TRACES_PATH}"
 
     async def get_user_preferences_path_volume(self, service_run_id: ServiceRunID) -> str | None:
         if self.volume_user_preferences is None:

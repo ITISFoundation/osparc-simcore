@@ -114,7 +114,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           opacity: 1
         };
         if (states.hovered) {
-          style.opacity = 0.5;
+          style.decorator = "pb-listitem-hovered";
         }
         if (states.selected || states.checked) {
           style.opacity = 1;
@@ -285,13 +285,13 @@ qx.Theme.define("osparc.theme.Appearance", {
     ---------------------------------------------------------------------------
     */
 
-   "table-header-cell": {
+    "table-header-cell": {
       style: function() {
         return {
           font: "text-13", // override the default theme's bold font
         }
       }
-   },
+    },
 
     /*
     ---------------------------------------------------------------------------

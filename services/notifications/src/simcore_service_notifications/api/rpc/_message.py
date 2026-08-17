@@ -63,6 +63,7 @@ async def send_message_from_template(
         addressing=request.addressing,
         ref=TemplateRef(**request.template_ref.model_dump()),
         context=request.context,
+        locale=request.locale,
         owner_metadata=request.owner_metadata,
     )
     return SendMessageResponse(task_or_group_uuid=task_or_group_uuid, task_name=task_name)

@@ -31,7 +31,8 @@ _VOLUMES_TO_NEVER_BACKUP: Final[set[str]] = {
     "stuptuo",  # outputs -> can be regenerated, usually all services use this name
     "erots-derahs",  # shared-store -> defined by the dynamic-sidecar
     f"{DEFAULT_VFS_CACHE_PATH}".strip("/")[::-1],  # vfs-cache
-    "secnereferP",  # Preferences -> usually defined by the user this is the one we use in the only service that supports if for now
+    "secnereferP",  # Preferences -> usually defined by the user
+    "secart",  # traces -> OTEL trace data collected by the dynamic-sidecar
 }
 
 

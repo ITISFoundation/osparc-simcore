@@ -11,7 +11,10 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
     AioHttpClientInstrumentor,
 )
-from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor, create_aiohttp_middleware
+from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
+    AioHttpServerInstrumentor,
+    create_aiohttp_middleware,
+)
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import get_current_span
@@ -19,7 +22,13 @@ from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import AIOHTTP_TRACING_CONFIG_KEY, TracingConfig, create_standard_attributes, get_trace_info_headers
+from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
+from ..tracing import (
+    AIOHTTP_TRACING_CONFIG_KEY,
+    TracingConfig,
+    create_standard_attributes,
+    get_trace_info_headers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -34,6 +43,12 @@ try:
     HAS_BOTOCORE = True
 except ImportError:
     HAS_BOTOCORE = False
+try:
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor  # type: ignore[import-not-found]
+
+    HAS_CELERY = True
+except ImportError:
+    HAS_CELERY = False
 
 try:
     from opentelemetry.instrumentation.threading import ThreadingInstrumentor
@@ -167,6 +182,13 @@ def _startup(
         ):
             BotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
             AiobotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
+    if HAS_CELERY:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add celery opentelemetry autoinstrumentation...",
+        ):
+            CeleryInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REQUESTS:
         with log_context(
             _logger,
@@ -182,6 +204,8 @@ def _startup(
             msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
         ):
             AioPikaInstrumentor().instrument(tracer_provider=tracer_provider)
+
+    TracedFunctionsInstrumentor().instrument(tracing_settings=tracing_settings, tracer_provider=tracer_provider)
 
 
 @web.middleware
@@ -220,6 +244,9 @@ def _shutdown() -> None:
         with log_catch(_logger, reraise=False):
             BotocoreInstrumentor().uninstrument()
             AiobotocoreInstrumentor().uninstrument()
+    if HAS_CELERY:
+        with log_catch(_logger, reraise=False):
+            CeleryInstrumentor().uninstrument()
     if HAS_THREADING:
         with log_catch(_logger, reraise=False):
             ThreadingInstrumentor().uninstrument()
@@ -229,6 +256,8 @@ def _shutdown() -> None:
     if HAS_AIO_PIKA:
         with log_catch(_logger, reraise=False):
             AioPikaInstrumentor().uninstrument()
+    with log_catch(_logger, reraise=False):
+        TracedFunctionsInstrumentor().uninstrument()
 
 
 def setup_tracing(

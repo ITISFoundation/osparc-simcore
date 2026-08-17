@@ -13,10 +13,6 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     get_long_running_manager,
 )
-from servicelib.aiohttp.requests_validation import (
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.aiohttp.rest_responses import (
     create_data_response,
 )
@@ -27,6 +23,7 @@ from ...celery import get_task_manager
 from ...login.decorators import login_required
 from ...long_running_tasks.plugin import webserver_request_context_decorator
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
+from ...web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from .. import _tasks_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import TaskPathParams, TaskStreamQueryParams, TaskStreamResponse

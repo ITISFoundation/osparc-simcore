@@ -10,7 +10,6 @@ from models_library.rest_base import RequestParameters
 from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from .._meta import API_VTAG as VTAG
 from ..constants import RQ_PRODUCT_KEY
@@ -18,6 +17,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users import users_service
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import parse_request_body_as
 from . import api
 
 routes = web.RouteTableDef()

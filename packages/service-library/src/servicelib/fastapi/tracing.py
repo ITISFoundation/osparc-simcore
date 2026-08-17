@@ -16,7 +16,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import TracingConfig, get_trace_info_headers
+from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
+from ..tracing import (
+    TracingConfig,
+    get_trace_info_headers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -45,6 +49,13 @@ try:
     HAS_BOTOCORE = True
 except ImportError:
     HAS_BOTOCORE = False
+
+try:
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor  # type: ignore[import-not-found]
+
+    HAS_CELERY = True
+except ImportError:
+    HAS_CELERY = False
 
 try:
     from opentelemetry.instrumentation.threading import ThreadingInstrumentor
@@ -124,6 +135,13 @@ def _startup(
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
             AsyncPGInstrumentor().instrument(tracer_provider=tracer_provider)
+    if HAS_CELERY:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add celery opentelemetry autoinstrumentation...",
+        ):
+            CeleryInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REDIS:
         with log_context(
             _logger,
@@ -164,6 +182,8 @@ def _startup(
         ):
             AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
 
+    TracedFunctionsInstrumentor().instrument(tracing_settings=tracing_settings, tracer_provider=tracer_provider)
+
 
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
@@ -175,6 +195,9 @@ def _shutdown() -> None:
     if HAS_ASYNCPG:
         with log_catch(_logger, reraise=False):
             AsyncPGInstrumentor().uninstrument()
+    if HAS_CELERY:
+        with log_catch(_logger, reraise=False):
+            CeleryInstrumentor().uninstrument()
     if HAS_REDIS:
         with log_catch(_logger, reraise=False):
             RedisInstrumentor().uninstrument()
@@ -191,6 +214,9 @@ def _shutdown() -> None:
     if HAS_AIOHTTP_CLIENT:
         with log_catch(_logger, reraise=False):
             AioHttpClientInstrumentor().uninstrument()
+
+    with log_catch(_logger, reraise=False):
+        TracedFunctionsInstrumentor().uninstrument()
 
 
 def initialize_fastapi_app_tracing(

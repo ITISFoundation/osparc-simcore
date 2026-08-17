@@ -26,6 +26,7 @@ from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.kms import KMSSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.utils.files import (
@@ -108,6 +109,27 @@ def app_environment(
     monkeypatch.delenv("DASK_START_AS_SCHEDULER", raising=False)
 
     return envs
+
+
+@pytest.fixture
+def kms_settings(mocked_kms_server_envs: EnvVarsDict) -> KMSSettings:
+    return KMSSettings.create_from_envs()
+
+
+@pytest.fixture
+def app_environment_with_kms(
+    app_environment: EnvVarsDict,
+    kms_settings: KMSSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    """Layers DASK_SIDECAR_KMS on top of app_environment - NOTE: must be requested by the test
+    BEFORE dask_client/local_cluster so the env var is set before the worker process(es) start.
+    """
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {"DASK_SIDECAR_KMS": json_dumps(model_dump_with_secrets(kms_settings, show_secrets=True))},
+    )
+    return {**app_environment, **envs}
 
 
 @pytest.fixture

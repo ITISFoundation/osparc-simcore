@@ -14,6 +14,7 @@ from pydantic import (
 from ..api_schemas_directorv2.computations import (
     ComputationGet as _DirectorV2ComputationGet,
 )
+from ..api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from ..basic_types import IDStr
 from ..computations import CollectionRunID
 from ..projects import CommitID, ProjectID
@@ -44,6 +45,7 @@ class ComputationGet(_DirectorV2ComputationGet, OutputSchemaWithoutCamelCase):
 class ComputationStart(InputSchemaWithoutCamelCase):
     force_restart: bool = False
     subgraph: Annotated[set[str], Field(default_factory=set, json_schema_extra={"default": []})] = DEFAULT_FACTORY
+    encryption: JobEncryptionContextMetadata | None = None
 
 
 class ComputationStarted(OutputSchemaWithoutCamelCase):
@@ -93,7 +95,8 @@ class ComputationRunIterationsLatestListQueryParams(ComputationRunListQueryParam
 class ComputationRunIterationsListQueryParams(ComputationRunListQueryParams):
     include_children: bool = Field(
         default=False,
-        description="If true, all computational runs of the project and its children are returned (Currently supported only for root projects)",
+        description="If true, all computational runs of the project and its children are returned"
+        " (Currently supported only for root projects)",
     )
 
 
@@ -137,7 +140,8 @@ class ComputationTaskListQueryParams(
 ):
     include_children: bool = Field(
         default=False,
-        description="If true, all tasks of the project and its children are returned (Currently supported only for root projects)",
+        description="If true, all tasks of the project and its children are returned "
+        "(Currently supported only for root projects)",
     )
 
 

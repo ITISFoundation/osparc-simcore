@@ -28,12 +28,9 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
   construct: function(message, duration, supportId) {
     this.base(arguments, message, "ERROR", duration ? duration*2 : null);
 
-    if (osparc.store.Groups.getInstance().isSupportEnabled() && false) {
-      this.getChildControl("contact-support");
-    } else {
-      const oecAtom = this.getChildControl("oec-atom");
-      this.bind("supportId", oecAtom, "label");
-    }
+    const oecAtom = this.getChildControl("oec-atom");
+    this.bind("supportId", oecAtom, "label");
+
     if (supportId) {
       this.setSupportId(supportId);
     }
@@ -141,7 +138,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
         if (confirmationWindow.getConfirmed()) {
           const extraContext = extraContextTA.getValue()
           const friendlyContext = this.__getSupportFriendlyContext();
-          const text = "Dear Support Team,\n" + extraContext + "\n" + friendlyContext;
+          const text = this.tr("Dear Support Team,") + "\n" + extraContext + "\n" + friendlyContext;
           textToAddMessageField(text);
           // This should be an automatic response in the chat
           const msg = this.tr("Thanks, your report has been sent.<br>Our support team will get back to you.");

@@ -28,23 +28,25 @@ async def create_project_group(
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-    query = (
-        project_to_groups.insert()
-        .values(
-            project_uuid=f"{project_id}",
-            gid=group_id,
-            read=read,
-            write=write,
-            delete=delete,
-            created=func.now(),
-            modified=func.now(),
-        )
-        .returning(literal_column("*"))
-    )
-
+    row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        row = await result.first()
+        row = await (
+            await conn.stream(
+                project_to_groups.insert()
+                .values(
+                    project_uuid=f"{project_id}",
+                    gid=group_id,
+                    read=read,
+                    write=write,
+                    delete=delete,
+                    created=func.now(),
+                    modified=func.now(),
+                )
+                .returning(literal_column("*"))
+            )
+        ).first()
+        if row is None:
+            raise ProjectGroupNotFoundError(details=f"Project {project_id} group {group_id} not found")
         return ProjectGroupGetDB.model_validate(row)
 
 
@@ -111,20 +113,20 @@ async def replace_project_group(
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-    query = (
-        project_to_groups.update()
-        .values(
-            read=read,
-            write=write,
-            delete=delete,
-        )
-        .where((project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id))
-        .returning(literal_column("*"))
-    )
-
+    row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        row = await result.first()
+        row = await (
+            await conn.stream(
+                project_to_groups.update()
+                .values(
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
+                .where((project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id))
+                .returning(literal_column("*"))
+            )
+        ).first()
         if row is None:
             raise ProjectGroupNotFoundError(details=f"Project {project_id} group {group_id} not found")
         return ProjectGroupGetDB.model_validate(row)

@@ -60,6 +60,20 @@
   "[makefile]": {
     "editor.insertSpaces": false
   },
+  "[jinja-html]": {
+    "editor.formatOnSave": false,
+    "editor.rulers": [],
+    "editor.wordWrap": "off"
+  },
+  "eslint.useFlatConfig": false,
+  "eslint.validate": [
+    "javascript"
+  ],
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
   "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "hadolint.cliOptions": [],
   "ruff.configuration": "${workspaceFolder}/.ruff.toml",

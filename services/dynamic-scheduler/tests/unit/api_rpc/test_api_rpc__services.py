@@ -63,7 +63,7 @@ def service_status_new_style() -> DynamicServiceGet:
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
-    return TypeAdapter(NodeGet).validate_python(NodeGet.model_json_schema()["examples"][1])
+    return TypeAdapter(NodeGet).validate_python(NodeGet.model_json_schema()["examples"][0])
 
 
 @pytest.fixture

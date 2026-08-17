@@ -1,5 +1,6 @@
 from enum import auto
 
+from common_library.gettext_support import SupportedLocale
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
 from models_library.utils.enums import StrAutoEnum
@@ -11,6 +12,11 @@ from ..domain.groups import Groups
 class ProfileCommon(BaseModel):
     first_name: FirstNameStr | None = Field(None, examples=["James"])
     last_name: LastNameStr | None = Field(None, examples=["Maxwell"])
+    language: SupportedLocale | None = Field(
+        None,
+        description="Persisted UI/communications language. None means no persisted choice.",
+        examples=["en"],
+    )
 
 
 class ProfileUpdate(ProfileCommon): ...

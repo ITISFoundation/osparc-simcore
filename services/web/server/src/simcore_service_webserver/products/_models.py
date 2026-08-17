@@ -11,7 +11,9 @@ from models_library.basic_regex import (
 )
 from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
+from models_library.groups import GroupID
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
+from models_library.users import UserID
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -33,7 +35,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
-from sqlalchemy import Column
+from sqlalchemy import Column, DefaultClause
 
 from ..constants import FRONTEND_APPS_AVAILABLE
 
@@ -149,13 +151,13 @@ class Product(BaseModel):
         ),
     ] = None
 
-    group_id: Annotated[int | None, Field(description="Groups associated to this product")] = None
+    group_id: Annotated[GroupID | None, Field(description="Groups associated to this product")] = None
     support_standard_group_id: Annotated[
-        int | None, Field(description="Support standard group ID, None if disabled")
+        GroupID | None, Field(description="Support standard group ID, None if disabled")
     ] = None
-    support_chatbot_user_id: Annotated[int | None, Field(description="Support chatbot user ID, None if disabled")] = (
-        None
-    )
+    support_chatbot_user_id: Annotated[
+        UserID | None, Field(description="Support chatbot user ID, None if disabled")
+    ] = None
     support_assigned_fogbugz_person_id: Annotated[
         int | None,
         Field(description="Support assigned Fogbugz person ID, None if disabled"),
@@ -235,9 +237,11 @@ class Product(BaseModel):
                         },
                         # defaults from sqlalchemy table
                         **{
-                            str(c.name): c.server_default.arg  # type: ignore[union-attr]
+                            f"{c.name}": c.server_default.arg
                             for c in products.columns
-                            if isinstance(c, Column) and c.server_default and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
+                            if isinstance(c, Column)
+                            and isinstance(c.server_default, DefaultClause)
+                            and isinstance(c.server_default.arg, str)
                         },
                     },
                     # Example of data in the database with a url set with blanks

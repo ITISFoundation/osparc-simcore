@@ -16,11 +16,6 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task
 
@@ -31,6 +26,11 @@ from ..payments import payments_service
 from ..products import products_service
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from ._handlers import (
     WalletsRequestContext,
     handle_wallets_exceptions,
@@ -62,7 +62,6 @@ async def _create_payment(request: web.Request):
         logging.INFO,
         "Payment transaction started to %s",
         f"{wallet_id=}",
-        log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         credit_result = await products_service.get_credit_amount(
@@ -200,7 +199,6 @@ async def _init_creation_of_payment_method(request: web.Request):
         logging.INFO,
         "Initiated the creation of a payment-method for wallet %s",
         f"{path_params.wallet_id=}",
-        log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         initiated: PaymentMethodInitiated = await payments_service.init_creation_of_wallet_payment_method(
@@ -232,7 +230,6 @@ async def _cancel_creation_of_payment_method(request: web.Request):
         "Cancelled the creation of a payment-method %s for wallet %s",
         path_params.payment_method_id,
         path_params.wallet_id,
-        log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         await payments_service.cancel_creation_of_wallet_payment_method(
@@ -330,7 +327,6 @@ async def _pay_with_payment_method(request: web.Request):
         logging.INFO,
         "Payment transaction started to %s",
         f"{wallet_id=}",
-        log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         credit_result = await products_service.get_credit_amount(

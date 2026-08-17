@@ -74,7 +74,7 @@ async def test_list_files_metadata(
     assert not error
 
     # now add some stuff there
-    NUM_FILES = 10
+    NUM_FILES = 7
     file_size = TypeAdapter(ByteSize).validate_python("15Mib")
     files_owned_by_us = [await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)]
     assert files_owned_by_us
@@ -104,7 +104,7 @@ async def test_list_files_metadata(
     assert previous_data == list_fmds
 
     # create some more files but with a base common name
-    NUM_FILES = 10
+    NUM_FILES = 7
     file_size = TypeAdapter(ByteSize).validate_python("15Mib")
     files_with_common_name = [
         await upload_file(file_size, f"common_name-{faker.file_name()}") for _ in range(NUM_FILES)

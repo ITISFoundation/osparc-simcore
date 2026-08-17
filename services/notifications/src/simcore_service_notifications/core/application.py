@@ -1,3 +1,4 @@
+from celery_library.basic_types import BootServerMode
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
@@ -16,11 +17,10 @@ from .._meta import (
     API_VTAG,
     APP_NAME,
     APP_SHUTDOWN_BANNER_MSG,
-    APP_STARTED_BANNER_MSG,
     APP_STARTING_BANNER_MSG,
-    APP_WORKER_STARTED_BANNER_MSG,
     SUMMARY,
     VERSION,
+    get_started_banner,
 )
 from ..api.rest.routes import configure_rest_api
 from ..api.rpc.routes import configure_rpc_api
@@ -38,25 +38,6 @@ def _configure_plugins(
     settings: ApplicationSettings,
     tracing_config: TracingConfig,
 ) -> None:
-    configure_postgres_database(
-        app_lifespan,
-        settings=settings.NOTIFICATIONS_POSTGRES,
-        tracing_config=tracing_config,
-    )
-    configure_postgres_liveness(app_lifespan)
-    configure_smtp_config_check(app_lifespan)
-
-    if not settings.NOTIFICATIONS_WORKER_MODE:
-        configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
-        configure_rpc_api(app_lifespan)
-
-    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
-    configure_redis_client(
-        app_lifespan,
-        settings=settings.NOTIFICATIONS_CELERY.CELERY_REDIS_RESULT_BACKEND,
-    )
-    configure_task_manager(app_lifespan)
-
     if settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
 
@@ -66,6 +47,32 @@ def _configure_plugins(
             app_lifespan,
             tracing_config=tracing_config,
         )
+
+    assert settings.NOTIFICATIONS_CELERY is not None  # nosec
+
+    configure_redis_client(
+        app_lifespan,
+        settings=settings.NOTIFICATIONS_CELERY.CELERY_REDIS_RESULT_BACKEND,
+    )
+    configure_task_manager(app_lifespan)
+
+    mode = settings.NOTIFICATIONS_BOOT_SERVER_MODE
+
+    if mode is BootServerMode.AS_REST_API_SERVER:
+        configure_postgres_database(
+            app_lifespan,
+            settings=settings.NOTIFICATIONS_POSTGRES,
+            tracing_config=tracing_config,
+        )
+        configure_postgres_liveness(app_lifespan)
+
+        configure_smtp_config_check(app_lifespan)
+
+        configure_rabbitmq_client(app_lifespan, settings=settings.NOTIFICATIONS_RABBITMQ)
+        configure_rpc_api(app_lifespan)
+        configure_rest_api(app)
+    else:
+        assert mode is BootServerMode.AS_CELERY_WORKER  # nosec
 
 
 def create_app(
@@ -78,13 +85,11 @@ def create_app(
         service_name=APP_NAME, tracing_settings=settings.NOTIFICATIONS_TRACING
     )
 
-    started_banner = APP_WORKER_STARTED_BANNER_MSG if settings.NOTIFICATIONS_WORKER_MODE else APP_STARTED_BANNER_MSG
-
     assert settings.SC_BOOT_MODE  # nosec
     with configure_app_lifespan(
         logging_lifespan=logging_lifespan,
         starting_banner=APP_STARTING_BANNER_MSG,
-        started_banner=started_banner,
+        started_banner=get_started_banner(settings.NOTIFICATIONS_BOOT_SERVER_MODE),
         shutdown_complete_banner=APP_SHUTDOWN_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
@@ -101,7 +106,5 @@ def create_app(
         app.state.tracing_config = tracing_config
 
         _configure_plugins(app, app_lifespan, settings, tracing_config)
-
-    configure_rest_api(app)
 
     return app

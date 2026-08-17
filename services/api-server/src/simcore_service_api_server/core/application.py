@@ -13,12 +13,15 @@ from servicelib.fastapi.tracing import (
 from servicelib.tracing import TracingConfig
 
 from .. import exceptions
+from .._locale_middleware import LocaleMiddleware
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import setup_task_manager
+from ..clients.kms import setup_kms
 from ..clients.postgres import setup_postgres
 from ..services_http import director_v2, storage, webserver
+from ..services_http.chatbot import setup as setup_chatbot
 from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import on_shutdown, on_startup
@@ -101,6 +104,8 @@ def create_app(  # noqa: C901
     if settings.API_SERVER_CELERY:
         setup_task_manager(app, settings.API_SERVER_CELERY)
 
+    setup_kms(app)
+
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
@@ -109,6 +114,13 @@ def create_app(  # noqa: C901
             app,
             tracing_config=tracing_config,
             add_response_trace_id_header=True,
+        )
+
+    if settings.API_SERVER_CHATBOT:
+        setup_chatbot(
+            app,
+            base_url=str(settings.API_SERVER_CHATBOT.CHATBOT_URL),
+            tracing_settings=settings.API_SERVER_TRACING,
         )
 
     if settings.API_SERVER_WEBSERVER:
@@ -138,6 +150,9 @@ def create_app(  # noqa: C901
 
     if settings.API_SERVER_PROFILING:
         configure_profiler(app)
+
+    if settings.API_SERVER_LOCALIZED_MESSAGES_ENABLED:
+        app.add_middleware(LocaleMiddleware)
 
     exceptions.setup_exception_handlers(app, is_debug=settings.SC_BOOT_MODE == BootModeEnum.DEBUG)
 

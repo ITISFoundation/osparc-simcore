@@ -173,6 +173,7 @@ def test_diagnostics_setup(client: TestClient):
         "servicelib.aiohttp.monitoring.monitor_simcore_service_webserver",
         "servicelib.aiohttp.rest_middlewares.envelope_v0",
         "servicelib.aiohttp.rest_middlewares.error_v0",
+        "simcore_service_webserver.locale.locale_middleware",
         "simcore_service_webserver.session.plugin.session",
     }
 

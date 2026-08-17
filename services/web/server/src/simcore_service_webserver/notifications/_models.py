@@ -85,7 +85,7 @@ class EmailContent(BaseModel):
 class EmailAddressing(BaseModel):
     to: list[EmailContact]
     reply_to: EmailContact | None = None
-    bcc: EmailContact | None = None
+    bcc: list[EmailContact] | None = None
 
     attachments: list[EmailAttachment] | None = None
 

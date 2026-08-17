@@ -155,10 +155,10 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input-background");
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
       const defaultBottomBorder = qx.theme.manager.Color.getInstance().resolve("default-button-active");
-      document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
-      document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
-      document.documentElement.style.setProperty('--tel-border-bottom-color', defaultBottomBorder);
-      document.documentElement.style.setProperty('--tel-border-bottom-color-focused', productColor);
+      document.documentElement.style.setProperty("--country-list-dropdown-bg", bgColor);
+      document.documentElement.style.setProperty("--country-list-dropdown-text", textColor);
+      document.documentElement.style.setProperty("--tel-border-bottom-color", defaultBottomBorder);
+      document.documentElement.style.setProperty("--tel-border-bottom-color-focused", productColor);
 
       const isCompact = this.isCompactField();
       const phoneInputField = this.getChildControl("phone-input-field");
@@ -181,7 +181,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
         if (this.getValue() && !this.isValidNumber()) {
           const errorColor = qx.theme.manager.Color.getInstance().resolve("failed-red");
-          document.documentElement.style.setProperty('--tel-border-bottom-color', errorColor);
+          document.documentElement.style.setProperty("--tel-border-bottom-color", errorColor);
         }
       }
     },

@@ -343,7 +343,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
 
       // hypertools filter
-      const hypertoolTypeButton = new qx.ui.menu.Button("Hypertools", null);
+      const hypertoolTypeButton = new qx.ui.menu.Button(this.tr("Hypertools"), null);
       hypertoolTypeButton.exclude();
       osparc.store.Templates.getHypertools()
         .then(hypertools => {
