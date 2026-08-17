@@ -10655,6 +10655,74 @@
         ],
         "title": "LicensedResourceType"
       },
+      "Links": {
+        "properties": {
+          "first": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First"
+          },
+          "last": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          },
+          "prev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev"
+          },
+          "self": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first",
+          "last",
+          "next",
+          "prev",
+          "self"
+        ],
+        "title": "Links"
+      },
       "LogLevelInt": {
         "type": "integer"
       },
@@ -10959,7 +11027,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11016,7 +11084,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11073,7 +11141,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11112,7 +11180,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11151,7 +11219,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11190,7 +11258,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11229,7 +11297,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11268,7 +11336,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11307,7 +11375,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -11346,7 +11414,7 @@
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/_RequiredLinks",
+            "$ref": "#/components/schemas/Links",
             "readOnly": true
           }
         },
@@ -13818,74 +13886,6 @@
       "_GroupIDInt": {
         "type": "integer",
         "exclusiveMinimum": 0
-      },
-      "_RequiredLinks": {
-        "properties": {
-          "first": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First"
-          },
-          "last": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last"
-          },
-          "next": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next"
-          },
-          "prev": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prev"
-          },
-          "self": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Self"
-          }
-        },
-        "type": "object",
-        "required": [
-          "first",
-          "last",
-          "next",
-          "prev",
-          "self"
-        ],
-        "title": "_RequiredLinks"
       },
       "_UserIDInt": {
         "type": "integer",
