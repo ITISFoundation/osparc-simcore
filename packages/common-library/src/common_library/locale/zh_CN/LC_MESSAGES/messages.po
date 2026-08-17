@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 20:48+0200\n"
+"POT-Creation-Date: 2026-08-13 16:55+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-07-28T18:48:16Z\n"
+"X-Translation-Date: 2026-08-13T14:55:52Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -583,6 +583,8 @@ msgid ""
 "persists."
 msgstr "系统在等待计算资源时超时。请尝试重新运行您的项目，如果问题仍然存在，请联系oSparc支持。"
 
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:4
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:4
@@ -607,6 +609,126 @@ msgstr "系统在等待计算资源时超时。请尝试重新运行您的项目
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:1
 msgid "Dear %(first_name)s,"
 msgstr "亲爱的 %(first_name)s，"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their request to access a product has been approved, and they
+# now have access to the product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
+msgid ""
+"Your request has been approved and you now have access to %(product_name)s."
+msgstr "您的请求已批准，您现在可以访问 %(product_name)s。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users who have already created an account to log in to a specific product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:14
+msgid ""
+"Since you already have an account on\n"
+"  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
+msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s。"
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users who have already created an account to log in to a specific product
+# using their existing credentials.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:10
+msgid ""
+"Since you already have an account, please continue logging in to "
+"%(product_name)s with the same email and password."
+msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s。"
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# inform a user that their account has been added to a product, providing a
+# link to access the product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
+msgid "You can access %(product_name)s here: %(login_link)s"
+msgstr "您可以在这里访问：%(product_name)s。"
+
+# CTX-INTERPRETATION: This string appears in an email body, providing contact
+# information for support in case of registration issues.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr "如果在注册过程中出现任何问题，请随时通过 %(support_link)s 联系我们。"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
+msgid "Enjoy %(product_name)s!"
+msgstr "祝您使用 %(product_name)s 愉快！"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:36
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
+msgid "Best regards,"
+msgstr "此致敬礼，"
+
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:39
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
+msgid "The %(product_name)s Team"
+msgstr "%(product_name)s 团队"
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users who have an existing account to log in to a specific product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:7
+msgid ""
+"Since you already have an account on %(existing_product)s, please continue "
+"logging in to %(product_name)s with the same email and password."
+msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s."
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# a user that they have been added to a product, providing a link to access
+# the product's homepage.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
+msgid "You can access %(product_name)s here: %(link)s"
+msgstr "您可以在这里访问：%(link)s"
+
+# CTX-INTERPRETATION: This string is part of an email template used to provide
+# a support email address to the user.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr "如果在任何问题发生时，请随时通过 %(support_email)s 联系我们。"
+
+# CTX-INTERPRETATION: This string is part of an email subject line, informing
+# the user that they have been granted access to a specific product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/subject.j2:1
+msgid "You Now Have Access to %(product_name)s"
+msgstr "您现在可以访问 %(product_name)s"
 
 # CTX-INTERPRETATION: This string is part of an email template used to thank
 # users for their interest and provide them with a registration link.
@@ -652,47 +774,6 @@ msgid ""
 "If any problem should occur, please feel free to contact us at "
 "%(support_link)s."
 msgstr "请按照屏幕上的信息进行操作并完成注册。如果遇到任何问题，请随时通过%(support_link)s联系我们。"
-
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
-msgid "Enjoy %(product_name)s!"
-msgstr "祝您使用 %(product_name)s 愉快！"
-
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
-msgid "Best regards,"
-msgstr "此致敬礼，"
-
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
-#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
-#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
-#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
-#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
-#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
-#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
-#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
-#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
-#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
-msgid "The %(product_name)s Team"
-msgstr "%(product_name)s 团队"
 
 # CTX-INTERPRETATION: This string is part of an email body template used to
 # inform users that their account has been approved and provides a link to the
@@ -802,7 +883,7 @@ msgid ""
 "You have requested to change the email address linked to your "
 "%(product_name)s account. Please follow the on-screen information in the "
 "link below:"
-msgstr "您已成功更改与您的{{ product_name }} 帐户关联的电子邮件地址。请按照屏幕上的信息，点击以下链接以完成操作："
+msgstr "您已成功更改与您的%(product_name)s 帐户关联的电子邮件地址。请按照屏幕上的信息，点击以下链接以完成操作："
 
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
 msgid "Change email"
@@ -871,7 +952,7 @@ msgid ""
 "We want to inform you that your service run (%(service_run)s) on "
 "%(product_name)s was affected by a platform issue and was not billed."
 msgstr ""
-"我们想通知您，您在（{{ service_run }}）上的服务运行（{{ product_name }}）由于平台问题而中断，因此未收取费用。"
+"我们想通知您，您在（%(service_run)s）上的服务运行（%(product_name)s）由于平台问题而中断，因此未收取费用。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that credits have been reimbursed to their credit account.
@@ -945,28 +1026,12 @@ msgid ""
 "Please follow the on-screen information and proceed with your registration."
 msgstr "请按照屏幕上的信息进行操作，并完成注册。"
 
-# CTX-INTERPRETATION: This string appears in an email body, providing contact
-# information for support in case of registration issues.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
-msgid ""
-"If any problem should occur, please feel free to contact us at "
-"%(support_link)s."
-msgstr "如果在注册过程中出现任何问题，请随时通过 %(support_link)s 联系我们。"
-
 # CTX-INTERPRETATION: This string is part of an email template used to invite
 # users to register for a scientific simulation application, providing a link
 # to the registration page.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
 msgid "Click here to access the registration page: %(link)s"
 msgstr "点击此处访问注册页面：%(link)s"
-
-# CTX-INTERPRETATION: This string is part of an email template used to provide
-# a support email address to the user.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
-msgid ""
-"If any problem should occur, please feel free to contact us at "
-"%(support_email)s."
-msgstr "如果在任何问题发生时，请随时通过 %(support_email)s 联系我们。"
 
 # CTX-INTERPRETATION: This string is part of an email body template used to
 # confirm a payment and credit purchase, dynamically inserting the user's
@@ -1039,7 +1104,7 @@ msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_link
 msgid ""
 "Thank you for registering with %(product_name)s. Your account\n"
 "has been successfully created and you can now sign in to %(host)s."
-msgstr "感谢您使用 {{ product_name }} 注册。您的帐户已成功创建，您现在可以登录到 {{ host }}。"
+msgstr "感谢您使用 %(product_name)s 注册。您的帐户已成功创建，您现在可以登录到 %(host)s。"
 
 # CTX-INTERPRETATION: This string appears in an email body template, providing
 # contact information for support.
@@ -1054,7 +1119,7 @@ msgstr "如果您有任何问题或需要帮助，请随时通过 %(support_emai
 # surrounding code.
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
 msgid "Welcome to %(product_name)s!"
-msgstr "欢迎使用 {{ product_name }}！"
+msgstr "欢迎使用 %(product_name)s！"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that a password reset request has been submitted for their specified
@@ -1215,8 +1280,8 @@ msgid ""
 "your account by sending us an email to %(support_email)s. Afterwards, it "
 "will be completely deleted from our system."
 msgstr ""
-"您的项目和数据将在{{ retention_days }}天内安全地保留。在此期间，如果您决定退回，可以通过发送电子邮件至 {{ "
-"support_email }} 来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
+"您的项目和数据将在%(retention_days)s天内安全地保留。在此期间，如果您决定退回，可以通过发送电子邮件至 "
+"%(support_email)s 来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # users about contacting support for assistance, specifically mentioning the
@@ -2561,7 +2626,7 @@ msgstr "找不到“{service}”的API令牌。"
 # CTX-INTERPRETATION: This string appears in an error message indicating that
 # there is no pending registration request associated with the specified email
 # and product name.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:30
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:32
 #, python-brace-format
 msgid ""
 "No pending registration request found for email {email} in {product_name}."
@@ -2570,7 +2635,7 @@ msgstr "在{product_name}中找不到与电子邮件{email}相关的待处理注
 # CTX-INTERPRETATION: This string is an error message displayed to users when
 # a requested user profile cannot be accessed due to non-registration or
 # privacy settings.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:37
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:39
 msgid ""
 "The requested user could not be found. This may be because the user is not "
 "registered or has privacy settings enabled."
@@ -2579,7 +2644,7 @@ msgstr "请求的用户无法找到。这可能是因为用户未注册或启用
 # CTX-INTERPRETATION: This string appears in an error message when a user
 # attempts to register with a username that is already taken, suggesting an
 # alternative username.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:45
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:47
 #, python-brace-format
 msgid ""
 "The username '{user_name}' is already in use. Please try "
@@ -2589,7 +2654,7 @@ msgstr "用户名 '{user_name}' 已被使用。请尝试使用 '{alternative_use
 # CTX-INTERPRETATION: This string appears in an error message when a user
 # attempts to pre-register an account with an email that already has existing
 # accounts associated with it.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:52
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:54
 #, python-brace-format
 msgid ""
 "Found {num_found} existing account(s) for '{email}'. Unable to pre-register "
@@ -2599,7 +2664,7 @@ msgstr "找到{num_found}个现有账户为'{email}'。无法为已存在的用�
 # CTX-INTERPRETATION: This string is an error message displayed to users when
 # they attempt to access a product that is still being set up and is not
 # available for use yet.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:59
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:61
 msgid ""
 "This product is currently being configured and is not yet ready for use. "
 "Please try again later."
@@ -2608,7 +2673,7 @@ msgstr "此产品当前正在配置中，尚未准备好使用。请稍后再试
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to proceed with a phone registration process that has not been
 # initiated.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:66
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:68
 msgid ""
 "No pending phone registration found. Please start the phone registration "
 "process first."
@@ -2617,7 +2682,7 @@ msgstr "未找到待处理的电话注册。请先开始电话注册过程。"
 # CTX-INTERPRETATION: This string is an error message displayed to users when
 # their phone registration session is no longer valid or has expired,
 # prompting them to restart the registration process.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:73
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:75
 msgid ""
 "Your phone registration session is invalid or has expired. Please start the "
 "phone registration process again."
@@ -2626,7 +2691,7 @@ msgstr "您的手机注册会话无效或已过期。请重新开始手机注册
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # inputs an incorrect confirmation code during phone registration in the
 # application.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:81
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:83
 msgid ""
 "The confirmation code you entered is incorrect. Please check and try again."
 msgstr "您输入的确认码不正确。请检查后重试。"
@@ -2634,26 +2699,26 @@ msgstr "您输入的确认码不正确。请检查后重试。"
 # CTX-INTERPRETATION: This string appears as an error message displayed to the
 # user when a requested product is not found in the system, likely due to an
 # incorrect product ID or the product being unavailable.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:88
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:90
 msgid "The requested product could not be found."
 msgstr "请求的产品无法找到。"
 
 # CTX-INTERPRETATION: This error message appears when a user attempts to
 # access a pre-registration that does not exist in the system.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:95
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:97
 msgid "The requested pre-registration was not found."
 msgstr "请求的预注册未找到。"
 
 # CTX-INTERPRETATION: This string appears in an error message indicating that
 # a request has already been reviewed and cannot be changed or moved.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:102
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:104
 msgid "This request was already reviewed and cannot be moved."
 msgstr "此请求已被审核，无法移动。"
 
 # CTX-INTERPRETATION: This error message appears when a user attempts to link
 # a request to an account that has already been associated with another
 # account, preventing further action.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:109
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:111
 msgid ""
 "This request is already linked to a created account and cannot be moved."
 msgstr "此请求已链接到一个已创建的账户，无法移动。"
@@ -2661,9 +2726,27 @@ msgstr "此请求已链接到一个已创建的账户，无法移动。"
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to register with an email that is already associated with an
 # existing request in the product.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:116
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:118
 msgid "A request with this email already exists in the target product."
 msgstr "目标产品中已存在使用此电子邮件的请求。"
+
+# CTX-INTERPRETATION: This string is displayed in a REST API response when a
+# user's account is inactive, indicating that they cannot be granted access to
+# a new product.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:125
+#, python-brace-format
+msgid ""
+"This user's account is not active ({status}) and cannot be granted access to"
+" a new product."
+msgstr "此用户帐户处于非活动状态 ({status})，因此无法授予对其新产品的访问权限。"
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint related to
+# user approval, specifically when an invitation URL is missing, indicating
+# that the user needs to provide one to proceed with approval.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:132
+#, python-brace-format
+msgid "An invitation URL is required to approve {email}."
+msgstr "邀请 URL 是必需的，用于批准 {email}。"
 
 # CTX-INTERPRETATION: This string appears in an error message when a user
 # attempts to access a product that is not available in the system.

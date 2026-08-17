@@ -217,3 +217,57 @@ async def test_preview_paid_template_invalid_context(
 
     with pytest.raises(NotificationsTemplateContextValidationError):
         await preview_template(rpc_client, product_name=product_name, ref=ref, context=context)
+
+
+async def test_preview_account_added_to_product_template_renders_without_errors(
+    with_product: dict[str, Any],
+    product_name: ProductName,
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="account_added_to_product")
+    context = {
+        "user": {"first_name": "Jane"},
+        "existing_product": "Sim4Life Lite",
+    }
+
+    response = await preview_template(rpc_client, product_name=product_name, ref=ref, context=context)
+    assert isinstance(response, PreviewTemplateResponse)
+    assert response.ref.template_name == "account_added_to_product"
+    assert isinstance(response.message_content, dict)
+    assert with_product["display_name"] in response.message_content["subject"]
+    assert "Jane" in response.message_content["body_text"]
+    assert "Sim4Life Lite" in response.message_content["body_text"]
+    assert with_product["display_name"] in response.message_content["body_text"]
+
+
+async def test_preview_account_added_to_product_template_renders_with_existing_product_missing(
+    with_product: dict[str, Any],
+    product_name: ProductName,
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="account_added_to_product")
+    # existing_product is optional: falls back to a generic "you already have an account" phrasing
+    context = {
+        "user": {"first_name": "Jane"},
+    }
+
+    response = await preview_template(rpc_client, product_name=product_name, ref=ref, context=context)
+    assert isinstance(response, PreviewTemplateResponse)
+    assert response.ref.template_name == "account_added_to_product"
+    assert "Jane" in response.message_content["body_text"]
+    assert "None" not in response.message_content["body_text"]
+
+
+async def test_preview_account_added_to_product_template_invalid_context(
+    with_product: dict[str, Any],
+    product_name: ProductName,
+    rpc_client: RabbitMQRPCClient,
+):
+    ref = TemplateRef(channel=Channel.email, template_name="account_added_to_product")
+    # Missing required 'user' field
+    context = {
+        "invalid_key": "invalid_value",
+    }
+
+    with pytest.raises(NotificationsTemplateContextValidationError):
+        await preview_template(rpc_client, product_name=product_name, ref=ref, context=context)
