@@ -174,6 +174,7 @@ async def send_email_code(
     user_name: str,
     product_name: ProductName,
     host: str,
+    ttl: int,
     user_id: UserID | None = None,
     locale: SupportedLocale | None = None,
 ):
@@ -198,6 +199,7 @@ async def send_email_code(
                 },
                 "host": host,
                 "code": code,
+                "ttl": ttl,
             },
             locale=locale,
         )
