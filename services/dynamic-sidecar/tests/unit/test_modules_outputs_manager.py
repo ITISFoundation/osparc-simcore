@@ -233,12 +233,15 @@ async def test_recovers_after_raising_error(
 
     assert set(exec_info.value.failures.keys()) == set(port_keys) | set(non_file_type_port_keys)
 
-    def _assert_same_exceptions(first: list[Exception], second: list[Exception]) -> None:
-        assert {x.__class__: f"{x}" for x in first} == {x.__class__: f"{x}" for x in second}
+    def _assert_same_exceptions(first: list[str | None], second: list[type[BaseException]]) -> None:
+        for formatted_traceback, error_class in zip(first, second, strict=True):
+            assert formatted_traceback is not None
+            assert error_class.__name__ in formatted_traceback
+            assert mock_error.message in formatted_traceback
 
     _assert_same_exceptions(
-        exec_info.value.failures.values(),
-        [mock_error.error_class(mock_error.message)] * len(exec_info.value.failures),
+        list(exec_info.value.failures.values()),
+        [mock_error.error_class] * len(exec_info.value.failures),
     )
 
     # the second time uploading there is no error to be raised
