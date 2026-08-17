@@ -811,7 +811,8 @@ def start_and_stop_pipeline(
     def _do() -> SocketIOEvent:
         with log_context(
             logging.INFO,
-            f"Start computation in {product_url=}...",
+            f"Start computation in {product_url=} "
+            f"(timeout: {datetime.timedelta(milliseconds=_OUTER_CONTEXT_TIMEOUT_MS)})...",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=(

@@ -23,6 +23,7 @@ from pytest_simcore.helpers.logging_tools import (
 )
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    SECOND,
     PipelineStageTimeouts,
     RobustWebSocket,
     ServiceType,
@@ -30,9 +31,12 @@ from pytest_simcore.helpers.playwright import (
     check_node_outputs,
     retrieve_project_state_from_decoded_message,
     wait_for_computation_done,
+    wait_for_nodes_outputs_updated,
 )
 
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
+# NOTE: small grace budget for stages a non-autoscaled deployment should never actually enter
+_NON_AUTOSCALED_STAGE_GRACE_TIME: Final[int] = 30 * SECOND
 
 _VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
     parse_version("1.0.0"): ["logs.zip", "single_number.txt"],
@@ -54,6 +58,7 @@ def test_sleepers(
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     num_sleepers: int,
     input_sleep_time: int | None,
+    is_autoscaled: bool,
 ):
     project_data = create_project_from_service_dashboard(ServiceType.COMPUTATIONAL, "sleeper", "itis", None)
 
@@ -95,6 +100,13 @@ def test_sleepers(
             workbench_selector.click()
         break
 
+    # collect all sleeper node ids upfront, so we can watch their websocket updates below
+    sleeper_node_ids: list[str] = []
+    for sleeper in page.get_by_test_id("nodeTreeItem").all()[1:]:
+        node_id = sleeper.get_attribute("osparc-test-key")
+        assert node_id
+        sleeper_node_ids.append(node_id)
+
     # set inputs if needed
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
@@ -112,19 +124,32 @@ def test_sleepers(
     # sometimes they may jump
     # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] ->
     # (PENDING) -> STARTED -> SUCCESS/FAILED
-    socket_io_event = start_and_stop_pipeline()
-    current_state = retrieve_project_state_from_decoded_message(socket_io_event)
-    test_logger.info("pipeline is in %s", f"{current_state=}")
-
-    # handles the autoscaled-deployment state machine (cold cluster/worker scale-up can take
-    # several minutes without the pipeline actually being stuck)
-    current_state = wait_for_computation_done(
-        current_state,
-        websocket=log_in_and_out,
-        stage_timeouts=PipelineStageTimeouts(
-            started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
-        ),
+    # NOTE: asserts every sleeper actually pushes a NodeUpdated websocket message with its
+    # outputs, instead of only relying on the after-the-fact REST check below
+    # on non-autoscaled deployments the cluster/resources stages are never entered, so keep
+    # their budget minimal instead of the full 5 min each (would otherwise slow down failures)
+    stage_timeouts = PipelineStageTimeouts(
+        waiting_for_cluster_ms=(5 * MINUTE) if is_autoscaled else _NON_AUTOSCALED_STAGE_GRACE_TIME,
+        waiting_for_resources_ms=(5 * MINUTE) if is_autoscaled else _NON_AUTOSCALED_STAGE_GRACE_TIME,
+        started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
     )
+    with wait_for_nodes_outputs_updated(
+        log_in_and_out,
+        node_id_to_expected_number_of_outputs=dict.fromkeys(sleeper_node_ids, len(sleeper_expected_output_files)),
+        # NOTE: covers every autoscaling stage (cold cluster/worker scale-up), not just STARTED
+        timeout=stage_timeouts.total_ms,
+    ):
+        socket_io_event = start_and_stop_pipeline()
+        current_state = retrieve_project_state_from_decoded_message(socket_io_event)
+        test_logger.info("pipeline is in %s", f"{current_state=}")
+
+        # handles the autoscaled-deployment state machine (cold cluster/worker scale-up can take
+        # several minutes without the pipeline actually being stuck)
+        current_state = wait_for_computation_done(
+            current_state,
+            websocket=log_in_and_out,
+            stage_timeouts=stage_timeouts,
+        )
 
     # check the outputs (the first item is the title, so we skip it)
     with log_context(
