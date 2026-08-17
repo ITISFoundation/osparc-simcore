@@ -245,6 +245,22 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
     approval_data = await parse_request_body_as(UserAccountPreviewApproval, request)
 
+    existing_user_id = await _accounts_service.get_registered_user_id_for_pending_request(
+        request.app,
+        email=approval_data.email,
+        product_name=req_ctx.product_name,
+    )
+
+    if existing_user_id is not None:
+        # Already-registered user: no invitation is generated, they keep their existing password
+        preview_result = await _accounts_service.preview_grant_product_access_user_account(
+            request.app,
+            approval_email=approval_data.email,
+            product_name=req_ctx.product_name,
+        )
+        response = UserAccountPreviewApprovalGet(**preview_result.model_dump())
+        return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
+
     with log_context(
         _logger,
         logging.DEBUG,

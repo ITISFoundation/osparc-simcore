@@ -65,6 +65,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
+    ComputationalBackendTaskResultsReleaseError,
     ComputationalSchedulerChangedError,
     InsufficientComputationalResourcesError,
     MissingComputationalResourcesError,
@@ -855,6 +856,24 @@ async def test_failed_task_returns_exceptions(
     assert len(await dask_client.backend.client.list_datasets()) > 0  # type: ignore
     await dask_client.release_task_result(published_computation_task[0].job_id)
     assert len(await dask_client.backend.client.list_datasets()) == 0  # type: ignore
+
+
+async def test_release_task_result_timeouts_raises(
+    dask_client: DaskClient,
+    mocker: MockerFixture,
+):
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client._DASK_DEFAULT_TIMEOUT_S",
+        0.1,
+    )
+
+    async def _never_completes(*args, **kwargs) -> None:
+        await asyncio.sleep(10)
+
+    mocker.patch.object(dask_client.backend.client, "get_dataset", side_effect=_never_completes)
+
+    with pytest.raises(ComputationalBackendTaskResultsReleaseError):
+        await dask_client.release_task_result("some-unknown-job-id")
 
 
 # currently in the case of a dask-gateway we do not check for missing resources

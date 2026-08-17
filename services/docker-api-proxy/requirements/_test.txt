@@ -68,7 +68,7 @@ faker==40.11.0
     # via -r requirements/_test.in
 fast-depends==3.0.8
     # via faststream
-fastapi==0.135.1
+fastapi==0.141.1
     # via
     #   -r requirements/_test.in
     #   fastapi-lifespan-manager

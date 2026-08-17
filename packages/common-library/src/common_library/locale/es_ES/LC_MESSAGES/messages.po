@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 20:48+0200\n"
+"POT-Creation-Date: 2026-08-14 18:43+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-07-28T18:49:06Z\n"
+"X-Translation-Date: 2026-08-14T16:43:12Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -652,7 +652,7 @@ msgstr ""
 # iteration. the completion status of a project pipeline execution for a
 # specific iteration. the completion status of a project pipeline execution
 # for a specific iteration.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:240
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:239
 #, python-brace-format
 msgid ""
 "Project pipeline execution for iteration {iteration} has completed with "
@@ -664,7 +664,7 @@ msgstr ""
 # CTX-INTERPRETATION: This message is an error notification related to task
 # scheduling in the application. system to notify users of an unexpected issue
 # during the scheduling of tasks.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:861
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:860
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -676,7 +676,7 @@ msgstr ""
 # scheduling a task with variable resolution has exceeded the time limit and
 # will attempt to retry. warning message when a task involving variable
 # resolution fails to complete in time and will be attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:892
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:891
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr ""
 "La resolución variable excedió el tiempo límite durante la programación de "
@@ -686,7 +686,7 @@ msgstr ""
 # cannot allocate the necessary computational resources in time. fails to
 # allocate computational resources for their task, prompting them to retry or
 # seek support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:960
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:959
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
@@ -698,6 +698,8 @@ msgstr ""
 
 # CTX-INTERPRETATION: This string appears in an email template as a greeting.
 # to the user, where the user's first name is dynamically inserted.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:4
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:4
@@ -722,6 +724,150 @@ msgstr ""
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:1
 msgid "Dear %(first_name)s,"
 msgstr "Estimado/a %(first_name)s,"
+
+# CTX-INTERPRETATION: This string is part of an email template confirming that
+# a user's request to access a product has been approved, displaying the
+# product's name.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
+msgid ""
+"Your request has been approved and you now have access to %(product_name)s."
+msgstr ""
+"Su solicitud ha sido aprobada y ahora tiene acceso a %(product_name)s."
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users who have an existing account to log in to a specific product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:14
+msgid ""
+"Since you already have an account on\n"
+"  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
+msgstr ""
+"Dado que ya tiene una cuenta, por favor continúe iniciando sesión en "
+"%(product_name)s con la misma dirección de correo electrónico y contraseña."
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users who have an existing account about adding a new product, prompting
+# them to log in.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:10
+msgid ""
+"Since you already have an account, please continue logging in to "
+"%(product_name)s with the same email and password."
+msgstr ""
+"Dado que ya tiene una cuenta, por favor continúe iniciando sesión en "
+"%(product_name)s con la misma dirección de correo electrónico y contraseña."
+
+# CTX-INTERPRETATION: This string appears in an email body template,
+# specifically for an account added to a product, providing a link to access
+# the product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
+msgid "You can access %(product_name)s here: %(login_link)s"
+msgstr "Puede acceder a %(product_name)s aquí: %(login_link)s"
+
+# CTX-INTERPRETATION: This string appears in the user interface of a
+# scientific simulation application, providing contact information for
+# support. scientific simulation application, providing users with contact
+# information for support in case they encounter any issues.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr ""
+"Si ocurre algún problema, no dude en contactarnos en %(support_link)s."
+
+# CTX-INTERPRETATION: This string is a friendly message encouraging the user
+# to enjoy the product. message that is displayed to users after they have
+# completed their registration for the scientific simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
+msgid "Enjoy %(product_name)s!"
+msgstr "¡Disfruta %(product_name)s!"
+
+# CTX-INTERPRETATION: This string appears as a closing salutation in a
+# message. or email, likely from the team responsible for the scientific
+# simulation application.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:36
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
+msgid "Best regards,"
+msgstr "Saludos cordiales,"
+
+# CTX-INTERPRETATION: This string is used to refer to the team associated with
+# the product in a closing message. or email, indicating it is sent by the
+# team responsible for the specified product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:39
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
+msgid "The %(product_name)s Team"
+msgstr "El equipo de %(product_name)s"
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users who have an existing account to log in to a different product using
+# their existing credentials.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:7
+msgid ""
+"Since you already have an account on %(existing_product)s, please continue "
+"logging in to %(product_name)s with the same email and password."
+msgstr ""
+"Dado que ya tiene una cuenta en %(product_name)s, por favor continúe "
+"iniciando sesión en %(product_name)s con la misma dirección de correo "
+"electrónico y contraseña."
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# a user that they have been added to a product, providing a link to access
+# the product's homepage.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
+msgid "You can access %(product_name)s here: %(link)s"
+msgstr "Puede acceder a %(product_name)s aquí: %(link)s"
+
+# CTX-INTERPRETATION: This string appears as part of an error message or help,
+# providing contact information for support. section in the application,
+# providing users with contact information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr ""
+"Si ocurre algún problema, no dude en contactarnos en %(support_email)s."
+
+# CTX-INTERPRETATION: This string is part of an email subject line, informing
+# the user that they have been added to a product and have gained access to
+# it.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/subject.j2:1
+msgid "You Now Have Access to %(product_name)s"
+msgstr "Ahora tiene acceso a"
 
 # CTX-INTERPRETATION: This string appears in an email or notification message.
 # sent to a user expressing gratitude for their interest in a product and
@@ -776,56 +922,6 @@ msgid ""
 msgstr ""
 "Por favor, siga la información en pantalla y proceda con su registro. Si "
 "ocurre algún problema, no dude en contactarnos en %(support_link)s."
-
-# CTX-INTERPRETATION: This string is a friendly message encouraging the user
-# to enjoy the product. message that is displayed to users after they have
-# completed their registration for the scientific simulation application.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
-msgid "Enjoy %(product_name)s!"
-msgstr "¡Disfruta %(product_name)s!"
-
-# CTX-INTERPRETATION: This string appears as a closing salutation in a
-# message. or email, likely from the team responsible for the scientific
-# simulation application.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
-msgid "Best regards,"
-msgstr "Saludos cordiales,"
-
-# CTX-INTERPRETATION: This string is used to refer to the team associated with
-# the product in a closing message. or email, indicating it is sent by the
-# team responsible for the specified product.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
-#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
-#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
-#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
-#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
-#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
-#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
-#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
-#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
-#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
-#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
-#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
-#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
-msgid "The %(product_name)s Team"
-msgstr "El equipo de %(product_name)s"
 
 # CTX-INTERPRETATION: This string appears as a clickable link prompt on a
 # registration page. webpage, directing users to the registration page for the
@@ -981,7 +1077,6 @@ msgstr "Cambiar correo electrónico"
 # simulation application.
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
 msgid ""
@@ -995,8 +1090,8 @@ msgstr "No dude en contactarnos en %(support_link)s si necesita más ayuda."
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:12
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
@@ -1019,7 +1114,6 @@ msgstr "Saludos cordiales,"
 # contact information for further assistance.
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
 msgid ""
@@ -1124,12 +1218,37 @@ msgstr ""
 msgid "Your code is: %(code_display)s"
 msgstr "Su código es: %(code_display)s"
 
+# CTX-INTERPRETATION: This string appears in an email template, indicating the
+# validity period of a two-factor authentication (2FA) code.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
+msgid "This code is valid for %(ttl)s seconds."
+msgstr "Este código es válido durante %(ttl)s segundos."
+
+# CTX-INTERPRETATION: This string appears in an email body, specifically
+# within a template for sending a new 2FA code, providing contact information
+# for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further\n"
+"  help."
+msgstr "No duden en contactarnos en %(support_link)s si necesitan más ayuda."
+
 # CTX-INTERPRETATION: This string appears in a notification or message sent to
 # provide a two-factor authentication code. users to provide them with a two-
 # factor authentication code for accessing their account.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
 msgid "Your code is: %(code)s"
 msgstr "Su código es: %(code)s"
+
+# CTX-INTERPRETATION: This string is a customer support message encouraging
+# users to reach out for further assistance. application, providing users with
+# contact information for further assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need\n"
+"further help."
+msgstr "No dude en contactarnos en %(support_email)s si necesita más ayuda."
 
 # CTX-INTERPRETATION: This string is used to inform the user of their two-
 # factor authentication code for a specific host. notification to inform the
@@ -1156,17 +1275,6 @@ msgid ""
 "Please follow the on-screen information and proceed with your registration."
 msgstr "Por favor, siga la información en pantalla y proceda con su registro."
 
-# CTX-INTERPRETATION: This string appears in the user interface of a
-# scientific simulation application, providing contact information for
-# support. scientific simulation application, providing users with contact
-# information for support in case they encounter any issues.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
-msgid ""
-"If any problem should occur, please feel free to contact us at "
-"%(support_link)s."
-msgstr ""
-"Si ocurre algún problema, no dude en contactarnos en %(support_link)s."
-
 # CTX-INTERPRETATION: This string appears as a hyperlink text in an email or
 # notification inviting the user to register on the platform. webpage,
 # directing the user to the registration page for the scientific simulation
@@ -1174,16 +1282,6 @@ msgstr ""
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
 msgid "Click here to access the registration page: %(link)s"
 msgstr "Haga clic aquí para acceder a la página de registro: %(link)s"
-
-# CTX-INTERPRETATION: This string appears as part of an error message or help,
-# providing contact information for support. section in the application,
-# providing users with contact information for support.
-#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
-msgid ""
-"If any problem should occur, please feel free to contact us at "
-"%(support_email)s."
-msgstr ""
-"Si ocurre algún problema, no dude en contactarnos en %(support_email)s."
 
 # CTX-INTERPRETATION: This string appears in an email notification confirming
 # a successful payment and credit addition to a user's account. the successful
@@ -1267,8 +1365,8 @@ msgid ""
 "Thank you for registering with %(product_name)s. Your account\n"
 "has been successfully created and you can now sign in to %(host)s."
 msgstr ""
-"Gracias por registrarse con {{ product_name }}. Su cuenta\n"
-"ha sido creada con éxito y ahora puede iniciar sesión en {{ host }}."
+"Gracias por registrarse con %(product_name)s. Su cuenta\n"
+"ha sido creada con éxito y ahora puede iniciar sesión en %(host)s}."
 
 # CTX-INTERPRETATION: This string appears in an email body template, providing
 # contact information for support.
@@ -1284,7 +1382,7 @@ msgstr ""
 # the user to a specific product after registration.
 #: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
 msgid "Welcome to %(product_name)s!"
-msgstr "¡Bienvenido a {{ product_name }}!"
+msgstr "¡Bienvenido a %(product_name)s!"
 
 # CTX-INTERPRETATION: This string appears in an email notification sent to a
 # user regarding a password reset request. user when a password reset request
@@ -1913,7 +2011,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string appears in an error message that is raised
 # when two-factor authentication login is not available. when the two-factor
 # authentication login feature is not available in the application.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:209
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:210
 #: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
 msgid "2FA login is not available"
 msgstr "El inicio de sesión con 2FA no está disponible"
@@ -3161,7 +3259,7 @@ msgstr "No se pudo encontrar el token de API para '{service}'."
 # attempts to register but no pending registration request is found for their
 # email in the specified product. attempts to register with an email that does
 # not have a pending registration request in the specified product.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:30
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:32
 #, python-brace-format
 msgid ""
 "No pending registration request found for email {email} in {product_name}."
@@ -3173,7 +3271,7 @@ msgstr ""
 # a requested user cannot be found due to registration or privacy settings. a
 # requested user profile cannot be accessed due to non-registration or privacy
 # settings.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:37
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:39
 msgid ""
 "The requested user could not be found. This may be because the user is not "
 "registered or has privacy settings enabled."
@@ -3186,7 +3284,7 @@ msgstr ""
 # tries to register with a username that is already taken. attempts to
 # register with a username that is already taken, suggesting an alternative
 # username.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:45
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:47
 #, python-brace-format
 msgid ""
 "The username '{user_name}' is already in use. Please try "
@@ -3199,7 +3297,7 @@ msgstr ""
 # attempts to pre-register an email that already has existing accounts.
 # attempts to pre-register an email that is already associated with one or
 # more existing accounts.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:52
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:54
 #, python-brace-format
 msgid ""
 "Found {num_found} existing account(s) for '{email}'. Unable to pre-register "
@@ -3211,7 +3309,7 @@ msgstr ""
 # CTX-INTERPRETATION: This error message appears when a user tries to access a
 # product that is still being set up and is not available yet. product that is
 # still being set up and is not available for use yet.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:59
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:61
 msgid ""
 "This product is currently being configured and is not yet ready for use. "
 "Please try again later."
@@ -3223,7 +3321,7 @@ msgstr ""
 # tries to proceed without having initiated the phone registration process.
 # attempts to proceed with a phone registration process that has not been
 # initiated.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:66
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:68
 msgid ""
 "No pending phone registration found. Please start the phone registration "
 "process first."
@@ -3235,7 +3333,7 @@ msgstr ""
 # phone registration session is no longer valid. phone registration session is
 # no longer valid or has expired, prompting them to restart the registration
 # process.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:73
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:75
 msgid ""
 "Your phone registration session is invalid or has expired. Please start the "
 "phone registration process again."
@@ -3246,7 +3344,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # enters an incorrect confirmation code. inputs an incorrect confirmation code
 # during phone registration in the application.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:81
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:83
 msgid ""
 "The confirmation code you entered is incorrect. Please check and try again."
 msgstr ""
@@ -3257,14 +3355,14 @@ msgstr ""
 # a product is not available or cannot be located in the system. a requested
 # product is not found in the system, likely due to an incorrect product ID or
 # the product being unavailable.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:88
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:90
 msgid "The requested product could not be found."
 msgstr "El producto solicitado no se pudo encontrar."
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # tries to access a pre-registration that does not exist. attempts to access a
 # pre-registration that does not exist in the system.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:95
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:97
 msgid "The requested pre-registration was not found."
 msgstr "La preinscripción solicitada no fue encontrada."
 
@@ -3272,7 +3370,7 @@ msgstr "La preinscripción solicitada no fue encontrada."
 # a request has already been reviewed and cannot be changed or relocated. a
 # request has already been reviewed and cannot be changed or moved to another
 # state.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:102
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:104
 msgid "This request was already reviewed and cannot be moved."
 msgstr "Esta solicitud ya fue revisada y no se puede mover."
 
@@ -3280,7 +3378,7 @@ msgstr "Esta solicitud ya fue revisada y no se puede mover."
 # a request that is already associated with an existing account. a request to
 # an account that has already been associated with another account, preventing
 # further action.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:109
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:111
 msgid ""
 "This request is already linked to a created account and cannot be moved."
 msgstr ""
@@ -3290,10 +3388,29 @@ msgstr ""
 # tries to register with an email that is already in use for the target
 # product. attempts to register with an email that is already associated with
 # an existing request in the product.
-#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:116
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:118
 msgid "A request with this email already exists in the target product."
 msgstr ""
 "Ya existe una solicitud con este correo electrónico en el producto objetivo."
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint that handles
+# user account status and access control, specifically when a user's account
+# is inactive.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:125
+#, python-brace-format
+msgid ""
+"This user's account is not active ({status}) and cannot be granted access to"
+" a new product."
+msgstr ""
+"Esta cuenta de usuario no está activa ({status}) y no puede ser otorgado "
+"acceso a un nuevo producto."
+
+# CTX-INTERPRETATION: The string appears in a REST API endpoint related to
+# user approval, specifically when an invitation URL is missing.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:132
+#, python-brace-format
+msgid "An invitation URL is required to approve {email}."
+msgstr "Se requiere una URL de invitación para aprobar {email}."
 
 # CTX-INTERPRETATION: This string appears in an error message when a user
 # tries to access a product that is not available. tries to access a product

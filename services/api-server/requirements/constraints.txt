@@ -9,7 +9,3 @@
 # NOTE: moto, aws-sam-translator, and cfn-lint constraints were removed
 # after upgrading jsonschema from ~=3.2 to a modern version (the old
 # constraints existed solely to work around jsonschema version conflicts).
-
-# the osparc client currently requires fastapi-pagination<0.13.0 as it requires links fields in the response (from version 0.13.0 they are all optional)
-# https://github.com/ITISFoundation/osparc-simcore/issues/8254
-fastapi-pagination<0.13.0

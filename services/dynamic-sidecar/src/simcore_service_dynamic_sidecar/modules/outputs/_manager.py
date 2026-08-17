@@ -118,8 +118,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._task_scheduler_worker: Task | None = None
         self._schedule_all_ports_for_upload: bool = False
 
-        # keep track if a port was uploaded and there was an error, remove said error if
-        self._last_upload_error_tracker: dict[str, Exception | None] = {}
+        # keep track if a port was uploaded and there was an error, remove said error if last upload was ok
+        self._last_upload_error_tracker: dict[str, str | None] = {}
 
     async def _uploading_task_start(self) -> None:
         port_keys = await self._port_key_tracker.get_uploading()
@@ -163,7 +163,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     future.result()
                     self._last_upload_error_tracker[port_key] = None
                 except Exception as e:  # pylint: disable=broad-except
-                    self._last_upload_error_tracker[port_key] = e
+                    self._last_upload_error_tracker[port_key] = format_exception_as_string(e)
 
             self._task_uploading_followup = create_task(self._port_key_tracker.remove_all_uploading())
 
