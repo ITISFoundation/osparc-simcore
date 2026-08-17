@@ -8,6 +8,7 @@ from settings_library.redis import RedisDatabase
 from simcore_service_dynamic_scheduler.services.redis import get_all_redis_clients
 
 from ...services.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
+from ...services.t_scheduler import TemporalHealthCheck, get_temporalio_health_check
 
 assert get_app  # nosec
 assert get_reverse_url_mapper  # nosec
@@ -25,6 +26,12 @@ def get_redis_clients_from_request(
     request: Request,
 ) -> dict[RedisDatabase, RedisClientSDK]:
     return get_all_redis_clients(request.app)
+
+
+def get_temporalio_health_check_from_request(
+    request: Request,
+) -> TemporalHealthCheck:
+    return get_temporalio_health_check(request.app)
 
 
 __all__: tuple[str, ...] = (
