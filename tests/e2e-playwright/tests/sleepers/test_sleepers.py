@@ -15,7 +15,8 @@ from typing import Any, Final
 
 from packaging.version import Version
 from packaging.version import parse as parse_version
-from playwright.sync_api import Page
+from playwright.sync_api import APIRequestContext, Page
+from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import (
     ContextMessages,
     log_context,
@@ -53,6 +54,8 @@ def _get_expected_file_names_for_version(version: Version) -> list[str]:
 
 def test_sleepers(
     page: Page,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
     log_in_and_out: RobustWebSocket,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
@@ -151,6 +154,12 @@ def test_sleepers(
             stage_timeouts=stage_timeouts,
         )
 
+    # NOTE: `project_data["workbench"]` predates the sleeper nodes created via the UI above, so
+    # the project is re-fetched here to get an up-to-date workbench
+    get_prj_response = api_request_context.get(f"{product_url}v0/projects/{project_data['uuid']}")
+    assert get_prj_response.ok, f"Failed to GET project: {get_prj_response.status} {get_prj_response.text()}"
+    workbench = get_prj_response.json()["data"]["workbench"]
+
     # check the outputs (the first item is the title, so we skip it)
     with log_context(
         logging.INFO,
@@ -167,7 +176,7 @@ def test_sleepers(
             check_node_outputs(
                 page,
                 study_id=project_data["uuid"],
-                workbench=project_data["workbench"],
+                workbench=workbench,
                 node_id=node_id,
                 expected_file_names=sleeper_expected_output_files,
             )
