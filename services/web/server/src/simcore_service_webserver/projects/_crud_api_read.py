@@ -85,13 +85,10 @@ async def _aggregate_data_to_projects_from_other_sources(
         projects_uuids_with_workspace_id=[(p["uuid"], p["workspaceId"]) for p in db_projects],
     )
 
-    # updating `project.state`
-    update_state_per_project = [
-        _projects_service.add_project_states_for_user(user_id=user_id, project=prj, app=app) for prj in db_projects
-    ]
-
-    updated_projects: list[ProjectDict] = await _parallel_update(
-        *update_state_per_project,
+    updated_projects = await _projects_service.add_projects_states_for_user(
+        app=app,
+        projects=db_projects,
+        user_id=user_id,
     )
 
     for project in updated_projects:

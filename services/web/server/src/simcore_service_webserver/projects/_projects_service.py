@@ -1985,6 +1985,33 @@ async def _get_project_share_state(
     )
 
 
+async def add_projects_states_for_user(
+    *,
+    user_id: UserID,
+    projects: list[ProjectDict],
+    app: web.Application,
+) -> list[ProjectDict]:
+    latest_states, project_share_states = await asyncio.gather(
+        director_v2_service.list_computations_latest_states(
+            app,
+            project_ids=[ProjectID(project["uuid"]) for project in projects],
+        ),
+        limited_gather(
+            *[_get_project_share_state(user_id, project["uuid"], app) for project in projects],
+            limit=20,
+        ),
+    )
+    state_by_project = {item.project_uuid: item.state for item in latest_states}
+
+    for project, project_share_state in zip(projects, project_share_states, strict=True):
+        project["state"] = ProjectState(
+            share_state=project_share_state,
+            state=ProjectRunningState(value=state_by_project.get(ProjectID(project["uuid"]), RunningState.NOT_STARTED)),
+        ).model_dump(by_alias=True, exclude_unset=True)
+
+    return projects
+
+
 async def add_project_states_for_user(
     *,
     user_id: UserID,

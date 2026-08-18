@@ -8,11 +8,17 @@ from collections.abc import Awaitable, Callable
 from http import HTTPStatus
 from math import ceil
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationProjectStateRpcGet,
+)
 from models_library.products import ProductName
+from models_library.projects_state import RunningState
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -27,6 +33,27 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
+
+
+@pytest.fixture(autouse=True)
+def mock_list_computations_latest_states(mocker: MockerFixture) -> AsyncMock:
+    async def _list_latest_states(*_args, project_ids, **_kwargs) -> list[ComputationProjectStateRpcGet]:
+        return (
+            [
+                ComputationProjectStateRpcGet(
+                    project_uuid=project_ids[0],
+                    state=RunningState.SUCCESS,
+                )
+            ]
+            if project_ids
+            else []
+        )
+
+    return mocker.patch(
+        "simcore_service_webserver.director_v2._director_v2_service.computations.list_computations_latest_states",
+        spec=True,
+        side_effect=_list_latest_states,
+    )
 
 
 def assert_replaced(current_project, update_data):
@@ -155,6 +182,7 @@ async def test_list_projects_with_pagination(
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
+    mock_list_computations_latest_states: AsyncMock,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     NUM_PROJECTS = 60
@@ -185,10 +213,21 @@ async def test_list_projects_with_pagination(
             assert len(data) == meta["count"]
             assert meta["count"] == min(limit, NUM_PROJECTS - len(projects))
             assert meta["limit"] == limit
+            rpc_call = mock_list_computations_latest_states.await_args_list[-1]
+            assert {f"{project_id}" for project_id in rpc_call.kwargs["project_ids"]} == {
+                project["uuid"] for project in data
+            }
+            state_by_project = {project["uuid"]: project["state"]["state"]["value"] for project in data}
+            assert state_by_project[f"{rpc_call.kwargs['project_ids'][0]}"] == RunningState.SUCCESS
+            assert set(state_by_project.values()) <= {
+                RunningState.NOT_STARTED,
+                RunningState.SUCCESS,
+            }
             projects.extend(data)
             next_link = URL(links["next"]) if links["next"] is not None else None
 
         assert len(projects) == len(created_projects)
+        assert mock_list_computations_latest_states.await_count == NUMBER_OF_CALLS
         assert {prj["uuid"] for prj in projects} == {prj["uuid"] for prj in created_projects}
 
 

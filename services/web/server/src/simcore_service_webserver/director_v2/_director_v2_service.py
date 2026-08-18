@@ -2,6 +2,9 @@ import logging
 from uuid import UUID
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationProjectStateRpcGet,
+)
 from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
@@ -16,6 +19,7 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_decorator
+from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
     GroupExtraPropertiesRepo,
@@ -26,6 +30,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
+from ..rabbitmq import get_rabbitmq_rpc_client
 from ..user_preferences import user_preferences_service
 from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
 from ..users.errors import UserDefaultWalletNotFoundError
@@ -44,6 +49,17 @@ _logger = logging.getLogger(__name__)
 #
 # PIPELINE RESOURCE ----------------------
 #
+
+
+async def list_computations_latest_states(
+    app: web.Application,
+    *,
+    project_ids: list[ProjectID],
+) -> list[ComputationProjectStateRpcGet]:
+    return await computations.list_computations_latest_states(
+        get_rabbitmq_rpc_client(app),
+        project_ids=project_ids,
+    )
 
 
 @log_decorator(logger=_logger)
