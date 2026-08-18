@@ -8,6 +8,7 @@ from models_library.api_schemas_directorv2 import (
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGetPage,
+    ComputationProjectStateRpcGet,
     ComputationRunRpcGetPage,
     ComputationTaskRpcGetPage,
 )
@@ -28,6 +29,21 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
 
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_computations_latest_states(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    project_ids: list[ProjectID],
+) -> list[ComputationProjectStateRpcGet]:
+    result = await rabbitmq_rpc_client.request(
+        DIRECTOR_V2_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_computations_latest_states"),
+        project_ids=project_ids,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    return TypeAdapter(list[ComputationProjectStateRpcGet]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
