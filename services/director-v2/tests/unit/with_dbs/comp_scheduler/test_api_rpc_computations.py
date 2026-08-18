@@ -14,8 +14,8 @@ from faker import Faker
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGetPage,
-    ComputationProjectStateRpcGet,
     ComputationRunRpcGetPage,
+    ComputationRunStateRpcGet,
     ComputationTaskRpcGetPage,
 )
 from models_library.computations import CollectionRunID
@@ -85,7 +85,7 @@ async def test_rpc_list_computations_latest_states(
         ],
     )
 
-    assert all(isinstance(item, ComputationProjectStateRpcGet) for item in output)
+    assert all(isinstance(item, ComputationRunStateRpcGet) for item in output)
     assert {item.project_uuid: item.state for item in output} == {
         project_with_multiple_runs.uuid: RunningState.SUCCESS,
         project_with_other_user_run.uuid: RunningState.FAILED,

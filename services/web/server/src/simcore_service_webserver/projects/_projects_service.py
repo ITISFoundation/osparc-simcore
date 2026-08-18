@@ -24,7 +24,7 @@ from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.comp_runs import (
-    ComputationProjectStateRpcGet,
+    ComputationRunStateRpcGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -1992,7 +1992,7 @@ async def _get_project_share_state(
 async def _list_computations_latest_states_or_none(
     app: web.Application,
     project_ids: list[ProjectID],
-) -> list[ComputationProjectStateRpcGet] | None:
+) -> list[ComputationRunStateRpcGet] | None:
     try:
         return await director_v2_service.list_computations_latest_states(
             app,

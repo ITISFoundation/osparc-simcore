@@ -14,7 +14,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.api_schemas_directorv2.comp_runs import (
-    ComputationProjectStateRpcGet,
+    ComputationRunStateRpcGet,
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -42,10 +42,10 @@ def mock_list_computations_latest_states(mocked_director_v2: AsyncMock) -> Async
         _rabbitmq_rpc_client: RabbitMQRPCClient,
         *,
         project_ids: list[ProjectID],
-    ) -> list[ComputationProjectStateRpcGet]:
+    ) -> list[ComputationRunStateRpcGet]:
         return (
             [
-                ComputationProjectStateRpcGet(
+                ComputationRunStateRpcGet(
                     project_uuid=project_ids[0],
                     state=RunningState.SUCCESS,
                 )

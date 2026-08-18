@@ -8,8 +8,8 @@ import sqlalchemy as sa
 import sqlalchemy.exc as sql_exc
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGet,
-    ComputationProjectStateRpcGet,
     ComputationRunRpcGet,
+    ComputationRunStateRpcGet,
 )
 from models_library.basic_types import IDStr
 from models_library.computations import CollectionRunID
@@ -154,7 +154,7 @@ class CompRunsRepository(BaseRepository):
     async def list_latest_states_by_projects(
         self,
         project_ids: list[ProjectID],
-    ) -> list[ComputationProjectStateRpcGet]:
+    ) -> list[ComputationRunStateRpcGet]:
         if not project_ids:
             return []
 
@@ -175,7 +175,7 @@ class CompRunsRepository(BaseRepository):
             result = await conn.execute(query)
 
             return [
-                ComputationProjectStateRpcGet(
+                ComputationRunStateRpcGet(
                     project_uuid=row.project_uuid,
                     state=DB_TO_RUNNING_STATE[row.state],
                 )

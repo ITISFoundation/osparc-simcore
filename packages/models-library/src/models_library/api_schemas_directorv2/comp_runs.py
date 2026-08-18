@@ -16,7 +16,7 @@ from ..projects_nodes_io import NodeID
 from ..projects_state import RunningState
 
 
-class ComputationProjectStateRpcGet(BaseModel):
+class ComputationRunStateRpcGet(BaseModel):
     project_uuid: ProjectID
     state: RunningState
 

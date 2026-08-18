@@ -8,8 +8,8 @@ from models_library.api_schemas_directorv2 import (
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGetPage,
-    ComputationProjectStateRpcGet,
     ComputationRunRpcGetPage,
+    ComputationRunStateRpcGet,
     ComputationTaskRpcGetPage,
 )
 from models_library.computations import CollectionRunID
@@ -38,7 +38,7 @@ async def list_computations_latest_states(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     project_ids: list[ProjectID],
-) -> list[ComputationProjectStateRpcGet]:
+) -> list[ComputationRunStateRpcGet]:
     try:
         result = await rabbitmq_rpc_client.request(
             DIRECTOR_V2_RPC_NAMESPACE,
@@ -48,7 +48,7 @@ async def list_computations_latest_states(
         )
     except (TimeoutError, BaseRPCError) as exc:
         raise ComputationStatesRetrievalError from exc
-    return TypeAdapter(list[ComputationProjectStateRpcGet]).validate_python(result)
+    return TypeAdapter(list[ComputationRunStateRpcGet]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

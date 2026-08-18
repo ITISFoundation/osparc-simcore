@@ -4,8 +4,8 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGet,
     ComputationCollectionRunTaskRpcGetPage,
-    ComputationProjectStateRpcGet,
     ComputationRunRpcGetPage,
+    ComputationRunStateRpcGet,
     ComputationTaskRpcGet,
     ComputationTaskRpcGetPage,
 )
@@ -40,7 +40,7 @@ async def list_computations_latest_states(
     app: FastAPI,
     *,
     project_ids: list[ProjectID],
-) -> list[ComputationProjectStateRpcGet]:
+) -> list[ComputationRunStateRpcGet]:
     comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
     return await comp_runs_repo.list_latest_states_by_projects(project_ids)
 

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from aiohttp import web
 from models_library.api_schemas_directorv2.comp_runs import (
-    ComputationProjectStateRpcGet,
+    ComputationRunStateRpcGet,
 )
 from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
@@ -62,7 +62,7 @@ async def list_computations_latest_states(
     app: web.Application,
     *,
     project_ids: list[ProjectID],
-) -> list[ComputationProjectStateRpcGet]:
+) -> list[ComputationRunStateRpcGet]:
     try:
         return await computations.list_computations_latest_states(
             get_rabbitmq_rpc_client(app),
