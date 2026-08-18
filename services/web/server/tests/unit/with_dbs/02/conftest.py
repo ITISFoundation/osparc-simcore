@@ -38,6 +38,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
+from simcore_service_webserver.director_v2 import _director_v2_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 
@@ -230,7 +231,7 @@ async def mocked_director_v2(
     mocker: MockerFixture,
 ) -> mock.AsyncMock:
     return mocker.patch(
-        "simcore_service_webserver.director_v2._director_v2_service.computations.list_computations_latest_states",
+        f"{_director_v2_service.__name__}.computations.list_computations_latest_states",
         spec=True,
         return_value=[],
     )
