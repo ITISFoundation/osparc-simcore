@@ -167,6 +167,7 @@ async def test_trash_projects_shared_among_users(
     user_project: ProjectDict,
     other_user: UserInfoDict,
     mocked_catalog: None,
+    mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
