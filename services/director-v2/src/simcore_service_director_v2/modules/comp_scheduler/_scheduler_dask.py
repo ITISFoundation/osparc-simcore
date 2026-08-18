@@ -605,7 +605,8 @@ class DaskScheduler(BaseCompScheduler):
 
         _logger.warning(
             **create_troubleshooting_log_kwargs(
-                f"Task {task.job_id} is unknown to the computational backend, resubmitting it",
+                f"Task {task.job_id} is unknown to the computational backend, "
+                f"resubmitting it for the {resubmissions + 1} time",
                 error=result,
                 error_context=log_error_context,
                 tip="The dask-scheduler forgets all tasks when it crashes or is restarted. "
