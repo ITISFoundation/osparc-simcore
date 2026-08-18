@@ -553,8 +553,9 @@ class DaskScheduler(BaseCompScheduler):
         result: ComputationalBackendTaskNotFoundError,
         log_error_context: dict[str, Any],
         comp_run: CompRunsAtDB,
-    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool] | None:
-        """Returns None if resubmitted, otherwise the outcome tuple (waiting or exhausted)."""
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        """Returns the outcome tuple: WAITING_FOR_CLUSTER if resubmitted, STARTED if still waiting
+        for the backoff delay to elapse, or the exhausted (failed) outcome."""
         resubmissions = 0
         last_attempt = arrow.utcnow()
         for error in task.errors or []:
@@ -630,7 +631,12 @@ class DaskScheduler(BaseCompScheduler):
                 )
             ],
         )
-        return None
+        return (
+            RunningState.WAITING_FOR_CLUSTER,
+            SimcorePlatformStatus.BAD,
+            [],
+            False,
+        )
 
     @staticmethod
     async def _handle_task_error(
@@ -714,16 +720,15 @@ class DaskScheduler(BaseCompScheduler):
                     task.current, result, log_error_context
                 )
             elif isinstance(result, ComputationalBackendTaskNotFoundError):
-                outcome = await self._handle_task_not_found_error(task.current, result, log_error_context, comp_run)
-                if outcome is None:
-                    # the task was reset for resubmission, nothing else to update
-                    return False, None
                 (
                     task_final_state,
                     simcore_platform_status,
                     task_errors,
                     task_completed,
-                ) = outcome
+                ) = await self._handle_task_not_found_error(task.current, result, log_error_context, comp_run)
+                if task_final_state is RunningState.WAITING_FOR_CLUSTER:
+                    # already persisted via reset_task_for_resubmission (job_id cleared), nothing else to update
+                    return False, None
                 if task_completed:
                     # resubmissions exhausted: clean up any invalid output files, as for other failures
                     await clean_task_output_and_log_files_if_invalid(

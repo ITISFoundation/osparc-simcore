@@ -1696,15 +1696,13 @@ async def test_handle_task_not_found_error_resubmission_and_backoff(
 
     async def _handle_task_not_found(
         task: CompTaskAtDB,
-    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool] | None:
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
         return await cast(DaskScheduler, scheduler_api)._handle_task_not_found_error(  # noqa: SLF001
             task, result, {}, comp_run
         )
 
     # 1st occurrence ever: too early to tell if this is transient, must NOT resubmit yet
-    outcome = await _handle_task_not_found(task)
-    assert outcome is not None
-    task_state, _platform_status, errors, completed = outcome
+    task_state, _platform_status, errors, completed = await _handle_task_not_found(task)
     assert task_state is RunningState.STARTED
     assert completed is False
     assert errors[0]["ctx"]["resubmissions"] == 0
@@ -1719,8 +1717,9 @@ async def test_handle_task_not_found_error_resubmission_and_backoff(
         fake_now["value"] = fake_now["value"].shift(seconds=backoff_delay.total_seconds() + 1)
 
         # backoff elapsed: the task must now actually be resubmitted
-        outcome = await _handle_task_not_found(task)
-        assert outcome is None, "task should have been reset for resubmission"
+        task_state, _platform_status, _errors, completed = await _handle_task_not_found(task)
+        assert task_state is RunningState.WAITING_FOR_CLUSTER, "task should have been reset for resubmission"
+        assert completed is False
         persisted_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
             sqlalchemy_async_engine,
             project_uuid=running_project.project.uuid,
@@ -1735,9 +1734,7 @@ async def test_handle_task_not_found_error_resubmission_and_backoff(
         assert task.errors[0]["ctx"]["resubmissions"] == expected_resubmissions
 
         # right after resubmitting: waits again, or fails for good once resubmissions are exhausted
-        outcome = await _handle_task_not_found(task)
-        assert outcome is not None
-        task_state, _platform_status, errors, completed = outcome
+        task_state, _platform_status, errors, completed = await _handle_task_not_found(task)
         if expected_resubmissions < settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES:
             assert task_state is RunningState.STARTED
             assert completed is False
