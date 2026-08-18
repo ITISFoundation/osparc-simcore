@@ -167,6 +167,7 @@ def test_sleepers(
             check_node_outputs(
                 page,
                 study_id=project_data["uuid"],
+                workbench=project_data["workbench"],
                 node_id=node_id,
                 expected_file_names=sleeper_expected_output_files,
             )
