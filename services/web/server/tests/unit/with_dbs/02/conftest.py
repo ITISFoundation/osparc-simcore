@@ -225,8 +225,15 @@ async def project_db_cleaner(client: TestClient):
 
 
 @pytest.fixture(autouse=True)
-async def mocked_director_v2(director_v2_service_mock: aioresponses) -> None:
-    pass
+async def mocked_director_v2(
+    director_v2_service_mock: aioresponses,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch(
+        "simcore_service_webserver.director_v2._director_v2_service.computations.list_computations_latest_states",
+        spec=True,
+        return_value=[],
+    )
 
 
 @pytest.fixture()
