@@ -1,5 +1,4 @@
 import contextlib
-import datetime
 import logging
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
@@ -75,9 +74,6 @@ _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 _TASK_NOT_FOUND_ERROR_TYPE: Final[str] = "task-not-found-in-computational-backend"
 _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: Final[str] = "resubmissions"
-_TASK_NOT_FOUND_ERROR_CONTEXT_TIME_KEY: Final[str] = "last_attempt"
-_TASK_NOT_FOUND_RESUBMISSION_INITIAL_DELAY: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-_TASK_NOT_FOUND_RESUBMISSION_MAX_DELAY: Final[datetime.timedelta] = datetime.timedelta(minutes=2)
 _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 
@@ -555,17 +551,13 @@ class DaskScheduler(BaseCompScheduler):
         log_error_context: dict[str, Any],
         comp_run: CompRunsAtDB,
     ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
-        """Returns the outcome tuple: WAITING_FOR_CLUSTER if resubmitted, STARTED if still waiting
-        for the backoff delay to elapse, or the exhausted (failed) outcome."""
+        """Returns the outcome tuple: WAITING_FOR_CLUSTER if resubmitted, or the exhausted (failed) outcome."""
         resubmissions = 0
-        last_attempt = arrow.utcnow()
         for error in task.errors or []:
             if error["type"] == _TASK_NOT_FOUND_ERROR_TYPE:
                 assert "ctx" in error  # nosec
                 assert _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY in error["ctx"]  # nosec
-                assert _TASK_NOT_FOUND_ERROR_CONTEXT_TIME_KEY in error["ctx"]  # nosec
                 resubmissions = int(error["ctx"][_TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY])
-                last_attempt = arrow.get(error["ctx"][_TASK_NOT_FOUND_ERROR_CONTEXT_TIME_KEY])
                 break
 
         if resubmissions >= self.settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES:
@@ -582,30 +574,6 @@ class DaskScheduler(BaseCompScheduler):
             task_state, _, task_errors, task_completed = await self._handle_task_error(task, result, log_error_context)
             # NOTE: this is a platform failure (backend lost the task), not the user's fault, so no billing
             return task_state, SimcorePlatformStatus.BAD, task_errors, task_completed
-
-        # NOTE: exponential backoff, so we do not hammer a computational backend that is still recovering
-        backoff_delay = min(
-            _TASK_NOT_FOUND_RESUBMISSION_INITIAL_DELAY * (2**resubmissions),
-            _TASK_NOT_FOUND_RESUBMISSION_MAX_DELAY,
-        )
-        if (arrow.utcnow() - last_attempt) < backoff_delay:
-            return (
-                RunningState.STARTED,
-                SimcorePlatformStatus.BAD,
-                [
-                    ErrorDict(
-                        loc=(f"{task.project_id}", f"{task.node_id}"),
-                        msg=f"{result}",
-                        type=_TASK_NOT_FOUND_ERROR_TYPE,
-                        ctx={
-                            _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: resubmissions,
-                            _TASK_NOT_FOUND_ERROR_CONTEXT_TIME_KEY: f"{last_attempt}",
-                            **log_error_context,
-                        },
-                    )
-                ],
-                False,
-            )
 
         _logger.warning(
             **create_troubleshooting_log_kwargs(
@@ -628,7 +596,6 @@ class DaskScheduler(BaseCompScheduler):
                     type=_TASK_NOT_FOUND_ERROR_TYPE,
                     ctx={
                         _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: resubmissions + 1,
-                        _TASK_NOT_FOUND_ERROR_CONTEXT_TIME_KEY: f"{arrow.utcnow()}",
                         **log_error_context,
                     },
                 )
