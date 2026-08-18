@@ -617,6 +617,7 @@ async def test_new_project_from_template_with_body(
 async def test_new_template_from_project(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mocked_director_v2: mock.AsyncMock,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
