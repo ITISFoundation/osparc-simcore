@@ -5,6 +5,7 @@ Read operations are list, get
 
 """
 
+from collections.abc import Coroutine
 from typing import Any, NamedTuple
 
 from aiohttp import web
@@ -15,6 +16,7 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
+from servicelib.utils import logged_gather
 from simcore_postgres_database.models.users import UserRole
 
 from ..folders import _folders_repository
@@ -51,6 +53,14 @@ def _batch_update(
     for obj, value in zip(objects, value_per_object, strict=True):
         obj[key] = value
     return objects
+
+
+async def _parallel_update(*update_per_object: Coroutine) -> list[Any]:
+    return await logged_gather(
+        *update_per_object,
+        reraise=True,
+        max_concurrency=100,
+    )
 
 
 async def _aggregate_data_to_projects_from_other_sources(
