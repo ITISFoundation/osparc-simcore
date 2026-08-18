@@ -760,6 +760,12 @@ _RUNNING_STATES: Final[tuple[RunningState, ...]] = (
 )
 
 _RUN_PIPELINE_MAX_WAIT_TIME: Final[int] = 60 * SECOND
+_COMPUTATION_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/computations")
+_COMPUTATION_START_REQUEST_TIMEOUT: Final[int] = 35 * SECOND
+
+
+def _computation_started_predicate(request: Request) -> bool:
+    return bool(re.search(_COMPUTATION_START_REQUEST_PATTERN, request.url) and request.method.upper() == "POST")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -863,13 +869,27 @@ def run_pipeline_and_wait_done(
 
     Port of the legacy `TutorialBase.runPipeline()` + `TutorialBase.waitForStudyDone()`.
     """
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=tuple(RunningState))
+    # NOTE: mirrors `start_and_stop_pipeline` (tests/conftest.py): expected_states is restricted to
+    # the "actively running" states only (no NOT_STARTED/UNKNOWN/SUCCESS/FAILED/ABORTED) so a stray
+    # `projectStateUpdated` frame still reporting the pre-run state can't race with the actual run
+    # trigger and be mistaken for a final state; the `POST /computations` request is also checked
+    # to confirm the click really triggered a computation.
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=_RUNNING_STATES)
     with log_context(
         logging.INFO,
         f"Running pipeline and waiting for it to complete (timeout {timedelta(milliseconds=timeout_ms)})",
-    ):
-        with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
+    ) as ctx:
+        with (
+            websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event,
+            page.expect_request(
+                _computation_started_predicate, timeout=_COMPUTATION_START_REQUEST_TIMEOUT
+            ) as request_info,
+        ):
             page.get_by_test_id(run_button_test_id).click()
+        response = request_info.value.response()
+        assert response
+        ctx.logger.info("POST /computations request response: %s", f"{response.status=}")
+        assert response.ok, f"{response.json()}"
         current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
         current_state = wait_for_computation_done(
             current_state,
