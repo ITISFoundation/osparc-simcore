@@ -14,7 +14,6 @@ from models_library.wallets import WalletInfo
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.utils import logged_gather
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -257,6 +256,8 @@ class CompTasksRepository(BaseRepository):
             optional_started -- _description_ (default: {None})
             optional_stopped -- _description_ (default: {None})
         """
+        if not tasks:
+            return
         update_values: dict[str, Any] = {
             "state": RUNNING_STATE_TO_DB[state],
             "errors": errors,
@@ -267,7 +268,31 @@ class CompTasksRepository(BaseRepository):
             update_values["start"] = optional_started
         if optional_stopped is not None:
             update_values["end"] = optional_stopped
-        await logged_gather(*(self._update_task(project_id, task_id, run_id, **update_values) for task_id in tasks))
+
+        # NOTE: all the tasks share the same update_values, so this is done as a single
+        # bulk update per table instead of one transaction per task (see ADR on comp_tasks batching)
+        node_ids = [f"{task_id}" for task_id in tasks]
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"update tasks state {project_id=}:{node_ids=} with '{update_values}'",
+        ):
+            async with self.db_engine.begin() as conn:
+                await conn.execute(
+                    sa.update(comp_tasks)
+                    .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id.in_(node_ids)))
+                    .values(**update_values)
+                )
+                # Sync with comp_run_snapshot_tasks table
+                await conn.execute(
+                    sa.update(comp_run_snapshot_tasks)
+                    .where(
+                        (comp_run_snapshot_tasks.c.run_id == run_id)
+                        & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
+                        & (comp_run_snapshot_tasks.c.node_id.in_(node_ids))
+                    )
+                    .values(**update_values)
+                )
 
     async def update_project_task_progress(
         self,

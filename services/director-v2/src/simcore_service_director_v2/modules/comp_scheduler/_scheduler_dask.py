@@ -248,13 +248,6 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     if t is not None
                 ]
-            for progress_event in task_progress_events:
-                await CompTasksRepository(self.db_engine).update_project_task_progress(
-                    progress_event.task_owner.project_id,
-                    progress_event.task_owner.node_id,
-                    comp_run.run_id,
-                    progress_event.progress,
-                )
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
@@ -442,8 +435,7 @@ class DaskScheduler(BaseCompScheduler):
         except PortsValidationError as err:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Unexpected error while parsing output data, "
-                    "comp_tasks/comp_pipeline is not in sync with what was started",
+                    "Unexpected error while parsing output data, comp_tasks is not in sync with what was started",
                     error=err,
                     error_context=log_error_context,
                 )
