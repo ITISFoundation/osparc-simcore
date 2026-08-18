@@ -5,7 +5,7 @@ class BaseRpcError(RPCInterfaceError):  # pylint: disable=too-many-ancestors
     pass
 
 
-class ComputationStatesRetrievalError(BaseRpcError):  # pylint: disable=too-many-ancestors
+class ComputationRunStatesRetrievalError(BaseRpcError):  # pylint: disable=too-many-ancestors
     msg_template = "Could not retrieve computation states from director-v2"
 
 

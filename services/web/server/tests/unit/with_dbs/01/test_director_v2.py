@@ -13,7 +13,7 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
-    ComputationStatesRetrievalError,
+    ComputationRunStatesRetrievalError,
 )
 from simcore_service_webserver.director_v2 import director_v2_service
 from simcore_service_webserver.director_v2.exceptions import (
@@ -77,7 +77,7 @@ async def test_list_computations_latest_states_raises_domain_error_on_rpc_failur
     assert client.app
     mocker.patch(
         "simcore_service_webserver.director_v2._director_v2_service.computations.list_computations_latest_states",
-        side_effect=ComputationStatesRetrievalError,
+        side_effect=ComputationRunStatesRetrievalError,
     )
 
     with pytest.raises(DirectorV2StateRetrievalError):

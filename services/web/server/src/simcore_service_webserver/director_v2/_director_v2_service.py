@@ -21,7 +21,7 @@ from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
-    ComputationStatesRetrievalError,
+    ComputationRunStatesRetrievalError,
 )
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
@@ -68,7 +68,7 @@ async def list_computations_latest_states(
             get_rabbitmq_rpc_client(app),
             project_ids=project_ids,
         )
-    except ComputationStatesRetrievalError as exc:
+    except ComputationRunStatesRetrievalError as exc:
         raise DirectorV2StateRetrievalError from exc
 
 

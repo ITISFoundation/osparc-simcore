@@ -23,7 +23,7 @@ from pydantic import NonNegativeInt, TypeAdapter
 from ....logging_utils import log_decorator
 from ... import RabbitMQRPCClient
 from ..._errors import BaseRPCError
-from .errors import ComputationStatesRetrievalError
+from .errors import ComputationRunStatesRetrievalError
 
 _logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ async def list_computations_latest_states(
             timeout_s=_DEFAULT_TIMEOUT_S,
         )
     except (TimeoutError, BaseRPCError) as exc:
-        raise ComputationStatesRetrievalError from exc
+        raise ComputationRunStatesRetrievalError from exc
     return TypeAdapter(list[ComputationRunStateRpcGet]).validate_python(result)
 
 
