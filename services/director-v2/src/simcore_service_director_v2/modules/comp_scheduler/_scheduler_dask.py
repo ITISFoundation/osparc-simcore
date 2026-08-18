@@ -566,7 +566,7 @@ class DaskScheduler(BaseCompScheduler):
                 last_attempt = arrow.get(error["ctx"][_TASK_NOT_FOUND_ERROR_CONTEXT_TIME_KEY])
                 break
 
-        if resubmissions >= self.settings.COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS:
+        if resubmissions >= self.settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES:
             _logger.error(
                 **create_troubleshooting_log_kwargs(
                     f"Task {task.job_id} is unknown to the computational backend "

@@ -1492,9 +1492,7 @@ def with_disabled_unknown_max_time(mocker: MockerFixture) -> None:
 @pytest.fixture
 def with_disabled_task_resubmission(scheduler_api: BaseCompScheduler) -> None:
     # disables resubmission backoff so apply() goes straight to the FAILED branch (settings are frozen, so we copy)
-    scheduler_api.settings = scheduler_api.settings.model_copy(
-        update={"COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS": 0}
-    )
+    scheduler_api.settings = scheduler_api.settings.model_copy(update={"COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES": 0})
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -1712,7 +1710,7 @@ async def test_handle_task_not_found_error_resubmission_and_backoff(
     assert errors[0]["ctx"]["resubmissions"] == 0
     task = task.model_copy(update={"errors": errors})
 
-    for expected_resubmissions in range(1, settings.COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS + 1):
+    for expected_resubmissions in range(1, settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES + 1):
         # advance time past the (exponentially growing) backoff delay for this attempt
         backoff_delay = min(
             _TASK_NOT_FOUND_RESUBMISSION_INITIAL_DELAY * (2 ** (expected_resubmissions - 1)),
@@ -1740,7 +1738,7 @@ async def test_handle_task_not_found_error_resubmission_and_backoff(
         outcome = await _handle_task_not_found(task)
         assert outcome is not None
         task_state, _platform_status, errors, completed = outcome
-        if expected_resubmissions < settings.COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS:
+        if expected_resubmissions < settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES:
             assert task_state is RunningState.STARTED
             assert completed is False
             assert errors[0]["ctx"]["resubmissions"] == expected_resubmissions

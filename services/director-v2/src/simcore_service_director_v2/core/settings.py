@@ -115,14 +115,13 @@ class ComputationalBackendSettings(BaseCustomSettings):
         ),
     ] = datetime.timedelta(minutes=10)
 
-    COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS: Annotated[
+    COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES: Annotated[
         NonNegativeInt,
         Field(
             description=(
-                "maximum number of times a task that the computational backend does not know "
-                "about anymore is resubmitted before it is considered failed. This happens when "
-                "the connection to the dask-scheduler is lost while the task was submitted but "
-                "not yet durably published."
+                "maximum number of times a task is retried in case the (dask) underlying "
+                "computational cluster is restarted and a task disappears before it is "
+                "considered as failed."
             )
         ),
     ] = 2
