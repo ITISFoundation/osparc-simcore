@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -44,6 +45,7 @@ pytest_simcore_core_services_selection = [
 async def test_custom_metadata_handlers(
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
+    mocker: MockerFixture,
     storage_subsystem_mock: MockedStorageSubsystem,
     client: TestClient,
     faker: Faker,
@@ -83,6 +85,20 @@ async def test_custom_metadata_handlers(
     data, _ = await assert_status(response, expected_status_code=expected.ok)
 
     assert ProjectMetadataGet.model_validate(data).custom == custom_metadata
+
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
+        autospec=True,
+        return_value=False,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
+        autospec=True,
+    )
 
     # delete project
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
