@@ -55,9 +55,8 @@ from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
-from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 from simcore_service_director_v2.core.errors import (
     ClustersKeeperNotAvailableError,
@@ -2962,61 +2961,6 @@ def mocked_safe_release_resources(scheduler_api: BaseCompScheduler, mocker: Mock
         scheduler_api,
         "_safe_release_resources",
         wraps=scheduler_api._safe_release_resources,  # noqa: SLF001
-    )
-
-
-async def test_pipeline_not_found_error_aborts_scheduling(
-    with_disabled_auto_scheduling: mock.Mock,
-    with_disabled_scheduler_publisher: mock.Mock,
-    initialized_app: FastAPI,
-    mocked_dask_client: mock.MagicMock,
-    scheduler_api: BaseCompScheduler,
-    mocked_safe_release_resources: mock.AsyncMock,
-    sqlalchemy_async_engine: AsyncEngine,
-    published_project: PublishedProject,
-    run_metadata: RunMetadataDict,
-    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
-    fake_collection_run_id: CollectionRunID,
-):
-    """When the comp_pipeline row is deleted between pipeline start and scheduling,
-    PipelineNotFoundError is raised, resources are released and the run is set to FAILED."""
-    _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
-    run_in_db, _ = await _assert_start_pipeline(
-        initialized_app,
-        sqlalchemy_async_engine=sqlalchemy_async_engine,
-        published_project=published_project,
-        run_metadata=run_metadata,
-        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
-        collection_run_id=fake_collection_run_id,
-    )
-
-    # Simulate a corrupted state: remove the pipeline from comp_pipelines
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(comp_tasks.delete().where(comp_tasks.c.project_id == f"{published_project.project.uuid}"))
-        await conn.execute(
-            comp_pipeline.delete().where(comp_pipeline.c.project_id == f"{published_project.project.uuid}")
-        )
-
-    # Scheduling must handle PipelineNotFoundError gracefully and mark the run FAILED
-    await scheduler_api.apply(
-        user_id=run_in_db.user_id,
-        project_id=run_in_db.project_uuid,
-        iteration=run_in_db.iteration,
-    )
-    await assert_comp_runs(
-        sqlalchemy_async_engine,
-        expected_total=1,
-        expected_state=RunningState.FAILED,
-        where_statement=and_(
-            comp_runs.c.user_id == run_in_db.user_id,
-            comp_runs.c.project_uuid == f"{run_in_db.project_uuid}",
-        ),
-    )
-    mocked_safe_release_resources.assert_called_once_with(run_in_db.user_id, run_in_db.project_uuid, mock.ANY)
-    await _assert_message_received(
-        computational_pipeline_rabbit_client_parser,
-        1,
-        ComputationalPipelineStatusMessage.model_validate_json,
     )
 
 

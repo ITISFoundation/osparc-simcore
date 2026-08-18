@@ -442,8 +442,7 @@ class DaskScheduler(BaseCompScheduler):
         except PortsValidationError as err:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Unexpected error while parsing output data, "
-                    "comp_tasks/comp_pipeline is not in sync with what was started",
+                    "Unexpected error while parsing output data, comp_tasks is not in sync with what was started",
                     error=err,
                     error_context=log_error_context,
                 )
