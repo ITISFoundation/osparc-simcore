@@ -579,7 +579,9 @@ class DaskScheduler(BaseCompScheduler):
                     "Please contact support if the problem persists.",
                 )
             )
-            return await self._handle_task_error(task, result, log_error_context)
+            task_state, _, task_errors, task_completed = await self._handle_task_error(task, result, log_error_context)
+            # NOTE: this is a platform failure (backend lost the task), not the user's fault, so no billing
+            return task_state, SimcorePlatformStatus.BAD, task_errors, task_completed
 
         # NOTE: exponential backoff, so we do not hammer a computational backend that is still recovering
         backoff_delay = min(
