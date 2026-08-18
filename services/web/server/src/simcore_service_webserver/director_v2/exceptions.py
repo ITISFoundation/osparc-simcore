@@ -5,7 +5,10 @@ from typing import Any
 from ..errors import WebServerBaseError
 
 
-class DirectorV2ServiceError(WebServerBaseError, RuntimeError):
+class DirectorV2BaseError(WebServerBaseError, RuntimeError): ...
+
+
+class DirectorV2ServiceError(DirectorV2BaseError):
     """Basic exception for errors raised by director-v2"""
 
     msg_template = "Unexpected error: director-v2 returned '{status}', details '{details}' after calling '{url}'"
@@ -14,6 +17,10 @@ class DirectorV2ServiceError(WebServerBaseError, RuntimeError):
         super().__init__(**ctx)
         self.status = status
         self.details = details
+
+
+class DirectorV2StateRetrievalError(DirectorV2BaseError):
+    msg_template = "Could not retrieve computation states from director-v2"
 
 
 class ComputationNotFoundError(DirectorV2ServiceError):

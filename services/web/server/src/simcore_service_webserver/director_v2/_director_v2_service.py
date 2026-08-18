@@ -20,6 +20,9 @@ from servicelib.aiohttp import status
 from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    ComputationStatesRetrievalError,
+)
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
     GroupExtraPropertiesRepo,
@@ -40,7 +43,11 @@ from ..wallets.wallets_service import (
 )
 from ._client import DirectorV2RestClient
 from ._client_base import DataType, request_director_v2
-from .exceptions import ComputationNotFoundError, DirectorV2ServiceError
+from .exceptions import (
+    ComputationNotFoundError,
+    DirectorV2ServiceError,
+    DirectorV2StateRetrievalError,
+)
 from .settings import DirectorV2Settings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -56,10 +63,13 @@ async def list_computations_latest_states(
     *,
     project_ids: list[ProjectID],
 ) -> list[ComputationProjectStateRpcGet]:
-    return await computations.list_computations_latest_states(
-        get_rabbitmq_rpc_client(app),
-        project_ids=project_ids,
-    )
+    try:
+        return await computations.list_computations_latest_states(
+            get_rabbitmq_rpc_client(app),
+            project_ids=project_ids,
+        )
+    except ComputationStatesRetrievalError as exc:
+        raise DirectorV2StateRetrievalError from exc
 
 
 @log_decorator(logger=_logger)

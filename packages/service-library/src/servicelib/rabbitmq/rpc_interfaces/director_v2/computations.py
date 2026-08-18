@@ -22,6 +22,8 @@ from pydantic import NonNegativeInt, TypeAdapter
 
 from ....logging_utils import log_decorator
 from ... import RabbitMQRPCClient
+from ..._errors import BaseRPCError
+from .errors import ComputationStatesRetrievalError
 
 _logger = logging.getLogger(__name__)
 
@@ -37,12 +39,15 @@ async def list_computations_latest_states(
     *,
     project_ids: list[ProjectID],
 ) -> list[ComputationProjectStateRpcGet]:
-    result = await rabbitmq_rpc_client.request(
-        DIRECTOR_V2_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("list_computations_latest_states"),
-        project_ids=project_ids,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
+    try:
+        result = await rabbitmq_rpc_client.request(
+            DIRECTOR_V2_RPC_NAMESPACE,
+            _RPC_METHOD_NAME_ADAPTER.validate_python("list_computations_latest_states"),
+            project_ids=project_ids,
+            timeout_s=_DEFAULT_TIMEOUT_S,
+        )
+    except (TimeoutError, BaseRPCError) as exc:
+        raise ComputationStatesRetrievalError from exc
     return TypeAdapter(list[ComputationProjectStateRpcGet]).validate_python(result)
 
 
