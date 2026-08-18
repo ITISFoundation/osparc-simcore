@@ -45,8 +45,8 @@ from ._client import DirectorV2RestClient
 from ._client_base import DataType, request_director_v2
 from .exceptions import (
     ComputationNotFoundError,
+    DirectorV2PipelineStatesRetrievalError,
     DirectorV2ServiceError,
-    DirectorV2StateRetrievalError,
 )
 from .settings import DirectorV2Settings, get_plugin_settings
 
@@ -69,7 +69,7 @@ async def list_computations_latest_states(
             project_ids=project_ids,
         )
     except ComputationRunStatesRetrievalError as exc:
-        raise DirectorV2StateRetrievalError from exc
+        raise DirectorV2PipelineStatesRetrievalError from exc
 
 
 @log_decorator(logger=_logger)

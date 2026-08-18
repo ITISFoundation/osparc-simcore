@@ -123,7 +123,7 @@ from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
-from ..director_v2.exceptions import DirectorV2StateRetrievalError
+from ..director_v2.exceptions import DirectorV2PipelineStatesRetrievalError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
 from ..products import products_web
@@ -1998,7 +1998,7 @@ async def _list_computations_latest_states_or_none(
             app,
             project_ids=project_ids,
         )
-    except DirectorV2StateRetrievalError as exc:
+    except DirectorV2PipelineStatesRetrievalError as exc:
         _logger.warning("Getting latest computation states failed: %s", exc)
         return None
 

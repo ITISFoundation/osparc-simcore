@@ -17,7 +17,7 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
 )
 from simcore_service_webserver.director_v2 import director_v2_service
 from simcore_service_webserver.director_v2.exceptions import (
-    DirectorV2StateRetrievalError,
+    DirectorV2PipelineStatesRetrievalError,
 )
 
 
@@ -80,7 +80,7 @@ async def test_list_computations_latest_states_raises_domain_error_on_rpc_failur
         side_effect=ComputationRunStatesRetrievalError,
     )
 
-    with pytest.raises(DirectorV2StateRetrievalError):
+    with pytest.raises(DirectorV2PipelineStatesRetrievalError):
         await director_v2_service.list_computations_latest_states(
             client.app,
             project_ids=[project_id],

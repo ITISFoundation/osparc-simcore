@@ -19,7 +19,7 @@ class DirectorV2ServiceError(DirectorV2BaseError):
         self.details = details
 
 
-class DirectorV2StateRetrievalError(DirectorV2BaseError):
+class DirectorV2PipelineStatesRetrievalError(DirectorV2BaseError):
     msg_template = "Could not retrieve computation states from director-v2"
 
 
