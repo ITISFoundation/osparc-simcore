@@ -240,7 +240,7 @@ class CompTasksRepository(BaseRepository):
         self,
         project_id: ProjectID,
         task: NodeID,
-        run_id: PositiveInt,
+        run_id: RunID,
         errors: list[ErrorDict] | None = None,
     ) -> None:
         """clears the backend job reference so the scheduler picks the task up again"""
