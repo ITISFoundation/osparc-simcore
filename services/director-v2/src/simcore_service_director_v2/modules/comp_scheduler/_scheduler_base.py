@@ -287,7 +287,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         run_id: RunID,
         iteration: Iteration,
-        dag: nx.DiGraph,
+        tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> None:
         utc_now = arrow.utcnow().datetime
 
@@ -302,7 +302,6 @@ class BaseCompScheduler(ABC):
                 )
             return bool((utc_now - task.last_heartbeat) > self.service_runtime_heartbeat_interval)
 
-        tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
         if running_tasks := [t for t in tasks.values() if _need_heartbeat(t)]:
             await limited_gather(
                 *(
@@ -597,7 +596,7 @@ class BaseCompScheduler(ABC):
                     )
 
                 # 5. send a heartbeat
-                await self._send_running_tasks_heartbeat(user_id, project_id, comp_run.run_id, iteration, dag)
+                await self._send_running_tasks_heartbeat(user_id, project_id, comp_run.run_id, iteration, comp_tasks)
 
                 # 6. Update the run result
                 pipeline_result = await self._update_run_result_from_tasks(
