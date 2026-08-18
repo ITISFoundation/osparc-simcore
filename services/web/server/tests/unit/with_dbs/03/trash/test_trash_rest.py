@@ -35,16 +35,6 @@ from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 from yarl import URL
 
 
-# All tests in this module can list projects; keep the new external RPC boundary local to this module.
-@pytest.fixture(autouse=True)
-def mock_list_computations_latest_states(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_webserver.director_v2._director_v2_service.computations.list_computations_latest_states",
-        spec=True,
-        return_value=[],
-    )
-
-
 @pytest.fixture
 def user_role() -> UserRole:
     return UserRole.USER

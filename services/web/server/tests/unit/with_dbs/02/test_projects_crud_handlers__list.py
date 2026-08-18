@@ -36,7 +36,7 @@ from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_list_computations_latest_states(mocked_director_v2: AsyncMock) -> AsyncMock:
     async def _list_latest_states(
         _rabbitmq_rpc_client: RabbitMQRPCClient,
