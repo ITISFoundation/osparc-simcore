@@ -18,7 +18,6 @@ from models_library.api_schemas_directorv2.comp_runs import (
 )
 from models_library.products import ProductName
 from models_library.projects_state import RunningState
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -36,7 +35,7 @@ from yarl import URL
 
 
 @pytest.fixture(autouse=True)
-def mock_list_computations_latest_states(mocker: MockerFixture) -> AsyncMock:
+def mock_list_computations_latest_states(mocked_director_v2: AsyncMock) -> AsyncMock:
     async def _list_latest_states(*_args, project_ids, **_kwargs) -> list[ComputationProjectStateRpcGet]:
         return (
             [
@@ -49,11 +48,8 @@ def mock_list_computations_latest_states(mocker: MockerFixture) -> AsyncMock:
             else []
         )
 
-    return mocker.patch(
-        "simcore_service_webserver.director_v2._director_v2_service.computations.list_computations_latest_states",
-        spec=True,
-        side_effect=_list_latest_states,
-    )
+    mocked_director_v2.side_effect = _list_latest_states
+    return mocked_director_v2
 
 
 def assert_replaced(current_project, update_data):
