@@ -174,6 +174,7 @@ class DaskScheduler(BaseCompScheduler):
                 comp_run.run_id,
                 list(scheduled_tasks.keys()),
                 RunningState.PENDING,
+                clear_errors=False,
             )
             # each task is started independently
 

@@ -264,6 +264,7 @@ class CompTasksRepository(BaseRepository):
         state: RunningState,
         errors: list[ErrorDict] | None = None,
         *,
+        clear_errors: bool = True,
         optional_progress: float | None = None,
         optional_started: datetime | None = None,
         optional_stopped: datetime | None = None,
@@ -272,16 +273,17 @@ class CompTasksRepository(BaseRepository):
         passing None for the optional arguments will not update the respective values in the database
         Keyword Arguments:
             errors -- _description_ (default: {None})
+            clear_errors -- if False and errors is None, the errors column is left untouched
+                instead of being cleared (default: {True})
             optional_progress -- _description_ (default: {None})
             optional_started -- _description_ (default: {None})
             optional_stopped -- _description_ (default: {None})
         """
         if not tasks:
             return
-        update_values: dict[str, Any] = {
-            "state": RUNNING_STATE_TO_DB[state],
-            "errors": errors,
-        }
+        update_values: dict[str, Any] = {"state": RUNNING_STATE_TO_DB[state]}
+        if clear_errors or errors is not None:
+            update_values["errors"] = errors
         if optional_progress is not None:
             update_values["progress"] = optional_progress
         if optional_started is not None:
