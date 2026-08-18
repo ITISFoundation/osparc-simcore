@@ -224,7 +224,7 @@ async def project_db_cleaner(client: TestClient):
     await delete_all_projects(client.app)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 async def mocked_director_v2(
     director_v2_service_mock: aioresponses,
     mocker: MockerFixture,

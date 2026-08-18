@@ -17,6 +17,7 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationProjectStateRpcGet,
 )
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -26,6 +27,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.redis import RedisSettings
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -36,7 +38,11 @@ from yarl import URL
 
 @pytest.fixture(autouse=True)
 def mock_list_computations_latest_states(mocked_director_v2: AsyncMock) -> AsyncMock:
-    async def _list_latest_states(*_args, project_ids, **_kwargs) -> list[ComputationProjectStateRpcGet]:
+    async def _list_latest_states(
+        _rabbitmq_rpc_client: RabbitMQRPCClient,
+        *,
+        project_ids: list[ProjectID],
+    ) -> list[ComputationProjectStateRpcGet]:
         return (
             [
                 ComputationProjectStateRpcGet(
