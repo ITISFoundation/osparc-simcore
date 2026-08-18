@@ -223,6 +223,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         request_simcore_user_agent: str,
         *,
         can_save: bool,
+        version_display: str | None = None,
     ) -> None:
         """Invoked before the service is started"""
         groups_extra_properties = get_repository(self.app, GroupsExtraPropertiesRepository)
@@ -239,6 +240,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
             requires_data_mounting=user_extra_properties.mount_data,
+            version_display=version_display,
         )
         scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = arrow.utcnow().datetime
 

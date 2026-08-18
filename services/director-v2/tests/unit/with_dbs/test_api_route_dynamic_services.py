@@ -235,6 +235,12 @@ def mocked_catalog_service_api(
             name="service labels",
         ).respond(json=service_labels)
 
+        # get service metadata (e.g. version_display)
+        respx_mock.get(
+            f"/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}",
+            name="get service",
+        ).respond(json={"version_display": "Test Release"})
+
         yield respx_mock
 
 

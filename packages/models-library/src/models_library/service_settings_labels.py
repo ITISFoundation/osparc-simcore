@@ -355,6 +355,13 @@ class RestartPolicy(StrEnum):
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
+class UserPreferencesVersionSource(StrEnum):
+    """Content of "simcore.service.user-preferences-version-source" label"""
+
+    SERVICE_VERSION = "service-version"
+    VERSION_DISPLAY = "version-display"
+
+
 class DynamicSidecarServiceLabels(BaseModel):
     """All "simcore.service.*" labels including keys"""
 
@@ -409,6 +416,20 @@ class DynamicSidecarServiceLabels(BaseModel):
             description=("path where the user user preferences folder will be mounted in the user services"),
         ),
     ] = None
+
+    user_preferences_version_source: Annotated[
+        UserPreferencesVersionSource,
+        Field(
+            alias="simcore.service.user-preferences-version-source",
+            description=(
+                "selects which resolved version is used to namespace saved user preferences:\n"
+                "- `service-version` default, namespaces by the service's semantic version\n"
+                "- `version-display` namespaces by the catalog's human readable display version "
+                "instead, so preferences survive across semantic version bumps within the same "
+                "display release\n"
+            ),
+        ),
+    ] = UserPreferencesVersionSource.SERVICE_VERSION
 
     restart_policy: Annotated[
         RestartPolicy,
@@ -669,6 +690,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         "simcore.service.user-preferences-path": json_dumps(
                             "/tmp/path_to_preferences"  # noqa: S108
                         ),
+                        "simcore.service.user-preferences-version-source": UserPreferencesVersionSource.SERVICE_VERSION,
                         "simcore.service.is_collaborative": "False",
                     },
                     # dynamic-service with compose spec

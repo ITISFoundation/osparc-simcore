@@ -26,6 +26,7 @@ from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     RestartPolicy,
+    UserPreferencesVersionSource,
 )
 from models_library.service_settings_nat_rule import NATRule
 from models_library.services import BootOptions, ServiceMetaDataPublished
@@ -226,6 +227,7 @@ class RuntimeConfig(BaseModel):
     is_collaborative: bool = False
 
     user_preferences_path: Path | None = None
+    user_preferences_version_source: UserPreferencesVersionSource = UserPreferencesVersionSource.SERVICE_VERSION
     boot_options: BootOptions | None = None
     min_visible_inputs: NonNegativeInt | None = None
 

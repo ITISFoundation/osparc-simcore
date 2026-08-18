@@ -30,7 +30,7 @@ def setup_user_services_preferences(app: FastAPI) -> None:
                 app.state.user_services_preferences_manager = UserServicesPreferencesManager(
                     user_preferences_path=user_preferences_path,
                     service_key=settings.DY_SIDECAR_SERVICE_KEY,
-                    service_version=settings.DY_SIDECAR_SERVICE_VERSION,
+                    resolved_version=settings.DY_SIDECAR_SERVICE_VERSION,
                     user_id=settings.DY_SIDECAR_USER_ID,
                     product_name=settings.DY_SIDECAR_PRODUCT_NAME,
                     application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
