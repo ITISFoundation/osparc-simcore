@@ -558,6 +558,7 @@ async def test_trash_workspace(  # noqa: PLR0915
     workspace: WorkspaceGet,
     user_project: ProjectDict,
     fake_project: ProjectDict,
+    mocked_director_v2: None,
     mocked_dynamic_services_interface: dict[str, MagicMock],
     postgres_db: sa.engine.Engine,
 ):

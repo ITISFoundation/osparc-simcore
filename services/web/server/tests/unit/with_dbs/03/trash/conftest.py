@@ -70,7 +70,15 @@ def mocked_catalog(
 
 
 @pytest.fixture
-def mocked_director_v2(director_v2_service_mock: aioresponses): ...
+def mocked_director_v2(
+    director_v2_service_mock: aioresponses,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch(
+        "simcore_service_webserver.director_v2._director_v2_service.computations.list_computations_latest_states",
+        spec=True,
+        return_value=[],
+    )
 
 
 @pytest.fixture
