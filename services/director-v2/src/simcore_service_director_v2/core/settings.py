@@ -127,27 +127,6 @@ class ComputationalBackendSettings(BaseCustomSettings):
         ),
     ] = 2
 
-    COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_INITIAL_DELAY: Annotated[
-        datetime.timedelta,
-        Field(
-            description=(
-                "initial delay before resubmitting a task the computational backend does not know about "
-                "anymore, doubled after each further resubmission (default to seconds, or see "
-                "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
-            )
-        ),
-    ] = datetime.timedelta(seconds=10)
-
-    COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_MAX_DELAY: Annotated[
-        datetime.timedelta,
-        Field(
-            description=(
-                "maximum delay between task resubmissions, caps the exponential backoff (default to seconds, "
-                "or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
-            )
-        ),
-    ] = datetime.timedelta(minutes=2)
-
     @cached_property
     def default_cluster(self) -> BaseCluster:
         return BaseCluster(

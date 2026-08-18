@@ -84,6 +84,8 @@ from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
     BaseCompScheduler,
 )
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
+    _TASK_NOT_FOUND_RESUBMISSION_INITIAL_DELAY,
+    _TASK_NOT_FOUND_RESUBMISSION_MAX_DELAY,
     _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY,
     _TASK_RETRIEVAL_ERROR_TYPE,
     DaskScheduler,
@@ -1713,8 +1715,8 @@ async def test_handle_task_not_found_error_resubmission_and_backoff(
     for expected_resubmissions in range(1, settings.COMPUTATIONAL_BACKEND_MAX_TASK_RESUBMISSIONS + 1):
         # advance time past the (exponentially growing) backoff delay for this attempt
         backoff_delay = min(
-            settings.COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_INITIAL_DELAY * (2 ** (expected_resubmissions - 1)),
-            settings.COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_MAX_DELAY,
+            _TASK_NOT_FOUND_RESUBMISSION_INITIAL_DELAY * (2 ** (expected_resubmissions - 1)),
+            _TASK_NOT_FOUND_RESUBMISSION_MAX_DELAY,
         )
         fake_now["value"] = fake_now["value"].shift(seconds=backoff_delay.total_seconds() + 1)
 

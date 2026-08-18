@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import logging
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
@@ -75,6 +76,8 @@ _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 _TASK_NOT_FOUND_ERROR_TYPE: Final[str] = "task-not-found-in-computational-backend"
 _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: Final[str] = "resubmissions"
 _TASK_NOT_FOUND_ERROR_CONTEXT_TIME_KEY: Final[str] = "last_attempt"
+_TASK_NOT_FOUND_RESUBMISSION_INITIAL_DELAY: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
+_TASK_NOT_FOUND_RESUBMISSION_MAX_DELAY: Final[datetime.timedelta] = datetime.timedelta(minutes=2)
 _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 
@@ -578,8 +581,8 @@ class DaskScheduler(BaseCompScheduler):
 
         # NOTE: exponential backoff, so we do not hammer a computational backend that is still recovering
         backoff_delay = min(
-            self.settings.COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_INITIAL_DELAY * (2**resubmissions),
-            self.settings.COMPUTATIONAL_BACKEND_TASK_RESUBMISSION_MAX_DELAY,
+            _TASK_NOT_FOUND_RESUBMISSION_INITIAL_DELAY * (2**resubmissions),
+            _TASK_NOT_FOUND_RESUBMISSION_MAX_DELAY,
         )
         if (arrow.utcnow() - last_attempt) < backoff_delay:
             return (
@@ -605,8 +608,8 @@ class DaskScheduler(BaseCompScheduler):
                 f"Task {task.job_id} is unknown to the computational backend, resubmitting it",
                 error=result,
                 error_context=log_error_context,
-                tip="This happens when the connection to the dask-scheduler was lost before "
-                "the task was durably published. The task is automatically resubmitted.",
+                tip="The dask-scheduler forgets all tasks when it crashes or is restarted. "
+                "The task is automatically resubmitted.",
             )
         )
         await CompTasksRepository(self.db_engine).reset_task_for_resubmission(
