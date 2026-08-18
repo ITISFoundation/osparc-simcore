@@ -253,7 +253,10 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments  # noq
     api_projects = await _legacy_convert_db_projects_to_api_projects(app, db, db_projects)
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=api_projects, user_id=user_id
+        app,
+        db_projects=api_projects,
+        include_states=True,
+        user_id=user_id,
     )
 
     return final_projects, total_number_projects
