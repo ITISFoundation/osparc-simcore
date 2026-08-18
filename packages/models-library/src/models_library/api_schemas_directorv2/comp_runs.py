@@ -16,6 +16,11 @@ from ..projects_nodes_io import NodeID
 from ..projects_state import RunningState
 
 
+class ComputationProjectStateRpcGet(BaseModel):
+    project_uuid: ProjectID
+    state: RunningState
+
+
 class ComputationRunRpcGet(BaseModel):
     project_uuid: ProjectID
     iteration: int
