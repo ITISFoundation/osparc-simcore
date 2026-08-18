@@ -82,6 +82,57 @@ def test_collect_python_hints_reads_hint_kwarg(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Source discovery exclusions
+# ---------------------------------------------------------------------------
+
+
+def test_collect_sources_excludes_test_filename_pattern(tmp_path: Path) -> None:
+    production_file = tmp_path / "widget.cpp"
+    test_file = tmp_path / "test_widget.cpp"
+    production_file.touch()
+    test_file.touch()
+
+    files = ix.collect_sources(tmp_path, ["cpp"], ["test_*.cpp"])
+
+    assert files == [production_file]
+
+
+def test_collect_sources_excludes_test_directory(tmp_path: Path) -> None:
+    production_file = tmp_path / "widget.cpp"
+    test_file = tmp_path / "test" / "widget.cpp"
+    test_file.parent.mkdir()
+    production_file.touch()
+    test_file.touch()
+
+    files = ix.collect_sources(tmp_path, ["cpp"], ["test/*"])
+
+    assert files == [production_file]
+
+
+def test_collect_sources_excludes_testsuite_cpp_files(tmp_path: Path) -> None:
+    production_file = tmp_path / "widget.cpp"
+    test_file = tmp_path / "testsuite" / "widget.cpp"
+    test_file.parent.mkdir()
+    production_file.touch()
+    test_file.touch()
+
+    files = ix.collect_sources(tmp_path, ["cpp"], ["testsuite/*.cpp"])
+
+    assert files == [production_file]
+
+
+def test_collect_sources_includes_test_files_without_exclusions(tmp_path: Path) -> None:
+    production_file = tmp_path / "widget.cpp"
+    test_file = tmp_path / "test_widget.cpp"
+    production_file.touch()
+    test_file.touch()
+
+    files = ix.collect_sources(tmp_path, ["cpp"])
+
+    assert files == [test_file, production_file]
+
+
+# ---------------------------------------------------------------------------
 # JSON key extraction (guided tours)
 # ---------------------------------------------------------------------------
 
