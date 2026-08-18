@@ -439,6 +439,7 @@ async def test_get_project(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group,
@@ -456,6 +457,7 @@ async def test_new_project(
 )
 async def test_create_get_and_patch_project_ui_field(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     storage_subsystem_mock,
     client: TestClient,
     logged_user: UserInfoDict,
