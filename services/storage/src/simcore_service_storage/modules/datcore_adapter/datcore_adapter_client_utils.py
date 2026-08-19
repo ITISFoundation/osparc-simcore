@@ -1,10 +1,14 @@
 import logging
 from collections.abc import Callable
 from math import ceil
-from typing import Any, cast
+from typing import Any
 
 import httpx
 from fastapi import FastAPI
+from fastapi_pagination import LimitOffsetPage
+from models_library.api_schemas_storage.storage_schemas import (
+    DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
+)
 from servicelib.fastapi.httpx_client import get_httpx_client
 
 from ...core.settings import get_application_settings
@@ -71,22 +75,31 @@ async def retrieve_all_pages[T](
     path: str,
     return_type_creator: Callable[..., T],
 ) -> list[T]:
-    page = 1
+    offset = 0
     objs = []
-    while (
-        response := cast(
-            dict[str, Any],
-            await request(app, api_key, api_secret, method, path, params={"page": page}),
+    while True:
+        response_page = LimitOffsetPage[dict[str, Any]].model_validate(
+            await request(
+                app,
+                api_key,
+                api_secret,
+                method,
+                path,
+                params={"limit": DEFAULT_NUMBER_OF_PATHS_PER_PAGE, "offset": offset},
+            )
         )
-    ) and response.get("items"):
+        assert response_page.limit is not None  # nosec
+        assert response_page.offset is not None  # nosec
         _logger.debug(
             "called %s [%d/%d], received %d objects",
             path,
-            page,
-            ceil(response.get("total", -1) / response.get("size", 1)),
-            len(response.get("items", [])),
+            response_page.offset // response_page.limit + 1,
+            ceil(response_page.total / response_page.limit),
+            len(response_page.items),
         )
 
-        objs += [return_type_creator(d) for d in response.get("items", [])]
-        page += 1
+        objs += [return_type_creator(item) for item in response_page.items]
+        offset = response_page.offset + response_page.limit
+        if not response_page.items or offset >= response_page.total:
+            break
     return objs
