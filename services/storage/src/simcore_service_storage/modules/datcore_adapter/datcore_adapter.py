@@ -3,7 +3,7 @@ from typing import Any, cast
 
 import httpx
 from fastapi import FastAPI, status
-from fastapi_pagination import Page
+from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_datcore_adapter.datasets import (
     DatasetMetaData as DatCoreDatasetMetaData,
 )
@@ -158,6 +158,10 @@ def _create_next_cursor(total: TotalNumber, page: _Page, size: _Size) -> Generic
     return None
 
 
+def _to_limit_offset_params(page: _Page, size: _Size) -> dict[str, NonNegativeInt]:
+    return {"limit": size, "offset": (page - 1) * size}
+
+
 async def _list_top_level_objects(
     app: FastAPI,
     *,
@@ -175,13 +179,12 @@ async def _list_top_level_objects(
         api_secret,
         "GET",
         request_path,
-        params={"size": size, "page": page},
+        params=_to_limit_offset_params(page, size),
     )
     assert isinstance(response, dict)  # nosec
-    file_metadata_page = Page[DatCoreFileMetaData](**response)
+    file_metadata_page = LimitOffsetPage[DatCoreFileMetaData].model_validate(response)
     entries = file_metadata_page.items
-    total = file_metadata_page.total
-    assert isinstance(total, int)  # nosec
+    total = TypeAdapter(TotalNumber).validate_python(file_metadata_page.total)
     next_cursor = _create_next_cursor(total, page, size)
 
     return (
@@ -287,14 +290,13 @@ async def list_datasets(
         api_secret,
         "GET",
         "/datasets",
-        params={"size": size, "page": page},
+        params=_to_limit_offset_params(page, size),
     )
     assert isinstance(response, dict)  # nosec
-    datasets_page = Page[DatCoreDatasetMetaData](**response)
+    datasets_page = LimitOffsetPage[DatCoreDatasetMetaData].model_validate(response)
     datasets = datasets_page.items
-    total = datasets_page.total
+    total = TypeAdapter(TotalNumber).validate_python(datasets_page.total)
 
-    assert isinstance(total, int)  # nosec
     next_cursor = _create_next_cursor(total, page, size)
 
     return (
