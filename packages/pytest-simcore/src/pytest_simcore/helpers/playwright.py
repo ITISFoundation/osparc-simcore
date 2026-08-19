@@ -760,6 +760,12 @@ _RUNNING_STATES: Final[tuple[RunningState, ...]] = (
 )
 
 _RUN_PIPELINE_MAX_WAIT_TIME: Final[int] = 60 * SECOND
+_COMPUTATION_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/computations")
+_COMPUTATION_START_REQUEST_TIMEOUT: Final[int] = 35 * SECOND
+
+
+def _computation_started_predicate(request: Request) -> bool:
+    return bool(re.search(_COMPUTATION_START_REQUEST_PATTERN, request.url) and request.method.upper() == "POST")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -863,13 +869,27 @@ def run_pipeline_and_wait_done(
 
     Port of the legacy `TutorialBase.runPipeline()` + `TutorialBase.waitForStudyDone()`.
     """
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=tuple(RunningState))
+    # NOTE: mirrors `start_and_stop_pipeline` (tests/conftest.py): expected_states is restricted to
+    # the "actively running" states only (no NOT_STARTED/UNKNOWN/SUCCESS/FAILED/ABORTED) so a stray
+    # `projectStateUpdated` frame still reporting the pre-run state can't race with the actual run
+    # trigger and be mistaken for a final state; the `POST /computations` request is also checked
+    # to confirm the click really triggered a computation.
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=_RUNNING_STATES)
     with log_context(
         logging.INFO,
         f"Running pipeline and waiting for it to complete (timeout {timedelta(milliseconds=timeout_ms)})",
-    ):
-        with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
+    ) as ctx:
+        with (
+            websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event,
+            page.expect_request(
+                _computation_started_predicate, timeout=_COMPUTATION_START_REQUEST_TIMEOUT
+            ) as request_info,
+        ):
             page.get_by_test_id(run_button_test_id).click()
+        response = request_info.value.response()
+        assert response
+        ctx.logger.info("POST /computations request response: %s", f"{response.status=}")
+        assert response.ok, f"{response.json()}"
         current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
         current_state = wait_for_computation_done(
             current_state,
@@ -1049,19 +1069,39 @@ def get_node_id_from_service_key(workbench: dict[str, Any], service_key_fragment
     raise ValueError(msg)
 
 
-def _select_node(page: Page, position: int) -> str:
-    """Selects the node at `position` in the workbench tree (left panel) and returns its node id."""
-    tree_items = page.locator('[osparc-test-id="nodeTreeItem"]')
-    node_ids_and_locators = []
-    for index in range(tree_items.count()):
-        item = tree_items.nth(index)
-        node_key = item.get_attribute("osparc-test-key")
-        if node_key and node_key != "root":
-            node_ids_and_locators.append((node_key, item))
+def get_node_id_from_label(workbench: dict[str, Any], label_fragment: str) -> str:
+    """Finds the node id in a project's workbench whose label contains the given fragment.
 
-    node_id, locator = node_ids_and_locators[position]
+    Preferred over the workbench tree's displayed text since the workbench dict is the
+    authoritative source for a node's label.
+    """
+    matches = [node_id for node_id, node_data in workbench.items() if label_fragment in node_data["label"]]
+    available_labels = [node_data["label"] for node_data in workbench.values()]
+    if not matches:
+        msg = f"Could not find a node with label containing {label_fragment!r} (available: {available_labels})"
+        raise ValueError(msg)
+    if len(matches) > 1:
+        msg = f"Found {len(matches)} nodes with label containing {label_fragment!r} (available: {available_labels})"
+        raise ValueError(msg)
+    return matches[0]
+
+
+def get_node_id_from_position(workbench: dict[str, Any], position: int) -> str:
+    """Returns the node id at `position` in the workbench (its insertion order).
+
+    Preferred over the workbench tree's DOM order since the workbench dict is the authoritative
+    source for a project's nodes and their order.
+    """
+    node_ids = list(workbench)
+    assert 0 <= position < len(node_ids), f"position {position} out of range for workbench with {len(node_ids)} node(s)"
+    return node_ids[position]
+
+
+def _select_node(page: Page, *, node_id: str) -> None:
+    """Selects the node with `node_id` in the workbench tree (left panel)."""
+    locator = page.locator(f'[osparc-test-id="nodeTreeItem"][osparc-test-key="{node_id}"]')
+    assert locator.count() == 1, f"expected exactly one tree item for node {node_id!r}, found {locator.count()}"
     locator.click()
-    return node_id
 
 
 _OUTPUT_FILE_NAMES_MAX_WAITING_TIME: Final[timedelta] = timedelta(seconds=30)
@@ -1146,7 +1186,9 @@ def check_node_outputs(
     page: Page,
     *,
     study_id: str,
+    workbench: dict[str, Any],
     node_position: int | None = None,
+    node_name: str | None = None,
     node_id: str | None = None,
     expected_file_names: list[str],
     open_outputs_folder: bool = False,
@@ -1154,12 +1196,25 @@ def check_node_outputs(
 ) -> None:
     """Opens a node's output files panel and asserts it contains exactly `expected_file_names`.
 
+    The node is identified by exactly one of `node_id`, `node_position` (its index in
+    `workbench`) or `node_name` (its label in `workbench`). `workbench` is the project's
+    authoritative source of node ids/labels/order, so the lookup never depends on the fragile
+    workbench tree's DOM order/displayed text.
+
     Port of the legacy `TutorialBase.checkNodeOutputs()` /
     `TutorialBase.checkNodeOutputsAppMode()`.
     """
     if node_id is None:
-        assert node_position is not None, "either node_id or node_position must be provided"
-        node_id = _select_node(page, node_position)
+        assert (node_position is None) != (node_name is None), (
+            "either node_id, node_position or node_name must be provided"
+        )
+        if node_position is not None:
+            node_id = get_node_id_from_position(workbench, node_position)
+        else:
+            assert node_name is not None
+            node_id = get_node_id_from_label(workbench, node_name)
+    assert node_id in workbench, f"node {node_id!r} not found in workbench"
+    _select_node(page, node_id=node_id)
 
     with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
         _check_node_outputs_dialog(
