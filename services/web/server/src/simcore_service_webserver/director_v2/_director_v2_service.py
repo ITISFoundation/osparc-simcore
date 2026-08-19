@@ -58,7 +58,7 @@ _logger = logging.getLogger(__name__)
 #
 
 
-async def list_computations_latest_states(
+async def list_pipelines_latest_states(
     app: web.Application,
     *,
     project_ids: list[ProjectID],

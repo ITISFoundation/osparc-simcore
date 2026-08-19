@@ -69,7 +69,7 @@ async def test_get_computation_task(
     assert task_out.state == RunningState.NOT_STARTED
 
 
-async def test_list_computations_latest_states_raises_domain_error_on_rpc_failure(
+async def test_list_pipelines_latest_states_raises_domain_error_on_rpc_failure(
     client: TestClient,
     mocker: MockerFixture,
     project_id: ProjectID,
@@ -81,7 +81,7 @@ async def test_list_computations_latest_states_raises_domain_error_on_rpc_failur
     )
 
     with pytest.raises(DirectorV2PipelineStatesRetrievalError):
-        await director_v2_service.list_computations_latest_states(
+        await director_v2_service.list_pipelines_latest_states(
             client.app,
             project_ids=[project_id],
         )

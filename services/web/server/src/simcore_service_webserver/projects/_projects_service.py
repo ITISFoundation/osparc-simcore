@@ -1989,12 +1989,12 @@ async def _get_project_share_state(
     )
 
 
-async def _list_computations_latest_states_or_none(
+async def _list_pipelines_latest_states_or_none(
     app: web.Application,
     project_ids: list[ProjectID],
 ) -> list[ComputationRunStateRpcGet] | None:
     try:
-        return await director_v2_service.list_computations_latest_states(
+        return await director_v2_service.list_pipelines_latest_states(
             app,
             project_ids=project_ids,
         )
@@ -2010,7 +2010,7 @@ async def add_projects_states_for_user(
     app: web.Application,
 ) -> list[ProjectDict]:
     latest_states, project_share_states = await asyncio.gather(
-        _list_computations_latest_states_or_none(
+        _list_pipelines_latest_states_or_none(
             app,
             [ProjectID(project["uuid"]) for project in projects],
         ),
