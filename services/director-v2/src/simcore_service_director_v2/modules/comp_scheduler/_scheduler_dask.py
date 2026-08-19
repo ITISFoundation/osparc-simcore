@@ -37,6 +37,7 @@ from ..._meta import APP_NAME
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
+    ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
     PortsValidationError,
 )
@@ -71,6 +72,8 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
+_TASK_NOT_FOUND_ERROR_TYPE: Final[str] = "task-not-found-in-computational-backend"
+_TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: Final[str] = "resubmissions"
 _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 
@@ -167,6 +170,7 @@ class DaskScheduler(BaseCompScheduler):
                 comp_run.run_id,
                 list(scheduled_tasks.keys()),
                 RunningState.PENDING,
+                clear_errors=False,
             )
             # each task is started independently
 
@@ -540,6 +544,70 @@ class DaskScheduler(BaseCompScheduler):
         # state is kept as STARTED so it will be retried
         return RunningState.STARTED, SimcorePlatformStatus.BAD, [], False
 
+    async def _handle_task_not_found_error(
+        self,
+        task: CompTaskAtDB,
+        result: ComputationalBackendTaskNotFoundError,
+        log_error_context: dict[str, Any],
+        comp_run: CompRunsAtDB,
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        """Returns the outcome tuple: WAITING_FOR_CLUSTER if resubmitted, or the exhausted (failed) outcome."""
+        resubmissions = 0
+        for error in task.errors or []:
+            if error["type"] == _TASK_NOT_FOUND_ERROR_TYPE:
+                assert "ctx" in error  # nosec
+                assert _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY in error["ctx"]  # nosec
+                resubmissions = int(error["ctx"][_TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY])
+                break
+
+        if resubmissions >= self.settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES:
+            _logger.error(
+                **create_troubleshooting_log_kwargs(
+                    f"Task {task.job_id} is unknown to the computational backend "
+                    f"and was already resubmitted {resubmissions} time(s)",
+                    error=result,
+                    error_context=log_error_context,
+                    tip="The dask-scheduler lost the task and resubmitting it did not help. "
+                    "Please contact support if the problem persists.",
+                )
+            )
+            task_state, _, task_errors, task_completed = await self._handle_task_error(task, result, log_error_context)
+            # NOTE: this is a platform failure (backend lost the task), not the user's fault, so no billing
+            return task_state, SimcorePlatformStatus.BAD, task_errors, task_completed
+
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                f"Task {task.job_id} is unknown to the computational backend, "
+                f"resubmitting it for the {resubmissions + 1} time",
+                error=result,
+                error_context=log_error_context,
+                tip="The dask-scheduler forgets all tasks when it crashes or is restarted. "
+                "The task is automatically resubmitted.",
+            )
+        )
+        await CompTasksRepository(self.db_engine).reset_task_for_resubmission(
+            task.project_id,
+            task.node_id,
+            comp_run.run_id,
+            errors=[
+                ErrorDict(
+                    loc=(f"{task.project_id}", f"{task.node_id}"),
+                    msg=f"{result}",
+                    type=_TASK_NOT_FOUND_ERROR_TYPE,
+                    ctx={
+                        _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: resubmissions + 1,
+                        **log_error_context,
+                    },
+                )
+            ],
+        )
+        return (
+            RunningState.WAITING_FOR_CLUSTER,
+            SimcorePlatformStatus.BAD,
+            [],
+            False,
+        )
+
     @staticmethod
     async def _handle_task_error(
         task: CompTaskAtDB,
@@ -621,6 +689,24 @@ class DaskScheduler(BaseCompScheduler):
                 ) = await self._handle_computational_backend_not_connected_error(
                     task.current, result, log_error_context
                 )
+            elif isinstance(result, ComputationalBackendTaskNotFoundError):
+                (
+                    task_final_state,
+                    simcore_platform_status,
+                    task_errors,
+                    task_completed,
+                ) = await self._handle_task_not_found_error(task.current, result, log_error_context, comp_run)
+                if task_final_state is RunningState.WAITING_FOR_CLUSTER:
+                    # already persisted via reset_task_for_resubmission (job_id cleared), nothing else to update
+                    return False, None
+                if task_completed:
+                    # resubmissions exhausted: clean up any invalid output files, as for other failures
+                    await clean_task_output_and_log_files_if_invalid(
+                        self.db_engine,
+                        comp_run.user_id,
+                        comp_run.project_uuid,
+                        task.current.node_id,
+                    )
             else:
                 (
                     task_final_state,
