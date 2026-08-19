@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 18:43+0200\n"
+"POT-Creation-Date: 2026-08-19 15:19+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-08-14T16:43:12Z\n"
+"X-Translation-Date: 2026-08-19T13:20:00Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -652,7 +652,7 @@ msgstr ""
 # iteration. the completion status of a project pipeline execution for a
 # specific iteration. the completion status of a project pipeline execution
 # for a specific iteration.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:239
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:229
 #, python-brace-format
 msgid ""
 "Project pipeline execution for iteration {iteration} has completed with "
@@ -664,7 +664,7 @@ msgstr ""
 # CTX-INTERPRETATION: This message is an error notification related to task
 # scheduling in the application. system to notify users of an unexpected issue
 # during the scheduling of tasks.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:860
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:831
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -676,7 +676,7 @@ msgstr ""
 # scheduling a task with variable resolution has exceeded the time limit and
 # will attempt to retry. warning message when a task involving variable
 # resolution fails to complete in time and will be attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:891
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:862
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr ""
 "La resolución variable excedió el tiempo límite durante la programación de "
@@ -686,7 +686,7 @@ msgstr ""
 # cannot allocate the necessary computational resources in time. fails to
 # allocate computational resources for their task, prompting them to retry or
 # seek support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:959
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:930
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
