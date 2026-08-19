@@ -8,7 +8,6 @@
 
 import json
 from http import HTTPStatus
-from importlib import import_module
 from unittest import mock
 
 import pytest
@@ -25,6 +24,10 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 )
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects import (
+    _projects_nodes_repository as projects_nodes_repository,
+)
+from simcore_service_webserver.projects import _projects_service as projects_service
 from simcore_service_webserver.projects.models import ProjectDict
 
 API_PREFIX = "/" + api_version_prefix
@@ -279,7 +282,6 @@ async def test_patch_project_node_notifies_latest_node_after_pipeline_sync(
     node_id = next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"])
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
-    projects_nodes_repository = import_module("simcore_service_webserver.projects._projects_nodes_repository")
     latest_outputs = {"output_1": 42}
 
     async def _update_outputs_during_pipeline_sync(*args: object, **kwargs: object) -> None:
@@ -344,7 +346,6 @@ async def test_patch_project_node_inputs_notifies(
     node_id = next(iter(user_project["workbench"]))
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
-    projects_service = import_module("simcore_service_webserver.projects._projects_service")
     notify_project_nodes_update = mocker.spy(projects_service, "notify_project_nodes_update")
     list_project_groups = mocker.spy(
         projects_service._groups_service,  # noqa: SLF001
