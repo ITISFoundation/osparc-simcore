@@ -151,7 +151,7 @@ class CompRunsRepository(BaseRepository):
                 raise ComputationalRunNotFoundError
             return CompRunsAtDB.model_validate(row)
 
-    async def list_latest_run_states_by_projects(
+    async def batch_get_latest_run_states_by_projects(
         self,
         project_ids: list[ProjectID],
     ) -> list[ComputationRunStateRpcGet]:
