@@ -921,13 +921,7 @@ _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[int] = 30 * SECOND
 
 
 def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
-    """Returns the service iframe for ``node_id``, resilient to duplicate iframes.
-
-    Real-time-collaboration document sync can momentarily mount a second iframe carrying the same
-    ``osparc-test-id="iframe_<nodeId>"`` (see ITISFoundation/osparc-simcore#9541), which makes a
-    plain ``frame_locator`` ambiguous under Playwright strict mode. We scope to the first (live)
-    match and warn when a duplicate is present so the frontend regression stays visible in the logs.
-    """
+    """Returns the service iframe for ``node_id``, resilient to duplicate iframes."""
     iframe_selector = f'[osparc-test-id="iframe_{node_id}"]'
     iframe_count = page.locator(iframe_selector).count()
     if iframe_count > 1:
