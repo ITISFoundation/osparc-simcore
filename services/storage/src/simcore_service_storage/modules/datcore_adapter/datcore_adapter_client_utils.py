@@ -76,8 +76,9 @@ async def retrieve_all_pages[T](
     return_type_creator: Callable[..., T],
 ) -> list[T]:
     offset = 0
-    objs = []
-    while True:
+    total: int | None = None
+    objs: list[T] = []
+    while total is None or offset < total:
         response_page = LimitOffsetPage[dict[str, Any]].model_validate(
             await request(
                 app,
@@ -99,7 +100,8 @@ async def retrieve_all_pages[T](
         )
 
         objs += [return_type_creator(item) for item in response_page.items]
+        total = response_page.total
         offset = response_page.offset + response_page.limit
-        if not response_page.items or offset >= response_page.total:
+        if not response_page.items:
             break
     return objs
