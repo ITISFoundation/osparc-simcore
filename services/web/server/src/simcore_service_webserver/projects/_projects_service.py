@@ -1377,7 +1377,7 @@ async def patch_project_node(
 
     # 3. Patch the project node
 
-    await _projects_nodes_repository.update(
+    updated_node = await _projects_nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1404,17 +1404,32 @@ async def patch_project_node(
         if node_patch_exclude_unset.get("label"):
             await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 
-    updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
-        app, project_uuid=project_id
-    )
+    notify_all_nodes = bool({"inputs", "outputs"} & node_patch_exclude_unset.keys())
+    if notify_all_nodes:
+        updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
+            app, project_uuid=project_id
+        )
+        project_for_notification = updated_project.model_dump(mode="json", by_alias=True)
+    else:
+        project_for_notification = {
+            "uuid": f"{project_id}",
+            "workbench": {
+                f"{node_id}": updated_node.model_dump(mode="json", by_alias=True, exclude_none=True),
+            },
+        }
 
     updated_project_with_states = await add_project_states_for_user(
-        user_id=user_id, project=updated_project.model_dump(mode="json", by_alias=True), app=app
+        user_id=user_id,
+        project=project_for_notification,
+        app=app,
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
-    if {"inputs", "outputs"} & node_patch_exclude_unset.keys():
-        for node_uuid in updated_project_with_states["workbench"]:
-            await notify_project_node_update(app, updated_project_with_states, node_uuid)
+    if notify_all_nodes:
+        await notify_project_nodes_update(
+            app,
+            updated_project_with_states,
+            [NodeID(node_uuid) for node_uuid in updated_project_with_states["workbench"]],
+        )
         return
 
     await notify_project_node_update(app, updated_project_with_states, node_id)
@@ -2279,28 +2294,35 @@ async def remove_project_dynamic_services(
 _CONCURRENT_NOTIFICATIONS_LIMIT: Final[int] = 10
 
 
+async def _list_project_group_rooms_to_notify(
+    app: web.Application,
+    project_id: ProjectID,
+) -> list[GroupID]:
+    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        app, project_id=project_id
+    )
+    return [item.gid for item in project_group_get_list if item.read is True]
+
+
+async def _send_message_to_rooms(
+    app: web.Application,
+    rooms: Iterable[GroupID],
+    message: SocketMessageDict,
+) -> None:
+    await limited_gather(
+        *(socketio_service.send_message_to_standard_group(app, room, message) for room in rooms),
+        log=_logger,
+        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
+    )
+
+
 async def _send_message_to_project_groups(
     app: web.Application,
     project_id: ProjectID,
     message: SocketMessageDict,
 ) -> None:
-    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-        app, project_id=project_id
-    )
-    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
-
-    await limited_gather(
-        *(
-            socketio_service.send_message_to_standard_group(
-                app,
-                room,
-                message,
-            )
-            for room in rooms_to_notify
-        ),
-        log=_logger,
-        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
-    )
+    rooms_to_notify = await _list_project_group_rooms_to_notify(app, project_id)
+    await _send_message_to_rooms(app, rooms_to_notify, message)
 
 
 async def notify_project_state_update(
@@ -2332,26 +2354,36 @@ async def notify_project_state_update(
         await _send_message_to_project_groups(app, project["uuid"], message)
 
 
+async def notify_project_nodes_update(
+    app: web.Application,
+    project: dict,
+    node_ids: Iterable[NodeID],
+) -> None:
+    if await is_project_hidden(app, ProjectID(project["uuid"])):
+        return
+
+    rooms_to_notify = await _list_project_group_rooms_to_notify(app, ProjectID(project["uuid"]))
+    for node_id in node_ids:
+        data: dict = {
+            "project_id": project["uuid"],
+            "node_id": f"{node_id}",
+            "data": project["workbench"][f"{node_id}"],
+        }
+
+        message = SocketMessageDict(
+            event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+            data=data,
+        )
+
+        await _send_message_to_rooms(app, rooms_to_notify, message)
+
+
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
 ) -> None:
-    if await is_project_hidden(app, ProjectID(project["uuid"])):
-        return
-
-    data: dict = {
-        "project_id": project["uuid"],
-        "node_id": f"{node_id}",
-        "data": project["workbench"][f"{node_id}"],
-    }
-
-    message = SocketMessageDict(
-        event_type=SOCKET_IO_NODE_UPDATED_EVENT,
-        data=data,
-    )
-
-    await _send_message_to_project_groups(app, project["uuid"], message)
+    await notify_project_nodes_update(app, project, (node_id,))
 
 
 async def retrieve_and_notify_project_locked_state(
