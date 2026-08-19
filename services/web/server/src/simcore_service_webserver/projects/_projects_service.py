@@ -186,7 +186,6 @@ from .models import (
     ProjectDBGet,
     ProjectDict,
     ProjectPatchInternalExtended,
-    ProjectWithWorkbenchDBGet,
 )
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import (
@@ -1406,9 +1405,7 @@ async def patch_project_node(
 
     notify_all_nodes = bool({"inputs", "outputs"} & node_patch_exclude_unset.keys())
     if notify_all_nodes:
-        updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
-            app, project_uuid=project_id
-        )
+        updated_project = await _projects_repository.get_project_with_workbench(app, project_uuid=project_id)
         project_for_notification = updated_project.model_dump(mode="json", by_alias=True)
     else:
         latest_node = await _projects_nodes_repository.get(
