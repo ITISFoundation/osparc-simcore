@@ -26,20 +26,20 @@ def test_cc_human(
         page,
         study_id=study_id,
         workbench=workbench,
-        node_position=1,
+        node_name="Human GB 0D cardiac model",
         expected_file_names=["vm_1Hz.txt", "logs.zip", "allresult_1Hz.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
         workbench=workbench,
-        node_position=2,
+        node_name="Human GB 1D cardiac model",
         expected_file_names=["model_INPUT.from1D", "y_1D.txt", "logs.zip", "ECGs.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
         workbench=workbench,
-        node_position=3,
+        node_name="Human GB 2D cardiac model",
         expected_file_names=["aps.zip", "logs.zip"],
     )
