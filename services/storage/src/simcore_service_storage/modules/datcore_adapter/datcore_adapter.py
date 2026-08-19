@@ -184,7 +184,7 @@ async def _list_top_level_objects(
     assert isinstance(response, dict)  # nosec
     file_metadata_page = LimitOffsetPage[DatCoreFileMetaData].model_validate(response)
     entries = file_metadata_page.items
-    total = TypeAdapter(TotalNumber).validate_python(file_metadata_page.total)
+    total: TotalNumber = TypeAdapter(TotalNumber).validate_python(file_metadata_page.total)
     next_cursor = _create_next_cursor(total, page, size)
 
     return (
@@ -295,7 +295,7 @@ async def list_datasets(
     assert isinstance(response, dict)  # nosec
     datasets_page = LimitOffsetPage[DatCoreDatasetMetaData].model_validate(response)
     datasets = datasets_page.items
-    total = TypeAdapter(TotalNumber).validate_python(datasets_page.total)
+    total: TotalNumber = TypeAdapter(TotalNumber).validate_python(datasets_page.total)
 
     next_cursor = _create_next_cursor(total, page, size)
 
