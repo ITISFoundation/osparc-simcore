@@ -1414,7 +1414,7 @@ async def patch_project_node(
         project_for_notification = {
             "uuid": f"{project_id}",
             "workbench": {
-                f"{node_id}": updated_node.model_dump(mode="json", by_alias=True, exclude_none=True),
+                f"{node_id}": updated_node.model_dump(mode="json", by_alias=True),
             },
         }
 
