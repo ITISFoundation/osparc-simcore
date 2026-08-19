@@ -14,6 +14,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from deepdiff import DeepDiff
+from models_library.projects_nodes import PartialNode
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -263,6 +264,42 @@ async def test_patch_project_node_enriches_only_updated_node(
     mocked_notify_project_node_update.assert_awaited_once()
     notified_project = mocked_notify_project_node_update.await_args.args[1]
     assert notified_project["workbench"][node_id]["label"] == "updated label"
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+async def test_patch_project_node_notifies_latest_node_after_pipeline_sync(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mocked_notify_project_node_update,
+):
+    node_id = next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"])
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    projects_nodes_repository = import_module("simcore_service_webserver.projects._projects_nodes_repository")
+    latest_outputs = {"output_1": 42}
+
+    async def _update_outputs_during_pipeline_sync(*args: object, **kwargs: object) -> None:
+        await projects_nodes_repository.update(
+            client.app,
+            project_id=user_project["uuid"],
+            node_id=node_id,
+            partial_node=PartialNode.model_construct(outputs=latest_outputs),
+        )
+
+    mocked_dynamic_services_interface[
+        "director_v2.api.create_or_update_pipeline"
+    ].side_effect = _update_outputs_during_pipeline_sync
+
+    resp = await client.patch(f"{base_url}", json={"label": "updated label"})
+
+    await assert_status(resp, expected)
+    mocked_notify_project_node_update.assert_awaited_once()
+    notified_project = mocked_notify_project_node_update.await_args.args[1]
+    assert notified_project["workbench"][node_id]["outputs"] == latest_outputs
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])

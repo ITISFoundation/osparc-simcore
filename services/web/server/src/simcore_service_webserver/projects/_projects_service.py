@@ -1377,7 +1377,7 @@ async def patch_project_node(
 
     # 3. Patch the project node
 
-    updated_node = await _projects_nodes_repository.update(
+    await _projects_nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1411,10 +1411,15 @@ async def patch_project_node(
         )
         project_for_notification = updated_project.model_dump(mode="json", by_alias=True)
     else:
+        latest_node = await _projects_nodes_repository.get(
+            app,
+            project_id=project_id,
+            node_id=node_id,
+        )
         project_for_notification = {
             "uuid": f"{project_id}",
             "workbench": {
-                f"{node_id}": updated_node.model_dump(mode="json", by_alias=True, exclude_none=True),
+                f"{node_id}": latest_node.model_dump(mode="json", by_alias=True, exclude_none=True),
             },
         }
 
