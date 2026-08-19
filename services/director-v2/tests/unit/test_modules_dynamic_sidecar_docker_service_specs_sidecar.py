@@ -30,7 +30,6 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "DY_SIDECAR_RUN_ID",
     "DY_SIDECAR_SERVICE_KEY",
     "DY_SIDECAR_SERVICE_VERSION",
-    "DY_SIDECAR_SERVICE_VERSION_DISPLAY",
     "DY_SIDECAR_STATE_EXCLUDE",
     "DY_SIDECAR_STATE_PATHS",
     "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE",
@@ -73,10 +72,13 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
 }
 
 
+@pytest.mark.parametrize("version_display", [None, "Summer Release"])
 def test_dynamic_sidecar_env_vars(
     scheduler_data_from_http_request: SchedulerData,
     project_env_devel_environment: dict[str, Any],
+    version_display: str | None,
 ):
+    scheduler_data_from_http_request.version_display = version_display
     app_settings = AppSettings.create_from_envs()
 
     dynamic_sidecar_env_vars = _get_environment_variables(
@@ -89,7 +91,10 @@ def test_dynamic_sidecar_env_vars(
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
-    assert set(dynamic_sidecar_env_vars) == EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES
+    expected_env_var_names = EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES | (
+        {"DY_SIDECAR_SERVICE_VERSION_DISPLAY"} if version_display is not None else set()
+    )
+    assert set(dynamic_sidecar_env_vars) == expected_env_var_names
 
 
 @pytest.mark.parametrize(

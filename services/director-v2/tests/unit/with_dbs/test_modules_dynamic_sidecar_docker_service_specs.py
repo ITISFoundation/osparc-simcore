@@ -262,7 +262,6 @@ def expected_dynamic_sidecar_spec(
                     ),
                     "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/3dviewer",
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
-                    "DY_SIDECAR_SERVICE_VERSION_DISPLAY": "None",
                     "DY_SIDECAR_PRODUCT_NAME": osparc_product_name,
                     "DY_SIDECAR_USER_PREFERENCES_PATH": "None",
                     "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": "service-version",

@@ -188,7 +188,6 @@ def _get_environment_variables(
         "STORAGE_USERNAME": storage_config.username,
         "DY_SIDECAR_SERVICE_KEY": scheduler_data.key,
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
-        "DY_SIDECAR_SERVICE_VERSION_DISPLAY": f"{scheduler_data.version_display}",
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
         "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": f"{scheduler_data.user_preferences_version_source}",
         "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
@@ -196,6 +195,8 @@ def _get_environment_variables(
     }
     if r_clone_settings.R_CLONE_S3.S3_ENDPOINT is not None:
         envs["S3_ENDPOINT"] = f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}"
+    if scheduler_data.version_display is not None:
+        envs["DY_SIDECAR_SERVICE_VERSION_DISPLAY"] = scheduler_data.version_display
 
     return envs
 
