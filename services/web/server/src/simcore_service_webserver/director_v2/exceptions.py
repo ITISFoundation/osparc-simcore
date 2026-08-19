@@ -20,7 +20,7 @@ class DirectorV2ServiceError(DirectorV2BaseError):
 
 
 class DirectorV2PipelineStatesRetrievalError(DirectorV2BaseError):
-    msg_template = "Could not retrieve computation states from director-v2"
+    msg_template = "Could not retrieve pipeline states"
 
 
 class ComputationNotFoundError(DirectorV2ServiceError):

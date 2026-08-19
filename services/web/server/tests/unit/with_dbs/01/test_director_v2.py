@@ -80,7 +80,10 @@ async def test_list_pipelines_latest_states_raises_domain_error_on_rpc_failure(
         side_effect=ComputationRunStatesRetrievalError,
     )
 
-    with pytest.raises(DirectorV2PipelineStatesRetrievalError):
+    with pytest.raises(
+        DirectorV2PipelineStatesRetrievalError,
+        match="Could not retrieve pipeline states",
+    ):
         await director_v2_service.list_pipelines_latest_states(
             client.app,
             project_ids=[project_id],
