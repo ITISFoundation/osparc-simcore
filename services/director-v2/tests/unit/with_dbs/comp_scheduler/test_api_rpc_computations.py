@@ -74,9 +74,9 @@ async def test_rpc_list_computations_latest_states(
         dag_adjacency_list=fake_workbench_adjacency,
     )
 
-    assert await rpc_computations.list_computations_latest_states(rpc_client, project_ids=[]) == []
+    assert await rpc_computations.batch_get_computations_latest_states(rpc_client, project_ids=[]) == []
 
-    output = await rpc_computations.list_computations_latest_states(
+    output = await rpc_computations.batch_get_computations_latest_states(
         rpc_client,
         project_ids=[
             project_with_multiple_runs.uuid,

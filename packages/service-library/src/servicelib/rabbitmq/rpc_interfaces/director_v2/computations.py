@@ -34,7 +34,7 @@ _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def list_computations_latest_states(
+async def batch_get_computations_latest_states(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     project_ids: list[ProjectID],

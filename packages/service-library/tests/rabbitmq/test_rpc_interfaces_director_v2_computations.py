@@ -17,7 +17,7 @@ async def test_list_computations_latest_states_translates_rpc_errors(
     rpc_client.request = mocker.AsyncMock(side_effect=rpc_error)
 
     with pytest.raises(ComputationRunStatesRetrievalError):
-        await computations.list_computations_latest_states(
+        await computations.batch_get_computations_latest_states(
             rpc_client,
             project_ids=[ProjectID("de2578c5-431e-6257-a462-d7bf73b76c0c")],
         )

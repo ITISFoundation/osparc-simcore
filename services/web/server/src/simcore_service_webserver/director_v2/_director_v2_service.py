@@ -64,7 +64,7 @@ async def list_pipelines_latest_states(
     project_ids: list[ProjectID],
 ) -> list[ComputationRunStateRpcGet]:
     try:
-        return await computations.list_computations_latest_states(
+        return await computations.batch_get_computations_latest_states(
             get_rabbitmq_rpc_client(app),
             project_ids=project_ids,
         )
