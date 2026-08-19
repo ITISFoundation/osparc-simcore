@@ -11,30 +11,15 @@ from common_library.logging.logging_utils_filtering import LoggerName, MessageSu
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt
-from models_library.clusters import (
-    BaseCluster,
-    ClusterAuthentication,
-    ClusterTypeInModel,
-    NoAuthentication,
-)
-from pydantic import (
-    AliasChoices,
-    AnyUrl,
-    Field,
-    NonNegativeInt,
-    PositiveInt,
-    field_validator,
-)
+from models_library.clusters import BaseCluster, ClusterAuthentication, ClusterTypeInModel, NoAuthentication
+from pydantic import AliasChoices, AnyUrl, Field, NonNegativeInt, PositiveInt, field_validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
-from settings_library.node_ports import (
-    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
-    StorageAuthSettings,
-)
+from settings_library.node_ports import NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE, StorageAuthSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -124,7 +109,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
                 "considered as failed."
             )
         ),
-    ] = 2
+    ] = 1
 
     @cached_property
     def default_cluster(self) -> BaseCluster:
