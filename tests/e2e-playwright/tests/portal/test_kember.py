@@ -56,6 +56,7 @@ def test_kember(
     check_node_outputs(
         page,
         study_id=project_data["uuid"],
+        workbench=workbench,
         node_id=kember_solver_id,
         expected_file_names=["logs.zip", "outputController.dat"],
         open_outputs_folder=True,

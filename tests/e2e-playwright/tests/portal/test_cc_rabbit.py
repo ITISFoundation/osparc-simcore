@@ -16,25 +16,30 @@ def test_cc_rabbit(
     run_pipeline_timeout: int,
 ) -> None:
     opened_study = open_study_link(anonymous_study_url)
-    study_id = opened_study.project_data["uuid"]
+    project_data = opened_study.project_data
+    study_id = project_data["uuid"]
+    workbench = project_data["workbench"]
 
     run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=run_pipeline_timeout)
 
     check_node_outputs(
         page,
         study_id=study_id,
+        workbench=workbench,
         node_position=1,
         expected_file_names=["logs.zip", "allresult_1Hz.txt", "vm_1Hz.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
+        workbench=workbench,
         node_position=2,
         expected_file_names=["model_INPUT.from1D", "logs.zip", "cai_1D.txt", "ap_1D.txt", "ECGs.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
+        workbench=workbench,
         node_position=3,
         expected_file_names=["aps.zip", "logs.zip"],
     )
