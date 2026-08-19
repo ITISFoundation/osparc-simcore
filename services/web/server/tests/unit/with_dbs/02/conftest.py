@@ -231,7 +231,7 @@ async def mocked_director_v2(
     mocker: MockerFixture,
 ) -> mock.AsyncMock:
     return mocker.patch(
-        f"{_director_v2_service.__name__}.computations.list_computations_latest_states",
+        f"{_director_v2_service.__name__}.computations.batch_get_computations_latest_states",
         spec=True,
         return_value=[],
     )

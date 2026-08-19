@@ -37,7 +37,9 @@ from yarl import URL
 
 
 @pytest.fixture
-def mock_list_computations_latest_states(mocked_director_v2: AsyncMock) -> AsyncMock:
+def mock_batch_get_computations_latest_states(
+    mocked_director_v2: AsyncMock,
+) -> AsyncMock:
     async def _list_latest_states(
         _rabbitmq_rpc_client: RabbitMQRPCClient,
         *,
@@ -184,7 +186,7 @@ async def test_list_projects_with_pagination(
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
-    mock_list_computations_latest_states: AsyncMock,
+    mock_batch_get_computations_latest_states: AsyncMock,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     NUM_PROJECTS = 60
@@ -215,7 +217,7 @@ async def test_list_projects_with_pagination(
             assert len(data) == meta["count"]
             assert meta["count"] == min(limit, NUM_PROJECTS - len(projects))
             assert meta["limit"] == limit
-            rpc_call = mock_list_computations_latest_states.await_args_list[-1]
+            rpc_call = mock_batch_get_computations_latest_states.await_args_list[-1]
             assert {f"{project_id}" for project_id in rpc_call.kwargs["project_ids"]} == {
                 project["uuid"] for project in data
             }
@@ -229,7 +231,7 @@ async def test_list_projects_with_pagination(
             next_link = URL(links["next"]) if links["next"] is not None else None
 
         assert len(projects) == len(created_projects)
-        assert mock_list_computations_latest_states.await_count == NUMBER_OF_CALLS
+        assert mock_batch_get_computations_latest_states.await_count == NUMBER_OF_CALLS
         assert {prj["uuid"] for prj in projects} == {prj["uuid"] for prj in created_projects}
 
 
