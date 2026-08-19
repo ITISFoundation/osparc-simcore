@@ -26,20 +26,20 @@ def test_cc_rabbit(
         page,
         study_id=study_id,
         workbench=workbench,
-        node_position=1,
+        node_name="Rabbit SS 0D cardiac model",
         expected_file_names=["logs.zip", "allresult_1Hz.txt", "vm_1Hz.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
         workbench=workbench,
-        node_position=2,
+        node_name="Rabbit SS 1D cardiac model",
         expected_file_names=["model_INPUT.from1D", "logs.zip", "cai_1D.txt", "ap_1D.txt", "ECGs.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
         workbench=workbench,
-        node_position=3,
+        node_name="Rabbit SS 2D cardiac model",
         expected_file_names=["aps.zip", "logs.zip"],
     )
