@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-07-30T14:21:13Z\n"
+"X-Translation-Date: 2026-08-19T13:20:05Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
@@ -1889,7 +1889,7 @@ msgstr " - 文件夹： "
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:690
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:691
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1333
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:485
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:495
 msgid "Move"
 msgstr "移动"
 
@@ -8380,7 +8380,7 @@ msgstr "拒绝并发送"
 # CTX-INTERPRETATION: The string "Please enter a subject" appears in a form
 # related to sending emails or previewing approval/rejection processes,
 # prompting the user to provide a subject for the email or preview.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:211
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:215
 #: services/static-webserver/client/source/class/osparc/po/SendEmail.js:131
 msgid "Please enter a subject"
 msgstr "请输入主题"
@@ -8388,7 +8388,7 @@ msgstr "请输入主题"
 # CTX-INTERPRETATION: The string appears in the email content editor,
 # prompting the user to preview the email before sending, likely to avoid
 # errors or unintended consequences.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:218
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:222
 #: services/static-webserver/client/source/class/osparc/po/SendEmail.js:138
 msgid "Please preview the email before sending"
 msgstr "在发送之前，请预览电子邮件内容。"
@@ -8396,28 +8396,28 @@ msgstr "在发送之前，请预览电子邮件内容。"
 # CTX-INTERPRETATION: This string appears in the PreviewApprovalRejection.js
 # file, likely indicating that a user has approved a preview and an email
 # notification has been successfully sent.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:254
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:258
 msgid "User approved and email sent"
 msgstr "用户已批准并已发送电子邮件"
 
 # CTX-INTERPRETATION: This string appears in the PreviewApprovalRejection.js
 # file, likely indicating that a user has rejected a preview and an email
 # notification has been sent to the relevant parties.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:282
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:286
 msgid "User rejected and email sent"
 msgstr "用户已拒绝并已发送电子邮件"
 
 # CTX-INTERPRETATION: The string "User approved" appears in the context of a
 # user approving a preview or action within a scientific simulation
 # application, likely displayed in a user interface.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:300
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:304
 msgid "User approved"
 msgstr "用户已批准"
 
 # CTX-INTERPRETATION: The string "User rejected" appears in the context of a
 # user rejecting a preview or approval, likely within a user interface for a
 # scientific simulation application.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:316
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:320
 msgid "User rejected"
 msgstr "用户已拒绝"
 
@@ -8537,36 +8537,36 @@ msgstr "拒绝"
 # CTX-INTERPRETATION: The string "Preview Approve" appears as the label for a
 # button within a dialog window, likely used to preview an approval request
 # before formally approving it.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:401
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:409
 msgid "Preview Approve"
 msgstr "预览批准"
 
 # CTX-INTERPRETATION: This string is used as a title for a preview window that
 # displays an email invitation, likely within a user interface for managing
 # pending invitations.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:456
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:573
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:466
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:583
 msgid "Preview email"
 msgstr "预览邮件"
 
 # CTX-INTERPRETATION: The string "Move to another product" appears as a
 # tooltip for a button, likely used within a user interface for managing
 # products or items, possibly related to inventory or order processing.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:465
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:475
 msgid "Move to another product"
 msgstr "移动到另一个产品"
 
 # CTX-INTERPRETATION: The string "Select the target product:" appears within a
 # user interface, likely a form or dialog, where the user is prompted to
 # choose a specific product from a list or selection mechanism.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:476
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:486
 msgid "Select the target product:"
 msgstr "选择目标产品："
 
 # CTX-INTERPRETATION: The string "Move to Product" is used within a user
 # interface element, likely a dialog or window, to indicate the action of
 # assigning a user to a specific product.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:494
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:504
 msgid "Move to Product"
 msgstr "将用户添加到产品"
 
@@ -8574,7 +8574,7 @@ msgstr "将用户添加到产品"
 # specifically within the 'UsersPending' component, indicating that a user has
 # been successfully moved or transitioned to a different state within the
 # application.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:534
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:544
 msgid "User moved successfully"
 msgstr "用户已成功移动"
 
