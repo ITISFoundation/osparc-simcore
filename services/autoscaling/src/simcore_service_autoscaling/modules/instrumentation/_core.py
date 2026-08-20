@@ -13,7 +13,7 @@ async def _autoscaling_instrumentation_lifespan(app: FastAPI) -> AsyncIterator[S
     app_settings = get_application_settings(app)
     metrics_subsystem = "dynamic" if app_settings.AUTOSCALING_NODES_MONITORING else "computational"
     registry = app.state.prometheus_metrics.registry
-    app.state.instrumentation = AutoscalingInstrumentation(registry=registry, subsystem=metrics_subsystem)
+    app.state.instrumentation = AutoscalingInstrumentation(registry=registry, subsystem=metrics_subsystem)  # pylint: disable=unexpected-keyword-arg
     try:
         yield {}
     finally:

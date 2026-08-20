@@ -131,8 +131,8 @@ class AutoscalingInstrumentation(MetricsBase):
     buffer_machines_pools_metrics: WarmBufferPoolsMetrics = field(init=False)
 
     def __post_init__(self) -> None:
-        self.cluster_metrics = ClusterMetrics(subsystem=self.subsystem, registry=self.registry)
+        self.cluster_metrics = ClusterMetrics(subsystem=self.subsystem, registry=self.registry)  # pylint: disable=unexpected-keyword-arg
         self.ec2_client_metrics = EC2ClientMetrics(
             namespace=METRICS_NAMESPACE, subsystem=self.subsystem, registry=self.registry
         )
-        self.buffer_machines_pools_metrics = WarmBufferPoolsMetrics(subsystem=self.subsystem, registry=self.registry)
+        self.buffer_machines_pools_metrics = WarmBufferPoolsMetrics(subsystem=self.subsystem, registry=self.registry)  # pylint: disable=unexpected-keyword-arg
