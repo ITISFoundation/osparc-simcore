@@ -28,6 +28,7 @@ from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,
+    UserPreferencesVersionSource,
 )
 from models_library.services import ServiceRunID
 from models_library.services_resources import ServiceResourcesDict
@@ -390,6 +391,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     tracing: bool = False
 
     user_preferences_path: Path | None = None
+    user_preferences_version_source: UserPreferencesVersionSource = (
+        UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
+    )
     callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
 
     requires_data_mounting: bool = False
@@ -447,6 +451,11 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     product_name: Annotated[str, Field(description="Current product upon which this service is scheduled")]
 
+    version_display: Annotated[
+        str | None,
+        Field(description="catalog's human readable name for this service version"),
+    ] = None
+
     product_api_base_url: Annotated[
         str | None,
         BeforeValidator(lambda v: f"{AnyHttpUrl(v)}"),
@@ -469,6 +478,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         can_save: bool,
         requires_data_mounting: bool,
         run_id: ServiceRunID | None = None,
+        version_display: str | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
@@ -482,6 +492,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "user_id": service.user_id,
             "key": service.key,
             "version": service.version,
+            "version_display": version_display,
             "service_resources": service.service_resources,
             "product_name": service.product_name,
             "product_api_base_url": service.product_api_base_url,
@@ -497,6 +508,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "request_dns": request_dns,
             "request_scheme": request_scheme,
             "user_preferences_path": simcore_service_labels.user_preferences_path,
+            "user_preferences_version_source": simcore_service_labels.user_preferences_version_source,
             "proxy_service_name": names_helper.proxy_service_name,
             "request_simcore_user_agent": request_simcore_user_agent,
             "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
