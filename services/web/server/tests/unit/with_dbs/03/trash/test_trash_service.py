@@ -275,20 +275,9 @@ async def test_trash_service__delete_expired_trash_retries_pipeline_stop_and_suc
     mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "wait", wait_none())  # noqa: SLF001
     mocker.patch.object(_projects_service_delete._wait_for_pipeline_to_stop.retry, "stop", stop_after_attempt(3))  # noqa: SLF001
 
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
-        autospec=True,
-    )
     # simulate: pipeline is still running for the first 2 checks, then reports as stopped
-    mock_is_pipeline_running = mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
-        autospec=True,
-        side_effect=[True, True, False],
-    )
+    mock_is_pipeline_running = mocked_dynamic_services_interface["director_v2.api.is_pipeline_running"]
+    mock_is_pipeline_running.side_effect = [True, True, False]
 
     user_project_id = user_project["uuid"]
     await _trash_service.trash_project(
@@ -327,20 +316,9 @@ async def test_trash_service__delete_expired_trash_retries_across_gc_cycles_when
     """
     assert client.app
 
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
-        autospec=True,
-    )
     # pipeline is stuck/never reports as stopped
-    mock_is_pipeline_running = mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
-        autospec=True,
-        return_value=True,
-    )
+    mock_is_pipeline_running = mocked_dynamic_services_interface["director_v2.api.is_pipeline_running"]
+    mock_is_pipeline_running.return_value = True
 
     # speed up the retry so a stuck GC cycle gives up quickly instead of waiting up to 60s.
     # NOTE: use an attempt-count bound (not `stop_after_delay`) to avoid wall-clock timing
@@ -612,19 +590,6 @@ async def test_trash_service__delete_expired_trash_for_workspace_retries_across_
     """
     assert client.app
 
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
-        autospec=True,
-        return_value=False,
-    )
     mocker.patch(
         "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,

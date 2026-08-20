@@ -5,6 +5,8 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunTaskRpcGet,
     ComputationCollectionRunTaskRpcGetPage,
     ComputationRunRpcGetPage,
+    ComputationRunStateBatchGetProjectIDs,
+    ComputationRunStateRpcGet,
     ComputationTaskRpcGet,
     ComputationTaskRpcGetPage,
 )
@@ -15,6 +17,7 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
+from pydantic import ValidationError, validate_call
 from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
 
@@ -32,6 +35,17 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
 
 router = RPCRouter()
+
+
+@router.expose(reraise_if_error_type=(ValidationError,))
+@validate_call(config={"arbitrary_types_allowed": True})
+async def batch_get_computations_latest_states(
+    app: FastAPI,
+    *,
+    project_ids: ComputationRunStateBatchGetProjectIDs,
+) -> list[ComputationRunStateRpcGet]:
+    comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
+    return await comp_runs_repo.batch_get_latest_run_states_by_projects(project_ids)
 
 
 @router.expose(reraise_if_error_type=())
