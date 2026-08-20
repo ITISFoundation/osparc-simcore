@@ -68,7 +68,7 @@ async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
     await common_interface.restart_user_services(app, node_id=node_id)
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(ServiceWasNotFoundError,))
 async def retrieve_inputs(
     app: FastAPI, *, node_id: NodeID, port_keys: list[ServicePortKey]
 ) -> RetrieveDataOutEnveloped:
