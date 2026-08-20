@@ -11,6 +11,7 @@ from ._instrumentation import (
     InstanceLabelExtractor,
     TrackedGauge,
     create_gauge,
+    create_instrumented_ec2_client,
     instrument_ec2_client,
 )
 from ._models import (
@@ -55,5 +56,6 @@ __all__: tuple[str, ...] = (
     "TrackedGauge",
     "configure_ec2_client",
     "create_gauge",
+    "create_instrumented_ec2_client",
     "instrument_ec2_client",
 )

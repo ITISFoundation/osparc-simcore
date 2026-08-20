@@ -6,6 +6,7 @@ from typing import Any, ParamSpec, TypeVar
 
 from prometheus_client import CollectorRegistry, Counter, Gauge
 from servicelib.instrumentation import MetricsBase
+from settings_library.ec2 import EC2Settings
 
 from ._client import SimcoreEC2API
 from ._models import EC2InstanceData
@@ -164,3 +165,22 @@ def instrument_ec2_client(ec2_client: SimcoreEC2API, metrics: EC2ClientMetrics) 
         )(method)
         setattr(ec2_client, method_name, decorated_method)
     return ec2_client
+
+
+async def create_instrumented_ec2_client(
+    settings: EC2Settings, ec2_client_metrics: EC2ClientMetrics | None
+) -> SimcoreEC2API:
+    """Creates a SimcoreEC2API client, optionally wired to report to ec2_client_metrics.
+
+    Intended to be used as (or from) the client_factory passed to aws_library.ec2.configure_ec2_client:
+    if wiring the already-created client to the metrics fails, the client is closed before the
+    error is re-raised, since it otherwise never gets tracked/closed by the caller.
+    """
+    ec2_client = await SimcoreEC2API.create(settings)
+    if ec2_client_metrics is None:
+        return ec2_client
+    try:
+        return instrument_ec2_client(ec2_client, ec2_client_metrics)
+    except Exception:
+        await ec2_client.close()
+        raise

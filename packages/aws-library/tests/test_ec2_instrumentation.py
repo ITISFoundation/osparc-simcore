@@ -6,15 +6,18 @@ from collections.abc import Callable
 from typing import TypedDict, cast
 from unittest.mock import AsyncMock, Mock
 
+import pytest
 from aws_library.ec2 import EC2InstanceData, SimcoreEC2API
 from aws_library.ec2._instrumentation import (
     EC2ClientMetrics,
     _instrumented_ec2_client_method,
     create_gauge,
+    create_instrumented_ec2_client,
     instrument_ec2_client,
 )
 from prometheus_client import CollectorRegistry
 from prometheus_client.metrics import MetricWrapperBase
+from pytest_mock import MockerFixture
 
 
 class _ExpectedSample(TypedDict):
@@ -113,7 +116,7 @@ async def test_instrument_ec2_client_reports_all_lifecycle_methods(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     registry = CollectorRegistry()
-    metrics = EC2ClientMetrics(namespace="test_namespace", subsystem="whatever", registry=registry)
+    metrics = EC2ClientMetrics(namespace="test_namespace", subsystem="whatever", registry=registry)  # pylint: disable=unexpected-keyword-arg
     instance = fake_ec2_instance_data()
     fake_client = cast(SimcoreEC2API, _FakeEC2Client(returned_instances=[instance]))
     ec2_client = instrument_ec2_client(fake_client, metrics)
@@ -143,7 +146,7 @@ async def test_instrument_ec2_client_skips_missing_methods(
     # future-proofing: an older/partial SimcoreEC2API missing one of the lifecycle
     # methods must not break instrumentation of the remaining ones
     registry = CollectorRegistry()
-    metrics = EC2ClientMetrics(namespace="test_namespace", subsystem="whatever", registry=registry)
+    metrics = EC2ClientMetrics(namespace="test_namespace", subsystem="whatever", registry=registry)  # pylint: disable=unexpected-keyword-arg
     instance = fake_ec2_instance_data()
 
     class _PartialEC2Client:
@@ -189,3 +192,31 @@ async def test_instrumented_ec2_client_method_without_any_instance_type_source_r
 
     assert result is instance
     metrics_handler.assert_not_called()
+
+
+async def test_create_instrumented_ec2_client_without_metrics(mocker: MockerFixture):
+    mock_client = mocker.AsyncMock(spec=SimcoreEC2API)
+    mocker.patch.object(SimcoreEC2API, "create", return_value=mock_client)
+
+    result = await create_instrumented_ec2_client(mocker.Mock(), None)
+
+    assert result is mock_client
+    mock_client.close.assert_not_called()
+
+
+async def test_create_instrumented_ec2_client_closes_client_if_instrumentation_wiring_fails(
+    mocker: MockerFixture,
+):
+    # the client is created successfully (holding real resources) but wiring
+    # instrumentation onto it fails afterwards: it must still be closed, not leaked
+    mock_client = mocker.AsyncMock(spec=SimcoreEC2API)
+    mocker.patch.object(SimcoreEC2API, "create", return_value=mock_client)
+    mocker.patch(
+        "aws_library.ec2._instrumentation.instrument_ec2_client",
+        side_effect=RuntimeError("boom"),
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await create_instrumented_ec2_client(mocker.Mock(), mocker.Mock())
+
+    mock_client.close.assert_called_once()

@@ -226,7 +226,7 @@ async def test_ec2_client_is_closed_if_instrumentation_wiring_fails(
     # instrumentation onto it fails afterwards: it must still be closed, not leaked
     close_spy = mocker.patch.object(SimcoreEC2API, "close", autospec=True)
     mocker.patch(
-        "simcore_service_autoscaling.modules.ec2.instrument_ec2_client",
+        "aws_library.ec2._instrumentation.instrument_ec2_client",
         side_effect=RuntimeError("boom"),
     )
 
