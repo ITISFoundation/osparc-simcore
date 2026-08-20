@@ -64,10 +64,11 @@ def get_containers_manager(app: FastAPI) -> ContainersManager:
 
 def configure_containers_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
     async def _containers_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
-        ContainersManager().set_to_app_state(app)
+        containers_manager = ContainersManager()
         try:
+            containers_manager.set_to_app_state(app)
             yield {}
         finally:
-            await ContainersManager.get_from_app_state(app).shutdown()
+            await containers_manager.shutdown()
 
     app_lifespan.add(_containers_manager_lifespan)
