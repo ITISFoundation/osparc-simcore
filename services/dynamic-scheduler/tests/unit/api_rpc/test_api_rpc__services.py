@@ -556,7 +556,7 @@ async def test_retrieve_inputs(
 
 
 async def test_retrieve_inputs_service_not_found(
-    mock_director_v2_service_retrieve_inputs: None,
+    mock_director_v2_service_retrieve_inputs: Route,
     rpc_client: RabbitMQRPCClient,
     node_id_not_found: NodeID,
 ):
