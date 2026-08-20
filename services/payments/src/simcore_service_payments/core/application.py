@@ -48,7 +48,10 @@ def _configure_plugins(
 
     configure_postgres(app_lifespan, tracing_config=app_tracing_config)
 
-    configure_rabbitmq(app_lifespan)
+    configure_rabbitmq(
+        app_lifespan,
+        settings=app.state.settings.PAYMENTS_RABBITMQ,
+    )
     configure_rpc_api_routes(app_lifespan)
 
     setup_payments_gateway(app)
