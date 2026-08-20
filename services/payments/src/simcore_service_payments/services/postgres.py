@@ -1,4 +1,7 @@
+from collections.abc import AsyncIterator
+
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
 from servicelib.tracing import TracingConfig
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -13,20 +16,19 @@ def get_engine(app: FastAPI) -> AsyncEngine:
     return engine
 
 
-def setup_postgres(app: FastAPI, tracing_config: TracingConfig | None) -> None:
-    app.state.engine = None
-
-    async def _on_startup() -> None:
+def configure_postgres(app_lifespan: LifespanManager[FastAPI], tracing_config: TracingConfig | None) -> None:
+    async def _postgres_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        app.state.engine = None
         settings: ApplicationSettings = app.state.settings
         await connect_to_db(
             app, settings=settings.PAYMENTS_POSTGRES, application_name=APP_NAME, tracing_config=tracing_config
         )
         assert app.state.engine  # nosec
         assert isinstance(app.state.engine, AsyncEngine)  # nosec
+        try:
+            yield {}
+        finally:
+            assert app.state.engine  # nosec
+            await close_db_connection(app)
 
-    async def _on_shutdown() -> None:
-        assert app.state.engine  # nosec
-        await close_db_connection(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_postgres_lifespan)

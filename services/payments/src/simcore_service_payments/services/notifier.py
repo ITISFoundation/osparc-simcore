@@ -1,7 +1,9 @@
 import contextlib
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -72,10 +74,9 @@ class NotifierService(SingletonInAppStateMixin):
             )
 
 
-def setup_notifier(app: FastAPI):
-    app_settings: ApplicationSettings = app.state.settings
-
-    async def _on_startup() -> None:
+def configure_notifier(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _notifier_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        app_settings: ApplicationSettings = app.state.settings
         assert app.state.external_socketio  # nosec
         engine = get_engine(app)
         providers: list[NotificationProvider] = [
@@ -93,10 +94,10 @@ def setup_notifier(app: FastAPI):
         notifier = NotifierService(*providers)
         notifier.set_to_app_state(app)
         assert NotifierService.get_from_app_state(app) == notifier  # nosec
+        try:
+            yield {}
+        finally:
+            with contextlib.suppress(AttributeError):
+                NotifierService.pop_from_app_state(app)
 
-    async def _on_shutdown() -> None:
-        with contextlib.suppress(AttributeError):
-            NotifierService.pop_from_app_state(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_notifier_lifespan)

@@ -1,8 +1,10 @@
 import logging
+from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI
 from fastapi.requests import Request
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.rabbitmq import (
     RabbitMQClient,
@@ -19,28 +21,28 @@ def get_rabbitmq_settings(app: FastAPI) -> RabbitSettings:
     return settings
 
 
-def setup_rabbitmq(app: FastAPI) -> None:
-    settings: RabbitSettings = get_rabbitmq_settings(app)
-    app.state.rabbitmq_client = None
-
-    async def _on_startup() -> None:
+def configure_rabbitmq(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        settings: RabbitSettings = get_rabbitmq_settings(app)
+        app.state.rabbitmq_client = None
+        app.state.rabbitmq_rpc_client = None
         await wait_till_rabbitmq_responsive(settings.dsn)
 
         app.state.rabbitmq_client = RabbitMQClient(client_name="payments", settings=settings)
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
             client_name="payments_rpc_client", settings=settings
         )
+        try:
+            yield {}
+        finally:
+            if app.state.rabbitmq_client:
+                await app.state.rabbitmq_client.close()
+                app.state.rabbitmq_client = None
+            if app.state.rabbitmq_rpc_client:
+                await app.state.rabbitmq_rpc_client.close()
+                app.state.rabbitmq_rpc_client = None
 
-    async def _on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await app.state.rabbitmq_client.close()
-            app.state.rabbitmq_client = None
-        if app.state.rabbitmq_rpc_client:
-            await app.state.rabbitmq_rpc_client.close()
-            app.state.rabbitmq_rpc_client = None
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_rabbitmq_lifespan)
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

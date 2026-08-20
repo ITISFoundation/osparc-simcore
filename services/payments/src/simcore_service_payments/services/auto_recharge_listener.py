@@ -1,7 +1,9 @@
 import functools
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import ConsumerTag, QueueName
@@ -29,17 +31,17 @@ async def _unsubscribe_consumer(app, queue_name: QueueName, consumer_tag: Consum
         await rabbit_client.unsubscribe_consumer(queue_name, consumer_tag)
 
 
-def setup_auto_recharge_listener(app: FastAPI):
-    async def _on_startup() -> None:
+def configure_auto_recharge_listener(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _auto_recharge_listener_lifespan(app: FastAPI) -> AsyncIterator[State]:
         app.state.auto_recharge_rabbitmq_consumer = await _subscribe_to_rabbitmq(app)
+        try:
+            yield {}
+        finally:
+            assert app.state.auto_recharge_rabbitmq_consumer  # nosec
+            assert isinstance(app.state.auto_recharge_rabbitmq_consumer, tuple)  # nosec
+            if app.state.rabbitmq_client:
+                # NOTE: We want to have persistent queue, therefore we will unsubscribe only consumer
+                await _unsubscribe_consumer(app, *app.state.auto_recharge_rabbitmq_consumer)
+            app.state.auto_recharge_rabbitmq_consumer = None
 
-    async def _on_shutdown() -> None:
-        assert app.state.auto_recharge_rabbitmq_consumer  # nosec
-        assert isinstance(app.state.auto_recharge_rabbitmq_consumer, tuple)  # nosec
-        if app.state.rabbitmq_client:
-            # NOTE: We want to have persistent queue, therefore we will unsubscribe only consumer
-            await _unsubscribe_consumer(app, *app.state.auto_recharge_rabbitmq_consumer)
-        app.state.auto_recharge_rabbitmq_consumer = None
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_auto_recharge_listener_lifespan)
