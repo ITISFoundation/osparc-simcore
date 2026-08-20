@@ -1,7 +1,4 @@
-# Shared recipe body to create files from template counterparts.
-
-define clone_from_template
-$(if $(wildcard $@), \
-@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
-endef
+# SHIM: content moved to scripts/makefiles/templates.mk (naming convention: .mk = library).
+# Kept so existing `include .../scripts/common-templates.Makefile` references keep working.
+# SEE scripts/makefiles/README.md
+include $(dir $(lastword $(MAKEFILE_LIST)))makefiles/templates.mk
