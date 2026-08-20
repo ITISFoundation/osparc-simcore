@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
+from servicelib.fastapi.postgres_lifespan import configure_postgres_database
 from servicelib.fastapi.tracing import configure_fastapi_app_tracing
 from servicelib.tracing import TracingConfig
 
@@ -21,7 +22,6 @@ from ..api.rpc.routes import configure_rpc_routes
 from ..services.background_tasks_setup import configure_background_tasks
 from ..services.efs_manager_setup import configure_efs_manager
 from ..services.fire_and_forget_setup import configure_fire_and_forget
-from ..services.modules.db import configure_db
 from ..services.modules.rabbitmq import configure_rabbitmq
 from ..services.modules.redis import configure_redis
 from ..services.process_messages_setup import configure_process_messages
@@ -40,7 +40,11 @@ def _configure_plugins(
 
     configure_rabbitmq(app, app_lifespan)
     configure_redis(app_lifespan)
-    configure_db(app_lifespan, tracing_config=tracing_config)
+    configure_postgres_database(
+        app_lifespan,
+        settings=app.state.settings.EFS_GUARDIAN_POSTGRES,
+        tracing_config=tracing_config,
+    )
 
     configure_rpc_routes(app_lifespan)
     configure_efs_manager(app_lifespan)
