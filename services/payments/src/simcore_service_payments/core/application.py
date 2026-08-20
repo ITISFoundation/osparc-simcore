@@ -61,9 +61,9 @@ def _configure_plugins(
 
     setup_stripe(app)
 
-    configure_auto_recharge_listener(app_lifespan)
     configure_socketio(app_lifespan)
     configure_notifier(app_lifespan)
+    configure_auto_recharge_listener(app_lifespan)
 
     if app.state.settings.PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
