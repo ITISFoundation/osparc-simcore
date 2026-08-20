@@ -11,7 +11,14 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from simcore_service_webserver.director_v2 import director_v2_service
+from pytest_mock import MockerFixture
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    ComputationRunStatesRetrievalError,
+)
+from simcore_service_webserver.director_v2 import _director_v2_service, director_v2_service
+from simcore_service_webserver.director_v2.exceptions import (
+    DirectorV2PipelineStatesRetrievalError,
+)
 
 
 @pytest.fixture()
@@ -60,6 +67,27 @@ async def test_get_computation_task(
     assert task_out
     assert isinstance(task_out, ComputationTask)
     assert task_out.state == RunningState.NOT_STARTED
+
+
+async def test_list_pipelines_latest_states_raises_domain_error_on_rpc_failure(
+    client: TestClient,
+    mocker: MockerFixture,
+    project_id: ProjectID,
+):
+    assert client.app
+    mocker.patch(
+        f"{_director_v2_service.__name__}.computations.batch_get_computations_latest_states",
+        side_effect=ComputationRunStatesRetrievalError,
+    )
+
+    with pytest.raises(
+        DirectorV2PipelineStatesRetrievalError,
+        match="Could not retrieve pipeline states",
+    ):
+        await director_v2_service.list_pipelines_latest_states(
+            client.app,
+            project_ids=[project_id],
+        )
 
 
 async def test_delete_pipeline(

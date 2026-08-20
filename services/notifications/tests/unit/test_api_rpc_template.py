@@ -125,6 +125,7 @@ async def test_preview_new_2fa_code_template_renders_without_errors(
         },
         "host": "https://example.com",
         "code": "123456",
+        "ttl": 120,
     }
 
     response = await preview_template(rpc_client, product_name=product_name, ref=ref, context=context)
@@ -135,6 +136,8 @@ async def test_preview_new_2fa_code_template_renders_without_errors(
     assert "123456" in response.message_content["subject"]
     assert "John" in response.message_content["body_text"]
     assert "https://example.com" in response.message_content["body_text"]
+    assert "120 seconds" in response.message_content["body_text"]
+    assert "120 seconds" in response.message_content["body_html"]
 
 
 async def test_preview_new_2fa_code_template_invalid_context(

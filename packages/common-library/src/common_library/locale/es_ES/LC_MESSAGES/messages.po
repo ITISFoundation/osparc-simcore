@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 16:55+0200\n"
+"POT-Creation-Date: 2026-08-19 15:19+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-08-13T14:56:02Z\n"
+"X-Translation-Date: 2026-08-19T13:20:00Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -652,7 +652,7 @@ msgstr ""
 # iteration. the completion status of a project pipeline execution for a
 # specific iteration. the completion status of a project pipeline execution
 # for a specific iteration.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:240
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:229
 #, python-brace-format
 msgid ""
 "Project pipeline execution for iteration {iteration} has completed with "
@@ -664,7 +664,7 @@ msgstr ""
 # CTX-INTERPRETATION: This message is an error notification related to task
 # scheduling in the application. system to notify users of an unexpected issue
 # during the scheduling of tasks.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:861
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:831
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -676,7 +676,7 @@ msgstr ""
 # scheduling a task with variable resolution has exceeded the time limit and
 # will attempt to retry. warning message when a task involving variable
 # resolution fails to complete in time and will be attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:892
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:862
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr ""
 "La resolución variable excedió el tiempo límite durante la programación de "
@@ -686,7 +686,7 @@ msgstr ""
 # cannot allocate the necessary computational resources in time. fails to
 # allocate computational resources for their task, prompting them to retry or
 # seek support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:960
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:930
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
@@ -732,7 +732,8 @@ msgstr "Estimado/a %(first_name)s,"
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
 msgid ""
 "Your request has been approved and you now have access to %(product_name)s."
-msgstr "Su solicitud ha sido aprobada y ahora tiene acceso a %(product_name)s."
+msgstr ""
+"Su solicitud ha sido aprobada y ahora tiene acceso a %(product_name)s."
 
 # CTX-INTERPRETATION: This string is part of an email template used to guide
 # users who have an existing account to log in to a specific product.
@@ -812,8 +813,8 @@ msgstr "Saludos cordiales,"
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
@@ -1076,7 +1077,6 @@ msgstr "Cambiar correo electrónico"
 # simulation application.
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
 msgid ""
@@ -1090,8 +1090,8 @@ msgstr "No dude en contactarnos en %(support_link)s si necesita más ayuda."
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:12
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
@@ -1114,7 +1114,6 @@ msgstr "Saludos cordiales,"
 # contact information for further assistance.
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
-#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
 #: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
 msgid ""
@@ -1219,12 +1218,37 @@ msgstr ""
 msgid "Your code is: %(code_display)s"
 msgstr "Su código es: %(code_display)s"
 
+# CTX-INTERPRETATION: This string appears in an email template, indicating the
+# validity period of a two-factor authentication (2FA) code.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
+msgid "This code is valid for %(ttl)s seconds."
+msgstr "Este código es válido durante %(ttl)s segundos."
+
+# CTX-INTERPRETATION: This string appears in an email body, specifically
+# within a template for sending a new 2FA code, providing contact information
+# for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further\n"
+"  help."
+msgstr "No duden en contactarnos en %(support_link)s si necesitan más ayuda."
+
 # CTX-INTERPRETATION: This string appears in a notification or message sent to
 # provide a two-factor authentication code. users to provide them with a two-
 # factor authentication code for accessing their account.
 #: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
 msgid "Your code is: %(code)s"
 msgstr "Su código es: %(code)s"
+
+# CTX-INTERPRETATION: This string is a customer support message encouraging
+# users to reach out for further assistance. application, providing users with
+# contact information for further assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need\n"
+"further help."
+msgstr "No dude en contactarnos en %(support_email)s si necesita más ayuda."
 
 # CTX-INTERPRETATION: This string is used to inform the user of their two-
 # factor authentication code for a specific host. notification to inform the
@@ -1987,7 +2011,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string appears in an error message that is raised
 # when two-factor authentication login is not available. when the two-factor
 # authentication login feature is not available in the application.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:209
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:210
 #: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
 msgid "2FA login is not available"
 msgstr "El inicio de sesión con 2FA no está disponible"

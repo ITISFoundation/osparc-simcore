@@ -104,6 +104,7 @@ async def delete_workspace_with_all_content(
             app,
             user_id=user_id,
             product_name=product_name,
+            include_states=False,
             show_hidden=False,
             workspace_id=workspace_id,
             project_type=ProjectTypeAPI.all,
