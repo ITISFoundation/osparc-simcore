@@ -523,7 +523,7 @@ async def test_restart_user_services(
 
 
 @pytest.fixture
-def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[Route]:
+def mock_director_v2_service_retrieve_inputs(node_id: NodeID, node_id_not_found: NodeID) -> Iterator[Route]:
     with respx.mock(
         base_url="http://director-v2:8000/v2",
         assert_all_called=False,
@@ -535,6 +535,9 @@ def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[Route]
             .validate_python(RetrieveDataOutEnveloped.model_json_schema()["examples"][0])
             .model_dump_json(),
         )
+
+        # service was not found (e.g. already stopped/removed)
+        mock.post(f"/dynamic_services/{node_id_not_found}:retrieve").respond(status.HTTP_404_NOT_FOUND)
 
         yield request
 
@@ -550,6 +553,15 @@ async def test_retrieve_inputs(
     assert sent_request.headers["Content-Type"] == "application/json"
     assert json.loads(sent_request.content) == {"port_keys": []}
     assert results.model_dump(mode="python") == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+
+
+async def test_retrieve_inputs_service_not_found(
+    mock_director_v2_service_retrieve_inputs: Route,
+    rpc_client: RabbitMQRPCClient,
+    node_id_not_found: NodeID,
+):
+    with pytest.raises(ServiceWasNotFoundError):
+        await services.retrieve_inputs(rpc_client, node_id=node_id_not_found, port_keys=[], timeout_s=10)
 
 
 @pytest.fixture
