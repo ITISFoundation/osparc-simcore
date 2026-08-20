@@ -1,12 +1,12 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from aws_library.ec2 import EC2ClientMetrics, EC2InstanceData
+from aws_library.ec2 import EC2ClientMetrics, EC2InstanceData, TrackedGauge
 from prometheus_client import CollectorRegistry
 from servicelib.instrumentation import MetricsBase
 
 from ._constants import METRICS_NAMESPACE, PRIMARY_INSTANCES_METRICS_DEFINITIONS
-from ._utils import TrackedGauge, create_gauge
+from ._utils import create_gauge
 
 
 @dataclass(slots=True, kw_only=True)

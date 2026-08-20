@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Final
 
-from aws_library.ec2 import EC2ClientMetrics
+from aws_library.ec2 import EC2ClientMetrics, TrackedGauge
 from prometheus_client import CollectorRegistry, Histogram
 from servicelib.instrumentation import MetricsBase
 
@@ -12,7 +12,7 @@ from ._constants import (
     METRICS_NAMESPACE,
     WARM_BUFFER_POOLS_METRICS_DEFINITIONS,
 )
-from ._utils import TrackedGauge, create_gauge
+from ._utils import create_gauge
 
 
 @dataclass(slots=True, kw_only=True)
