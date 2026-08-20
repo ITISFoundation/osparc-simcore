@@ -65,7 +65,7 @@ def _instance_type_from_instance_data(instance_data_list: Iterable[EC2InstanceDa
     return [i.type for i in instance_data_list]
 
 
-def instrumented_ec2_client_method(
+def _instrumented_ec2_client_method(
     metrics_handler: Callable[[str], None],
     *,
     instance_type_from_method_arguments: Callable[..., list[str]] | None = None,
@@ -159,7 +159,7 @@ def instrument_ec2_client(ec2_client: SimcoreEC2API, metrics: EC2ClientMetrics) 
         if method is None:
             # future-proof: skip methods that may not exist on this SimcoreEC2API version
             continue
-        decorated_method = instrumented_ec2_client_method(
+        decorated_method = _instrumented_ec2_client_method(
             metrics_handler, instance_type_from_method_arguments=instance_type_from_method_arguments
         )(method)
         setattr(ec2_client, method_name, decorated_method)

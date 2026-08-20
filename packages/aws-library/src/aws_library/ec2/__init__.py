@@ -12,7 +12,6 @@ from ._instrumentation import (
     TrackedGauge,
     create_gauge,
     instrument_ec2_client,
-    instrumented_ec2_client_method,
 )
 from ._models import (
     AWS_TAG_KEY_MAX_LENGTH,
@@ -57,5 +56,4 @@ __all__: tuple[str, ...] = (
     "configure_ec2_client",
     "create_gauge",
     "instrument_ec2_client",
-    "instrumented_ec2_client_method",
 )
