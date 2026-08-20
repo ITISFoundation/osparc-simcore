@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-include ../scripts/common-templates.Makefile
+include ../scripts/makefiles/templates.mk
 
 VSCODE_CONFIGS := settings.json launch.json mcp.json
 
