@@ -356,8 +356,6 @@ class RestartPolicy(StrEnum):
 
 
 class UserPreferencesVersionSource(StrEnum):
-    """Content of "simcore.service.user-preferences-version-source" label"""
-
     SERVICE_VERSION = "service-version"
     VERSION_DISPLAY = "version-display"
 
