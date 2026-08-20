@@ -110,3 +110,33 @@ async def test_configure_ec2_client_closes_client_if_ping_fails(
     mock_ec2_client_create.assert_called_once_with(settings.EC2_ACCESS)
     mock_ec2_client_create.return_value.ping.assert_called_once()
     mock_ec2_client_create.return_value.close.assert_called_once()
+
+
+async def test_configure_ec2_client_does_not_close_if_client_creation_fails(
+    app_environment: EnvVarsDict,
+    mock_ec2_client_create: MockType,
+):
+    assert app_environment
+
+    class AppSettings(BaseApplicationSettings):
+        EC2_ACCESS: EC2Settings = Field(..., json_schema_extra={"auto_default_from_env": True})
+
+    settings = AppSettings.create_from_envs()
+    # the client itself is never created (e.g. wrong credentials/network issue)
+    mock_ec2_client_create.side_effect = RuntimeError("boom")
+
+    app_lifespan = LifespanManager()
+    configure_ec2_client(
+        app_lifespan,
+        settings=settings.EC2_ACCESS,
+        client_name="test_ec2_client",
+    )
+
+    app = FastAPI(lifespan=app_lifespan)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        async with ASGILifespanManager(app, startup_timeout=10, shutdown_timeout=10):
+            pytest.fail("lifespan startup should fail before entering the context")
+
+    # nothing was ever created, so there is nothing to close
+    mock_ec2_client_create.return_value.close.assert_not_called()

@@ -12,6 +12,7 @@ import botocore.exceptions
 import pytest
 from aws_library.ec2._client import SimcoreEC2API
 from aws_library.ec2._errors import (
+    EC2AccessError,
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
     EC2InsufficientCapacityError,
@@ -526,6 +527,69 @@ async def test_start_instances_with_insufficient_instance_capacity(
     # start the instances now
     with pytest.raises(EC2InsufficientCapacityError):
         await simcore_ec2_api.start_instances(created_instances)
+
+
+async def test_start_instances_with_insufficient_instance_capacity_parses_error_details(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    ec2_instance_config: EC2InstanceConfig,
+    mocker: MockerFixture,
+):
+    created_instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=1,
+        number_of_instances=1,
+    )
+    await simcore_ec2_api.stop_instances(created_instances)
+
+    # this message matches the internal regex used to extract instance_type/availability_zone
+    async def mock_start_instances(*args, **kwargs) -> Any:
+        error_response: dict[str, Any] = {
+            "Error": {
+                "Code": "InsufficientInstanceCapacity",
+                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the "
+                "StartInstances operation (reached max retries: 4): We currently do not have "
+                "sufficient g4dn.4xlarge capacity in the Availability Zone you requested "
+                "(us-east-1a). Our system will be working on provisioning additional capacity.",
+            },
+        }
+        raise botocore.exceptions.ClientError(error_response, "StartInstances")  # type: ignore
+
+    mocker.patch.object(simcore_ec2_api.client, "start_instances", side_effect=mock_start_instances)
+
+    with pytest.raises(EC2InsufficientCapacityError) as exc_info:
+        await simcore_ec2_api.start_instances(created_instances)
+
+    assert exc_info.value.instance_type == "g4dn.4xlarge"  # type: ignore
+    assert exc_info.value.availability_zones == "us-east-1a"  # type: ignore
+
+
+async def test_launch_instances_reraises_other_client_errors(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_instance_config: EC2InstanceConfig,
+    mocker: MockerFixture,
+):
+    # a ClientError code other than "InsufficientInstanceCapacity" must be re-raised as-is
+    # (not internally retried on another subnet), and mapped to the generic EC2AccessError
+    async def mock_run_instances(*args, **kwargs) -> Any:
+        error_response: dict[str, Any] = {
+            "Error": {
+                "Code": "UnauthorizedOperation",
+                "Message": "You are not authorized to perform this operation.",
+            },
+        }
+        raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
+
+    mocker.patch.object(simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances)
+
+    with pytest.raises(EC2AccessError) as exc_info:
+        await simcore_ec2_api.launch_instances(
+            ec2_instance_config,
+            min_number_of_instances=1,
+            number_of_instances=1,
+        )
+
+    assert exc_info.value.code == "UnauthorizedOperation"  # type: ignore
 
 
 async def test_terminate_instance(

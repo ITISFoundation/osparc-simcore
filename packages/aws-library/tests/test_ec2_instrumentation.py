@@ -4,11 +4,12 @@
 
 from collections.abc import Callable
 from typing import TypedDict, cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 from aws_library.ec2 import EC2InstanceData, SimcoreEC2API
 from aws_library.ec2._instrumentation import (
     EC2ClientMetrics,
+    _instrumented_ec2_client_method,
     create_gauge,
     instrument_ec2_client,
 )
@@ -134,3 +135,57 @@ async def test_instrument_ec2_client_reports_all_lifecycle_methods(
                 labels={"instance_type": instance.type},
             ),
         )
+
+
+async def test_instrument_ec2_client_skips_missing_methods(
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    # future-proofing: an older/partial SimcoreEC2API missing one of the lifecycle
+    # methods must not break instrumentation of the remaining ones
+    registry = CollectorRegistry()
+    metrics = EC2ClientMetrics(namespace="test_namespace", subsystem="whatever", registry=registry)
+    instance = fake_ec2_instance_data()
+
+    class _PartialEC2Client:
+        def __init__(self) -> None:
+            self.launch_instances = AsyncMock(return_value=[instance])
+            # NOTE: start_instances/stop_instances/terminate_instances are intentionally missing
+
+    fake_client = cast(SimcoreEC2API, _PartialEC2Client())
+    ec2_client = instrument_ec2_client(fake_client, metrics)
+
+    await ec2_client.launch_instances()
+    _assert_metrics(
+        metrics.launched_instances,
+        expected_num_samples=2,
+        check_sample_index=0,
+        expected_sample=_ExpectedSample(
+            name="test_namespace_whatever_launched_instances_total",
+            value=1,
+            labels={"instance_type": instance.type},
+        ),
+    )
+    assert not hasattr(ec2_client, "start_instances")
+
+
+async def test_instrumented_ec2_client_method_without_any_instance_type_source_reports_nothing(
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    # covers the (unused in practice, but supported) case where neither the method
+    # arguments nor its return value are used to report instance types
+    metrics_handler = Mock()
+    instance = fake_ec2_instance_data()
+
+    async def _some_method(*_args, **_kwargs) -> EC2InstanceData:
+        return instance
+
+    decorated = _instrumented_ec2_client_method(
+        metrics_handler,
+        instance_type_from_method_arguments=None,
+        instance_type_from_method_return=None,
+    )(_some_method)
+
+    result = await decorated()
+
+    assert result is instance
+    metrics_handler.assert_not_called()
