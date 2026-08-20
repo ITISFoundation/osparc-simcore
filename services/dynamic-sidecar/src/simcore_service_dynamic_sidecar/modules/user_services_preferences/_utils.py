@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 def get_resolved_version(app: FastAPI) -> ServiceVersion | None:
     settings: ApplicationSettings = app.state.settings
 
-    if settings.DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE == UserPreferencesVersionSource.SERVICE_VERSION:
+    if settings.DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE == UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER:
         return settings.DY_SIDECAR_SERVICE_VERSION
 
     # NOTE: version_display is free text and not guaranteed to be a valid ServiceVersion;

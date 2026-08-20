@@ -391,7 +391,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     tracing: bool = False
 
     user_preferences_path: Path | None = None
-    user_preferences_version_source: UserPreferencesVersionSource = UserPreferencesVersionSource.SERVICE_VERSION
+    user_preferences_version_source: UserPreferencesVersionSource = (
+        UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
+    )
     callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
 
     requires_data_mounting: bool = False

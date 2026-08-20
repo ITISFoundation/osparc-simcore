@@ -356,8 +356,8 @@ class RestartPolicy(StrEnum):
 
 
 class UserPreferencesVersionSource(StrEnum):
-    SERVICE_VERSION = "service-version"
-    VERSION_DISPLAY = "version-display"
+    SERVICE_VERSION_IDENTIFIER = "service-version"
+    SERVICE_VERSION_DISPLAY = "version-display"
 
 
 class DynamicSidecarServiceLabels(BaseModel):
@@ -427,7 +427,7 @@ class DynamicSidecarServiceLabels(BaseModel):
                 "display release\n"
             ),
         ),
-    ] = UserPreferencesVersionSource.SERVICE_VERSION
+    ] = UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
 
     restart_policy: Annotated[
         RestartPolicy,
@@ -688,7 +688,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         "simcore.service.user-preferences-path": json_dumps(
                             "/tmp/path_to_preferences"  # noqa: S108
                         ),
-                        "simcore.service.user-preferences-version-source": UserPreferencesVersionSource.SERVICE_VERSION,
+                        "simcore.service.user-preferences-version-source": (
+                            UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
+                        ),
                         "simcore.service.is_collaborative": "False",
                     },
                     # dynamic-service with compose spec

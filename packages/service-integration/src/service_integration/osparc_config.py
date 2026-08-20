@@ -227,7 +227,9 @@ class RuntimeConfig(BaseModel):
     is_collaborative: bool = False
 
     user_preferences_path: Path | None = None
-    user_preferences_version_source: UserPreferencesVersionSource = UserPreferencesVersionSource.SERVICE_VERSION
+    user_preferences_version_source: UserPreferencesVersionSource = (
+        UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
+    )
     boot_options: BootOptions | None = None
     min_visible_inputs: NonNegativeInt | None = None
 
