@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from aiodocker.volumes import DockerVolume
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -53,8 +54,8 @@ def max_response_time() -> int:
 
 @pytest.fixture
 async def test_client(app: FastAPI, max_response_time: int) -> AsyncIterable[TestClient]:
-    async with TestClient(app, timeout=max_response_time) as client:
-        yield client
+    async with ASGILifespanManager(app):
+        yield TestClient(app, timeout=max_response_time)
 
 
 #

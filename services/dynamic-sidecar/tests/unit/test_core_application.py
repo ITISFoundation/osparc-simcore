@@ -19,6 +19,7 @@ from simcore_service_dynamic_sidecar.core.application import (
 )
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 
 
 def test_create_app(mock_environment_with_envdevel: EnvVarsDict):
@@ -59,13 +60,25 @@ async def test_create_base_app_with_explicit_lifespan_manager(
 
 def test_class_appstate_decorator_class(mock_environment_with_envdevel: EnvVarsDict):
     app = create_app()
+    settings: ApplicationSettings = app.state.settings
+    app.state.mounted_volumes = MountedVolumes(
+        service_run_id=settings.DY_SIDECAR_RUN_ID,
+        node_id=settings.DY_SIDECAR_NODE_ID,
+        inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
+        outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
+        user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
+        state_paths=settings.DY_SIDECAR_STATE_PATHS,
+        state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
+        compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
+        dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
+    )
     app.state.shared_store = SharedStore()  # emulate on_startup event
     app_state = AppState(app)
 
     # ensure exposed properties are init after creation
     properties = inspect.getmembers(
         AppState,
-        lambda o: isinstance(o, property) and o.fget.__name__ in AppState._STATES,
+        lambda o: isinstance(o, property) and o.fget.__name__ in AppState._STATES,  # noqa: SLF001
     )
     for prop_name, prop in properties:
         # checks GETTERS
