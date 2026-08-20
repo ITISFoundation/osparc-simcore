@@ -1,6 +1,7 @@
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_efs_guardian import EFS_GUARDIAN_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
 
@@ -28,6 +29,12 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     return _stop
 
 
-def setup_rpc_routes(app: FastAPI) -> None:
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
+def configure_rpc_routes(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _rpc_routes_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        try:
+            await on_app_startup(app)()
+            yield {}
+        finally:
+            await on_app_shutdown(app)()
+
+    app_lifespan.add(_rpc_routes_lifespan)
