@@ -14,7 +14,13 @@ async def _create_ec2_client(app: FastAPI, settings: EC2Settings) -> SimcoreEC2A
     ec2_client = await SimcoreEC2API.create(settings)
     if not has_instrumentation(app):
         return ec2_client
-    return instrument_ec2_client(ec2_client, get_instrumentation(app).ec2_client_metrics)
+    try:
+        return instrument_ec2_client(ec2_client, get_instrumentation(app).ec2_client_metrics)
+    except Exception:
+        # NOTE: ec2_client was already created and holds open resources (aiobotocore session);
+        # since it never gets returned/tracked by the caller on error, we must close it ourselves
+        await ec2_client.close()
+        raise
 
 
 def configure_ec2_client(
