@@ -42,7 +42,7 @@ async def batch_get_computations_latest_states(
     try:
         result = await rabbitmq_rpc_client.request(
             DIRECTOR_V2_RPC_NAMESPACE,
-            _RPC_METHOD_NAME_ADAPTER.validate_python("list_computations_latest_states"),
+            _RPC_METHOD_NAME_ADAPTER.validate_python("batch_get_computations_latest_states"),
             project_ids=project_ids,
             timeout_s=_DEFAULT_TIMEOUT_S,
         )
