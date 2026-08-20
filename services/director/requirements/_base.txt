@@ -242,7 +242,7 @@ packaging==24.2
     #   opentelemetry-instrumentation-sqlalchemy
 pamqp==3.3.0
     # via aiormq
-prometheus-client==0.21.0
+prometheus-client==0.26.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
