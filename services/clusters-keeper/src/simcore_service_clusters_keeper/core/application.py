@@ -24,6 +24,7 @@ from .._meta import (
 from ..api.routes import setup_api_routes
 from ..modules.clusters_management_task import configure_clusters_management
 from ..modules.ec2 import configure_ec2_client
+from ..modules.instrumentation import configure_clusters_keeper_instrumentation
 from ..modules.rabbitmq import configure_rabbitmq_client
 from ..modules.redis import configure_redis_client
 from ..modules.ssm import configure_ssm_client
@@ -48,6 +49,7 @@ def _configure_plugins(
 
     if settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)
+        configure_clusters_keeper_instrumentation(app_lifespan)
 
     if tracing_config.tracing_enabled:
         configure_fastapi_app_tracing(
