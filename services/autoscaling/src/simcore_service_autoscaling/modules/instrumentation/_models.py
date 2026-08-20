@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Final
 
-from prometheus_client import CollectorRegistry, Counter, Histogram
+from aws_library.ec2 import EC2ClientMetrics
+from prometheus_client import CollectorRegistry, Histogram
 from servicelib.instrumentation import MetricsBase
 
 from ...models import Cluster, WarmBufferPoolManager
@@ -50,60 +51,6 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
                 tracked_gauge.update_from_instances(i.ec2_instance for i in instances)
             else:
                 self.disconnected_nodes.gauge.set(len(cluster.disconnected_nodes))
-
-
-@dataclass(slots=True, kw_only=True)
-class EC2ClientMetrics(MetricsBase):
-    launched_instances: Counter = field(init=False)
-    started_instances: Counter = field(init=False)
-    stopped_instances: Counter = field(init=False)
-    terminated_instances: Counter = field(init=False)
-
-    def __post_init__(self) -> None:
-        self.launched_instances = Counter(
-            "launched_instances_total",
-            "Number of EC2 instances that were launched",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=self.subsystem,
-            registry=self.registry,
-        )
-        self.started_instances = Counter(
-            "started_instances_total",
-            "Number of EC2 instances that were started",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=self.subsystem,
-            registry=self.registry,
-        )
-        self.stopped_instances = Counter(
-            "stopped_instances_total",
-            "Number of EC2 instances that were stopped",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=self.subsystem,
-            registry=self.registry,
-        )
-        self.terminated_instances = Counter(
-            "terminated_instances_total",
-            "Number of EC2 instances that were terminated",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=self.subsystem,
-            registry=self.registry,
-        )
-
-    def instance_started(self, instance_type: str) -> None:
-        self.started_instances.labels(instance_type=instance_type).inc()
-
-    def instance_launched(self, instance_type: str) -> None:
-        self.launched_instances.labels(instance_type=instance_type).inc()
-
-    def instance_stopped(self, instance_type: str) -> None:
-        self.stopped_instances.labels(instance_type=instance_type).inc()
-
-    def instance_terminated(self, instance_type: str) -> None:
-        self.terminated_instances.labels(instance_type=instance_type).inc()
 
 
 _MINUTE: Final[int] = 60
@@ -188,7 +135,7 @@ class AutoscalingInstrumentation(MetricsBase):
             subsystem=self.subsystem, registry=self.registry
         )
         self.ec2_client_metrics = EC2ClientMetrics(  # pylint: disable=unexpected-keyword-arg
-            subsystem=self.subsystem, registry=self.registry
+            namespace=METRICS_NAMESPACE, subsystem=self.subsystem, registry=self.registry
         )
         self.buffer_machines_pools_metrics = WarmBufferPoolsMetrics(  # pylint: disable=unexpected-keyword-arg
             subsystem=self.subsystem, registry=self.registry
