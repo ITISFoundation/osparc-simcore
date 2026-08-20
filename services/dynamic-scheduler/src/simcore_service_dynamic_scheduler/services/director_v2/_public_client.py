@@ -109,9 +109,17 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         port_keys: list[ServicePortKey],
         timeout: datetime.timedelta,  # noqa: ASYNC109
     ) -> RetrieveDataOutEnveloped:
-        response = await self.thin_client.dynamic_service_retrieve(
-            node_id=node_id, port_keys=port_keys, timeout=timeout
-        )
+        try:
+            response = await self.thin_client.dynamic_service_retrieve(
+                node_id=node_id, port_keys=port_keys, timeout=timeout
+            )
+        except UnexpectedStatusError as e:
+            if (
+                e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
+                == status.HTTP_404_NOT_FOUND
+            ):
+                raise ServiceWasNotFoundError(node_id=node_id) from None
+            raise
         dict_response: dict[str, Any] = response.json()
         return TypeAdapter(RetrieveDataOutEnveloped).validate_python(dict_response)
 

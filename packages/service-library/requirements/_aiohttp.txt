@@ -55,7 +55,7 @@ opentelemetry-util-http==0.65b0
     #   opentelemetry-instrumentation-aiohttp-server
 packaging==26.0
     # via opentelemetry-instrumentation
-prometheus-client==0.24.1
+prometheus-client==0.26.0
     # via -r requirements/_aiohttp.in
 propcache==0.4.1
     # via
