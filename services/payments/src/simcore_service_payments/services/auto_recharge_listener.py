@@ -33,8 +33,8 @@ async def _unsubscribe_consumer(app, queue_name: QueueName, consumer_tag: Consum
 
 def configure_auto_recharge_listener(app_lifespan: LifespanManager[FastAPI]) -> None:
     async def _auto_recharge_listener_lifespan(app: FastAPI) -> AsyncIterator[State]:
-        app.state.auto_recharge_rabbitmq_consumer = await _subscribe_to_rabbitmq(app)
         try:
+            app.state.auto_recharge_rabbitmq_consumer = await _subscribe_to_rabbitmq(app)
             yield {}
         finally:
             assert app.state.auto_recharge_rabbitmq_consumer  # nosec
