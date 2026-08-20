@@ -73,7 +73,7 @@ async def _initialized_app(
         if with_r_clone_mount_manager:
             configure_r_clone_mount_manager(app_lifespan)
 
-    async with app_lifespan(app), ASGILifespanManager(app):
+    async with ASGILifespanManager(app):
         yield app
 
 

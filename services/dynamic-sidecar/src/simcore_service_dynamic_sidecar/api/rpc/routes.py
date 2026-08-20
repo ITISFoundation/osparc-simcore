@@ -42,10 +42,3 @@ async def _rpc_api_routes_lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def configure_rpc_api_routes(app_lifespan: LifespanManager[FastAPI]) -> None:
     app_lifespan.add(_rpc_api_routes_lifespan)
-
-
-def setup_rpc_api_routes(app: FastAPI) -> None:
-    async def startup() -> None:
-        await _register_rpc_api_routes(app)
-
-    app.add_event_handler("startup", startup)

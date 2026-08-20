@@ -37,15 +37,3 @@ async def _check_dependencies_lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def configure_check_dependencies(app_lifespan: LifespanManager[FastAPI]) -> None:
     app_lifespan.add(_check_dependencies_lifespan)
-
-
-def setup_check_dependencies(app: FastAPI) -> None:
-    # NOTE: in most situations these checks would live
-    # inside each individual module's setup function
-    # The dynamic-sidecar is created and expected to
-    # start rapidly, for this reason they are run in
-    # parallel.
-    async def on_startup() -> None:
-        await _check_dependencies(app)
-
-    app.add_event_handler("startup", on_startup)

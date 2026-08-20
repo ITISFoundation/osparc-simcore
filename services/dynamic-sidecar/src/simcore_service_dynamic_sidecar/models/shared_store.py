@@ -124,13 +124,6 @@ def configure_shared_store(app_lifespan: LifespanManager[FastAPI]) -> None:
     app_lifespan.add(_shared_store_lifespan)
 
 
-def setup_shared_store(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        await _initialize_shared_store(app)
-
-    app.add_event_handler("startup", on_startup)
-
-
 def get_shared_store(app: FastAPI) -> SharedStore:
     shared_store: SharedStore = app.state.shared_store
     return shared_store

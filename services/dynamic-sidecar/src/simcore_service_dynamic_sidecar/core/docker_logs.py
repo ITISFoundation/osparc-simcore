@@ -126,21 +126,3 @@ def configure_background_log_fetcher(
             logger.info("Stopped background container log fetcher")
 
     app_lifespan.add(_lifespan)
-
-
-def setup_background_log_fetcher(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app.state.background_log_fetcher = BackgroundLogFetcher(app)
-
-        logger.info("Started background container log fetcher")
-
-    async def on_shutdown() -> None:
-        if app.state.background_log_fetcher is None:
-            logger.warning("No background_log_fetcher to stop")
-            return
-
-        await app.state.background_log_fetcher.stop_fetcher()
-        logger.info("stopped background container log fetcher")
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
