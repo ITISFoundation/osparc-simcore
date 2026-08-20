@@ -26,6 +26,8 @@ i18n-extract: ## Extract user_message() strings -> _partials/$(I18N_COMPONENT_NA
 	uv run $(I18N_TOOLS)/i18n_extractor.py xgettext \
 	  --src $$(realpath --relative-to=$(REPO_BASE_DIR) $(I18N_SRC_DIR)) \
 	  --out $(I18N_PARTIALS)/$(I18N_COMPONENT_NAME).pot \
+		  --exclude 'test/*' \
+		  --exclude 'tests/*' \
 	  --langs python
 
 i18n-translate: ## (Delegate) AI translate full catalog via orchestrator
@@ -38,6 +40,8 @@ i18n-check: ## Validate no f-strings in user_message() calls
 	@cd $(REPO_BASE_DIR) && \
 	uv run $(I18N_TOOLS)/i18n_extractor.py validate \
 	  --src $$(realpath --relative-to=$(REPO_BASE_DIR) $(I18N_SRC_DIR)) \
+		  --exclude 'test/*' \
+		  --exclude 'tests/*' \
 	  --langs python
 
 .PHONY: i18n-info

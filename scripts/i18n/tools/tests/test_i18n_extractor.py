@@ -31,6 +31,7 @@ import json
 import subprocess
 import sys
 import types
+from collections.abc import Callable
 from pathlib import Path
 
 import polib
@@ -58,6 +59,19 @@ def _xgettext_available() -> bool:
 requires_xgettext = pytest.mark.skipif(not _xgettext_available(), reason="xgettext binary required")
 
 
+@pytest.fixture
+def make_cpp_files(tmp_path: Path) -> Callable[[str], tuple[Path, Path]]:
+    def _make(test_relative_path: str) -> tuple[Path, Path]:
+        production_file = tmp_path / "widget.cpp"
+        test_file = tmp_path / test_relative_path
+        test_file.parent.mkdir(parents=True, exist_ok=True)
+        production_file.touch()
+        test_file.touch()
+        return production_file, test_file
+
+    return _make
+
+
 # ---------------------------------------------------------------------------
 # f-string validation
 # ---------------------------------------------------------------------------
@@ -79,6 +93,43 @@ def test_collect_python_hints_reads_hint_kwarg(tmp_path: Path) -> None:
     src = tmp_path / "mod.py"
     src.write_text('user_message("Msg", _hint="be gentle")\n', encoding="utf-8")
     assert ix.collect_python_hints([src]) == {"Msg": "be gentle"}
+
+
+# ---------------------------------------------------------------------------
+# Source discovery exclusions
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "test_relative_path, exclude_pattern",
+    [
+        ("test_widget.cpp", "test_*.cpp"),
+        ("test/widget.cpp", "test/*"),
+        ("testsuite/widget.cpp", "testsuite/*.cpp"),
+    ],
+)
+def test_collect_sources_excludes_test_paths(
+    make_cpp_files: Callable[[str], tuple[Path, Path]],
+    tmp_path: Path,
+    test_relative_path: str,
+    exclude_pattern: str,
+) -> None:
+    production_file, _ = make_cpp_files(test_relative_path)
+
+    files = ix.collect_sources(tmp_path, ["cpp"], [exclude_pattern])
+
+    assert files == [production_file]
+
+
+def test_collect_sources_includes_test_files_without_exclusions(
+    make_cpp_files: Callable[[str], tuple[Path, Path]],
+    tmp_path: Path,
+) -> None:
+    production_file, test_file = make_cpp_files("test_widget.cpp")
+
+    files = ix.collect_sources(tmp_path, ["cpp"])
+
+    assert files == [test_file, production_file]
 
 
 # ---------------------------------------------------------------------------
