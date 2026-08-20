@@ -15,7 +15,7 @@ from simcore_service_dynamic_sidecar.modules.user_services_preferences import (
 )
 
 
-async def test_configure_file_notification_subscriber_lifespan() -> None:
+async def test_configure_file_notification_subscriber_lifespan():
     app = FastAPI()
     app.state.settings = Mock(DY_SIDECAR_NODE_ID="node", DY_SIDECAR_PROJECT_ID="project")
     app.state.rabbitmq_client = rabbitmq_client = AsyncMock()
@@ -29,7 +29,7 @@ async def test_configure_file_notification_subscriber_lifespan() -> None:
     rabbitmq_client.unsubscribe.assert_awaited_once_with("queue")
 
 
-async def test_configure_prometheus_metrics_lifespan(mocker: MockerFixture) -> None:
+async def test_configure_prometheus_metrics_lifespan(mocker: MockerFixture):
     app = FastAPI()
     metrics_command = Mock()
     app.state.settings = Mock(DY_SIDECAR_CALLBACKS_MAPPING=Mock(metrics=metrics_command))
@@ -49,7 +49,7 @@ async def test_configure_prometheus_metrics_lifespan(mocker: MockerFixture) -> N
     user_service_metrics.stop.assert_awaited_once_with()
 
 
-async def test_configure_resource_tracking_lifespan(mocker: MockerFixture) -> None:
+async def test_configure_resource_tracking_lifespan(mocker: MockerFixture):
     app = FastAPI()
     stop_heart_beat_task = mocker.patch(
         "simcore_service_dynamic_sidecar.modules.resource_tracking._setup.stop_heart_beat_task",
@@ -64,7 +64,7 @@ async def test_configure_resource_tracking_lifespan(mocker: MockerFixture) -> No
     stop_heart_beat_task.assert_awaited_once_with(app)
 
 
-async def test_configure_disk_usage_lifespan(mocker: MockerFixture) -> None:
+async def test_configure_disk_usage_lifespan(mocker: MockerFixture):
     app = FastAPI()
     disk_usage_monitor = AsyncMock()
     mocker.patch(
@@ -80,7 +80,7 @@ async def test_configure_disk_usage_lifespan(mocker: MockerFixture) -> None:
     disk_usage_monitor.shutdown.assert_awaited_once_with()
 
 
-async def test_configure_system_monitor_disabled(mocker: MockerFixture) -> None:
+async def test_configure_system_monitor_disabled(mocker: MockerFixture):
     app = FastAPI()
     app.state.settings = Mock(SYSTEM_MONITOR_SETTINGS=Mock(DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE=False))
     configure_disk_usage_mock = mocker.patch(
@@ -100,7 +100,7 @@ async def test_configure_system_monitor_disabled(mocker: MockerFixture) -> None:
     display_current_disk_usage.assert_awaited_once_with(app)
 
 
-async def test_configure_user_services_preferences_disabled(mocker: MockerFixture) -> None:
+async def test_configure_user_services_preferences_disabled(mocker: MockerFixture):
     app = FastAPI()
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.user_services_preferences._setup.is_feature_enabled",
