@@ -27,7 +27,7 @@ from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import configure_rpc_api_routes
 from ..services.containers_manager import configure_containers_manager
 from ..services.instrumentation import configure_instrumentation
-from ..services.rabbitmq import configure_rabbitmq
+from ..services.rabbitmq import configure_rabbitmq_client
 from ..services.volumes_manager import configure_volume_manager
 from .settings import ApplicationSettings
 
@@ -50,7 +50,7 @@ def _configure_plugins(
             tracing_config=tracing_config,
         )
 
-    configure_rabbitmq(app_lifespan)
+    configure_rabbitmq_client(app_lifespan, settings=settings.AGENT_RABBITMQ)
     configure_volume_manager(app_lifespan)
     configure_containers_manager(app_lifespan)
     configure_rpc_api_routes(app_lifespan)
