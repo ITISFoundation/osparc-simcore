@@ -5,24 +5,30 @@
 
 
 import pytest
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from models_library.payments import StripeInvoiceID
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
-from simcore_service_payments.services.stripe import StripeApi, setup_stripe
+from simcore_service_payments.services.stripe import StripeApi, configure_stripe
 
 
-async def test_setup_stripe_api(app_environment: EnvVarsDict):
-    new_app = FastAPI()
+async def test_configure_stripe_api(app_environment: EnvVarsDict):
+    app_lifespan = LifespanManager[FastAPI]()
+    new_app = FastAPI(lifespan=app_lifespan)
     new_app.state.settings = ApplicationSettings.create_from_envs()
     with pytest.raises(AttributeError):
         StripeApi.get_from_app_state(new_app)
 
-    setup_stripe(new_app)
+    configure_stripe(new_app, app_lifespan)
     stripe_api = StripeApi.get_from_app_state(new_app)
 
     assert stripe_api is not None
+    async with ASGILifespanManager(new_app):
+        assert not stripe_api.client.is_closed
+    assert stripe_api.client.is_closed
 
 
 @pytest.fixture

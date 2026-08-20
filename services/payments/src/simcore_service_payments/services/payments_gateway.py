@@ -9,22 +9,19 @@ import contextlib
 import functools
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from contextlib import suppress
 
 import httpx
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager, State
 from httpx import URL, HTTPStatusError, TimeoutException
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.fastapi.http_client import (
-    AttachLifespanMixin,
-    BaseHTTPApi,
-    HealthMixinMixin,
-)
+from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.httpx_utils import to_curl_command
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
@@ -123,7 +120,7 @@ class _GatewayApiAuth(httpx.Auth):
         yield request
 
 
-class PaymentsGatewayApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
+class PaymentsGatewayApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
     app_state_name: str = "payment_gateway_api"
 
     #
@@ -221,7 +218,7 @@ class PaymentsGatewayApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, Sin
         return AckPaymentWithPaymentMethod.model_validate(response.json())
 
 
-def setup_payments_gateway(app: FastAPI):
+def configure_payments_gateway(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     assert app.state  # nosec
     settings: ApplicationSettings = app.state.settings
 
@@ -236,5 +233,13 @@ def setup_payments_gateway(app: FastAPI):
             api.client,
             tracing_config=get_tracing_config(app),
         )
-    api.attach_lifespan_to(app)
     api.set_to_app_state(app)
+
+    async def _payments_gateway_lifespan(_: FastAPI) -> AsyncIterator[State]:
+        try:
+            await api.setup_client()
+            yield {}
+        finally:
+            await api.teardown_client()
+
+    app_lifespan.add(_payments_gateway_lifespan)

@@ -23,12 +23,12 @@ from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import configure_rpc_api_routes
 from ..services.auto_recharge_listener import configure_auto_recharge_listener
 from ..services.notifier import configure_notifier
-from ..services.payments_gateway import setup_payments_gateway
+from ..services.payments_gateway import configure_payments_gateway
 from ..services.postgres import configure_postgres
 from ..services.rabbitmq import configure_rabbitmq
-from ..services.resource_usage_tracker import setup_resource_usage_tracker
+from ..services.resource_usage_tracker import configure_resource_usage_tracker
 from ..services.socketio import configure_socketio
-from ..services.stripe import setup_stripe
+from ..services.stripe import configure_stripe
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -54,12 +54,12 @@ def _configure_plugins(
     )
     configure_rpc_api_routes(app_lifespan)
 
-    setup_payments_gateway(app)
+    configure_payments_gateway(app, app_lifespan)
     setup_rest_api(app)
 
-    setup_resource_usage_tracker(app)
+    configure_resource_usage_tracker(app, app_lifespan)
 
-    setup_stripe(app)
+    configure_stripe(app, app_lifespan)
 
     configure_socketio(app_lifespan)
     configure_notifier(app_lifespan)

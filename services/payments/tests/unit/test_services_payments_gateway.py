@@ -6,9 +6,11 @@
 
 import httpx
 import pytest
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import URL as HttpxURL
+from fastapi_lifespan_manager import LifespanManager
+from httpx import URL as HttpxUrl
 from httpx import ASGITransport
 from models_library.payments import UserInvoiceAddress
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -23,21 +25,25 @@ from simcore_service_payments.services.payments_gateway import (
     PaymentsGatewayApi,
     PaymentsGatewayError,
     _raise_as_payments_gateway_error,
-    setup_payments_gateway,
+    configure_payments_gateway,
 )
 from yarl import URL
 
 
-async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
-    new_app = FastAPI()
+async def test_configure_payment_gateway_api(app_environment: EnvVarsDict):
+    app_lifespan = LifespanManager[FastAPI]()
+    new_app = FastAPI(lifespan=app_lifespan)
     new_app.state.settings = ApplicationSettings.create_from_envs()
     with pytest.raises(AttributeError):
         PaymentsGatewayApi.get_from_app_state(new_app)
 
-    setup_payments_gateway(new_app)
+    configure_payments_gateway(new_app, app_lifespan)
     payment_gateway_api = PaymentsGatewayApi.get_from_app_state(new_app)
 
     assert payment_gateway_api is not None
+    async with ASGILifespanManager(new_app):
+        assert not payment_gateway_api.client.is_closed
+    assert payment_gateway_api.client.is_closed
 
 
 @pytest.fixture
@@ -119,7 +125,7 @@ async def test_one_time_payment_workflow(
     submission_link = payment_gateway_api.get_form_payment_url(payment_initiated.payment_id)
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(submission_link, HttpxURL)
+    assert isinstance(submission_link, HttpxUrl)
     assert URL(f"{submission_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # cancel
@@ -155,7 +161,7 @@ async def test_payment_methods_workflow(
     form_link = payments_gateway_api.get_form_payment_method_url(initiated.payment_method_id)
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(form_link, HttpxURL)
+    assert isinstance(form_link, HttpxUrl)
     assert URL(f"{form_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # CRUD

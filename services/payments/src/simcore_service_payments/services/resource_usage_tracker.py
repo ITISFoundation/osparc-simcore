@@ -5,11 +5,13 @@
 """
 
 import logging
+from collections.abc import AsyncIterator
 from datetime import datetime
 from decimal import Decimal
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     CreditTransactionCreateBody,
     CreditTransactionCreated,
@@ -19,11 +21,7 @@ from models_library.resource_tracker import CreditTransactionId
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.fastapi.http_client import (
-    AttachLifespanMixin,
-    BaseHTTPApi,
-    HealthMixinMixin,
-)
+from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
 
@@ -32,7 +30,7 @@ from ..core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-class ResourceUsageTrackerApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
+class ResourceUsageTrackerApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
     app_state_name: str = "source_usage_tracker_api"
 
     async def create_credit_transaction(
@@ -66,7 +64,7 @@ class ResourceUsageTrackerApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin
         return credit_transaction.credit_transaction_id
 
 
-def setup_resource_usage_tracker(app: FastAPI):
+def configure_resource_usage_tracker(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     assert app.state  # nosec
     settings: ApplicationSettings = app.state.settings
     api = ResourceUsageTrackerApi.from_client_kwargs(
@@ -78,4 +76,12 @@ def setup_resource_usage_tracker(app: FastAPI):
             tracing_config=get_tracing_config(app),
         )
     api.set_to_app_state(app)
-    api.attach_lifespan_to(app)
+
+    async def _resource_usage_tracker_lifespan(_: FastAPI) -> AsyncIterator[State]:
+        try:
+            await api.setup_client()
+            yield {}
+        finally:
+            await api.teardown_client()
+
+    app_lifespan.add(_resource_usage_tracker_lifespan)
