@@ -245,7 +245,7 @@ async def test_patch_project_node_ui_remove_marker(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
-async def test_patch_project_node_enriches_only_updated_node(
+async def test_patch_computational_project_node_notifies_only_updated_node(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -257,20 +257,19 @@ async def test_patch_project_node_enriches_only_updated_node(
     node_id = next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"])
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
-    get_dynamic_service = mocked_dynamic_services_interface["dynamic_scheduler.api.get_dynamic_service"]
-    get_dynamic_service.reset_mock()
 
-    resp = await client.patch(f"{base_url}", json={"label": "updated label"})
+    resp = await client.patch(f"{base_url}", json={"label": "updated label", "runHash": None})
 
     await assert_status(resp, expected)
-    get_dynamic_service.assert_not_awaited()
     mocked_notify_project_node_update.assert_awaited_once()
     notified_project = mocked_notify_project_node_update.await_args.args[1]
+    assert set(notified_project["workbench"]) == {node_id}
     assert notified_project["workbench"][node_id]["label"] == "updated label"
+    assert notified_project["workbench"][node_id]["runHash"] is None
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
-async def test_patch_project_node_notifies_latest_node_after_pipeline_sync(
+async def test_patch_project_node_notifies_outputs_updated_during_pipeline_sync(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -282,14 +281,14 @@ async def test_patch_project_node_notifies_latest_node_after_pipeline_sync(
     node_id = next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"])
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
-    latest_outputs = {"output_1": 42}
+    outputs_updated_during_pipeline_sync = {"output_1": 42}
 
     async def _update_outputs_during_pipeline_sync(*args: object, **kwargs: object) -> None:
         await projects_nodes_repository.update(
             client.app,
             project_id=user_project["uuid"],
             node_id=node_id,
-            partial_node=PartialNode.model_construct(outputs=latest_outputs),
+            partial_node=PartialNode.model_construct(outputs=outputs_updated_during_pipeline_sync),
         )
 
     mocked_dynamic_services_interface[
@@ -301,7 +300,7 @@ async def test_patch_project_node_notifies_latest_node_after_pipeline_sync(
     await assert_status(resp, expected)
     mocked_notify_project_node_update.assert_awaited_once()
     notified_project = mocked_notify_project_node_update.await_args.args[1]
-    assert notified_project["workbench"][node_id]["outputs"] == latest_outputs
+    assert notified_project["workbench"][node_id]["outputs"] == outputs_updated_during_pipeline_sync
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
