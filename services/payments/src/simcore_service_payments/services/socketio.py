@@ -14,13 +14,16 @@ _logger = logging.getLogger(__name__)
 
 def configure_socketio(app_lifespan: LifespanManager[FastAPI]) -> None:
     async def _socketio_lifespan(app: FastAPI) -> AsyncIterator[State]:
-        settings: RabbitSettings = get_rabbitmq_settings(app)
-        assert app.state.rabbitmq_client  # nosec
-
-        # Connect to the as an external process in write-only mode
-        # SEE https://python-socketio.readthedocs.io/en/stable/server.html#emitting-from-external-processes
-        app.state.external_socketio = socketio.AsyncAioPikaManager(url=settings.dsn, logger=_logger, write_only=True)
+        app.state.external_socketio = None
         try:
+            settings: RabbitSettings = get_rabbitmq_settings(app)
+            assert app.state.rabbitmq_client  # nosec
+
+            # Connect to the as an external process in write-only mode
+            # SEE https://python-socketio.readthedocs.io/en/stable/server.html#emitting-from-external-processes
+            app.state.external_socketio = socketio.AsyncAioPikaManager(
+                url=settings.dsn, logger=_logger, write_only=True
+            )
             yield {}
         finally:
             if app.state.external_socketio:

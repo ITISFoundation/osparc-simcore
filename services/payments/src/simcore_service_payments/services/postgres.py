@@ -19,16 +19,16 @@ def get_engine(app: FastAPI) -> AsyncEngine:
 def configure_postgres(app_lifespan: LifespanManager[FastAPI], tracing_config: TracingConfig | None) -> None:
     async def _postgres_lifespan(app: FastAPI) -> AsyncIterator[State]:
         app.state.engine = None
-        settings: ApplicationSettings = app.state.settings
-        await connect_to_db(
-            app, settings=settings.PAYMENTS_POSTGRES, application_name=APP_NAME, tracing_config=tracing_config
-        )
-        assert app.state.engine  # nosec
-        assert isinstance(app.state.engine, AsyncEngine)  # nosec
         try:
+            settings: ApplicationSettings = app.state.settings
+            await connect_to_db(
+                app, settings=settings.PAYMENTS_POSTGRES, application_name=APP_NAME, tracing_config=tracing_config
+            )
+            assert app.state.engine  # nosec
+            assert isinstance(app.state.engine, AsyncEngine)  # nosec
             yield {}
         finally:
-            assert app.state.engine  # nosec
-            await close_db_connection(app)
+            if app.state.engine:
+                await close_db_connection(app)
 
     app_lifespan.add(_postgres_lifespan)

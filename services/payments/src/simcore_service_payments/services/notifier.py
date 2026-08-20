@@ -76,25 +76,25 @@ class NotifierService(SingletonInAppStateMixin):
 
 def configure_notifier(app_lifespan: LifespanManager[FastAPI]) -> None:
     async def _notifier_lifespan(app: FastAPI) -> AsyncIterator[State]:
-        app_settings: ApplicationSettings = app.state.settings
-        assert app.state.external_socketio  # nosec
-        engine = get_engine(app)
-        providers: list[NotificationProvider] = [
-            WebSocketProvider(
-                sio_manager=app.state.external_socketio,
-                users_repo=PaymentsUsersRepo(engine),
-            ),
-            EmailProvider(
-                rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
-                users_repo=PaymentsUsersRepo(engine),
-                bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
-            ),
-        ]
-
-        notifier = NotifierService(*providers)
-        notifier.set_to_app_state(app)
-        assert NotifierService.get_from_app_state(app) == notifier  # nosec
         try:
+            app_settings: ApplicationSettings = app.state.settings
+            assert app.state.external_socketio  # nosec
+            engine = get_engine(app)
+            providers: list[NotificationProvider] = [
+                WebSocketProvider(
+                    sio_manager=app.state.external_socketio,
+                    users_repo=PaymentsUsersRepo(engine),
+                ),
+                EmailProvider(
+                    rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
+                    users_repo=PaymentsUsersRepo(engine),
+                    bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
+                ),
+            ]
+
+            notifier = NotifierService(*providers)
+            notifier.set_to_app_state(app)
+            assert NotifierService.get_from_app_state(app) == notifier  # nosec
             yield {}
         finally:
             with contextlib.suppress(AttributeError):
