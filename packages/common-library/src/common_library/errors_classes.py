@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from pydantic.errors import PydanticErrorMixin
 
@@ -8,6 +8,12 @@ from .error_codes import create_error_code
 # accidentally embedded traceback/blob) blowing up log lines beyond what
 # log aggregators (Loki, journald, etc.) can reasonably handle.
 _MAX_MESSAGE_LENGTH: Final[int] = 2000
+
+
+def _reconstruct_osparc_error(error_type: type["OsparcErrorMixin"], context: dict[str, Any]) -> "OsparcErrorMixin":
+    error = cast("OsparcErrorMixin", error_type.__new__(error_type))
+    error.__dict__ = context
+    return error
 
 
 class _DefaultDict(dict):
@@ -40,6 +46,9 @@ class OsparcErrorMixin(PydanticErrorMixin):
         # another error's msg_template context. Overriding __repr__ here keeps
         # the actual message visible in those cases too.
         return f"{type(self).__name__}({self._build_message()!r})"
+
+    def __reduce__(self) -> tuple[Any, tuple[type["OsparcErrorMixin"], dict[str, Any]]]:
+        return _reconstruct_osparc_error, (type(self), self.error_context())
 
     def _build_message(self) -> str:
         # NOTE: safe. Does not raise KeyError
