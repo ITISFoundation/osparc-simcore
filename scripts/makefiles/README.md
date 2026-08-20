@@ -47,11 +47,12 @@ include ../../scripts/makefiles/common.mk
 include ../../scripts/makefiles/service.mk
 ```
 
-> Legacy paths `scripts/common.Makefile`, `scripts/common-service.Makefile`,
-> `scripts/common-package.Makefile`, `scripts/common-templates.Makefile` and
-> `requirements/base.Makefile` are kept as **one-line shims** that `include` the
-> new `*.mk`. New Makefiles should include the `*.mk` files directly; the shims
-> exist only so the ~90 existing Makefiles keep working during migration.
+Every `<project>/requirements/Makefile` includes the pip-compile library
+directly:
+
+```make
+include ../../../scripts/makefiles/requirements.mk
+```
 
 ## CI is a contract
 
@@ -108,6 +109,3 @@ unused.
   Reconciling this needs a per-package decision (parametrize a shared recipe with
   `--keep-docker-up` / `--junitxml` toggles + an overridable cov target), which is
   why it was **not** auto-applied.
-- **Shim removal (contract step)**: once all project Makefiles include the `*.mk`
-  paths directly, delete the 5 legacy shim files and update the
-  `../../../requirements/base.Makefile` references.

@@ -1,12 +1,12 @@
 #
 # Targets for DEVELOPMENT of Service Library
 #
-include ../../scripts/common.Makefile
+include ../../scripts/makefiles/common.mk
 
 help:	## overwrites and calls common help function
-	$(MAKE) --no-print-directory --file ../../scripts/common.Makefile $@
+	$(MAKE) --no-print-directory --file ../../scripts/makefiles/common.mk $@
 	@echo
-	@echo '🚨 BEWARE there are issues with brakets in names `make test-dev[aiohttp]` will raise errors:'
+	@echo '🚨 BEWARE there are issues with brackets in names `make test-dev[aiohttp]` will raise errors:'
 	@echo '✅` `make "test-dev[aiohttp]"` works as intended'
 	@echo '👓 Please note: when INSTALLING, DEVELOPING and TESTING '
 	@echo

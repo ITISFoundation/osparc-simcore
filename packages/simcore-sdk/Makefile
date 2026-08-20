@@ -7,8 +7,8 @@
 #
 # by sanderegg, pcrespov
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-package.Makefile
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/package.mk
 
 
 .PHONY: install-dev install-prod install-ci

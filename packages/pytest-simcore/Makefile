@@ -1,7 +1,7 @@
 #
 # Targets for DEVELOPMENT of Service Library
 #
-include ../../scripts/common.Makefile
+include ../../scripts/makefiles/common.mk
 
 
 .PHONY: install-dev install-prod install-ci

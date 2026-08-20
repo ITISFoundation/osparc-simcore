@@ -1,4 +1,4 @@
-include ../../scripts/common.Makefile
+include ../../scripts/makefiles/common.mk
 
 
 ifneq (,$(wildcard $(DOT_ENV_FILE)))

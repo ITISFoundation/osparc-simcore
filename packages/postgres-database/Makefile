@@ -1,8 +1,8 @@
 #
 # Targets for DEVELOPMENT of postgres-database
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-package.Makefile
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/package.mk
 
 
 .PHONY: requirements
@@ -137,15 +137,15 @@ doc-erd: ## Creates entity relationship diagram (ERD) defined under ``simcore_po
 
 
 .PHONY: merge-heads check-multiple-heads
-check-multiple-heads: ## checks that multiple postgress heads exist
+check-multiple-heads: ## checks that multiple postgres heads exist
 	@cd src/simcore_postgres_database; \
 	nheads=$$(alembic heads | wc -l); \
-	echo "Number of postgress heads: $${nheads}"; \
+	echo "Number of postgres heads: $${nheads}"; \
 	if [ "$${nheads}" -lt "2" ]; then \
 	 	exit 1; \
 	fi
 
-merge-heads: check-multiple-heads ## merges multiple postgress heads
+merge-heads: check-multiple-heads ## merges multiple postgres heads
 	@cd src/simcore_postgres_database; \
 	merge_msg="merge "$$(alembic heads | sed 's/(head)//g' | tr '\n' ' '); \
 	echo "$${merge_msg}"; \

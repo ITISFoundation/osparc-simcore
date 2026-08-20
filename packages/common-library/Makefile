@@ -1,8 +1,8 @@
 #
 # Targets for DEVELOPMENT of common Library
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-package.Makefile
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/package.mk
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)

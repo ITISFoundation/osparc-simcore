@@ -1,8 +1,8 @@
 #
 # Shared i18n targets for services and packages.
 #
-# USAGE: include this file in common-service.Makefile or common-package.Makefile
-# (after REPO_BASE_DIR and SRC_DIR are set by common.Makefile).
+# USAGE: include this file in service.mk or package.mk
+# (after REPO_BASE_DIR and SRC_DIR are set by common.mk).
 #
 # Example:
 #   include $(REPO_BASE_DIR)/scripts/makefiles/i18n.make

@@ -14,7 +14,7 @@ services:
   # `FROM ${DOCKER_REGISTRY}/simcore-{runtime,build}-base:${BASE_TAG}`.
   #
   # - On local/test builds (no push) the Makefile links these targets in-memory as
-  #   build contexts, so no registry is needed (see scripts/common.Makefile / root Makefile).
+  #   build contexts, so no registry is needed (see scripts/makefiles/common.mk / root Makefile).
   # - On deploy (push) builds the service FROM pulls the pre-built & pushed base images.
   #
   # NOTE: these targets are NOT part of SERVICES_NAMES_TO_BUILD, they are only built
