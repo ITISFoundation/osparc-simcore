@@ -28,9 +28,8 @@ async def _logs_fetcher_worker(container_name: str, dispatch_log: Callable[..., 
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
-        # extract image to display in logs, Eg: from
+        # Extract the short image name from the registry-qualified name.
         # registry:5000/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar:2.0.2
-        # "dy-static-file-server-dynamic-sidecar:2.0.2"
         container_inspect = await container.show()
         image_name = container_inspect["Config"]["Image"].split("/")[-1]
 
