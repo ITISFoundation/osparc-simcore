@@ -1,9 +1,11 @@
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import aioprocessing  # type: ignore[import-untyped]
 from aioprocessing.queues import AioQueue  # type: ignore[import-untyped]
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 
 from ..mounted_fs import MountedVolumes
 
@@ -46,11 +48,12 @@ class OutputsContext:
         return self._file_type_port_keys
 
 
-def setup_outputs_context(app: FastAPI) -> None:
-    async def on_startup() -> None:
+def configure_outputs_context(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         assert isinstance(app.state.mounted_volumes, MountedVolumes)  # nosec
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
         app.state.outputs_context = OutputsContext(outputs_path=mounted_volumes.disk_outputs_path)
+        yield
 
-    app.add_event_handler("startup", on_startup)
+    app_lifespan.add(_lifespan)

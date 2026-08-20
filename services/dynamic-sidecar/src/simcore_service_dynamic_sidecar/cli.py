@@ -5,23 +5,24 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 import typer
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.long_running_tasks.models import TaskProgress
+from servicelib.tracing import TracingConfig
 from settings_library.utils_cli import create_settings_command
 
-from ._meta import PROJECT_NAME
-from .core.application import create_base_app
-from .core.rabbitmq import setup_rabbitmq
+from ._meta import APP_NAME, PROJECT_NAME
+from .core.application import create_app_lifespan, create_base_app
+from .core.rabbitmq import configure_rabbitmq
 from .core.settings import ApplicationSettings
 from .modules.long_running_tasks import (
     push_user_services_output_ports,
     save_user_services_state_paths,
 )
-from .modules.mounted_fs import MountedVolumes, setup_mounted_fs
-from .modules.outputs import OutputsManager, setup_outputs
-from .modules.r_clone_mount_manager import setup_r_clone_mount_manager
+from .modules.mounted_fs import MountedVolumes, configure_mounted_fs
+from .modules.outputs import OutputsManager, configure_outputs
+from .modules.r_clone_mount_manager import configure_r_clone_mount_manager
 
 log = logging.getLogger(__name__)
 main = typer.Typer(
@@ -49,19 +50,30 @@ async def _initialized_app(
     with_outputs: bool = False,
     with_r_clone_mount_manager: bool = False,
 ) -> AsyncIterator[FastAPI]:
-    app = create_base_app()
+    app_settings = ApplicationSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME,
+        tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
+    )
 
-    # setup required components
-    if with_rabbitmq:
-        setup_rabbitmq(app)
-    if with_mounted_fs:
-        setup_mounted_fs(app)
-    if with_outputs:
-        setup_outputs(app)
-    if with_r_clone_mount_manager:
-        setup_r_clone_mount_manager(app)
+    with create_app_lifespan(app_settings, tracing_config) as app_lifespan:
+        app = create_base_app(
+            app_lifespan,
+            app_settings=app_settings,
+            tracing_config=tracing_config,
+        )
 
-    async with LifespanManager(app):
+        # setup required components
+        if with_rabbitmq:
+            configure_rabbitmq(app, app_lifespan)
+        if with_mounted_fs:
+            configure_mounted_fs(app_lifespan)
+        if with_outputs:
+            configure_outputs(app_lifespan)
+        if with_r_clone_mount_manager:
+            configure_r_clone_mount_manager(app_lifespan)
+
+    async with app_lifespan(app), ASGILifespanManager(app):
         yield app
 
 

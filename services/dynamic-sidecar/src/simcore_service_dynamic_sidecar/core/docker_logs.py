@@ -13,6 +13,7 @@ from typing import Any, cast
 
 from aiodocker import DockerError
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.logging_utils import guess_message_log_level
 
 from ..core.rabbitmq import post_log_message
@@ -109,6 +110,22 @@ async def stop_log_fetching(app: FastAPI, container_name: str) -> None:
     background_log_fetcher = _get_background_log_fetcher(app)
     if background_log_fetcher is not None:
         await background_log_fetcher.stop_log_fetching(container_name)
+
+
+def configure_background_log_fetcher(
+    app_lifespan: LifespanManager[FastAPI],
+) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        app.state.background_log_fetcher = BackgroundLogFetcher(app)
+        logger.info("Started background container log fetcher")
+
+        try:
+            yield
+        finally:
+            await app.state.background_log_fetcher.stop_fetcher()
+            logger.info("Stopped background container log fetcher")
+
+    app_lifespan.add(_lifespan)
 
 
 def setup_background_log_fetcher(app: FastAPI) -> None:

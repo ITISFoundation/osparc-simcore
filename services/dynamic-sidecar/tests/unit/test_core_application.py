@@ -4,10 +4,19 @@
 # pylint: disable=unused-variable
 
 import inspect
+from collections.abc import AsyncIterator
 from typing import Union, get_args, get_origin
 
+from fastapi import FastAPI
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_dynamic_sidecar.core.application import AppState, create_app
+from servicelib.tracing import TracingConfig
+from simcore_service_dynamic_sidecar._meta import APP_NAME
+from simcore_service_dynamic_sidecar.core.application import (
+    AppState,
+    create_app,
+    create_app_lifespan,
+    create_base_app,
+)
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 
@@ -15,6 +24,37 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 def test_create_app(mock_environment_with_envdevel: EnvVarsDict):
     app = create_app()
     assert isinstance(app.state.settings, ApplicationSettings)
+
+
+async def test_create_base_app_with_explicit_lifespan_manager(
+    mock_environment_with_envdevel: EnvVarsDict,
+):
+    app_settings = ApplicationSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME,
+        tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
+    )
+    lifecycle_events: list[str] = []
+
+    async def _probe_lifespan(_: FastAPI) -> AsyncIterator[None]:
+        lifecycle_events.append("startup")
+        try:
+            yield
+        finally:
+            lifecycle_events.append("shutdown")
+
+    with create_app_lifespan(app_settings, tracing_config) as app_lifespan:
+        app = create_base_app(
+            app_lifespan,
+            app_settings=app_settings,
+            tracing_config=tracing_config,
+        )
+        app_lifespan.add(_probe_lifespan)
+
+    async with app_lifespan(app):
+        assert lifecycle_events == ["startup"]
+
+    assert lifecycle_events == ["startup", "shutdown"]
 
 
 def test_class_appstate_decorator_class(mock_environment_with_envdevel: EnvVarsDict):

@@ -1,9 +1,11 @@
 from asyncio import Lock
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Final
 
 import aiofiles
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import BaseModel, Field, PrivateAttr
@@ -105,13 +107,26 @@ class SharedStore(_StoreMixin):  # noqa: PLW1641
         return obj
 
 
+async def _initialize_shared_store(app: FastAPI) -> None:
+    settings: ApplicationSettings = app.state.settings
+    app.state.shared_store = await SharedStore.init_from_disk(
+        settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR,
+        store_file_name=STORE_FILE_NAME,
+    )
+
+
+async def _shared_store_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    await _initialize_shared_store(app)
+    yield
+
+
+def configure_shared_store(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_shared_store_lifespan)
+
+
 def setup_shared_store(app: FastAPI) -> None:
     async def on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
-
-        app.state.shared_store = await SharedStore.init_from_disk(
-            settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR, store_file_name=STORE_FILE_NAME
-        )
+        await _initialize_shared_store(app)
 
     app.add_event_handler("startup", on_startup)
 
