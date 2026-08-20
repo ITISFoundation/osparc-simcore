@@ -10,7 +10,7 @@ from ._models import ClustersKeeperInstrumentation
 
 async def _clusters_keeper_instrumentation_lifespan(app: FastAPI) -> AsyncIterator[State]:
     registry = app.state.prometheus_metrics.registry
-    app.state.instrumentation = ClustersKeeperInstrumentation(registry=registry, subsystem="")
+    app.state.instrumentation = ClustersKeeperInstrumentation(registry=registry, subsystem="")  # pylint: disable=unexpected-keyword-arg
     try:
         yield {}
     finally:

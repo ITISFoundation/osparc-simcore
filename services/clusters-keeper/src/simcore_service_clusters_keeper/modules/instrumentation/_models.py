@@ -49,7 +49,7 @@ class ClustersKeeperInstrumentation(MetricsBase):
     ec2_client_metrics: EC2ClientMetrics = field(init=False)
 
     def __post_init__(self) -> None:
-        self.primary_instances_metrics = PrimaryInstancesMetrics(subsystem="primary", registry=self.registry)
+        self.primary_instances_metrics = PrimaryInstancesMetrics(subsystem="primary", registry=self.registry)  # pylint: disable=unexpected-keyword-arg
         self.ec2_client_metrics = EC2ClientMetrics(
             namespace=METRICS_NAMESPACE, subsystem=self.subsystem, registry=self.registry
         )
