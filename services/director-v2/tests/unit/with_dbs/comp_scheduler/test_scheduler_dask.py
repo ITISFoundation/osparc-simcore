@@ -27,10 +27,7 @@ from _helpers import (
     assert_comp_runs_empty,
     assert_comp_tasks_and_comp_run_snapshot_tasks,
 )
-from dask_task_models_library.container_tasks.errors import (
-    ServiceRuntimeError,
-    TaskCancelledError,
-)
+from dask_task_models_library.container_tasks.errors import ServiceRuntimeError, TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import TaskOwner
@@ -49,6 +46,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessages,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
+    SimcorePlatformStatus,
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -72,29 +70,17 @@ from simcore_service_director_v2.core.errors import (
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
-from simcore_service_director_v2.modules.comp_scheduler._manager import (
-    run_new_pipeline,
-    stop_pipeline,
-)
-from simcore_service_director_v2.modules.comp_scheduler._models import (
-    ReleaseTaskResultRabbitMessage,
-)
-from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
-    BaseCompScheduler,
-)
+from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline, stop_pipeline
+from simcore_service_director_v2.modules.comp_scheduler._models import ReleaseTaskResultRabbitMessage
+from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import BaseCompScheduler
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
     _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY,
     _TASK_RETRIEVAL_ERROR_TYPE,
     DaskScheduler,
 )
 from simcore_service_director_v2.modules.comp_scheduler._utils import COMPLETED_STATES
-from simcore_service_director_v2.modules.comp_scheduler._worker import (
-    _get_scheduler_worker,
-)
-from simcore_service_director_v2.modules.dask_client import (
-    DaskJobID,
-    PublishedComputationTask,
-)
+from simcore_service_director_v2.modules.comp_scheduler._worker import _get_scheduler_worker
+from simcore_service_director_v2.modules.dask_client import DaskJobID, PublishedComputationTask
 from simcore_service_director_v2.modules.osparc_variables._errors import (
     OsparcVariableResolveError,
     OsparcVariableResolveTimeoutError,
@@ -1486,6 +1472,12 @@ def with_disabled_unknown_max_time(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.fixture
+def with_disabled_task_resubmission(scheduler_api: BaseCompScheduler) -> None:
+    # disables resubmission so apply() goes straight to the FAILED branch (settings are frozen, so we copy)
+    scheduler_api.settings = scheduler_api.settings.model_copy(update={"COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES": 0})
+
+
 @dataclass(frozen=True, kw_only=True)
 class RebootState:
     dask_task_status: RunningState
@@ -1572,6 +1564,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
     with_disabled_unknown_max_time: None,
+    with_disabled_task_resubmission: None,
     mocked_dask_client: mock.MagicMock,
     sqlalchemy_async_engine: AsyncEngine,
     running_project: RunningProject,
@@ -1663,6 +1656,47 @@ async def test_handling_scheduled_tasks_after_director_reboots(
         reboot_state.expected_pipeline_state_notification,
         ComputationalPipelineStatusMessage.model_validate_json,
     )
+
+
+async def test_handle_task_not_found_error_resubmission_and_max_retries(
+    sqlalchemy_async_engine: AsyncEngine,
+    running_project: RunningProject,
+    scheduler_api: BaseCompScheduler,
+):
+    """Verifies immediate resubmission of a lost task, and eventual failure once max retries are exhausted."""
+    settings = scheduler_api.settings
+    task = running_project.tasks[1]
+    comp_run = running_project.runs
+    result = ComputationalBackendTaskNotFoundError(job_id=task.job_id)
+
+    async def _handle_task_not_found(
+        task: CompTaskAtDB,
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        return await cast(DaskScheduler, scheduler_api)._handle_task_not_found_error(  # noqa: SLF001
+            task, result, {}, comp_run
+        )
+
+    for expected_resubmissions in range(1, settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES + 1):
+        task_state, _platform_status, _errors, completed = await _handle_task_not_found(task)
+        assert task_state is RunningState.WAITING_FOR_CLUSTER, "task should have been reset for resubmission"
+        assert completed is False
+        persisted_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+            sqlalchemy_async_engine,
+            project_uuid=running_project.project.uuid,
+            task_ids=[task.node_id],
+            expected_state=RunningState.WAITING_FOR_CLUSTER,
+            expected_processing_state_has_job_id=False,
+            expected_progress=None,
+            run_id=comp_run.run_id,
+        )
+        task = persisted_tasks[0]
+        assert task.errors is not None
+        assert task.errors[0]["ctx"]["resubmissions"] == expected_resubmissions
+
+    # retries exhausted: the task must now fail for good
+    task_state, _platform_status, _errors, completed = await _handle_task_not_found(task)
+    assert task_state is RunningState.FAILED
+    assert completed is True
 
 
 async def test_handling_cancellation_of_jobs_after_reboot(
