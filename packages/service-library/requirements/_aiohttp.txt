@@ -30,26 +30,26 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.42.1
+opentelemetry-api==1.44.0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.63b1
+opentelemetry-instrumentation==0.65b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-opentelemetry-instrumentation-aiohttp-client==0.63b1
+opentelemetry-instrumentation-aiohttp-client==0.65b0
     # via -r requirements/_aiohttp.in
-opentelemetry-instrumentation-aiohttp-server==0.63b1
+opentelemetry-instrumentation-aiohttp-server==0.65b0
     # via -r requirements/_aiohttp.in
-opentelemetry-semantic-conventions==0.63b1
+opentelemetry-semantic-conventions==0.65b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-opentelemetry-util-http==0.63b1
+opentelemetry-util-http==0.65b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
