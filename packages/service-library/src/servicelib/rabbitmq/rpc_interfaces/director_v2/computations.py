@@ -9,6 +9,7 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGetPage,
     ComputationRunRpcGetPage,
+    ComputationRunStateBatchGetProjectIDs,
     ComputationRunStateRpcGet,
     ComputationTaskRpcGetPage,
 )
@@ -18,7 +19,7 @@ from models_library.projects import ProjectID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter, validate_call
 
 from ....logging_utils import log_decorator
 from ... import RabbitMQRPCClient
@@ -33,11 +34,12 @@ _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
 
 
+@validate_call(config={"arbitrary_types_allowed": True})
 @log_decorator(_logger, level=logging.DEBUG)
 async def batch_get_computations_latest_states(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    project_ids: list[ProjectID],
+    project_ids: ComputationRunStateBatchGetProjectIDs,
 ) -> list[ComputationRunStateRpcGet]:
     try:
         result = await rabbitmq_rpc_client.request(

@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Any, NamedTuple
+from typing import Annotated, Any, NamedTuple
 
 from pydantic import (
     AnyUrl,
     BaseModel,
     ConfigDict,
+    Field,
     PositiveInt,
 )
 
@@ -14,6 +15,12 @@ from models_library.services_types import ServiceRunID
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_state import RunningState
+from ..rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+
+type ComputationRunStateBatchGetProjectIDs = Annotated[
+    list[ProjectID],
+    Field(max_length=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE),
+]
 
 
 class ComputationRunStateRpcGet(BaseModel):

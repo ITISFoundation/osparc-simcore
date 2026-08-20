@@ -1,12 +1,11 @@
 # pylint: disable=too-many-arguments
-from typing import Annotated, Final
-
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGet,
     ComputationCollectionRunTaskRpcGetPage,
     ComputationRunRpcGetPage,
+    ComputationRunStateBatchGetProjectIDs,
     ComputationRunStateRpcGet,
     ComputationTaskRpcGet,
     ComputationTaskRpcGetPage,
@@ -18,7 +17,7 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
-from pydantic import Field, ValidationError, validate_call
+from pydantic import ValidationError, validate_call
 from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
 
@@ -37,18 +36,13 @@ from ...utils import dask as dask_utils
 
 router = RPCRouter()
 
-_BATCH_GET_MAX_IDS: Final[int] = 50
-
 
 @router.expose(reraise_if_error_type=(ValidationError,))
 @validate_call(config={"arbitrary_types_allowed": True})
 async def batch_get_computations_latest_states(
     app: FastAPI,
     *,
-    project_ids: Annotated[
-        list[ProjectID],
-        Field(max_length=_BATCH_GET_MAX_IDS),
-    ],
+    project_ids: ComputationRunStateBatchGetProjectIDs,
 ) -> list[ComputationRunStateRpcGet]:
     comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
     return await comp_runs_repo.batch_get_latest_run_states_by_projects(project_ids)

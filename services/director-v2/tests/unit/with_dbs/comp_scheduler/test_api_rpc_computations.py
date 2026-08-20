@@ -9,23 +9,29 @@
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
+import pytest
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGetPage,
     ComputationRunRpcGetPage,
+    ComputationRunStateBatchGetProjectIDs,
     ComputationRunStateRpcGet,
     ComputationTaskRpcGetPage,
 )
 from models_library.computations import CollectionRunID
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
+from pydantic import TypeAdapter, ValidationError
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import (
     computations as rpc_computations,
 )
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_service_director_v2.api.rpc import _computations as rpc_api_computations
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_run_snapshot_tasks import (
     CompRunSnapshotTaskDBGet,
@@ -37,6 +43,16 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
+
+
+async def test_rpc_batch_get_computations_latest_states_rejects_oversized_batch():
+    max_batch_size = TypeAdapter(ComputationRunStateBatchGetProjectIDs).json_schema()["maxItems"]
+
+    with pytest.raises(ValidationError, match=f"at most {max_batch_size} items"):
+        await rpc_api_computations.batch_get_computations_latest_states(
+            FastAPI(),
+            project_ids=[ProjectID(f"{uuid4()}") for _ in range(max_batch_size + 1)],
+        )
 
 
 async def test_rpc_list_computations_latest_states(
