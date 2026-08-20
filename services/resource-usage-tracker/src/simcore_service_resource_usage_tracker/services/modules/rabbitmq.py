@@ -1,51 +1,33 @@
-import logging
 from typing import cast
 
-from fastapi import FastAPI
-from fastapi.requests import Request
-from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import (
-    RabbitMQClient,
-    RabbitMQRPCClient,
-    wait_till_rabbitmq_responsive,
+from fastapi import FastAPI, Request
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.rabbitmq_lifespan import (
+    configure_rabbitmq_client,
+    configure_rabbitmq_rpc_client,
 )
-from settings_library.rabbit import RabbitSettings
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 
 from ...exceptions.errors import ConfigurationError
 
-_logger = logging.getLogger(__name__)
 
+def configure_rabbitmq(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
+    settings = app.state.settings.RESOURCE_USAGE_TRACKER_RABBITMQ
+    if not settings:
+        raise ConfigurationError(msg="Rabbit MQ client is de-activated in the settings")
 
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="RUT startup Rabbitmq",
-        ):
-            app.state.rabbitmq_client = None
-            settings: RabbitSettings | None = app.state.settings.RESOURCE_USAGE_TRACKER_RABBITMQ
-            if not settings:
-                raise ConfigurationError(msg="Rabbit MQ client is de-activated in the settings")
-            await wait_till_rabbitmq_responsive(settings.dsn)
-            app.state.rabbitmq_client = RabbitMQClient(client_name="resource-usage-tracker", settings=settings)
-            app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-                client_name="resource_usage_tracker_rpc_client", settings=settings
-            )
-
-    async def on_shutdown() -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="RUT shutdown Rabbitmq",
-        ):
-            if app.state.rabbitmq_client:
-                await app.state.rabbitmq_client.close()
-            if app.state.rabbitmq_rpc_client:
-                await app.state.rabbitmq_rpc_client.close()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    configure_rabbitmq_client(
+        app_lifespan,
+        settings=settings,
+        client_name="resource-usage-tracker",
+        wait_for_connectivity=True,
+    )
+    configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=settings,
+        client_name="resource_usage_tracker_rpc_client",
+        wait_for_connectivity=False,
+    )
 
 
 def get_rabbitmq_client_from_request(request: Request):
