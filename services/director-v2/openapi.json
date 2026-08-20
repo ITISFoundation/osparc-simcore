@@ -3035,6 +3035,10 @@
             ],
             "title": "User Preferences Path"
           },
+          "user_preferences_version_source": {
+            "$ref": "#/components/schemas/UserPreferencesVersionSource",
+            "default": "service-version"
+          },
           "simcore.service.restart-policy": {
             "$ref": "#/components/schemas/RestartPolicy",
             "description": "the dynamic-sidecar can restart all running containers on certain events. Supported events:\n- `no-restart` default\n- `on-inputs-downloaded` after inputs are downloaded\n",
@@ -3234,6 +3238,18 @@
             "type": "string",
             "title": "Product Name",
             "description": "Current product upon which this service is scheduled"
+          },
+          "version_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Display",
+            "description": "catalog's human readable name for this service version"
           },
           "product_api_base_url": {
             "anyOf": [
@@ -3445,6 +3461,14 @@
           "nodes_ids"
         ],
         "title": "TasksSelection"
+      },
+      "UserPreferencesVersionSource": {
+        "type": "string",
+        "enum": [
+          "service-version",
+          "version-display"
+        ],
+        "title": "UserPreferencesVersionSource"
       },
       "UserServiceCommand": {
         "properties": {
