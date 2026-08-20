@@ -15,7 +15,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-coverage==7.15.4
+coverage==7.15.3
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -23,7 +23,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-idna==3.19
+idna==3.18
     # via yarl
 iniconfig==2.3.0
     # via pytest
@@ -60,7 +60,7 @@ openapi-schema-validator==0.8.1
     #   openapi-spec-validator
 openapi-spec-validator==0.8.5
     # via openapi-core
-packaging==26.3
+packaging==26.2
     # via pytest
 pathable==0.5.0
     # via jsonschema-path
@@ -79,11 +79,11 @@ pydantic==2.13.4
     #   pydantic-settings
 pydantic-core==2.46.4
     # via pydantic
-pydantic-settings==2.15.0
+pydantic-settings==2.14.2
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
-pygments==2.21.0
+pygments==2.20.0
     # via pytest
 pytest==9.1.1
     # via
@@ -100,7 +100,7 @@ pytest-instafail==0.5.0
     # via -r requirements.in
 pytest-sugar==1.1.1
     # via -r requirements.in
-python-dotenv==1.2.3
+python-dotenv==1.2.2
     # via pydantic-settings
 pyyaml==6.0.3
     # via
@@ -128,7 +128,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.4
+typing-inspection==0.4.2
     # via
     #   pydantic
     #   pydantic-settings
