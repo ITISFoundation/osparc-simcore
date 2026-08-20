@@ -609,8 +609,9 @@ async def restart_user_services(
 
 def configure_long_running_tasks(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    long_running_tasks.server.setup(
+    long_running_tasks.server.configure(
         app,
+        app_lifespan,
         redis_settings=app_settings.REDIS_SETTINGS,
         rabbit_settings=app_settings.RABBIT_SETTINGS,
         lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
