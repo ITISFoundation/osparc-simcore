@@ -10,7 +10,6 @@ from asgi_lifespan import LifespanManager as ASGILifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from httpx import URL as HttpxUrl
 from httpx import ASGITransport
 from models_library.payments import UserInvoiceAddress
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -125,7 +124,7 @@ async def test_one_time_payment_workflow(
     submission_link = payment_gateway_api.get_form_payment_url(payment_initiated.payment_id)
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(submission_link, HttpxUrl)
+    assert isinstance(submission_link, httpx.URL)
     assert URL(f"{submission_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # cancel
@@ -161,7 +160,7 @@ async def test_payment_methods_workflow(
     form_link = payments_gateway_api.get_form_payment_method_url(initiated.payment_method_id)
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(form_link, HttpxUrl)
+    assert isinstance(form_link, httpx.URL)
     assert URL(f"{form_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # CRUD
