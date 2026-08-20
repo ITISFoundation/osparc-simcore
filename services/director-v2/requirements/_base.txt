@@ -330,7 +330,7 @@ pint==0.25.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==4.5.0
     # via pint
-prometheus-client==0.23.1
+prometheus-client==0.26.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.4.1
     # via

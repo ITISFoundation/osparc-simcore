@@ -302,7 +302,7 @@ partd==1.4.2
     # via dask
 pillow==12.2.0
     # via bokeh
-prometheus-client==0.23.1
+prometheus-client==0.26.0
     # via -r requirements/_base.in
 propcache==0.4.1
     # via

@@ -328,7 +328,7 @@ pint==0.25
     #   -r requirements/_base.in
 platformdirs==4.5.0
     # via pint
-prometheus-client==0.14.1
+prometheus-client==0.26.0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 prompt-toolkit==3.0.52
     # via click-repl
