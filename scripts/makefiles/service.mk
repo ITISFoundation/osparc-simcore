@@ -1,0 +1,217 @@
+#
+# Common targets and recipes for services/
+#
+# LIBRARY (.mk): include-only, not a directly-invoked entry point.
+# USAGE (top of a service Makefile):
+#   include ../../scripts/makefiles/common.mk
+#   include ../../scripts/makefiles/service.mk
+#
+# $(CURDIR) here refers to the service directory that includes it.
+# SEE scripts/makefiles/README.md for conventions.
+#
+
+#
+# GLOBALS
+#
+
+# Variable based on conventions (override if they do not apply)
+APP_NAME          = $(notdir $(CURDIR))
+APP_CLI_NAME      = simcore-service-$(APP_NAME)
+APP_PACKAGE_NAME  = $(subst -,_,$(APP_CLI_NAME))
+APP_VERSION      := $(shell cat VERSION)
+SRC_DIR           = $(abspath $(CURDIR)/src/$(APP_PACKAGE_NAME))
+
+export APP_VERSION
+
+
+#
+# VENV (virtual environment) TASKS
+#
+
+include $(REPO_BASE_DIR)/scripts/makefiles/python-install.mk
+
+
+#
+# TEST TASKS
+#
+
+.PHONY: test-dev-ci FORCE
+
+# Always out-of-date sentinel used to force pattern test targets to run.
+FORCE:
+
+# REVIEW: self-test of the test-target dispatch; no known CI/docs callers.
+.PHONY: check-test-dispatch
+check-test-dispatch: ## validates test target dispatch and mode-specific pytest options via dry-runs
+	@tmp_file=$$(mktemp); \
+	trap 'rm -f "$$tmp_file"' EXIT; \
+	$(MAKE) --no-print-directory -n test-dev-unit > "$$tmp_file"; \
+	grep -q "_run-test-dev" "$$tmp_file" || (echo "ERROR: test-dev-unit does not dispatch to _run-test-dev"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n test-ci-integration > "$$tmp_file"; \
+	grep -q "_run-test-ci" "$$tmp_file" || (echo "ERROR: test-ci-integration does not dispatch to _run-test-ci"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n _run-test-dev target=/tmp/dispatch-check > "$$tmp_file"; \
+	grep -q -- "--pdb" "$$tmp_file" || (echo "ERROR: _run-test-dev is missing development pytest options"; cat "$$tmp_file"; exit 1); \
+	$(MAKE) --no-print-directory -n _run-test-ci target=/tmp/dispatch-check > "$$tmp_file"; \
+	grep -q -- "--cov-append" "$$tmp_file" || (echo "ERROR: _run-test-ci is missing CI pytest options"; cat "$$tmp_file"; exit 1); \
+	echo "OK: test dispatch checks passed"
+
+TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
+
+# CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
+test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/unit folder (or an explicit target= if provided)
+	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
+
+# CI-CONTRACT: test-ci-integration is invoked by ci/github/**/*.bash (also test-dev-integration locally)
+test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
+	@export DOCKER_REGISTRY=local; \
+	export DOCKER_IMAGE_TAG=production; \
+	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
+
+
+test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
+
+test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
+
+
+# ---------------------------------------------------------------------------
+# i18n — extract translatable strings for this service
+# ---------------------------------------------------------------------------
+include $(REPO_BASE_DIR)/scripts/makefiles/i18n.mk
+
+
+#
+# DOCKER CONTAINERS TASKS
+#
+
+.PHONY: build build-nc build-devel build-devel-nc
+build build-nc build-devel build-devel-nc: ## [docker] builds docker image in many flavours
+	# Building docker image for ${APP_NAME} ...
+	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
+
+
+.PHONY: shell
+shell: ## [swarm] runs shell inside $(APP_NAME) container
+	docker exec \
+		--interactive \
+		--tty \
+		$(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		/bin/bash
+
+
+.PHONY: tail logs
+tail logs: ## [swarm] tails log of $(APP_NAME) container
+	docker logs \
+		--follow \
+		$(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		2>&1
+
+
+.PHONY: stats
+stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
+	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
+
+
+
+DOCKER_REGISTRY ?=local
+DOCKER_IMAGE_TAG?=production
+
+.PHONY: settings-schema.json
+settings-schema.json: ## [container] dumps json-shcema of this service settings
+	# Dumping settings schema of ${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG}
+	@docker run \
+		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
+		${APP_CLI_NAME} settings --as-json-schema \
+		| sed --expression='1,/{/ {/{/!d}' \
+		> $@
+	# Dumped '$(CURDIR)/$@'
+
+# NOTE: settings CLI prints some logs in the header from the boot and entrypoint scripts. We
+# use stream editor expression (sed --expression) to trim them:
+# - 1,/{/: This specifies the range of lines to operate on, in this case, from the first line to (but not including) the line that contains the string "{".
+# - {/{/!d}: This specifies that all lines between the first line and the line that contains "{" should be printed ({) except for the line that contains "{" (/{/!d).
+#
+
+
+
+#
+# MISC
+#
+
+.PHONY: info
+info: ## displays service info
+	@make --no-print-directory info-super
+	# service setup
+	@echo ' APP_NAME         : $(APP_NAME)'
+	@echo ' APP_CLI_NAME     : ${APP_CLI_NAME}'
+	@echo ' APP_PACKAGE_NAME : ${APP_PACKAGE_NAME}'
+	@echo ' APP_VERSION      : ${APP_VERSION}'
+	@echo ' SRC_DIR          : ${SRC_DIR}'
+
+
+
+#
+# SUBTASKS
+#
+
+TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
+PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
+
+PYTEST_BASE_ARGS = \
+	--asyncio-mode=auto \
+	--color=yes \
+	--cov-config=.coveragerc \
+	--cov-report=term-missing \
+	--cov-report=xml \
+	--cov=$(APP_PACKAGE_NAME) \
+	--durations=10 \
+	--junitxml=junit.xml -o junit_family=legacy \
+	--keep-docker-up
+
+PYTEST_ARGS_dev = \
+	--exitfirst \
+	--failed-first \
+	--pdb \
+	-vv
+
+PYTEST_ARGS_ci = \
+	--cov-append \
+	--log-date-format="%Y-%m-%d %H:%M:%S" \
+	--log-format="%(asctime)s %(levelname)s %(message)s" \
+	--verbose \
+	-m "not heavy_load"
+
+_run-test-%: FORCE _check_venv_active
+	# runs tests for development or CI mode
+	$(if $(filter $*,dev ci),,$(error unsupported test mode '$*', expected dev or ci))
+	pytest \
+		$(PYTEST_BASE_ARGS) \
+		$(PYTEST_ARGS_$*) \
+		$(PYTEST_ADDITIONAL_PARAMETERS) \
+		$(TEST_TARGET)
+
+
+.PHONY: _assert_target_defined
+_assert_target_defined:
+	$(if $(target),,$(error unset argument 'target' is required))
+
+
+
+
+#
+# OPENAPI SPECIFICATIONS ROUTINES
+#
+
+
+# specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
+OPENAPI_GENERATOR_NAME := openapitools/openapi-generator-cli
+OPENAPI_GENERATOR_TAG := latest
+OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
+
+define validate_openapi_specs
+	# Validating OAS '$(1)' ...
+	docker run --rm \
+			--volume "$(CURDIR):/local" \
+			$(OPENAPI_GENERATOR_IMAGE) validate --input-spec /local/$(strip $(1))
+endef
