@@ -29,6 +29,10 @@ from simcore_service_clusters_keeper.modules.clusters import (
 from simcore_service_clusters_keeper.modules.clusters_management_core import (
     check_clusters,
 )
+from simcore_service_clusters_keeper.modules.instrumentation import (
+    get_instrumentation,
+    has_instrumentation,
+)
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
@@ -38,7 +42,7 @@ def wallet_id(faker: Faker, request: pytest.FixtureRequest) -> WalletID | None:
     return faker.pyint(min_value=1) if request.param == "with_wallet" else None
 
 
-_FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
+_FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 
 
 @pytest.fixture
@@ -263,6 +267,63 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
+
+
+def _gauge_value(gauge, *, instance_type: str, user_id: UserID, wallet_id: WalletID | None) -> float:
+    return gauge.labels(instance_type=instance_type, user_id=f"{user_id}", wallet_id=f"{wallet_id}")._value.get()  # noqa: SLF001
+
+
+async def test_cluster_management_core_updates_primary_instances_metrics(
+    disable_clusters_management_background_task: None,
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    product_name: ProductName,
+    user_id: UserID,
+    wallet_id: WalletID | None,
+    initialized_app: FastAPI,
+    mocked_dask_ping_scheduler: MockedDaskModule,
+):
+    assert has_instrumentation(initialized_app)
+    primary_metrics = get_instrumentation(initialized_app).primary_instances_metrics
+
+    # the primary instance was just created: dask-scheduler is not reachable yet -> starting
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = False
+    created_clusters = await create_cluster(
+        initialized_app, product_name=product_name, user_id=user_id, wallet_id=wallet_id
+    )
+    assert len(created_clusters) == 1
+    the_cluster = created_clusters[0]
+    labels = {"instance_type": the_cluster.type, "user_id": user_id, "wallet_id": wallet_id}
+
+    await check_clusters(initialized_app)
+    assert _gauge_value(primary_metrics.starting_instances.gauge, **labels) == 1
+    assert _gauge_value(primary_metrics.connected_instances.gauge, **labels) == 0
+    assert _gauge_value(primary_metrics.busy_instances.gauge, **labels) == 0
+    assert _gauge_value(primary_metrics.broken_instances.gauge, **labels) == 0
+
+    # the dask-scheduler now answers and is busy -> connected and busy
+    mocked_dask_ping_scheduler.ping_scheduler.return_value = True
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = True
+    await check_clusters(initialized_app)
+    assert _gauge_value(primary_metrics.starting_instances.gauge, **labels) == 0
+    assert _gauge_value(primary_metrics.connected_instances.gauge, **labels) == 1
+    assert _gauge_value(primary_metrics.busy_instances.gauge, **labels) == 1
+    assert _gauge_value(primary_metrics.broken_instances.gauge, **labels) == 0
+
+    # the cluster becomes idle and, after the termination delay, gets terminated
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
+    mocked_dask_ping_scheduler.is_scheduler_busy.return_value = False
+    await check_clusters(initialized_app)
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
+
+    # NOTE: connected/busy are snapshotted before termination happens within the same check_clusters()
+    # call, so they only reflect the termination on the *next* run, once get_all_clusters() no longer
+    # returns the (now terminated) instance -> all gauges back to 0
+    await check_clusters(initialized_app)
+    assert _gauge_value(primary_metrics.starting_instances.gauge, **labels) == 0
+    assert _gauge_value(primary_metrics.connected_instances.gauge, **labels) == 0
+    assert _gauge_value(primary_metrics.busy_instances.gauge, **labels) == 0
+    assert _gauge_value(primary_metrics.broken_instances.gauge, **labels) == 0
 
 
 async def test_cluster_management_core_does_not_terminate_busy_cluster_with_stale_heartbeat(
