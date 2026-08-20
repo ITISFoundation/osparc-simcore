@@ -23,6 +23,9 @@ from aiohttp import web
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationRunStateRpcGet,
+)
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
     GetProjectInactivityResponse,
@@ -120,6 +123,7 @@ from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
+from ..director_v2.exceptions import DirectorV2PipelineStatesRetrievalError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
 from ..products import products_web
@@ -2000,6 +2004,53 @@ async def _get_project_share_state(
             limit=10,
         ),
     )
+
+
+async def _list_pipelines_latest_states_or_none(
+    app: web.Application,
+    project_ids: list[ProjectID],
+) -> list[ComputationRunStateRpcGet] | None:
+    try:
+        return await director_v2_service.list_pipelines_latest_states(
+            app,
+            project_ids=project_ids,
+        )
+    except DirectorV2PipelineStatesRetrievalError as exc:
+        _logger.warning("Getting latest computation states failed: %s", exc)
+        return None
+
+
+async def add_projects_states_for_user(
+    *,
+    user_id: UserID,
+    projects: list[ProjectDict],
+    app: web.Application,
+) -> list[ProjectDict]:
+    latest_states, project_share_states = await asyncio.gather(
+        _list_pipelines_latest_states_or_none(
+            app,
+            [ProjectID(project["uuid"]) for project in projects],
+        ),
+        limited_gather(
+            *[_get_project_share_state(user_id, project["uuid"], app) for project in projects],
+            limit=20,
+        ),
+    )
+    state_by_project = {item.project_uuid: item.state for item in latest_states} if latest_states is not None else None
+
+    for project, project_share_state in zip(projects, project_share_states, strict=True):
+        project_id = ProjectID(project["uuid"])
+        project_running_state = (
+            state_by_project.get(project_id, RunningState.NOT_STARTED)
+            if state_by_project is not None
+            else RunningState.UNKNOWN
+        )
+        project["state"] = ProjectState(
+            share_state=project_share_state,
+            state=ProjectRunningState(value=project_running_state),
+        ).model_dump(by_alias=True, exclude_unset=True)
+
+    return projects
 
 
 async def add_project_states_for_user(

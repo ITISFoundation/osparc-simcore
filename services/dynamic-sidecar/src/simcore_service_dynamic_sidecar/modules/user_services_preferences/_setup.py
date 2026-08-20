@@ -6,7 +6,7 @@ from servicelib.logging_utils import log_context
 from ..._meta import APP_NAME
 from ...core.settings import ApplicationSettings
 from ._manager import UserServicesPreferencesManager
-from ._utils import is_feature_enabled
+from ._utils import get_resolved_version, is_feature_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -27,10 +27,13 @@ def setup_user_services_preferences(app: FastAPI) -> None:
                 )
                 user_preferences_path.mkdir(parents=True, exist_ok=True)
 
+                resolved_version = get_resolved_version(app)
+                assert resolved_version is not None  # nosec
+
                 app.state.user_services_preferences_manager = UserServicesPreferencesManager(
                     user_preferences_path=user_preferences_path,
                     service_key=settings.DY_SIDECAR_SERVICE_KEY,
-                    service_version=settings.DY_SIDECAR_SERVICE_VERSION,
+                    resolved_version=resolved_version,
                     user_id=settings.DY_SIDECAR_USER_ID,
                     product_name=settings.DY_SIDECAR_PRODUCT_NAME,
                     application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
