@@ -318,7 +318,7 @@ pillow==12.2.0
     # via matplotlib
 prometheus-api-client==0.6.0
     # via -r requirements/_base.in
-prometheus-client==0.20.0
+prometheus-client==0.26.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.3.1
     # via
