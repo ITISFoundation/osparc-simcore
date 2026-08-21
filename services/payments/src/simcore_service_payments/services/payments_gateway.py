@@ -233,7 +233,6 @@ def configure_payments_gateway(app: FastAPI, app_lifespan: LifespanManager[FastA
             api.client,
             tracing_config=get_tracing_config(app),
         )
-    api.set_to_app_state(app)
 
     async def _payments_gateway_lifespan(_: FastAPI) -> AsyncIterator[State]:
         try:
@@ -243,3 +242,4 @@ def configure_payments_gateway(app: FastAPI, app_lifespan: LifespanManager[FastA
             await api.teardown_client()
 
     app_lifespan.add(_payments_gateway_lifespan)
+    api.set_to_app_state(app)
