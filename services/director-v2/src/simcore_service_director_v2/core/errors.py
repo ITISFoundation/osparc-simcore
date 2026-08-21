@@ -154,6 +154,10 @@ class ComputationalBackendTaskResultsNotReadyError(ComputationalSchedulerError):
     msg_template = "The task result is not ready yet for job '{job_id}'"
 
 
+class ComputationalBackendTaskResultsReleaseError(ComputationalSchedulerError):
+    msg_template = "Releasing the task result for job '{job_id}' timed-out"
+
+
 class ClustersKeeperNotAvailableError(ComputationalSchedulerError):
     msg_template = "clusters-keeper service is not available!"
 

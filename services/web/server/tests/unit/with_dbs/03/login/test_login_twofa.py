@@ -371,6 +371,7 @@ async def test_send_email_code(
         user_name=user_name,
         product_name="osparc",
         host="osparc.io",
+        ttl=120,
     )
 
     mock_send.assert_called_once()
@@ -378,6 +379,7 @@ async def test_send_email_code(
     assert call_kwargs["template_name"] == "new_2fa_code"
     assert call_kwargs["context"]["code"] == code
     assert call_kwargs["context"]["host"] == "osparc.io"
+    assert call_kwargs["context"]["ttl"] == 120
     assert call_kwargs["context"]["user"]["first_name"] == first_name
     assert call_kwargs["context"]["user"]["user_name"] == user_name
 

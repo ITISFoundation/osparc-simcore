@@ -1,9 +1,10 @@
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any, Final
+from uuid import uuid4
 
 import arrow
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -15,6 +16,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
+from dask_task_models_library.models import DaskJobID
 from models_library.clusters import BaseCluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -23,7 +25,6 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
-from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis._semaphore_decorator import (
@@ -36,10 +37,11 @@ from ..._meta import APP_NAME
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
+    ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
     PortsValidationError,
 )
-from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, Iteration, RunID, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
@@ -59,6 +61,7 @@ from ..db.repositories.comp_runs import (
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._models import TaskStateTracker
+from ._publisher import request_task_result_release
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
@@ -69,6 +72,8 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
+_TASK_NOT_FOUND_ERROR_TYPE: Final[str] = "task-not-found-in-computational-backend"
+_TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: Final[str] = "resubmissions"
 _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 
@@ -79,9 +84,10 @@ async def _cluster_dask_client(
     *,
     use_on_demand_clusters: bool,
     project_id: ProjectID,
-    run_id: PositiveInt,
+    run_id: RunID,
     run_metadata: RunMetadataDict,
-) -> AsyncIterator[DaskClient]:
+    ref: str | None = None,
+) -> AsyncGenerator[DaskClient]:
     """returns the dask client to use for a given user and project, it will automatically create an on-demand
     cluster if needed and wait for it to be ready
 
@@ -106,6 +112,11 @@ async def _cluster_dask_client(
             wallet_id=run_metadata.get("wallet_id"),
         )
 
+    # NOTE: callers that must not share the run-scoped pool reference (e.g. the dataset
+    # releaser, whose lifetime is independent from `_safe_release_resources`) can pass
+    # their own `ref` and are responsible for calling `dask_clients_pool.release_client_ref`
+    client_ref = ref or _DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id)
+
     @with_limited_concurrency_cm(
         scheduler.redis_client,
         key=f"{APP_NAME}-cluster-user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}",
@@ -114,11 +125,9 @@ async def _cluster_dask_client(
         blocking_timeout=None,
     )
     @asynccontextmanager
-    async def _acquire_client(user_id: UserID, scheduler: "DaskScheduler") -> AsyncIterator[DaskClient]:
-        async with scheduler.dask_clients_pool.acquire(
-            cluster,
-            ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id),
-        ) as client:
+    async def _acquire_client(user_id: UserID, scheduler: "DaskScheduler") -> AsyncGenerator[DaskClient]:
+        assert user_id  # nosec
+        async with scheduler.dask_clients_pool.acquire(cluster, ref=client_ref) as client:
             yield client
 
     async with _acquire_client(user_id, scheduler) as client:
@@ -161,6 +170,7 @@ class DaskScheduler(BaseCompScheduler):
                 comp_run.run_id,
                 list(scheduled_tasks.keys()),
                 RunningState.PENDING,
+                clear_errors=False,
             )
             # each task is started independently
 
@@ -242,13 +252,6 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     if t is not None
                 ]
-            for progress_event in task_progress_events:
-                await CompTasksRepository(self.db_engine).update_project_task_progress(
-                    progress_event.task_owner.project_id,
-                    progress_event.task_owner.node_id,
-                    comp_run.run_id,
-                    progress_event.progress,
-                )
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
@@ -285,7 +288,49 @@ class DaskScheduler(BaseCompScheduler):
             limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
 
-    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: Iteration) -> None:
+    async def release_task_result(
+        self,
+        *,
+        user_id: UserID,
+        project_id: ProjectID,
+        run_id: RunID,
+        use_on_demand_clusters: bool,
+        run_metadata: RunMetadataDict,
+        job_ids: list[DaskJobID],
+    ) -> None:
+        """unpublish task results/datasets for a given cluster.
+
+        Called by the dedicated release-task-result rabbitmq consumer, decoupled from the
+        main pipeline scheduling flow so a slow/unresponsive scheduler cannot leak consumer
+        slots meant for scheduling.
+
+        NOTE: uses its own pool reference (independent from the run-scoped one managed by
+        `_safe_release_resources`) since this call can happen after the run already finished
+        and released its own reference - reusing that ref here would either be a no-op on an
+        already-torn-down entry or silently leave a fresh client registered forever. All the
+        job_ids of a single scheduling batch share the SAME acquire/release bracket so a run
+        with many completed tasks does not create/delete a client once per task.
+        """
+        pool_ref = f"release-task-result:{uuid4()}"
+        try:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=use_on_demand_clusters,
+                project_id=project_id,
+                run_id=run_id,
+                run_metadata=run_metadata,
+                ref=pool_ref,
+            ) as client:
+                await limited_gather(
+                    *(client.release_task_result(job_id) for job_id in job_ids),
+                    log=_logger,
+                    limit=1,  # to avoid overloading the dask scheduler
+                )
+        finally:
+            await self.dask_clients_pool.release_client_ref(ref=pool_ref)
+
+    async def _safe_release_resources(self, user_id: UserID, project_id: ProjectID, run_id: RunID) -> None:
         """release resources used by the scheduler for a given user and project"""
         with (
             log_catch(_logger, reraise=False),
@@ -340,6 +385,7 @@ class DaskScheduler(BaseCompScheduler):
                 log=_logger,
                 limit=1,  # to avoid overloading the dask scheduler
             )
+            releasable_job_ids: list[str] = []
             async for future in limited_as_completed(
                 (
                     self._process_task_result(
@@ -355,7 +401,26 @@ class DaskScheduler(BaseCompScheduler):
                 with log_catch(_logger, reraise=False):
                     task_can_be_cleaned, job_id = await future
                     if task_can_be_cleaned and job_id:
-                        await client.release_task_result(job_id)
+                        releasable_job_ids.append(job_id)
+
+        if releasable_job_ids:
+            # NOTE: releasing is delegated to a dedicated consumer so a slow/hanging
+            # dask-scheduler cannot leak this pipeline-scheduling slot (see _releaser.py).
+            # All the job_ids completed in this batch are sent as a single message so the
+            # releaser only needs one client acquire/release for the whole batch.
+            # NOTE: best effort: a publish failure here is only logged (not retried) so a
+            # transient RabbitMQ issue does not also break the rest of the pipeline scheduling
+            # (heartbeat, run result, resources release).
+            with log_catch(_logger, reraise=False):
+                await request_task_result_release(
+                    self.rabbitmq_client,
+                    user_id=user_id,
+                    project_id=comp_run.project_uuid,
+                    run_id=comp_run.run_id,
+                    use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                    run_metadata=comp_run.metadata,
+                    job_ids=releasable_job_ids,
+                )
 
     async def _handle_successful_run(
         self,
@@ -374,8 +439,7 @@ class DaskScheduler(BaseCompScheduler):
         except PortsValidationError as err:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Unexpected error while parsing output data, "
-                    "comp_tasks/comp_pipeline is not in sync with what was started",
+                    "Unexpected error while parsing output data, comp_tasks is not in sync with what was started",
                     error=err,
                     error_context=log_error_context,
                 )
@@ -480,6 +544,70 @@ class DaskScheduler(BaseCompScheduler):
         # state is kept as STARTED so it will be retried
         return RunningState.STARTED, SimcorePlatformStatus.BAD, [], False
 
+    async def _handle_task_not_found_error(
+        self,
+        task: CompTaskAtDB,
+        result: ComputationalBackendTaskNotFoundError,
+        log_error_context: dict[str, Any],
+        comp_run: CompRunsAtDB,
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        """Returns the outcome tuple: WAITING_FOR_CLUSTER if resubmitted, or the exhausted (failed) outcome."""
+        resubmissions = 0
+        for error in task.errors or []:
+            if error["type"] == _TASK_NOT_FOUND_ERROR_TYPE:
+                assert "ctx" in error  # nosec
+                assert _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY in error["ctx"]  # nosec
+                resubmissions = int(error["ctx"][_TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY])
+                break
+
+        if resubmissions >= self.settings.COMPUTATIONAL_BACKEND_MAX_TASK_RETRIES:
+            _logger.error(
+                **create_troubleshooting_log_kwargs(
+                    f"Task {task.job_id} is unknown to the computational backend "
+                    f"and was already resubmitted {resubmissions} time(s)",
+                    error=result,
+                    error_context=log_error_context,
+                    tip="The dask-scheduler lost the task and resubmitting it did not help. "
+                    "Please contact support if the problem persists.",
+                )
+            )
+            task_state, _, task_errors, task_completed = await self._handle_task_error(task, result, log_error_context)
+            # NOTE: this is a platform failure (backend lost the task), not the user's fault, so no billing
+            return task_state, SimcorePlatformStatus.BAD, task_errors, task_completed
+
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                f"Task {task.job_id} is unknown to the computational backend, "
+                f"resubmitting it for the {resubmissions + 1} time",
+                error=result,
+                error_context=log_error_context,
+                tip="The dask-scheduler forgets all tasks when it crashes or is restarted. "
+                "The task is automatically resubmitted.",
+            )
+        )
+        await CompTasksRepository(self.db_engine).reset_task_for_resubmission(
+            task.project_id,
+            task.node_id,
+            comp_run.run_id,
+            errors=[
+                ErrorDict(
+                    loc=(f"{task.project_id}", f"{task.node_id}"),
+                    msg=f"{result}",
+                    type=_TASK_NOT_FOUND_ERROR_TYPE,
+                    ctx={
+                        _TASK_NOT_FOUND_ERROR_CONTEXT_RESUBMISSIONS_KEY: resubmissions + 1,
+                        **log_error_context,
+                    },
+                )
+            ],
+        )
+        return (
+            RunningState.WAITING_FOR_CLUSTER,
+            SimcorePlatformStatus.BAD,
+            [],
+            False,
+        )
+
     @staticmethod
     async def _handle_task_error(
         task: CompTaskAtDB,
@@ -561,6 +689,24 @@ class DaskScheduler(BaseCompScheduler):
                 ) = await self._handle_computational_backend_not_connected_error(
                     task.current, result, log_error_context
                 )
+            elif isinstance(result, ComputationalBackendTaskNotFoundError):
+                (
+                    task_final_state,
+                    simcore_platform_status,
+                    task_errors,
+                    task_completed,
+                ) = await self._handle_task_not_found_error(task.current, result, log_error_context, comp_run)
+                if task_final_state is RunningState.WAITING_FOR_CLUSTER:
+                    # already persisted via reset_task_for_resubmission (job_id cleared), nothing else to update
+                    return False, None
+                if task_completed:
+                    # resubmissions exhausted: clean up any invalid output files, as for other failures
+                    await clean_task_output_and_log_files_if_invalid(
+                        self.db_engine,
+                        comp_run.user_id,
+                        comp_run.project_uuid,
+                        task.current.node_id,
+                    )
             else:
                 (
                     task_final_state,

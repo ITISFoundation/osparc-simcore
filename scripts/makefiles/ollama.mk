@@ -28,10 +28,10 @@
 ### reflects the shared-daemon reality: two Makefiles both running
 ### `ollama-serve` should coordinate on the SAME daemon, not start two).
 
-OLLAMA_HOST            ?= http://localhost:11434   ## Ollama daemon URL (health-check + API base)
+OLLAMA_HOST            ?= http://localhost:11434    ## Ollama daemon URL (health-check + API base)
 OLLAMA_MODEL           ?= llama3.1                  ## Model tag for `ollama-pull`/`ollama-ensure` (set before include to override)
 OLLAMA_STARTUP_TIMEOUT ?= 30                        ## Seconds to wait for `ollama serve` to become healthy
-OLLAMA_STATE_DIR       ?= /tmp/s4l-ollama-mk         ## PID/log file location (shared across includers -- see note above)
+OLLAMA_STATE_DIR       ?= /tmp/s4l-ollama-mk        ## PID/log file location (shared across includers -- see note above)
 
 # \note re-assign with $(strip ...): the column-aligned `##` comments above leave
 # trailing whitespace IN the value itself (make only strips the comment, not

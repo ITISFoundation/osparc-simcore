@@ -11,14 +11,14 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import PositiveInt, TypeAdapter
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.utils import logged_gather
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from .....core.errors import ComputationalTaskNotFoundError
+from .....models.comp_runs import RunID
 from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.computations import to_node_class
@@ -206,9 +206,7 @@ class CompTasksRepository(BaseRepository):
                 )
             return inserted_comp_tasks_db, insufficient_credits
 
-    async def _update_task(
-        self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, **task_kwargs
-    ) -> CompTaskAtDB:
+    async def _update_task(self, project_id: ProjectID, task: NodeID, run_id: RunID, **task_kwargs) -> CompTaskAtDB:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -235,19 +233,38 @@ class CompTasksRepository(BaseRepository):
                 row = result.one()
                 return CompTaskAtDB.model_validate(row)
 
-    async def update_project_task_job_id(
-        self, project_id: ProjectID, task: NodeID, run_id: PositiveInt, job_id: str
-    ) -> None:
+    async def update_project_task_job_id(self, project_id: ProjectID, task: NodeID, run_id: RunID, job_id: str) -> None:
         await self._update_task(project_id, task, run_id, job_id=job_id)
+
+    async def reset_task_for_resubmission(
+        self,
+        project_id: ProjectID,
+        task: NodeID,
+        run_id: RunID,
+        errors: list[ErrorDict] | None = None,
+    ) -> None:
+        """clears the backend job reference so the scheduler picks the task up again"""
+        await self._update_task(
+            project_id,
+            task,
+            run_id,
+            state=RUNNING_STATE_TO_DB[RunningState.WAITING_FOR_CLUSTER],
+            job_id=None,
+            progress=None,
+            start=None,
+            end=None,
+            errors=errors,
+        )
 
     async def update_project_tasks_state(
         self,
         project_id: ProjectID,
-        run_id: PositiveInt,
+        run_id: RunID,
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
         *,
+        clear_errors: bool = True,
         optional_progress: float | None = None,
         optional_started: datetime | None = None,
         optional_stopped: datetime | None = None,
@@ -256,27 +273,54 @@ class CompTasksRepository(BaseRepository):
         passing None for the optional arguments will not update the respective values in the database
         Keyword Arguments:
             errors -- _description_ (default: {None})
+            clear_errors -- if False and errors is None, the errors column is left untouched
+                instead of being cleared (default: {True})
             optional_progress -- _description_ (default: {None})
             optional_started -- _description_ (default: {None})
             optional_stopped -- _description_ (default: {None})
         """
-        update_values: dict[str, Any] = {
-            "state": RUNNING_STATE_TO_DB[state],
-            "errors": errors,
-        }
+        if not tasks:
+            return
+        update_values: dict[str, Any] = {"state": RUNNING_STATE_TO_DB[state]}
+        if clear_errors or errors is not None:
+            update_values["errors"] = errors
         if optional_progress is not None:
             update_values["progress"] = optional_progress
         if optional_started is not None:
             update_values["start"] = optional_started
         if optional_stopped is not None:
             update_values["end"] = optional_stopped
-        await logged_gather(*(self._update_task(project_id, task_id, run_id, **update_values) for task_id in tasks))
+
+        # NOTE: all the tasks share the same update_values, so this is done as a single
+        # bulk update per table instead of one transaction per task (see ADR on comp_tasks batching)
+        node_ids = [f"{task_id}" for task_id in tasks]
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"update tasks state {project_id=}:{node_ids=} with '{update_values}'",
+        ):
+            async with self.db_engine.begin() as conn:
+                await conn.execute(
+                    sa.update(comp_tasks)
+                    .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id.in_(node_ids)))
+                    .values(**update_values)
+                )
+                # Sync with comp_run_snapshot_tasks table
+                await conn.execute(
+                    sa.update(comp_run_snapshot_tasks)
+                    .where(
+                        (comp_run_snapshot_tasks.c.run_id == run_id)
+                        & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
+                        & (comp_run_snapshot_tasks.c.node_id.in_(node_ids))
+                    )
+                    .values(**update_values)
+                )
 
     async def update_project_task_progress(
         self,
         project_id: ProjectID,
         node_id: NodeID,
-        run_id: PositiveInt,
+        run_id: RunID,
         progress: float,
     ) -> None:
         await self._update_task(project_id, node_id, run_id, progress=progress)
@@ -285,7 +329,7 @@ class CompTasksRepository(BaseRepository):
         self,
         project_id: ProjectID,
         node_id: NodeID,
-        run_id: PositiveInt,
+        run_id: RunID,
         heartbeat_time: datetime,
     ) -> None:
         await self._update_task(project_id, node_id, run_id, last_heartbeat=heartbeat_time)

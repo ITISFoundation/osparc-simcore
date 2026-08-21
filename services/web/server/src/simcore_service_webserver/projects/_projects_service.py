@@ -23,6 +23,9 @@ from aiohttp import web
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationRunStateRpcGet,
+)
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
     GetProjectInactivityResponse,
@@ -123,6 +126,7 @@ from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
+from ..director_v2.exceptions import DirectorV2PipelineStatesRetrievalError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
 from ..products import products_web
@@ -190,7 +194,6 @@ from .models import (
     ProjectDBGet,
     ProjectDict,
     ProjectPatchInternalExtended,
-    ProjectWithWorkbenchDBGet,
 )
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import (
@@ -1427,17 +1430,35 @@ async def patch_project_node(
         if node_patch_exclude_unset.get("label"):
             await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 
-    updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
-        app, project_uuid=project_id
-    )
+    notify_all_nodes = bool({"inputs", "outputs"} & node_patch_exclude_unset.keys())
+    if notify_all_nodes:
+        updated_project = await _projects_repository.get_project_with_workbench(app, project_uuid=project_id)
+        project_for_notification = updated_project.model_dump(mode="json", by_alias=True)
+    else:
+        latest_node = await _projects_nodes_repository.get(
+            app,
+            project_id=project_id,
+            node_id=node_id,
+        )
+        project_for_notification = {
+            "uuid": f"{project_id}",
+            "workbench": {
+                f"{node_id}": latest_node.model_dump(mode="json", by_alias=True),
+            },
+        }
 
     updated_project_with_states = await add_project_states_for_user(
-        user_id=user_id, project=updated_project.model_dump(mode="json", by_alias=True), app=app
+        user_id=user_id,
+        project=project_for_notification,
+        app=app,
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
-    if {"inputs", "outputs"} & node_patch_exclude_unset.keys():
-        for node_uuid in updated_project_with_states["workbench"]:
-            await notify_project_node_update(app, updated_project_with_states, node_uuid)
+    if notify_all_nodes:
+        await notify_project_nodes_update(
+            app,
+            updated_project_with_states,
+            [NodeID(node_uuid) for node_uuid in updated_project_with_states["workbench"]],
+        )
         return
 
     await notify_project_node_update(app, updated_project_with_states, node_id)
@@ -2008,6 +2029,53 @@ async def _get_project_share_state(
     )
 
 
+async def _list_pipelines_latest_states_or_none(
+    app: web.Application,
+    project_ids: list[ProjectID],
+) -> list[ComputationRunStateRpcGet] | None:
+    try:
+        return await director_v2_service.list_pipelines_latest_states(
+            app,
+            project_ids=project_ids,
+        )
+    except DirectorV2PipelineStatesRetrievalError as exc:
+        _logger.warning("Getting latest computation states failed: %s", exc)
+        return None
+
+
+async def add_projects_states_for_user(
+    *,
+    user_id: UserID,
+    projects: list[ProjectDict],
+    app: web.Application,
+) -> list[ProjectDict]:
+    latest_states, project_share_states = await asyncio.gather(
+        _list_pipelines_latest_states_or_none(
+            app,
+            [ProjectID(project["uuid"]) for project in projects],
+        ),
+        limited_gather(
+            *[_get_project_share_state(user_id, project["uuid"], app) for project in projects],
+            limit=20,
+        ),
+    )
+    state_by_project = {item.project_uuid: item.state for item in latest_states} if latest_states is not None else None
+
+    for project, project_share_state in zip(projects, project_share_states, strict=True):
+        project_id = ProjectID(project["uuid"])
+        project_running_state = (
+            state_by_project.get(project_id, RunningState.NOT_STARTED)
+            if state_by_project is not None
+            else RunningState.UNKNOWN
+        )
+        project["state"] = ProjectState(
+            share_state=project_share_state,
+            state=ProjectRunningState(value=project_running_state),
+        ).model_dump(by_alias=True, exclude_unset=True)
+
+    return projects
+
+
 async def add_project_states_for_user(
     *,
     user_id: UserID,
@@ -2302,28 +2370,35 @@ async def remove_project_dynamic_services(
 _CONCURRENT_NOTIFICATIONS_LIMIT: Final[int] = 10
 
 
+async def _list_project_group_rooms_to_notify(
+    app: web.Application,
+    project_id: ProjectID,
+) -> list[GroupID]:
+    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        app, project_id=project_id
+    )
+    return [item.gid for item in project_group_get_list if item.read is True]
+
+
+async def _send_message_to_rooms(
+    app: web.Application,
+    rooms: Iterable[GroupID],
+    message: SocketMessageDict,
+) -> None:
+    await limited_gather(
+        *(socketio_service.send_message_to_standard_group(app, room, message) for room in rooms),
+        log=_logger,
+        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
+    )
+
+
 async def _send_message_to_project_groups(
     app: web.Application,
     project_id: ProjectID,
     message: SocketMessageDict,
 ) -> None:
-    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-        app, project_id=project_id
-    )
-    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
-
-    await limited_gather(
-        *(
-            socketio_service.send_message_to_standard_group(
-                app,
-                room,
-                message,
-            )
-            for room in rooms_to_notify
-        ),
-        log=_logger,
-        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
-    )
+    rooms_to_notify = await _list_project_group_rooms_to_notify(app, project_id)
+    await _send_message_to_rooms(app, rooms_to_notify, message)
 
 
 async def notify_project_state_update(
@@ -2355,26 +2430,36 @@ async def notify_project_state_update(
         await _send_message_to_project_groups(app, project["uuid"], message)
 
 
+async def notify_project_nodes_update(
+    app: web.Application,
+    project: dict,
+    node_ids: Iterable[NodeID],
+) -> None:
+    if await is_project_hidden(app, ProjectID(project["uuid"])):
+        return
+
+    rooms_to_notify = await _list_project_group_rooms_to_notify(app, ProjectID(project["uuid"]))
+    for node_id in node_ids:
+        data: dict = {
+            "project_id": project["uuid"],
+            "node_id": f"{node_id}",
+            "data": project["workbench"][f"{node_id}"],
+        }
+
+        message = SocketMessageDict(
+            event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+            data=data,
+        )
+
+        await _send_message_to_rooms(app, rooms_to_notify, message)
+
+
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
 ) -> None:
-    if await is_project_hidden(app, ProjectID(project["uuid"])):
-        return
-
-    data: dict = {
-        "project_id": project["uuid"],
-        "node_id": f"{node_id}",
-        "data": project["workbench"][f"{node_id}"],
-    }
-
-    message = SocketMessageDict(
-        event_type=SOCKET_IO_NODE_UPDATED_EVENT,
-        data=data,
-    )
-
-    await _send_message_to_project_groups(app, project["uuid"], message)
+    await notify_project_nodes_update(app, project, (node_id,))
 
 
 async def retrieve_and_notify_project_locked_state(

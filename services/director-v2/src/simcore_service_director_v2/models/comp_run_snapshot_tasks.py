@@ -16,12 +16,13 @@ from pydantic import (
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..utils.db import DB_TO_RUNNING_STATE
+from .comp_runs import Iteration, RunID
 from .comp_tasks import BaseCompTaskAtDB, Image
 
 
 class CompRunSnapshotTaskAtDBGet(BaseCompTaskAtDB):
     snapshot_task_id: PositiveInt
-    run_id: PositiveInt
+    run_id: RunID
 
     model_config = ConfigDict(
         extra="forbid",
@@ -40,7 +41,8 @@ class CompRunSnapshotTaskAtDBGet(BaseCompTaskAtDB):
                         "inputs": {
                             "input_1": {
                                 "label": "input_files",
-                                "description": "Any input files. One or serveral files compressed in a zip will be downloaded in an inputs folder.",
+                                "description": "Any input files. One or several files compressed "
+                                "in a zip will be downloaded in an inputs folder.",
                                 "type": "data:*/*",
                                 "displayOrder": 1.0,
                             }
@@ -63,7 +65,8 @@ class CompRunSnapshotTaskAtDBGet(BaseCompTaskAtDB):
                     "outputs": {
                         "output_1": {
                             "store": 0,
-                            "path": "341351c4-23d1-4366-95d0-bc01386001a7/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
+                            "path": "341351c4-23d1-4366-95d0-bc01386001a7"
+                            "/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
                         }
                     },
                     "image": image_example,
@@ -89,7 +92,7 @@ class CompRunSnapshotTaskAtDBGet(BaseCompTaskAtDB):
 
 
 class CompRunSnapshotTaskAtDBCreate(BaseCompTaskAtDB):
-    run_id: PositiveInt
+    run_id: RunID
 
 
 def _none_to_zero_float_pre_validator(value: Any):
@@ -100,7 +103,7 @@ def _none_to_zero_float_pre_validator(value: Any):
 
 class CompRunSnapshotTaskDBGet(BaseModel):
     snapshot_task_id: PositiveInt
-    run_id: PositiveInt
+    run_id: RunID
     project_uuid: ProjectID
     node_id: NodeID
     state: RunningState
@@ -108,14 +111,14 @@ class CompRunSnapshotTaskDBGet(BaseModel):
     image: dict[str, Any]
     started_at: datetime | None
     ended_at: datetime | None
-    iteration: PositiveInt
+    iteration: Iteration
 
     @field_validator("state", mode="before")
     @classmethod
     def convert_result_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
             # try to convert to a StateType, if it fails the validations will continue
-            # and pydantic will try to convert it to a RunninState later on
+            # and pydantic will try to convert it to a RunningState later on
             with suppress(ValueError):
                 v = StateType(v)
         if isinstance(v, StateType):

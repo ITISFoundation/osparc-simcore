@@ -67,6 +67,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     app: web.Application,
     *,
     db_projects: list[ProjectDict],
+    include_states: bool,
     user_id: UserID,
 ) -> list[ProjectDict]:
     """
@@ -85,14 +86,13 @@ async def _aggregate_data_to_projects_from_other_sources(
         projects_uuids_with_workspace_id=[(p["uuid"], p["workspaceId"]) for p in db_projects],
     )
 
-    # updating `project.state`
-    update_state_per_project = [
-        _projects_service.add_project_states_for_user(user_id=user_id, project=prj, app=app) for prj in db_projects
-    ]
-
-    updated_projects: list[ProjectDict] = await _parallel_update(
-        *update_state_per_project,
-    )
+    updated_projects = db_projects
+    if include_states:
+        updated_projects = await _projects_service.add_projects_states_for_user(
+            app=app,
+            projects=db_projects,
+            user_id=user_id,
+        )
 
     for project in updated_projects:
         project["accessRights"] = project_to_access_rights[f"{project['uuid']}"]
@@ -125,6 +125,7 @@ async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     user_id: UserID,
     product_name: str,
     *,
+    include_states: bool = True,
     # hierarchy filter
     workspace_id: WorkspaceID | None,
     folder_id: FolderID | None,
@@ -200,11 +201,14 @@ async def list_projects(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
     api_projects = await _legacy_convert_db_projects_to_api_projects(app, db, db_projects)
 
-    final_projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=api_projects, user_id=user_id
+    api_projects = await _aggregate_data_to_projects_from_other_sources(
+        app,
+        db_projects=api_projects,
+        include_states=include_states,
+        user_id=user_id,
     )
 
-    return final_projects, total_number_projects
+    return api_projects, total_number_projects
 
 
 async def list_projects_full_depth(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -249,7 +253,10 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments  # noq
     api_projects = await _legacy_convert_db_projects_to_api_projects(app, db, db_projects)
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=api_projects, user_id=user_id
+        app,
+        db_projects=api_projects,
+        include_states=True,
+        user_id=user_id,
     )
 
     return final_projects, total_number_projects

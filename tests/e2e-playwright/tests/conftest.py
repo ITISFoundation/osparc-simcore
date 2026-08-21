@@ -193,7 +193,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         diagnostics = {
             "test_name": test_name,
             "test_location": test_location,
-            "product_url": product_url,
+            "product_url": f"{product_url}" if product_url is not None else None,
             "is_billable": is_billable,
         }
 
@@ -415,15 +415,16 @@ def log_in_and_out(
         assert response
         assert response.ok, response.body()
 
-    # In case the accept cookies or new release window shows up, we accept
-    page.wait_for_timeout(2000)
-    acceptCookiesBtnLocator = page.get_by_test_id("acceptCookiesBtn")
-    if acceptCookiesBtnLocator.is_visible():
-        acceptCookiesBtnLocator.click()
-        page.wait_for_timeout(1000)
-        newReleaseCloseBtnLocator = page.get_by_test_id("newReleaseCloseBtn")
-        if newReleaseCloseBtnLocator.is_visible():
-            newReleaseCloseBtnLocator.click()
+    # The cookie-consent banner and the "new release" popup can appear at
+    # unpredictable times (often a moment after page load)
+    page.add_locator_handler(
+        page.get_by_test_id("acceptCookiesBtn"),
+        lambda locator: locator.click(),
+    )
+    page.add_locator_handler(
+        page.get_by_test_id("newReleaseCloseBtn"),
+        lambda locator: locator.click(),
+    )
 
     with (
         log_context(
@@ -811,7 +812,8 @@ def start_and_stop_pipeline(
     def _do() -> SocketIOEvent:
         with log_context(
             logging.INFO,
-            f"Start computation in {product_url=}...",
+            f"Start computation in {product_url=} "
+            f"(timeout: {datetime.timedelta(milliseconds=_OUTER_CONTEXT_TIMEOUT_MS)})...",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=(

@@ -86,8 +86,7 @@ def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None: ...
 
 @pytest.fixture
 def user_db(create_registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
-    user = create_registered_user()
-    return user
+    return create_registered_user()
 
 
 @pytest.fixture
@@ -111,6 +110,21 @@ def node_uuid(faker: Faker) -> str:
 
 
 @pytest.fixture
+def granted_service_access_rights(
+    user_db: dict[str, Any],
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    osparc_product_name: str,
+    grant_service_access_rights: Callable[..., dict[str, Any]],
+) -> None:
+    grant_service_access_rights(
+        group_id=user_db["primary_gid"],
+        service_key=dy_static_file_server_dynamic_sidecar_service["image"]["name"],
+        service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
+        product_name=osparc_product_name,
+    )
+
+
+@pytest.fixture
 def start_request_data(
     user_id: UserID,
     project_id: ProjectID,
@@ -120,6 +134,7 @@ def start_request_data(
     ensure_swarm_and_networks: None,
     osparc_product_name: str,
     osparc_product_api_base_url: str,
+    granted_service_access_rights: None,
 ) -> dict[str, Any]:
     return {
         "user_id": user_id,
@@ -216,9 +231,10 @@ async def ensure_services_stopped(
                     delete_result = await docker_client.services.delete(service_name)
                     assert delete_result is True
                 except aiodocker.exceptions.DockerError as e:
-                    assert e.status == 404, f"Unexpected error when deleting service: {e}"
+                    assert e.status == 404, f"Unexpected error when deleting service: {e}"  # noqa: PT017
 
-        scheduler_interval = director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
+        settings = director_v2_client.application.state.settings
+        scheduler_interval = settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval.total_seconds())
 
@@ -260,7 +276,7 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         mocker.patch(
             f"{class_path}.{function_name}",
             # pylint: disable=cell-var-from-loop
-            side_effect=lambda *args, **kwargs: return_value,
+            side_effect=lambda *args, **kwargs: return_value,  # noqa: ARG005, B023
         )
 
     # also patch the long_running_tasks client context mangers handling the above

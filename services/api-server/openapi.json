@@ -12,7 +12,7 @@
           "meta"
         ],
         "summary": "Get Service Metadata",
-        "operationId": "get_service_metadata",
+        "operationId": "get_service_metadata_v0_meta_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -33,7 +33,7 @@
           "users"
         ],
         "summary": "Get My Profile",
-        "operationId": "get_my_profile",
+        "operationId": "get_my_profile_v0_me_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -117,7 +117,7 @@
           "users"
         ],
         "summary": "Update My Profile",
-        "operationId": "update_my_profile",
+        "operationId": "update_my_profile_v0_me_put",
         "requestBody": {
           "content": {
             "application/json": {
@@ -212,7 +212,9 @@
         },
         "security": [
           {
-            "HTTPBasic": []
+            "HTTPBasic": [
+              "write"
+            ]
           }
         ]
       }
@@ -224,7 +226,7 @@
         ],
         "summary": "List Files",
         "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/files/page` instead.\n\n\n\nLists all files stored in the system\n\nAdded in *version 0.5*: \n\nRemoved in *version 0.7*: This endpoint is deprecated and will be removed in a future version",
-        "operationId": "list_files",
+        "operationId": "list_files_v0_files_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -315,7 +317,7 @@
         ],
         "summary": "Upload File",
         "description": "Uploads a single file to the system",
-        "operationId": "upload_file",
+        "operationId": "upload_file_v0_files_content_put",
         "security": [
           {
             "HTTPBasic": []
@@ -438,7 +440,7 @@
         ],
         "summary": "Get Upload Links",
         "description": "Get upload links for uploading a file to storage",
-        "operationId": "get_upload_links",
+        "operationId": "get_upload_links_v0_files_content_post",
         "security": [
           {
             "HTTPBasic": []
@@ -553,7 +555,7 @@
         ],
         "summary": "Get File",
         "description": "Gets metadata for a given file resource",
-        "operationId": "get_file",
+        "operationId": "get_file_v0_files__file_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -659,7 +661,7 @@
           "files"
         ],
         "summary": "Delete File",
-        "operationId": "delete_file",
+        "operationId": "delete_file_v0_files__file_id__delete",
         "security": [
           {
             "HTTPBasic": []
@@ -766,7 +768,7 @@
         ],
         "summary": "Search Files Page",
         "description": "Search files",
-        "operationId": "search_files_page",
+        "operationId": "search_files_page_v0_files_search_get",
         "security": [
           {
             "HTTPBasic": []
@@ -921,7 +923,7 @@
           "files"
         ],
         "summary": "Abort Multipart Upload",
-        "operationId": "abort_multipart_upload",
+        "operationId": "abort_multipart_upload_v0_files__file_id__abort_post",
         "security": [
           {
             "HTTPBasic": []
@@ -1027,7 +1029,7 @@
           "files"
         ],
         "summary": "Complete Multipart Upload",
-        "operationId": "complete_multipart_upload",
+        "operationId": "complete_multipart_upload_v0_files__file_id__complete_post",
         "security": [
           {
             "HTTPBasic": []
@@ -1145,7 +1147,7 @@
           "files"
         ],
         "summary": "Download File",
-        "operationId": "download_file",
+        "operationId": "download_file_v0_files__file_id__content_get",
         "security": [
           {
             "HTTPBasic": []
@@ -1263,7 +1265,7 @@
         ],
         "summary": "List Programs",
         "description": "Lists the latest of all available programs\n\nNew in *version 0.10*",
-        "operationId": "list_programs",
+        "operationId": "list_programs_v0_programs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -1325,7 +1327,7 @@
         ],
         "summary": "List Program History",
         "description": "Lists the latest of all available programs\n\nNew in *version 0.10*",
-        "operationId": "list_program_history",
+        "operationId": "list_program_history_v0_programs__program_key__releases_get",
         "security": [
           {
             "HTTPBasic": []
@@ -1397,7 +1399,7 @@
         ],
         "summary": "Get Program Release",
         "description": "Gets a specific release of a solver",
-        "operationId": "get_program_release",
+        "operationId": "get_program_release_v0_programs__program_key__releases__version__get",
         "security": [
           {
             "HTTPBasic": []
@@ -1456,7 +1458,7 @@
         ],
         "summary": "Create Program Job",
         "description": "Creates a program job",
-        "operationId": "create_program_job",
+        "operationId": "create_program_job_v0_programs__program_key__releases__version__jobs_post",
         "security": [
           {
             "HTTPBasic": []
@@ -1558,7 +1560,7 @@
         ],
         "summary": "List Solvers",
         "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5*",
-        "operationId": "list_solvers",
+        "operationId": "list_solvers_v0_solvers_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1649,7 +1651,7 @@
         ],
         "summary": "List All Solvers Paginated",
         "description": "Lists all available solvers (paginated)\n\nNew in *version 0.10-rc1*",
-        "operationId": "list_all_solvers_paginated",
+        "operationId": "list_all_solvers_paginated_v0_solvers_page_get",
         "security": [
           {
             "HTTPBasic": []
@@ -1749,7 +1751,7 @@
         ],
         "summary": "Lists All Releases",
         "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/{solver_key}/releases/page` instead.\n\n\n\nLists **all** released solvers (not just latest version)\n\nNew in *version 0.5*",
-        "operationId": "list_solvers_releases",
+        "operationId": "list_solvers_releases_v0_solvers_releases_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1840,7 +1842,7 @@
         ],
         "summary": "Get Solver",
         "description": "Gets latest release of a solver\n\nAdded in *version 0.7.1*: `version_display` field in the response",
-        "operationId": "get_solver",
+        "operationId": "get_solver_v0_solvers__solver_key__latest_get",
         "security": [
           {
             "HTTPBasic": []
@@ -1949,7 +1951,7 @@
         ],
         "summary": "List Solver Releases",
         "description": "Lists all releases of a given (one) solver\n\nAdded in *version 0.7.1*: `version_display` field in the response",
-        "operationId": "list_solver_releases",
+        "operationId": "list_solver_releases_v0_solvers__solver_key__releases_get",
         "security": [
           {
             "HTTPBasic": []
@@ -2062,7 +2064,7 @@
         ],
         "summary": "List Solver Releases Paginated",
         "description": "Lists all releases of a give solver (paginated)\n\nNew in *version 0.10-rc1*",
-        "operationId": "list_solver_releases_paginated",
+        "operationId": "list_solver_releases_paginated_v0_solvers__solver_key__releases_page_get",
         "security": [
           {
             "HTTPBasic": []
@@ -2134,7 +2136,7 @@
         ],
         "summary": "Get Solver Release",
         "description": "Gets a specific release of a solver\n\nAdded in *version 0.7.1*: `version_display` field in the response",
-        "operationId": "get_solver_release",
+        "operationId": "get_solver_release_v0_solvers__solver_key__releases__version__get",
         "security": [
           {
             "HTTPBasic": []
@@ -2253,7 +2255,7 @@
         ],
         "summary": "List Solver Ports",
         "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
-        "operationId": "list_solver_ports",
+        "operationId": "list_solver_ports_v0_solvers__solver_key__releases__version__ports_get",
         "security": [
           {
             "HTTPBasic": []
@@ -2372,7 +2374,7 @@
         ],
         "summary": "Get Solver Pricing Plan",
         "description": "Gets solver pricing plan\n\nNew in *version 0.7*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
-        "operationId": "get_solver_pricing_plan",
+        "operationId": "get_solver_pricing_plan_v0_solvers__solver_key__releases__version__pricing_plan_get",
         "security": [
           {
             "HTTPBasic": []
@@ -2491,7 +2493,7 @@
         ],
         "summary": "Create Solver Job",
         "description": "Creates a job in a specific release with given inputs. This operation does not start the job.\n\nNew in *version 0.5*",
-        "operationId": "create_solver_job",
+        "operationId": "create_solver_job_v0_solvers__solver_key__releases__version__jobs_post",
         "security": [
           {
             "HTTPBasic": []
@@ -2672,7 +2674,7 @@
         ],
         "summary": "List Jobs",
         "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /{solver_key}/releases/{version}/jobs/page` instead.\n\n\n\nList of jobs in a specific released solver (limited to 20 jobs)\n\nNew in *version 0.5*\n\nRemoved in *version 0.7*: This endpoint is deprecated and will be removed in a future version",
-        "operationId": "list_jobs",
+        "operationId": "list_jobs_v0_solvers__solver_key__releases__version__jobs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -2805,7 +2807,7 @@
         ],
         "summary": "Delete Job",
         "description": "Deletes an existing solver job\n\nNew in *version 0.7*",
-        "operationId": "delete_job",
+        "operationId": "delete_job_v0_solvers__solver_key__releases__version__jobs__job_id__delete",
         "security": [
           {
             "HTTPBasic": []
@@ -2837,7 +2839,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -2933,7 +2937,7 @@
         ],
         "summary": "Get Job",
         "description": "Gets job of a given solver",
-        "operationId": "get_job",
+        "operationId": "get_job_v0_solvers__solver_key__releases__version__jobs__job_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -2965,7 +2969,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -3070,7 +3076,7 @@
         ],
         "summary": "Delete Job Assets",
         "description": "Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable\n\nNew in *version 0.12*",
-        "operationId": "delete_job_assets",
+        "operationId": "delete_job_assets_v0_solvers__solver_key__releases__version__jobs__job_id__assets_delete",
         "security": [
           {
             "HTTPBasic": []
@@ -3102,7 +3108,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -3203,7 +3211,7 @@
         ],
         "summary": "Start Job",
         "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\n\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation\n\nChanged in *version 0.7*: query parameter `cluster_id` deprecated",
-        "operationId": "start_job",
+        "operationId": "start_job_v0_solvers__solver_key__releases__version__jobs__job_id__start_post",
         "security": [
           {
             "HTTPBasic": []
@@ -3235,7 +3243,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           },
           {
@@ -3405,7 +3415,7 @@
         ],
         "summary": "Stop Job",
         "description": "Stops a running job\n\nNew in *version 0.5*",
-        "operationId": "stop_job",
+        "operationId": "stop_job_v0_solvers__solver_key__releases__version__jobs__job_id__stop_post",
         "security": [
           {
             "HTTPBasic": []
@@ -3437,7 +3447,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -3542,7 +3554,7 @@
         ],
         "summary": "Inspect Job",
         "description": "Inspects the current status of a job\n\nNew in *version 0.5*",
-        "operationId": "inspect_job",
+        "operationId": "inspect_job_v0_solvers__solver_key__releases__version__jobs__job_id__inspect_post",
         "security": [
           {
             "HTTPBasic": []
@@ -3574,7 +3586,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -3679,7 +3693,7 @@
         ],
         "summary": "Replace Job Custom Metadata",
         "description": "Updates custom metadata from a job\n\nNew in *version 0.7*",
-        "operationId": "replace_job_custom_metadata",
+        "operationId": "replace_job_custom_metadata_v0_solvers__solver_key__releases__version__jobs__job_id__metadata_patch",
         "security": [
           {
             "HTTPBasic": []
@@ -3711,7 +3725,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -3814,7 +3830,7 @@
         ],
         "summary": "Get Job Custom Metadata",
         "description": "Gets custom metadata from a job\n\nNew in *version 0.7*",
-        "operationId": "get_job_custom_metadata",
+        "operationId": "get_job_custom_metadata_v0_solvers__solver_key__releases__version__jobs__job_id__metadata_get",
         "security": [
           {
             "HTTPBasic": []
@@ -3846,7 +3862,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -3941,7 +3959,7 @@
         ],
         "summary": "List All Solvers Jobs",
         "description": "List of all jobs created for any released solver (paginated)\n\nNew in *version 0.10-rc1*",
-        "operationId": "list_all_solvers_jobs",
+        "operationId": "list_all_solvers_jobs_v0_solvers___releases___jobs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -4045,7 +4063,7 @@
         ],
         "summary": "Batch Get Jobs Custom Metadata",
         "description": "Gets custom metadata for multiple jobs in a single request\n\nNew in *version 0.7*",
-        "operationId": "batch_get_jobs_custom_metadata",
+        "operationId": "batch_get_jobs_custom_metadata_v0_solvers___releases___jobs_metadata_batchGet_get",
         "security": [
           {
             "HTTPBasic": []
@@ -4158,7 +4176,7 @@
         ],
         "summary": "List Jobs Paginated",
         "description": "List of jobs on a specific released solver (includes pagination)\n\nNew in *version 0.7*",
-        "operationId": "list_jobs_paginated",
+        "operationId": "get_jobs_page",
         "security": [
           {
             "HTTPBasic": []
@@ -4309,7 +4327,7 @@
           "solvers"
         ],
         "summary": "Get Job Outputs",
-        "operationId": "get_job_outputs",
+        "operationId": "get_job_outputs_v0_solvers__solver_key__releases__version__jobs__job_id__outputs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -4341,7 +4359,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -4456,7 +4476,7 @@
         ],
         "summary": "Get Job Output Logfile",
         "description": "Special extra output with persistent logs file for the solver run.\n\n**NOTE**: this is not a log stream but a predefined output that is only\navailable after the job is done\n\nNew in *version 0.4*",
-        "operationId": "get_job_output_logfile",
+        "operationId": "get_job_output_logfile_v0_solvers__solver_key__releases__version__jobs__job_id__outputs_logfile_get",
         "security": [
           {
             "HTTPBasic": []
@@ -4488,7 +4508,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -4591,7 +4613,7 @@
         ],
         "summary": "Get Job Wallet",
         "description": "Get job wallet\n\nNew in *version 0.7*",
-        "operationId": "get_job_wallet",
+        "operationId": "get_job_wallet_v0_solvers__solver_key__releases__version__jobs__job_id__wallet_get",
         "security": [
           {
             "HTTPBasic": []
@@ -4623,7 +4645,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -4728,7 +4752,7 @@
         ],
         "summary": "Get Job Pricing Unit",
         "description": "Get job pricing unit\n\nNew in *version 0.7*",
-        "operationId": "get_job_pricing_unit",
+        "operationId": "get_job_pricing_unit_v0_solvers__solver_key__releases__version__jobs__job_id__pricing_unit_get",
         "security": [
           {
             "HTTPBasic": []
@@ -4760,7 +4784,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -4854,7 +4880,7 @@
           "solvers"
         ],
         "summary": "Get Log Stream",
-        "operationId": "get_log_stream",
+        "operationId": "get_log_stream_v0_solvers__solver_key__releases__version__jobs__job_id__logstream_get",
         "security": [
           {
             "HTTPBasic": []
@@ -4886,7 +4912,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -4990,7 +5018,7 @@
         ],
         "summary": "List Studies",
         "description": "List all studies\n\nNew in *version 0.5*",
-        "operationId": "list_studies",
+        "operationId": "list_studies_v0_studies_get",
         "security": [
           {
             "HTTPBasic": []
@@ -5052,7 +5080,7 @@
         ],
         "summary": "Get Study",
         "description": "Get study by ID\n\nNew in *version 0.5*",
-        "operationId": "get_study",
+        "operationId": "get_study_v0_studies__study_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -5110,7 +5138,7 @@
           "studies"
         ],
         "summary": "Clone Study",
-        "operationId": "clone_study",
+        "operationId": "clone_study_v0_studies__study_id__clone_post",
         "security": [
           {
             "HTTPBasic": []
@@ -5222,7 +5250,7 @@
         ],
         "summary": "List Study Ports",
         "description": "Lists metadata on ports of a given study\n\nNew in *version 0.5*",
-        "operationId": "list_study_ports",
+        "operationId": "list_study_ports_v0_studies__study_id__ports_get",
         "security": [
           {
             "HTTPBasic": []
@@ -5281,7 +5309,7 @@
         ],
         "summary": "List Study Jobs",
         "description": "List of all jobs created for a given study (paginated)\n\nNew in *version 0.10-rc1*",
-        "operationId": "list_study_jobs",
+        "operationId": "list_study_jobs_v0_studies__study_id__jobs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -5351,7 +5379,7 @@
         ],
         "summary": "Create Study Job",
         "description": "hidden -- if True (default) hides project from UI",
-        "operationId": "create_study_job",
+        "operationId": "create_study_job_v0_studies__study_id__jobs_post",
         "security": [
           {
             "HTTPBasic": []
@@ -5454,7 +5482,7 @@
         ],
         "summary": "Get Study Job",
         "description": "Gets a jobs for a given study\n\nNew in *version 0.10-rc1*",
-        "operationId": "get_study_job",
+        "operationId": "get_study_job_v0_studies__study_id__jobs__job_id__get",
         "parameters": [
           {
             "name": "study_id",
@@ -5471,7 +5499,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -5504,7 +5534,7 @@
         ],
         "summary": "Delete Study Job",
         "description": "Deletes an existing study job",
-        "operationId": "delete_study_job",
+        "operationId": "delete_study_job_v0_studies__study_id__jobs__job_id__delete",
         "security": [
           {
             "HTTPBasic": []
@@ -5526,7 +5556,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -5564,7 +5596,7 @@
         ],
         "summary": "Start Study Job",
         "description": "Changed in *version 0.6*: Now responds with a 202 when successfully starting a computation",
-        "operationId": "start_study_job",
+        "operationId": "start_study_job_v0_studies__study_id__jobs__job_id__start_post",
         "security": [
           {
             "HTTPBasic": []
@@ -5586,7 +5618,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           },
           {
@@ -5730,7 +5764,7 @@
           "studies"
         ],
         "summary": "Stop Study Job",
-        "operationId": "stop_study_job",
+        "operationId": "stop_study_job_v0_studies__study_id__jobs__job_id__stop_post",
         "security": [
           {
             "HTTPBasic": []
@@ -5752,7 +5786,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -5786,7 +5822,7 @@
           "studies"
         ],
         "summary": "Inspect Study Job",
-        "operationId": "inspect_study_job",
+        "operationId": "inspect_study_job_v0_studies__study_id__jobs__job_id__inspect_post",
         "security": [
           {
             "HTTPBasic": []
@@ -5808,7 +5844,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -5842,7 +5880,7 @@
           "studies"
         ],
         "summary": "Get Study Job Outputs",
-        "operationId": "get_study_job_outputs",
+        "operationId": "get_study_job_outputs_v0_studies__study_id__jobs__job_id__outputs_post",
         "security": [
           {
             "HTTPBasic": []
@@ -5864,7 +5902,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -5898,7 +5938,7 @@
           "studies"
         ],
         "summary": "Get download links for study job log files",
-        "operationId": "get_study_job_output_logfile",
+        "operationId": "get_study_job_output_logfile_v0_studies__study_id__jobs__job_id__outputs_log_links_get",
         "security": [
           {
             "HTTPBasic": []
@@ -5920,7 +5960,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -5955,7 +5997,7 @@
         ],
         "summary": "Get Study Job Custom Metadata",
         "description": "Get custom metadata from a study's job\n\nNew in *version 0.7*",
-        "operationId": "get_study_job_custom_metadata",
+        "operationId": "get_study_job_custom_metadata_v0_studies__study_id__jobs__job_id__metadata_get",
         "security": [
           {
             "HTTPBasic": []
@@ -5977,7 +6019,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -6010,7 +6054,7 @@
         ],
         "summary": "Replace Study Job Custom Metadata",
         "description": "Changes custom metadata of a study's job\n\nNew in *version 0.7*",
-        "operationId": "replace_study_job_custom_metadata",
+        "operationId": "replace_study_job_custom_metadata_v0_studies__study_id__jobs__job_id__metadata_put",
         "security": [
           {
             "HTTPBasic": []
@@ -6032,7 +6076,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/JobID"
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
             }
           }
         ],
@@ -6077,7 +6123,7 @@
         ],
         "summary": "List Function Jobs",
         "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`\n\nAdded in *version 0.13.0*: add include_status bool query parameter to list function jobs with their status",
-        "operationId": "list_function_jobs",
+        "operationId": "list_function_jobs_v0_function_jobs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -6209,7 +6255,7 @@
         ],
         "summary": "Register Function Job",
         "description": "Create function job\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "register_function_job",
+        "operationId": "register_function_job_v0_function_jobs_post",
         "security": [
           {
             "HTTPBasic": []
@@ -6294,7 +6340,7 @@
         ],
         "summary": "Get Function Job",
         "description": "Get function job\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "get_function_job",
+        "operationId": "get_function_job_v0_function_jobs__function_job_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -6370,7 +6416,7 @@
         ],
         "summary": "Delete Function Job",
         "description": "Delete function job\n\nNew in *version 0.8.0*",
-        "operationId": "delete_function_job",
+        "operationId": "delete_function_job_v0_function_jobs__function_job_id__delete",
         "security": [
           {
             "HTTPBasic": []
@@ -6427,7 +6473,7 @@
         ],
         "summary": "Function Job Status",
         "description": "Get function job status\n\nNew in *version 0.8.0*",
-        "operationId": "function_job_status",
+        "operationId": "function_job_status_v0_function_jobs__function_job_id__status_get",
         "security": [
           {
             "HTTPBasic": []
@@ -6486,7 +6532,7 @@
         ],
         "summary": "Function Job Outputs",
         "description": "Get function job outputs\n\nNew in *version 0.8.0*",
-        "operationId": "function_job_outputs",
+        "operationId": "function_job_outputs_v0_function_jobs__function_job_id__outputs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -6554,7 +6600,7 @@
         ],
         "summary": "Get Function Job Logs Task",
         "description": "Get function job logs task\n\nNew in *version 0.11.0*",
-        "operationId": "get_function_job_logs_task",
+        "operationId": "get_function_job_logs_task_v0_function_jobs__function_job_id__log_post",
         "security": [
           {
             "HTTPBasic": []
@@ -6613,7 +6659,7 @@
         ],
         "summary": "List Function Job Collections",
         "description": "List function job collections\n\nNew in *version 0.8.0*",
-        "operationId": "list_function_job_collections",
+        "operationId": "list_function_job_collections_v0_function_job_collections_get",
         "security": [
           {
             "HTTPBasic": []
@@ -6690,7 +6736,7 @@
         ],
         "summary": "Register Function Job Collection",
         "description": "Register function job collection\n\nNew in *version 0.8.0*",
-        "operationId": "register_function_job_collection",
+        "operationId": "register_function_job_collection_v0_function_job_collections_post",
         "security": [
           {
             "HTTPBasic": []
@@ -6737,7 +6783,7 @@
         ],
         "summary": "Get Function Job Collection",
         "description": "Get function job collection\n\nNew in *version 0.8.0*",
-        "operationId": "get_function_job_collection",
+        "operationId": "get_function_job_collection_v0_function_job_collections__function_job_collection_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -6794,7 +6840,7 @@
         ],
         "summary": "Delete Function Job Collection",
         "description": "Delete function job collection\n\nNew in *version 0.8.0*",
-        "operationId": "delete_function_job_collection",
+        "operationId": "delete_function_job_collection_v0_function_job_collections__function_job_collection_id__delete",
         "security": [
           {
             "HTTPBasic": []
@@ -6851,7 +6897,7 @@
         ],
         "summary": "Function Job Collection List Function Jobs",
         "description": "Get the function jobs in function job collection\n\nNew in *version 0.8.0*",
-        "operationId": "function_job_collection_list_function_jobs",
+        "operationId": "function_job_collection_list_function_jobs_v0_function_job_collections__function_job_collection_id__function_jobs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -6932,7 +6978,7 @@
         ],
         "summary": "Function Job Collection List Function Jobs Page",
         "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
-        "operationId": "function_job_collection_list_function_jobs_page",
+        "operationId": "function_job_collection_list_function_jobs_page_v0_function_job_collections__function_job_collection_id__function_jobs_page_get",
         "security": [
           {
             "HTTPBasic": []
@@ -7014,7 +7060,7 @@
         ],
         "summary": "Function Job Collection List Function Jobs List",
         "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
-        "operationId": "function_job_collection_list_function_jobs_list",
+        "operationId": "function_job_collection_list_function_jobs_list_v0_function_job_collections__function_job_collection_id__function_jobs_list_get",
         "security": [
           {
             "HTTPBasic": []
@@ -7095,7 +7141,7 @@
         ],
         "summary": "Function Job Collection Status",
         "description": "Get function job collection status\n\nNew in *version 0.8.0*",
-        "operationId": "function_job_collection_status",
+        "operationId": "function_job_collection_status_v0_function_job_collections__function_job_collection_id__status_get",
         "security": [
           {
             "HTTPBasic": []
@@ -7154,7 +7200,7 @@
         ],
         "summary": "Get Default Wallet",
         "description": "Get default wallet\n\nNew in *version 0.7*",
-        "operationId": "get_default_wallet",
+        "operationId": "get_default_wallet_v0_wallets_default_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -7251,7 +7297,7 @@
         ],
         "summary": "Get Wallet",
         "description": "Get wallet\n\nNew in *version 0.7*",
-        "operationId": "get_wallet",
+        "operationId": "get_wallet_v0_wallets__wallet_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -7368,7 +7414,7 @@
         ],
         "summary": "Get Available Licensed Items For Wallet",
         "description": "Get all available licensed items for a given wallet\n\nNew in *version 0.6*",
-        "operationId": "get_available_licensed_items_for_wallet",
+        "operationId": "get_available_licensed_items_for_wallet_v0_wallets__wallet_id__licensed_items_get",
         "security": [
           {
             "HTTPBasic": []
@@ -7508,7 +7554,7 @@
         ],
         "summary": "Checkout Licensed Item",
         "description": "Checkout licensed item",
-        "operationId": "checkout_licensed_item",
+        "operationId": "checkout_licensed_item_v0_wallets__wallet_id__licensed_items__licensed_item_id__checkout_post",
         "security": [
           {
             "HTTPBasic": []
@@ -7645,7 +7691,7 @@
         ],
         "summary": "Get Credits Price",
         "description": "New in *version 0.6*",
-        "operationId": "get_credits_price",
+        "operationId": "get_credits_price_v0_credits_price_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -7672,7 +7718,7 @@
         ],
         "summary": "Get Licensed Items",
         "description": "Get all licensed items",
-        "operationId": "get_licensed_items",
+        "operationId": "get_licensed_items_v0_licensed_items_get",
         "security": [
           {
             "HTTPBasic": []
@@ -7784,7 +7830,7 @@
         ],
         "summary": "Release Licensed Item",
         "description": "Release previously checked out licensed item",
-        "operationId": "release_licensed_item",
+        "operationId": "release_licensed_item_v0_licensed_items__licensed_item_id__checked_out_items__licensed_item_checkout_id__release_post",
         "security": [
           {
             "HTTPBasic": []
@@ -7893,7 +7939,7 @@
         ],
         "summary": "Register Function",
         "description": "Create function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "register_function",
+        "operationId": "register_function_v0_functions_post",
         "security": [
           {
             "HTTPBasic": []
@@ -7986,7 +8032,7 @@
         ],
         "summary": "List Functions",
         "description": "List functions\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "list_functions",
+        "operationId": "list_functions_v0_functions_get",
         "security": [
           {
             "HTTPBasic": []
@@ -8048,7 +8094,7 @@
         ],
         "summary": "Get Function",
         "description": "Get function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "get_function",
+        "operationId": "get_function_v0_functions__function_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -8124,7 +8170,7 @@
         ],
         "summary": "Delete Function",
         "description": "Delete function\n\nNew in *version 0.8.0*",
-        "operationId": "delete_function",
+        "operationId": "delete_function_v0_functions__function_id__delete",
         "security": [
           {
             "HTTPBasic": []
@@ -8181,7 +8227,7 @@
         ],
         "summary": "List Function Jobs For Functionid",
         "description": "List function jobs for a function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "list_function_jobs_for_functionid",
+        "operationId": "list_function_jobs_for_functionid_v0_functions__function_id__jobs_get",
         "security": [
           {
             "HTTPBasic": []
@@ -8253,7 +8299,7 @@
         ],
         "summary": "Update Function Title",
         "description": "Update function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "update_function_title",
+        "operationId": "update_function_title_v0_functions__function_id__title_patch",
         "security": [
           {
             "HTTPBasic": []
@@ -8340,7 +8386,7 @@
         ],
         "summary": "Update Function Description",
         "description": "Update function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "update_function_description",
+        "operationId": "update_function_description_v0_functions__function_id__description_patch",
         "security": [
           {
             "HTTPBasic": []
@@ -8427,7 +8473,7 @@
         ],
         "summary": "Get Function Inputschema",
         "description": "Get function input schema\n\nNew in *version 0.8.0*",
-        "operationId": "get_function_inputschema",
+        "operationId": "get_function_inputschema_v0_functions__function_id__input_schema_get",
         "security": [
           {
             "HTTPBasic": []
@@ -8497,7 +8543,7 @@
         ],
         "summary": "Get Function Outputschema",
         "description": "Get function output schema\n\nNew in *version 0.8.0*",
-        "operationId": "get_function_outputschema",
+        "operationId": "get_function_outputschema_v0_functions__function_id__output_schema_get",
         "security": [
           {
             "HTTPBasic": []
@@ -8567,7 +8613,7 @@
         ],
         "summary": "Validate Function Inputs",
         "description": "Validate inputs against the function's input schema\n\nNew in *version 0.8.0*",
-        "operationId": "validate_function_inputs",
+        "operationId": "validate_function_inputs_v0_functions__function_id__validate_inputs_post",
         "security": [
           {
             "HTTPBasic": []
@@ -8652,7 +8698,7 @@
         ],
         "summary": "Run Function",
         "description": "Run function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "run_function",
+        "operationId": "run_function_v0_functions__function_id__run_post",
         "security": [
           {
             "HTTPBasic": []
@@ -8785,7 +8831,7 @@
         ],
         "summary": "Map Function",
         "description": "Map function over input parameters\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
-        "operationId": "map_function",
+        "operationId": "map_function_v0_functions__function_id__map_post",
         "security": [
           {
             "HTTPBasic": []
@@ -8903,7 +8949,7 @@
         ],
         "summary": "Create Response",
         "description": "Creates a model response (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*",
-        "operationId": "create_response",
+        "operationId": "create_response_v0_responses_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -8961,7 +9007,7 @@
         ],
         "summary": "Get Response",
         "description": "Retrieves a model response by ID. Use to poll status of background responses (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*",
-        "operationId": "get_response",
+        "operationId": "get_response_v0_responses__response_id__get",
         "security": [
           {
             "HTTPBasic": []
@@ -9020,7 +9066,7 @@
         ],
         "summary": "List Tasks",
         "description": "List all tasks\n\nNew in *version 0.10-rc1*",
-        "operationId": "list_tasks",
+        "operationId": "list_tasks_v0_tasks_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -9057,7 +9103,7 @@
         ],
         "summary": "Get Task Status",
         "description": "Get task status\n\nNew in *version 0.10-rc1*",
-        "operationId": "get_task_status",
+        "operationId": "get_task_status_v0_tasks__task_uuid__get",
         "security": [
           {
             "HTTPBasic": []
@@ -9069,7 +9115,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/AsyncJobId"
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Uuid"
             }
           }
         ],
@@ -9114,7 +9162,7 @@
         ],
         "summary": "Cancel Task",
         "description": "Cancel task\n\nNew in *version 0.10-rc1*",
-        "operationId": "cancel_task",
+        "operationId": "cancel_task_v0_tasks__task_uuid__cancel_post",
         "security": [
           {
             "HTTPBasic": []
@@ -9126,7 +9174,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/AsyncJobId"
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Uuid"
             }
           }
         ],
@@ -9164,7 +9214,7 @@
         ],
         "summary": "Get Task Result",
         "description": "Get task result\n\nNew in *version 0.10-rc1*",
-        "operationId": "get_task_result",
+        "operationId": "get_task_result_v0_tasks__task_uuid__result_get",
         "security": [
           {
             "HTTPBasic": []
@@ -9176,7 +9226,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/AsyncJobId"
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Uuid"
             }
           }
         ],
@@ -9268,10 +9320,6 @@
             "type": "null"
           }
         ]
-      },
-      "AsyncJobId": {
-        "type": "string",
-        "format": "uuid"
       },
       "BatchGetJobMetadataResponse": {
         "properties": {
@@ -10631,17 +10679,6 @@
             ],
             "title": "Last"
           },
-          "self": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Self"
-          },
           "next": {
             "anyOf": [
               {
@@ -10663,15 +10700,26 @@
               }
             ],
             "title": "Prev"
+          },
+          "self": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self"
           }
         },
         "type": "object",
         "required": [
           "first",
           "last",
-          "self",
           "next",
-          "prev"
+          "prev",
+          "self"
         ],
         "title": "Links"
       },
@@ -10964,43 +11012,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11041,43 +11069,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11118,43 +11126,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11177,43 +11165,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11236,43 +11204,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11295,43 +11243,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11354,43 +11282,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11413,43 +11321,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11472,43 +11360,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11531,43 +11399,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -13943,6 +13791,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

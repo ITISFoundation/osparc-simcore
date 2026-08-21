@@ -10,6 +10,7 @@ from ._director_v2_service import (
     get_batch_tasks_outputs,
     get_computation_task,
     is_pipeline_running,
+    list_pipelines_latest_states,
     stop_pipeline,
 )
 from .exceptions import DirectorV2ServiceError
@@ -25,6 +26,7 @@ __all__: tuple[str, ...] = (
     "get_project_run_policy",
     "is_healthy",
     "is_pipeline_running",
+    "list_pipelines_latest_states",
     "set_project_run_policy",
     "stop_pipeline",
 )

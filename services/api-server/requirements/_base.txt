@@ -40,6 +40,8 @@ alembic==1.14.0
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 amqp==5.3.1
     # via kombu
+annotated-doc==0.0.5
+    # via fastapi
 annotated-types==0.7.0
     # via pydantic
 anyio==4.7.0
@@ -116,12 +118,13 @@ email-validator==2.2.0
     #   pydantic
 fast-depends==3.0.8
     # via faststream
-fastapi==0.116.1
+fastapi==0.141.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
-fastapi-cli==0.0.8
+    #   fastapi-pagination
+fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.1.5
     # via fastapi-cli
@@ -129,10 +132,10 @@ fastapi-lifespan-manager==0.1.4
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fastapi-pagination==0.12.34
-    # via
-    #   -c requirements/./constraints.txt
-    #   -r requirements/_base.in
+fastapi-pagination==0.15.16
+    # via -r requirements/_base.in
+fastar==0.11.0
+    # via fastapi
 faststream==0.6.7
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 flexcache==0.3
@@ -213,7 +216,7 @@ multidict==6.1.0
     #   aiobotocore
     #   aiohttp
     #   yarl
-opentelemetry-api==1.42.1
+opentelemetry-api==1.44.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -234,17 +237,17 @@ opentelemetry-api==1.42.1
     #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.42.1
+opentelemetry-exporter-otlp==1.44.0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.42.1
+opentelemetry-exporter-otlp-proto-common==1.44.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.42.1
+opentelemetry-exporter-otlp-proto-grpc==1.44.0
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.42.1
+opentelemetry-exporter-otlp-proto-http==1.44.0
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.63b1
+opentelemetry-instrumentation==0.65b0
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
@@ -258,43 +261,43 @@ opentelemetry-instrumentation==0.63b1
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
-opentelemetry-instrumentation-aio-pika==0.63b1
+opentelemetry-instrumentation-aio-pika==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-asgi==0.63b1
+opentelemetry-instrumentation-asgi==0.65b0
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-asyncpg==0.63b1
+opentelemetry-instrumentation-asyncpg==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-botocore==0.63b1
+opentelemetry-instrumentation-botocore==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-opentelemetry-instrumentation-celery==0.63b1
+opentelemetry-instrumentation-celery==0.65b0
     # via -r requirements/../../../packages/celery-library/requirements/_base.in
-opentelemetry-instrumentation-fastapi==0.63b1
+opentelemetry-instrumentation-fastapi==0.65b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-httpx==0.63b1
+opentelemetry-instrumentation-httpx==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-logging==0.63b1
+opentelemetry-instrumentation-logging==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-redis==0.63b1
+opentelemetry-instrumentation-redis==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.63b1
+opentelemetry-instrumentation-requests==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-sqlalchemy==0.63b1
+opentelemetry-instrumentation-sqlalchemy==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-threading==0.63b1
+opentelemetry-instrumentation-threading==0.65b0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-propagator-aws-xray==1.0.2
     # via opentelemetry-instrumentation-botocore
-opentelemetry-proto==1.42.1
+opentelemetry-proto==1.44.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.42.1
+opentelemetry-sdk==1.44.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.63b1
+opentelemetry-semantic-conventions==0.65b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
@@ -309,7 +312,7 @@ opentelemetry-semantic-conventions==0.63b1
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-sdk
-opentelemetry-util-http==0.63b1
+opentelemetry-util-http==0.65b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
@@ -336,8 +339,10 @@ pint==0.25
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==4.3.6
     # via pint
-prometheus-client==0.21.1
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+prometheus-client==0.26.0
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
 prompt-toolkit==3.0.51
     # via click-repl
 propcache==0.2.1
@@ -379,10 +384,12 @@ pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   fastapi
 pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   fastapi
 pygments==2.18.0
     # via rich
 pyinstrument==5.1.1
@@ -513,6 +520,7 @@ typing-extensions==4.14.1
     #   typing-inspection
 typing-inspection==0.4.2
     # via
+    #   fastapi
     #   pydantic
     #   pydantic-settings
 tzdata==2025.2

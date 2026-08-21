@@ -33,22 +33,12 @@ class _ProjectDeletionMocks:
 
 
 @pytest.fixture
-def mock_project_deletion_side_effects(mocker: MockerFixture) -> _ProjectDeletionMocks:
+def mock_project_deletion_side_effects(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mocker: MockerFixture,
+) -> _ProjectDeletionMocks:
     mocker.patch(
         "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
-        autospec=True,
-        return_value=False,
-    )
-    director_v2_delete_pipeline = mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
         autospec=True,
     )
     storage_delete_project_data_folders = mocker.patch(
@@ -57,7 +47,7 @@ def mock_project_deletion_side_effects(mocker: MockerFixture) -> _ProjectDeletio
     )
     return _ProjectDeletionMocks(
         storage_delete_project_data_folders=storage_delete_project_data_folders,
-        director_v2_delete_pipeline=director_v2_delete_pipeline,
+        director_v2_delete_pipeline=mocked_dynamic_services_interface["director_v2.api.delete_pipeline"],
     )
 
 
