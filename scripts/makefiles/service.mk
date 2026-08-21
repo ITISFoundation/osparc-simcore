@@ -35,6 +35,8 @@ include $(REPO_BASE_DIR)/scripts/makefiles/python-install.mk
 # TEST TASKS
 #
 
+##@ Tests
+
 .PHONY: test test-dev test-ci
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
@@ -87,14 +89,18 @@ include $(REPO_BASE_DIR)/scripts/makefiles/i18n.mk
 # DOCKER CONTAINERS TASKS (alphabetically ordered)
 #
 
+##@ Docker
+
 .PHONY: build build-nc build-devel build-devel-nc
-build build-nc build-devel build-devel-nc: ## [docker] builds docker image in many flavours
+build build-nc build-devel build-devel-nc: ## builds docker image in many flavours
 	# Building docker image for ${APP_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
+##@ Container / Swarm
+
 .PHONY: logs tail
-logs tail: ## [swarm] tails log of $(APP_NAME) container
+logs tail: ## tails log of $(APP_NAME) container
 	docker logs \
 		--follow \
 		$(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
@@ -105,7 +111,7 @@ DOCKER_REGISTRY ?=local
 DOCKER_IMAGE_TAG?=production
 
 .PHONY: settings-schema.json
-settings-schema.json: ## [container] dumps json-shcema of this service settings
+settings-schema.json: ## dumps json-shcema of this service settings
 	# Dumping settings schema of ${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG}
 	@docker run \
 		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
@@ -122,7 +128,7 @@ settings-schema.json: ## [container] dumps json-shcema of this service settings
 
 
 .PHONY: shell
-shell: ## [swarm] runs shell inside $(APP_NAME) container
+shell: ## runs shell inside $(APP_NAME) container
 	docker exec \
 		--interactive \
 		--tty \
@@ -131,7 +137,7 @@ shell: ## [swarm] runs shell inside $(APP_NAME) container
 
 
 .PHONY: stats
-stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
+stats: ## display live stream of $(APP_NAME) container resource usage statistics
 	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
 
 
@@ -139,6 +145,8 @@ stats: ## [swarm] display live stream of $(APP_NAME) container resource usage st
 #
 # MISC
 #
+
+##@ Misc
 
 .PHONY: info
 info: ## displays service info

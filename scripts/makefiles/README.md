@@ -22,7 +22,8 @@ scripts/makefiles/
 ├── common.mk          # aggregator included by EVERY package/service Makefile
 │   ├── globals.mk     # OS/platform detection, colors, VCS vars, REPO_BASE_DIR, paths, venv checks
 │   ├── templates.mk   # clone_from_template macro (used by `.env`)
-│   ├── help.mk        # auto-documented `help` target
+│   ├── help.mk        # auto-documented, grouped `help` target (see help.awk)
+│   ├── help.awk       # renders `##@ Section` groups for help.mk (self-locating, no REPO_BASE_DIR)
 │   ├── python-lint.mk # pylint / ruff / mypy / codestyle (+ REVIEW-tagged extras)
 │   ├── python-test.mk # shared pytest runner for packages and services
 │   └── version.mk     # version-{patch,minor,major} (bump2version)
@@ -54,6 +55,10 @@ directly:
 ```make
 include ../../../scripts/makefiles/requirements.mk
 ```
+
+The root `Makefile` includes `help.mk` directly (not via `common.mk`, since it
+isn't a package/service) to get the same grouped `make help` output — see
+"Help output & grouping" in `.github/instructions/makefiles.instructions.md`.
 
 ## Python test targets
 

@@ -57,6 +57,30 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
   `tests-ci`, `mypy`, `pylint`, and root `devenv` / `openapi-specs` /
   `info-images` / `down` / `leave` / `pull-externals`.
 
+## Help output & grouping
+
+- `scripts/makefiles/help.mk` (delegating to `scripts/makefiles/help.awk`) is
+  the shared `make help` renderer. It is included by `common.mk` for every
+  package/service, and directly by the root `Makefile`.
+- Add a `##@ Section Name` comment above a group of targets to label it in
+  `make help`. It applies to every target below it until the next `##@` line
+  in that file.
+- The same section name reused across different files merges into a single
+  section in the output (e.g. `##@ Tests` in both `service.mk` and
+  `package.mk`) — this is how related targets stay grouped regardless of
+  `include` order.
+- Targets with no `##@` above them fall into a leading, unlabeled section —
+  no migration is required for Makefiles that don't opt in.
+- `help.awk` assigns a small icon by keyword/substring match on the section
+  name (e.g. any name containing "Docker", "Test", "Lint", "Clean",
+  "Environment"/"Install", "i18n", "Version"/"Release", "Swarm"/"Container",
+  "Info"/"Misc"). This table is centralized in `help.awk` — never hardcode an
+  emoji in a `##` description or `##@` header text.
+- Prefer a real `##@` section over ad-hoc category text in the description
+  (e.g. don't write `## [docker] builds ...`; put the target under `##@
+  Docker` instead). `[CI]` is unrelated to grouping and stays as documented
+  above.
+
 ## Dead / uncertain targets
 
 - Only delete a target if it is clearly unused. Otherwise group it under a

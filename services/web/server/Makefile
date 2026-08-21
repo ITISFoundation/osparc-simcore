@@ -8,12 +8,16 @@ include ../../../scripts/makefiles/service.mk
 APP_NAME := webserver
 PY_PACKAGE_NAME := simcore_service_webserver
 
+##@ Environment & Install
+
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
 APP_OPENAPI_RELPATH=src/$(PY_PACKAGE_NAME)/api/v0/openapi.json
+
+##@ API
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications

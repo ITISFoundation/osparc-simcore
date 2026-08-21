@@ -7,6 +7,8 @@
 
 .PHONY: version-patch version-minor version-major
 
+##@ Version
+
 version-major: ## commits version with backwards-INcompatible addition or changes
 	$(_bumpversion)
 

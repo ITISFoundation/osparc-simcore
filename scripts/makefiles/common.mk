@@ -19,6 +19,8 @@ include $(REPO_BASE_DIR)/scripts/makefiles/version.mk
 # COMMON TASKS (alphabetically ordered)
 #
 
+##@ Environment & Install
+
 .PHONY: clean
 _GIT_CLEAN_ARGS = -dxf -e .vscode
 clean: ## cleans all unversioned files in project and temp files create by this makefile
@@ -37,6 +39,8 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 devenv: ## build development environment
 	@$(MAKE_C) $(REPO_BASE_DIR) $@
 
+
+##@ Misc
 
 .PHONY: github-workflow-job
 github-workflow-job: ## runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"
