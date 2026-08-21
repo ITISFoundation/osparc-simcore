@@ -64,7 +64,10 @@ async def _subscribe_out_of_credits_lifespan(app: FastAPI) -> AsyncIterator[None
 
 def configure_rabbitmq(app_lifespan: LifespanManager, *, settings: RabbitSettings) -> None:
     configure_rabbitmq_client(app_lifespan, settings=settings, client_name="director-v2")
-    configure_rabbitmq_rpc_client(app_lifespan, settings=settings, client_name="director-v2-rpc-client")
+    # NOTE: connectivity was already awaited above; skip the redundant wait here
+    configure_rabbitmq_rpc_client(
+        app_lifespan, settings=settings, client_name="director-v2-rpc-client", wait_for_connectivity=False
+    )
     app_lifespan.add(_subscribe_out_of_credits_lifespan)
 
 
