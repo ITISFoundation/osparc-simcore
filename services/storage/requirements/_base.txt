@@ -444,7 +444,7 @@ sqlalchemy==2.0.51
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
-starlette==0.47.2
+starlette==1.6.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
