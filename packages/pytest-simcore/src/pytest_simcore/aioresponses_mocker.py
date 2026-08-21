@@ -20,8 +20,6 @@ PASSTHROUGH_REQUESTS_PREFIXES = [
     f"http://{get_localhost_ip()}",
 ]
 
-_ORIGINAL_CLIENT_RESPONSE_INIT = ClientResponse.__init__
-
 
 def _is_stream_writer_patch_needed() -> bool:
     client_response_init_signature = inspect.signature(ClientResponse.__init__)
@@ -29,11 +27,6 @@ def _is_stream_writer_patch_needed() -> bool:
     if stream_writer_parameter is None:
         return False
     return stream_writer_parameter.default is inspect.Parameter.empty
-
-
-def _patched_client_response_init(self: ClientResponse, *args: Any, **kwargs: Any) -> None:
-    kwargs.setdefault("stream_writer", Mock(output_size=0))
-    _ORIGINAL_CLIENT_RESPONSE_INIT(self, *args, **kwargs)
 
 
 @pytest.fixture
@@ -52,6 +45,12 @@ def aioresponses_mocker(mocker: MockerFixture) -> Iterator[AioResponsesMock]:
                     assert response.status == 200
     """
     if _is_stream_writer_patch_needed():
+        original_client_response_init = ClientResponse.__init__
+
+        def _patched_client_response_init(self: ClientResponse, *args: Any, **kwargs: Any) -> None:
+            kwargs.setdefault("stream_writer", Mock(output_size=0))
+            original_client_response_init(self, *args, **kwargs)
+
         warnings.warn(
             "aioresponses does not provide aiohttp's required stream_writer argument, therefore it is manually mocked. "
             "TIP: periodically check if it gets updated https://github.com/pnuckowski/aioresponses/issues/289",
