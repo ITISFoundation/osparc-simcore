@@ -6,11 +6,14 @@
 #
 
 .PHONY: version-patch version-minor version-major
-version-patch: ## commits version with bug fixes not affecting the cookiecuter config
+
+version-major: ## commits version with backwards-INcompatible addition or changes
 	$(_bumpversion)
+
 version-minor: ## commits version with backwards-compatible API addition or changes (i.e. can replay)
 	$(_bumpversion)
-version-major: ## commits version with backwards-INcompatible addition or changes
+
+version-patch: ## commits version with bug fixes not affecting the cookiecuter config
 	$(_bumpversion)
 
 
