@@ -56,6 +56,7 @@ class ChatbotSession:
         response = await self._api.client.post(
             "/v1/chat/completions",
             json=request.model_dump(exclude_none=True),
+            timeout=self._chatbot_settings.CHATBOT_REQUEST_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
         return CreateChatCompletionResponse.model_validate(response.json())

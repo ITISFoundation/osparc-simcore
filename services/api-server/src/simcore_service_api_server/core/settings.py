@@ -70,6 +70,12 @@ class ChatbotSettings(BaseCustomSettings):
             description="Name of the graph to be used in the chatbot service",
         ),
     ]
+    CHATBOT_REQUEST_TIMEOUT_SECONDS: Annotated[
+        PositiveInt,
+        Field(
+            description="Timeout for requests to the chatbot service",
+        ),
+    ] = 10 * 60  # 10 minutes
 
 
 # MAIN SETTINGS --------------------------------------------
