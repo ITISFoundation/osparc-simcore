@@ -15,7 +15,7 @@ from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
 from .notifier_email import EmailProvider
 from .notifier_ws import WebSocketProvider
-from .postgres import get_engine
+from .postgres import get_async_engine
 from .rabbitmq import get_rabbitmq_rpc_client
 
 _logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ def configure_notifier(app_lifespan: LifespanManager[FastAPI]) -> None:
         try:
             app_settings: ApplicationSettings = app.state.settings
             assert app.state.external_socketio  # nosec
-            engine = get_engine(app)
+            engine = get_async_engine(app)
             providers: list[NotificationProvider] = [
                 WebSocketProvider(
                     sio_manager=app.state.external_socketio,

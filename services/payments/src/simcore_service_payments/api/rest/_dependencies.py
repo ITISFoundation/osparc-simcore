@@ -14,7 +14,7 @@ from ...core.settings import ApplicationSettings
 from ...db.base import BaseRepository
 from ...models.auth import SessionData
 from ...services.auth import get_session_data
-from ...services.postgres import get_engine
+from ...services.postgres import get_async_engine
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 
 _logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ def get_from_app_state(
 
 
 def get_db_engine(request: Request) -> AsyncEngine:
-    engine: AsyncEngine = get_engine(request.app)
+    engine: AsyncEngine = get_async_engine(request.app)
     assert engine  # nosec
     return engine
 

@@ -37,6 +37,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.tracing import TracingConfig
+from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
@@ -96,7 +97,12 @@ async def rpc_client(
 
 @pytest.fixture
 def disable_postgres_setup(mocker: MockerFixture) -> Callable:
-    def _configure(app_lifespan: LifespanManager[FastAPI], *, tracing_config: TracingConfig | None) -> None:
+    def _configure(
+        app_lifespan: LifespanManager[FastAPI],
+        *,
+        settings: PostgresSettings,
+        tracing_config: TracingConfig | None,
+    ) -> None:
         async def _postgres_lifespan(app: FastAPI) -> AsyncIterator[State]:
             app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
             yield {}
