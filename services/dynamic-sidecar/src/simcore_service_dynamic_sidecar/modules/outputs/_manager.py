@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from asyncio import CancelledError, Future, Lock, Task, create_task, wait
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from datetime import timedelta
 from functools import partial
@@ -12,6 +13,7 @@ from common_library.logging.logging_errors import (
     format_exception_as_string,
 )
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from servicelib import progress_bar
@@ -249,38 +251,38 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             raise UploadPortsFailedError(failures=self._last_upload_error_tracker)
 
 
-def setup_outputs_manager(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        assert isinstance(app.state.outputs_context, OutputsContext)  # nosec
-        outputs_context: OutputsContext = app.state.outputs_context
-        assert isinstance(app.state.settings, ApplicationSettings)  # nosec
-        settings: ApplicationSettings = app.state.settings
+def configure_outputs_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        outputs_manager: OutputsManager | None = None
+        try:
+            assert isinstance(app.state.outputs_context, OutputsContext)  # nosec
+            outputs_context: OutputsContext = app.state.outputs_context
+            assert isinstance(app.state.settings, ApplicationSettings)  # nosec
+            settings: ApplicationSettings = app.state.settings
 
-        io_log_redirect_cb: LogRedirectCB | None = None
-        if settings.RABBIT_SETTINGS:
-            io_log_redirect_cb = partial(post_log_message, app, log_level=logging.INFO)
-        _logger.debug(
-            "setting up outputs manager %s",
-            "with redirection of logs..." if io_log_redirect_cb else "...",
-        )
+            io_log_redirect_cb: LogRedirectCB | None = None
+            if settings.RABBIT_SETTINGS:
+                io_log_redirect_cb = partial(post_log_message, app, log_level=logging.INFO)
+            _logger.debug(
+                "setting up outputs manager %s",
+                "with redirection of logs..." if io_log_redirect_cb else "...",
+            )
 
-        outputs_manager = app.state.outputs_manager = OutputsManager(
-            outputs_context=outputs_context,
-            io_log_redirect_cb=io_log_redirect_cb,
-            progress_cb=partial(post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PUSHING),
-            port_notifier=PortNotifier(
-                app,
-                settings.DY_SIDECAR_USER_ID,
-                settings.DY_SIDECAR_PROJECT_ID,
-                settings.DY_SIDECAR_NODE_ID,
-            ),
-        )
-        await outputs_manager.start()
+            outputs_manager = app.state.outputs_manager = OutputsManager(
+                outputs_context=outputs_context,
+                io_log_redirect_cb=io_log_redirect_cb,
+                progress_cb=partial(post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PUSHING),
+                port_notifier=PortNotifier(
+                    app,
+                    settings.DY_SIDECAR_USER_ID,
+                    settings.DY_SIDECAR_PROJECT_ID,
+                    settings.DY_SIDECAR_NODE_ID,
+                ),
+            )
+            await outputs_manager.start()
+            yield
+        finally:
+            if outputs_manager is not None:
+                await outputs_manager.shutdown()
 
-    async def on_shutdown() -> None:
-        outputs_manager: OutputsManager | None = app.state.outputs_manager
-        if outputs_manager is not None:
-            await outputs_manager.shutdown()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)

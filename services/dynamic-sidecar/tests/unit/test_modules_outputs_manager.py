@@ -14,6 +14,7 @@ import pytest
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.services import ServiceRunID
 from pydantic import PositiveFloat
 from pytest_mock.plugin import MockerFixture
@@ -26,15 +27,16 @@ from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
+from simcore_service_dynamic_sidecar.modules.outputs import configure_outputs
 from simcore_service_dynamic_sidecar.modules.outputs._context import (
     OutputsContext,
-    setup_outputs_context,
+    configure_outputs_context,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     OutputsManager,
     UploadPortsFailedError,
     _PortKeyTracker,
-    setup_outputs_manager,
+    configure_outputs_manager,
 )
 
 # UTILS
@@ -52,6 +54,27 @@ class ToggleErrorRaising:
 
     def stop_raising_errors(self) -> None:
         self._raise_errors = False
+
+
+def test_configure_outputs_preserves_lifespan_order(mocker: MockerFixture):
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    configured_lifespans: list[str] = []
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs.configure_outputs_manager",
+        side_effect=lambda _: configured_lifespans.append("manager"),
+    )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs.configure_outputs_context",
+        side_effect=lambda _: configured_lifespans.append("context"),
+    )
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.outputs.configure_outputs_watcher",
+        side_effect=lambda _: configured_lifespans.append("watcher"),
+    )
+
+    configure_outputs(app_lifespan)
+
+    assert configured_lifespans == ["context", "manager", "watcher"]
 
 
 # FIXTURES
@@ -377,10 +400,11 @@ async def test_regression_io_log_redirect_cb(
     # mocked_volumes
     app.state.mounted_volumes = mounted_volumes
 
-    setup_outputs_context(app)
-    setup_outputs_manager(app)
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    configure_outputs_context(app_lifespan)
+    configure_outputs_manager(app_lifespan)
 
-    async with TestClient(app):  # runs setup handlers
+    async with app_lifespan(app), TestClient(app):
         outputs_manager: OutputsManager = app.state.outputs_manager
         assert outputs_manager.io_log_redirect_cb is not None
 

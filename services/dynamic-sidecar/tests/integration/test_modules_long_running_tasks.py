@@ -15,6 +15,7 @@ import aioboto3
 import pytest
 import sqlalchemy as sa
 from aiobotocore.session import ClientCreatorContext
+from asgi_lifespan import LifespanManager
 from async_asgi_testclient import TestClient
 from botocore.client import Config
 from botocore.exceptions import ClientError
@@ -126,8 +127,8 @@ def app(
 
 @pytest.fixture
 async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
-        yield client
+    async with LifespanManager(app):
+        yield TestClient(app)
 
 
 @pytest.fixture

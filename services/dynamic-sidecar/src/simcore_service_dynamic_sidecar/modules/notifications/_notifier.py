@@ -1,8 +1,10 @@
 import contextlib
+from collections.abc import AsyncIterator
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_dynamic_sidecar.ports import (
     InputPortStatus,
     InputStatus,
@@ -113,19 +115,19 @@ class Notifier(SingletonInAppStateMixin):
         )
 
 
-def setup_notifier(app: FastAPI):
-    async def _on_startup() -> None:
-        assert app.state.external_socketio  # nosec
+def configure_notifier(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        notifier: Notifier | None = None
+        try:
+            assert app.state.external_socketio  # nosec
 
-        notifier = Notifier(
-            sio_manager=app.state.external_socketio,
-        )
-        notifier.set_to_app_state(app)
-        assert Notifier.get_from_app_state(app) == notifier  # nosec
+            notifier = Notifier(sio_manager=app.state.external_socketio)
+            notifier.set_to_app_state(app)
+            assert Notifier.get_from_app_state(app) == notifier  # nosec
+            yield
+        finally:
+            if notifier is not None:
+                with contextlib.suppress(AttributeError):
+                    Notifier.pop_from_app_state(app)
 
-    async def _on_shutdown() -> None:
-        with contextlib.suppress(AttributeError):
-            Notifier.pop_from_app_state(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)

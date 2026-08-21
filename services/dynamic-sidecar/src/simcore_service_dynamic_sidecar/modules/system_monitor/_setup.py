@@ -1,13 +1,16 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.logging_utils import log_context
 
 from ...core.settings import SystemMonitorSettings
 from ._disk_usage import (
+    configure_disk_usage,
     create_disk_usage_monitor,
     get_disk_usage_monitor,
-    setup_disk_usage,
 )
 
 _logger = logging.getLogger(__name__)
@@ -30,16 +33,18 @@ async def _display_current_disk_usage(app: FastAPI) -> None:
         )
 
 
-def setup_system_monitor(app: FastAPI) -> None:
+def configure_system_monitor(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     with log_context(_logger, logging.INFO, "setup system monitor"):
         settings: SystemMonitorSettings = app.state.settings.SYSTEM_MONITOR_SETTINGS
 
         if settings.DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE:
-            setup_disk_usage(app)
+            configure_disk_usage(app_lifespan)
         else:
             _logger.warning("system monitor disabled")
 
-        async def on_startup() -> None:
+        @asynccontextmanager
+        async def display_current_disk_usage_lifespan(app: FastAPI) -> AsyncIterator[None]:
             await _display_current_disk_usage(app)
+            yield
 
-        app.add_event_handler("startup", on_startup)
+        app_lifespan.add(display_current_disk_usage_lifespan)

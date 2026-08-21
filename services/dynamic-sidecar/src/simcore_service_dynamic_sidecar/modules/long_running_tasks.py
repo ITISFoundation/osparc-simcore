@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.generated_models.docker_rest_api import ContainerState
@@ -606,27 +607,27 @@ async def restart_user_services(
         await progress.update(message="started log fetching", percent=0.99)
 
 
-def setup_long_running_tasks(app: FastAPI) -> None:
+def configure_long_running_tasks(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    long_running_tasks.server.setup(
+    long_running_tasks.server.configure(
         app,
+        app_lifespan,
         redis_settings=app_settings.REDIS_SETTINGS,
         rabbit_settings=app_settings.RABBIT_SETTINGS,
         lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
     )
 
-    task_context: dict[TaskProtocol, dict[str, Any]] = {}
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        registered_handlers: list[TaskProtocol] = []
+        try:
+            shared_store: SharedStore = app.state.shared_store
+            settings: ApplicationSettings = app.state.settings
+            application_health: ApplicationHealth = app.state.application_health
+            mounted_volumes: MountedVolumes = app.state.mounted_volumes
+            outputs_manager: OutputsManager = app.state.outputs_manager
+            inputs_state: InputsState = app.state.inputs_state
 
-    async def on_startup() -> None:
-        shared_store: SharedStore = app.state.shared_store
-        settings: ApplicationSettings = app.state.settings
-        application_health: ApplicationHealth = app.state.application_health
-        mounted_volumes: MountedVolumes = app.state.mounted_volumes
-        outputs_manager: OutputsManager = app.state.outputs_manager
-        inputs_state: InputsState = app.state.inputs_state
-
-        task_context.update(
-            {
+            task_context: dict[TaskProtocol, dict[str, Any]] = {
                 pull_user_services_images: {
                     "shared_store": shared_store,
                     "app": app,
@@ -673,14 +674,13 @@ def setup_long_running_tasks(app: FastAPI) -> None:
                     "shared_store": shared_store,
                 },
             }
-        )
 
-        for handler, context in task_context.items():
-            TaskRegistry.register(handler, **context)
+            for handler, context in task_context.items():
+                TaskRegistry.register(handler, **context)
+                registered_handlers.append(handler)
+            yield
+        finally:
+            for handler in registered_handlers:
+                TaskRegistry.unregister(handler)
 
-    async def _on_shutdown() -> None:
-        for handler in task_context:
-            TaskRegistry.unregister(handler)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)

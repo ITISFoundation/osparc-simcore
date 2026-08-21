@@ -1,13 +1,15 @@
 import asyncio
 import logging
 from collections import deque
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Final
 
 import arrow
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from models_library.callbacks_mapping import CallbacksMapping, UserServiceCommand
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
 from servicelib.container_utils import (
@@ -130,21 +132,23 @@ class UserServicesMetrics:
                 await cancel_wait_task(self._metrics_recovery_task, max_delay=_TASK_CANCELLATION_TIMEOUT_S)
 
 
-def setup_prometheus_metrics(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        callbacks_mapping: CallbacksMapping = app.state.settings.DY_SIDECAR_CALLBACKS_MAPPING
-        assert callbacks_mapping.metrics  # nosec
+def configure_prometheus_metrics(app_lifespan: LifespanManager[FastAPI]) -> None:
+    @asynccontextmanager
+    async def prometheus_metrics_lifespan(app: FastAPI) -> AsyncIterator[None]:
+        user_service_metrics: UserServicesMetrics | None = None
+        try:
+            callbacks_mapping: CallbacksMapping = app.state.settings.DY_SIDECAR_CALLBACKS_MAPPING
+            assert callbacks_mapping.metrics  # nosec
 
-        with log_context(_logger, logging.INFO, "enabling user services metrics scraping"):
-            shared_store: SharedStore = app.state.shared_store
-            app.state.user_service_metrics = user_service_metrics = UserServicesMetrics(
-                shared_store, callbacks_mapping.metrics
-            )
-            await user_service_metrics.start()
+            with log_context(_logger, logging.INFO, "enabling user services metrics scraping"):
+                shared_store: SharedStore = app.state.shared_store
+                app.state.user_service_metrics = user_service_metrics = UserServicesMetrics(
+                    shared_store, callbacks_mapping.metrics
+                )
+                await user_service_metrics.start()
+            yield
+        finally:
+            if user_service_metrics is not None:
+                await user_service_metrics.stop()
 
-    async def on_shutdown() -> None:
-        user_service_metrics: UserServicesMetrics = app.state.user_service_metrics
-        await user_service_metrics.stop()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(prometheus_metrics_lifespan)

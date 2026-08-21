@@ -1,10 +1,14 @@
 import logging
 from asyncio import Lock
+from collections.abc import AsyncIterator
+from contextlib import AbstractContextManager
 from typing import Any, ClassVar
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
+from fastapi_lifespan_manager import LifespanManager, State
+from servicelib.fastapi.lifespan_utils import configure_app_lifespan
+from servicelib.fastapi.logging_lifespan import create_logging_lifespan
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -90,15 +94,35 @@ class AppState:
         return self._shared_store.compose_spec
 
 
-def create_base_app() -> FastAPI:
-    app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING)
-    logging_shutdown_event = create_logging_shutdown_event(
+def create_app_lifespan(
+    app_settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> AbstractContextManager[LifespanManager[FastAPI]]:
+    logging_lifespan = create_logging_lifespan(
         log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
         tracing_config=tracing_config,
         log_base_level=app_settings.logging_level,
         noisy_loggers=_NOISY_LOGGERS,
+    )
+    return configure_app_lifespan(
+        logging_lifespan=logging_lifespan,
+        starting_banner=f"Starting {APP_NAME}...",
+        started_banner=APP_STARTED_BANNER_MSG,
+        shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
+    )
+
+
+def create_base_app(
+    app_lifespan: LifespanManager[FastAPI] | None = None,
+    *,
+    app_settings: ApplicationSettings | None = None,
+    tracing_config: TracingConfig | None = None,
+) -> FastAPI:
+    app_settings = app_settings or ApplicationSettings.create_from_envs()
+    tracing_config = tracing_config or TracingConfig.create(
+        service_name=APP_NAME,
+        tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
     )
 
     _logger.info(
@@ -108,6 +132,7 @@ def create_base_app() -> FastAPI:
 
     # minimal
     assert app_settings.SC_BOOT_MODE  # nosec
+    app_lifespan = app_lifespan or LifespanManager()
     app = FastAPI(
         debug=app_settings.SC_BOOT_MODE.is_devel_mode(),
         title=APP_NAME,
@@ -115,6 +140,7 @@ def create_base_app() -> FastAPI:
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         **get_common_oas_options(is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()),
+        lifespan=app_lifespan,
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
@@ -129,126 +155,135 @@ def create_base_app() -> FastAPI:
 
     setup_reserved_space(app)
 
-    app.add_event_handler("shutdown", logging_shutdown_event)
     return app
 
 
-# pylint: disable=too-many-statements
-def create_app() -> FastAPI:  # noqa: PLR0915
-    """
-    Creates the application from using the env vars as a context
-    Also stores inside the state all instances of classes
-    needed in other requests and used to share data.
-    """
-
-    app = create_base_app()
-
-    # MODULES SETUP --------------
-
+def _configure_plugins(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    tracing_config: TracingConfig,
+) -> None:
     # NOTE: lazy import for faster startup
     # ruff: noqa: PLC0415
-    from servicelib.fastapi.tracing import (
-        get_tracing_config,
-        initialize_fastapi_app_tracing,
-        setup_tracing,
-    )
+    from servicelib.fastapi.tracing import configure_fastapi_app_tracing
 
-    from ..api.rpc.routes import setup_rpc_api_routes
-    from ..models.shared_store import setup_shared_store
-    from ..modules.attribute_monitor import setup_attribute_monitor
+    from ..api.rpc.routes import configure_rpc_api_routes
+    from ..models.shared_store import configure_shared_store
+    from ..modules.attribute_monitor import configure_attribute_monitor
     from ..modules.file_notification_subscriber import (
-        setup_file_notification_subscriber,
+        configure_file_notification_subscriber,
     )
-    from ..modules.inputs import setup_inputs
-    from ..modules.long_running_tasks import setup_long_running_tasks
-    from ..modules.mounted_fs import setup_mounted_fs
-    from ..modules.notifications import setup_notifications
-    from ..modules.outputs import setup_outputs
-    from ..modules.prometheus_metrics import setup_prometheus_metrics
-    from ..modules.r_clone_mount_manager import setup_r_clone_mount_manager
-    from ..modules.resource_tracking import setup_resource_tracking
-    from ..modules.system_monitor import setup_system_monitor
-    from ..modules.user_services_preferences import setup_user_services_preferences
-    from .docker_logs import setup_background_log_fetcher
-    from .external_dependencies import setup_check_dependencies
-    from .rabbitmq import setup_rabbitmq
+    from ..modules.inputs import configure_inputs
+    from ..modules.long_running_tasks import configure_long_running_tasks
+    from ..modules.mounted_fs import configure_mounted_fs
+    from ..modules.notifications import configure_notifications
+    from ..modules.outputs import configure_outputs
+    from ..modules.prometheus_metrics import configure_prometheus_metrics
+    from ..modules.r_clone_mount_manager import configure_r_clone_mount_manager
+    from ..modules.resource_tracking import configure_resource_tracking
+    from ..modules.system_monitor import configure_system_monitor
+    from ..modules.user_services_preferences import (
+        configure_user_services_preferences,
+    )
+    from .docker_logs import configure_background_log_fetcher
+    from .external_dependencies import configure_check_dependencies
+    from .rabbitmq import configure_rabbitmq
 
-    setup_check_dependencies(app)
-
-    setup_shared_store(app)
-    app.state.application_health = ApplicationHealth()
-    application_settings: ApplicationSettings = app.state.settings
-
-    tracing_config = get_tracing_config(app)
+    configure_check_dependencies(app_lifespan)
+    configure_shared_store(app_lifespan)
 
     if tracing_config.tracing_enabled:
-        setup_tracing(app, tracing_config)
-
-    setup_rabbitmq(app)
-
-    setup_rpc_api_routes(app)
-    setup_background_log_fetcher(app)
-    setup_resource_tracking(app)
-    setup_notifications(app)
-
-    setup_mounted_fs(app)
-    setup_system_monitor(app)
-    setup_inputs(app)
-    setup_outputs(app)
-
-    setup_long_running_tasks(app)
-
-    setup_attribute_monitor(app)
-
-    setup_user_services_preferences(app)
-
-    setup_r_clone_mount_manager(app)
-
-    setup_file_notification_subscriber(app)
-
-    if application_settings.are_prometheus_metrics_enabled:
-        setup_prometheus_metrics(app)
-
-    if tracing_config.tracing_enabled:
-        initialize_fastapi_app_tracing(
+        configure_fastapi_app_tracing(
             app,
+            app_lifespan,
             tracing_config=tracing_config,
         )
 
-    # ERROR HANDLERS  ------------
+    configure_rabbitmq(app, app_lifespan)
+    configure_rpc_api_routes(app_lifespan)
+    configure_background_log_fetcher(app_lifespan)
+    configure_resource_tracking(app_lifespan)
+    configure_notifications(app_lifespan)
+
+    configure_mounted_fs(app_lifespan)
+    configure_system_monitor(app, app_lifespan)
+    configure_inputs(app_lifespan)
+    configure_outputs(app_lifespan)
+    configure_long_running_tasks(app, app_lifespan)
+    configure_attribute_monitor(app_lifespan)
+    configure_user_services_preferences(app_lifespan)
+    configure_r_clone_mount_manager(app_lifespan)
+    configure_file_notification_subscriber(app_lifespan)
+
+    if app.state.settings.are_prometheus_metrics_enabled:
+        configure_prometheus_metrics(app_lifespan)
+
+
+def _configure_application_lifespan(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+) -> None:
+    async def _application_lifespan(_: FastAPI) -> AsyncIterator[State]:
+        app.state.container_restart_lock = Lock()
+
+        try:
+            app_state = AppState(app)
+            await volumes_fix_permissions(app_state.mounted_volumes)
+            yield {}
+        finally:
+            app_state = AppState(app)
+            if docker_compose_yaml := app_state.compose_spec:
+                _logger.info("Removing spawned containers")
+
+                result = await docker_compose_down(docker_compose_yaml, app.state.settings)
+
+                _logger.log(
+                    logging.INFO if result.success else logging.ERROR,
+                    "Removed spawned containers:\n%s",
+                    result.message,
+                )
+
+    app_lifespan.add(_application_lifespan)
+
+
+def _create_app(
+    app_lifespan: LifespanManager[FastAPI],
+    app_settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+) -> FastAPI:
+    app = create_base_app(
+        app_lifespan,
+        app_settings=app_settings,
+        tracing_config=tracing_config,
+    )
+    app.state.application_health = ApplicationHealth()
+
+    _configure_plugins(app, app_lifespan, tracing_config)
+    _configure_application_lifespan(app, app_lifespan)
+
     app.add_exception_handler(
         NodeNotFoundError,
         node_not_found_error_handler,  # type: ignore[arg-type]
     )
     app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)  # type: ignore[arg-type]
 
-    # EVENTS ---------------------
-
-    async def _on_startup() -> None:
-        app.state.container_restart_lock = Lock()
-
-        app_state = AppState(app)
-        await volumes_fix_permissions(app_state.mounted_volumes)
-        # STARTED
-        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
-
-    async def _on_shutdown() -> None:
-        app_state = AppState(app)
-        if docker_compose_yaml := app_state.compose_spec:
-            _logger.info("Removing spawned containers")
-
-            result = await docker_compose_down(docker_compose_yaml, app.state.settings)
-
-            _logger.log(
-                logging.INFO if result.success else logging.ERROR,
-                "Removed spawned containers:\n%s",
-                result.message,
-            )
-
-        # FINISHED
-        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
-
     return app
+
+
+def create_app(
+    app_lifespan: LifespanManager[FastAPI] | None = None,
+    *,
+    app_settings: ApplicationSettings | None = None,
+    tracing_config: TracingConfig | None = None,
+) -> FastAPI:
+    app_settings = app_settings or ApplicationSettings.create_from_envs()
+    tracing_config = tracing_config or TracingConfig.create(
+        service_name=APP_NAME,
+        tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
+    )
+
+    if app_lifespan is not None:
+        return _create_app(app_lifespan, app_settings, tracing_config)
+
+    with create_app_lifespan(app_settings, tracing_config) as configured_lifespan:
+        return _create_app(configured_lifespan, app_settings, tracing_config)

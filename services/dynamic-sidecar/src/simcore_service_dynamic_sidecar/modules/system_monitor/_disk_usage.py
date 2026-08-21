@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from functools import cached_property
@@ -9,6 +11,7 @@ from typing import Final
 import psutil
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
     MountPathCategory,
@@ -204,18 +207,18 @@ def get_disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor | None:
     return None
 
 
-def setup_disk_usage(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        with log_context(_logger, logging.INFO, "setup disk monitor"):
-            app.state.disk_usage_monitor = create_disk_usage_monitor(app)
-            await app.state.disk_usage_monitor.setup()
+def configure_disk_usage(app_lifespan: LifespanManager[FastAPI]) -> None:
+    @asynccontextmanager
+    async def disk_usage_lifespan(app: FastAPI) -> AsyncIterator[None]:
+        disk_usage_monitor: DiskUsageMonitor | None = None
+        try:
+            with log_context(_logger, logging.INFO, "setup disk monitor"):
+                app.state.disk_usage_monitor = disk_usage_monitor = create_disk_usage_monitor(app)
+                await disk_usage_monitor.setup()
+            yield
+        finally:
+            if disk_usage_monitor is not None:
+                with log_context(_logger, logging.INFO, "shutdown disk monitor"):
+                    await disk_usage_monitor.shutdown()
 
-    async def on_shutdown() -> None:
-        with log_context(_logger, logging.INFO, "shutdown disk monitor"):
-            if disk_usage_monitor := getattr(  # noqa: B009
-                app.state, "disk_usage_monitor"
-            ):
-                await disk_usage_monitor.shutdown()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(disk_usage_lifespan)
