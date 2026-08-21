@@ -182,7 +182,7 @@ pluggy==1.6.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-psutil==7.1.3
+psutil==7.2.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
