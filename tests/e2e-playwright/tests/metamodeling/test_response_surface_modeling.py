@@ -882,7 +882,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(str(_NUM_SAMPLING_POINTS))
+            samplingInput.fill(f"{_NUM_SAMPLING_POINTS}")
             samplingInput.press("Enter")
 
             seed_was_set = False
