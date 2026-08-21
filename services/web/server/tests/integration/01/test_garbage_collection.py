@@ -20,11 +20,11 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
 from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers import webserver_projects
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import log_client_in
@@ -108,14 +108,14 @@ async def _delete_all_redis_keys(redis_settings: RedisSettings):
 
 @pytest.fixture
 async def director_v2_service_mock(
+    aioresponses_mocker: AioResponsesMock,
     mocker: MockerFixture,
-) -> AsyncIterable[aioresponses]:
+) -> AsyncIterable[AioResponsesMock]:
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
     Other than that it seems to behave nicely
     """
-    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
     get_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$")
     delete_computation_pattern = get_computation_pattern
     stop_computation_pattern = get_computation_pattern
@@ -126,20 +126,15 @@ async def director_v2_service_mock(
         return_value={},
     )
 
-    # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
-    # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined
-    # at different locations?? not sure..
-    # anyway I think this should disappear once the garbage collector moves to its own micro-service
-    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        mock.get(
-            get_computation_pattern,
-            status=status.HTTP_202_ACCEPTED,
-            payload={"state": str(RunningState.NOT_STARTED.value)},
-            repeat=True,
-        )
-        mock.delete(delete_computation_pattern, status=204, repeat=True)
-        mock.post(stop_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
-        yield mock
+    aioresponses_mocker.get(
+        get_computation_pattern,
+        status=status.HTTP_202_ACCEPTED,
+        payload={"state": str(RunningState.NOT_STARTED.value)},
+        repeat=True,
+    )
+    aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
+    aioresponses_mocker.post(stop_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
+    return aioresponses_mocker
 
 
 @pytest.fixture
@@ -152,7 +147,7 @@ async def client(
     redis_client: aioredis.Redis,
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
-    director_v2_service_mock: aioresponses,
+    director_v2_service_mock: AioResponsesMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> TestClient:
     cfg = deepcopy(app_config)
