@@ -56,6 +56,8 @@ PYTEST_ARGS_ci ?= \
 include $(REPO_BASE_DIR)/scripts/makefiles/python-test.mk
 
 
+##@ Tests
+
 .PHONY: test test-ci-unit test-dev-unit
 
 # Canonical package test targets. Historical package targets delegate here.
@@ -69,6 +71,8 @@ test: test-dev-unit ## runs package unit tests for development (e.g. w/ pdb)
 #
 # COMMON TASKS
 #
+
+##@ Misc
 
 .PHONY: info
 info: ## displays package info

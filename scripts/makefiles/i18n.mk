@@ -20,6 +20,8 @@ I18N_PARTIALS       := $(I18N_LOCALE_DIR)/_partials
 
 .PHONY: i18n-extract i18n-translate i18n-compile i18n-check i18n-info
 
+##@ i18n
+
 i18n-check: ## Validate no f-strings in user_message() calls
 	@cd $(REPO_BASE_DIR) && \
 	uv run $(I18N_TOOLS)/i18n_extractor.py validate \

@@ -10,6 +10,8 @@
 # MAIN LINTING TARGETS (alphabetically ordered)
 # ---------------------------------------------------------------------------
 
+##@ Linting & Static Analysis
+
 .PHONY: codestyle
 codestyle codestyle-ci: ## enforces codestyle (isort & black) finally runs pylint & mypy
 	@$(SCRIPTS_DIR)/codestyle.bash $(if $(findstring -ci,$@),ci,development) $(shell basename "${SRC_DIR}")
@@ -58,6 +60,8 @@ ruff: $(REPO_BASE_DIR)/.ruff.toml ## runs ruff (python fast linter) on src and t
 # DEVELOPER-ONLY CONVENIENCE TARGETS (alphabetically ordered)
 # REVIEW: no known CI or docs callers. Safe to keep or drop as a batch.
 # ---------------------------------------------------------------------------
+
+##@ Linting & Static Analysis
 
 .PHONY: codeformat
 codeformat: ## runs all code formatters. Use AFTER make install-*

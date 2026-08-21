@@ -159,10 +159,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-.PHONY: help
-
-help: ## help on rule's targets
-	@awk 'BEGIN {FS = ":.*?## "}; /^[^.[:space:]].*?:.*?## / {if ($$1 != "help" && NF == 2) {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}}' $(MAKEFILE_LIST)
+include scripts/makefiles/help.mk
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
@@ -176,6 +173,7 @@ _check_venv_active:
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 
+##@ Docker Build
 ## DOCKER BUILD -------------------------------
 #
 # - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
@@ -279,6 +277,7 @@ shell:
 	docker run -it local/$(target):production /bin/sh
 
 
+##@ Docker Swarm
 ## DOCKER SWARM -------------------------------
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
@@ -557,6 +556,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 
+##@ Docker Tags
 ## DOCKER TAGS  -------------------------------
 
 .PHONY: tag-local tag-version tag-latest
@@ -579,6 +579,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 
+##@ Docker Pull/Push
 ## DOCKER PULL/PUSH  -------------------------------
 
 .PHONY: pull-version
@@ -618,6 +619,7 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 
 
+##@ Environment
 ## ENVIRONMENT -------------------------------
 
 .PHONY: devenv devenv-all node-env
@@ -676,6 +678,7 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 
+##@ Tools
 ## TOOLS -------------------------------
 
 .PHONY: pylint
@@ -766,6 +769,7 @@ postgres-upgrade: ## initialize or upgrade postgres db to latest state
 CITATION-validate: ## validates CITATION.cff file
 	@docker run --rm -v $(CURDIR):/app citationcff/cffconvert --validate
 
+##@ Local Docker Registry
 ## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
 
 LOCAL_REGISTRY_HOSTNAME := registry
@@ -856,6 +860,7 @@ info-registry: ## info on local registry (if any)
 	@echo No target set)
 
 
+##@ Info
 ## INFO -------------------------------
 
 .PHONY: info info-images info-swarm
@@ -922,6 +927,7 @@ endif
 
 
 
+##@ Clean
 ## CLEAN -------------------------------
 
 .PHONY: clean clean-images clean-venv clean-all clean-more
@@ -1012,6 +1018,7 @@ define create_github_release_url
 endef
 
 .PHONY: release-staging release-prod
+##@ Release
 release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)
 	$(create_github_release_url)
 
