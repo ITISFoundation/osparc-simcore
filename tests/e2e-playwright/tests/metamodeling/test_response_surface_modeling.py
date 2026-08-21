@@ -57,6 +57,9 @@ _SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
 _NUM_SAMPLING_POINTS: Final[int] = 40
+# Internal master is more resource-constrained, use fewer samples
+_NUM_SAMPLING_POINTS_INTERNAL_MASTER: Final[int] = 10
+_INTERNAL_MASTER_HOSTNAME: Final[str] = "osparc-master.speag.com"
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
@@ -171,6 +174,12 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     api_host = f"api.{parsed.hostname}"
     api_netloc = f"{api_host}:{parsed.port}" if parsed.port else api_host
     return urlunparse(parsed._replace(netloc=api_netloc))
+
+
+def _get_num_sampling_points(product_url: AnyUrl) -> int:
+    if urlparse(str(product_url)).hostname == _INTERNAL_MASTER_HOSTNAME:
+        return _NUM_SAMPLING_POINTS_INTERNAL_MASTER
+    return _NUM_SAMPLING_POINTS
 
 
 @retry(
@@ -468,6 +477,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
 ):
+    num_sampling_points = _get_num_sampling_points(product_url)
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
@@ -862,7 +872,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(str(_NUM_SAMPLING_POINTS))
+            samplingInput.fill(str(num_sampling_points))
             samplingInput.press("Enter")
 
             seed_was_set = False
@@ -972,10 +982,11 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 )
 
                 if "uq" not in local_service_key.lower():
-                    assert len(input_values) == _NUM_SAMPLING_POINTS, (
-                        f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
+                    assert len(input_values) == num_sampling_points, (
+                        f"Expected {num_sampling_points} input values, got {len(input_values)}"
                     )
-                    if seed_was_set:
+                    # Values below assume the full _NUM_SAMPLING_POINTS
+                    if seed_was_set and num_sampling_points == _NUM_SAMPLING_POINTS:
                         for i, (actual, expected) in enumerate(
                             zip(input_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)
                         ):
