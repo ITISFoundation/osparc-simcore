@@ -39,7 +39,7 @@ def _configure_plugins(
         configure_fastapi_app_tracing(app, app_lifespan, tracing_config=tracing_config)
 
     configure_rabbitmq(app, app_lifespan)
-    configure_redis(app_lifespan)
+    configure_redis(app, app_lifespan)
     configure_postgres_database(
         app_lifespan,
         settings=app.state.settings.EFS_GUARDIAN_POSTGRES,
