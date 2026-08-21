@@ -51,7 +51,6 @@ def aioresponses_mocker(mocker: MockerFixture) -> Iterator[AioResponsesMock]:
                 async with session.get("https://foo.io") as response:
                     assert response.status == 200
     """
-    # Remove when aioresponses supports aiohttp's required stream_writer argument.
     if _is_stream_writer_patch_needed():
         warnings.warn(
             "aioresponses does not provide aiohttp's required stream_writer argument, therefore it is manually mocked. "
