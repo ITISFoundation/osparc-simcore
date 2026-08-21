@@ -1,12 +1,12 @@
-.DEFAULT_GOAL := help
+REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+include $(REPO_BASE_DIR)/scripts/makefiles/globals.mk
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 # qooxdoo-kit's versions to use. See https://hub.docker.com/r/itisfoundation/qooxdoo-kit/tags
 export QOOXDOO_KIT_TAG=latest
 
 
 # version controlled
-export VCS_URL:=$(shell git config --get remote.origin.url)
-export VCS_REF:=$(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 .)
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 
@@ -16,14 +16,14 @@ docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
 
 container_name := qooxdoo-compiler
 
-# qx compile --------------------------
+##@ Compile
 
 source-output:
 	# making fast a folder to allow volume binding in dev-mode
 	mkdir $@
 
 .PHONY: compile-dev
-compile-dev: source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
+compile-dev: source-output ## Compiles host source to source-output; use flags=--watch for continuous compilation
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --detach --rm --name=$(container_name) qooxdoo-kit \
 		qx compile $(flags) \
@@ -33,12 +33,12 @@ compile-dev: source-output ## qx compiles host' 'source' -> host's 'source-outpu
 			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}"
 
 .PHONY: follow-dev-logs
-follow-dev-logs: ## follow the logs of the qx compiler
+follow-dev-logs: ## Follows the logs of the qooxdoo compiler
 	@docker logs --follow $(container_name)
 
 
 .PHONY: compile touch upgrade
-compile: ## qx compiles host' 'source' -> image's 'build-output'
+compile: ## Compiles host source to the image build-output
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	@docker buildx build \
 		--load \
@@ -52,7 +52,7 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 		--target=build-client .
 	python ./scripts/post-compile.py
 
-touch: ## minimal image build with /project/output-build inside
+touch: ## Builds a minimal image with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
 	@docker buildx build \
 		--load \
@@ -62,15 +62,17 @@ touch: ## minimal image build with /project/output-build inside
 		--target=touch \
 		.
 
-upgrade: ## upgrade to official version of the tool
+##@ Docker
+
+upgrade: ## Upgrades to the official version of the tool
 	# upgrading to ${QOOXDOO_KIT_TAG}
 	@${docker_compose} pull
 
 .PHONY: down
-down: ## tear down docker-compose
+down: ## Tears down Docker Compose
 	@${docker_compose} down --remove-orphans
 
-# qx serve --------------------------
+##@ Serve
 
 define qx_serve =
 			qx serve $(flags) \
@@ -82,17 +84,15 @@ define qx_serve =
 endef
 
 .PHONY: serve-dev
-serve-dev: ## compiles & watches host 'source' and serves site in 127.0.0.1:8080. Use this to view the effect of your changes in realtime
+serve-dev: ## Compiles and watches host source, serving the site on 127.0.0.1:8080
 	# qx serve $(flags) 'source' --> 'source-output' --> 127.0.0.1:8080
 	$(docker_compose) run $(if $(detached),--detach --name=$(detached),--rm) --service-ports qooxdoo-kit $(qx_serve)
 
 .PHONY: serve
-serve: compile ## serves site compiled in image in 127.0.0.1:8080
+serve: compile ## Serves the site compiled in the image on 127.0.0.1:8080
 	# qx serve $(flags) 'build-output' within $(docker_image) image --> 127.0.0.1:8080
 	docker run --rm -p 8080:8080  $(docker_image) $(qx_serve) --target=build
 
-
-# qx translate --------------------------
 
 define qx_translate_extract =
 			qx compile --update-po-files
@@ -100,31 +100,19 @@ endef
 
 
 
-# misc --------------------------
+##@ Misc
 .PHONY: shell
-shell: ## runs /bin/sh in 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
+shell: ## Runs /bin/sh in the qooxdoo-kit image
 	@$(docker_compose) run --rm qooxdoo-kit /bin/sh
 
 
 .PHONY: info
-info: ## displays info about toolkit and build images
+info: ## Displays information about toolkit and build images
 	# toolkit image 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'
 	@docker images itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}
 	@docker image inspect itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG} $(if jq,| jq .[0].ContainerConfig.Labels,)
 	# build image '$(docker_image)'
 	@docker images $(docker_image)
-
-
-.PHONY: help
-# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## this colorful help
-	@echo "Recipes to qx compile/serve web client using 'itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}'"
-	@docker image inspect itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG} $(if jq,| jq .[0].ContainerConfig.Labels,)
-	@echo ""
-	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-
 
 .PHONY: clean clean-files clean-images
 clean-files:
