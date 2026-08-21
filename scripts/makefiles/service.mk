@@ -1,17 +1,18 @@
 #
-# These are common target and recipes to Makefiles for services/
+# Common targets and recipes for services/
 #
-# USAGE: Add this in the top of service's Makefile
+# LIBRARY (.mk): include-only, not a directly-invoked entry point.
+# USAGE (top of a service Makefile):
+#   include ../../scripts/makefiles/common.mk
+#   include ../../scripts/makefiles/service.mk
 #
-#   include ../../scripts/common.Makefile
-#   include ../../scripts/common-service.Makefile
+# $(CURDIR) here refers to the service directory that includes it.
+# SEE scripts/makefiles/README.md for conventions.
 #
 
 #
 # GLOBALS
 #
-
-# NOTE $(CURDIR) in this file refers to the directory where this file is included
 
 # Variable based on conventions (override if they do not apply)
 APP_NAME          = $(notdir $(CURDIR))
@@ -24,28 +25,39 @@ export APP_VERSION
 
 
 #
-# SHORTCUTS
-#
-
-
-#
 # VENV (virtual environment) TASKS
 #
 
-
-.PHONY: install-dev install-prod install-ci
-
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# Installing in $(subst install-,,$@) mode
-	@uv pip sync requirements/$(subst install-,,$@).txt
+include $(REPO_BASE_DIR)/scripts/makefiles/python-install.mk
 
 
+#
+# TEST TASKS
+#
 
-.PHONY: test-dev test-ci FORCE
+##@ Tests
 
-# Always out-of-date sentinel used to force pattern test targets to run.
-FORCE:
+.PHONY: test test-dev test-ci
 
+TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
+
+# Pattern rules (alphabetically ordered)
+
+# CI-CONTRACT: test-ci-integration is invoked by ci/github/**/*.bash (also test-dev-integration locally)
+test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s)) [CI]
+	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
+	@export DOCKER_REGISTRY=local; \
+	export DOCKER_IMAGE_TAG=production; \
+	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
+
+# CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
+test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s)) [CI]
+	# Targets tests/unit folder (or an explicit target= if provided)
+	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
+
+# Public targets (alphabetically ordered)
+
+# REVIEW: self-test of the test-target dispatch; no known CI/docs callers.
 .PHONY: check-test-dispatch
 check-test-dispatch: ## validates test target dispatch and mode-specific pytest options via dry-runs
 	@tmp_file=$$(mktemp); \
@@ -60,22 +72,11 @@ check-test-dispatch: ## validates test target dispatch and mode-specific pytest 
 	grep -q -- "--cov-append" "$$tmp_file" || (echo "ERROR: _run-test-ci is missing CI pytest options"; cat "$$tmp_file"; exit 1); \
 	echo "OK: test dispatch checks passed"
 
-TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
-
-test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s))
-	# Targets tests/unit folder (or an explicit target= if provided)
-	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
-
-test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s))
-	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
-	@export DOCKER_REGISTRY=local; \
-	export DOCKER_IMAGE_TAG=production; \
-	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
-
+test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
 
-test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
+test: test-dev-unit ## runs app unit tests for development (e.g. w/ pdb)
 
 
 # ---------------------------------------------------------------------------
@@ -85,43 +86,32 @@ include $(REPO_BASE_DIR)/scripts/makefiles/i18n.mk
 
 
 #
-# DOCKER CONTAINERS TASKS
+# DOCKER CONTAINERS TASKS (alphabetically ordered)
 #
 
+##@ Docker
+
 .PHONY: build build-nc build-devel build-devel-nc
-build build-nc build-devel build-devel-nc: ## [docker] builds docker image in many flavours
+build build-nc build-devel build-devel-nc: ## builds docker image in many flavours
 	# Building docker image for ${APP_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
-.PHONY: shell
-shell: ## [swarm] runs shell inside $(APP_NAME) container
-	docker exec \
-		--interactive \
-		--tty \
-		$(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
-		/bin/bash
+##@ Container / Swarm
 
-
-.PHONY: tail logs
-tail logs: ## [swarm] tails log of $(APP_NAME) container
+.PHONY: logs tail
+logs tail: ## tails log of $(APP_NAME) container
 	docker logs \
 		--follow \
 		$(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
 		2>&1
 
 
-.PHONY: stats
-stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
-	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
-
-
-
 DOCKER_REGISTRY ?=local
 DOCKER_IMAGE_TAG?=production
 
 .PHONY: settings-schema.json
-settings-schema.json: ## [container] dumps json-shcema of this service settings
+settings-schema.json: ## dumps json-shcema of this service settings
 	# Dumping settings schema of ${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG}
 	@docker run \
 		${DOCKER_REGISTRY}/${APP_NAME}:${DOCKER_IMAGE_TAG} \
@@ -137,10 +127,26 @@ settings-schema.json: ## [container] dumps json-shcema of this service settings
 #
 
 
+.PHONY: shell
+shell: ## runs shell inside $(APP_NAME) container
+	docker exec \
+		--interactive \
+		--tty \
+		$(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		/bin/bash
+
+
+.PHONY: stats
+stats: ## display live stream of $(APP_NAME) container resource usage statistics
+	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
+
+
 
 #
 # MISC
 #
+
+##@ Misc
 
 .PHONY: info
 info: ## displays service info
@@ -160,6 +166,7 @@ info: ## displays service info
 
 TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
+PYTEST_COV_TARGET := $(APP_PACKAGE_NAME)
 
 PYTEST_BASE_ARGS = \
 	--asyncio-mode=auto \
@@ -167,7 +174,7 @@ PYTEST_BASE_ARGS = \
 	--cov-config=.coveragerc \
 	--cov-report=term-missing \
 	--cov-report=xml \
-	--cov=$(APP_PACKAGE_NAME) \
+	--cov=$(PYTEST_COV_TARGET) \
 	--durations=10 \
 	--junitxml=junit.xml -o junit_family=legacy \
 	--keep-docker-up
@@ -185,14 +192,7 @@ PYTEST_ARGS_ci = \
 	--verbose \
 	-m "not heavy_load"
 
-_run-test-%: FORCE _check_venv_active
-	# runs tests for development or CI mode
-	$(if $(filter $*,dev ci),,$(error unsupported test mode '$*', expected dev or ci))
-	pytest \
-		$(PYTEST_BASE_ARGS) \
-		$(PYTEST_ARGS_$*) \
-		$(PYTEST_ADDITIONAL_PARAMETERS) \
-		$(TEST_TARGET)
+include $(REPO_BASE_DIR)/scripts/makefiles/python-test.mk
 
 
 .PHONY: _assert_target_defined

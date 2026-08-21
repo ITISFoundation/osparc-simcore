@@ -1,6 +1,8 @@
-# Base Makefile for all requirements/Makefile
+# Base library for every <project>/requirements/Makefile
 #
-# SEE docs/python-dependencies.md
+# LIBRARY (.mk): include-only, not a directly-invoked entry point.
+# Provides the pip-compile workflow (reqs/touch/check/clean/help + %.txt:%.in rule).
+# SEE docs/python-dependencies.md and scripts/makefiles/README.md
 #
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 
@@ -15,11 +17,7 @@ UPGRADE_OPTION := $(if $(upgrade),--upgrade-package "$(upgrade)",$(DO_CLEAN_OR_U
 objects = $(sort $(wildcard *.in))
 outputs := $(objects:.in=.txt)
 
-reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
-
-touch:
-	@$(foreach p,${objects},touch ${p};)
-
+# Public targets (alphabetically ordered)
 
 check: ## Checks whether uv is installed
 	@which uv > /dev/null
@@ -31,7 +29,7 @@ clean: check ## Cleans all requirements/*.txt
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## this colorful help
+help: ## This colorful help
 	@echo "Recipes for '$(notdir $(CURDIR))':"
 	@echo ""
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -42,6 +40,11 @@ help: ## this colorful help
 	@echo "  make reqs startswith=pytest # Upgrade all packages starting with 'pytest'"
 	@echo "  make reqs clean=1           # Clean and rebuild all requirements"
 	@echo ""
+
+reqs: $(outputs) ## Pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
+
+touch:
+	@$(foreach p,${objects},touch ${p};)
 
 
 # ------------------------------------------------------------------------------------------

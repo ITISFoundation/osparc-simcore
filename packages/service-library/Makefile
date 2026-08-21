@@ -1,12 +1,12 @@
 #
 # Targets for DEVELOPMENT of Service Library
 #
-include ../../scripts/common.Makefile
+include ../../scripts/makefiles/common.mk
 
 help:	## overwrites and calls common help function
-	$(MAKE) --no-print-directory --file ../../scripts/common.Makefile $@
+	$(MAKE) --no-print-directory --file ../../scripts/makefiles/common.mk $@
 	@echo
-	@echo '🚨 BEWARE there are issues with brakets in names `make test-dev[aiohttp]` will raise errors:'
+	@echo '🚨 BEWARE there are issues with brackets in names `make test-dev[aiohttp]` will raise errors:'
 	@echo '✅` `make "test-dev[aiohttp]"` works as intended'
 	@echo '👓 Please note: when INSTALLING, DEVELOPING and TESTING '
 	@echo
@@ -24,103 +24,61 @@ install-%: _check_venv_active ## install app in development/production or CI mod
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
 
-APP_PACKAGE_NAME=servicelib
-.PHONY: test-dev
-test-dev: ## runs unit tests in w/o extras
-	# running test-dev
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=$(CURDIR)/../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--keep-docker-up \
-		--ignore=tests/aiohttp \
-		--ignore=tests/fastapi \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
+PYTEST_COV_TARGET := servicelib
+TEST_TARGET := $(CURDIR)/tests
 
+PYTEST_BASE_ARGS = \
+	--asyncio-mode=auto \
+	--color=yes \
+	--cov-config=$(CURDIR)/../../.coveragerc \
+	--cov-report=term-missing \
+	--cov-report=xml \
+	--cov=$(PYTEST_COV_TARGET) \
+	--durations=10 \
+	--junitxml=junit.xml -o junit_family=legacy \
+	--keep-docker-up
 
-.PHONY: test-dev[aiohttp]
+PYTEST_ARGS_dev = \
+	--exitfirst \
+	--failed-first \
+	--pdb \
+	-vv
+
+PYTEST_ARGS_ci = \
+	--cov-append \
+	--log-date-format="%Y-%m-%d %H:%M:%S" \
+	--log-format="%(asctime)s %(levelname)s %(message)s" \
+	--verbose \
+	-m "not heavy_load"
+
+include ../../scripts/makefiles/python-test.mk
+
+.PHONY: test test-dev test-dev-unit test-ci-unit test-dev[aiohttp] test-dev[fastapi] test-dev[all] test-ci[all]
+
+test: test-dev ## runs unit tests without extras
+
+test-dev: PYTEST_ADDITIONAL_PARAMETERS := --ignore=tests/aiohttp --ignore=tests/fastapi
+test-dev: ## runs unit tests without extras
+	@$(MAKE) --no-print-directory _run-test-dev \
+		PYTEST_ADDITIONAL_PARAMETERS='$(PYTEST_ADDITIONAL_PARAMETERS)'
+
+test-dev-unit: test-dev ## runs unit tests without extras
+
+test-ci-unit: test-ci[all] ## runs unit tests with all extras in CI mode
+
+test-dev[aiohttp]: PYTEST_ADDITIONAL_PARAMETERS := --ignore=tests/fastapi
 test-dev[aiohttp]: ## runs unit common tests and aiohttp extras
-	# running test-dev[aiohttp]
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=$(CURDIR)/../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--keep-docker-up \
-		--ignore=tests/fastapi \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
+	@$(MAKE) --no-print-directory _run-test-dev \
+		PYTEST_ADDITIONAL_PARAMETERS='$(PYTEST_ADDITIONAL_PARAMETERS)'
 
-.PHONY: test-dev[fastapi]
+test-dev[fastapi]: PYTEST_ADDITIONAL_PARAMETERS := --ignore=tests/aiohttp
 test-dev[fastapi]: ## runs unit common tests and fastapi extras
-	# running test-dev[aiohttp]
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=$(CURDIR)/../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--keep-docker-up \
-		--ignore=tests/aiohttp \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
+	@$(MAKE) --no-print-directory _run-test-dev \
+		PYTEST_ADDITIONAL_PARAMETERS='$(PYTEST_ADDITIONAL_PARAMETERS)'
 
-.PHONY: test-dev[all]
-test-dev[all]: ## runs unit tests  w/ all extras
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=$(CURDIR)/../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--keep-docker-up \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
+test-dev[all]: ## runs unit tests with all extras
+	@$(MAKE) --no-print-directory _run-test-dev
 
-
-.PHONY: test-ci[all]
-test-ci[all]:  ## runs unit tests  w/ all extras
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=$(CURDIR)/../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(APP_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--keep-docker-up \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
-		-m "not heavy_load" \
-		$(CURDIR)/tests
+# CI-CONTRACT: test-ci[all] is invoked by ci/github/**/*.bash
+test-ci[all]: ## runs unit tests with all extras in CI mode [CI]
+	@$(MAKE) --no-print-directory _run-test-ci

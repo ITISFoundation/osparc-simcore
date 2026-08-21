@@ -1,7 +1,11 @@
 #
 # Targets for DEVELOPMENT of Service Library
 #
-include ../../scripts/common.Makefile
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/package.mk
+
+PYTEST_BASE_ARGS := --asyncio-mode=auto --durations=10
+PYTEST_ARGS_ci := --exitfirst --failed-first --pdb -vv
 
 
 .PHONY: install-dev install-prod install-ci
@@ -11,6 +15,6 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 
 .PHONY: tests-ci
-tests-ci: ## runs unit tests inside CI
-	# running unit tests inside CI
-	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
+
+# CI-CONTRACT: tests-ci is invoked by ci/github/**/*.bash
+tests-ci: test-ci-unit ## runs unit tests inside CI [CI]

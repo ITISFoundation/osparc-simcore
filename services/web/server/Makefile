@@ -1,12 +1,14 @@
 #
 # Targets for DEVELOPMENT for Webserver service
 #
-include ../../../scripts/common.Makefile
-include ../../../scripts/common-service.Makefile
+include ../../../scripts/makefiles/common.mk
+include ../../../scripts/makefiles/service.mk
 
 # overrides since it does not has same directory name
 APP_NAME := webserver
 PY_PACKAGE_NAME := simcore_service_webserver
+
+##@ Environment & Install
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
@@ -14,6 +16,8 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 
 APP_OPENAPI_RELPATH=src/$(PY_PACKAGE_NAME)/api/v0/openapi.json
+
+##@ API
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications

@@ -1,8 +1,8 @@
 #
 # Targets for DEVELOPMENT of Public API Server
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-service.Makefile
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/service.mk
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -19,11 +19,6 @@ guard-%:
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
-
-
-
-.env:
-	cp .env-devel $@
 
 
 define _create_and_validate_openapi
