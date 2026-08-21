@@ -93,7 +93,6 @@ def build_otel_collector_compose_service(
         "volumes": [traces_volume_mount],
         "mem_limit": f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT}",
         "cpus": f"{user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT}",
-        "cpu_shares": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES,
         "stop_grace_period": (
             f"{int(user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD.total_seconds())}s"
         ),

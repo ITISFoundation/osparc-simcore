@@ -297,8 +297,7 @@ def expected_dynamic_sidecar_spec(
                         '"USER_SERVICES_TRACING_COLLECTOR_MAX_FILE_SIZE_MB":1,'
                         '"USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD":"PT15S",'
                         '"USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT":268435456,'
-                        '"USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT":0.25,'
-                        '"USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES":16}'
+                        '"USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT":0.25}'
                     ),
                     "R_CLONE_PROVIDER": "MINIO",
                     "SC_BOOT_MODE": "production",

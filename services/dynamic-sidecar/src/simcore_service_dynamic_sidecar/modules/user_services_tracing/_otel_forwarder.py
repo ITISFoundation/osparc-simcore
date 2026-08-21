@@ -144,7 +144,6 @@ def _build_forwarder_container_config(
             "NanoCpus": int(
                 user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT * _NANO_CPUS_PER_CORE
             ),
-            "CpuShares": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES,
         },
     }
 

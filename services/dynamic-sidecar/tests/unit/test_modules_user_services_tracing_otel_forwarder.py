@@ -151,7 +151,6 @@ def test_build_forwarder_container_config(
     assert host_config["NanoCpus"] == int(
         user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT * _otel_forwarder._NANO_CPUS_PER_CORE  # noqa: SLF001
     )
-    assert host_config["CpuShares"] == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES
     assert config["Env"] == [
         f"OTEL_COLLECTOR_CONFIG={_otel_forwarder._generate_forwarder_config(platform_tracing_settings_stub)}"  # noqa: SLF001
     ]
