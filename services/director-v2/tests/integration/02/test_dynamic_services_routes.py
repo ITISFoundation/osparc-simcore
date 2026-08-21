@@ -12,9 +12,9 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import aiodocker
+import httpx
 import pytest
-from async_asgi_testclient import TestClient
-from async_asgi_testclient.response import Response
+from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB, ProjectID
@@ -50,6 +50,12 @@ SERVICE_IS_READY_TIMEOUT = 2 * 60
 DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 
 logger = logging.getLogger(__name__)
+
+
+class _TestClient(httpx.AsyncClient):
+    # NOTE: keeps the `.application` API previously provided by async_asgi_testclient.TestClient
+    application: FastAPI
+
 
 pytest_simcore_core_services_selection = [
     "agent",
@@ -175,7 +181,7 @@ async def director_v2_client(
     redis_settings: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-) -> AsyncIterable[TestClient]:
+) -> AsyncIterable[_TestClient]:
     setenvs_from_dict(
         monkeypatch,
         {
@@ -210,13 +216,22 @@ async def director_v2_client(
 
     app = create_app(settings)
 
-    async with TestClient(app) as client:
+    # NOTE: httpx.AsyncClient (unlike async_asgi_testclient) is ASGI-compliant and
+    # supports the "state" key the app's lifespan manager writes to the scope
+    async with (
+        LifespanManager(app),
+        _TestClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://director-v2.testserver.io",
+        ) as client,
+    ):
+        client.application = app
         yield client
 
 
 @pytest.fixture
 async def ensure_services_stopped(
-    start_request_data: dict[str, Any], director_v2_client: TestClient
+    start_request_data: dict[str, Any], director_v2_client: _TestClient
 ) -> AsyncIterator[None]:
     yield
     # ensure service cleanup when done testing
@@ -314,7 +329,7 @@ async def key_version_expected(
 
 @pytest.mark.flaky(max_runs=3)
 async def test_start_status_stop(
-    director_v2_client: TestClient,
+    director_v2_client: _TestClient,
     node_uuid: str,
     start_request_data: dict[str, Any],
     ensure_services_stopped: None,
@@ -329,7 +344,7 @@ async def test_start_status_stop(
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 
     # starting the service
-    response: Response = await director_v2_client.post(
+    response: httpx.Response = await director_v2_client.post(
         "/v2/dynamic_services",
         json=start_request_data,
         headers={
@@ -352,8 +367,8 @@ async def test_start_status_stop(
     ):
         with attempt:
             print(f"--> getting service {node_uuid=} status... attempt {attempt.retry_state.attempt_number}")
-            response: Response = await director_v2_client.get(
-                f"/v2/dynamic_services/{node_uuid}", json=start_request_data
+            response: httpx.Response = await director_v2_client.request(
+                "GET", f"/v2/dynamic_services/{node_uuid}", json=start_request_data
             )
             print("-- sidecar status result %s", response.text)
             assert response.status_code == 200, response.text
@@ -369,6 +384,8 @@ async def test_start_status_stop(
     assert data["service_state"] == "running"
 
     # finally stopping the service
-    response: Response = await director_v2_client.delete(f"/v2/dynamic_services/{node_uuid}", json=start_request_data)
+    response: httpx.Response = await director_v2_client.request(
+        "DELETE", f"/v2/dynamic_services/{node_uuid}", json=start_request_data
+    )
     assert response.status_code == 204, response.text
     assert response.text == ""
