@@ -58,7 +58,7 @@ _SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
 # Lets CI override the sample count per deployment, e.g. for weaker ones
-_NUM_SAMPLING_POINTS: Final[int] = int(os.environ.get("E2E_MMUX_RSM_NUM_SAMPLING_POINTS", "40"))
+_NUM_SAMPLING_POINTS: Final[int] = int(os.environ.get("E2E_MMUX_RSM_NUM_SAMPLING_POINTS") or 40)
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
