@@ -17,6 +17,7 @@
 import base64
 import json
 import logging
+import os
 import re
 from collections.abc import Callable, Iterator
 from typing import Any, Final
@@ -56,10 +57,8 @@ _SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
 
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
-_NUM_SAMPLING_POINTS: Final[int] = 40
-# Internal master is more resource-constrained, use fewer samples
-_NUM_SAMPLING_POINTS_INTERNAL_MASTER: Final[int] = 5
-_INTERNAL_MASTER_HOSTNAME: Final[str] = "osparc-master.speag.com"
+# Lets CI override the sample count per deployment, e.g. for weaker ones
+_NUM_SAMPLING_POINTS: Final[int] = int(os.environ.get("E2E_MMUX_RSM_NUM_SAMPLING_POINTS", "40"))
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
@@ -69,7 +68,7 @@ _TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
 _TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
 _TEARDOWN_FULL_WAIT_SECONDS: Final[float] = 10.0
 _TEARDOWN_FULL_ATTEMPTS: Final[int] = 3
-_EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
+_EXPECTED_LHS_INPUT_VALUES_40: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
     1.5227525095,
@@ -112,14 +111,19 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     9.7291886695,
 ]
 
-# Generated the same way as _EXPECTED_LHS_INPUT_VALUES, with n=5
-_EXPECTED_LHS_INPUT_VALUES_INTERNAL_MASTER: Final[list[float]] = [
+# Generated the same way as _EXPECTED_LHS_INPUT_VALUES_40, with n=5
+_EXPECTED_LHS_INPUT_VALUES_5: Final[list[float]] = [
     2.404167764,
     4.3708610696,
     6.3879263578,
     7.5879454763,
     9.5564287577,
 ]
+# Only known CI overrides have precomputed expected values to check against
+_EXPECTED_LHS_INPUT_VALUES_BY_COUNT: Final[dict[int, list[float]]] = {
+    40: _EXPECTED_LHS_INPUT_VALUES_40,
+    5: _EXPECTED_LHS_INPUT_VALUES_5,
+}
 
 
 class _TeardownDeleteError(Exception):
@@ -183,18 +187,6 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     api_host = f"api.{parsed.hostname}"
     api_netloc = f"{api_host}:{parsed.port}" if parsed.port else api_host
     return urlunparse(parsed._replace(netloc=api_netloc))
-
-
-def _get_num_sampling_points(product_url: AnyUrl) -> int:
-    if urlparse(str(product_url)).hostname == _INTERNAL_MASTER_HOSTNAME:
-        return _NUM_SAMPLING_POINTS_INTERNAL_MASTER
-    return _NUM_SAMPLING_POINTS
-
-
-def _get_expected_lhs_input_values(product_url: AnyUrl) -> list[float]:
-    if urlparse(str(product_url)).hostname == _INTERNAL_MASTER_HOSTNAME:
-        return _EXPECTED_LHS_INPUT_VALUES_INTERNAL_MASTER
-    return _EXPECTED_LHS_INPUT_VALUES
 
 
 @retry(
@@ -492,8 +484,10 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
 ):
-    num_sampling_points = _get_num_sampling_points(product_url)
-    expected_lhs_input_values = _get_expected_lhs_input_values(product_url)
+    assert _NUM_SAMPLING_POINTS in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
+        f"No expected LHS values for _NUM_SAMPLING_POINTS={_NUM_SAMPLING_POINTS}, "
+        f"add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
+    )
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
@@ -888,7 +882,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(str(num_sampling_points))
+            samplingInput.fill(str(_NUM_SAMPLING_POINTS))
             samplingInput.press("Enter")
 
             seed_was_set = False
@@ -998,13 +992,12 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 )
 
                 if "uq" not in local_service_key.lower():
-                    assert len(input_values) == num_sampling_points, (
-                        f"Expected {num_sampling_points} input values, got {len(input_values)}"
+                    assert len(input_values) == _NUM_SAMPLING_POINTS, (
+                        f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
                     )
                     if seed_was_set:
-                        for i, (actual, expected) in enumerate(
-                            zip(input_values, expected_lhs_input_values, strict=True)
-                        ):
+                        expected_values = _EXPECTED_LHS_INPUT_VALUES_BY_COUNT[_NUM_SAMPLING_POINTS]
+                        for i, (actual, expected) in enumerate(zip(input_values, expected_values, strict=True)):
                             assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
 
         with (
