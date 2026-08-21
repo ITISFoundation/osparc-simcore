@@ -11,7 +11,7 @@ import pytest
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup("oSparc e2e options", description="oSPARC-e2e specific parameters")
     group.addoption(
-        "--num-sampling-points",
+        "--mmux-num-sampling-points",
         action="store",
         type=int,
         default=None,

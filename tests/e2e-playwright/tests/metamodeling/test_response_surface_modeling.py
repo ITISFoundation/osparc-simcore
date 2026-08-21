@@ -56,7 +56,7 @@ _SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
 
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
-# CI can override this via --num-sampling-points, e.g. for weaker deployments
+# CI can override this via --mmux-num-sampling-points, e.g. for weaker deployments
 _DEFAULT_NUM_SAMPLING_POINTS: Final[int] = 40
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
@@ -192,7 +192,7 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
 def num_sampling_points(request: pytest.FixtureRequest) -> int:
     value = (
         int(passed)
-        if (passed := request.config.getoption("--num-sampling-points")) is not None
+        if (passed := request.config.getoption("--mmux-num-sampling-points")) is not None
         else _DEFAULT_NUM_SAMPLING_POINTS
     )
     assert value in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
