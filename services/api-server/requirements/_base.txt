@@ -340,7 +340,9 @@ pint==0.25
 platformdirs==4.3.6
     # via pint
 prometheus-client==0.26.0
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
 prompt-toolkit==3.0.51
     # via click-repl
 propcache==0.2.1

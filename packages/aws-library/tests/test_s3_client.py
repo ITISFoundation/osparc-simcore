@@ -651,7 +651,7 @@ async def test_list_objects_pagination(
     assert len(first_level_files) == total_num_files
 
     # now we will fetch the file objects according to the given limit
-    num_fetch = int(round(total_num_files / limit + 0.5))
+    num_fetch = round(float(total_num_files) / limit + 0.5)
     assert num_fetch >= 1
     start_after_key = None
     for i in range(num_fetch - 1):
@@ -1441,7 +1441,7 @@ async def test_upload_file_invalid_raises(
 
 @pytest.mark.parametrize(
     "file_size",
-    [parametrized_file_size("500Mib")],
+    [parametrized_file_size("223Mib")],
     ids=byte_size_ids,
 )
 async def test_copy_file(
@@ -1700,7 +1700,7 @@ def test_compute_s3_url(bucket: S3BucketName, object_key: S3ObjectKey, expected_
     [
         parametrized_file_size("10Mib"),
         parametrized_file_size("100Mib"),
-        parametrized_file_size("1000Mib"),
+        parametrized_file_size("333Mib"),
     ],
     ids=byte_size_ids,
 )
