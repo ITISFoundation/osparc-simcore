@@ -17,8 +17,8 @@ from models_library.services_metadata_runtime import to_simcore_runtime_docker_l
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     GIGA,
-    HELPER_CONTAINERS_RESOURCE_KEY,
     MEMORY_1GB,
+    SIDECAR_HELPERS_RESOURCE_KEY,
     ServiceResourcesDict,
 )
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -45,7 +45,7 @@ def get_max_user_service_container_memory(service_resources: ServiceResourcesDic
     user_service_ram_limits = [
         int(image_resources.resources["RAM"].limit)
         for key, image_resources in service_resources.items()
-        if key != HELPER_CONTAINERS_RESOURCE_KEY and "RAM" in image_resources.resources
+        if key != SIDECAR_HELPERS_RESOURCE_KEY and "RAM" in image_resources.resources
     ]
     return TypeAdapter(ByteSize).validate_python(max(user_service_ram_limits, default=0))
 

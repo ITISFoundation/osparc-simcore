@@ -19,7 +19,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import ServiceRunID
 from models_library.services_resources import (
-    HELPER_CONTAINERS_RESOURCE_KEY,
+    SIDECAR_HELPERS_RESOURCE_KEY,
     ImageResources,
     ResourceValue,
     ServiceResourcesDict,
@@ -120,8 +120,8 @@ def _add_helper_containers_resources_to_service_resources(
     if cpu <= 0 and ram <= 0:
         return
 
-    service_resources[HELPER_CONTAINERS_RESOURCE_KEY] = ImageResources(
-        image=HELPER_CONTAINERS_RESOURCE_KEY,
+    service_resources[SIDECAR_HELPERS_RESOURCE_KEY] = ImageResources(
+        image=SIDECAR_HELPERS_RESOURCE_KEY,
         resources={
             "CPU": ResourceValue(limit=cpu, reservation=cpu),
             "RAM": ResourceValue(limit=ram, reservation=ram),
