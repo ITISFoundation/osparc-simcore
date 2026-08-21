@@ -21,11 +21,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-
-.env:
-	cp .env-devel $@
-
-
 define _create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'officially released'!)
 	set -o allexport; \

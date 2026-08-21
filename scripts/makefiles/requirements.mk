@@ -29,7 +29,7 @@ clean: check ## Cleans all requirements/*.txt
 
 .PHONY: help
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## this colorful help
+help: ## This colorful help
 	@echo "Recipes for '$(notdir $(CURDIR))':"
 	@echo ""
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -41,7 +41,7 @@ help: ## this colorful help
 	@echo "  make reqs clean=1           # Clean and rebuild all requirements"
 	@echo ""
 
-reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
+reqs: $(outputs) ## Pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
 
 touch:
 	@$(foreach p,${objects},touch ${p};)
