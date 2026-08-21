@@ -1,5 +1,6 @@
 import logging
 from asyncio import Lock, Task
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Final
@@ -8,6 +9,7 @@ import arrow
 from aiodocker.docker import Docker
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
 from servicelib.background_task import create_periodic_task
@@ -177,8 +179,8 @@ def get_volumes_manager(app: FastAPI) -> VolumesManager:
     return VolumesManager.get_from_app_state(app)
 
 
-def setup_volume_manager(app: FastAPI) -> None:
-    async def _on_startup() -> None:
+def configure_volume_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _volumes_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
         settings: ApplicationSettings = app.state.settings
 
         volumes_manager = VolumesManager(
@@ -189,9 +191,9 @@ def setup_volume_manager(app: FastAPI) -> None:
         )
         volumes_manager.set_to_app_state(app)
         await volumes_manager.setup()
+        try:
+            yield {}
+        finally:
+            await VolumesManager.get_from_app_state(app).shutdown()
 
-    async def _on_shutdown() -> None:
-        await VolumesManager.get_from_app_state(app).shutdown()
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_volumes_manager_lifespan)
