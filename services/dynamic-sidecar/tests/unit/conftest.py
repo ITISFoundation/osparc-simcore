@@ -63,15 +63,15 @@ async def initialized_app(app: FastAPI) -> AsyncIterable[FastAPI]:
         yield app
 
 
-@pytest.fixture
-async def test_client(initialized_app: FastAPI, max_response_time: int) -> AsyncIterable[TestClient]:
-    return TestClient(initialized_app, timeout=max_response_time)
-
-
 #
 # DOCKER Fixtures
 #
 #
+
+
+@pytest.fixture
+def test_client(initialized_app: FastAPI, max_response_time: int) -> TestClient:
+    return TestClient(initialized_app, timeout=max_response_time)
 
 
 @pytest.fixture
