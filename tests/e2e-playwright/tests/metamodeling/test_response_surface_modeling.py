@@ -112,6 +112,20 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     9.7291886695,
 ]
 
+# Generated the same way as _EXPECTED_LHS_INPUT_VALUES, with n=10
+_EXPECTED_LHS_INPUT_VALUES_INTERNAL_MASTER: Final[list[float]] = [
+    1.5227525095,
+    2.403950683,
+    2.404167764,
+    4.3708610696,
+    6.3879263578,
+    6.4100351057,
+    7.3726532002,
+    7.5879454763,
+    8.795585312,
+    9.5564287577,
+]
+
 
 class _TeardownDeleteError(Exception):
     """Raised when a resource DELETE request fails (non-ok, non-404 status)."""
@@ -180,6 +194,12 @@ def _get_num_sampling_points(product_url: AnyUrl) -> int:
     if urlparse(str(product_url)).hostname == _INTERNAL_MASTER_HOSTNAME:
         return _NUM_SAMPLING_POINTS_INTERNAL_MASTER
     return _NUM_SAMPLING_POINTS
+
+
+def _get_expected_lhs_input_values(product_url: AnyUrl) -> list[float]:
+    if urlparse(str(product_url)).hostname == _INTERNAL_MASTER_HOSTNAME:
+        return _EXPECTED_LHS_INPUT_VALUES_INTERNAL_MASTER
+    return _EXPECTED_LHS_INPUT_VALUES
 
 
 @retry(
@@ -478,6 +498,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     api_key_and_secret: tuple[str, str],
 ):
     num_sampling_points = _get_num_sampling_points(product_url)
+    expected_lhs_input_values = _get_expected_lhs_input_values(product_url)
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
@@ -985,10 +1006,9 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                     assert len(input_values) == num_sampling_points, (
                         f"Expected {num_sampling_points} input values, got {len(input_values)}"
                     )
-                    # Values below assume the full _NUM_SAMPLING_POINTS
-                    if seed_was_set and num_sampling_points == _NUM_SAMPLING_POINTS:
+                    if seed_was_set:
                         for i, (actual, expected) in enumerate(
-                            zip(input_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)
+                            zip(input_values, expected_lhs_input_values, strict=True)
                         ):
                             assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
 
