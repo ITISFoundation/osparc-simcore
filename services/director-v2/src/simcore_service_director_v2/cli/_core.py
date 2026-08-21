@@ -6,6 +6,7 @@ from enum import Enum
 
 import typer
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
@@ -16,10 +17,12 @@ from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
+from servicelib.tracing import TracingConfig
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
 
+from .._meta import APP_NAME
 from ..core.application import create_base_app
 from ..core.settings import AppSettings
 from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
@@ -35,22 +38,24 @@ from ._client import ThinDV2LocalhostClient
 
 @asynccontextmanager
 async def _initialized_app(*, only_db: bool = False) -> AsyncIterator[FastAPI]:
-    app = create_base_app()
-    settings: AppSettings = app.state.settings
+    settings = AppSettings.create_from_envs()
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.DIRECTOR_V2_TRACING)
+    app_lifespan: LifespanManager = LifespanManager()
+    app = create_base_app(settings, tracing_config, app_lifespan)
+
     # Initialize minimal required components for the application
-    db.setup(app, settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
+    db.configure_db(app_lifespan, settings=settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
 
     if not only_db:
-        dynamic_sidecar.setup(app)
-        director_v0.setup(
-            app,
+        dynamic_sidecar.configure_dynamic_sidecar(app, app_lifespan)
+        director_v0.configure_director_v0(
+            app_lifespan,
             director_v0_settings=settings.DIRECTOR_V0,
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
-    await app.router.startup()
-    yield app
-    await app.router.shutdown()
+    async with app_lifespan(app):
+        yield app
 
 
 ### PROJECT SAVE STATE
