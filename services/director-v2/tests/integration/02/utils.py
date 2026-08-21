@@ -49,6 +49,8 @@ from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
+_logger = logging.getLogger(__name__)
+
 PROXY_BOOT_TIME = 30
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 120
 SERVICES_ARE_READY_TIMEOUT = 2 * 60
@@ -327,12 +329,18 @@ async def assert_start_service(  # pylint: disable=too-many-arguments
             product_name=product_name,
         )
 
-    # Older test images may ship with CPU.limit=0 in their labels. Apply a 1-core
-    # floor per container so integration tests work with pre-requirement images,
-    # regardless of container key names.
-    for image_resources in service_resources.values():
+    for image_key, image_resources in service_resources.items():
         cpu = image_resources.resources.get("CPU")
         if cpu is not None and float(cpu.limit) < _MIN_CPU:
+            _logger.warning(
+                "%s: CPU.limit=%s is below the %s-core floor for %s, forcing it to %s "
+                "(older test images may ship with CPU.limit=0 in their labels)",
+                service_key,
+                cpu.limit,
+                _MIN_CPU,
+                image_key,
+                _MIN_CPU,
+            )
             cpu.limit = _MIN_CPU
             cpu.reservation = _MIN_CPU
     data = {
