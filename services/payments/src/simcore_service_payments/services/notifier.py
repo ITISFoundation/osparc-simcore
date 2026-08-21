@@ -1,7 +1,9 @@
 import contextlib
 import logging
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -13,7 +15,7 @@ from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
 from .notifier_email import EmailProvider
 from .notifier_ws import WebSocketProvider
-from .postgres import get_engine
+from .postgres import get_async_engine
 from .rabbitmq import get_rabbitmq_rpc_client
 
 _logger = logging.getLogger(__name__)
@@ -72,31 +74,30 @@ class NotifierService(SingletonInAppStateMixin):
             )
 
 
-def setup_notifier(app: FastAPI):
-    app_settings: ApplicationSettings = app.state.settings
+def configure_notifier(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _notifier_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        try:
+            app_settings: ApplicationSettings = app.state.settings
+            assert app.state.external_socketio  # nosec
+            engine = get_async_engine(app)
+            providers: list[NotificationProvider] = [
+                WebSocketProvider(
+                    sio_manager=app.state.external_socketio,
+                    users_repo=PaymentsUsersRepo(engine),
+                ),
+                EmailProvider(
+                    rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
+                    users_repo=PaymentsUsersRepo(engine),
+                    bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
+                ),
+            ]
 
-    async def _on_startup() -> None:
-        assert app.state.external_socketio  # nosec
-        engine = get_engine(app)
-        providers: list[NotificationProvider] = [
-            WebSocketProvider(
-                sio_manager=app.state.external_socketio,
-                users_repo=PaymentsUsersRepo(engine),
-            ),
-            EmailProvider(
-                rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
-                users_repo=PaymentsUsersRepo(engine),
-                bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
-            ),
-        ]
+            notifier = NotifierService(*providers)
+            notifier.set_to_app_state(app)
+            assert NotifierService.get_from_app_state(app) == notifier  # nosec
+            yield {}
+        finally:
+            with contextlib.suppress(AttributeError):
+                NotifierService.pop_from_app_state(app)
 
-        notifier = NotifierService(*providers)
-        notifier.set_to_app_state(app)
-        assert NotifierService.get_from_app_state(app) == notifier  # nosec
-
-    async def _on_shutdown() -> None:
-        with contextlib.suppress(AttributeError):
-            NotifierService.pop_from_app_state(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_notifier_lifespan)

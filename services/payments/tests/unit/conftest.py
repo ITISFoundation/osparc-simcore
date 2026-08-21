@@ -16,10 +16,11 @@ import jsonref
 import pytest
 import respx
 import sqlalchemy as sa
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
@@ -36,6 +37,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.tracing import TracingConfig
+from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
@@ -67,11 +69,11 @@ from toolz.dicttoolz import get_in
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
     def _():
         # The following services are affected if rabbitmq is not in place
-        mocker.patch("simcore_service_payments.core.application.setup_notifier")
-        mocker.patch("simcore_service_payments.core.application.setup_socketio")
-        mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
-        mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
-        mocker.patch("simcore_service_payments.core.application.setup_auto_recharge_listener")
+        mocker.patch("simcore_service_payments.core.application.configure_notifier")
+        mocker.patch("simcore_service_payments.core.application.configure_socketio")
+        mocker.patch("simcore_service_payments.core.application.configure_rabbitmq")
+        mocker.patch("simcore_service_payments.core.application.configure_rpc_api_routes")
+        mocker.patch("simcore_service_payments.core.application.configure_auto_recharge_listener")
 
     return _
 
@@ -95,15 +97,24 @@ async def rpc_client(
 
 @pytest.fixture
 def disable_postgres_setup(mocker: MockerFixture) -> Callable:
-    def _setup(app: FastAPI, *, tracing_config: TracingConfig | None) -> None:
-        app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
+    def _configure(
+        app_lifespan: LifespanManager[FastAPI],
+        *,
+        settings: PostgresSettings,
+        tracing_config: TracingConfig | None,
+    ) -> None:
+        async def _postgres_lifespan(app: FastAPI) -> AsyncIterator[State]:
+            app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
+            yield {}
+
+        app_lifespan.add(_postgres_lifespan)
 
     def _():
         # The following services are affected if postgres is not in place
         mocker.patch(
-            "simcore_service_payments.core.application.setup_postgres",
+            "simcore_service_payments.core.application.configure_postgres",
             spec=True,
-            side_effect=_setup,
+            side_effect=_configure,
         )
 
     return _
@@ -207,7 +218,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 @pytest.fixture
 async def app(app_environment: EnvVarsDict, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     the_test_app = create_app()
-    async with LifespanManager(
+    async with ASGILifespanManager(
         the_test_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,

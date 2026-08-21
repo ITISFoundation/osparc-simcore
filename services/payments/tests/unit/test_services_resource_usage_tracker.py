@@ -8,35 +8,37 @@
 from datetime import UTC, datetime
 
 import pytest
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from respx import MockRouter
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
-    setup_resource_usage_tracker,
+    configure_resource_usage_tracker,
 )
 
 MAX_TIME_FOR_APP_TO_STARTUP = 10
 MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
-async def test_setup_rut_api(app_environment: EnvVarsDict, is_pdb_enabled: bool):
-    new_app = FastAPI()
+async def test_configure_rut_api(app_environment: EnvVarsDict, is_pdb_enabled: bool):
+    app_lifespan = LifespanManager[FastAPI]()
+    new_app = FastAPI(lifespan=app_lifespan)
     new_app.state.settings = ApplicationSettings.create_from_envs()
     with pytest.raises(AttributeError):
         ResourceUsageTrackerApi.get_from_app_state(new_app)
 
-    setup_resource_usage_tracker(new_app)
+    configure_resource_usage_tracker(new_app, app_lifespan)
     rut_api = ResourceUsageTrackerApi.get_from_app_state(new_app)
 
     assert rut_api is not None
     assert rut_api.client
 
-    async with LifespanManager(
+    async with ASGILifespanManager(
         new_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,

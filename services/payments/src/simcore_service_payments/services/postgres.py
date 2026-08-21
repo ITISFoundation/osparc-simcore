@@ -1,32 +1,27 @@
 from fastapi import FastAPI
-from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.postgres_lifespan import (
+    configure_postgres_database as _configure_postgres_database,
+)
 from servicelib.tracing import TracingConfig
+from settings_library.postgres import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .._meta import APP_NAME
-from ..core.settings import ApplicationSettings
+
+def configure_postgres(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: PostgresSettings,
+    tracing_config: TracingConfig | None,
+) -> None:
+    _configure_postgres_database(
+        app_lifespan,
+        settings=settings,
+        tracing_config=tracing_config,
+    )
 
 
-def get_engine(app: FastAPI) -> AsyncEngine:
+def get_async_engine(app: FastAPI) -> AsyncEngine:
     assert app.state.engine  # nosec
     engine: AsyncEngine = app.state.engine
     return engine
-
-
-def setup_postgres(app: FastAPI, tracing_config: TracingConfig | None) -> None:
-    app.state.engine = None
-
-    async def _on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
-        await connect_to_db(
-            app, settings=settings.PAYMENTS_POSTGRES, application_name=APP_NAME, tracing_config=tracing_config
-        )
-        assert app.state.engine  # nosec
-        assert isinstance(app.state.engine, AsyncEngine)  # nosec
-
-    async def _on_shutdown() -> None:
-        assert app.state.engine  # nosec
-        await close_db_connection(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
