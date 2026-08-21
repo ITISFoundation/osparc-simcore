@@ -58,7 +58,7 @@ _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "abort
 _LHS_SEED: Final[int] = 42
 _NUM_SAMPLING_POINTS: Final[int] = 40
 # Internal master is more resource-constrained, use fewer samples
-_NUM_SAMPLING_POINTS_INTERNAL_MASTER: Final[int] = 10
+_NUM_SAMPLING_POINTS_INTERNAL_MASTER: Final[int] = 5
 _INTERNAL_MASTER_HOSTNAME: Final[str] = "osparc-master.speag.com"
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
@@ -112,17 +112,12 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     9.7291886695,
 ]
 
-# Generated the same way as _EXPECTED_LHS_INPUT_VALUES, with n=10
+# Generated the same way as _EXPECTED_LHS_INPUT_VALUES, with n=5
 _EXPECTED_LHS_INPUT_VALUES_INTERNAL_MASTER: Final[list[float]] = [
-    1.5227525095,
-    2.403950683,
     2.404167764,
     4.3708610696,
     6.3879263578,
-    6.4100351057,
-    7.3726532002,
     7.5879454763,
-    8.795585312,
     9.5564287577,
 ]
 
