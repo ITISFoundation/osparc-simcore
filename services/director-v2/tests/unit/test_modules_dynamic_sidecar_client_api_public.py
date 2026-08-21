@@ -23,6 +23,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
     get_sidecars_client,
+    remove_sidecars_client,
     shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
@@ -364,3 +365,28 @@ async def test_free_reserved_disk_space(
             )
             is None
         )
+
+
+async def test_remove_sidecars_client_tears_down_and_pops_client(
+    sidecars_client: SidecarsClient, mocker: MockerFixture
+) -> None:
+    app = sidecars_client._app  # noqa: SLF001  # pylint:disable=protected-access
+    node_id = next(iter(app.state.sidecars_api_clients))
+    teardown_mock = mocker.patch.object(sidecars_client, "teardown", AsyncMock(wraps=sidecars_client.teardown))
+
+    assert node_id in app.state.sidecars_api_clients
+
+    await remove_sidecars_client(app, node_id)
+
+    teardown_mock.assert_awaited_once()
+    assert node_id not in app.state.sidecars_api_clients
+
+
+async def test_remove_sidecars_client_missing_client_is_a_noop(sidecars_client: SidecarsClient, faker: Faker) -> None:
+    app = sidecars_client._app  # noqa: SLF001  # pylint:disable=protected-access
+    existing_node_ids = set(app.state.sidecars_api_clients)
+
+    # does not raise even though no client was ever created for this node
+    await remove_sidecars_client(app, faker.uuid4(cast_to=None))
+
+    assert set(app.state.sidecars_api_clients) == existing_node_ids
