@@ -319,6 +319,12 @@ def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> Running
     return RunningState(event.obj["data"]["state"]["value"])
 
 
+def retrieve_project_id_from_decoded_message(event: SocketIOEvent) -> str:
+    assert event.name == _OSparcMessages.PROJECT_STATE_UPDATED.value
+    assert "project_uuid" in event.obj
+    return event.obj["project_uuid"]
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NodeProgressEvent:
     node_id: str
@@ -363,14 +369,26 @@ class SocketIOProjectClosedWaiter:
 @dataclass
 class SocketIOProjectStateUpdatedWaiter:
     expected_states: tuple[RunningState, ...]
+    project_uuid: str | None = None
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
+                    if self.project_uuid is not None:
+                        message_project_id = retrieve_project_id_from_decoded_message(decoded_message)
+                        if message_project_id != self.project_uuid:
+                            # a different project (e.g. a previous test/job's project still open or
+                            # closing on the shared user): ignore it and keep waiting for ours
+                            ctx.logger.debug(
+                                "ignoring projectStateUpdated for other project %s (waiting for %s)",
+                                message_project_id,
+                                self.project_uuid,
+                            )
+                            return False
                     return retrieve_project_state_from_decoded_message(decoded_message) in self.expected_states
 
             return False
