@@ -233,6 +233,8 @@ packaging==26.0
     #   opentelemetry-instrumentation-sqlalchemy
 pamqp==3.3.0
     # via aiormq
+prometheus-client==0.26.0
+    # via -r requirements/_base.in
 propcache==0.4.1
     # via
     #   aiohttp

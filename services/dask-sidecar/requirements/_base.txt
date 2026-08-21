@@ -303,7 +303,9 @@ partd==1.4.2
 pillow==12.2.0
     # via bokeh
 prometheus-client==0.26.0
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/_base.in
 propcache==0.4.1
     # via
     #   aiohttp
