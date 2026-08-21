@@ -262,7 +262,6 @@ def _flatten_host_permit_list_policies(
 
 
 def count_required_egress_proxies(simcore_service_labels: SimcoreServiceLabels) -> int:
-    """Returns the number of dy-sidecar-egress-proxy containers `add_egress_configuration` will create."""
     return len(_get_egress_proxy_dns_port_rules(_flatten_host_permit_list_policies(simcore_service_labels)))
 
 
