@@ -69,7 +69,8 @@ def inject_container_resources(
         deploy = service.setdefault("deploy", {})
         resources = deploy.setdefault("resources", {})
         limits = resources.setdefault("limits", {})
+        reservations = resources.setdefault("reservations", {})
         cpus = nano_cpus / 1e9
-        limits["cpus"] = f"{cpus}"
-        limits["memory"] = f"{memory_bytes}"
+        limits["cpus"] = reservations["cpus"] = f"{cpus}"
+        limits["memory"] = reservations["memory"] = f"{memory_bytes}"
     return compose_spec
