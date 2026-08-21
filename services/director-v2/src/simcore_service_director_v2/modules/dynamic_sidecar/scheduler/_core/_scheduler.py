@@ -402,6 +402,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             del self._inverse_search_mapping[node_uuid]
             self._to_observe.pop(service_name, None)
+            self._service_observation_task.pop(service_name, None)
 
         _logger.debug("Removed service '%s' from scheduler", service_name)
 
