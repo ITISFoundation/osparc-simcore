@@ -13,7 +13,7 @@ from servicelib.tracing import TracingConfig
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import APP_NAME, PROJECT_NAME
-from .core.application import create_app_lifespan, create_base_app
+from .core.application import create_app, create_app_lifespan, create_base_app
 from .core.rabbitmq import configure_rabbitmq
 from .core.settings import ApplicationSettings
 from .modules.long_running_tasks import (
@@ -38,7 +38,7 @@ main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=
 @main.command()
 def openapi():
     """Prints OpenAPI specifications in json format"""
-    app = create_base_app()
+    app = create_app()
     typer.secho(json_dumps(app.openapi(), indent=2))
 
 
