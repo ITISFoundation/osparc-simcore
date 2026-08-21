@@ -321,7 +321,9 @@ partd==1.4.2
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
 prometheus-client==0.26.0
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.4.1
     # via
     #   aiohttp
