@@ -201,6 +201,13 @@ def dynamic_sidecar_network_name() -> str:
 
 @pytest.fixture
 def compose_spec(dynamic_sidecar_network_name: str) -> str:
+    _cpu_limit = "4.0"
+    _ram_limit = str(16 * 1024 * 1024 * 1024)
+    _user_svc_env = [
+        f"SIMCORE_NANO_CPUS_LIMIT={int(float(_cpu_limit) * 1e9)}",
+        f"SIMCORE_MEMORY_BYTES_LIMIT={_ram_limit}",
+    ]
+    _user_svc_deploy = {"resources": {"limits": {"cpus": _cpu_limit, "memory": _ram_limit}}}
     return json.dumps(
         {
             "version": "3",
@@ -211,8 +218,14 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
                         dynamic_sidecar_network_name: None,
                     },
                     "labels": {"io.osparc.test-label": "mark-entrypoint"},
+                    "environment": _user_svc_env,
+                    "deploy": _user_svc_deploy,
                 },
-                "second-box": {"image": "busybox:latest"},
+                "second-box": {
+                    "image": "busybox:latest",
+                    "environment": _user_svc_env,
+                    "deploy": _user_svc_deploy,
+                },
                 "egress": {
                     "image": "busybox:latest",
                     "networks": {
@@ -227,6 +240,13 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
 
 @pytest.fixture
 def compose_spec_single_service() -> str:
+    _cpu_limit = "4.0"
+    _ram_limit = str(16 * 1024 * 1024 * 1024)
+    _user_svc_env = [
+        f"SIMCORE_NANO_CPUS_LIMIT={int(float(_cpu_limit) * 1e9)}",
+        f"SIMCORE_MEMORY_BYTES_LIMIT={_ram_limit}",
+    ]
+    _user_svc_deploy = {"resources": {"limits": {"cpus": _cpu_limit, "memory": _ram_limit}}}
     return json.dumps(
         {
             "version": "3",
@@ -234,6 +254,8 @@ def compose_spec_single_service() -> str:
                 "solo-box": {
                     "image": "busybox:latest",
                     "labels": {"io.osparc.test-label": "mark-entrypoint"},
+                    "environment": _user_svc_env,
+                    "deploy": _user_svc_deploy,
                 },
             },
         }

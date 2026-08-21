@@ -7,7 +7,7 @@ import os
 import urllib.parse
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
-from typing import Any
+from typing import Any, Final
 
 import aiodocker
 import httpx
@@ -48,6 +48,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
+
+_logger = logging.getLogger(__name__)
 
 PROXY_BOOT_TIME = 30
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 120
@@ -303,7 +305,10 @@ async def _handle_redirection(redirection_response: httpx.Response, *, method: s
         return response
 
 
-async def assert_start_service(
+_MIN_CPU: Final[float] = 1.0
+
+
+async def assert_start_service(  # pylint: disable=too-many-arguments
     director_v2_client: httpx.AsyncClient,
     product_name: str,
     product_api_base_url: str,
@@ -314,13 +319,30 @@ async def assert_start_service(
     service_uuid: str,
     basepath: str | None,
     catalog_url: URL,
+    service_resources: ServiceResourcesDict | None = None,
 ) -> None:
-    service_resources: ServiceResourcesDict = await _get_service_resources(
-        catalog_url=catalog_url,
-        service_key=service_key,
-        service_version=service_version,
-        product_name=product_name,
-    )
+    if service_resources is None:
+        service_resources = await _get_service_resources(
+            catalog_url=catalog_url,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
+
+    for image_key, image_resources in service_resources.items():
+        cpu = image_resources.resources.get("CPU")
+        if cpu is not None and float(cpu.limit) < _MIN_CPU:
+            _logger.warning(
+                "%s: CPU.limit=%s is below the %s-core floor for %s, forcing it to %s "
+                "(older test images may ship with CPU.limit=0 in their labels)",
+                service_key,
+                cpu.limit,
+                _MIN_CPU,
+                image_key,
+                _MIN_CPU,
+            )
+            cpu.limit = _MIN_CPU
+            cpu.reservation = _MIN_CPU
     data = {
         "user_id": user_id,
         "project_id": project_id,
@@ -338,6 +360,7 @@ async def assert_start_service(
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
         X_SIMCORE_USER_AGENT: "",
     }
+    print(f"Remaining start-service request payload: {data}")
 
     response = await director_v2_client.post(
         "/v2/dynamic_services",

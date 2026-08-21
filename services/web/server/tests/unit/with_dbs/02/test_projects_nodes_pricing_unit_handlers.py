@@ -18,6 +18,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingUnitGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -120,14 +121,25 @@ def mocked_clusters_keeper_service_get_instance_type_details(mocker: MockerFixtu
         return [
             EC2InstanceTypeGet(
                 name=next(iter(instance_type_names)),
-                cpus=faker.pyfloat(min_value=0.1),
-                ram=faker.pyint(min_value=1024),
+                cpus=faker.pyfloat(min_value=4, max_value=16),
+                ram=faker.pyint(
+                    min_value=TypeAdapter(ByteSize).validate_python("8GiB"),
+                    max_value=TypeAdapter(ByteSize).validate_python("32GiB"),
+                ),
             )
         ]
 
     return mocker.patch(
         "simcore_service_webserver.projects._projects_service.get_instance_type_details",
         side_effect=_fake_instance_type_details,
+    )
+
+
+@pytest.fixture
+def mocked_director_v2_service_get_helper_containers_resources(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service.get_helper_containers_resources",
+        return_value=(0.1, TypeAdapter(ByteSize).validate_python("256MiB")),
     )
 
 
@@ -139,6 +151,7 @@ async def test_project_wallets_full_workflow(
     expected: HTTPStatus,
     mock_rut_api_responses: AioResponsesMock,
     mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
+    mocked_director_v2_service_get_helper_containers_resources: None,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app

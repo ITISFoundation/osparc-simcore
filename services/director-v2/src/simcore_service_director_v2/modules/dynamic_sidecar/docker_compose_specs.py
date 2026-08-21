@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, Final, TypeAlias, TypedDict
+from typing import Any, Final, TypedDict
 
 from common_library.json_serialization import json_dumps
 from fastapi.applications import FastAPI
@@ -17,6 +17,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
+    GIGA,
     ResourcesDict,
     ResourceValue,
     ServiceResourcesDict,
@@ -26,10 +27,10 @@ from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from models_library.wallets import WalletID
 from pydantic import ByteSize
-from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 from settings_library.docker_registry import RegistrySettings
+from settings_library.egress_proxy import EgressProxySettings
 
-from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
 from ..osparc_variables.substitutions import (
     auto_inject_environments,
     resolve_and_substitute_session_variables_in_model,
@@ -39,8 +40,8 @@ from ..osparc_variables.substitutions import (
 )
 from .docker_compose_egress_config import add_egress_configuration
 
-EnvKeyEqValueList: TypeAlias = list[str]
-EnvVarsMap: TypeAlias = dict[str, str | None]
+type EnvKeyEqValueList = list[str]
+type EnvVarsMap = dict[str, str | None]
 
 _COMPOSE_MAJOR_VERSION: Final[int] = 3
 
@@ -153,7 +154,6 @@ def _update_resource_limits_and_reservations(
 
         nano_cpu_limits: float = 0.0
         mem_limits: str = "0"
-        _NANO = 10**9  #  cpu's in nano-cpu's
 
         if docker_compose_major_version >= _COMPOSE_MAJOR_VERSION:
             # compos spec version 3 and beyond
@@ -191,12 +191,16 @@ def _update_resource_limits_and_reservations(
 
         # remove any already existing env var
         environment = [
-            e for e in environment if all(i not in e for i in [CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY])
+            e
+            for e in environment
+            if all(
+                i not in e for i in [USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY]
+            )
         ]
 
         resource_limits = [
-            f"{CPU_RESOURCE_LIMIT_KEY}={int(nano_cpu_limits * _NANO)}",
-            f"{MEM_RESOURCE_LIMIT_KEY}={mem_limits}",
+            f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={int(nano_cpu_limits * GIGA)}",
+            f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={mem_limits}",
         ]
 
         environment.extend(resource_limits)

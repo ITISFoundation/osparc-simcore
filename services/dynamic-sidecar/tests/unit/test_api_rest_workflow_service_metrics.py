@@ -36,6 +36,7 @@ from models_library.rabbitmq_messages import (
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
 from pytest_simcore.helpers.long_running_tasks import (
     assert_task_is_no_longer_present,
     get_fastapi_long_running_manager,
@@ -86,7 +87,7 @@ def raw_compose_spec(container_names: list[str]) -> dict[str, Any]:
 
 @pytest.fixture
 def compose_spec(raw_compose_spec: dict[str, Any]) -> DockerComposeYamlStr:
-    return json.dumps(raw_compose_spec)
+    return json.dumps(inject_container_resources(raw_compose_spec))
 
 
 @pytest.fixture

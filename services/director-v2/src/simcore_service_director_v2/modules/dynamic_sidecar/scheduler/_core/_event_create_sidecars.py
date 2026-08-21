@@ -13,8 +13,17 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressType,
 )
-from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.service_settings_labels import (
+    SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
+)
 from models_library.services import ServiceRunID
+from models_library.services_resources import (
+    SIDECAR_HELPERS_RESOURCE_KEY,
+    ImageResources,
+    ResourceValue,
+    ServiceResourcesDict,
+)
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -43,12 +52,17 @@ from ...docker_api import (
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
 )
+from ...docker_compose_egress_config import count_required_egress_proxies
 from ...docker_service_specs import (
     extract_service_port_service_settings,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
 )
-from ...docker_service_specs.settings import merge_settings_before_use
+from ...docker_service_specs.settings import (
+    compute_helper_containers_resources,
+    get_max_user_service_container_memory,
+    merge_settings_before_use,
+)
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import get_allow_metrics_collection
 
@@ -77,6 +91,41 @@ def _merge_service_base_and_user_specs(
             jsonable_encoder(user_specific_service_spec, exclude_unset=True, by_alias=False),
             include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
         )
+    )
+
+
+def _add_helper_containers_resources_to_service_resources(
+    service_resources: ServiceResourcesDict,
+    *,
+    dynamic_services_settings: DynamicServicesSettings,
+    egress_proxy_count: int,
+    with_tracing: bool,
+    with_rclone: bool,
+) -> None:
+    """Adds a synthetic entry to `service_resources` summing the footprint of helper
+    containers (envoy egress-proxies, otel collector/forwarder, rclone mount) that the
+    dynamic-sidecar creates but which are NOT their own Swarm services, so that Swarm/
+    autoscaling correctly sizes the dynamic-sidecar's own Swarm service. dy-proxy (caddy)
+    is excluded: it already runs as its own separate Swarm service with its own
+    dedicated resources.
+    """
+    cpu, ram = compute_helper_containers_resources(
+        dynamic_services_settings=dynamic_services_settings,
+        egress_proxy_count=egress_proxy_count,
+        with_tracing=with_tracing,
+        with_rclone=with_rclone,
+        max_user_service_container_memory=get_max_user_service_container_memory(service_resources),
+    )
+
+    if cpu <= 0 and ram <= 0:
+        return
+
+    service_resources[SIDECAR_HELPERS_RESOURCE_KEY] = ImageResources(
+        image=SIDECAR_HELPERS_RESOURCE_KEY,
+        resources={
+            "CPU": ResourceValue(limit=cpu, reservation=cpu),
+            "RAM": ResourceValue(limit=ram, reservation=ram),
+        },
     )
 
 
@@ -172,6 +221,20 @@ class CreateSidecars(DynamicSchedulerEvent):
         _logger.info("%s", f"{boot_options=}")
 
         catalog_client = CatalogClient.instance(app)
+
+        # fetched early (again, later re-fetched in SendUserServicesSpec) so the exact
+        # count of egress-proxy helper containers is known before the dynamic-sidecar's
+        # own Swarm service resources are computed below
+        simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
+            scheduler_data.key, scheduler_data.version
+        )
+        _add_helper_containers_resources_to_service_resources(
+            scheduler_data.service_resources,
+            dynamic_services_settings=app_settings.DYNAMIC_SERVICES,
+            egress_proxy_count=count_required_egress_proxies(simcore_service_labels),
+            with_tracing=scheduler_data.tracing,
+            with_rclone=scheduler_data.requires_data_mounting,
+        )
 
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             catalog_client=catalog_client,

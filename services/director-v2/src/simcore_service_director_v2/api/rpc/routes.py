@@ -8,12 +8,12 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.rabbitmq import get_rabbitmq_rpc_client
-from . import _computations, _computations_tasks
+from . import _computations, _computations_tasks, _resources
 
 _logger = logging.getLogger(__name__)
 
 
-ROUTERS: list[RPCRouter] = [_computations.router, _computations_tasks.router]
+ROUTERS: list[RPCRouter] = [_computations.router, _computations_tasks.router, _resources.router]
 
 
 def setup_rpc_api_routes(app: FastAPI) -> None:

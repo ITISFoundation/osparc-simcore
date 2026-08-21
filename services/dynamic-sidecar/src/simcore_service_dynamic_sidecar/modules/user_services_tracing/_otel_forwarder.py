@@ -22,9 +22,8 @@ from fastapi import FastAPI, status
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
+from settings_library.user_services_tracing import UserServicesTracingSettings
 from yarl import URL
-
-from ._settings import UserServicesTracingSettings
 
 if TYPE_CHECKING:
     from ...core.settings import ApplicationSettings
@@ -145,7 +144,6 @@ def _build_forwarder_container_config(
             "NanoCpus": int(
                 user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT * _NANO_CPUS_PER_CORE
             ),
-            "CpuShares": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES,
         },
     }
 

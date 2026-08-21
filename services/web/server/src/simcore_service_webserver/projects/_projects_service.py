@@ -100,6 +100,9 @@ from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
+from servicelib.rabbitmq.rpc_interfaces.director_v2.resources import (
+    get_helper_containers_resources,
+)
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
@@ -171,6 +174,7 @@ from ._socketio_service import notify_project_document_updated
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
+    InsufficientResourcesForHelperContainersError,
     InsufficientRoleForProjectTemplateTypeUpdateError,
     InvalidEC2TypeInResourcesSpecsError,
     InvalidKeysInResourcesSpecsError,
@@ -752,6 +756,8 @@ _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
 _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
 _CPUS_SAFE_MARGIN: Final[float] = 1.4
 _MIN_NUM_CPUS: Final[float] = 0.5
+_MIN_NUM_CPUS_AFTER_HELPER_CONTAINERS: Final[float] = 1.0
+_MIN_RAM_AFTER_HELPER_CONTAINERS: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
 
 
 async def update_project_node_resources_from_hardware_info(
@@ -818,6 +824,23 @@ async def update_project_node_resources_from_hardware_info(
             )
 
             new_ram_value = max(int(new_ram_value - other_services_resources["RAM"]), 128 * 1024 * 1024)
+
+        # subtract the resources director-v2 will later ADD BACK for the helper
+        # containers (egress-proxy/tracing/rclone) it creates for the dynamic-sidecar,
+        # so the total (main service + helpers) fits the selected EC2 instance
+        cpu_overhead, ram_overhead = await get_helper_containers_resources(
+            rabbitmq_rpc_client,
+            user_id=user_id,
+            product_name=product_name,
+            service_key=service_key,
+            service_version=service_version,
+            max_user_service_container_memory=TypeAdapter(ByteSize).validate_python(new_ram_value),
+        )
+        new_cpus_value = new_cpus_value - cpu_overhead
+        new_ram_value = int(new_ram_value - ram_overhead)
+
+        if new_cpus_value < _MIN_NUM_CPUS_AFTER_HELPER_CONTAINERS or new_ram_value < _MIN_RAM_AFTER_HELPER_CONTAINERS:
+            raise InsufficientResourcesForHelperContainersError(cpus=new_cpus_value, ram=new_ram_value)
 
         # scale the service
         node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
