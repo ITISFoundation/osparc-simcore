@@ -58,9 +58,9 @@ attrs==25.4.0
     #   aiohttp
     #   jsonschema
     #   referencing
-blosc==1.11.3
+blosc==1.11.4
     # via -r requirements/_base.in
-bokeh==3.8.1
+bokeh==3.10.0
     # via dask
 boto3==1.40.61
     # via aiobotocore
@@ -90,19 +90,17 @@ cloudpickle==3.1.2
     # via
     #   dask
     #   distributed
-contourpy==1.3.3
-    # via bokeh
 cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-dask==2025.11.0
+dask==2026.7.1
     # via
     #   -c requirements/constraints.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   distributed
-distributed==2025.11.0
+distributed==2026.7.1
     # via dask
 dnspython==2.8.0
     # via email-validator
@@ -122,7 +120,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.10.0
+fsspec==2026.7.0
     # via
     #   -r requirements/_base.in
     #   dask
@@ -183,7 +181,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.1.2
+msgpack==1.2.1
     # via distributed
 multidict==6.7.0
     # via
@@ -192,11 +190,8 @@ multidict==6.7.0
     #   yarl
 narwhals==2.11.0
     # via bokeh
-numpy==2.3.5
-    # via
-    #   bokeh
-    #   contourpy
-    #   pandas
+numpy==2.5.2
+    # via bokeh
 opentelemetry-api==1.44.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -296,8 +291,6 @@ packaging==25.0
     #   opentelemetry-instrumentation-sqlalchemy
 pamqp==3.3.0
     # via aiormq
-pandas==2.3.3
-    # via bokeh
 partd==1.4.2
     # via dask
 pillow==12.2.0
@@ -315,7 +308,7 @@ protobuf==6.33.5
     #   -c requirements/../../../requirements/constraints.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==7.1.3
+psutil==7.2.2
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   distributed
@@ -355,11 +348,8 @@ python-dateutil==2.9.0.post0
     #   aiobotocore
     #   arrow
     #   botocore
-    #   pandas
 python-dotenv==1.2.1
     # via pydantic-settings
-pytz==2025.2
-    # via pandas
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -387,7 +377,7 @@ rpds-py==0.29.0
     # via
     #   jsonschema
     #   referencing
-s3fs==2025.10.0
+s3fs==2026.7.0
     # via fsspec
 s3transfer==0.14.0
     # via boto3
@@ -417,7 +407,7 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.2
+tornado==6.5.8
     # via
     #   bokeh
     #   distributed
@@ -460,14 +450,11 @@ typing-inspection==0.4.2
     #   pydantic
     #   pydantic-settings
 tzdata==2025.2
-    # via
-    #   arrow
-    #   pandas
+    # via arrow
 urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
-    #   distributed
     #   requests
 wrapt==1.17.3
     # via

@@ -13,6 +13,7 @@ from random import choice
 from typing import Any
 from unittest import mock
 
+import distributed
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from dask_task_models_library.container_tasks.io import (
@@ -480,6 +481,56 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
             node_image=sleeper_task.image,
             scheduler_info=dask_client.backend.client.scheduler_info(),
             task_resources={},
+        )
+
+
+@pytest.fixture
+def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
+    """6 workers, only the last one exposing a distinctive resource."""
+    return {
+        f"worker-{i}": {
+            "cls": distributed.Worker,
+            "options": {
+                "nthreads": 1,
+                "resources": {"CPU": 1, "RAM": 1e9, "SPECIAL": 1} if i == 5 else {"CPU": 1, "RAM": 1e9},
+            },
+        }
+        for i in range(6)
+    }
+
+
+async def test_check_if_cluster_is_able_to_run_pipeline_with_more_than_5_workers(
+    dask_workers_config_with_more_than_5_workers: dict[str, Any],
+    dask_scheduler_config: dict[str, Any],
+    project_id: ProjectID,
+    node_id: NodeID,
+    published_project: PublishedProject,
+):
+    """Regression test for https://github.com/dask/distributed/pull/9308 (distributed>=2026.7.0):
+    scheduler_info() used to cap results at 5 workers for async clients, which could make
+    check_if_cluster_is_able_to_run_pipeline() miss resources located on workers beyond the cap."""
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    async with (
+        distributed.SpecCluster(
+            workers=dask_workers_config_with_more_than_5_workers,
+            scheduler=dask_scheduler_config,
+            asynchronous=True,
+        ) as cluster,
+        distributed.Client(cluster.scheduler_address, asynchronous=True) as client,
+    ):
+        # scheduler_info()'s local cache is only synced once the scheduler pushes its periodic
+        # broadcast, so wait for all workers to register before relying on it.
+        await client.wait_for_workers(6, timeout=10)
+        scheduler_info = client.scheduler_info()
+        assert len(scheduler_info["workers"]) == 6, "scheduler_info() must return all 6 workers"
+
+        # the resource only present on the 6th worker must still be discoverable
+        check_if_cluster_is_able_to_run_pipeline(
+            project_id=project_id,
+            node_id=node_id,
+            node_image=sleeper_task.image,
+            scheduler_info=scheduler_info,
+            task_resources={"SPECIAL": 1},
         )
 
 
