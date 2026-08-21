@@ -6,7 +6,7 @@ from typing import Final
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib import tracing
-from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
+from servicelib.fastapi.logging_lifespan import create_logging_lifespan
 
 from simcore_service_efs_guardian.core.application import create_app
 from simcore_service_efs_guardian.core.settings import ApplicationSettings
@@ -26,7 +26,7 @@ def app_factory() -> FastAPI:
         service_name=app_settings.APP_NAME,
         tracing_settings=app_settings.EFS_GUARDIAN_TRACING,
     )
-    logging_shutdown_event = create_logging_shutdown_event(
+    logging_lifespan = create_logging_lifespan(
         log_format_local_dev_enabled=app_settings.EFS_GUARDIAN_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.EFS_GUARDIAN_LOG_FILTER_MAPPING,
         tracing_config=tracing_config,
@@ -38,6 +38,8 @@ def app_factory() -> FastAPI:
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
-    app = create_app(settings=app_settings, tracing_config=tracing_config)
-    app.add_event_handler("shutdown", logging_shutdown_event)
-    return app
+    return create_app(
+        settings=app_settings,
+        tracing_config=tracing_config,
+        logging_lifespan=logging_lifespan,
+    )
