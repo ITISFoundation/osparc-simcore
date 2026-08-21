@@ -24,9 +24,10 @@ scripts/makefiles/
 │   ├── templates.mk   # clone_from_template macro (used by `.env`)
 │   ├── help.mk        # auto-documented `help` target
 │   ├── python-lint.mk # pylint / ruff / mypy / codestyle (+ REVIEW-tagged extras)
+│   ├── python-test.mk # shared pytest runner for packages and services
 │   └── version.mk     # version-{patch,minor,major} (bump2version)
-├── package.mk         # profile for packages/  (adds package vars + i18n)
-├── service.mk         # profile for services/  (adds docker/openapi + tests + install)
+├── package.mk         # profile for packages/  (adds package vars, tests + i18n)
+├── service.mk         # profile for services/  (adds docker/openapi, tests + install)
 │   └── python-install.mk  # shared install-{dev,prod,ci}
 ├── requirements.mk    # pip-compile workflow for every <project>/requirements/Makefile
 ├── i18n.mk            # user_message() extraction
@@ -53,6 +54,20 @@ directly:
 ```make
 include ../../../scripts/makefiles/requirements.mk
 ```
+
+## Python test targets
+
+`python-test.mk` provides the shared `_run-test-{dev,ci}` pytest runner. Both
+profiles expose `test-dev-unit`, `test-ci-unit`, and `test`, where `test` runs
+the development unit target. Services retain `test-{dev,ci}-integration` and
+their `test-dev` / `test-ci` aggregates.
+
+Package Makefiles retain their existing CI contracts as compatibility aliases:
+`tests-ci`, `tests-unit-ci`, `tests-integration-ci`, and `test-ci[all]` all
+delegate to the shared runner. Package profiles set the conventional pytest
+arguments; a package can override `PYTEST_COV_TARGET`, `PYTEST_ASYNCIO_ARGS`,
+`PYTEST_JUNIT_ARGS`, `PYTEST_BASE_ARGS`, `PYTEST_ARGS_dev`, `PYTEST_ARGS_ci`,
+or `TEST_TARGET` when its behavior differs.
 
 ## CI is a contract
 
@@ -97,15 +112,8 @@ unused.
 
 ## Known follow-ups (deferred, need manual review)
 
-- **Package test/install DRY**: `packages/*/Makefile` still each define their own
-  `install-*` / `tests` / `tests-ci` / `requirements`. These have **drifted** and
-  cannot be blanket-shared without changing behavior:
-  - `celery-library` adds `--keep-docker-up` to `tests`/`tests-ci`.
-  - `common-library` omits `--junitxml` in `tests-ci` and has a **custom**
-    `install-dev` that compiles locale `.mo` files.
-  - `postgres-database` covers `simcore_postgres_database` (folder name differs).
-  - `simcore-sdk` uses `tests-unit-ci` / `tests-integration-ci` (has integration).
-  - `service-library` uses `install-%` / `test-*[extras]` bracket variants.
-  Reconciling this needs a per-package decision (parametrize a shared recipe with
-  `--keep-docker-up` / `--junitxml` toggles + an overridable cov target), which is
-  why it was **not** auto-applied.
+- **Package install/requirements DRY**: `packages/*/Makefile` still each define
+   their own `install-*` and `requirements` targets. Consolidation needs a
+   per-package decision because `common-library` has a custom `install-dev` that
+   compiles locale `.mo` files and `service-library` uses bracketed `install-%`
+   variants.

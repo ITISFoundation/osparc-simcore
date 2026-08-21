@@ -35,24 +35,21 @@ include $(REPO_BASE_DIR)/scripts/makefiles/python-install.mk
 # TEST TASKS
 #
 
-.PHONY: test-dev-ci FORCE
-
-# Always out-of-date sentinel used to force pattern test targets to run.
-FORCE:
+.PHONY: test test-dev test-ci
 
 TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
 
 # Pattern rules (alphabetically ordered)
 
 # CI-CONTRACT: test-ci-integration is invoked by ci/github/**/*.bash (also test-dev-integration locally)
-test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s))
+test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s)) [CI]
 	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
 	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
 
 # CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
-test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s))
+test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s)) [CI]
 	# Targets tests/unit folder (or an explicit target= if provided)
 	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
 
@@ -76,6 +73,8 @@ check-test-dispatch: ## validates test target dispatch and mode-specific pytest 
 test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
+
+test: test-dev-unit ## runs app unit tests for development (e.g. w/ pdb)
 
 
 # ---------------------------------------------------------------------------
@@ -159,6 +158,7 @@ info: ## displays service info
 
 TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
+PYTEST_COV_TARGET := $(APP_PACKAGE_NAME)
 
 PYTEST_BASE_ARGS = \
 	--asyncio-mode=auto \
@@ -166,7 +166,7 @@ PYTEST_BASE_ARGS = \
 	--cov-config=.coveragerc \
 	--cov-report=term-missing \
 	--cov-report=xml \
-	--cov=$(APP_PACKAGE_NAME) \
+	--cov=$(PYTEST_COV_TARGET) \
 	--durations=10 \
 	--junitxml=junit.xml -o junit_family=legacy \
 	--keep-docker-up
@@ -184,14 +184,7 @@ PYTEST_ARGS_ci = \
 	--verbose \
 	-m "not heavy_load"
 
-_run-test-%: FORCE _check_venv_active
-	# runs tests for development or CI mode
-	$(if $(filter $*,dev ci),,$(error unsupported test mode '$*', expected dev or ci))
-	pytest \
-		$(PYTEST_BASE_ARGS) \
-		$(PYTEST_ARGS_$*) \
-		$(PYTEST_ADDITIONAL_PARAMETERS) \
-		$(TEST_TARGET)
+include $(REPO_BASE_DIR)/scripts/makefiles/python-test.mk
 
 
 .PHONY: _assert_target_defined

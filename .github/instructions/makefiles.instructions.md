@@ -20,10 +20,14 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 
 - Shared logic lives in exactly one `*.mk` and is `include`d — do not copy a
   recipe into a project Makefile that a library already provides.
-- Place a recipe in the topic library that matches it (lint →
+- Place a recipe in the topic library that matches it (examples: lint →
   `python-lint.mk`, install → `python-install.mk`, version → `version.mk`,
-  pip-compile → `requirements.mk`). If none fits, add a small new topic `*.mk`
-  rather than bloating `common.mk`.
+  pip-compile → `requirements.mk`). If none fits, add a new single-purpose
+  `*.mk` containing only targets for that topic (no more than one logical
+  concern per file) rather than bloating `common.mk`.
+- If a recipe legitimately spans two topics, place it in the more specific
+  topic library and have the other library delegate to it via a dependency,
+  rather than duplicating the recipe.
 - A package Makefile includes `common.mk` + `package.mk`; a service Makefile
   includes `common.mk` + `service.mk`.
 
@@ -47,6 +51,7 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 - Targets invoked by `ci/github/**/*.bash` are a **contract**: their name and
   observable behavior must not change without updating the caller in the same
   change. Mark them `# CI-CONTRACT: <caller>` above the recipe.
+- Append `[CI]` to the end of a CI-contract target's `##` help description.
 - Before renaming/removing any target, grep `ci/github` for its name.
 - Known contract targets: `install-ci`, `test-ci-unit`, `test-ci-integration`,
   `tests-ci`, `mypy`, `pylint`, and root `devenv` / `openapi-specs` /

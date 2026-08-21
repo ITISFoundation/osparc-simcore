@@ -16,82 +16,38 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
 
-.PHONY: tests-unit tests-unit-ci tests-integration tests-integration-ci tests
-tests-unit: ## runs unit tests
-	# running unit tests
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov=simcore_sdk \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--keep-docker-up \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests/unit
+TEST_TARGET := $(CURDIR)/tests/unit
+PYTEST_BASE_ARGS += --keep-docker-up
 
-tests-unit-ci: ## runs unit tests with ci parameters
-	# running unit tests
-	@pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=simcore_sdk \
-		--durations=10 \
-		--keep-docker-up \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
-		-m "not heavy_load" \
-		$(CURDIR)/tests/unit
+.PHONY: test-ci-integration test-dev-integration tests-unit tests-unit-ci tests-integration tests-integration-ci tests
 
-tests-integration: ## runs integration tests against local+production images
-	# running integration tests local/(service):production images ...
+test-dev-integration: TEST_TARGET := $(CURDIR)/tests/integration
+test-dev-integration: PYTEST_BASE_ARGS += --cov-report=xml $(PYTEST_JUNIT_ARGS)
+test-dev-integration: PYTEST_ARGS_dev := --exitfirst --failed-first --pdb --verbose
+test-dev-integration: ## runs integration tests against local+production images
 	@export DOCKER_REGISTRY=local; \
 	export DOCKER_IMAGE_TAG=production; \
-	pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=simcore_sdk \
-		--durations=10 \
-		--exitfirst \
-		--failed-first \
-		--keep-docker-up \
-		--pdb \
-		--verbose \
-		$(CURDIR)/tests/integration
+	$(MAKE) --no-print-directory _run-test-dev \
+		TEST_TARGET="$(TEST_TARGET)" \
+		PYTEST_BASE_ARGS='$(PYTEST_BASE_ARGS)' \
+		PYTEST_ARGS_dev='$(PYTEST_ARGS_dev)'
 
-tests-integration-ci: ## runs integration tests against local+production images with CI parameters
-	pytest \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--disk-usage \
-		--disk-usage-threshold=20 \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=simcore_sdk \
-		--durations=10 \
-		--keep-docker-up \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--log-cli-level=WARNING		\
-		--verbose \
-		-m "not heavy_load" \
-		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		$(CURDIR)/tests/integration
+test-ci-integration: TEST_TARGET := $(CURDIR)/tests/integration
+test-ci-integration: PYTEST_ARGS_ci += --disk-usage --disk-usage-threshold=20 --log-cli-level=WARNING
+test-ci-integration: ## runs integration tests with CI parameters
+	@$(MAKE) --no-print-directory _run-test-ci \
+		TEST_TARGET="$(TEST_TARGET)" \
+		PYTEST_BASE_ARGS='$(PYTEST_BASE_ARGS)' \
+		PYTEST_ARGS_ci='$(PYTEST_ARGS_ci)'
+
+tests-unit: test-dev-unit ## runs unit tests
+
+# CI-CONTRACT: tests-unit-ci is invoked by ci/github/**/*.bash
+tests-unit-ci: test-ci-unit ## runs unit tests with CI parameters [CI]
+
+tests-integration: test-dev-integration ## runs integration tests against local+production images
+
+# CI-CONTRACT: tests-integration-ci is invoked by ci/github/**/*.bash
+tests-integration-ci: test-ci-integration ## runs integration tests with CI parameters [CI]
 
 tests: tests-unit tests-integration ## runs all tests
-	# running tests

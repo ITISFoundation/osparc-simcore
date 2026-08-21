@@ -10,6 +10,6 @@
 .PHONY: install-dev install-prod install-ci
 
 # CI-CONTRACT: install-ci is invoked by ci/github/**/*.bash
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
+install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode [CI]
 	# Installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
