@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import cached_property
 from typing import Annotated, Literal
 
@@ -71,11 +72,14 @@ class ChatbotSettings(BaseCustomSettings):
         ),
     ]
     CHATBOT_REQUEST_TIMEOUT_SECONDS: Annotated[
-        PositiveInt,
+        timedelta,
         Field(
             description="Timeout for requests to the chatbot service",
         ),
-    ] = 10 * 60  # 10 minutes
+    ] = timedelta(minutes=10)
+    # the agent can take a long time to generate code and the failure should not occur
+    # in the api-server. To avoid this, expose instead the agent's tools as a mcp server
+    # and let the agent call it directly. Tool calls are typically very fast.
 
 
 # MAIN SETTINGS --------------------------------------------
