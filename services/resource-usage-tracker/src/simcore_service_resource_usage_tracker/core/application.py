@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.postgres_lifespan import configure_postgres_database
 from servicelib.fastapi.tracing import configure_fastapi_app_tracing
 from servicelib.tracing import TracingConfig
 
@@ -23,7 +24,6 @@ from ..services.background_task_periodic_heartbeat_check_setup import (
     configure_periodic_heartbeat_check,
 )
 from ..services.fire_and_forget_setup import configure_fire_and_forget
-from ..services.modules.db import configure_db
 from ..services.modules.rabbitmq import configure_rabbitmq
 from ..services.modules.redis import configure_redis
 from ..services.modules.s3 import configure_s3
@@ -47,7 +47,11 @@ def _configure_plugins(
     configure_fire_and_forget(app_lifespan)
 
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
-        configure_db(app_lifespan, tracing_config=tracing_config)
+        configure_postgres_database(
+            app_lifespan,
+            settings=settings.RESOURCE_USAGE_TRACKER_POSTGRES,
+            tracing_config=tracing_config,
+        )
     configure_redis(app_lifespan)
     configure_rabbitmq(app, app_lifespan)
     if settings.RESOURCE_USAGE_TRACKER_S3:
