@@ -147,13 +147,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="basic auth password, for portals protected by HTTP basic auth",
     )
-    group.addoption(
-        "--num-sampling-points",
-        action="store",
-        type=int,
-        default=None,
-        help="Number of LHS sampling points for the RSM mmux e2e test (overrides the test's default)",
-    )
 
 
 # Dictionary to store start times of tests
