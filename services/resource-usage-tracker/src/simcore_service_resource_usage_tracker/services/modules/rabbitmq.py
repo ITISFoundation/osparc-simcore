@@ -1,7 +1,8 @@
+from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI, Request
-from fastapi_lifespan_manager import LifespanManager
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.rabbitmq_lifespan import (
     configure_rabbitmq_client,
     configure_rabbitmq_rpc_client,
@@ -13,8 +14,13 @@ from ...exceptions.errors import ConfigurationError
 
 def configure_rabbitmq(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     settings = app.state.settings.RESOURCE_USAGE_TRACKER_RABBITMQ
-    if not settings:
-        raise ConfigurationError(msg="Rabbit MQ client is de-activated in the settings")
+
+    async def _validate_settings_lifespan(_: FastAPI) -> AsyncIterator[State]:
+        if not settings:
+            raise ConfigurationError(msg="Rabbit MQ client is de-activated in the settings")
+        yield {}
+
+    app_lifespan.add(_validate_settings_lifespan)
 
     configure_rabbitmq_client(
         app_lifespan,
