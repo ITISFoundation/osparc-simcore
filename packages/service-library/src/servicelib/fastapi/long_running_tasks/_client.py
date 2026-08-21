@@ -214,10 +214,6 @@ def setup(
     - `http_requests_timeout` short requests are used to interact with the
         server API, a low timeout is sufficient
     """
-
-    async def on_startup() -> None:
-        app.state.long_running_client_configuration = ClientConfiguration(
-            router_prefix=router_prefix, default_timeout=http_requests_timeout
-        )
-
-    app.add_event_handler("startup", on_startup)
+    app.state.long_running_client_configuration = ClientConfiguration(
+        router_prefix=router_prefix, default_timeout=http_requests_timeout
+    )

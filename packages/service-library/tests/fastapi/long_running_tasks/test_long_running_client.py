@@ -1,8 +1,21 @@
 from typing import Any
 
 import pytest
+from fastapi import FastAPI
 from httpx import HTTPError
-from servicelib.fastapi.long_running_tasks._client import retry_on_http_errors
+from servicelib.fastapi.long_running_tasks._client import (
+    ClientConfiguration,
+    retry_on_http_errors,
+    setup,
+)
+
+
+def test_setup_configures_client_immediately():
+    app = FastAPI()
+
+    setup(app, router_prefix="/api", http_requests_timeout=2)
+
+    assert app.state.long_running_client_configuration == ClientConfiguration(router_prefix="/api", default_timeout=2)
 
 
 @pytest.mark.parametrize(
