@@ -475,12 +475,15 @@ def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
     }
 
 
-async def test_get_scheduler_identity_returns_all_workers_beyond_default_cap(
+async def test_get_scheduler_identity_returns_all_workers_reliably(
     dask_workers_config_with_more_than_5_workers: dict[str, Any],
     dask_scheduler_config: dict[str, Any],
 ):
-    """Regression test: scheduler_info() caps at 5 workers for async clients;
-    _get_scheduler_identity() must return all workers regardless."""
+    """Regression test: client.scheduler_info() is a local cache that (a) used to cap results at
+    5 workers for async clients (fixed in distributed>=2026.7.0, see distributed#9308) and (b) can
+    still be empty/incomplete immediately after connecting, since it is only synced once the
+    scheduler pushes its periodic broadcast. _get_scheduler_identity() uses a live RPC instead and
+    must always return all connected workers, regardless of client-side cache state."""
     _NUM_WORKERS: Final[int] = 6
     assert len(dask_workers_config_with_more_than_5_workers) == _NUM_WORKERS
 
@@ -492,16 +495,8 @@ async def test_get_scheduler_identity_returns_all_workers_beyond_default_cap(
         ) as cluster,
         distributed.Client(cluster.scheduler_address, asynchronous=True) as client,
     ):
-        # Demonstrate the bug: scheduler_info() with default n_workers=5 misses
-        # the 6th worker even when called with n_workers=-1 on an async client
-        info_default = client.scheduler_info()
-        assert len(info_default["workers"]) == 5, "scheduler_info() should return at most 5 workers (the default cap)"
-        info_minus1 = client.scheduler_info(n_workers=-1)
-        assert len(info_minus1["workers"]) == 5, (
-            "scheduler_info(n_workers=-1) is still broken for async clients - it ignores the argument"
-        )
-
-        # Our fix: _get_scheduler_identity() bypasses the cache and returns all workers
+        # _get_scheduler_identity() must return all workers right away, unlike scheduler_info()
+        # which relies on a local cache that may not be synced yet right after connecting.
         identity = await _get_scheduler_identity(client)
         assert len(identity["workers"]) == _NUM_WORKERS, (
             f"_get_scheduler_identity() must return all {_NUM_WORKERS} workers"

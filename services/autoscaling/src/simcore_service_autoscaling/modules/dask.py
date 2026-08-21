@@ -61,9 +61,12 @@ def _scheduler_identity_key_builder(func: Callable[..., Any], client: distribute
 async def _get_scheduler_identity(client: distributed.Client) -> SchedulerInfo:
     """Returns all workers from the scheduler with a 2-second TTL cache.
 
-    client.scheduler_info() is a local cache capped at 5 workers for async clients
-    since https://github.com/dask/distributed/pull/9045.
-    client.scheduler.identity(n_workers=-1) is a live RPC but we cache it briefly
+    We use a live RPC instead of client.scheduler_info(), a local cache that
+    (a) capped results at 5 workers for async clients before
+    https://github.com/dask/distributed/pull/9308 (fixed in distributed 2026.7.0), and
+    (b) can still be empty/incomplete right after a client connects, since it is only
+    populated once the scheduler pushes its periodic info broadcast.
+    client.scheduler.identity(n_workers=-1) has neither limitation; we cache it briefly
     to avoid redundant round-trips within a single autoscaling tick.
     """
     assert client.scheduler  # nosec
@@ -110,8 +113,7 @@ async def _dask_worker_from_ec2_instance(
 ) -> tuple[DaskWorkerUrl, DaskWorkerDetails]:
     """
     Uses client.scheduler.identity() RPC to get all workers live from the scheduler,
-    bypassing client.scheduler_info() which is a local cache capped at 5 workers
-    for async clients regardless of the n_workers argument.
+    avoiding client.scheduler_info()'s local-cache limitations (see _get_scheduler_identity).
 
     Raises:
         Ec2InvalidDnsNameError
