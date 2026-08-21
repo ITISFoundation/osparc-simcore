@@ -578,6 +578,7 @@ def _open_project(  # noqa: C901
                 _open_with_resources(page, click_it=True)
 
         assert response_info.value.ok, f"{response_info.value.json()}"
+        waiter.project_uuid = response_info.value.json()["data"]["uuid"]
     project_data = response_info.value.json()
     assert project_data
     return project_data
