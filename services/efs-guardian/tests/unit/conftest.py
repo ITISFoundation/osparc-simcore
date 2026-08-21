@@ -17,11 +17,14 @@ import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager as FastAPILifespanManager
+from fastapi_lifespan_manager import State
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.tracing import TracingConfig
 from settings_library.efs import AwsEfsSettings
+from settings_library.postgres import PostgresSettings
 from simcore_service_efs_guardian.core.application import create_app
 
 #
@@ -33,9 +36,9 @@ from simcore_service_efs_guardian.core.application import create_app
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
     def _():
         # The following services are affected if rabbitmq is not in place
-        mocker.patch("simcore_service_efs_guardian.core.application.setup_rabbitmq")
-        mocker.patch("simcore_service_efs_guardian.core.application.setup_rpc_routes")
-        mocker.patch("simcore_service_efs_guardian.core.application.setup_process_messages")
+        mocker.patch("simcore_service_efs_guardian.core.application.configure_rabbitmq")
+        mocker.patch("simcore_service_efs_guardian.core.application.configure_rpc_routes")
+        mocker.patch("simcore_service_efs_guardian.core.application.configure_process_messages")
 
     return _
 
@@ -59,15 +62,24 @@ async def rpc_client(
 
 @pytest.fixture
 def disable_postgres_setup(mocker: MockerFixture) -> Callable:
-    def _setup(app: FastAPI, *, tracing_config: TracingConfig | None) -> None:
-        app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
+    def _configure(
+        app_lifespan: FastAPILifespanManager[FastAPI],
+        *,
+        settings: PostgresSettings,
+        tracing_config: TracingConfig | None,
+    ) -> None:
+        async def _db_lifespan(app: FastAPI) -> AsyncIterator[State]:
+            app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
+            yield {}
+
+        app_lifespan.add(_db_lifespan)
 
     def _():
         # The following services are affected if postgres is not in place
         mocker.patch(
-            "simcore_service_efs_guardian.core.application.setup_db",
+            "simcore_service_efs_guardian.core.application.configure_postgres_database",
             spec=True,
-            side_effect=_setup,
+            side_effect=_configure,
         )
 
     return _
@@ -122,13 +134,13 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 @pytest.fixture
 def with_disabled_background_tasks(mocker: MockerFixture) -> None:
-    mocker.patch("simcore_service_efs_guardian.core.application.setup_background_tasks")
+    mocker.patch("simcore_service_efs_guardian.core.application.configure_background_tasks")
 
 
 @pytest.fixture
 def with_disabled_redis_and_background_tasks(mocker: MockerFixture) -> None:
-    mocker.patch("simcore_service_efs_guardian.core.application.setup_redis")
-    mocker.patch("simcore_service_efs_guardian.core.application.setup_background_tasks")
+    mocker.patch("simcore_service_efs_guardian.core.application.configure_redis")
+    mocker.patch("simcore_service_efs_guardian.core.application.configure_background_tasks")
 
 
 #

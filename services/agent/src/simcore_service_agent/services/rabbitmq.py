@@ -1,27 +1,22 @@
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.rabbitmq import RabbitMQRPCClient, wait_till_rabbitmq_responsive
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.rabbitmq_lifespan import configure_rabbitmq_rpc_client
+from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 
 
-def setup_rabbitmq(app: FastAPI) -> None:
-    settings: RabbitSettings = app.state.settings.AGENT_RABBITMQ
-    app.state.rabbitmq_rpc_client = None
-
-    async def _on_startup() -> None:
-        await wait_till_rabbitmq_responsive(settings.dsn)
-
-        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-            client_name="dynamic_scheduler_rpc_client", settings=settings
-        )
-
-    async def _on_shutdown() -> None:
-        if app.state.rabbitmq_rpc_client:
-            await app.state.rabbitmq_rpc_client.close()
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+def configure_rabbitmq_client(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: RabbitSettings,
+) -> None:
+    configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=settings,
+        client_name="agent_rpc_client",
+    )
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
