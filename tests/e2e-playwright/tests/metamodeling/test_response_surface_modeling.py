@@ -124,6 +124,10 @@ _EXPECTED_LHS_INPUT_VALUES_BY_COUNT: Final[dict[int, list[float]]] = {
     40: _EXPECTED_LHS_INPUT_VALUES_40,
     5: _EXPECTED_LHS_INPUT_VALUES_5,
 }
+assert _NUM_SAMPLING_POINTS in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
+    f"No expected LHS values for _NUM_SAMPLING_POINTS={_NUM_SAMPLING_POINTS}, "
+    f"add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
+)
 
 
 class _TeardownDeleteError(Exception):
@@ -484,10 +488,6 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
 ):
-    assert _NUM_SAMPLING_POINTS in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
-        f"No expected LHS values for _NUM_SAMPLING_POINTS={_NUM_SAMPLING_POINTS}, "
-        f"add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
-    )
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
@@ -882,7 +882,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(str(_NUM_SAMPLING_POINTS))
+            samplingInput.fill(f"{_NUM_SAMPLING_POINTS}")
             samplingInput.press("Enter")
 
             seed_was_set = False
