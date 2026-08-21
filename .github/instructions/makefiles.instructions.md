@@ -65,6 +65,11 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 - Add a `##@ Section Name` comment above a group of targets to label it in
   `make help`. It applies to every target below it until the next `##@` line
   in that file.
+- **Help text must start with a capital letter** (e.g., `## Runs mypy...` not
+  `## runs mypy...`). This applies to all `##` descriptions across all
+  Makefiles and `.mk` files.
+- **Help text must fit on a single line** — keep descriptions concise and avoid
+  line breaks within the `##` comment.
 - The same section name reused across different files merges into a single
   section in the output (e.g. `##@ Tests` in both `service.mk` and
   `package.mk`) — this is how related targets stay grouped regardless of

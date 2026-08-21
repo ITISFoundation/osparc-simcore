@@ -23,7 +23,7 @@ include $(REPO_BASE_DIR)/scripts/makefiles/version.mk
 
 .PHONY: clean
 _GIT_CLEAN_ARGS = -dxf -e .vscode
-clean: ## cleans all unversioned files in project and temp files create by this makefile
+clean: ## Cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
 	@git clean -n $(_GIT_CLEAN_ARGS)
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -31,25 +31,25 @@ clean: ## cleans all unversioned files in project and temp files create by this 
 	@git clean $(_GIT_CLEAN_ARGS)
 
 
-.env: .env-devel ## creates .env file from defaults in .env-devel
+.env: .env-devel ## Creates .env file from defaults in .env-devel
 	$(clone_from_template)
 
 
 .PHONY: devenv
-devenv: ## build development environment
+devenv: ## Build development environment
 	@$(MAKE_C) $(REPO_BASE_DIR) $@
 
 
 ##@ Misc
 
 .PHONY: github-workflow-job
-github-workflow-job: ## runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"
+github-workflow-job: ## Runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"
 	# running job "${job}"
 	$(SCRIPTS_DIR)/act.bash ../.. ${job}
 
 
 .PHONY: info
-inf%: ## displays basic info
+inf%: ## Displays basic info
 	# system
 	@echo ' OS               : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN)'
 	@echo ' CURDIR           : ${CURDIR}'
@@ -67,6 +67,6 @@ inf%: ## displays basic info
 
 # REVIEW: diagnostics-only, no known CI/docs callers (was tagged `.PHONE`, i.e. never phony).
 .PHONY: pip-freeze
-pip-freeze: ## dumps current environ and base.txt [diagnostics]
+pip-freeze: ## Dumps current environ and base.txt [diagnostics]
 	pip freeze > freeze-now.ignore.txt
 	cat requirements/_base.txt | grep -v '#' > freeze-base.ignore.txt

@@ -61,11 +61,11 @@ include $(REPO_BASE_DIR)/scripts/makefiles/python-test.mk
 .PHONY: test test-ci-unit test-dev-unit
 
 # Canonical package test targets. Historical package targets delegate here.
-test-ci-unit: _run-test-ci ## runs package unit tests in CI mode
+test-ci-unit: _run-test-ci ## Runs package unit tests in CI mode
 
-test-dev-unit: _run-test-dev ## runs package unit tests for development (e.g. w/ pdb)
+test-dev-unit: _run-test-dev ## Runs package unit tests for development (e.g. w/ pdb)
 
-test: test-dev-unit ## runs package unit tests for development (e.g. w/ pdb)
+test: test-dev-unit ## Runs package unit tests for development (e.g. w/ pdb)
 
 
 #
@@ -75,7 +75,7 @@ test: test-dev-unit ## runs package unit tests for development (e.g. w/ pdb)
 ##@ Misc
 
 .PHONY: info
-info: ## displays package info
+info: ## Displays package info
 	@make --no-print-directory info-super
 	# package env vars
 	@echo ' PACKAGE_VERSION      : ${PACKAGE_VERSION}'
