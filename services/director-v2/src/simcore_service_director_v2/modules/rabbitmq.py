@@ -1,17 +1,19 @@
 import logging
+from collections.abc import AsyncIterator
 from functools import partial
 from typing import TYPE_CHECKING, cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import (
     CreditsLimit,
     WalletCreditsLimitReachedMessage,
 )
-from servicelib.rabbitmq import (
-    RabbitMQClient,
-    RabbitMQRPCClient,
-    wait_till_rabbitmq_responsive,
+from servicelib.fastapi.rabbitmq_lifespan import (
+    configure_rabbitmq_client,
+    configure_rabbitmq_rpc_client,
 )
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
@@ -49,30 +51,21 @@ async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
     return True
 
 
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        settings: RabbitSettings = app.state.settings.DIRECTOR_V2_RABBITMQ
-        await wait_till_rabbitmq_responsive(settings.dsn)
-        app.state.rabbitmq_client = RabbitMQClient(client_name="director-v2", settings=settings)
-        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-            client_name="director-v2-rpc-client", settings=settings
-        )
+async def _subscribe_out_of_credits_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    rabbitmq_client = get_rabbitmq_client(app)
+    await rabbitmq_client.subscribe(
+        WalletCreditsLimitReachedMessage.get_channel_name(),
+        partial(handler_out_of_credits, app),
+        exclusive_queue=False,
+        topics=[f"*.{CreditsLimit.OUT_OF_CREDITS}"],
+    )
+    yield
 
-        await app.state.rabbitmq_client.subscribe(
-            WalletCreditsLimitReachedMessage.get_channel_name(),
-            partial(handler_out_of_credits, app),
-            exclusive_queue=False,
-            topics=[f"*.{CreditsLimit.OUT_OF_CREDITS}"],
-        )
 
-    async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await app.state.rabbitmq_client.close()
-        if app.state.rabbitmq_rpc_client:
-            await app.state.rabbitmq_rpc_client.close()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+def configure_rabbitmq(app_lifespan: LifespanManager, *, settings: RabbitSettings) -> None:
+    configure_rabbitmq_client(app_lifespan, settings=settings, client_name="director-v2")
+    configure_rabbitmq_rpc_client(app_lifespan, settings=settings, client_name="director-v2-rpc-client")
+    app_lifespan.add(_subscribe_out_of_credits_lifespan)
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

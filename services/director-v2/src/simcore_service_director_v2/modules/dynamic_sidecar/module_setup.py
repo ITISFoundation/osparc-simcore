@@ -1,29 +1,34 @@
+from collections.abc import AsyncIterator
+
 from fastapi import FastAPI
-from servicelib.fastapi import long_running_tasks
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.long_running_tasks import client as long_running_tasks_client
+from servicelib.fastapi.long_running_tasks import server as long_running_tasks_server
 
 from ..._meta import APP_NAME
 from ...core.settings import AppSettings
 from . import api_client, scheduler
 
 
-def setup(app: FastAPI) -> None:
+def configure_dynamic_sidecar(app: FastAPI, app_lifespan: LifespanManager) -> None:
     settings: AppSettings = app.state.settings
 
-    long_running_tasks.client.setup(app)
-    long_running_tasks.server.setup(
+    long_running_tasks_client.configure_client(app_lifespan)
+    long_running_tasks_server.configure_server(
         app,
+        app_lifespan,
         redis_settings=settings.REDIS,
         rabbit_settings=settings.DIRECTOR_V2_RABBITMQ,
         lrt_namespace=APP_NAME,
     )
 
-    async def on_startup() -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         await api_client.setup(app)
         await scheduler.setup_scheduler(app)
+        try:
+            yield
+        finally:
+            await scheduler.shutdown_scheduler(app)
+            await api_client.shutdown(app)
 
-    async def on_shutdown() -> None:
-        await scheduler.shutdown_scheduler(app)
-        await api_client.shutdown(app)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)
