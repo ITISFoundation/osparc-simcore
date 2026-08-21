@@ -6,6 +6,14 @@ from ._errors import (
     EC2RuntimeError,
 )
 from ._fastapi_lifespan import configure_ec2_client
+from ._instrumentation import (
+    EC2ClientMetrics,
+    InstanceLabelExtractor,
+    TrackedGauge,
+    create_gauge,
+    create_instrumented_ec2_client,
+    instrument_ec2_client,
+)
 from ._models import (
     AWS_TAG_KEY_MAX_LENGTH,
     AWS_TAG_KEY_MIN_LENGTH,
@@ -32,6 +40,7 @@ __all__: tuple[str, ...] = (
     "AWSTagKey",
     "AWSTagValue",
     "EC2AccessError",
+    "EC2ClientMetrics",
     "EC2InstanceBootSpecific",
     "EC2InstanceConfig",
     "EC2InstanceData",
@@ -41,7 +50,12 @@ __all__: tuple[str, ...] = (
     "EC2RuntimeError",
     "EC2Tags",
     "GenericResourceValueType",
+    "InstanceLabelExtractor",
     "Resources",
     "SimcoreEC2API",
+    "TrackedGauge",
     "configure_ec2_client",
+    "create_gauge",
+    "create_instrumented_ec2_client",
+    "instrument_ec2_client",
 )
