@@ -57,8 +57,8 @@ _SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
 
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
-# Lets CI override the sample count per deployment, e.g. for weaker ones
-_NUM_SAMPLING_POINTS: Final[int] = int(os.environ.get("E2E_MMUX_RSM_NUM_SAMPLING_POINTS") or 40)
+# CI can override this via --num-sampling-points, e.g. for weaker deployments
+_DEFAULT_NUM_SAMPLING_POINTS: Final[int] = 40
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
@@ -124,10 +124,6 @@ _EXPECTED_LHS_INPUT_VALUES_BY_COUNT: Final[dict[int, list[float]]] = {
     40: _EXPECTED_LHS_INPUT_VALUES_40,
     5: _EXPECTED_LHS_INPUT_VALUES_5,
 }
-assert _NUM_SAMPLING_POINTS in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
-    f"No expected LHS values for _NUM_SAMPLING_POINTS={_NUM_SAMPLING_POINTS}, "
-    f"add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
-)
 
 
 class _TeardownDeleteError(Exception):
@@ -191,6 +187,20 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     api_host = f"api.{parsed.hostname}"
     api_netloc = f"{api_host}:{parsed.port}" if parsed.port else api_host
     return urlunparse(parsed._replace(netloc=api_netloc))
+
+
+@pytest.fixture(scope="session")
+def num_sampling_points(request: pytest.FixtureRequest) -> int:
+    if (passed := request.config.getoption("--num-sampling-points")) is not None:
+        value = int(passed)
+    elif env_value := os.environ.get("E2E_MMUX_RSM_NUM_SAMPLING_POINTS"):
+        value = int(env_value)
+    else:
+        value = _DEFAULT_NUM_SAMPLING_POINTS
+    assert value in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
+        f"No expected LHS values for num_sampling_points={value}, add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
+    )
+    return value
 
 
 @retry(
@@ -487,6 +497,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     create_function_from_project: Callable[[Page, str], dict[str, Any]],
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
+    num_sampling_points: int,
 ):
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
@@ -882,7 +893,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(f"{_NUM_SAMPLING_POINTS}")
+            samplingInput.fill(f"{num_sampling_points}")
             samplingInput.press("Enter")
 
             seed_was_set = False
@@ -992,11 +1003,11 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 )
 
                 if "uq" not in local_service_key.lower():
-                    assert len(input_values) == _NUM_SAMPLING_POINTS, (
-                        f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
+                    assert len(input_values) == num_sampling_points, (
+                        f"Expected {num_sampling_points} input values, got {len(input_values)}"
                     )
                     if seed_was_set:
-                        expected_values = _EXPECTED_LHS_INPUT_VALUES_BY_COUNT[_NUM_SAMPLING_POINTS]
+                        expected_values = _EXPECTED_LHS_INPUT_VALUES_BY_COUNT[num_sampling_points]
                         for i, (actual, expected) in enumerate(zip(input_values, expected_values, strict=True)):
                             assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
 
