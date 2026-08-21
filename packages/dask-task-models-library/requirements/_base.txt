@@ -19,17 +19,17 @@ cloudpickle==3.1.2
     # via
     #   dask
     #   distributed
-dask==2026.3.0
+dask==2026.7.1
     # via
     #   -r requirements/_base.in
     #   distributed
-distributed==2026.3.0
+distributed==2026.7.1
     # via dask
 dnspython==2.8.0
     # via email-validator
 email-validator==2.3.0
     # via pydantic
-fsspec==2026.2.0
+fsspec==2026.7.0
     # via dask
 idna==3.11
     # via email-validator
@@ -53,7 +53,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.1.2
+msgpack==1.2.1
     # via distributed
 orjson==3.11.9
     # via
@@ -122,7 +122,7 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.5
+tornado==6.5.8
     # via distributed
 typer==0.24.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -138,9 +138,5 @@ typing-inspection==0.4.2
     #   pydantic-settings
 tzdata==2025.3
     # via arrow
-urllib3==2.7.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   distributed
 zict==3.0.0
     # via distributed
