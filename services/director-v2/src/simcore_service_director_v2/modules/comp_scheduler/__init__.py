@@ -13,22 +13,43 @@ from ._worker import setup_worker, shutdown_worker
 _logger = logging.getLogger(__name__)
 
 
-async def _comp_scheduler_lifespan(app: FastAPI) -> AsyncIterator[None]:
-    with log_context(_logger, level=logging.INFO, msg=f"starting {MODULE_NAME_SCHEDULER}"):
+async def _releaser_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    with log_context(_logger, level=logging.INFO, msg=f"starting {MODULE_NAME_SCHEDULER} releaser"):
         await setup_releaser(app)
+    try:
+        yield
+    finally:
+        with log_context(_logger, level=logging.INFO, msg=f"stopping {MODULE_NAME_SCHEDULER} releaser"):
+            await shutdown_releaser(app)
+
+
+async def _worker_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    with log_context(_logger, level=logging.INFO, msg=f"starting {MODULE_NAME_SCHEDULER} worker"):
         await setup_worker(app)
+    try:
+        yield
+    finally:
+        with log_context(_logger, level=logging.INFO, msg=f"stopping {MODULE_NAME_SCHEDULER} worker"):
+            await shutdown_worker(app)
+
+
+async def _manager_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    with log_context(_logger, level=logging.INFO, msg=f"starting {MODULE_NAME_SCHEDULER} manager"):
         await setup_manager(app)
     try:
         yield
     finally:
-        with log_context(_logger, level=logging.INFO, msg=f"stopping {MODULE_NAME_SCHEDULER}"):
+        with log_context(_logger, level=logging.INFO, msg=f"stopping {MODULE_NAME_SCHEDULER} manager"):
             await shutdown_manager(app)
-            await shutdown_worker(app)
-            await shutdown_releaser(app)
 
 
 def configure_comp_scheduler(app_lifespan: LifespanManager) -> None:
-    app_lifespan.add(_comp_scheduler_lifespan)
+    # NOTE: each resource is registered as its own lifespan so that, if a later one fails to
+    # start, the LifespanManager only tears down the resources that were actually started (in
+    # reverse order), instead of leaving them dangling.
+    app_lifespan.add(_releaser_lifespan)
+    app_lifespan.add(_worker_lifespan)
+    app_lifespan.add(_manager_lifespan)
 
 
 __all__: tuple[str, ...] = (
