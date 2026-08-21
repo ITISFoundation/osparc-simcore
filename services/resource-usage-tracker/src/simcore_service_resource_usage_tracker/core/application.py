@@ -52,7 +52,10 @@ def _configure_plugins(
             settings=settings.RESOURCE_USAGE_TRACKER_POSTGRES,
             tracing_config=tracing_config,
         )
-    configure_redis(app_lifespan)
+    configure_redis(
+        app_lifespan,
+        settings=settings.RESOURCE_USAGE_TRACKER_REDIS,
+    )
     configure_rabbitmq(app, app_lifespan)
     if settings.RESOURCE_USAGE_TRACKER_S3:
         configure_s3(app_lifespan)
