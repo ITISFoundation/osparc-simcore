@@ -17,7 +17,6 @@
 import base64
 import json
 import logging
-import os
 import re
 from collections.abc import Callable, Iterator
 from typing import Any, Final
@@ -191,12 +190,11 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
 
 @pytest.fixture(scope="session")
 def num_sampling_points(request: pytest.FixtureRequest) -> int:
-    if (passed := request.config.getoption("--num-sampling-points")) is not None:
-        value = int(passed)
-    elif env_value := os.environ.get("E2E_MMUX_RSM_NUM_SAMPLING_POINTS"):
-        value = int(env_value)
-    else:
-        value = _DEFAULT_NUM_SAMPLING_POINTS
+    value = (
+        int(passed)
+        if (passed := request.config.getoption("--num-sampling-points")) is not None
+        else _DEFAULT_NUM_SAMPLING_POINTS
+    )
     assert value in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
         f"No expected LHS values for num_sampling_points={value}, add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
     )
