@@ -49,7 +49,7 @@ def inject_container_resources(
     memory_bytes: int = TypeAdapter(ByteSize).validate_python("1GiB"),
 ) -> dict[str, Any]:
     """Injects SIMCORE resource env vars and deploy limits into every service of a compose spec"""
-    cpus_float = nano_cpus / 1e9
+
     for service in compose_spec.get("services", {}).values():
         env = service.get("environment")
         if env is None:
@@ -65,9 +65,11 @@ def inject_container_resources(
                     f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={memory_bytes}",
                 ]
             )
+
         deploy = service.setdefault("deploy", {})
         resources = deploy.setdefault("resources", {})
         limits = resources.setdefault("limits", {})
-        limits["cpus"] = f"{cpus_float}"
+        cpus = nano_cpus / 1e9
+        limits["cpus"] = f"{cpus}"
         limits["memory"] = f"{memory_bytes}"
     return compose_spec
