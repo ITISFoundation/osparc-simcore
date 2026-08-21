@@ -39,12 +39,17 @@ def app(app: FastAPI) -> FastAPI:
 
 
 @pytest.fixture
-async def mounted_volumes(app: FastAPI) -> AsyncIterator[MountedVolumes]:
+async def initialized_app(app: FastAPI) -> AsyncIterator[FastAPI]:
     app_lifespan: LifespanManager[FastAPI] = LifespanManager()
     configure_mounted_fs(app_lifespan)
 
     async with app_lifespan(app):
-        yield AppState(app).mounted_volumes
+        yield app
+
+
+@pytest.fixture
+def mounted_volumes(initialized_app: FastAPI) -> MountedVolumes:
+    return AppState(initialized_app).mounted_volumes
 
 
 def test_name_from_full_path(path_to_transform: Path):
