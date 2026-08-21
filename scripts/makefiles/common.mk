@@ -16,8 +16,18 @@ include $(REPO_BASE_DIR)/scripts/makefiles/version.mk
 
 
 #
-# COMMON TASKS
+# COMMON TASKS (alphabetically ordered)
 #
+
+.PHONY: clean
+_GIT_CLEAN_ARGS = -dxf -e .vscode
+clean: ## cleans all unversioned files in project and temp files create by this makefile
+	# Cleaning unversioned
+	@git clean -n $(_GIT_CLEAN_ARGS)
+	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+	@git clean $(_GIT_CLEAN_ARGS)
+
 
 .env: .env-devel ## creates .env file from defaults in .env-devel
 	$(clone_from_template)
@@ -28,14 +38,10 @@ devenv: ## build development environment
 	@$(MAKE_C) $(REPO_BASE_DIR) $@
 
 
-.PHONY: clean
-_GIT_CLEAN_ARGS = -dxf -e .vscode
-clean: ## cleans all unversioned files in project and temp files create by this makefile
-	# Cleaning unversioned
-	@git clean -n $(_GIT_CLEAN_ARGS)
-	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@echo -n "$(shell whoami), are you REALLY sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@git clean $(_GIT_CLEAN_ARGS)
+.PHONY: github-workflow-job
+github-workflow-job: ## runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"
+	# running job "${job}"
+	$(SCRIPTS_DIR)/act.bash ../.. ${job}
 
 
 .PHONY: info
@@ -53,12 +59,6 @@ inf%: ## displays basic info
 	-@echo ' version      : ' $(shell python ${CURDIR}/setup.py --version)
 	-@echo ' authors      : ' "$(shell python ${CURDIR}/setup.py --author)"
 	-@echo ' description  : ' "$(shell python ${CURDIR}/setup.py --description)"
-
-
-.PHONY: github-workflow-job
-github-workflow-job: ## runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"
-	# running job "${job}"
-	$(SCRIPTS_DIR)/act.bash ../.. ${job}
 
 
 # REVIEW: diagnostics-only, no known CI/docs callers (was tagged `.PHONE`, i.e. never phony).

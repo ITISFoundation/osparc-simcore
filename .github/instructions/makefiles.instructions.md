@@ -11,8 +11,9 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 
 - `*.mk` = **library**: `include`-only, never invoked directly. Put reusable
   logic here, under `scripts/makefiles/`.
-- `Makefile` = **entry point**: invoked as `cd <dir> && make <target>` by a
-  human or CI. One per project directory + the repo root.
+- `Makefile` = **entry point**: invoked as `cd <dir> && make <target>` or
+  `make -C <dir> <target>` by a human or CI. One per project directory + the
+  repo root.
 - Never create a `Makefile` that is only `include`d, and never `make -f a.mk`.
 
 ## DRY & separation of concerns
@@ -25,6 +26,21 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
   rather than bloating `common.mk`.
 - A package Makefile includes `common.mk` + `package.mk`; a service Makefile
   includes `common.mk` + `service.mk`.
+
+## Recipe organization within a `.mk` file
+
+- **Group related recipes**: Place semantically related targets together (e.g.,
+  `mypy` and `mypy-debug` as a pair, not scattered).
+- **Organize groups alphabetically**: Within each logical group, sort recipes
+  alphabetically by target name (e.g., `check`, `clean`, `help`, `reqs`).
+- **Label groups clearly**: Use section headers with `# -----------...` and a
+  descriptive comment (e.g., `# MAIN LINTING TARGETS (alphabetically ordered)`)
+  so the file is self-documenting.
+- **Exception**: Pattern rules and subtasks can follow implementation order; the
+  alphabetical convention applies to public/user-facing targets.
+- **See example**: `scripts/makefiles/python-lint.mk` groups main linting
+  targets (alphabetical) separately from developer convenience targets
+  (alphabetical), keeping `mypy` and `mypy-debug` together.
 
 ## CI contract targets
 

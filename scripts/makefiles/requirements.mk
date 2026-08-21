@@ -17,11 +17,7 @@ UPGRADE_OPTION := $(if $(upgrade),--upgrade-package "$(upgrade)",$(DO_CLEAN_OR_U
 objects = $(sort $(wildcard *.in))
 outputs := $(objects:.in=.txt)
 
-reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
-
-touch:
-	@$(foreach p,${objects},touch ${p};)
-
+# Public targets (alphabetically ordered)
 
 check: ## Checks whether uv is installed
 	@which uv > /dev/null
@@ -44,6 +40,11 @@ help: ## this colorful help
 	@echo "  make reqs startswith=pytest # Upgrade all packages starting with 'pytest'"
 	@echo "  make reqs clean=1           # Clean and rebuild all requirements"
 	@echo ""
+
+reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
+
+touch:
+	@$(foreach p,${objects},touch ${p};)
 
 
 # ------------------------------------------------------------------------------------------

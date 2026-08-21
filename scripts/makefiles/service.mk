@@ -40,6 +40,24 @@ include $(REPO_BASE_DIR)/scripts/makefiles/python-install.mk
 # Always out-of-date sentinel used to force pattern test targets to run.
 FORCE:
 
+TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
+
+# Pattern rules (alphabetically ordered)
+
+# CI-CONTRACT: test-ci-integration is invoked by ci/github/**/*.bash (also test-dev-integration locally)
+test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
+	@export DOCKER_REGISTRY=local; \
+	export DOCKER_IMAGE_TAG=production; \
+	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
+
+# CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
+test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s))
+	# Targets tests/unit folder (or an explicit target= if provided)
+	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
+
+# Public targets (alphabetically ordered)
+
 # REVIEW: self-test of the test-target dispatch; no known CI/docs callers.
 .PHONY: check-test-dispatch
 check-test-dispatch: ## validates test target dispatch and mode-specific pytest options via dry-runs
@@ -55,24 +73,9 @@ check-test-dispatch: ## validates test target dispatch and mode-specific pytest 
 	grep -q -- "--cov-append" "$$tmp_file" || (echo "ERROR: _run-test-ci is missing CI pytest options"; cat "$$tmp_file"; exit 1); \
 	echo "OK: test dispatch checks passed"
 
-TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tests/unit/%,%, $(patsubst %/,%,$(test-path)))),)
-
-# CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
-test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s))
-	# Targets tests/unit folder (or an explicit target= if provided)
-	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
-
-# CI-CONTRACT: test-ci-integration is invoked by ci/github/**/*.bash (also test-dev-integration locally)
-test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s))
-	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
-	@export DOCKER_REGISTRY=local; \
-	export DOCKER_IMAGE_TAG=production; \
-	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
-
+test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 
 test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
-
-test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +85,7 @@ include $(REPO_BASE_DIR)/scripts/makefiles/i18n.mk
 
 
 #
-# DOCKER CONTAINERS TASKS
+# DOCKER CONTAINERS TASKS (alphabetically ordered)
 #
 
 .PHONY: build build-nc build-devel build-devel-nc
@@ -91,27 +94,12 @@ build build-nc build-devel build-devel-nc: ## [docker] builds docker image in ma
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
 
-.PHONY: shell
-shell: ## [swarm] runs shell inside $(APP_NAME) container
-	docker exec \
-		--interactive \
-		--tty \
-		$(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
-		/bin/bash
-
-
-.PHONY: tail logs
-tail logs: ## [swarm] tails log of $(APP_NAME) container
+.PHONY: logs tail
+logs tail: ## [swarm] tails log of $(APP_NAME) container
 	docker logs \
 		--follow \
 		$(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
 		2>&1
-
-
-.PHONY: stats
-stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
-	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
-
 
 
 DOCKER_REGISTRY ?=local
@@ -132,6 +120,20 @@ settings-schema.json: ## [container] dumps json-shcema of this service settings
 # - 1,/{/: This specifies the range of lines to operate on, in this case, from the first line to (but not including) the line that contains the string "{".
 # - {/{/!d}: This specifies that all lines between the first line and the line that contains "{" should be printed ({) except for the line that contains "{" (/{/!d).
 #
+
+
+.PHONY: shell
+shell: ## [swarm] runs shell inside $(APP_NAME) container
+	docker exec \
+		--interactive \
+		--tty \
+		$(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) \
+		/bin/bash
+
+
+.PHONY: stats
+stats: ## [swarm] display live stream of $(APP_NAME) container resource usage statistics
+	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
 
 
 
