@@ -1,7 +1,9 @@
 import logging
+from collections.abc import AsyncIterator
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from settings_library.efs import AwsEfsSettings
 from tenacity import (
     AsyncRetrying,
@@ -16,8 +18,8 @@ from .efs_manager import EfsManager
 _logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI) -> None:
-    async def on_startup() -> None:
+def configure_efs_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _efs_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
         aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
 
         app.state.efs_manager = None
@@ -35,13 +37,9 @@ def setup(app: FastAPI) -> None:
         ):
             with attempt:
                 await efs_manager.initialize_directories()
+        yield {}
 
-    async def on_shutdown() -> None:
-        if app.state.efs_manager:
-            ...
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_efs_manager_lifespan)
 
 
 def get_efs_manager(app: FastAPI) -> EfsManager:
