@@ -166,8 +166,20 @@ async def test_worker_scheduling_parallelism(
 ):
     with_disabled_auto_scheduling.assert_called_once()
 
+    release_scheduler_calls = asyncio.Event()
+    scheduler_calls_completed = asyncio.Event()
+    scheduler_calls_in_flight = 0
+
     async def _side_effect(*args, **kwargs):
-        await asyncio.sleep(10)
+        nonlocal scheduler_calls_in_flight
+        scheduler_calls_in_flight += 1
+        scheduler_calls_completed.clear()
+        try:
+            await release_scheduler_calls.wait()
+        finally:
+            scheduler_calls_in_flight -= 1
+            if scheduler_calls_in_flight == 0:
+                scheduler_calls_completed.set()
 
     mocked_scheduler_api.side_effect = _side_effect
 
@@ -192,4 +204,8 @@ async def test_worker_scheduling_parallelism(
     def _assert_expected_called() -> None:
         assert mocked_scheduler_api.call_count == scheduling_concurrency
 
-    _assert_expected_called()
+    try:
+        _assert_expected_called()
+    finally:
+        release_scheduler_calls.set()
+        await asyncio.wait_for(scheduler_calls_completed.wait(), timeout=5)
