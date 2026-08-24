@@ -74,6 +74,22 @@ async def test_worker_is_initialized_before_subscribing(mocker: MockerFixture):
     mocked_setup_manager.assert_awaited_once_with(app)
 
 
+async def test_scheduler_shutdown_order(mocker: MockerFixture):
+    app = FastAPI()
+    shutdown_calls = mocker.Mock()
+    shutdown_calls.attach_mock(mocker.patch(f"{comp_scheduler.__name__}.shutdown_manager"), "manager")
+    shutdown_calls.attach_mock(mocker.patch(f"{comp_scheduler.__name__}.shutdown_releaser"), "releaser")
+    shutdown_calls.attach_mock(mocker.patch(f"{comp_scheduler.__name__}.shutdown_worker"), "worker")
+
+    await comp_scheduler.on_app_shutdown(app)()
+
+    assert shutdown_calls.mock_calls == [
+        mocker.call.manager(app),
+        mocker.call.releaser(app),
+        mocker.call.worker(app),
+    ]
+
+
 @pytest.fixture
 def mock_schedule_pipeline(mocker: MockerFixture) -> mock.Mock:
     mock_scheduler_worker = mock.Mock()
