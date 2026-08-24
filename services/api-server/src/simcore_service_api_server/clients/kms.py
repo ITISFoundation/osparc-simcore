@@ -23,20 +23,21 @@ def configure_kms(app_lifespan: LifespanManager[FastAPI]) -> None:
             yield {}
             return
 
-        kms_client = await SimcoreKMSAPI.create(settings.API_SERVER_KMS)
-        if not await kms_client.ping():
-            await kms_client.close()
-            _logger.error(
-                "Could not reach AWS KMS with the configured API_SERVER_KMS settings "
-                "(unreachable endpoint, wrong key id, or missing permissions). "
-                "Refusing to start since encryption was requested."
-            )
-            raise KMSNotConnectedError
-
-        app.state.kms_client = kms_client
+        kms_client: SimcoreKMSAPI | None = None
         try:
+            kms_client = await SimcoreKMSAPI.create(settings.API_SERVER_KMS)
+            if not await kms_client.ping():
+                _logger.error(
+                    "Could not reach AWS KMS with the configured API_SERVER_KMS settings "
+                    "(unreachable endpoint, wrong key id, or missing permissions). "
+                    "Refusing to start since encryption was requested."
+                )
+                raise KMSNotConnectedError
+
+            app.state.kms_client = kms_client
             yield {}
         finally:
-            await kms_client.close()
+            if kms_client is not None:
+                await kms_client.close()
 
     app_lifespan.add(_kms_lifespan)

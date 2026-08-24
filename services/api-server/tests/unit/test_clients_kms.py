@@ -5,6 +5,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from aws_library.kms import KMSNotConnectedError, SimcoreKMSAPI
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 from servicelib.fastapi.lifespan_utils import configure_app_lifespan
 from settings_library.kms import KMSSettings
 from simcore_service_api_server.clients.kms import configure_kms
@@ -40,6 +41,26 @@ async def test_configure_kms_sets_client_when_kms_reachable(
     async with LifespanManager(app):
         assert isinstance(app.state.kms_client, SimcoreKMSAPI)
         assert await app.state.kms_client.ping() is True
+
+
+async def test_configure_kms_closes_client_when_ping_raises(
+    mocked_kms_server_settings: KMSSettings,
+    mocker: MockerFixture,
+):
+    kms_client = mocker.AsyncMock(spec=SimcoreKMSAPI)
+    kms_client.ping.side_effect = RuntimeError("ping failed")
+    mocker.patch(
+        "simcore_service_api_server.clients.kms.SimcoreKMSAPI.create",
+        return_value=kms_client,
+    )
+    app = _create_app(_FakeSettings(mocked_kms_server_settings))
+
+    with pytest.raises(RuntimeError, match="ping failed"):
+        async with LifespanManager(app):
+            pytest.fail("app startup should have failed before entering the context")
+
+    kms_client.close.assert_awaited_once_with()
+    assert app.state.kms_client is None
 
 
 async def test_configure_kms_raises_when_key_not_found(
