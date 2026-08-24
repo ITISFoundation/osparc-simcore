@@ -28,7 +28,6 @@ from simcore_service_director_v2.modules.comp_scheduler._models import (
     SchedulePipelineRabbitMessage,
 )
 from simcore_service_director_v2.modules.comp_scheduler._worker import _get_scheduler_worker
-from tenacity import retry, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -168,12 +167,14 @@ async def test_worker_scheduling_parallelism(
 
     release_scheduler_calls = asyncio.Event()
     scheduler_calls_completed = asyncio.Event()
+    scheduler_calls_started = asyncio.Event()
     scheduler_calls_in_flight = 0
 
     async def _side_effect(*args, **kwargs):
         nonlocal scheduler_calls_in_flight
         scheduler_calls_in_flight += 1
-        scheduler_calls_completed.clear()
+        if scheduler_calls_in_flight == scheduling_concurrency:
+            scheduler_calls_started.set()
         try:
             await release_scheduler_calls.wait()
         finally:
@@ -197,15 +198,10 @@ async def test_worker_scheduling_parallelism(
 
     # whatever scheduling concurrency we call in here, we shall always see the same number of calls to the scheduler
     await asyncio.gather(*(_project_pipeline_creation_workflow() for _ in range(scheduling_concurrency)))
-    # the call to run the pipeline is async so we need to wait here
-    mocked_scheduler_api.assert_called()
-
-    @retry(stop=stop_after_delay(5), reraise=True, wait=wait_fixed(0.5))
-    def _assert_expected_called() -> None:
-        assert mocked_scheduler_api.call_count == scheduling_concurrency
 
     try:
-        _assert_expected_called()
+        await asyncio.wait_for(scheduler_calls_started.wait(), timeout=5)
+        assert mocked_scheduler_api.call_count == scheduling_concurrency
     finally:
         release_scheduler_calls.set()
         await asyncio.wait_for(scheduler_calls_completed.wait(), timeout=5)
