@@ -54,8 +54,8 @@ async def test_configure_client_instance(the_service):
     # test startup/shutdown
     async with LifespanManager(app):
         # check startup
-        assert TheClientApi.get_instance(app)
         api_obj = TheClientApi.get_instance(app)
+        assert api_obj
 
         assert await api_obj.is_responsive()
         assert the_service["health_check"].called
