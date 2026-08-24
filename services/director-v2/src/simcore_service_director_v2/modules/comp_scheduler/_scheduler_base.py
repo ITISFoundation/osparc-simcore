@@ -567,7 +567,7 @@ class BaseCompScheduler(ABC):
                 # 1.1. get the updated tasks NOTE: we need to get them again as some states might have changed
                 comp_tasks = await self._get_pipeline_tasks(project_id, dag)
                 # 2. timeout if waiting for cluster has been there for more than X minutes
-                comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
+                comp_tasks = await self._timeout_if_stuck_waiting_to_start_too_long(
                     user_id, project_id, comp_run, comp_tasks
                 )
                 # 3. Any task following a FAILED task shall be ABORTED
@@ -896,18 +896,19 @@ class BaseCompScheduler(ABC):
 
         return comp_tasks
 
-    async def _timeout_if_waiting_for_cluster_too_long(
+    async def _timeout_if_stuck_waiting_to_start_too_long(
         self,
         user_id: UserID,
         project_id: ProjectID,
         comp_run: CompRunsAtDB,
         comp_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        if comp_run.result is not RunningState.WAITING_FOR_CLUSTER:
+        # NOTE: also covers tasks stuck pre-start (not just WAITING_FOR_CLUSTER)
+        if comp_run.result not in WAITING_FOR_START_STATES:
             return comp_tasks
 
-        tasks_waiting_for_cluster = [t for t in comp_tasks.values() if t.state is RunningState.WAITING_FOR_CLUSTER]
-        if not tasks_waiting_for_cluster:
+        stuck_tasks = [t for t in comp_tasks.values() if t.state in WAITING_FOR_START_STATES]
+        if not stuck_tasks:
             return comp_tasks
 
         if comp_run.last_result_changed is None:
@@ -919,12 +920,12 @@ class BaseCompScheduler(ABC):
             await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
-                [task.node_id for task in tasks_waiting_for_cluster],
+                [task.node_id for task in stuck_tasks],
                 RunningState.FAILED,
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
-            for task in tasks_waiting_for_cluster:
+            for task in stuck_tasks:
                 task.state = RunningState.FAILED
             msg = user_message(
                 "The system has timed out while waiting for computational resources. "
