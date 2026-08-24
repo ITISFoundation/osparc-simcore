@@ -27,6 +27,7 @@ from simcore_service_director_v2.modules.comp_scheduler._models import (
 )
 from simcore_service_director_v2.modules.comp_scheduler._worker import (
     _get_scheduler_worker,
+    setup_worker,
 )
 from tenacity import retry, stop_after_delay, wait_fixed
 
@@ -36,6 +37,36 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 async def test_worker_starts_and_stops(initialized_app: FastAPI):
     assert _get_scheduler_worker(initialized_app) is not None
+
+
+async def test_worker_is_initialized_before_subscribing(mocker: MockerFixture):
+    app = FastAPI()
+    scheduler = mocker.Mock()
+    rabbitmq_client = mocker.Mock()
+
+    async def _subscribe(*args: Any, **kwargs: Any) -> tuple[str, str]:
+        assert _get_scheduler_worker(app) is scheduler
+        return ("queue", "consumer")
+
+    rabbitmq_client.subscribe = mocker.AsyncMock(side_effect=_subscribe)
+    app_settings = mocker.Mock()
+    app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY = 1
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._worker.get_application_settings",
+        return_value=app_settings,
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._worker.get_rabbitmq_client",
+        return_value=rabbitmq_client,
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._worker.create_scheduler",
+        return_value=scheduler,
+    )
+
+    await setup_worker(app)
+
+    assert _get_scheduler_worker(app) is scheduler
 
 
 @pytest.fixture
