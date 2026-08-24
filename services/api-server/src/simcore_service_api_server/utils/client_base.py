@@ -50,7 +50,7 @@ def configure_client_instance(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     api_cls: type[BaseServiceClientApi],
-    api_baseurl,
+    api_baseurl: str,
     service_name: str,
     tracing_settings: TracingSettings | None,
     **extra_fields,
