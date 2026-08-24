@@ -77,7 +77,7 @@ def _configure_plugins(
     if settings.API_SERVER_POSTGRES:
         configure_postgres(app_lifespan, tracing_config=tracing_config)
 
-    configure_rabbitmq(app_lifespan)
+    configure_rabbitmq(app_lifespan, settings=settings.API_SERVER_RABBITMQ)
 
     if settings.API_SERVER_CELERY:
         configure_task_manager(app_lifespan, settings.API_SERVER_CELERY)
