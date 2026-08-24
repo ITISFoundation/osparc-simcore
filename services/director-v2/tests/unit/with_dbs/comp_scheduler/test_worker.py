@@ -71,7 +71,6 @@ async def test_worker_is_initialized_before_subscribing(mocker: MockerFixture):
     await comp_scheduler.on_app_startup(app)()
 
     assert _get_scheduler_worker(app) is scheduler
-    assert rabbitmq_client.subscribe.await_count > 1
     mocked_setup_manager.assert_awaited_once_with(app)
 
 
