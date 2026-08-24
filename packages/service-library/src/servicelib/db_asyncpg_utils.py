@@ -52,13 +52,14 @@ async def create_async_engine_and_database_ready(
 
     try:
         await raise_if_migration_not_ready(engine)
-        if tracing_config and tracing_config.tracing_enabled:
-            instrument_async_engine(engine, tracing_config=tracing_config)
     except BaseException as exc:
         # NOTE: engine must be closed because retry will create a new engine
         await engine.dispose()
-        exc.add_note("Failed during engine setup. Created engine disposed.")
+        exc.add_note("Failed during migration check. Created engine disposed.")
         raise
+
+    if tracing_config and tracing_config.tracing_enabled:
+        instrument_async_engine(engine, tracing_config=tracing_config)
 
     return engine
 
