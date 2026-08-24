@@ -534,11 +534,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
     def as_label_data(self) -> str:
-        # compose_spec needs to be json encoded before encoding it to json
-        # and storing it in the label
-        return self.model_copy(
-            update={"compose_spec": json_dumps(self.compose_spec)},
-            deep=True,
-        ).model_dump_json()
+        # compose_spec must be a JSON-encoded string in the label so that
+        # `from_service_inspect`'s `Json[...]` validator can parse it back.
+        # Patching a plain dict (instead of a model instance) avoids creating
+        # a SchedulerData copy whose compose_spec violates its declared type,
+        # which used to trigger a PydanticSerializationUnexpectedValue warning
+        # on every call.
+        data = self.model_dump(mode="json")
+        data["compose_spec"] = json_dumps(self.compose_spec)
+        return json_dumps(data)
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
