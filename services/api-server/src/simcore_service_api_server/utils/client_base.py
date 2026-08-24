@@ -60,13 +60,14 @@ def configure_client_instance(
     assert issubclass(api_cls, BaseServiceClientApi)  # nosec
 
     async def _client_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
-        # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
-        client = AsyncClient(
-            base_url=api_baseurl,
-            timeout=Timeout(_DEFAULT_BASE_SERVICE_CLIENT_API_TIMEOUT_SECONDS),
-        )
-        _logger.debug("Creating %s for %s", f"{type(client)=}", f"{api_baseurl=}")
+        client: AsyncClient | None = None
         try:
+            # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
+            client = AsyncClient(
+                base_url=api_baseurl,
+                timeout=Timeout(_DEFAULT_BASE_SERVICE_CLIENT_API_TIMEOUT_SECONDS),
+            )
+            _logger.debug("Creating %s for %s", f"{type(client)=}", f"{api_baseurl=}")
             if tracing_settings:
                 setup_httpx_client_tracing(
                     client,
@@ -81,6 +82,7 @@ def configure_client_instance(
             yield {}
         finally:
             api_obj: BaseServiceClientApi | None = api_cls.pop_instance(lifespan_app)
-            await (api_obj.client if api_obj else client).aclose()
+            if client is not None:
+                await (api_obj.client if api_obj else client).aclose()
 
     app_lifespan.add(_client_lifespan)

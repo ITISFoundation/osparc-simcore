@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
@@ -68,22 +69,24 @@ async def _collect_prometheus_metrics_task(app: FastAPI):
 
 def configure_api_server_prometheus_instrumentation(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     async def _api_server_instrumentation_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
-        app.state.instrumentation = ApiServerPrometheusInstrumentation(
-            registry=lifespan_app.state.prometheus_metrics.registry
-        )
-        await wait_till_log_distributor_ready(app)
-        app.state.instrumentation_task = create_periodic_task(
-            task=_collect_prometheus_metrics_task,
-            interval=timedelta(seconds=app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS),
-            task_name="prometheus_metrics_collection_task",
-            app=app,
-        )
-
+        instrumentation_task: asyncio.Task | None = None
         try:
+            app.state.instrumentation = ApiServerPrometheusInstrumentation(
+                registry=lifespan_app.state.prometheus_metrics.registry
+            )
+            await wait_till_log_distributor_ready(app)
+            instrumentation_task = create_periodic_task(
+                task=_collect_prometheus_metrics_task,
+                interval=timedelta(seconds=app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS),
+                task_name="prometheus_metrics_collection_task",
+                app=app,
+            )
+            app.state.instrumentation_task = instrumentation_task
             yield {}
         finally:
-            with log_catch(_logger, reraise=False):
-                await cancel_wait_task(app.state.instrumentation_task)
+            if instrumentation_task is not None:
+                with log_catch(_logger, reraise=False):
+                    await cancel_wait_task(instrumentation_task)
 
     configure_prometheus_instrumentation(
         app,

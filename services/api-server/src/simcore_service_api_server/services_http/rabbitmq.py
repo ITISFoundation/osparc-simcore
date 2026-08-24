@@ -52,8 +52,8 @@ def configure_rabbitmq(
                 timeout_seconds=app.state.settings.API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS,
                 allowed_health_check_failures=app.state.settings.API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES,
             )
-            await app.state.health_checker.setup(app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS)
             exit_stack.push_async_callback(app.state.health_checker.teardown)
+            await app.state.health_checker.setup(app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS)
 
             # setup rpc clients
             resource_usage_tracker.setup(app, get_rabbitmq_rpc_client(app))

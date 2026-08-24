@@ -19,12 +19,13 @@ _logger = logging.getLogger(__name__)
 
 def configure_task_manager(app_lifespan: LifespanManager[FastAPI], settings: CelerySettings) -> None:
     async def _task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
-        redis_client_sdk = RedisClientSDK(
-            settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
-            client_name="api_server_celery_tasks",
-        )
-        app.state.celery_tasks_redis_client_sdk = redis_client_sdk
+        redis_client_sdk: RedisClientSDK | None = None
         try:
+            redis_client_sdk = RedisClientSDK(
+                settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
+                client_name="api_server_celery_tasks",
+            )
+            app.state.celery_tasks_redis_client_sdk = redis_client_sdk
             with log_context(_logger, logging.INFO, "Setting up Celery"):
                 await redis_client_sdk.setup()
 
@@ -39,7 +40,8 @@ def configure_task_manager(app_lifespan: LifespanManager[FastAPI], settings: Cel
 
             yield {}
         finally:
-            with log_context(_logger, logging.INFO, "Shutting down Celery"):
-                await redis_client_sdk.shutdown()
+            if redis_client_sdk is not None:
+                with log_context(_logger, logging.INFO, "Shutting down Celery"):
+                    await redis_client_sdk.shutdown()
 
     app_lifespan.add(_task_manager_lifespan)
