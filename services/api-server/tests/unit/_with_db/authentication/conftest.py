@@ -10,7 +10,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
-from simcore_service_api_server.clients.postgres import get_engine
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_service_api_server.repository.api_keys import ApiKeysRepository
 from simcore_service_api_server.repository.users import UsersRepository
 from sqlalchemy.ext.asyncio import AsyncEngine

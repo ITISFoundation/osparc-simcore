@@ -4,12 +4,12 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.requests import Request
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_postgres_database.utils_aiosqlalchemy import (
     get_pg_engine_stateinfo,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ...clients.postgres import get_engine
 from ...repository import BaseRepository
 
 _logger = logging.getLogger(__name__)

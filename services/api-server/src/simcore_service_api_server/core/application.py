@@ -7,6 +7,7 @@ from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from packaging.version import Version
 from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
+from servicelib.fastapi.postgres_lifespan import configure_postgres_database
 from servicelib.fastapi.profiler import configure_profiler
 from servicelib.fastapi.tracing import (
     configure_fastapi_app_tracing,
@@ -27,7 +28,6 @@ from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import configure_task_manager
 from ..clients.kms import configure_kms
-from ..clients.postgres import configure_postgres
 from ..services_http import director_v2, storage, webserver
 from ..services_http.chatbot import configure as configure_chatbot
 from ..services_http.rabbitmq import configure_rabbitmq
@@ -75,7 +75,11 @@ def _configure_plugins(
         )
 
     if settings.API_SERVER_POSTGRES:
-        configure_postgres(app_lifespan, tracing_config=tracing_config)
+        configure_postgres_database(
+            app_lifespan,
+            settings=settings.API_SERVER_POSTGRES,
+            tracing_config=tracing_config,
+        )
 
     configure_rabbitmq(app_lifespan, settings=settings.API_SERVER_RABBITMQ)
 
