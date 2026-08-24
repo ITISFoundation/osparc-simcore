@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from settings_library.tracing import TracingSettings
 
 from ..core.settings import ChatbotSettings
@@ -13,7 +14,7 @@ from ..models.domain.chatbot import (
     ChatResponseFormat,
     CreateChatCompletionResponse,
 )
-from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
 _logger = logging.getLogger(__name__)
 
@@ -65,14 +66,16 @@ class ChatbotSession:
 # APP SETUP -------------------------------------------------------------------
 
 
-def setup(
+def configure(
     app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
     *,
     base_url: str,
     tracing_settings: TracingSettings | None,
 ) -> None:
-    setup_client_instance(
+    configure_client_instance(
         app,
+        app_lifespan,
         ChatbotApi,
         api_baseurl=base_url,
         service_name="chatbot",

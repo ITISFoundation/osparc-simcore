@@ -9,9 +9,10 @@ import pytest
 import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from servicelib.fastapi.lifespan_utils import configure_app_lifespan
 from simcore_service_api_server.utils.client_base import (
     BaseServiceClientApi,
-    setup_client_instance,
+    configure_client_instance,
 )
 
 
@@ -27,24 +28,26 @@ def the_service():
         yield respx_mock
 
 
-async def test_setup_client_instance(the_service):
+async def test_configure_client_instance(the_service):
     @dataclass
     class TheClientApi(BaseServiceClientApi):
         x: int = 33
 
     # setup app
-    app = FastAPI()
-    assert not TheClientApi.get_instance(app)
+    with configure_app_lifespan(started_banner="", starting_banner="") as app_lifespan:
+        app = FastAPI(lifespan=app_lifespan)
+        assert not TheClientApi.get_instance(app)
 
-    setup_client_instance(
-        app,
-        api_cls=TheClientApi,
-        api_baseurl="http://the_service",
-        service_name="the_service",
-        health_check_path="/health",
-        x=42,
-        tracing_settings=None,
-    )
+        configure_client_instance(
+            app,
+            app_lifespan,
+            api_cls=TheClientApi,
+            api_baseurl="http://the_service",
+            service_name="the_service",
+            health_check_path="/health",
+            x=42,
+            tracing_settings=None,
+        )
     assert not TheClientApi.get_instance(app)
 
     # test startup/shutdown

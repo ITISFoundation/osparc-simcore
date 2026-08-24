@@ -2,6 +2,7 @@
 
 import logging
 import urllib.parse
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import partial
@@ -14,6 +15,7 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from cryptography import fernet
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
@@ -92,7 +94,7 @@ from ..models.schemas.model_adapter import (
 from ..models.schemas.profiles import Profile, ProfileUpdate, UserRoleEnum
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
-from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
 _logger = logging.getLogger(__name__)
 
@@ -684,33 +686,37 @@ class AuthSession:
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(
+def configure(
     app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
     webserver_settings: WebServerSettings,
     tracing_settings: TracingSettings | None,
 ) -> None:
-    setup_client_instance(
+    configure_client_instance(
         app,
+        app_lifespan,
         WebserverApi,
         api_baseurl=webserver_settings.api_base_url,
         service_name="webserver",
         tracing_settings=tracing_settings,
     )
-    setup_client_instance(
+    configure_client_instance(
         app,
+        app_lifespan,
         LongRunningTasksClient,
         api_baseurl="",
         service_name="long_running_tasks_client",
         tracing_settings=tracing_settings,
     )
 
-    def _on_startup() -> None:
+    async def _webserver_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
         # normalize & encrypt
         secret_key = webserver_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
-        app.state.webserver_fernet = fernet.Fernet(secret_key)
+        lifespan_app.state.webserver_fernet = fernet.Fernet(secret_key)
 
-    async def _on_shutdown() -> None:
-        _logger.debug("Webserver closed successfully")
+        try:
+            yield {}
+        finally:
+            _logger.debug("Webserver closed successfully")
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_webserver_lifespan)

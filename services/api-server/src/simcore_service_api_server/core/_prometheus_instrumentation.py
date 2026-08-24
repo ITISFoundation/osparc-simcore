@@ -1,16 +1,17 @@
 import logging
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Final, cast
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from prometheus_client import CollectorRegistry, Gauge
 from pydantic import PositiveInt
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.monitoring import (
-    setup_prometheus_instrumentation as setup_rest_instrumentation,
+    configure_prometheus_instrumentation,
 )
 from servicelib.logging_utils import log_catch
 
@@ -65,11 +66,11 @@ async def _collect_prometheus_metrics_task(app: FastAPI):
     )
 
 
-def setup_prometheus_instrumentation(app: FastAPI):
-    registry = setup_rest_instrumentation(app)
-
-    async def on_startup() -> None:
-        app.state.instrumentation = ApiServerPrometheusInstrumentation(registry=registry)
+def configure_api_server_prometheus_instrumentation(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _api_server_instrumentation_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
+        app.state.instrumentation = ApiServerPrometheusInstrumentation(
+            registry=lifespan_app.state.prometheus_metrics.registry
+        )
         await wait_till_log_distributor_ready(app)
         app.state.instrumentation_task = create_periodic_task(
             task=_collect_prometheus_metrics_task,
@@ -78,13 +79,17 @@ def setup_prometheus_instrumentation(app: FastAPI):
             app=app,
         )
 
-    async def on_shutdown() -> None:
-        assert app.state.instrumentation_task  # nosec
-        with log_catch(_logger, reraise=False):
-            await cancel_wait_task(app.state.instrumentation_task)
+        try:
+            yield {}
+        finally:
+            with log_catch(_logger, reraise=False):
+                await cancel_wait_task(app.state.instrumentation_task)
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    configure_prometheus_instrumentation(
+        app,
+        app_lifespan,
+        _api_server_instrumentation_lifespan,
+    )
 
 
 def get_instrumentation(app: FastAPI) -> ApiServerPrometheusInstrumentation:

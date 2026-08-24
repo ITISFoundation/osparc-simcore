@@ -1,7 +1,9 @@
 import logging
+from collections.abc import AsyncIterator
 
 from aws_library.kms import KMSNotConnectedError, SimcoreKMSAPI
 from fastapi import FastAPI, Request
+from fastapi_lifespan_manager import LifespanManager, State
 
 from ..core.settings import ApplicationSettings
 
@@ -13,12 +15,12 @@ def get_kms_client(request: Request) -> SimcoreKMSAPI | None:
     return kms_client
 
 
-def setup_kms(app: FastAPI) -> None:
-    app.state.kms_client = None
-
-    async def _on_startup() -> None:
+def configure_kms(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _kms_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        app.state.kms_client = None
         settings: ApplicationSettings = app.state.settings
         if settings.API_SERVER_KMS is None:
+            yield {}
             return
 
         kms_client = await SimcoreKMSAPI.create(settings.API_SERVER_KMS)
@@ -32,10 +34,9 @@ def setup_kms(app: FastAPI) -> None:
             raise KMSNotConnectedError
 
         app.state.kms_client = kms_client
+        try:
+            yield {}
+        finally:
+            await kms_client.close()
 
-    async def _on_shutdown() -> None:
-        if app.state.kms_client is not None:
-            await app.state.kms_client.close()
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_kms_lifespan)

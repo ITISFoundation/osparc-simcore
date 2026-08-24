@@ -5,48 +5,51 @@ import pytest
 from asgi_lifespan import LifespanManager
 from aws_library.kms import KMSNotConnectedError, SimcoreKMSAPI
 from fastapi import FastAPI
+from servicelib.fastapi.lifespan_utils import configure_app_lifespan
 from settings_library.kms import KMSSettings
-from simcore_service_api_server.clients.kms import setup_kms
+from simcore_service_api_server.clients.kms import configure_kms
 
 
 class _FakeSettings:
-    """Minimal stand-in for ApplicationSettings - setup_kms() only reads API_SERVER_KMS."""
+    """Minimal stand-in for ApplicationSettings - KMS only reads API_SERVER_KMS."""
 
     def __init__(self, api_server_kms: KMSSettings | None) -> None:
         self.API_SERVER_KMS = api_server_kms
 
 
-async def test_setup_kms_disabled_when_not_configured():
-    app = FastAPI()
-    app.state.settings = _FakeSettings(None)
-    setup_kms(app)
+def _create_app(settings: _FakeSettings) -> FastAPI:
+    with configure_app_lifespan(started_banner="", starting_banner="") as app_lifespan:
+        app = FastAPI(lifespan=app_lifespan)
+        app.state.settings = settings
+        configure_kms(app_lifespan)
+    return app
+
+
+async def test_configure_kms_disabled_when_not_configured():
+    app = _create_app(_FakeSettings(None))
 
     async with LifespanManager(app):
         assert app.state.kms_client is None
 
 
-async def test_setup_kms_sets_client_when_kms_reachable(
+async def test_configure_kms_sets_client_when_kms_reachable(
     mocked_kms_server_settings: KMSSettings,
 ):
-    app = FastAPI()
-    app.state.settings = _FakeSettings(mocked_kms_server_settings)
-    setup_kms(app)
+    app = _create_app(_FakeSettings(mocked_kms_server_settings))
 
     async with LifespanManager(app):
         assert isinstance(app.state.kms_client, SimcoreKMSAPI)
         assert await app.state.kms_client.ping() is True
 
 
-async def test_setup_kms_raises_when_key_not_found(
+async def test_configure_kms_raises_when_key_not_found(
     mocked_kms_server_settings: KMSSettings,
 ):
     """A wrongly configured (e.g. non-existent) KMS key must fail app startup, not start
     silently with encryption effectively broken."""
     unreachable_settings = mocked_kms_server_settings.model_copy(update={"KMS_KEY_ID": "does-not-exist"})
 
-    app = FastAPI()
-    app.state.settings = _FakeSettings(unreachable_settings)
-    setup_kms(app)
+    app = _create_app(_FakeSettings(unreachable_settings))
 
     with pytest.raises(KMSNotConnectedError):
         async with LifespanManager(app):

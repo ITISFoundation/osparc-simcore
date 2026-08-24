@@ -1,9 +1,11 @@
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Final
 
 import httpx
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from httpx import AsyncClient, Timeout
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
@@ -44,8 +46,9 @@ class BaseServiceClientApi(AppDataMixin):
 # HELPERS -------------------------------------------------------------
 
 
-def setup_client_instance(
+def configure_client_instance(
     app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
     api_cls: type[BaseServiceClientApi],
     api_baseurl,
     service_name: str,
@@ -66,20 +69,18 @@ def setup_client_instance(
             tracing_config=get_tracing_config(app),
         )
 
-    # events
-    def _create_instance() -> None:
+    async def _client_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
         _logger.debug("Creating %s for %s", f"{type(client)=}", f"{api_baseurl=}")
-        api_cls.create_once(
-            app,
-            client=client,
-            service_name=service_name,
-            **extra_fields,
-        )
+        try:
+            api_cls.create_once(
+                lifespan_app,
+                client=client,
+                service_name=service_name,
+                **extra_fields,
+            )
+            yield {}
+        finally:
+            api_obj: BaseServiceClientApi | None = api_cls.pop_instance(lifespan_app)
+            await (api_obj.client if api_obj else client).aclose()
 
-    async def _cleanup_instance() -> None:
-        api_obj: BaseServiceClientApi | None = api_cls.pop_instance(app)
-        if api_obj:
-            await api_obj.client.aclose()
-
-    app.add_event_handler("startup", _create_instance)
-    app.add_event_handler("shutdown", _cleanup_instance)
+    app_lifespan.add(_client_lifespan)
