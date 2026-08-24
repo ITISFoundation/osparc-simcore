@@ -21,6 +21,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
+from simcore_service_director_v2.modules.comp_scheduler import _scheduler_base, _worker
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._models import (
     SchedulePipelineRabbitMessage,
@@ -52,15 +53,15 @@ async def test_worker_is_initialized_before_subscribing(mocker: MockerFixture):
     app_settings = mocker.Mock()
     app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY = 1
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._worker.get_application_settings",
+        f"{_worker.__name__}.get_application_settings",
         return_value=app_settings,
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._worker.get_rabbitmq_client",
+        f"{_worker.__name__}.get_rabbitmq_client",
         return_value=rabbitmq_client,
     )
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._worker.create_scheduler",
+        f"{_worker.__name__}.create_scheduler",
         return_value=scheduler,
     )
 
@@ -83,7 +84,7 @@ def mocked_get_scheduler_worker(
 ) -> mock.Mock:
     # Mock `_get_scheduler_worker` to return our mock scheduler
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._worker._get_scheduler_worker",
+        f"{_worker.__name__}._get_scheduler_worker",
         return_value=mock_schedule_pipeline,
     )
 
@@ -115,7 +116,7 @@ async def test_worker_properly_autocalls_scheduler_api(
 
 @pytest.fixture
 async def mocked_scheduler_api(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch("simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler.apply")
+    return mocker.patch(f"{_scheduler_base.__name__}.BaseCompScheduler.apply")
 
 
 @pytest.fixture
