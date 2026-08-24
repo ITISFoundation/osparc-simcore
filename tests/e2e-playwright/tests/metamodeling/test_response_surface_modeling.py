@@ -56,10 +56,8 @@ _SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
 
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
-_NUM_SAMPLING_POINTS: Final[int] = 40
-# Internal master is more resource-constrained, use fewer samples
-_NUM_SAMPLING_POINTS_INTERNAL_MASTER: Final[int] = 5
-_INTERNAL_MASTER_HOSTNAME: Final[str] = "osparc-master.speag.com"
+# CI can override this via --mmux-num-sampling-points, e.g. for weaker deployments
+_DEFAULT_NUM_SAMPLING_POINTS: Final[int] = 40
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
@@ -69,7 +67,7 @@ _TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
 _TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
 _TEARDOWN_FULL_WAIT_SECONDS: Final[float] = 10.0
 _TEARDOWN_FULL_ATTEMPTS: Final[int] = 3
-_EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
+_EXPECTED_LHS_INPUT_VALUES_40: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
     1.5227525095,
@@ -112,14 +110,19 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     9.7291886695,
 ]
 
-# Generated the same way as _EXPECTED_LHS_INPUT_VALUES, with n=5
-_EXPECTED_LHS_INPUT_VALUES_INTERNAL_MASTER: Final[list[float]] = [
+# Generated the same way as _EXPECTED_LHS_INPUT_VALUES_40, with n=5
+_EXPECTED_LHS_INPUT_VALUES_5: Final[list[float]] = [
     2.404167764,
     4.3708610696,
     6.3879263578,
     7.5879454763,
     9.5564287577,
 ]
+# Only known CI overrides have precomputed expected values to check against
+_EXPECTED_LHS_INPUT_VALUES_BY_COUNT: Final[dict[int, list[float]]] = {
+    40: _EXPECTED_LHS_INPUT_VALUES_40,
+    5: _EXPECTED_LHS_INPUT_VALUES_5,
+}
 
 
 class _TeardownDeleteError(Exception):
@@ -185,16 +188,17 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     return urlunparse(parsed._replace(netloc=api_netloc))
 
 
-def _get_num_sampling_points(product_url: AnyUrl) -> int:
-    if urlparse(str(product_url)).hostname == _INTERNAL_MASTER_HOSTNAME:
-        return _NUM_SAMPLING_POINTS_INTERNAL_MASTER
-    return _NUM_SAMPLING_POINTS
-
-
-def _get_expected_lhs_input_values(product_url: AnyUrl) -> list[float]:
-    if urlparse(str(product_url)).hostname == _INTERNAL_MASTER_HOSTNAME:
-        return _EXPECTED_LHS_INPUT_VALUES_INTERNAL_MASTER
-    return _EXPECTED_LHS_INPUT_VALUES
+@pytest.fixture(scope="session")
+def num_sampling_points(request: pytest.FixtureRequest) -> int:
+    value = (
+        int(passed)
+        if (passed := request.config.getoption("--mmux-num-sampling-points")) is not None
+        else _DEFAULT_NUM_SAMPLING_POINTS
+    )
+    assert value in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
+        f"No expected LHS values for num_sampling_points={value}, add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
+    )
+    return value
 
 
 @retry(
@@ -491,9 +495,8 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     create_function_from_project: Callable[[Page, str], dict[str, Any]],
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
+    num_sampling_points: int,
 ):
-    num_sampling_points = _get_num_sampling_points(product_url)
-    expected_lhs_input_values = _get_expected_lhs_input_values(product_url)
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
@@ -888,7 +891,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(str(num_sampling_points))
+            samplingInput.fill(f"{num_sampling_points}")
             samplingInput.press("Enter")
 
             seed_was_set = False
@@ -1002,9 +1005,8 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                         f"Expected {num_sampling_points} input values, got {len(input_values)}"
                     )
                     if seed_was_set:
-                        for i, (actual, expected) in enumerate(
-                            zip(input_values, expected_lhs_input_values, strict=True)
-                        ):
+                        expected_values = _EXPECTED_LHS_INPUT_VALUES_BY_COUNT[num_sampling_points]
+                        for i, (actual, expected) in enumerate(zip(input_values, expected_values, strict=True)):
                             assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
 
         with (
