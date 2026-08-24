@@ -21,15 +21,13 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
-from simcore_service_director_v2.modules.comp_scheduler import _scheduler_base, _worker
+from simcore_service_director_v2.modules import comp_scheduler
+from simcore_service_director_v2.modules.comp_scheduler import _releaser, _scheduler_base, _worker
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._models import (
     SchedulePipelineRabbitMessage,
 )
-from simcore_service_director_v2.modules.comp_scheduler._worker import (
-    _get_scheduler_worker,
-    setup_worker,
-)
+from simcore_service_director_v2.modules.comp_scheduler._worker import _get_scheduler_worker
 from tenacity import retry, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
@@ -61,13 +59,20 @@ async def test_worker_is_initialized_before_subscribing(mocker: MockerFixture):
         return_value=rabbitmq_client,
     )
     mocker.patch(
+        f"{_releaser.__name__}.get_rabbitmq_client",
+        return_value=rabbitmq_client,
+    )
+    mocker.patch(
         f"{_worker.__name__}.create_scheduler",
         return_value=scheduler,
     )
+    mocked_setup_manager = mocker.patch(f"{comp_scheduler.__name__}.setup_manager")
 
-    await setup_worker(app)
+    await comp_scheduler.on_app_startup(app)()
 
     assert _get_scheduler_worker(app) is scheduler
+    assert rabbitmq_client.subscribe.await_count > 1
+    mocked_setup_manager.assert_awaited_once_with(app)
 
 
 @pytest.fixture
