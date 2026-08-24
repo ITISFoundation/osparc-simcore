@@ -1,3 +1,6 @@
+from collections import OrderedDict
+from collections.abc import Iterator
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Final
 
@@ -15,6 +18,12 @@ _INSTRUMENTATION_LABELS: Final[tuple[str, ...]] = (
     "service_key",
     "service_version",
 )
+# NOTE: user_id/wallet_id are unbounded values: every distinct combination ever
+# observed would otherwise be retained forever in the process' registry, causing
+# an unbounded memory leak (see incident: director-v2 slow memory growth). Bound
+# it with LRU eviction so recent per-user/per-wallet labels are kept while total
+# memory stays capped regardless of how many users/wallets are seen over time.
+_MAX_TRACKED_LABEL_COMBINATIONS: Final[int] = 2000
 
 _MINUTE: Final[int] = 60
 _BUCKETS_TIME_S: Final[tuple[float, ...]] = (
@@ -64,6 +73,8 @@ class DynamiSidecarMetrics(MetricsBase):
     # NOTE: input ports are never pushed
     # NOTE: output ports are pushed by the dy-sidecar, upon change making recovering the metric very complicated
     push_service_state_rate: Histogram = field(init=False)
+
+    _lru_label_combinations: "OrderedDict[tuple[str, ...], None]" = field(init=False, default_factory=OrderedDict)
 
     def __post_init__(self) -> None:
         self.start_time_duration = Histogram(
@@ -133,6 +144,34 @@ class DynamiSidecarMetrics(MetricsBase):
             subsystem=self.subsystem,
             registry=self.registry,
         )
+
+    def _iter_histograms(self) -> Iterator[Histogram]:
+        yield self.start_time_duration
+        yield self.stop_time_duration
+        yield self.pull_user_services_images_duration
+        yield self.output_ports_pull_rate
+        yield self.input_ports_pull_rate
+        yield self.pull_service_state_rate
+        yield self.push_service_state_rate
+
+    def record_labels(self, labels: dict[str, str]) -> dict[str, str]:
+        """Tracks usage of this (user_id, wallet_id, service_key, service_version) combination.
+
+        Evicts the least-recently-used combination from all histograms once
+        _MAX_TRACKED_LABEL_COMBINATIONS is exceeded, bounding memory usage.
+        """
+        key = tuple(labels[name] for name in _INSTRUMENTATION_LABELS)
+        if key in self._lru_label_combinations:
+            self._lru_label_combinations.move_to_end(key)
+            return labels
+
+        self._lru_label_combinations[key] = None
+        if len(self._lru_label_combinations) > _MAX_TRACKED_LABEL_COMBINATIONS:
+            oldest, _ = self._lru_label_combinations.popitem(last=False)
+            for histogram in self._iter_histograms():
+                with suppress(KeyError):
+                    histogram.remove(*oldest)
+        return labels
 
 
 @dataclass(slots=True, kw_only=True)
