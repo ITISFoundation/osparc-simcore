@@ -8,7 +8,7 @@
 # pylint: disable=too-many-statements
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from unittest import mock
 
@@ -19,6 +19,7 @@ from models_library.computations import CollectionRunID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq._client import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules import comp_scheduler
@@ -148,11 +149,22 @@ def with_scheduling_concurrency(
     )
 
 
+@pytest.fixture
+async def queue_name(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    mocker: MockerFixture,
+    scheduling_concurrency: int,
+) -> AsyncIterator[str]:
+    queue_name = f"{SchedulePipelineRabbitMessage.get_channel_name()}.{scheduling_concurrency}"
+    mocker.patch.object(SchedulePipelineRabbitMessage, "get_channel_name", return_value=queue_name)
+    yield queue_name
+    await create_rabbitmq_client("scheduler-parallelism-cleanup").unsubscribe(queue_name)
+
+
 @pytest.mark.parametrize("scheduling_concurrency", [1, 50, 100])
-@pytest.mark.parametrize("queue_name", [SchedulePipelineRabbitMessage.get_channel_name()])
 async def test_worker_scheduling_parallelism(
     rabbit_service: RabbitSettings,
-    ensure_parametrized_queue_is_empty: None,
+    queue_name: str,
     scheduling_concurrency: int,
     with_scheduling_concurrency: EnvVarsDict,
     with_disabled_auto_scheduling: mock.Mock,
