@@ -52,7 +52,7 @@ async def create_async_engine_and_database_ready(
 
     try:
         await raise_if_migration_not_ready(engine)
-    except BaseException as exc:
+    except Exception as exc:
         # NOTE: engine must be closed because retry will create a new engine
         await engine.dispose()
         exc.add_note("Failed during migration check. Created engine disposed.")
