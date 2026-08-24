@@ -58,20 +58,20 @@ def configure_client_instance(
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
 
     assert issubclass(api_cls, BaseServiceClientApi)  # nosec
-    # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
-    client = AsyncClient(
-        base_url=api_baseurl,
-        timeout=Timeout(_DEFAULT_BASE_SERVICE_CLIENT_API_TIMEOUT_SECONDS),
-    )
-    if tracing_settings:
-        setup_httpx_client_tracing(
-            client,
-            tracing_config=get_tracing_config(app),
-        )
 
     async def _client_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
+        # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
+        client = AsyncClient(
+            base_url=api_baseurl,
+            timeout=Timeout(_DEFAULT_BASE_SERVICE_CLIENT_API_TIMEOUT_SECONDS),
+        )
         _logger.debug("Creating %s for %s", f"{type(client)=}", f"{api_baseurl=}")
         try:
+            if tracing_settings:
+                setup_httpx_client_tracing(
+                    client,
+                    tracing_config=get_tracing_config(app),
+                )
             api_cls.create_once(
                 lifespan_app,
                 client=client,
