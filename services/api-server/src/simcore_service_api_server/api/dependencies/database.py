@@ -1,10 +1,9 @@
 import logging
 from collections.abc import AsyncGenerator, Callable
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends
 from fastapi.requests import Request
-from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_postgres_database.utils_aiosqlalchemy import (
     get_pg_engine_stateinfo,
 )
@@ -16,7 +15,8 @@ _logger = logging.getLogger(__name__)
 
 
 def get_db_asyncpg_engine(request: Request) -> AsyncEngine:
-    return get_engine(request.app)
+    assert request.app.state.engine  # nosec
+    return cast(AsyncEngine, request.app.state.engine)
 
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:
