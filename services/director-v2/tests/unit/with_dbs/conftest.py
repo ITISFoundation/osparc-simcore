@@ -31,6 +31,7 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import (
     CompRunsAtDB,
     ProjectMetadataDict,
+    RunID,
     RunMetadataDict,
 )
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
@@ -49,11 +50,26 @@ async def create_pipeline(
     return _
 
 
+# states from which a task has a job_id (see CompTasksRepository.set_task_job_id)
+_STATES_WITH_JOB_ID = {
+    StateType.ABORTED,
+    StateType.FAILED,
+    StateType.PENDING,
+    StateType.RUNNING,
+    StateType.SUCCESS,
+    StateType.WAITING_FOR_RESOURCES,
+}
+
+
 @pytest.fixture
 async def create_tasks_from_project(
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
 ) -> Callable[..., Awaitable[list[CompTaskAtDB]]]:
-    async def _(user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs) -> list[CompTaskAtDB]:
+    async def _(
+        user: dict[str, Any], project: ProjectAtDB, run_id: RunID | None = None, **overrides_kwargs
+    ) -> list[CompTaskAtDB]:
+        if run_id is None:
+            run_id = RunID(1)
         created_tasks: list[CompTaskAtDB] = []
         for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
             task_config = {
@@ -87,14 +103,16 @@ async def create_tasks_from_project(
                 "image": Image(name=node_data.key, tag=node_data.version).model_dump(by_alias=True, exclude_unset=True),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
-                "job_id": generate_dask_job_id(
+            }
+            if overrides_kwargs.get("state") in _STATES_WITH_JOB_ID:
+                task_config["job_id"] = generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
                     user_id=user["id"],
                     project_id=project.uuid,
                     node_id=NodeID(node_id),
-                ),
-            }
+                    run_id=run_id,
+                )
             task_config.update(**overrides_kwargs)
             task_dict = await create_comp_task(**task_config)
             new_task = CompTaskAtDB.model_validate(task_dict)
@@ -230,6 +248,7 @@ async def create_comp_run_snapshot_tasks(
                     user_id=user["id"],
                     project_id=project.uuid,
                     node_id=NodeID(node_id),
+                    run_id=run_id,
                 ),
                 "state": StateType.PUBLISHED.value,
             }
@@ -320,6 +339,7 @@ async def running_project(
         tasks=await create_tasks_from_project(
             user=user,
             project=created_project,
+            run_id=_comp_run.run_id,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,
@@ -370,6 +390,7 @@ async def running_project_mark_for_cancellation(
         tasks=await create_tasks_from_project(
             user=user,
             project=created_project,
+            run_id=_comp_run.run_id,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,

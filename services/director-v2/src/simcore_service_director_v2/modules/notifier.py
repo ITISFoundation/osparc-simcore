@@ -1,8 +1,10 @@
 import contextlib
+from collections.abc import AsyncIterator
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.notifications import ServiceNoMoreCredits
 from models_library.api_schemas_directorv2.socketio import (
     SOCKET_IO_SERVICE_NO_MORE_CREDITS_EVENT,
@@ -35,8 +37,8 @@ async def publish_shutdown_no_more_credits(
     await notifier.notify_shutdown_no_more_credits(user_id=user_id, node_id=node_id, wallet_id=wallet_id)
 
 
-def setup(app: FastAPI):
-    async def _on_startup() -> None:
+def configure_notifier(app_lifespan: LifespanManager) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         assert app.state.external_socketio  # nosec
 
         notifier = Notifier(
@@ -44,10 +46,10 @@ def setup(app: FastAPI):
         )
         notifier.set_to_app_state(app)
         assert Notifier.get_from_app_state(app) == notifier  # nosec
+        try:
+            yield
+        finally:
+            with contextlib.suppress(AttributeError):
+                Notifier.pop_from_app_state(app)
 
-    async def _on_shutdown() -> None:
-        with contextlib.suppress(AttributeError):
-            Notifier.pop_from_app_state(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)

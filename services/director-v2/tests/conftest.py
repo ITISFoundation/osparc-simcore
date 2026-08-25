@@ -287,19 +287,24 @@ def fake_workbench_complete_adjacency(
 
 @pytest.fixture
 def disable_rabbitmq(mocker: MockerFixture) -> None:
-    def rabbitmq_mock_setup(app: FastAPI) -> None:
-        app.state.rabbitmq_client = AsyncMock()
+    def rabbitmq_mock_configure(app_lifespan, **kwargs) -> None:
+        async def _lifespan(app: FastAPI):
+            app.state.rabbitmq_client = AsyncMock()
+            app.state.rabbitmq_rpc_client = AsyncMock()
+            yield
 
-    def rpc_api_routes_mock_setup(app: FastAPI) -> None:
-        app.state.rabbitmq_rpc_client = AsyncMock()
+        app_lifespan.add(_lifespan)
+
+    def rpc_api_routes_mock_configure(app_lifespan) -> None:
+        pass
 
     mocker.patch(
-        "simcore_service_director_v2.modules.rabbitmq.setup",
-        side_effect=rabbitmq_mock_setup,
+        "simcore_service_director_v2.modules.rabbitmq.configure_rabbitmq",
+        side_effect=rabbitmq_mock_configure,
     )
     mocker.patch(
-        "simcore_service_director_v2.core.application.setup_rpc_api_routes",
-        side_effect=rpc_api_routes_mock_setup,
+        "simcore_service_director_v2.core.application.configure_rpc_api_routes",
+        side_effect=rpc_api_routes_mock_configure,
     )
 
 
@@ -315,19 +320,20 @@ def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_redis(mocker: MockerFixture) -> None:
-    def _mock_setup(app: FastAPI) -> None:
+    def _mock_configure(app_lifespan, **kwargs) -> None:
         def _mock_client(*args, **kwargs) -> AsyncMock:
             return AsyncMock()
 
         mock = AsyncMock()
         mock.client = _mock_client
 
-        async def on_startup() -> None:
+        async def _lifespan(app: FastAPI):
             app.state.redis_clients_manager = mock
+            yield
 
-        app.add_event_handler("startup", on_startup)
+        app_lifespan.add(_lifespan)
 
-    mocker.patch("simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup)
+    mocker.patch("simcore_service_director_v2.modules.redis.configure_redis", side_effect=_mock_configure)
 
 
 @pytest.fixture

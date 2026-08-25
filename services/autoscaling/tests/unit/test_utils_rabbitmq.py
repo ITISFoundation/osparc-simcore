@@ -127,8 +127,11 @@ def dask_task(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    faker: Faker,
 ) -> DaskTask:
-    dask_key = generate_dask_job_id(service_key, service_version, user_id, project_id, node_id)
+    dask_key = generate_dask_job_id(
+        service_key, service_version, user_id, project_id, node_id, run_id=faker.pyint(min_value=1)
+    )
     return DaskTask(task_id=dask_key, required_resources={})
 
 
@@ -163,7 +166,8 @@ async def test_post_task_empty_tasks(
         async for attempt in AsyncRetrying(**_TENACITY_STABLE_RETRY_PARAMS):
             with attempt:
                 print(
-                    f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                    f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, "
+                    f"{attempt.retry_state.retry_object.statistics}"
                 )
 
                 logs_rabbitmq_consumer.assert_not_called()
@@ -192,7 +196,8 @@ async def test_post_task_log_message_docker(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             logs_rabbitmq_consumer.assert_called_once_with(
                 LoggerRabbitMessage(
@@ -229,7 +234,8 @@ async def test_post_task_log_message_dask(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             logs_rabbitmq_consumer.assert_called_once_with(
                 LoggerRabbitMessage(
@@ -274,7 +280,8 @@ async def test_post_task_progress_message_docker(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             progress_rabbitmq_consumer.assert_called_once_with(
                 ProgressRabbitMessageNode(
@@ -316,7 +323,8 @@ async def test_post_task_progress_message_dask(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             progress_rabbitmq_consumer.assert_called_once_with(
                 ProgressRabbitMessageNode(
