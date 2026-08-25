@@ -1,11 +1,12 @@
 """Substitution of osparc variables and secrets"""
 
-import functools
 import logging
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from typing import Any, Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.osparc_variable_identifier import (
     UnresolvedOsparcVariableIdentifierError,
     raise_if_unresolved_osparc_variable_identifier_found,
@@ -253,7 +254,7 @@ async def resolve_and_substitute_session_variables_in_specs(
     return deepcopy(specs)
 
 
-def setup(app: FastAPI):
+def configure_substitutions(app_lifespan: LifespanManager) -> None:
     """
     **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs
       (e.g. docker-compose).
@@ -262,7 +263,12 @@ def setup(app: FastAPI):
         - **lifespan variables**: produced before a service is started and cleaned up after it finishes
         (e.g. API tokens)
     """
-    app.add_event_handler("startup", functools.partial(OsparcSessionVariablesTable.create, app))
+
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        OsparcSessionVariablesTable.create(app)
+        yield
+
+    app_lifespan.add(_lifespan)
 
 
 #
