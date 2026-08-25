@@ -48,10 +48,14 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import Schedu
 def disable_postgres(mocker) -> None:
     fake_engine = mock.AsyncMock()
 
-    def mock_setup(app: FastAPI, *args, **kwargs) -> None:
-        app.state.engine = fake_engine
+    def mock_configure(app_lifespan, *args, **kwargs) -> None:
+        async def _lifespan(app: FastAPI):
+            app.state.engine = fake_engine
+            yield
 
-    mocker.patch("simcore_service_director_v2.modules.db.setup", side_effect=mock_setup)
+        app_lifespan.add(_lifespan)
+
+    mocker.patch("simcore_service_director_v2.modules.db.configure_db", side_effect=mock_configure)
     for module in [
         "simcore_service_director_v2.modules.db",
         "simcore_service_director_v2.modules.dask_client",

@@ -1,6 +1,8 @@
 import datetime
+from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
@@ -64,3 +66,37 @@ def setup(
     # add error handlers
     # NOTE: Exception handler can not be added during the on_startup script, otherwise not working correctly
     app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)  # type: ignore[arg-type]
+
+
+def configure_server(
+    app: FastAPI,
+    app_lifespan: LifespanManager,
+    *,
+    router_prefix: str = "",
+    redis_settings: RedisSettings,
+    rabbit_settings: RabbitSettings,
+    lrt_namespace: LRTNamespace,
+    stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
+    stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
+) -> None:
+    """Lifespan-based counterpart of `setup(...)`."""
+    main_router = APIRouter()
+    main_router.include_router(router, prefix=router_prefix)
+    app.include_router(main_router)
+    app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)  # type: ignore[arg-type]
+
+    async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+        app.state.long_running_manager = long_running_manager = FastAPILongRunningManager(
+            stale_task_check_interval=stale_task_check_interval,
+            stale_task_detect_timeout=stale_task_detect_timeout,
+            redis_settings=redis_settings,
+            rabbit_settings=rabbit_settings,
+            lrt_namespace=lrt_namespace,
+        )
+        await long_running_manager.setup()
+        try:
+            yield
+        finally:
+            await long_running_manager.teardown()
+
+    app_lifespan.add(_lifespan)
