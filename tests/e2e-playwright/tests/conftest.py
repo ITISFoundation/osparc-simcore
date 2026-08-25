@@ -578,7 +578,12 @@ def _open_project(  # noqa: C901
                 _open_with_resources(page, click_it=True)
 
         assert response_info.value.ok, f"{response_info.value.json()}"
-        waiter.project_uuid = response_info.value.json()["data"]["uuid"]
+        project_uuid = response_info.value.json()["data"]["uuid"]
+        assert isinstance(project_uuid, str), (
+            f"Expected project uuid to be a string in /projects/:open response, got: {project_uuid!r}"
+        )
+        assert project_uuid, "Expected non-empty project uuid in /projects/:open response"
+        waiter.project_uuid = project_uuid
     project_data = response_info.value.json()
     assert project_data
     return project_data

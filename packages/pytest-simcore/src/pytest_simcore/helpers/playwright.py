@@ -378,17 +378,20 @@ class SocketIOProjectStateUpdatedWaiter:
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
-                    if self.project_uuid is not None:
-                        message_project_uuid = retrieve_project_id_from_decoded_message(decoded_message)
-                        if message_project_uuid != self.project_uuid:
-                            # a different project (e.g. a previous test/job's project still open or
-                            # closing on the shared user): ignore it and keep waiting for ours
-                            ctx.logger.debug(
-                                "ignoring projectStateUpdated for other project %s (waiting for %s)",
-                                message_project_uuid,
-                                self.project_uuid,
-                            )
-                            return False
+                    if self.project_uuid is None:
+                        ctx.logger.warning("ignoring projectStateUpdated because waiter.project_uuid is not set yet")
+                        return False
+
+                    message_project_uuid = retrieve_project_id_from_decoded_message(decoded_message)
+                    if message_project_uuid != self.project_uuid:
+                        # a different project (e.g. a previous test/job's project still open or
+                        # closing on the shared user): ignore it and keep waiting for ours
+                        ctx.logger.debug(
+                            "ignoring projectStateUpdated for other project %s (waiting for %s)",
+                            message_project_uuid,
+                            self.project_uuid,
+                        )
+                        return False
                     return retrieve_project_state_from_decoded_message(decoded_message) in self.expected_states
 
             return False
