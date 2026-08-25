@@ -1,7 +1,9 @@
+import collections
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Final
 
-from prometheus_client import CollectorRegistry, Histogram
+from prometheus_client import CollectorRegistry, Gauge, Histogram
 from pydantic import ByteSize, TypeAdapter
 from servicelib.db_asyncpg_pool_metrics import DbPoolMetrics
 from servicelib.instrumentation import MetricsBase, get_metrics_namespace
@@ -51,6 +53,9 @@ _RATE_BPS_BUCKETS: Final[tuple[float, ...]] = tuple(
 
 @dataclass(slots=True, kw_only=True)
 class DynamiSidecarMetrics(MetricsBase):
+    running_services_count: Gauge = field(init=False)
+    _running_services_seen_labels: set[tuple[str, ...]] = field(init=False, default_factory=set)
+
     start_time_duration: Histogram = field(init=False)
     stop_time_duration: Histogram = field(init=False)
     pull_user_services_images_duration: Histogram = field(init=False)
@@ -66,6 +71,14 @@ class DynamiSidecarMetrics(MetricsBase):
     push_service_state_rate: Histogram = field(init=False)
 
     def __post_init__(self) -> None:
+        self.running_services_count = Gauge(
+            "running_services_count",
+            "number of dynamic services currently running",
+            labelnames=_INSTRUMENTATION_LABELS,
+            namespace=_METRICS_NAMESPACE,
+            subsystem=self.subsystem,
+            registry=self.registry,
+        )
         self.start_time_duration = Histogram(
             "start_time_duration_seconds",
             "time to start dynamic service (from start request in dv-2 till service "
@@ -133,6 +146,19 @@ class DynamiSidecarMetrics(MetricsBase):
             subsystem=self.subsystem,
             registry=self.registry,
         )
+
+    def update_running_services_count(self, all_labels: Iterable[Mapping[str, str]]) -> None:
+        """Recomputes the gauge from the current set of tracked services (self-healing snapshot,
+        instead of incremental inc/dec which can drift on crashes/manual-intervention/error paths)."""
+        label_tuples = [tuple(labels[name] for name in _INSTRUMENTATION_LABELS) for labels in all_labels]
+        counts = collections.Counter(label_tuples)
+        current_labels = set(counts)
+        for label_tuple, count in counts.items():
+            self.running_services_count.labels(*label_tuple).set(count)
+        # drop combinations no longer present, instead of leaving zeroed series forever
+        for label_tuple in self._running_services_seen_labels - current_labels:
+            self.running_services_count.remove(*label_tuple)
+        self._running_services_seen_labels = current_labels
 
 
 @dataclass(slots=True, kw_only=True)
