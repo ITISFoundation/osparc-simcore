@@ -22,7 +22,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
-from simcore_service_payments.services.postgres import get_async_engine
+from simcore_service_payments.services.postgres import get_engine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -64,7 +64,7 @@ async def user(
     """
     assert user_id == user["id"]
     async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        get_async_engine(app), **{**user, "language": "es_ES"}
+        get_engine(app), **{**user, "language": "es_ES"}
     ) as user_row:
         yield user_row
 
@@ -83,7 +83,7 @@ async def product(app: FastAPI, product: dict[str, Any]) -> AsyncIterator[dict[s
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        get_async_engine(app),
+        get_engine(app),
         table=products,
         values=product,
         pk_col=products.c.name,
@@ -104,13 +104,13 @@ async def successful_transaction(
     """
     async with (  # pylint:disable=contextmanager-generator-missing-cleanup
         insert_and_get_wallet_lifespan(
-            get_async_engine(app),
+            get_engine(app),
             product_name=product["name"],
             user_group_id=user["primary_gid"],
             wallet_id=successful_transaction["wallet_id"],
         ),
         insert_and_get_row_lifespan(
-            get_async_engine(app),
+            get_engine(app),
             table=payments_transactions,
             values=successful_transaction,
             pk_col=payments_transactions.c.payment_id,
@@ -121,7 +121,7 @@ async def successful_transaction(
 
 
 async def test_payments_user_repo(app: FastAPI, user_id: UserID, user_primary_group_id: GroupID):
-    repo = PaymentsUsersRepo(get_async_engine(app))
+    repo = PaymentsUsersRepo(get_engine(app))
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
 
 
@@ -131,7 +131,7 @@ async def test_get_notification_data(
     product: dict[str, Any],
     successful_transaction: dict[str, Any],
 ):
-    repo = PaymentsUsersRepo(get_async_engine(app))
+    repo = PaymentsUsersRepo(get_engine(app))
 
     # check once
     data = await repo.get_notification_data(user_id=user["id"], payment_id=successful_transaction["payment_id"])
