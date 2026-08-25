@@ -209,7 +209,7 @@ def get_disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor | None:
 
 def configure_disk_usage(app_lifespan: LifespanManager[FastAPI]) -> None:
     @asynccontextmanager
-    async def disk_usage_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    async def _disk_usage_lifespan(app: FastAPI) -> AsyncIterator[None]:
         disk_usage_monitor: DiskUsageMonitor | None = None
         try:
             with log_context(_logger, logging.INFO, "setup disk monitor"):
@@ -221,4 +221,4 @@ def configure_disk_usage(app_lifespan: LifespanManager[FastAPI]) -> None:
                 with log_context(_logger, logging.INFO, "shutdown disk monitor"):
                     await disk_usage_monitor.shutdown()
 
-    app_lifespan.add(disk_usage_lifespan)
+    app_lifespan.add(_disk_usage_lifespan)
