@@ -64,6 +64,7 @@ from simcore_service_director_v2.core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
     ComputationalSchedulerChangedError,
     ComputationalSchedulerError,
+    ComputationalTaskJobIdAlreadySetError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
 )
@@ -273,6 +274,7 @@ async def _assert_publish_in_dask_backend(
                 metadata=mock.ANY,
                 hardware_info=mock.ANY,
                 resource_tracking_run_id=mock.ANY,
+                run_id=mock.ANY,
             )
             for p in expected_pending_tasks
         ],
@@ -737,6 +739,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         metadata=mock.ANY,
         hardware_info=mock.ANY,
         resource_tracking_run_id=mock.ANY,
+        run_id=mock.ANY,
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_has_calls(
@@ -3096,3 +3099,56 @@ async def test_computational_run_not_found_error_does_not_release_resources(
     mocked_safe_release_resources.assert_not_called()
     # no comp_run row should exist (was deleted before apply)
     await assert_comp_runs_empty(sqlalchemy_async_engine)
+
+
+async def test_task_job_id_already_set_error_does_not_fail_other_tasks(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
+    mocked_dask_client: mock.MagicMock,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
+    mocker: MockerFixture,
+):
+    """If _start_tasks unexpectedly raises ComputationalTaskJobIdAlreadySetError (see
+    https://github.com/ITISFoundation/private-issues/issues/648), scheduling must handle it
+    gracefully: not crash, and not mark the tasks to start as FAILED (some might already be
+    legitimately running with their job_id already persisted)."""
+    _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
+    run_in_db, expected_published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
+    )
+
+    mocker.patch.object(
+        scheduler_api,
+        "_start_tasks",
+        side_effect=ComputationalTaskJobIdAlreadySetError(
+            project_id=run_in_db.project_uuid, node_id=expected_published_tasks[0].node_id
+        ),
+    )
+
+    # scheduling must not raise
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+
+    # tasks must remain untouched (still PUBLISHED), not forced to FAILED
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in expected_published_tasks],
+        expected_state=RunningState.PUBLISHED,
+        expected_progress=None,
+        run_id=run_in_db.run_id,
+    )
