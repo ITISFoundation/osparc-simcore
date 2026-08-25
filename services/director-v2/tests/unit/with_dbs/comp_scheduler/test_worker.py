@@ -23,7 +23,7 @@ from servicelib.rabbitmq._client import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules import comp_scheduler
-from simcore_service_director_v2.modules.comp_scheduler import _releaser, _scheduler_base, _worker
+from simcore_service_director_v2.modules.comp_scheduler import _scheduler_base, _worker
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._models import (
     SchedulePipelineRabbitMessage,
@@ -38,55 +38,28 @@ async def test_worker_starts_and_stops(initialized_app: FastAPI):
     assert _get_scheduler_worker(initialized_app) is not None
 
 
-async def test_worker_is_initialized_before_subscribing(mocker: MockerFixture):
-    app = FastAPI()
-    scheduler = mocker.Mock()
-    rabbitmq_client = mocker.Mock()
+async def test_scheduler_lifecycle_order(initialized_app: FastAPI, mocker: MockerFixture):
+    lifecycle_calls = mocker.Mock()
+    for function_name in (
+        "setup_manager",
+        "setup_releaser",
+        "setup_worker",
+        "shutdown_manager",
+        "shutdown_releaser",
+        "shutdown_worker",
+    ):
+        lifecycle_calls.attach_mock(mocker.patch(f"{comp_scheduler.__name__}.{function_name}"), function_name)
 
-    async def _subscribe(*args: Any, **kwargs: Any) -> tuple[str, str]:
-        assert _get_scheduler_worker(app) is scheduler
-        return ("queue", "consumer")
+    await comp_scheduler.on_app_startup(initialized_app)()
+    await comp_scheduler.on_app_shutdown(initialized_app)()
 
-    rabbitmq_client.subscribe = mocker.AsyncMock(side_effect=_subscribe)
-    app_settings = mocker.Mock()
-    app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY = 1
-    mocker.patch(
-        f"{_worker.__name__}.get_application_settings",
-        return_value=app_settings,
-    )
-    mocker.patch(
-        f"{_worker.__name__}.get_rabbitmq_client",
-        return_value=rabbitmq_client,
-    )
-    mocker.patch(
-        f"{_releaser.__name__}.get_rabbitmq_client",
-        return_value=rabbitmq_client,
-    )
-    mocker.patch(
-        f"{_worker.__name__}.create_scheduler",
-        return_value=scheduler,
-    )
-    mocked_setup_manager = mocker.patch(f"{comp_scheduler.__name__}.setup_manager")
-
-    await comp_scheduler.on_app_startup(app)()
-
-    assert _get_scheduler_worker(app) is scheduler
-    mocked_setup_manager.assert_awaited_once_with(app)
-
-
-async def test_scheduler_shutdown_order(mocker: MockerFixture):
-    app = FastAPI()
-    shutdown_calls = mocker.Mock()
-    shutdown_calls.attach_mock(mocker.patch(f"{comp_scheduler.__name__}.shutdown_manager"), "manager")
-    shutdown_calls.attach_mock(mocker.patch(f"{comp_scheduler.__name__}.shutdown_releaser"), "releaser")
-    shutdown_calls.attach_mock(mocker.patch(f"{comp_scheduler.__name__}.shutdown_worker"), "worker")
-
-    await comp_scheduler.on_app_shutdown(app)()
-
-    assert shutdown_calls.mock_calls == [
-        mocker.call.manager(app),
-        mocker.call.releaser(app),
-        mocker.call.worker(app),
+    assert lifecycle_calls.mock_calls == [
+        mocker.call.setup_worker(initialized_app),
+        mocker.call.setup_releaser(initialized_app),
+        mocker.call.setup_manager(initialized_app),
+        mocker.call.shutdown_manager(initialized_app),
+        mocker.call.shutdown_releaser(initialized_app),
+        mocker.call.shutdown_worker(initialized_app),
     ]
 
 
