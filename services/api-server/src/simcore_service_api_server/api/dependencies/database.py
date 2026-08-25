@@ -1,6 +1,6 @@
 import logging
 from collections.abc import AsyncGenerator, Callable
-from typing import Annotated, cast
+from typing import Annotated
 
 from fastapi import Depends
 from fastapi.requests import Request
@@ -16,7 +16,8 @@ _logger = logging.getLogger(__name__)
 
 def get_db_asyncpg_engine(request: Request) -> AsyncEngine:
     assert request.app.state.engine  # nosec
-    return cast(AsyncEngine, request.app.state.engine)
+    engine: AsyncEngine = request.app.state.engine
+    return engine
 
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:
