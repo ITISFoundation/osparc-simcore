@@ -536,7 +536,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         labels = service_inspect["Spec"]["Labels"]
         return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
-    @field_serializer("compose_spec")
+    @field_serializer("compose_spec", return_type=ComposeSpecLabelDict | None)
     @staticmethod
     def _serialize_compose_spec_for_label(
         value: ComposeSpecLabelDict | None, info: SerializationInfo
