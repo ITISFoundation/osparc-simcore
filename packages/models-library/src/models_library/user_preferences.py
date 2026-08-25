@@ -52,7 +52,7 @@ _ALLOWED_VALUE_CONSTRAINTS: Final[frozenset[str]] = frozenset(
     {"ge", "gt", "le", "lt", "max_length", "min_length", "multiple_of", "pattern"}
 )
 
-_VALUE_VALIDATOR_CLASSES: Final[dict[tuple[PreferenceName, str], type[BaseModel]]] = {}
+_VALUE_VALIDATOR_CLASSES: Final[dict[tuple[type, str], type[BaseModel]]] = {}
 
 
 class InvalidValueConstraintsError(ValueError):
@@ -92,7 +92,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         constraints = {**cls.value_constraints, **(overrides or {})}
         _raise_if_not_allowed(preference_name, constraints)
 
-        cache_key = (preference_name, json.dumps(constraints, sort_keys=True, default=str))
+        cache_key = (cls, json.dumps(constraints, sort_keys=True, default=str))
         if cache_key not in _VALUE_VALIDATOR_CLASSES:
             value_annotation = cls.model_fields["value"].annotation
             _VALUE_VALIDATOR_CLASSES[cache_key] = create_model(
