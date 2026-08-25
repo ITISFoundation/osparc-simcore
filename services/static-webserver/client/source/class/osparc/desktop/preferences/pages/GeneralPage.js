@@ -142,9 +142,10 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const box = new osparc.widget.SectionBox(this.tr("Automatic Shutdown of Idle Instances"));
 
       const form = new qx.ui.form.Form();
+      const isTester = osparc.data.Permissions.getInstance().isTester();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
-        maximum: 3*60, // 3 hours
+        maximum: isTester ? 48*60 : 3*60, // testers up to 48 hours, otherwise 3 hours
         singleStep: 1,
         allowGrowX: false
       });
