@@ -66,17 +66,14 @@ touch: ## Builds a minimal image with /project/output-build inside
 		--target=touch \
 		.
 
-##@ Docker
 
-upgrade: ## Upgrades to the official version of the tool
-	# upgrading to ${QOOXDOO_KIT_TAG}
-	@${docker_compose} pull
+
+##@ Serve
 
 .PHONY: down
 down: ## Tears down Docker Compose
 	@${docker_compose} down --remove-orphans
 
-##@ Serve
 
 define qx_serve =
 			qx serve $(flags) \
@@ -103,8 +100,12 @@ define qx_translate_extract =
 endef
 
 
-
 ##@ Misc
+
+upgrade: ## Pulls the latest qooxdoo-kit image
+	# upgrading to ${QOOXDOO_KIT_TAG}
+	@${docker_compose} pull
+
 .PHONY: shell
 shell: ## Runs /bin/sh in the qooxdoo-kit image
 	@$(docker_compose) run --rm qooxdoo-kit /bin/sh
