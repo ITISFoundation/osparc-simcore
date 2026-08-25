@@ -45,6 +45,7 @@ from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
     ComputationalRunNotFoundError,
     ComputationalSchedulerChangedError,
+    ComputationalTaskJobIdAlreadySetError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
 )
@@ -774,7 +775,7 @@ class BaseCompScheduler(ABC):
 
         return comp_tasks
 
-    async def _schedule_tasks_to_start(
+    async def _schedule_tasks_to_start(  # noqa: C901
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -906,6 +907,17 @@ class BaseCompScheduler(ABC):
             for task in tasks_ready_to_start:
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
 
+        except ComputationalTaskJobIdAlreadySetError as exc:
+            # NOTE: should never happen (see https://github.com/ITISFoundation/private-issues/issues/648).
+            # Do not mark tasks_ready_to_start as FAILED here: some may already be legitimately running.
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Unexpected: a task selected to start already had a job_id set. Left untouched, "
+                    "will be re-evaluated on the next scheduling pass.",
+                    error=exc,
+                    error_context=log_error_context,
+                )
+            )
         except Exception as exc:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
