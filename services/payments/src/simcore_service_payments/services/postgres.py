@@ -21,7 +21,7 @@ def configure_postgres(
     )
 
 
-def get_async_engine(app: FastAPI) -> AsyncEngine:
+def get_engine(app: FastAPI) -> AsyncEngine:
     assert app.state.engine  # nosec
     engine: AsyncEngine = app.state.engine
     return engine
