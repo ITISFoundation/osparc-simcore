@@ -50,6 +50,7 @@ def test_mattward(
     check_node_outputs(
         page,
         study_id=project_data["uuid"],
+        workbench=project_data["workbench"],
         node_position=0,
         expected_file_names=_EXPECTED_OUTPUT_FILES,
     )

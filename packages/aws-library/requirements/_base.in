@@ -12,6 +12,7 @@ aiocache
 arrow
 fastapi
 fastapi-lifespan-manager
+prometheus-client
 pydantic[email]
 types-aiobotocore[ec2,kms,s3,ssm]
 opentelemetry-instrumentation-botocore

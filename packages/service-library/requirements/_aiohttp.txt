@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/_aiohttp.txt requirements/_aiohttp.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_aiohttp.in
@@ -30,32 +30,32 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.42.1
+opentelemetry-api==1.44.0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.63b1
+opentelemetry-instrumentation==0.65b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-opentelemetry-instrumentation-aiohttp-client==0.63b1
+opentelemetry-instrumentation-aiohttp-client==0.65b0
     # via -r requirements/_aiohttp.in
-opentelemetry-instrumentation-aiohttp-server==0.63b1
+opentelemetry-instrumentation-aiohttp-server==0.65b0
     # via -r requirements/_aiohttp.in
-opentelemetry-semantic-conventions==0.63b1
+opentelemetry-semantic-conventions==0.65b0
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-opentelemetry-util-http==0.63b1
+opentelemetry-util-http==0.65b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
 packaging==26.0
     # via opentelemetry-instrumentation
-prometheus-client==0.24.1
+prometheus-client==0.26.0
     # via -r requirements/_aiohttp.in
 propcache==0.4.1
     # via

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 18:43+0200\n"
+"POT-Creation-Date: 2026-08-19 15:19+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-08-14T16:43:10Z\n"
+"X-Translation-Date: 2026-08-19T13:19:58Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -551,7 +551,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string is a log message indicating the completion
 # status of a project pipeline execution for a specific iteration in a
 # scientific simulation application.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:239
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:229
 #, python-brace-format
 msgid ""
 "Project pipeline execution for iteration {iteration} has completed with "
@@ -560,7 +560,7 @@ msgstr "项目管道执行的第{iteration}次迭代已完成，状态为：{run
 
 # CTX-INTERPRETATION: This string is an error message displayed to the user
 # when a task scheduling issue occurs in the application.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:860
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:831
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -569,14 +569,14 @@ msgstr "在任务调度过程中发生了意外错误。如果此问题仍然存
 # CTX-INTERPRETATION: This string appears in the application's log system when
 # a task involving variable resolution fails to complete in time and will be
 # attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:891
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:862
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr "在任务调度期间，变量分辨率超时，将重试。"
 
 # CTX-INTERPRETATION: This message appears when the system fails to allocate
 # computational resources for a task, prompting the user to retry or seek
 # support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:959
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:930
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "

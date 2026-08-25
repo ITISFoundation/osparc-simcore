@@ -47,10 +47,8 @@ from ...core.errors import (
     ComputationalSchedulerChangedError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
-    PipelineNotFoundError,
 )
 from ...core.settings import ComputationalBackendSettings
-from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, Iteration, RunID, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.computations import get_pipeline_state_from_task_states
@@ -61,7 +59,6 @@ from ...utils.rabbitmq import (
     publish_service_resource_tracking_started,
     publish_service_started_metrics,
 )
-from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ..osparc_variables._errors import OsparcVariableResolveTimeoutError
@@ -167,13 +164,6 @@ class BaseCompScheduler(ABC):
     settings: ComputationalBackendSettings
     service_runtime_heartbeat_interval: datetime.timedelta
     redis_client: RedisClientSDK
-
-    async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
-        comp_pipeline_repo = CompPipelinesRepository.instance(self.db_engine)
-        pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(project_id)
-        dag = pipeline_at_db.get_graph()
-        _logger.debug("%s: current %s", f"{project_id=}", f"{dag=}")
-        return dag
 
     async def _get_pipeline_tasks(
         self, project_id: ProjectID, pipeline_dag: nx.DiGraph
@@ -297,7 +287,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         run_id: RunID,
         iteration: Iteration,
-        dag: nx.DiGraph,
+        tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> None:
         utc_now = arrow.utcnow().datetime
 
@@ -312,7 +302,6 @@ class BaseCompScheduler(ABC):
                 )
             return bool((utc_now - task.last_heartbeat) > self.service_runtime_heartbeat_interval)
 
-        tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
         if running_tasks := [t for t in tasks.values() if _need_heartbeat(t)]:
             await limited_gather(
                 *(
@@ -571,7 +560,7 @@ class BaseCompScheduler(ABC):
 
             try:
                 comp_run = await CompRunsRepository.instance(self.db_engine).get(user_id, project_id, iteration)
-                dag = await self._get_pipeline_dag(project_id)
+                dag = comp_run.get_graph()
 
                 # 1. Update our list of tasks with data from backend (state, results)
                 await self._update_states_from_comp_backend(user_id, project_id, iteration, dag, comp_run)
@@ -607,7 +596,7 @@ class BaseCompScheduler(ABC):
                     )
 
                 # 5. send a heartbeat
-                await self._send_running_tasks_heartbeat(user_id, project_id, comp_run.run_id, iteration, dag)
+                await self._send_running_tasks_heartbeat(user_id, project_id, comp_run.run_id, iteration, comp_tasks)
 
                 # 6. Update the run result
                 pipeline_result = await self._update_run_result_from_tasks(
@@ -638,24 +627,6 @@ class BaseCompScheduler(ABC):
                     )
                 )
                 # NOTE: comp_run was never fetched, so there is no run_id to release resources for
-            except PipelineNotFoundError as exc:
-                _logger.exception(
-                    **create_troubleshooting_log_kwargs(
-                        f"pipeline {project_id} is missing from `comp_pipelines` DB table, "
-                        "something is corrupted. Aborting scheduling",
-                        error=exc,
-                        error_context={
-                            "user_id": f"{user_id}",
-                            "project_id": f"{project_id}",
-                            "iteration": f"{iteration}",
-                        },
-                        tip="Check that the project still exists",
-                    )
-                )
-
-                # NOTE: no need to update task states here as pipeline is already broken
-                await self._safe_release_resources(user_id, project_id, comp_run.run_id)
-                await self._set_run_result(user_id, project_id, iteration, RunningState.FAILED)
             except InvalidPipelineError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(

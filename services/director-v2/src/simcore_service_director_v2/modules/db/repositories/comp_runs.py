@@ -9,6 +9,7 @@ import sqlalchemy.exc as sql_exc
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGet,
     ComputationRunRpcGet,
+    ComputationRunStateRpcGet,
 )
 from models_library.basic_types import IDStr
 from models_library.computations import CollectionRunID
@@ -149,6 +150,37 @@ class CompRunsRepository(BaseRepository):
             if not row:
                 raise ComputationalRunNotFoundError
             return CompRunsAtDB.model_validate(row)
+
+    async def batch_get_latest_run_states_by_projects(
+        self,
+        project_ids: list[ProjectID],
+    ) -> list[ComputationRunStateRpcGet]:
+        if not project_ids:
+            return []
+
+        query = (
+            sa.select(
+                comp_runs.c.project_uuid,
+                comp_runs.c.result.label("state"),
+            )
+            .where(comp_runs.c.project_uuid.in_([f"{project_id}" for project_id in project_ids]))
+            .distinct(comp_runs.c.project_uuid)
+            .order_by(
+                comp_runs.c.project_uuid,
+                desc(comp_runs.c.run_id),
+            )
+        )
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            result = await conn.execute(query)
+
+            return [
+                ComputationRunStateRpcGet(
+                    project_uuid=row.project_uuid,
+                    state=DB_TO_RUNNING_STATE[row.state],
+                )
+                for row in result
+            ]
 
     async def list_(
         self,

@@ -45,6 +45,7 @@ Two-step .pot extractor:
 
 Usage:
     uv run tools/i18n_extractor.py extract --src src/ --out messages.pot
+    uv run tools/i18n_extractor.py extract --src src/ --exclude 'test_*.cpp' --exclude 'test/*' --out messages.pot
     uv run tools/i18n_extractor.py xgettext --src src/ --langs python,cpp --out messages.pot
     uv run tools/i18n_extractor.py xgettext --src ui/src --out ui.pot --node-cwd ui/
     uv run tools/i18n_extractor.py jinja --src src/templates --out templates.pot
@@ -810,8 +811,12 @@ def enrich(pot_path: Path, repo_root: Path, py_hints: dict[str, str] | None = No
     console.print(f"[enrich] {len(po)} entries enriched -> {pot_path}")
 
 
-def collect_sources(src_dir: Path, langs: list[str] | None) -> list[Path]:
-    """Return all source files under src_dir, optionally filtered by language."""
+def collect_sources(
+    src_dir: Path,
+    langs: list[str] | None,
+    exclude_patterns: list[str] | None = None,
+) -> list[Path]:
+    """Return source files under src_dir, filtered by language and exclusion globs."""
     allowed_exts: set[str] = set()
     if langs:
         lang_to_exts = {
@@ -827,6 +832,10 @@ def collect_sources(src_dir: Path, langs: list[str] | None) -> list[Path]:
         allowed_exts = set(XgetextExtractor.LANG_MAP.keys()) | TS_AST_EXTRACTOR_EXTS
 
     files = [f for f in sorted(src_dir.rglob("*")) if f.suffix.lower() in allowed_exts]
+    if exclude_patterns:
+        files = [
+            path for path in files if not any(path.relative_to(src_dir).match(pattern) for pattern in exclude_patterns)
+        ]
     console.print(f"[collect] {len(files)} file(s) under {src_dir}")
     return files
 
@@ -856,10 +865,16 @@ app = typer.Typer(
 )
 
 
-def run_xgettext_step(src: Path, out: Path, langs: str | None, node_cwd: Path | None = None) -> None:
+def run_xgettext_step(
+    src: Path,
+    out: Path,
+    langs: str | None,
+    node_cwd: Path | None = None,
+    exclude_patterns: list[str] | None = None,
+) -> None:
     """Shared implementation for xgettext."""
     lang_list = [lang.strip() for lang in langs.split(",")] if langs else None
-    src_files = collect_sources(src, lang_list)
+    src_files = collect_sources(src, lang_list, exclude_patterns)
     if not src_files:
         raise typer.Exit(code=1)
 
@@ -892,10 +907,10 @@ def run_xgettext_step(src: Path, out: Path, langs: str | None, node_cwd: Path | 
     console.print(f"[done] xgettext -> {out}")
 
 
-def run_validate_step(src: Path, langs: str | None) -> None:
+def run_validate_step(src: Path, langs: str | None, exclude_patterns: list[str] | None = None) -> None:
     """Shared implementation for validation-only checks."""
     lang_list = [lang.strip() for lang in langs.split(",")] if langs else None
-    src_files = collect_sources(src, lang_list)
+    src_files = collect_sources(src, lang_list, exclude_patterns)
     if not src_files:
         raise typer.Exit(code=1)
 
@@ -915,9 +930,21 @@ def run_enrich_step(pot: Path, repo_root: Path) -> None:
     console.print(f"[done] enrich -> {pot}")
 
 
-def run_xgettext_cmd(src: Path, out: Path, langs: str | None, node_cwd: Path | None = None) -> None:
+def run_xgettext_cmd(
+    src: Path,
+    out: Path,
+    langs: str | None,
+    node_cwd: Path | None = None,
+    exclude_patterns: list[str] | None = None,
+) -> None:
     """Run only xgettext extraction over source files."""
-    run_xgettext_step(src=src, out=out, langs=langs, node_cwd=node_cwd)
+    run_xgettext_step(
+        src=src,
+        out=out,
+        langs=langs,
+        node_cwd=node_cwd,
+        exclude_patterns=exclude_patterns,
+    )
 
 
 def run_enrich_cmd(pot: Path, repo_root: Path) -> None:
@@ -938,9 +965,14 @@ def xgettext_cmd(
         help="Directory whose node_modules contains 'typescript' -- required when --src "
         "contains .js/.jsx/.ts/.tsx files (e.g. the frontend project root)",
     ),
+    exclude: list[str] | None = typer.Option(
+        None,
+        "--exclude",
+        help="Source-relative glob to exclude; may be repeated (e.g. test_*.cpp, test/*)",
+    ),
 ) -> None:
     """Run only xgettext extraction."""
-    run_xgettext_cmd(src=src, out=out, langs=langs, node_cwd=node_cwd)
+    run_xgettext_cmd(src=src, out=out, langs=langs, node_cwd=node_cwd, exclude_patterns=exclude)
 
 
 @app.command("jinja")
@@ -1011,9 +1043,14 @@ def extract(
         help="Directory whose node_modules contains 'typescript' -- required when --src "
         "contains .js/.jsx/.ts/.tsx files (e.g. the frontend project root)",
     ),
+    exclude: list[str] | None = typer.Option(
+        None,
+        "--exclude",
+        help="Source-relative glob to exclude; may be repeated (e.g. test_*.cpp, test/*)",
+    ),
 ) -> None:
     """Run xgettext then enrich."""
-    run_xgettext_cmd(src=src, out=out, langs=langs, node_cwd=node_cwd)
+    run_xgettext_cmd(src=src, out=out, langs=langs, node_cwd=node_cwd, exclude_patterns=exclude)
     run_enrich_cmd(pot=out, repo_root=repo_root)
 
 
@@ -1024,9 +1061,14 @@ def validate_cmd(
         None,
         help="Comma-separated languages to scan: python,cpp,c,mfc (default: all)",
     ),
+    exclude: list[str] | None = typer.Option(
+        None,
+        "--exclude",
+        help="Source-relative glob to exclude; may be repeated (e.g. test_*.cpp, test/*)",
+    ),
 ) -> None:
     """Run validation checks only (no catalog generation)."""
-    run_validate_step(src=src, langs=langs)
+    run_validate_step(src=src, langs=langs, exclude_patterns=exclude)
 
 
 def main() -> None:

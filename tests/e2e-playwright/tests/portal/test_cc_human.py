@@ -16,25 +16,30 @@ def test_cc_human(
     run_pipeline_timeout: int,
 ) -> None:
     opened_study = open_study_link(anonymous_study_url)
-    study_id = opened_study.project_data["uuid"]
+    project_data = opened_study.project_data
+    study_id = project_data["uuid"]
+    workbench = project_data["workbench"]
 
     run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=run_pipeline_timeout)
 
     check_node_outputs(
         page,
         study_id=study_id,
-        node_position=1,
+        workbench=workbench,
+        node_name="Human GB 0D cardiac model",
         expected_file_names=["vm_1Hz.txt", "logs.zip", "allresult_1Hz.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
-        node_position=2,
+        workbench=workbench,
+        node_name="Human GB 1D cardiac model",
         expected_file_names=["model_INPUT.from1D", "y_1D.txt", "logs.zip", "ECGs.txt"],
     )
     check_node_outputs(
         page,
         study_id=study_id,
-        node_position=3,
+        workbench=workbench,
+        node_name="Human GB 2D cardiac model",
         expected_file_names=["aps.zip", "logs.zip"],
     )
