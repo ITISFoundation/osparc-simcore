@@ -62,8 +62,9 @@ include ../../../scripts/makefiles/requirements.mk
 ```
 
 The root `Makefile` includes `help.mk` directly (not via `common.mk`, since it
-isn't a package/service) to get the same grouped `make help` output — see
-"Help output & grouping" in `.github/instructions/makefiles.instructions.md`.
+isn't a package/service) to get the same grouped `make help` output. See the
+[Makefile authoring instructions](../../.github/instructions/makefiles.instructions.md)
+for the editing rules.
 The shared renderer uses GNU awk's `asort()`, so `gawk` must be available when
 running `make help`.
 

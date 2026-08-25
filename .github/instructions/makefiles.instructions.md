@@ -5,7 +5,7 @@ applyTo: '**/Makefile,**/*.mk'
 # Makefile authoring conventions
 
 The repo's Make system has two layers. Follow these rules when creating or
-editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
+editing any `Makefile` or `*.mk`. Full reference: [scripts/makefiles/README.md](../../scripts/makefiles/README.md).
 
 ## Naming (the invariant)
 
@@ -37,18 +37,27 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 
 ## Recipe organization within a `.mk` file
 
-- **Group related recipes**: Place semantically related targets together (e.g.,
-  `mypy` and `mypy-debug` as a pair, not scattered).
-- **Organize groups alphabetically**: Within each logical group, sort recipes
-  alphabetically by target name (e.g., `check`, `clean`, `help`, `reqs`).
-- **Label groups clearly**: Use section headers with `# -----------...` and a
-  descriptive comment (e.g., `# MAIN LINTING TARGETS (alphabetically ordered)`)
-  so the file is self-documenting.
-- **Exception**: Pattern rules and subtasks can follow implementation order; the
-  alphabetical convention applies to public/user-facing targets.
-- **See example**: `scripts/makefiles/python-lint.mk` groups main linting
-  targets (alphabetical) separately from developer convenience targets
-  (alphabetical), keeping `mypy` and `mypy-debug` together.
+- **Group related recipes**: A public target is a user-invoked target documented
+  with `##`. A group is two or more public targets that share a user-facing
+  purpose or workflow, such as `mypy` and `mypy-debug`. Keep them together when
+  that makes the Makefile or `make help` easier to scan.
+- **Label useful groups**: Put `##@ Section Name` above a group when the
+  section name helps users find those targets in `make help`. A single target
+  may have a section when the category is meaningful, but do not create a
+  section just to label one unrelated target.
+- **Leave small or internal blocks unlabeled**: Sections are optional. Pattern
+  rules, prerequisites, private helpers, and isolated public targets do not
+  need `##@` headers. They remain in the leading unlabeled help section when
+  they have a `##` description.
+- **Organize groups alphabetically**: Within a group, sort public targets by
+  name when their order has no semantic meaning, for example `check`, `clean`,
+  `help`, and `reqs`. Keep dependency or execution order when it matters.
+- **Implementation comments are separate**: `# -----------...` comments can
+  separate code sections for readers, but only `##@ Section Name` controls
+  grouping in the shared help renderer.
+- **See example**: `scripts/makefiles/python-lint.mk` uses `##@` headers to
+  separate main linting targets from developer convenience targets while
+  keeping `mypy` and `mypy-debug` together.
 
 ## CI contract targets
 

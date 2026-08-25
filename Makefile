@@ -970,7 +970,8 @@ reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
 
 
-# RELEASE --------------------------------------------------------------------------------------------------------------------------------------------
+
+##@ Release
 
 staging_prefix := staging_
 prod_prefix := v
@@ -1007,7 +1008,7 @@ define create_github_release_url
 	echo -e "\e[34m$(_prettify_logs)"
 endef
 
-##@ Release
+
 
 .PHONY: release-staging release-prod
 release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)
