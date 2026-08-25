@@ -15,6 +15,11 @@ If you find yourself running `make -f something.mk`, it should have been a
 `Makefile`. If you find a `Makefile` that only gets `include`d, it should have
 been a `*.mk`.
 
+Each entry-point `Makefile` declares its own `.DEFAULT_GOAL`. Shared libraries
+must not choose a default target for their callers. Entry points that expose
+the standard CLI use `.DEFAULT_GOAL := help`; directories with an intentional
+default such as `all`, `install`, or `openapi-specs` declare that target instead.
+
 ## Library layout & responsibilities
 
 ```
@@ -59,6 +64,8 @@ include ../../../scripts/makefiles/requirements.mk
 The root `Makefile` includes `help.mk` directly (not via `common.mk`, since it
 isn't a package/service) to get the same grouped `make help` output — see
 "Help output & grouping" in `.github/instructions/makefiles.instructions.md`.
+The shared renderer uses GNU awk's `asort()`, so `gawk` must be available when
+running `make help`.
 
 ## Python test targets
 

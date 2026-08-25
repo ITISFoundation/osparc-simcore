@@ -9,7 +9,7 @@
 # - Targets with no preceding '##@' anywhere in the scanned files fall into a
 #   leading, unlabeled section (no header line printed).
 # - Sections are printed in first-seen order; targets within a section are
-#   sorted alphabetically (requires gawk's asort()).
+#   sorted alphabetically (requires GNU awk's asort()).
 #
 
 BEGIN {
@@ -30,7 +30,7 @@ BEGIN {
     next
 }
 
-/^[[:alnum:][:space:]_-]+:.*?## / {
+/^[^.#[:space:]][^:]*:.*?## / {
     if ($1 == "help" || $1 ~ /^hel%/) next
     count[section]++
     key = section SUBSEP count[section]
