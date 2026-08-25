@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Final
 
 from aiohttp import web
@@ -36,6 +37,8 @@ from .errors import (
 )
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
+
+_logger = logging.getLogger(__name__)
 
 
 async def _get_frontend_user_preferences(
@@ -147,7 +150,6 @@ async def set_frontend_user_preference(
             frontend_preference_identifier
         )
     except GroupExtraPropertiesNotFoundError:
-        # NOTE: a product with no group properties configured overrides nothing
         constraints_overrides = None
 
     try:
