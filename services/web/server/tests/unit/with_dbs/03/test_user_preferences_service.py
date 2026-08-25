@@ -286,3 +286,26 @@ async def test_value_allowed_by_group_stays_readable_after_constraint_removal(
     )
     assert preference is not None
     assert preference.value == 6 * _HOUR
+
+
+async def test_aggregation_exposes_effective_constraints(
+    app: web.Application,
+    enable_all_frontend_preferences: None,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[dict[str, Any] | None], Awaitable[None]],
+):
+    await set_inactivity_constraints(None)
+    aggregation = await get_frontend_user_preferences_aggregation(app, user_id=user_id, product_name=product_name)
+    assert aggregation[_INACTIVITY_IDENTIFIER].constraints is not None
+    assert aggregation[_INACTIVITY_IDENTIFIER].constraints.le == 3 * _HOUR
+    # preferences without constraints must not carry an empty object
+    assert aggregation["themeName"].constraints is None
+
+    await set_inactivity_constraints({"le": 6 * _HOUR, "ge": 60})
+    aggregation = await get_frontend_user_preferences_aggregation(app, user_id=user_id, product_name=product_name)
+    constraints = aggregation[_INACTIVITY_IDENTIFIER].constraints
+    assert constraints is not None
+    assert constraints.le == 6 * _HOUR
+    assert constraints.ge == 60

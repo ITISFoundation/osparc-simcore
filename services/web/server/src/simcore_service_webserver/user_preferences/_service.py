@@ -103,8 +103,20 @@ async def get_frontend_user_preferences_aggregation(
             return is_telemetry_enabled
         return True
 
+    def to_preference(preference: FrontendUserPreference) -> Preference:
+        constraints = preference.get_value_constraints(
+            group_extra_properties.frontend_preferences_constraints.get(preference.preference_identifier)
+        )
+        return Preference.model_validate(
+            {
+                "value": preference.value,
+                "default_value": preference.get_default_value(),
+                "constraints": constraints or None,
+            }
+        )
+
     aggregated_preferences: AggregatedPreferences = {
-        p.preference_identifier: Preference.model_validate({"value": p.value, "default_value": p.get_default_value()})
+        p.preference_identifier: to_preference(p)
         for p in await _get_frontend_user_preferences(app, user_id, product_name)
         if include_preference(p.preference_identifier)
     }

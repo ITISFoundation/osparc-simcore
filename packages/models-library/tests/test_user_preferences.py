@@ -3,11 +3,13 @@
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Final, NamedTuple
 
 import pytest
+from models_library.api_schemas_webserver.users_preferences import PreferenceConstraints
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.user_preferences import (
+    _ALLOWED_VALUE_CONSTRAINTS,
     FrontendUserPreference,
     InvalidValueConstraintsError,
     NoPreferenceFoundError,
@@ -16,7 +18,7 @@ from models_library.user_preferences import (
     _AutoRegisterMeta,
     _BaseUserPreferenceModel,
 )
-from pydantic import TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError, create_model
 
 _SERVICE_KEY_AND_VERSION_SAMPLES: list[tuple[ServiceKey, ServiceVersion]] = [
     (
@@ -230,3 +232,63 @@ def test_nullable_value_accepts_none_with_constraints(restore_preference_classes
     Pref1.validate_value(5, {"ge": 1})
     with pytest.raises(ValidationError):
         Pref1.validate_value(0, {"ge": 1})
+
+
+class _ConstraintExample(NamedTuple):
+    name: str
+    value_type: type
+    stored_in_db: dict[str, Any]
+    accepts: Any
+    rejects: Any
+
+
+_CONSTRAINT_EXAMPLES: Final[list[_ConstraintExample]] = [
+    _ConstraintExample("ge", int, {"ge": 60}, 60, 59),
+    _ConstraintExample("gt", int, {"gt": 60}, 61, 60),
+    _ConstraintExample("le", int, {"le": 10800}, 10800, 10801),
+    _ConstraintExample("lt", int, {"lt": 10800}, 10799, 10800),
+    _ConstraintExample("max_length", str, {"max_length": 5}, "abcde", "abcdef"),
+    _ConstraintExample("min_length", str, {"min_length": 3}, "abc", "ab"),
+    _ConstraintExample("multiple_of", int, {"multiple_of": 60}, 120, 121),
+    _ConstraintExample("pattern", str, {"pattern": "^(dark|light)$"}, "dark", "blue"),
+]
+
+
+def test_constraint_examples_cover_all_allowed_constraints():
+    assert {example.name for example in _CONSTRAINT_EXAMPLES} == set(_ALLOWED_VALUE_CONSTRAINTS)
+
+
+def test_frontend_schema_exposes_all_allowed_constraints():
+    assert set(PreferenceConstraints.model_fields) == set(_ALLOWED_VALUE_CONSTRAINTS)
+
+
+@pytest.mark.parametrize(
+    "example",
+    [pytest.param(example, id=example.name) for example in _CONSTRAINT_EXAMPLES],
+)
+def test_every_allowed_constraint_is_enforced(
+    restore_preference_classes_registry: None,
+    example: _ConstraintExample,
+):
+    preference_class: type[FrontendUserPreference] = create_model(
+        "ConstrainedPreference",
+        __base__=FrontendUserPreference,
+        preference_identifier=(str, "constrained"),
+        value=(example.value_type, ...),
+    )
+
+    preference_class.validate_value(example.accepts, example.stored_in_db)
+    with pytest.raises(ValidationError):
+        preference_class.validate_value(example.rejects, example.stored_in_db)
+
+
+def test_get_value_constraints_merges_overrides_per_key(restore_preference_classes_registry: None):
+    class Pref1(FrontendUserPreference):
+        preference_identifier: str = "pref1"
+        value: int = 1800
+        value_constraints: ClassVar[dict[str, Any]] = {"ge": 60, "le": 10800}
+
+    assert Pref1.get_value_constraints() == {"ge": 60, "le": 10800}
+    assert Pref1.get_value_constraints({"le": 21600}) == {"ge": 60, "le": 21600}
+    with pytest.raises(InvalidValueConstraintsError, match="unsupported"):
+        Pref1.get_value_constraints({"not_a_constraint": 1})

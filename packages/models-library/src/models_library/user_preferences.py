@@ -85,12 +85,18 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         _raise_if_not_allowed(cls.get_preference_name(), cls.value_constraints)
 
     @classmethod
+    def get_value_constraints(cls, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Constraints declared by the class, with `overrides` taking precedence per key."""
+        constraints = {**cls.value_constraints, **(overrides or {})}
+        _raise_if_not_allowed(cls.get_preference_name(), constraints)
+        return constraints
+
+    @classmethod
     def build_value_validator(cls, overrides: dict[str, Any] | None = None) -> type[BaseModel]:
         """Model whose only field validates a preference value against `value_constraints` merged with `overrides`."""
         # pylint: disable=unsubscriptable-object
         preference_name = cls.get_preference_name()
-        constraints = {**cls.value_constraints, **(overrides or {})}
-        _raise_if_not_allowed(preference_name, constraints)
+        constraints = cls.get_value_constraints(overrides)
 
         cache_key = (cls, json.dumps(constraints, sort_keys=True, default=str))
         if cache_key not in _VALUE_VALIDATOR_CLASSES:
