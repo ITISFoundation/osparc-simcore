@@ -29,8 +29,9 @@ from _helpers import (
 )
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError, TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
-from dask_task_models_library.container_tasks.io import TaskOutputData
+from dask_task_models_library.container_tasks.io import TaskInputData, TaskOutputData, TaskOutputDataSchema
 from dask_task_models_library.container_tasks.protocol import TaskOwner
+from distributed import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.computations import CollectionRunID
@@ -49,8 +50,9 @@ from models_library.rabbitmq_messages import (
     SimcorePlatformStatus,
 )
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import AnyUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
 from simcore_postgres_database.models.comp_runs import comp_runs
@@ -82,6 +84,7 @@ from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
 from simcore_service_director_v2.modules.comp_scheduler._utils import COMPLETED_STATES
 from simcore_service_director_v2.modules.comp_scheduler._worker import _get_scheduler_worker
 from simcore_service_director_v2.modules.dask_client import DaskJobID, PublishedComputationTask
+from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.modules.osparc_variables._errors import (
     OsparcVariableResolveError,
     OsparcVariableResolveTimeoutError,
@@ -3198,3 +3201,115 @@ async def test_fix_tasks_stuck_pending_without_job_id_resets_to_published(
         expected_progress=stuck_task.progress,
         run_id=comp_run.run_id,
     )
+
+
+@pytest.fixture
+def with_real_dask_cluster_url(
+    mock_env: EnvVarsDict,
+    dask_spec_local_cluster: SpecCluster,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL", dask_spec_local_cluster.scheduler_address)
+
+
+@pytest.fixture
+def with_mocked_node_ports_and_storage(
+    mock_env: EnvVarsDict, mocker: MockerFixture, mocked_storage_service_api: Any
+) -> None:
+    # file-transfer machinery is out of scope here: only dask job submission/idempotency is under test
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.dask_utils.create_node_ports",
+        return_value=None,
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.dask_utils.compute_input_data",
+        return_value=TaskInputData.model_validate({}),
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.dask_utils.compute_output_data_schema",
+        return_value=TaskOutputDataSchema.model_validate({}),
+    )
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.dask_utils.compute_service_log_file_upload_link",
+        return_value=TypeAdapter(AnyUrl).validate_python("file://undefined"),
+    )
+
+
+async def test_start_tasks_retry_after_db_write_failure_does_not_duplicate_dask_job(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    with_real_dask_cluster_url: None,
+    with_mocked_node_ports_and_storage: None,
+    initialized_app: FastAPI,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
+):
+    """End-to-end regression test with a REAL dask cluster for
+    https://github.com/ITISFoundation/private-issues/issues/648: dask accepts the job, but the DB
+    write of (job_id, PENDING) never gets committed (e.g. the process crashes right after). The task
+    is found back in PUBLISHED with no job_id, so the next apply() resubmits it. Thanks to the
+    deterministic job_id, dask must not end up with two jobs for the same task."""
+    run_in_db, published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
+    )
+    task_to_start = published_tasks[1]
+
+    # 1. the scheduler submits the job to the (real) dask cluster and persists (job_id, PENDING)
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    persisted_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[task_to_start.node_id],
+        expected_state=RunningState.PENDING,
+        expected_progress=None,
+        run_id=run_in_db.run_id,
+    )
+    job_id = persisted_tasks[0].job_id
+    assert job_id
+
+    # 2. simulate the DB write never being committed: the task is found back in PUBLISHED
+    # with no job_id, even though dask already accepted the job
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update()
+            .where(comp_tasks.c.project_id == f"{task_to_start.project_id}")
+            .where(comp_tasks.c.node_id == f"{task_to_start.node_id}")
+            .values(state=RunningState.PUBLISHED.value, job_id=None)
+        )
+
+    # 3. the next scheduling pass picks it up again and resubmits it with the same deterministic job_id
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    persisted_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[task_to_start.node_id],
+        expected_state=RunningState.PENDING,
+        expected_progress=None,
+        run_id=run_in_db.run_id,
+    )
+    assert persisted_tasks[0].job_id == job_id
+
+    # 4. the critical assertion: only ONE dask job exists, despite 2 submission attempts
+    dask_clients_pool = DaskClientsPool.instance(initialized_app)
+    default_cluster = initialized_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.default_cluster
+    async with dask_clients_pool.acquire(default_cluster, ref="test-verify-single-dask-job") as dask_client:
+        published_datasets = await dask_client.backend.client.list_datasets()  # type: ignore
+    assert published_datasets.count(job_id) == 1
