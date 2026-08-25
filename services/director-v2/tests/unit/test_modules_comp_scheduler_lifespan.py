@@ -85,10 +85,10 @@ async def test_full_startup_and_shutdown_order(mocker: MockerFixture):
         pass
 
     assert calls == [
-        "setup_releaser",
         "setup_worker",
+        "setup_releaser",
         "setup_manager",
         "shutdown_manager",
-        "shutdown_worker",
         "shutdown_releaser",
+        "shutdown_worker",
     ]
