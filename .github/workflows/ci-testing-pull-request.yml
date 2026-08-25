@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: install uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.0.1
         with:
           version: "0.11.x"
           enable-cache: false
@@ -80,7 +80,7 @@ jobs:
           python-version: "3.13"
       - name: install uv
         if: steps.changes.outputs.api-server == 'true'
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.0.1
         with:
           version: "0.11.x"
           enable-cache: false
