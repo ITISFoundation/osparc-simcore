@@ -52,12 +52,12 @@ async def create_pipeline(
 
 # states from which a task has a job_id (see CompTasksRepository.set_task_job_id)
 _STATES_WITH_JOB_ID = {
+    StateType.ABORTED,
+    StateType.FAILED,
     StateType.PENDING,
-    StateType.WAITING_FOR_RESOURCES,
     StateType.RUNNING,
     StateType.SUCCESS,
-    StateType.FAILED,
-    StateType.ABORTED,
+    StateType.WAITING_FOR_RESOURCES,
 }
 
 
