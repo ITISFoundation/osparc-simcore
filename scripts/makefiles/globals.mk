@@ -7,9 +7,6 @@
 # SEE scripts/makefiles/README.md for conventions.
 #
 
-# defaults
-.DEFAULT_GOAL := help
-
 # Colors
 BLUE=\033[0;34m
 GREEN=\033[0;32m

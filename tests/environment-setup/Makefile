@@ -1,6 +1,8 @@
 #
 # Targets for DEVELOPMENT for system tests
 #
+.DEFAULT_GOAL := help
+
 include ../../scripts/makefiles/common.mk
 
 

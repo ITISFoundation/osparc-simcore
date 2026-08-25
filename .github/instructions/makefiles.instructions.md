@@ -13,7 +13,11 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
   logic here, under `scripts/makefiles/`.
 - `Makefile` = **entry point**: invoked as `cd <dir> && make <target>` or
   `make -C <dir> <target>` by a human or CI. One `Makefile` per directory
-- Never create a `Makefile` that is only `include`d, and never `make -f a.mk`.
+- Never create a `Makefile` that is only `include`d. The `make -f` option
+  selects a file as Make's entry point, so do not use it to execute a shared
+  `.mk` library. Include libraries from a project `Makefile` instead.
+- Each entry-point `Makefile` declares its own `.DEFAULT_GOAL`. Shared `.mk`
+  libraries must not impose a default target on their callers.
 
 ## DRY & separation of concerns
 
@@ -28,7 +32,8 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
   topic library and have the other library delegate to it via a dependency,
   rather than duplicating the recipe.
 - A package Makefile includes at least `common.mk` + `package.mk`; a service Makefile
-  includes at least `common.mk` + `service.mk`.
+  includes at least `common.mk` + `service.mk`. A directory may include additional
+  topic libraries when its targets need them.
 
 ## Recipe organization within a `.mk` file
 
@@ -61,6 +66,8 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 - `scripts/makefiles/help.mk` (delegating to `scripts/makefiles/help.awk`) is
   the shared `make help` renderer. It is included by `common.mk` for every
   package/service, and directly by the root `Makefile`.
+- The shared help renderer requires GNU `gawk` because it sorts targets with
+  `asort()`.
 - Add a `##@ Section Name` comment above a group of targets to label it in
   `make help`. It applies to every target below it until the next `##@` line
   in that file.

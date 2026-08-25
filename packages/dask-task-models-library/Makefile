@@ -1,6 +1,8 @@
 #
 # Targets for DEVELOPMENT of dask tasks models Library
 #
+.DEFAULT_GOAL := help
+
 include ../../scripts/makefiles/common.mk
 include ../../scripts/makefiles/package.mk
 
