@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Any, ClassVar, Final
 
 from aiohttp import web
 from models_library.authentication import TwoFactorAuthenticationMethod
@@ -15,6 +15,7 @@ from pydantic import Field, NonNegativeInt
 from ..users.settings import UsersSettings, get_plugin_settings
 
 _MINUTE: Final[NonNegativeInt] = 60
+_HOUR: Final[NonNegativeInt] = 60 * _MINUTE
 
 
 class ConfirmationBackToDashboardFrontendUserPreference(FrontendUserPreference):
@@ -85,6 +86,7 @@ class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
 class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "userInactivityThreshold"
     value: int = 30 * _MINUTE  # in seconds
+    value_constraints: ClassVar[dict[str, Any]] = {"le": 3 * _HOUR}
 
 
 class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):

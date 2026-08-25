@@ -3,8 +3,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=too-many-return-statements
 
-from collections.abc import AsyncIterator
-from typing import Any, Literal, get_args, get_origin
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any, Final, Literal, get_args, get_origin
 
 import pytest
 from aiohttp import web
@@ -26,11 +26,16 @@ from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.user_preferences._models import (
     ALL_FRONTEND_PREFERENCES,
     BillingCenterUsageColumnOrderFrontendUserPreference,
+    UserInactivityThresholdFrontendUserPreference,
 )
 from simcore_service_webserver.user_preferences._service import (
     _get_frontend_user_preferences,
+    get_frontend_user_preference,
     get_frontend_user_preferences_aggregation,
     set_frontend_user_preference,
+)
+from simcore_service_webserver.user_preferences.errors import (
+    FrontendUserPreferenceValueIsInvalidError,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -194,3 +199,90 @@ async def test_set_frontend_user_preference(
 def test_expected_fields_in_serialization():
     for preference_class in ALL_FRONTEND_PREFERENCES:
         assert set(preference_class().to_db().keys()) == {"value"}
+
+
+_INACTIVITY_IDENTIFIER: Final[str] = UserInactivityThresholdFrontendUserPreference.model_fields[
+    "preference_identifier"
+].default
+_HOUR: Final[int] = 60 * 60
+
+
+@pytest.fixture
+async def set_inactivity_constraints(
+    asyncpg_engine: AsyncEngine, product_name: ProductName
+) -> Callable[[dict[str, Any] | None], Awaitable[None]]:
+    async def _(constraints: dict[str, Any] | None) -> None:
+        async with asyncpg_engine.begin() as conn:
+            await conn.execute(
+                groups_extra_properties.update()
+                .where(groups_extra_properties.c.product_name == product_name)
+                .values(frontend_preferences_constraints={_INACTIVITY_IDENTIFIER: constraints} if constraints else {})
+            )
+
+    return _
+
+
+@pytest.mark.parametrize(
+    "constraints, value, is_allowed",
+    [
+        pytest.param(None, 3 * _HOUR, True, id="at_class_cap"),
+        pytest.param(None, 4 * _HOUR, False, id="above_class_cap"),
+        pytest.param({"le": 6 * _HOUR}, 6 * _HOUR, True, id="group_relaxes_class_cap"),
+        pytest.param({"le": 6 * _HOUR}, 7 * _HOUR, False, id="above_relaxed_group_cap"),
+        pytest.param({"le": 2 * _HOUR}, 3 * _HOUR, False, id="group_tightens_class_cap"),
+    ],
+)
+async def test_set_frontend_user_preference_honours_group_constraints(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[dict[str, Any] | None], Awaitable[None]],
+    constraints: dict[str, Any] | None,
+    value: int,
+    is_allowed: bool,
+):
+    await set_inactivity_constraints(constraints)
+
+    async def _set() -> None:
+        await set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+            value=value,
+        )
+
+    if is_allowed:
+        await _set()
+    else:
+        with pytest.raises(FrontendUserPreferenceValueIsInvalidError):
+            await _set()
+
+
+async def test_value_allowed_by_group_stays_readable_after_constraint_removal(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[dict[str, Any] | None], Awaitable[None]],
+):
+    await set_inactivity_constraints({"le": 6 * _HOUR})
+    await set_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+        value=6 * _HOUR,
+    )
+
+    await set_inactivity_constraints(None)
+
+    preference = await get_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=UserInactivityThresholdFrontendUserPreference,
+    )
+    assert preference is not None
+    assert preference.value == 6 * _HOUR

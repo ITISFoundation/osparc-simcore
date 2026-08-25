@@ -35,6 +35,7 @@ class GroupExtraProperties(  # pylint: disable=too-many-instance-attributes
     modified: datetime.datetime
     enable_efs: bool
     mount_data: bool
+    frontend_preferences_constraints: dict[str, dict[str, Any]]
 
 
 def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: str):

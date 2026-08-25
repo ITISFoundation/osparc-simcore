@@ -1,8 +1,9 @@
+import json
 from enum import auto
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, ClassVar, Final, Literal, Self
 
 from common_library.pydantic_fields_extension import get_type
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.fields import FieldInfo
 
@@ -29,8 +30,8 @@ class _AutoRegisterMeta(ModelMetaclass):
         return new_class
 
 
-PreferenceName: TypeAlias = str
-PreferenceIdentifier: TypeAlias = str
+type PreferenceName = str
+type PreferenceIdentifier = str
 
 
 class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta): ...
@@ -47,16 +48,73 @@ class NoPreferenceFoundError(RuntimeError):
         super().__init__(f"No preference class found for provided {preference_name=}")
 
 
+_ALLOWED_VALUE_CONSTRAINTS: Final[frozenset[str]] = frozenset(
+    {"ge", "gt", "le", "lt", "max_length", "min_length", "multiple_of", "pattern"}
+)
+
+_VALUE_VALIDATOR_CLASSES: Final[dict[tuple[PreferenceName, str], type[BaseModel]]] = {}
+
+
+class InvalidValueConstraintsError(ValueError):
+    def __init__(self, preference_name: PreferenceName, reason: str) -> None:
+        self.preference_name = preference_name
+        self.reason = reason
+        super().__init__(f"Invalid value constraints for {preference_name=}: {reason}")
+
+
+def _raise_if_not_allowed(preference_name: PreferenceName, constraints: dict[str, Any]) -> None:
+    if rejected := set(constraints) - _ALLOWED_VALUE_CONSTRAINTS:
+        raise InvalidValueConstraintsError(
+            preference_name,
+            f"unsupported {sorted(rejected)}, allowed are {sorted(_ALLOWED_VALUE_CONSTRAINTS)}",
+        )
+
+
 class _BaseUserPreferenceModel(_ExtendedBaseModel):
     preference_type: PreferenceType = Field(..., description="distinguish between the types of preferences")
 
     value: Any = Field(..., description="value of the preference")
 
+    # NOTE: enforced only when setting the value, never by this model itself, so that
+    # values allowed by a looser deployment configuration remain readable.
+    value_constraints: ClassVar[dict[str, Any]] = {}
+
     @classmethod
-    def get_preference_class_from_name(cls, preference_name: PreferenceName) -> type["_BaseUserPreferenceModel"]:
-        preference_class: type[_BaseUserPreferenceModel] | None = cls.registered_user_preference_classes.get(
-            preference_name, None
-        )
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        super().__pydantic_init_subclass__(**kwargs)
+        _raise_if_not_allowed(cls.get_preference_name(), cls.value_constraints)
+
+    @classmethod
+    def build_value_validator(cls, overrides: dict[str, Any] | None = None) -> type[BaseModel]:
+        """Model whose only field validates a preference value against `value_constraints` merged with `overrides`."""
+        # pylint: disable=unsubscriptable-object
+        preference_name = cls.get_preference_name()
+        constraints = {**cls.value_constraints, **(overrides or {})}
+        _raise_if_not_allowed(preference_name, constraints)
+
+        cache_key = (preference_name, json.dumps(constraints, sort_keys=True, default=str))
+        if cache_key not in _VALUE_VALIDATOR_CLASSES:
+            value_annotation = cls.model_fields["value"].annotation
+            _VALUE_VALIDATOR_CLASSES[cache_key] = create_model(
+                f"{preference_name}ValueValidator",
+                __base__=BaseModel,
+                value=(Annotated[value_annotation, Field(**constraints)], ...),
+            )
+        return _VALUE_VALIDATOR_CLASSES[cache_key]
+
+    @classmethod
+    def validate_value(cls, value: Any, overrides: dict[str, Any] | None = None) -> None:
+        validator_class = cls.build_value_validator(overrides)
+        try:
+            validator_class(value=value)
+        except TypeError as e:
+            # pydantic reports a constraint that cannot apply to the field type only on use
+            raise InvalidValueConstraintsError(cls.get_preference_name(), f"{e}") from e
+
+    @classmethod
+    def get_preference_class_from_name(cls, preference_name: PreferenceName) -> type[Self]:
+        # NOTE: the registry is untyped (`dict[str, type]`), the annotation below narrows it
+        preference_class: type[Self] | None = cls.registered_user_preference_classes.get(preference_name, None)
         if preference_class is None:
             raise NoPreferenceFoundError(preference_name)
         return preference_class
@@ -117,7 +175,7 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
         return self.model_dump(exclude={"preference_type"})
 
 
-AnyUserPreference: TypeAlias = Annotated[
+type AnyUserPreference = Annotated[
     FrontendUserPreference | UserServiceUserPreference,
     Field(discriminator="preference_type"),
 ]
