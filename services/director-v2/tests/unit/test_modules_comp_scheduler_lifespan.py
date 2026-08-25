@@ -11,15 +11,15 @@ from simcore_service_director_v2.modules.comp_scheduler import configure_comp_sc
 async def test_partial_startup_failure_only_tears_down_started_resources(mocker: MockerFixture):
     """If `setup_worker` fails, the releaser (already started) must be shut down while the
     manager (never started) must not."""
-    setup_releaser = mocker.patch("simcore_service_director_v2.modules.comp_scheduler.setup_releaser", autospec=True)
-    shutdown_releaser = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.shutdown_releaser", autospec=True
-    )
-    setup_worker = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.setup_worker",
+    setup_releaser = mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.setup_releaser",
         autospec=True,
         side_effect=RuntimeError("boom"),
     )
+    shutdown_releaser = mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.shutdown_releaser", autospec=True
+    )
+    setup_worker = mocker.patch("simcore_service_director_v2.modules.comp_scheduler.setup_worker", autospec=True)
     shutdown_worker = mocker.patch("simcore_service_director_v2.modules.comp_scheduler.shutdown_worker", autospec=True)
     setup_manager = mocker.patch("simcore_service_director_v2.modules.comp_scheduler.setup_manager", autospec=True)
     shutdown_manager = mocker.patch(
@@ -34,12 +34,12 @@ async def test_partial_startup_failure_only_tears_down_started_resources(mocker:
         async with app_lifespan(app):
             pytest.fail("lifespan should have failed to start")
 
-    setup_releaser.assert_called_once_with(app)
     setup_worker.assert_called_once_with(app)
+    setup_releaser.assert_called_once_with(app)
     setup_manager.assert_not_called()
 
-    shutdown_releaser.assert_called_once_with(app)
-    shutdown_worker.assert_not_called()
+    shutdown_worker.assert_called_once_with(app)
+    shutdown_releaser.assert_not_called()
     shutdown_manager.assert_not_called()
 
 
