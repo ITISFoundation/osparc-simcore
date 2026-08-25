@@ -537,8 +537,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
     @field_serializer("compose_spec")
+    @staticmethod
     def _serialize_compose_spec_for_label(
-        self, value: ComposeSpecLabelDict | None, info: SerializationInfo
+        value: ComposeSpecLabelDict | None, info: SerializationInfo
     ) -> ComposeSpecLabelDict | str | None:
         # `Json[...]` fields expect a JSON-encoded string on the way in, but
         # only `as_label_data` needs that encoding on the way out.
