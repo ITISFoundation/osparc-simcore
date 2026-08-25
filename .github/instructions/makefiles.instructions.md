@@ -12,8 +12,7 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 - `*.mk` = **library**: `include`-only, never invoked directly. Put reusable
   logic here, under `scripts/makefiles/`.
 - `Makefile` = **entry point**: invoked as `cd <dir> && make <target>` or
-  `make -C <dir> <target>` by a human or CI. One per project directory + the
-  repo root.
+  `make -C <dir> <target>` by a human or CI. One `Makefile` per directory
 - Never create a `Makefile` that is only `include`d, and never `make -f a.mk`.
 
 ## DRY & separation of concerns
@@ -28,8 +27,8 @@ editing any `Makefile` or `*.mk`. Full reference: `scripts/makefiles/README.md`.
 - If a recipe legitimately spans two topics, place it in the more specific
   topic library and have the other library delegate to it via a dependency,
   rather than duplicating the recipe.
-- A package Makefile includes `common.mk` + `package.mk`; a service Makefile
-  includes `common.mk` + `service.mk`.
+- A package Makefile includes at least `common.mk` + `package.mk`; a service Makefile
+  includes at least `common.mk` + `service.mk`.
 
 ## Recipe organization within a `.mk` file
 

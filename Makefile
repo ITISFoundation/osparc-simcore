@@ -174,7 +174,6 @@ _check_venv_active:
 
 
 ##@ Docker Build
-## DOCKER BUILD -------------------------------
 #
 # - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
@@ -278,7 +277,6 @@ shell:
 
 
 ##@ Docker Swarm
-## DOCKER SWARM -------------------------------
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
 #
@@ -557,7 +555,6 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 
 ##@ Docker Tags
-## DOCKER TAGS  -------------------------------
 
 .PHONY: tag-local tag-version tag-latest
 
@@ -580,7 +577,6 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 ##@ Docker Pull/Push
-## DOCKER PULL/PUSH  -------------------------------
 
 .PHONY: pull-version
 
@@ -618,9 +614,7 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 
 
-
 ##@ Environment
-## ENVIRONMENT -------------------------------
 
 .PHONY: devenv devenv-all node-env
 
@@ -679,7 +673,6 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 ##@ Tools
-## TOOLS -------------------------------
 
 .PHONY: pylint
 
@@ -769,8 +762,7 @@ postgres-upgrade: ## initialize or upgrade postgres db to latest state
 CITATION-validate: ## validates CITATION.cff file
 	@docker run --rm -v $(CURDIR):/app citationcff/cffconvert --validate
 
-##@ Local Docker Registry
-## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
+##@ Local Docker Registry (local-dev)
 
 LOCAL_REGISTRY_HOSTNAME := registry
 LOCAL_REGISTRY_VOLUME   := $(LOCAL_REGISTRY_HOSTNAME)
@@ -861,7 +853,6 @@ info-registry: ## info on local registry (if any)
 
 
 ##@ Info
-## INFO -------------------------------
 
 .PHONY: info info-images info-swarm
 info: ## displays setup information
@@ -928,7 +919,6 @@ endif
 
 
 ##@ Clean
-## CLEAN -------------------------------
 
 .PHONY: clean clean-images clean-venv clean-all clean-more
 
@@ -1017,8 +1007,9 @@ define create_github_release_url
 	echo -e "\e[34m$(_prettify_logs)"
 endef
 
-.PHONY: release-staging release-prod
 ##@ Release
+
+.PHONY: release-staging release-prod
 release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)
 	$(create_github_release_url)
 
