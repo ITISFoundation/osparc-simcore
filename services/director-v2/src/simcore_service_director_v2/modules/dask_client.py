@@ -259,9 +259,7 @@ class DaskClient:
                 if "already exists" not in f"{exc}":
                     raise
                 # NOTE: job_id (stable per run_id) was already published -> resubmission is a no-op.
-                _logger.warning(
-                    "dask task %s was already published, this should not happen but is harmless", f"{job_id=}"
-                )
+                _logger.info("dask task %s was already published, this should not happen but is harmless", f"{job_id=}")
 
             _logger.info(
                 "Dask task %s started [%s] with encryption [%s]",
