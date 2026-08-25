@@ -1,10 +1,11 @@
 import asyncio
 import functools
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Final
 
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient, HTTPError
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from tenacity import RetryCallState
@@ -221,3 +222,20 @@ def setup(
         )
 
     app.add_event_handler("startup", on_startup)
+
+
+def configure_client(
+    app_lifespan: LifespanManager,
+    *,
+    router_prefix: str = "",
+    http_requests_timeout: PositiveFloat = _DEFAULT_HTTP_REQUESTS_TIMEOUT,
+) -> None:
+    """Lifespan-based counterpart of `setup(...)`."""
+
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        app.state.long_running_client_configuration = ClientConfiguration(
+            router_prefix=router_prefix, default_timeout=http_requests_timeout
+        )
+        yield
+
+    app_lifespan.add(_lifespan)

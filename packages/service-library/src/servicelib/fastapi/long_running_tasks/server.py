@@ -7,11 +7,10 @@ running task. The client will take care of recovering the result from it.
 """
 
 from ._dependencies import get_long_running_manager
-from ._server import setup
+from ._server import configure_server, setup
 
 __all__: tuple[str, ...] = (
+    "configure_server",
     "get_long_running_manager",
     "setup",
 )
-
-# nopycln: file
