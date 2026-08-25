@@ -17,6 +17,7 @@ from pydantic import NonNegativeInt, ValidationError
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
+    GroupExtraPropertiesNotFoundError,
     GroupExtraPropertiesRepo,
 )
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
@@ -140,13 +141,17 @@ async def set_frontend_user_preference(
 
     preference_class = FrontendUserPreference.get_preference_class_from_name(preference_name)
 
-    group_extra_properties = await _get_group_extra_properties(app, user_id=user_id, product_name=product_name)
+    try:
+        group_extra_properties = await _get_group_extra_properties(app, user_id=user_id, product_name=product_name)
+        constraints_overrides = group_extra_properties.frontend_preferences_constraints.get(
+            frontend_preference_identifier
+        )
+    except GroupExtraPropertiesNotFoundError:
+        # NOTE: a product with no group properties configured overrides nothing
+        constraints_overrides = None
 
     try:
-        preference_class.validate_value(
-            value,
-            group_extra_properties.frontend_preferences_constraints.get(frontend_preference_identifier),
-        )
+        preference_class.validate_value(value, constraints_overrides)
         preference = preference_class.model_validate({"value": value})
     except ValidationError as e:
         raise FrontendUserPreferenceValueIsInvalidError(

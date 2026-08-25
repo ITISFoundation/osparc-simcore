@@ -222,6 +222,50 @@ async def set_inactivity_constraints(
     return _
 
 
+@pytest.fixture
+async def drop_all_group_extra_properties(asyncpg_engine: AsyncEngine, product_name: ProductName) -> None:
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            groups_extra_properties.delete().where(groups_extra_properties.c.product_name == product_name)
+        )
+
+
+async def test_set_frontend_user_preference_without_group_extra_properties(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    drop_all_group_extra_properties: None,
+):
+    # NOTE: products do not provision `groups_extra_properties`, writing a preference must not depend on it
+    await set_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+        value=2 * _HOUR,
+    )
+
+    preference = await get_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=UserInactivityThresholdFrontendUserPreference,
+    )
+    assert preference is not None
+    assert preference.value == 2 * _HOUR
+
+    # the class constraints still apply
+    with pytest.raises(FrontendUserPreferenceValueIsInvalidError):
+        await set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+            value=4 * _HOUR,
+        )
+
+
 @pytest.mark.parametrize(
     "constraints, value, is_allowed",
     [
@@ -298,8 +342,9 @@ async def test_aggregation_exposes_effective_constraints(
 ):
     await set_inactivity_constraints(None)
     aggregation = await get_frontend_user_preferences_aggregation(app, user_id=user_id, product_name=product_name)
-    assert aggregation[_INACTIVITY_IDENTIFIER].constraints is not None
-    assert aggregation[_INACTIVITY_IDENTIFIER].constraints.le == 3 * _HOUR
+    constraints = aggregation[_INACTIVITY_IDENTIFIER].constraints
+    assert constraints is not None
+    assert constraints.le == 3 * _HOUR
     # preferences without constraints must not carry an empty object
     assert aggregation["themeName"].constraints is None
 
