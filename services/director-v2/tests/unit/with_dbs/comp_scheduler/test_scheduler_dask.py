@@ -54,7 +54,7 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 from simcore_service_director_v2.core.errors import (
     ClustersKeeperNotAvailableError,
@@ -3151,4 +3151,50 @@ async def test_task_job_id_already_set_error_does_not_fail_other_tasks(
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
         run_id=run_in_db.run_id,
+    )
+
+
+async def test_fix_tasks_stuck_pending_without_job_id_resets_to_published(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    mocked_dask_client: mock.MagicMock,
+    sqlalchemy_async_engine: AsyncEngine,
+    running_project: RunningProject,
+    scheduler_api: BaseCompScheduler,
+):
+    """Safety-net regression test for https://github.com/ITISFoundation/private-issues/issues/648:
+    a task stuck PENDING with no job_id must be reset to PUBLISHED so it gets restarted."""
+    comp_run = running_project.runs
+    # tasks[2] depends on tasks[1] (not yet SUCCESS), so once reset to PUBLISHED it is not
+    # immediately eligible to (re)start in the same apply() call
+    stuck_task = running_project.tasks[2]
+
+    # simulate the invalid state: PENDING with no job_id
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update()
+            .where(comp_tasks.c.project_id == f"{stuck_task.project_id}")
+            .where(comp_tasks.c.node_id == f"{stuck_task.node_id}")
+            .values(state=RunningState.PENDING.value, job_id=None)
+        )
+
+    async def mocked_get_tasks_status(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.STARTED for _ in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
+    assert running_project.project.prj_owner
+    await scheduler_api.apply(
+        user_id=running_project.project.prj_owner,
+        project_id=running_project.project.uuid,
+        iteration=comp_run.iteration,
+    )
+
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=stuck_task.project_id,
+        task_ids=[stuck_task.node_id],
+        expected_state=RunningState.PUBLISHED,
+        expected_progress=stuck_task.progress,
+        run_id=comp_run.run_id,
     )
