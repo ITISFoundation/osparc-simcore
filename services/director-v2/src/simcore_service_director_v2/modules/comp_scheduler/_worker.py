@@ -62,6 +62,10 @@ async def _handle_apply_distributed_schedule(app: FastAPI, data: bytes) -> bool:
 async def setup_worker(app: FastAPI) -> None:
     app_settings = get_application_settings(app)
     rabbitmq_client = get_rabbitmq_client(app)
+
+    # scheduler must exist before consumers start, since messages may arrive right after subscribing
+    app.state.scheduler_worker = create_scheduler(app)
+
     app.state.scheduler_worker_consumers = await asyncio.gather(
         *(
             rabbitmq_client.subscribe(
@@ -72,8 +76,6 @@ async def setup_worker(app: FastAPI) -> None:
             for _ in range(app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY)
         )
     )
-
-    app.state.scheduler_worker = create_scheduler(app)
 
 
 async def shutdown_worker(app: FastAPI) -> None:
