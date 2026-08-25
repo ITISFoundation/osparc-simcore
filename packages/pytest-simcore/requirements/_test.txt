@@ -131,9 +131,9 @@ python-dateutil==2.9.0.post0
     # via arrow
 python-dotenv==1.2.2
     # via -r requirements/_test.in
-python-engineio==4.13.1
+python-engineio==4.13.5
     # via python-socketio
-python-socketio==5.16.1
+python-socketio==5.16.4
     # via -r requirements/_test.in
 pyyaml==6.0.3
     # via
