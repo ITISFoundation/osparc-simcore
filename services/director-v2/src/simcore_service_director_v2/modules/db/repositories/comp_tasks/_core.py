@@ -240,6 +240,7 @@ class CompTasksRepository(BaseRepository):
         """sets the task's job_id and atomically moves it to PENDING.
 
         Raises:
+            ComputationalTaskNotFoundError: if the task does not exist
             ComputationalTaskJobIdAlreadySetError: if the task already has a job_id
         """
         task_kwargs = {"job_id": job_id, "state": RUNNING_STATE_TO_DB[RunningState.PENDING]}
@@ -255,6 +256,13 @@ class CompTasksRepository(BaseRepository):
                 .returning(literal_column("*"))
             )
             if result.one_or_none() is None:
+                task_exists = await conn.scalar(
+                    sa.select(comp_tasks.c.node_id).where(
+                        (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}")
+                    )
+                )
+                if task_exists is None:
+                    raise ComputationalTaskNotFoundError(node_id=task)
                 raise ComputationalTaskJobIdAlreadySetError(project_id=project_id, node_id=task)
             # Sync with comp_run_snapshot_tasks table
             await conn.execute(

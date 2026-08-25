@@ -6,9 +6,13 @@ import sqlalchemy as sa
 from _helpers import PublishedProject
 from faker import Faker
 from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director_v2.core.errors import ComputationalTaskJobIdAlreadySetError
+from simcore_service_director_v2.core.errors import (
+    ComputationalTaskJobIdAlreadySetError,
+    ComputationalTaskNotFoundError,
+)
 from simcore_service_director_v2.models.comp_runs import RunID
 from simcore_service_director_v2.modules.db.repositories.comp_tasks import (
     CompTasksRepository,
@@ -62,3 +66,15 @@ async def test_set_task_job_id_raises_if_already_set(
     await comp_tasks_repo.set_task_job_id(task.project_id, task.node_id, run_id, "job-id-1")
     with pytest.raises(ComputationalTaskJobIdAlreadySetError):
         await comp_tasks_repo.set_task_job_id(task.project_id, task.node_id, run_id, "job-id-2")
+
+
+async def test_set_task_job_id_raises_not_found_if_task_does_not_exist(
+    initialized_app: FastAPI,
+    published_project: PublishedProject,
+    faker: Faker,
+):
+    comp_tasks_repo = get_repository(initialized_app, CompTasksRepository)
+    task = published_project.tasks[0]
+    run_id = RunID(1)
+    with pytest.raises(ComputationalTaskNotFoundError):
+        await comp_tasks_repo.set_task_job_id(task.project_id, NodeID(f"{faker.uuid4()}"), run_id, "job-id-1")
