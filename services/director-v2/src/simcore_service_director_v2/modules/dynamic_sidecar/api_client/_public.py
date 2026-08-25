@@ -26,7 +26,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
     periodic_task_result,
 )
-from servicelib.logging_utils import log_context, log_decorator
+from servicelib.logging_utils import log_catch, log_context, log_decorator
 from servicelib.long_running_tasks.models import (
     ProgressCallback,
     ProgressMessage,
@@ -504,8 +504,10 @@ async def get_sidecars_client(app: FastAPI, node_id: str | NodeID) -> SidecarsCl
     return client
 
 
-def remove_sidecars_client(app: FastAPI, node_id: NodeID) -> None:
-    app.state.sidecars_api_clients.pop(f"{node_id}", None)
+async def remove_sidecars_client(app: FastAPI, node_id: NodeID) -> None:
+    if sidecars_client := app.state.sidecars_api_clients.pop(f"{node_id}", None):
+        with log_catch(_logger, reraise=False):
+            await sidecars_client.teardown()
 
 
 async def get_dynamic_sidecar_service_health(

@@ -21,7 +21,7 @@ aiofiles==24.1.0
     #   -r requirements/_base.in
 aiohappyeyeballs==2.5.0
     # via aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -119,9 +119,9 @@ h11==0.16.0
     #   httpcore
     #   uvicorn
     #   wsproto
-h2==4.3.0
+h2==4.4.1
     # via httpx
-hpack==4.1.0
+hpack==4.2.0
     # via h2
 httpcore==1.0.9
     # via httpx
@@ -329,13 +329,13 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-python-engineio==4.11.2
+python-engineio==4.13.5
     # via python-socketio
 python-magic==0.4.27
     # via -r requirements/_base.in
 python-multipart==0.0.32
     # via fastapi
-python-socketio==5.13.0
+python-socketio==5.16.4
     # via -r requirements/_base.in
 pyyaml==6.0.3
     # via
