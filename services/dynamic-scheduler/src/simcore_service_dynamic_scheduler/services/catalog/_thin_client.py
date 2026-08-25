@@ -6,7 +6,6 @@ from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.fastapi.http_client import AttachLifespanMixin
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     expect_status,
@@ -19,7 +18,7 @@ from yarl import URL
 from ...core.settings import ApplicationSettings
 
 
-class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespanMixin):
+class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient):
     app_state_name: str = "catalog_thin_client"
 
     def __init__(self, app: FastAPI) -> None:
@@ -29,7 +28,6 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
         super().__init__(
             total_retry_interval=int(settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT),
             extra_allowed_method_names={
-                "attach_lifespan_to",
                 "get_from_app_state",
                 "pop_from_app_state",
                 "set_to_app_state",

@@ -19,7 +19,6 @@ from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.fastapi.http_client import AttachLifespanMixin
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -29,7 +28,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 from ._thin_client import DirectorV2ThinClient
 
 
-class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
+class DirectorV2Client(SingletonInAppStateMixin):
     app_state_name: str = "director_v2_client"
 
     def __init__(self, app: FastAPI) -> None:
@@ -147,10 +146,12 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
 async def _director_v2_lifespan(app: FastAPI) -> AsyncIterator[State]:
     public_client = DirectorV2Client(app)
     public_client.set_to_app_state(app)
-
-    yield {}
-
-    public_client.pop_from_app_state(app)
+    await public_client.setup_client()
+    try:
+        yield {}
+    finally:
+        await public_client.teardown_client()
+        public_client.pop_from_app_state(app)
 
 
 def configure_director_v2(app_lifespan: LifespanManager[FastAPI]) -> None:

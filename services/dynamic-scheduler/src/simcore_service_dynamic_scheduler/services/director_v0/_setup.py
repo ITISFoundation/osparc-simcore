@@ -10,15 +10,16 @@ from ._thin_client import DirectorV0ThinClient
 async def _director_v0_lifespan(app: FastAPI) -> AsyncIterator[State]:
     thin_client = DirectorV0ThinClient(app)
     thin_client.set_to_app_state(app)
-    thin_client.attach_lifespan_to(app)
+    await thin_client.setup_client()
+    try:
+        public_client = DirectorV0PublicClient(app)
+        public_client.set_to_app_state(app)
 
-    public_client = DirectorV0PublicClient(app)
-    public_client.set_to_app_state(app)
-
-    yield {}
-
-    DirectorV0PublicClient.pop_from_app_state(app)
-    DirectorV0ThinClient.pop_from_app_state(app)
+        yield {}
+    finally:
+        DirectorV0PublicClient.pop_from_app_state(app)
+        await thin_client.teardown_client()
+        DirectorV0ThinClient.pop_from_app_state(app)
 
 
 def configure_director_v0(app_lifespan: LifespanManager[FastAPI]) -> None:
