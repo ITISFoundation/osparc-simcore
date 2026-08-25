@@ -18,7 +18,8 @@ codestyle codestyle-ci: ## Enforces codestyle (isort & black) finally runs pylin
 
 
 .PHONY: mypy
-mypy: $(REPO_BASE_DIR)/mypy.ini ## Runs mypy python static type-checker on this services's code. Use AFTER make install-*
+# CI-CONTRACT: mypy is invoked by ci/github/**/*.bash
+mypy: $(REPO_BASE_DIR)/mypy.ini ## Runs mypy Python static type-checker on this service's code. Use AFTER make install-* [CI]
 	@mypy \
 	--config-file=$(REPO_BASE_DIR)/mypy.ini \
 	--show-error-context \

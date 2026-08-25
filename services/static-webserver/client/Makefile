@@ -2,6 +2,10 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 include $(REPO_BASE_DIR)/scripts/makefiles/globals.mk
 include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
+.DEFAULT_GOAL := help
+
+export VCS_URL VCS_REF
+
 # qooxdoo-kit's versions to use. See https://hub.docker.com/r/itisfoundation/qooxdoo-kit/tags
 export QOOXDOO_KIT_TAG=latest
 
