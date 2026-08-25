@@ -3005,9 +3005,6 @@
                 "$ref": "#/components/schemas/ComposeSpecLabelDict"
               },
               {
-                "type": "string"
-              },
-              {
                 "type": "null"
               }
             ],
