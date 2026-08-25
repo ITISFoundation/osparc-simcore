@@ -218,3 +218,18 @@ define validate_openapi_specs
 			--volume "$(CURDIR):/local" \
 			$(OPENAPI_GENERATOR_IMAGE) validate --input-spec /local/$(strip $(1))
 endef
+
+# $(1)=envfile to source before generation (empty to skip), $(2)=output path (e.g. $@)
+define generate_and_validate_openapi
+	# generating openapi specs file (need to have the environment set for this)
+	@$(if $(1),set -o allexport; source $(1); set +o allexport;) \
+	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app_factory().openapi(), indent=2) )" > $(2)
+	# validates OAS file: $(2)
+	$(call validate_openapi_specs,$(2))
+endef
+
+# services needing extra flags (e.g. --auto-password) set ENV_IGNORE_FLAGS before this rule runs
+ENV_IGNORE_FLAGS ?=
+
+.env-ignore:
+	$(APP_CLI_NAME) echo-dotenv $(ENV_IGNORE_FLAGS) > $@
