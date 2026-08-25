@@ -122,7 +122,7 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.5
+tornado==6.5.8
     # via distributed
 typer==0.24.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
