@@ -25,6 +25,7 @@ from models_library.generated_models.docker_rest_api import ContainerState, Stat
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
+    ComposeSpecLabelDict,
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,
@@ -39,8 +40,10 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    SerializationInfo,
     StringConstraints,
     TypeAdapter,
+    field_serializer,
     field_validator,
 )
 from servicelib.exception_utils import DelayedExceptionHandler
@@ -533,15 +536,17 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         labels = service_inspect["Spec"]["Labels"]
         return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
+    @field_serializer("compose_spec")
+    def _serialize_compose_spec_for_label(
+        self, value: ComposeSpecLabelDict | None, info: SerializationInfo
+    ) -> ComposeSpecLabelDict | str | None:
+        # `Json[...]` fields expect a JSON-encoded string on the way in, but
+        # only `as_label_data` needs that encoding on the way out.
+        if info.context and info.context.get("as_label"):
+            return json_dumps(value)
+        return value
+
     def as_label_data(self) -> str:
-        # compose_spec must be a JSON-encoded string in the label so that
-        # `from_service_inspect`'s `Json[...]` validator can parse it back.
-        # Patching a plain dict (instead of a model instance) avoids creating
-        # a SchedulerData copy whose compose_spec violates its declared type,
-        # which used to trigger a PydanticSerializationUnexpectedValue warning
-        # on every call.
-        data = self.model_dump(mode="json")
-        data["compose_spec"] = json_dumps(self.compose_spec)
-        return json_dumps(data)
+        return self.model_dump_json(context={"as_label": True})
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
