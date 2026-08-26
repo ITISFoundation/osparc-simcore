@@ -204,7 +204,8 @@ def test_expected_fields_in_serialization():
 _INACTIVITY_IDENTIFIER: Final[str] = UserInactivityThresholdFrontendUserPreference.model_fields[
     "preference_identifier"
 ].default
-_HOUR: Final[int] = 60 * 60
+_MINUTE: Final[int] = 60
+_HOUR: Final[int] = 60 * _MINUTE
 
 
 @pytest.fixture
@@ -269,8 +270,11 @@ async def test_set_frontend_user_preference_without_group_extra_properties(
 @pytest.mark.parametrize(
     "constraints, value, is_allowed",
     [
+        pytest.param(None, 1 * _MINUTE, True, id="at_class_minimum"),
+        pytest.param(None, 1 * _MINUTE - 1, False, id="below_class_minimum"),
         pytest.param(None, 3 * _HOUR, True, id="at_class_cap"),
         pytest.param(None, 4 * _HOUR, False, id="above_class_cap"),
+        # NOTE: overrides are merged per key, they must use the same key as the class to replace it
         pytest.param({"le": 6 * _HOUR}, 6 * _HOUR, True, id="group_relaxes_class_cap"),
         pytest.param({"le": 6 * _HOUR}, 7 * _HOUR, False, id="above_relaxed_group_cap"),
         pytest.param({"le": 2 * _HOUR}, 3 * _HOUR, False, id="group_tightens_class_cap"),

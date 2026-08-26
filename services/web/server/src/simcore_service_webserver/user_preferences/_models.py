@@ -86,7 +86,7 @@ class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
 class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "userInactivityThreshold"
     value: int = 30 * _MINUTE  # in seconds
-    value_constraints: ClassVar[dict[str, Any]] = {"le": 3 * _HOUR}
+    value_constraints: ClassVar[dict[str, Any]] = {"ge": 1 * _MINUTE, "le": 3 * _HOUR}
 
 
 class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
