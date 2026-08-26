@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager
 from httpx import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
@@ -46,7 +47,7 @@ from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.domain.files import File
-from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
 _POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
 _EXPECTED_S3_PATH_PARTS: Final[int] = 3
@@ -262,12 +263,18 @@ class StorageApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: StorageSettings, tracing_settings: TracingSettings | None) -> None:
+def configure(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    settings: StorageSettings,
+    tracing_settings: TracingSettings | None,
+) -> None:
     if not settings:
         settings = StorageSettings()
 
-    setup_client_instance(
+    configure_client_instance(
         app,
+        app_lifespan,
         StorageApi,
         api_baseurl=settings.api_base_url,
         service_name="storage",
@@ -278,6 +285,6 @@ def setup(app: FastAPI, settings: StorageSettings, tracing_settings: TracingSett
 __all__: tuple[str, ...] = (
     "StorageApi",
     "StorageFileMetaData",
-    "setup",
+    "configure",
     "to_file_api_model",
 )
