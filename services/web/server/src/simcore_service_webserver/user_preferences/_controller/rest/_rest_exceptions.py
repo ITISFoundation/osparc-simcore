@@ -24,11 +24,12 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     FrontendUserPreferenceIsNotDefinedError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Provided {frontend_preference_identifier} not found"),
+        # NOTE: reuses the domain message so it is translated from a single catalog entry
+        FrontendUserPreferenceIsNotDefinedError.msg_template,
     ),
     FrontendUserPreferenceValueIsInvalidError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
-        user_message("The value {value} is not allowed for {frontend_preference_identifier}"),
+        FrontendUserPreferenceValueIsInvalidError.msg_template,
     ),
 }
 

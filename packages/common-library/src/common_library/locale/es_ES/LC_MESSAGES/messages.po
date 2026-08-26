@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 15:19+0200\n"
+"POT-Creation-Date: 2026-08-26 16:31+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-08-19T13:20:00Z\n"
+"X-Translation-Date: 2026-08-26T14:32:15Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -652,7 +652,7 @@ msgstr ""
 # iteration. the completion status of a project pipeline execution for a
 # specific iteration. the completion status of a project pipeline execution
 # for a specific iteration.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:229
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:230
 #, python-brace-format
 msgid ""
 "Project pipeline execution for iteration {iteration} has completed with "
@@ -664,7 +664,7 @@ msgstr ""
 # CTX-INTERPRETATION: This message is an error notification related to task
 # scheduling in the application. system to notify users of an unexpected issue
 # during the scheduling of tasks.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:831
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:865
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -676,7 +676,7 @@ msgstr ""
 # scheduling a task with variable resolution has exceeded the time limit and
 # will attempt to retry. warning message when a task involving variable
 # resolution fails to complete in time and will be attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:862
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr ""
 "La resolución variable excedió el tiempo límite durante la programación de "
@@ -686,7 +686,7 @@ msgstr ""
 # cannot allocate the necessary computational resources in time. fails to
 # allocate computational resources for their task, prompting them to retry or
 # seek support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:930
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:974
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
@@ -3235,17 +3235,33 @@ msgstr ""
 # CTX-INTERPRETATION: This string appears as an error message when the
 # application fails to create or update user preferences. application fails to
 # create or update user preferences due to a bad request.
-#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:19
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:22
 msgid "Could not create or modify preferences"
 msgstr "No se pudieron crear o modificar las preferencias"
 
-# CTX-INTERPRETATION: This string appears as an error message when a user
-# preference is not found. preference specified by the placeholder is not
-# found in the system.
-#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
+# CTX-INTERPRETATION: This string appears in the user_preferences/errors.py
+# file, indicating that a user-defined setting with a specific identifier was
+# not found, prompting the user to check the setting name.
+#: services/web/server/src/simcore_service_webserver/user_preferences/errors.py:13
 #, python-brace-format
-msgid "Provided {frontend_preference_name} not found"
-msgstr "No se encontró el {frontend_preference_name} proporcionado"
+msgid ""
+"The setting '{frontend_preference_identifier}' was not found. Please verify "
+"the setting name and try again."
+msgstr ""
+"La configuración '{frontend_preference_identifier}' no se encontró. Por "
+"favor, verifique el nombre de la configuración y vuelva a intentarlo."
+
+# CTX-INTERPRETATION: This string appears in the user_preferences/errors.py
+# file, indicating that a user-provided value is invalid according to a
+# specified frontend preference.
+#: services/web/server/src/simcore_service_webserver/user_preferences/errors.py:20
+#, python-brace-format
+msgid ""
+"The value {value} is outside the acceptable range for "
+"'{frontend_preference_identifier}'. Please enter a valid value."
+msgstr ""
+"El valor {value} está fuera del rango aceptable para "
+"'{frontend_preference_identifier}'. Por favor, introduzca un valor válido."
 
 # CTX-INTERPRETATION: This string is an error message displayed when the API
 # token for a specific service is missing. application cannot locate the API
@@ -3555,6 +3571,18 @@ msgid ""
 msgstr ""
 "Lamentamos las molestias. El problema ha sido registrado, por favor "
 "repórtelo si persiste."
+
+# CTX-INTERPRETATION: This string is a user-friendly message indicating that a
+# user preference setting could not be saved, prompting them to retry.
+#~ msgid "Could not save your setting. Please try again."
+#~ msgstr "No se pudo guardar su configuración. Por favor, inténtelo de nuevo."
+
+# CTX-INTERPRETATION: This string appears as an error message when a user
+# preference is not found. preference specified by the placeholder is not
+# found in the system.
+#, python-brace-format
+#~ msgid "Provided {frontend_preference_name} not found"
+#~ msgstr "No se encontró el {frontend_preference_name} proporcionado"
 
 # CTX-INTERPRETATION: This string appears as a notification message prompting
 # the user to activate their account using a provided link. the user to
