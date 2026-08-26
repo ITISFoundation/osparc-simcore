@@ -8,12 +8,13 @@ import typer
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.tracing import TracingConfig
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import APP_NAME, PROJECT_NAME
-from .core.application import create_app, create_app_lifespan, create_base_app
+from .core.application import create_app, create_base_app
 from .core.rabbitmq import configure_rabbitmq
 from .core.settings import ApplicationSettings
 from .modules.long_running_tasks import (
@@ -56,22 +57,22 @@ async def _initialized_app(
         tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
     )
 
-    with create_app_lifespan(app_settings, tracing_config) as app_lifespan:
-        app = create_base_app(
-            app_lifespan,
-            app_settings=app_settings,
-            tracing_config=tracing_config,
-        )
+    app_lifespan = LifespanManager()
+    app = create_base_app(
+        app_lifespan,
+        app_settings=app_settings,
+        tracing_config=tracing_config,
+    )
 
-        # setup required components
-        if with_rabbitmq:
-            configure_rabbitmq(app, app_lifespan)
-        if with_mounted_fs:
-            configure_mounted_fs(app_lifespan)
-        if with_outputs:
-            configure_outputs(app_lifespan)
-        if with_r_clone_mount_manager:
-            configure_r_clone_mount_manager(app_lifespan)
+    # setup required components
+    if with_rabbitmq:
+        configure_rabbitmq(app, app_lifespan)
+    if with_mounted_fs:
+        configure_mounted_fs(app_lifespan)
+    if with_outputs:
+        configure_outputs(app_lifespan)
+    if with_r_clone_mount_manager:
+        configure_r_clone_mount_manager(app_lifespan)
 
     async with ASGILifespanManager(app):
         yield app
