@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import ClassVar
 
 import httpx
@@ -13,10 +13,10 @@ import pytest
 import respx
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
 from models_library.healthchecks import IsResponsive
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (
-    AttachLifespanMixin,
     BaseHTTPApi,
     HealthMixinMixin,
 )
@@ -47,7 +47,7 @@ def test_using_app_state_mixin():
 
     # cannot re-save if frozen
     assert SomeData.frozen
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"already in app\.state"):
         SomeData(32).set_to_app_state(app)
 
     # delete
@@ -76,13 +76,22 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 
 async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
-    class MyClientApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
+    class MyClientApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
         app_state_name: ClassVar[str] = "my_client_api"
-
-    new_app = FastAPI()
 
     # create
     api = MyClientApi(client=httpx.AsyncClient(base_url=base_url))
+
+    async def _client_lifespan(_: FastAPI) -> AsyncIterator[None]:
+        await api.setup_client()
+        try:
+            yield
+        finally:
+            await api.teardown_client()
+
+    app_lifespan = AppLifespanManager[FastAPI]()
+    app_lifespan.add(_client_lifespan)
+    new_app = FastAPI(lifespan=app_lifespan)
 
     # or create from client kwargs
     assert MyClientApi.from_client_kwargs(base_url=base_url)
@@ -90,9 +99,6 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
     # save to app.state
     api.set_to_app_state(new_app)
     assert MyClientApi.get_from_app_state(new_app) == api
-
-    # define lifespan
-    api.attach_lifespan_to(new_app)
 
     async with LifespanManager(
         new_app,

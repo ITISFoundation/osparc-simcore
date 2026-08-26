@@ -3,7 +3,6 @@ import logging
 from abc import ABC, abstractmethod
 
 import httpx
-from fastapi import FastAPI
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 
 from ..logging_utils import log_context
@@ -46,12 +45,6 @@ class BaseHTTPApi(HasClientSetupInterface):
     async def teardown_client(self) -> None:
         with log_context(_logger, logging.INFO, "teardown client"):
             await self._exit_stack.aclose()
-
-
-class AttachLifespanMixin(HasClientSetupInterface):
-    def attach_lifespan_to(self, app: FastAPI) -> None:
-        app.add_event_handler("startup", self.setup_client)
-        app.add_event_handler("shutdown", self.teardown_client)
 
 
 class HealthMixinMixin(HasClientInterface):
