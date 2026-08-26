@@ -14521,6 +14521,15 @@
         "maxLength": 200,
         "minLength": 1
       },
+      "AggregatedPreferences": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/Preference"
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/PreferenceIdentifier"
+        },
+        "type": "object"
+      },
       "AnnotationID": {
         "type": "string",
         "format": "uuid"
@@ -22768,11 +22777,7 @@
             "$ref": "#/components/schemas/MyProfilePrivacyGet"
           },
           "preferences": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Preference"
-            },
-            "type": "object",
-            "title": "Preferences"
+            "$ref": "#/components/schemas/AggregatedPreferences"
           },
           "contact": {
             "anyOf": [
@@ -24947,6 +24952,17 @@
           "value": {
             "title": "Value",
             "description": "preference value"
+          },
+          "constraints": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreferenceConstraints"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null when the value is unconstrained"
           }
         },
         "type": "object",
@@ -24955,6 +24971,119 @@
           "value"
         ],
         "title": "Preference"
+      },
+      "PreferenceConstraints": {
+        "properties": {
+          "ge": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ge"
+          },
+          "gt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gt"
+          },
+          "le": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Le"
+          },
+          "lt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lt"
+          },
+          "maxLength": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxlength"
+          },
+          "minLength": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minlength"
+          },
+          "multipleOf": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Multipleof"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pattern"
+          }
+        },
+        "type": "object",
+        "title": "PreferenceConstraints",
+        "description": "Limits applying to a preference value, used by the frontend to render its widget."
+      },
+      "PreferenceIdentifier": {
+        "type": "string"
       },
       "PresignedLink": {
         "properties": {
