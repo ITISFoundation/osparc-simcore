@@ -144,14 +144,19 @@ class DirectorV2Client(SingletonInAppStateMixin):
 
 
 async def _director_v2_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    public_client = DirectorV2Client(app)
-    public_client.set_to_app_state(app)
-    await public_client.setup_client()
+    public_client: DirectorV2Client | None = None
     try:
+        public_client = DirectorV2Client(app)
+        public_client.set_to_app_state(app)
+        await public_client.setup_client()
         yield {}
     finally:
-        await public_client.teardown_client()
-        public_client.pop_from_app_state(app)
+        if public_client is not None:
+            try:
+                await public_client.teardown_client()
+            finally:
+                if getattr(app.state, DirectorV2Client.app_state_name, None) is public_client:
+                    public_client.pop_from_app_state(app)
 
 
 def configure_director_v2(app_lifespan: LifespanManager[FastAPI]) -> None:
