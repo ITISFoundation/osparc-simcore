@@ -226,13 +226,22 @@ def _configure_application_lifespan(
     async def _application_lifespan(_: FastAPI) -> AsyncIterator[State]:
         app.state.container_restart_lock = Lock()
 
+        app_state = AppState(app)
+        await volumes_fix_permissions(app_state.mounted_volumes)
+        yield {}
+
+    app_lifespan.add(_application_lifespan)
+
+
+def _configure_compose_cleanup_lifespan(
+    app_lifespan: LifespanManager[FastAPI],
+) -> None:
+    async def _compose_cleanup_lifespan(app: FastAPI) -> AsyncIterator[State]:
         try:
-            app_state = AppState(app)
-            await volumes_fix_permissions(app_state.mounted_volumes)
             yield {}
         finally:
-            app_state = AppState(app)
-            if docker_compose_yaml := app_state.compose_spec:
+            shared_store = getattr(app.state, "shared_store", None)
+            if isinstance(shared_store, SharedStore) and (docker_compose_yaml := shared_store.compose_spec):
                 _logger.info("Removing spawned containers")
 
                 result = await docker_compose_down(docker_compose_yaml, app.state.settings)
@@ -243,7 +252,7 @@ def _configure_application_lifespan(
                     result.message,
                 )
 
-    app_lifespan.add(_application_lifespan)
+    app_lifespan.add(_compose_cleanup_lifespan)
 
 
 def _create_app(
@@ -258,6 +267,7 @@ def _create_app(
     )
     app.state.application_health = ApplicationHealth()
 
+    _configure_compose_cleanup_lifespan(app_lifespan)
     _configure_plugins(app, app_lifespan, tracing_config)
     _configure_application_lifespan(app, app_lifespan)
 
