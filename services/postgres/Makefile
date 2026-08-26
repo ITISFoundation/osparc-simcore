@@ -1,4 +1,6 @@
-include ../../scripts/common.Makefile
+.DEFAULT_GOAL := help
+
+include ../../scripts/makefiles/common.mk
 
 
 ifneq (,$(wildcard $(DOT_ENV_FILE)))
