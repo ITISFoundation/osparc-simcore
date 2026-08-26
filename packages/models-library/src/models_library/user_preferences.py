@@ -1,8 +1,8 @@
-import json
 from collections.abc import Mapping
 from enum import auto
 from typing import Annotated, Any, ClassVar, Final, Literal, Self
 
+from common_library.json_serialization import json_dumps
 from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, Field, create_model
 from pydantic._internal._model_construction import ModelMetaclass
@@ -102,7 +102,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         preference_name = cls.get_preference_name()
         constraints = cls.get_value_constraints(overrides)
 
-        cache_key = (cls, json.dumps(constraints, sort_keys=True, default=str))
+        cache_key = (cls, json_dumps(constraints, sort_keys=True, default=str))
         if cache_key not in _VALUE_VALIDATOR_CLASSES:
             value_annotation = cls.model_fields["value"].annotation
             try:

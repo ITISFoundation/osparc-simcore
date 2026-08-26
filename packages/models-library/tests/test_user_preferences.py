@@ -198,6 +198,15 @@ def test_build_value_validator_is_cached(
     )
 
 
+def test_build_value_validator_cache_ignores_constraint_ordering(
+    capped_preference_class: type[FrontendUserPreference],
+):
+    # NOTE: the cache key is serialized, equivalent constraints must not build separate validators
+    assert capped_preference_class.build_value_validator(
+        {"ge": 60, "le": 21600}
+    ) is capped_preference_class.build_value_validator({"le": 21600, "ge": 60})
+
+
 def test_unsupported_constraint_is_rejected(
     capped_preference_class: type[FrontendUserPreference],
 ):
