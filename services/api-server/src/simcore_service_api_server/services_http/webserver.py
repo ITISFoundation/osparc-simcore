@@ -710,11 +710,11 @@ def configure(
     )
 
     async def _webserver_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
-        # normalize & encrypt
-        secret_key = webserver_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
-        lifespan_app.state.webserver_fernet = fernet.Fernet(secret_key)
-
         try:
+            # normalize & encrypt
+            secret_key = webserver_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
+            lifespan_app.state.webserver_fernet = fernet.Fernet(secret_key)
+
             yield {}
         finally:
             _logger.debug("Webserver closed successfully")
