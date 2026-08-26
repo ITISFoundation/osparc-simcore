@@ -41,9 +41,8 @@ async def _minimal_app() -> AsyncIterator[FastAPI]:
 
     setup(app)
 
-    await app.router.startup()
-    yield app
-    await app.router.shutdown()
+    async with app.router.lifespan_context(app):
+        yield app
 
 
 async def _track_and_display(
