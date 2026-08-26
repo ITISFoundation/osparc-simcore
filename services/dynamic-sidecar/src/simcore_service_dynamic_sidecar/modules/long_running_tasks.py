@@ -609,7 +609,7 @@ async def restart_user_services(
 
 def configure_long_running_tasks(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    long_running_tasks.server.configure(
+    long_running_tasks.server.configure_server(
         app,
         app_lifespan,
         redis_settings=app_settings.REDIS_SETTINGS,
