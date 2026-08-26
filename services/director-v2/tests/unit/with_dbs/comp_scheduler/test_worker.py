@@ -28,7 +28,6 @@ from simcore_service_director_v2.modules.comp_scheduler._models import (
 from simcore_service_director_v2.modules.comp_scheduler._worker import (
     _get_scheduler_worker,
 )
-from tenacity import retry, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -114,8 +113,28 @@ async def test_worker_scheduling_parallelism(
 ):
     with_disabled_auto_scheduling.assert_called_once()
 
+    # NOTE: rendezvous barrier instead of a fixed sleep: each call blocks until
+    # `scheduling_concurrency` calls are simultaneously in-flight, which deterministically
+    # proves they run concurrently (not queued up one at a time) and, since it resolves as
+    # soon as that is true, is neither slower nor flakier than reality allows - unlike a
+    # fixed sleep, it does not need to guess a "long enough" duration.
+    concurrent_calls = 0
+    peak_concurrent_calls = 0
+    completed_calls = 0
+    all_running_concurrently = asyncio.Event()
+    all_calls_returned = asyncio.Event()
+
     async def _side_effect(*args, **kwargs):
-        await asyncio.sleep(10)
+        nonlocal concurrent_calls, peak_concurrent_calls, completed_calls
+        concurrent_calls += 1
+        peak_concurrent_calls = max(peak_concurrent_calls, concurrent_calls)
+        if peak_concurrent_calls == scheduling_concurrency:
+            all_running_concurrently.set()
+        await all_running_concurrently.wait()
+        concurrent_calls -= 1
+        completed_calls += 1
+        if completed_calls == scheduling_concurrency:
+            all_calls_returned.set()
 
     mocked_scheduler_api.side_effect = _side_effect
 
@@ -133,11 +152,18 @@ async def test_worker_scheduling_parallelism(
 
     # whatever scheduling concurrency we call in here, we shall always see the same number of calls to the scheduler
     await asyncio.gather(*(_project_pipeline_creation_workflow() for _ in range(scheduling_concurrency)))
-    # the call to run the pipeline is async so we need to wait here
-    mocked_scheduler_api.assert_called()
 
-    @retry(stop=stop_after_delay(5), reraise=True, wait=wait_fixed(0.5))
-    def _assert_expected_called() -> None:
-        assert mocked_scheduler_api.call_count == scheduling_concurrency
-
-    _assert_expected_called()
+    # NOTE: the messages are only acked once the handler (i.e. `apply`, including its own
+    # lock-release cleanup) fully returns. If the test returned earlier, the app/rabbitmq
+    # connection would be torn down while those messages are still un-acked, which makes the
+    # broker requeue them. Since the queue name is shared across all the parametrized runs of
+    # this test, that leftover message would then be redelivered to (and counted by) the *next*
+    # parametrized test, causing flaky off-by-one failures there. So we wait for every call to
+    # have actually returned (not just started), which also fails fast instead of hanging if the
+    # worker is not actually running the calls concurrently.
+    await asyncio.wait_for(all_calls_returned.wait(), timeout=10)
+    # small grace period for `apply`'s own post-return cleanup (lock release, message ack) to
+    # flush, so a late/duplicate call would still be observed by the assertions below
+    await asyncio.sleep(0.5)
+    assert mocked_scheduler_api.call_count == scheduling_concurrency
+    assert peak_concurrent_calls == scheduling_concurrency
