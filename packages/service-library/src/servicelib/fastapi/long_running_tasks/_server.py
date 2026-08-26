@@ -56,9 +56,6 @@ def configure_server(
     app_lifespan.add(_lifespan)
 
 
-configure = configure_server
-
-
 def setup(
     app: FastAPI,
     *,
