@@ -8,6 +8,7 @@ import contextlib
 import functools
 import logging
 from collections.abc import AsyncIterator, Callable
+from typing import ClassVar
 
 import httpx
 from fastapi import FastAPI
@@ -57,7 +58,7 @@ class _StripeBearerAuth(httpx.Auth):
 class StripeApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
     """https://docs.stripe.com/api"""
 
-    app_state_name: str = "stripe_api"
+    app_state_name: ClassVar[str] = "stripe_api"
 
     async def is_healthy(
         self,

@@ -1,7 +1,7 @@
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final
+from typing import ClassVar, Final
 
 import httpx
 from fastapi import FastAPI
@@ -40,7 +40,7 @@ class BaseServiceClientApi(AppDataMixin):
         except (httpx.HTTPStatusError, httpx.RequestError):
             return False
 
-    ping = is_responsive  # alias
+    ping: ClassVar[Callable[..., Awaitable[bool]]] = is_responsive  # alias
 
 
 # HELPERS -------------------------------------------------------------
