@@ -25,9 +25,7 @@ from pytest_mock import MockerFixture
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
-    configure as configure_server,
-)
-from servicelib.fastapi.long_running_tasks.server import (
+    configure_server,
     get_long_running_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server

@@ -7,10 +7,9 @@ running task. The client will take care of recovering the result from it.
 """
 
 from ._dependencies import get_long_running_manager
-from ._server import configure, configure_server, setup
+from ._server import configure_server, setup
 
 __all__: tuple[str, ...] = (
-    "configure",
     "configure_server",
     "get_long_running_manager",
     "setup",
