@@ -148,7 +148,9 @@ class GroupExtraPropertiesRepo:
     ) -> GroupExtraProperties:
         list_stmt = _list_table_entries_ordered_by_group_type_stmt(user_id=user_id, product_name=product_name)
 
-        result = await connection.execute(sa.select(list_stmt).order_by(list_stmt.c.type_order))
+        # NOTE: group_id breaks ties between standard groups, whose relative order would
+        # otherwise be arbitrary and silently decide the non-boolean fields
+        result = await connection.execute(sa.select(list_stmt).order_by(list_stmt.c.type_order, list_stmt.c.group_id))
         assert result  # nosec
 
         rows = result.mappings().all()
