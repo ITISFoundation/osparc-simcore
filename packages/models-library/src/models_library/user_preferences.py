@@ -1,4 +1,5 @@
 import json
+from collections.abc import Mapping
 from enum import auto
 from typing import Annotated, Any, ClassVar, Final, Literal, Self
 
@@ -6,6 +7,7 @@ from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, Field, create_model
 from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.fields import FieldInfo
+from pydantic_core import SchemaError
 
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
@@ -87,6 +89,8 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     @classmethod
     def get_value_constraints(cls, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
         """Constraints declared by the class, with `overrides` taking precedence per key."""
+        if overrides is not None and not isinstance(overrides, Mapping):
+            raise InvalidValueConstraintsError(cls.get_preference_name(), f"expected a mapping, got {type(overrides)}")
         constraints = {**cls.value_constraints, **(overrides or {})}
         _raise_if_not_allowed(cls.get_preference_name(), constraints)
         return constraints
@@ -101,11 +105,15 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         cache_key = (cls, json.dumps(constraints, sort_keys=True, default=str))
         if cache_key not in _VALUE_VALIDATOR_CLASSES:
             value_annotation = cls.model_fields["value"].annotation
-            _VALUE_VALIDATOR_CLASSES[cache_key] = create_model(
-                f"{preference_name}ValueValidator",
-                __base__=BaseModel,
-                value=(Annotated[value_annotation, Field(**constraints)], ...),
-            )
+            try:
+                _VALUE_VALIDATOR_CLASSES[cache_key] = create_model(
+                    f"{preference_name}ValueValidator",
+                    __base__=BaseModel,
+                    value=(Annotated[value_annotation, Field(**constraints)], ...),
+                )
+            except SchemaError as e:
+                # a constraint whose value is malformed (wrong type, invalid regex, ...)
+                raise InvalidValueConstraintsError(preference_name, f"{e}") from e
         return _VALUE_VALIDATOR_CLASSES[cache_key]
 
     @classmethod

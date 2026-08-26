@@ -292,3 +292,32 @@ def test_get_value_constraints_merges_overrides_per_key(restore_preference_class
     assert Pref1.get_value_constraints({"le": 21600}) == {"ge": 60, "le": 21600}
     with pytest.raises(InvalidValueConstraintsError, match="unsupported"):
         Pref1.get_value_constraints({"not_a_constraint": 1})
+
+
+@pytest.mark.parametrize(
+    "value_type, malformed_overrides",
+    [
+        pytest.param(int, {"lte": 3600}, id="misspelled_constraint"),
+        pytest.param(int, {"le": "not-a-number"}, id="constraint_value_of_wrong_type"),
+        pytest.param(str, {"pattern": "["}, id="invalid_regular_expression"),
+        pytest.param(str, {"ge": 1}, id="constraint_not_applicable_to_value_type"),
+        pytest.param(int, "not-a-mapping", id="overrides_not_a_mapping"),
+        pytest.param(int, ["le", 1], id="overrides_is_a_sequence"),
+    ],
+)
+def test_malformed_overrides_are_reported_as_configuration_errors(
+    restore_preference_classes_registry: None,
+    value_type: type,
+    malformed_overrides: Any,
+):
+    # NOTE: overrides come from the database, a malformed one must never escape as a raw
+    # pydantic/TypeError, otherwise callers cannot tell it apart from an invalid user value
+    preference_class: type[FrontendUserPreference] = create_model(
+        "MalformedOverridesPreference",
+        __base__=FrontendUserPreference,
+        preference_identifier=(str, "malformed"),
+        value=(value_type, ...),
+    )
+
+    with pytest.raises(InvalidValueConstraintsError):
+        preference_class.validate_value(value_type(), malformed_overrides)

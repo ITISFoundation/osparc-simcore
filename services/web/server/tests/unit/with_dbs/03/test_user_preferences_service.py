@@ -210,8 +210,8 @@ _HOUR: Final[int] = 60 * 60
 @pytest.fixture
 async def set_inactivity_constraints(
     asyncpg_engine: AsyncEngine, product_name: ProductName
-) -> Callable[[dict[str, Any] | None], Awaitable[None]]:
-    async def _(constraints: dict[str, Any] | None) -> None:
+) -> Callable[[Any], Awaitable[None]]:
+    async def _(constraints: Any) -> None:
         async with asyncpg_engine.begin() as conn:
             await conn.execute(
                 groups_extra_properties.update()
@@ -354,3 +354,48 @@ async def test_aggregation_exposes_effective_constraints(
     assert constraints is not None
     assert constraints.le == 6 * _HOUR
     assert constraints.ge == 60
+
+
+@pytest.mark.parametrize(
+    "malformed_constraints",
+    [
+        pytest.param({"lte": 6 * _HOUR}, id="misspelled_constraint"),
+        pytest.param({"le": "not-a-number"}, id="constraint_value_of_wrong_type"),
+        pytest.param({"pattern": "["}, id="invalid_regular_expression"),
+        pytest.param("not-a-mapping", id="overrides_not_a_mapping"),
+        pytest.param(["le", 1], id="overrides_is_a_sequence"),
+    ],
+)
+async def test_misconfigured_constraints_fall_back_to_code_defaults(
+    app: web.Application,
+    enable_all_frontend_preferences: None,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[Any], Awaitable[None]],
+    malformed_constraints: Any,
+):
+    # NOTE: a single bad row must not take down profile loading for everyone in the group
+    await set_inactivity_constraints(malformed_constraints)
+
+    aggregation = await get_frontend_user_preferences_aggregation(app, user_id=user_id, product_name=product_name)
+    constraints = aggregation[_INACTIVITY_IDENTIFIER].constraints
+    assert constraints is not None
+    assert constraints.le == 3 * _HOUR
+
+    # the code defaults still apply on the write path
+    await set_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+        value=2 * _HOUR,
+    )
+    with pytest.raises(FrontendUserPreferenceValueIsInvalidError):
+        await set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+            value=4 * _HOUR,
+        )

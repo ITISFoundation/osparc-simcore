@@ -2,6 +2,7 @@ import logging
 from typing import Any, Final
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_webserver.users_preferences import (
     AggregatedPreferences,
     Preference,
@@ -10,6 +11,7 @@ from models_library.products import ProductName
 from models_library.user_preferences import (
     AnyUserPreference,
     FrontendUserPreference,
+    InvalidValueConstraintsError,
     PreferenceIdentifier,
     PreferenceName,
 )
@@ -89,6 +91,30 @@ async def _get_group_extra_properties(
         )
 
 
+def _log_invalid_constraints(
+    error: Exception,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    frontend_preference_identifier: PreferenceIdentifier,
+) -> None:
+    _logger.warning(
+        **create_troubleshooting_log_kwargs(
+            f"Ignoring misconfigured constraints for {frontend_preference_identifier}",
+            error=error,
+            error_context={
+                "user_id": user_id,
+                "product_name": product_name,
+                "frontend_preference_identifier": frontend_preference_identifier,
+            },
+            tip=(
+                "Fix `frontend_preferences_constraints` in the `groups_extra_properties` row for this product. "
+                "Until then the defaults defined in the code apply."
+            ),
+        )
+    )
+
+
 async def get_frontend_user_preferences_aggregation(
     app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> AggregatedPreferences:
@@ -107,20 +133,35 @@ async def get_frontend_user_preferences_aggregation(
             return is_telemetry_enabled
         return True
 
-    def to_preference(preference: FrontendUserPreference) -> Preference:
-        constraints = preference.get_value_constraints(
-            group_extra_properties.frontend_preferences_constraints.get(preference.preference_identifier)
-        )
+    def to_preference(preference: FrontendUserPreference, overrides: dict[str, Any] | None) -> Preference:
+        # NOTE: builds the validator as well, to reject constraints that are malformed and not only unknown
+        preference.build_value_validator(overrides)
         return Preference.model_validate(
             {
                 "value": preference.value,
                 "default_value": preference.get_default_value(),
-                "constraints": constraints or None,
+                "constraints": preference.get_value_constraints(overrides) or None,
             }
         )
 
+    def to_preference_or_default(preference: FrontendUserPreference) -> Preference:
+        try:
+            return to_preference(
+                preference,
+                group_extra_properties.frontend_preferences_constraints.get(preference.preference_identifier),
+            )
+        except (InvalidValueConstraintsError, ValidationError) as exc:
+            _log_invalid_constraints(
+                exc,
+                user_id=user_id,
+                product_name=product_name,
+                frontend_preference_identifier=preference.preference_identifier,
+            )
+            # NOTE: constraints declared in the code are validated at class creation, this cannot fail
+            return to_preference(preference, None)
+
     aggregated_preferences: AggregatedPreferences = {
-        p.preference_identifier: to_preference(p)
+        p.preference_identifier: to_preference_or_default(p)
         for p in await _get_frontend_user_preferences(app, user_id, product_name)
         if include_preference(p.preference_identifier)
     }
@@ -153,7 +194,17 @@ async def set_frontend_user_preference(
         constraints_overrides = None
 
     try:
-        preference_class.validate_value(value, constraints_overrides)
+        try:
+            preference_class.validate_value(value, constraints_overrides)
+        except InvalidValueConstraintsError as exc:
+            _log_invalid_constraints(
+                exc,
+                user_id=user_id,
+                product_name=product_name,
+                frontend_preference_identifier=frontend_preference_identifier,
+            )
+            preference_class.validate_value(value)
+
         preference = preference_class.model_validate({"value": value})
     except ValidationError as e:
         raise FrontendUserPreferenceValueIsInvalidError(
