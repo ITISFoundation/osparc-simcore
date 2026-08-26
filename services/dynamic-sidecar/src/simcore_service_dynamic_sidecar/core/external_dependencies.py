@@ -16,6 +16,11 @@ class CouldNotReachExternalDependenciesError(OsparcErrorMixin, Exception):
 
 
 async def _check_dependencies(app: FastAPI) -> None:
+    # NOTE: in most situations these checks would live
+    # inside each individual module's setup function
+    # The dynamic-sidecar is created and expected to
+    # start rapidly, for this reason they are run in
+    # parallel.
     liveliness_results = await logged_gather(
         *[
             wait_for_database_liveness(app),
