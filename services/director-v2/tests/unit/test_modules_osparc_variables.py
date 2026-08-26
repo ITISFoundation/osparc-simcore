@@ -17,6 +17,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager as FastAPILifespanManager
 from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_types import ServiceRunID
@@ -142,13 +143,14 @@ def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
 
 @pytest.fixture
 async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
-    app = FastAPI()
+    app_lifespan = FastAPILifespanManager()
+    app = FastAPI(lifespan=app_lifespan)
     app.state.engine = AsyncMock()
 
     mock_settings = Mock()
     app.state.settings = mock_settings
 
-    substitutions.setup(app)
+    substitutions.configure_substitutions(app_lifespan)
 
     async with LifespanManager(app):
         yield app

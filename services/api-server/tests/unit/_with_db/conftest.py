@@ -31,10 +31,10 @@ from pytest_simcore.helpers.faker_factories import (
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
-from simcore_service_api_server.clients.postgres import get_engine
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -170,8 +170,8 @@ def app_environment(
     mocker: MockerFixture,
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
-    mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
-    mocker.patch("simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation")
+    mocker.patch("simcore_service_api_server.core.application.configure_rabbitmq")
+    mocker.patch("simcore_service_api_server.core.application.configure_api_server_prometheus_instrumentation")
 
     envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars})
     assert "API_SERVER_POSTGRES" not in envs
