@@ -8,6 +8,7 @@ import logging
 from collections.abc import AsyncIterator
 from datetime import datetime
 from decimal import Decimal
+from typing import ClassVar
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -31,7 +32,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ResourceUsageTrackerApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
-    app_state_name: str = "source_usage_tracker_api"
+    app_state_name: ClassVar[str] = "source_usage_tracker_api"
 
     async def create_credit_transaction(
         self,

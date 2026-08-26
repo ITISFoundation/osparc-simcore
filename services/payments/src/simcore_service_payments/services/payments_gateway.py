@@ -11,6 +11,7 @@ import logging
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import suppress
+from typing import ClassVar
 
 import httpx
 from common_library.errors_classes import OsparcErrorMixin
@@ -121,7 +122,7 @@ class _GatewayApiAuth(httpx.Auth):
 
 
 class PaymentsGatewayApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
-    app_state_name: str = "payment_gateway_api"
+    app_state_name: ClassVar[str] = "payment_gateway_api"
 
     #
     # api: one-time-payment workflow
