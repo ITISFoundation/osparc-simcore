@@ -5,6 +5,7 @@
 import json
 from collections.abc import AsyncIterable
 from typing import Final
+from unittest.mock import AsyncMock
 
 import pytest
 from aiodocker.volumes import DockerVolume
@@ -30,6 +31,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.long_running_tasks.models import TaskId
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     _USER_SERVICES_NOT_STARTED,
     UserServicesMetrics,
@@ -69,11 +71,15 @@ async def enable_prometheus_metrics(monkeypatch: pytest.MonkeyPatch, mock_enviro
 
 
 @pytest.fixture
-async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
-    assert isinstance(app.router.lifespan_context, LifespanManager)
-    configure_client(app.router.lifespan_context)
-    async with ASGILifespanManager(app):
-        yield app
+async def app(
+    mock_environment: EnvVarsDict,
+    mock_registry_service: AsyncMock,
+) -> AsyncIterable[FastAPI]:
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    configure_client(app_lifespan)
+    local_app = create_app(app_lifespan)
+    async with ASGILifespanManager(local_app):
+        yield local_app
 
 
 @pytest.fixture
