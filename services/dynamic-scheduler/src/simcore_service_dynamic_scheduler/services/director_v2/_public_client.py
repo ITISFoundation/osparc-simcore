@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, ClassVar
 
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager, State
@@ -30,7 +30,7 @@ from ._thin_client import DirectorV2ThinClient
 
 
 class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
-    app_state_name: str = "director_v2_client"
+    app_state_name: ClassVar[str] = "director_v2_client"
 
     def __init__(self, app: FastAPI) -> None:
         self.thin_client = DirectorV2ThinClient(app)

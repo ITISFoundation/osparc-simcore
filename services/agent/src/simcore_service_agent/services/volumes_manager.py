@@ -3,7 +3,7 @@ from asyncio import Lock, Task
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Final
+from typing import ClassVar, Final
 
 import arrow
 from aiodocker.docker import Docker
@@ -55,7 +55,7 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
 
     _task_periodic_volume_cleanup: Task | None = None
 
-    app_state_name: str = "volumes_manager"
+    app_state_name: ClassVar[str] = "volumes_manager"
 
     async def setup(self) -> None:
         self._task_bookkeeping = create_periodic_task(

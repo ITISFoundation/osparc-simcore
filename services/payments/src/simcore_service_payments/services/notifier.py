@@ -1,6 +1,7 @@
 import contextlib
 import logging
 from collections.abc import AsyncIterator
+from typing import ClassVar
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
@@ -22,7 +23,7 @@ _logger = logging.getLogger(__name__)
 
 
 class NotifierService(SingletonInAppStateMixin):
-    app_state_name: str = "notifier"
+    app_state_name: ClassVar[str] = "notifier"
 
     def __init__(self, *providers):
         self.providers: list[NotificationProvider] = list(providers)
