@@ -1,5 +1,6 @@
 import contextlib
 from collections.abc import AsyncIterator
+from typing import ClassVar
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
@@ -33,7 +34,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 
 class Notifier(SingletonInAppStateMixin):
-    app_state_name: str = "notifier"
+    app_state_name: ClassVar[str] = "notifier"
 
     def __init__(self, sio_manager: socketio.AsyncAioPikaManager):
         self._sio_manager = sio_manager
