@@ -23,7 +23,7 @@ def _include_router(app: FastAPI, router_prefix: str) -> None:
     app.include_router(main_router)
 
 
-def configure(
+def configure_server(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     *,
@@ -54,6 +54,9 @@ def configure(
                 await long_running_manager.teardown()
 
     app_lifespan.add(_lifespan)
+
+
+configure = configure_server
 
 
 def setup(

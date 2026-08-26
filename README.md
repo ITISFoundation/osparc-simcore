@@ -77,7 +77,7 @@ To build and run:
 - git
 - [docker](https://docs.docker.com/engine/install/ubuntu/#installation-methods)
 - make >=4.2
-- awk, jq (optional tools within makefiles)
+- gawk, jq (optional tools within makefiles)
 
 To develop, in addition:
 

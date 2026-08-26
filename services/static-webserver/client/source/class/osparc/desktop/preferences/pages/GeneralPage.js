@@ -24,31 +24,42 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (osparc.product.Utils.isLocaleEnabled() && osparc.utils.LanguageManager.isSwitchUseful()) {
-      this.__addLanguageSetting();
-    }
-
-    if (osparc.store.StaticInfo.isBillableProduct()) {
-      this.__addCreditsIndicatorSettings();
-    }
-
     const preferences = osparc.Preferences.getInstance();
-    if (preferences.getLowDiskSpaceThreshold()) {
-      this.__addLowDiskSpaceSetting();
+
+    // each setting is added in isolation, so that a faulty preference value
+    // only breaks its own section instead of the whole My Account window
+    if (osparc.product.Utils.isLocaleEnabled() && osparc.utils.LanguageManager.isSwitchUseful()) {
+      this.__addSetting(() => this.__addLanguageSetting());
     }
 
     if (osparc.store.StaticInfo.isBillableProduct()) {
-      this.__addInactivitySetting();
+      this.__addSetting(() => this.__addCreditsIndicatorSettings());
+    }
+
+    if (preferences.getLowDiskSpaceThreshold()) {
+      this.__addSetting(() => this.__addLowDiskSpaceSetting());
+    }
+
+    if (osparc.store.StaticInfo.isBillableProduct()) {
+      this.__addSetting(() => this.__addInactivitySetting());
     }
 
     if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
-      this.__addS4LUserPrivacySettings();
+      this.__addSetting(() => this.__addS4LUserPrivacySettings());
     }
   },
 
   members: {
     getChildrenCount: function() {
       return this._getChildren().length;
+    },
+
+    __addSetting: function(addSettingCbk) {
+      try {
+        addSettingCbk();
+      } catch (err) {
+        console.error("Failed to add setting to General preferences page", err);
+      }
     },
 
     __addLanguageSetting: function() {

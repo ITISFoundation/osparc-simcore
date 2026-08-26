@@ -5,6 +5,6 @@ Helpful conventions in method names:
 - `pod` = sidecar,proxy+user_services
 """
 
-from .module_setup import setup
+from .module_setup import configure_dynamic_sidecar
 
-__all__: tuple[str, ...] = ("setup",)
+__all__: tuple[str, ...] = ("configure_dynamic_sidecar",)
