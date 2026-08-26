@@ -118,6 +118,12 @@ async def test_worker_scheduling_parallelism(
     # proves they run concurrently (not queued up one at a time) and, since it resolves as
     # soon as that is true, is neither slower nor flakier than reality allows - unlike a
     # fixed sleep, it does not need to guess a "long enough" duration.
+    # NOTE: this queue is durable and shared by the whole comp_scheduler test suite (other
+    # tests in test_manager.py/test_scheduler_dask.py also publish real messages on it), so a
+    # stray message from a completely unrelated test can occasionally be delivered to this
+    # test's own consumer(s). We only track/synchronize on calls for the (user_id, project_id)
+    # pairs *we* actually scheduled below; anything else is such a stray and is simply ignored.
+    our_project_keys: set[tuple[int, str]] = set()
     concurrent_calls = 0
     peak_concurrent_calls = 0
     completed_calls = 0
@@ -126,6 +132,8 @@ async def test_worker_scheduling_parallelism(
 
     async def _side_effect(*args, **kwargs):
         nonlocal concurrent_calls, peak_concurrent_calls, completed_calls
+        if (kwargs.get("user_id"), f"{kwargs.get('project_id')}") not in our_project_keys:
+            return
         concurrent_calls += 1
         peak_concurrent_calls = max(peak_concurrent_calls, concurrent_calls)
         if peak_concurrent_calls == scheduling_concurrency:
@@ -141,6 +149,7 @@ async def test_worker_scheduling_parallelism(
     async def _project_pipeline_creation_workflow() -> None:
         published_project = await publish_project()
         assert published_project.project.prj_owner
+        our_project_keys.add((published_project.project.prj_owner, f"{published_project.project.uuid}"))
         await run_new_pipeline(
             initialized_app,
             user_id=published_project.project.prj_owner,
@@ -165,5 +174,5 @@ async def test_worker_scheduling_parallelism(
     # small grace period for `apply`'s own post-return cleanup (lock release, message ack) to
     # flush, so a late/duplicate call would still be observed by the assertions below
     await asyncio.sleep(0.5)
-    assert mocked_scheduler_api.call_count == scheduling_concurrency
+    assert completed_calls == scheduling_concurrency
     assert peak_concurrent_calls == scheduling_concurrency
