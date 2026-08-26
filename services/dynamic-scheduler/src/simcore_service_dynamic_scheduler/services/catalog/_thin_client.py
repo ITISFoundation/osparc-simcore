@@ -1,4 +1,5 @@
 import urllib.parse
+from typing import ClassVar
 
 from fastapi import FastAPI, status
 from httpx import Response
@@ -19,7 +20,7 @@ from ...core.settings import ApplicationSettings
 
 
 class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient):
-    app_state_name: str = "catalog_thin_client"
+    app_state_name: ClassVar[str] = "catalog_thin_client"
 
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings

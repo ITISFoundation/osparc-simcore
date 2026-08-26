@@ -25,6 +25,7 @@ from models_library.generated_models.docker_rest_api import ContainerState, Stat
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
+    ComposeSpecLabelDict,
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,
@@ -39,8 +40,10 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    SerializationInfo,
     StringConstraints,
     TypeAdapter,
+    field_serializer,
     field_validator,
 )
 from servicelib.exception_utils import DelayedExceptionHandler
@@ -533,12 +536,18 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         labels = service_inspect["Spec"]["Labels"]
         return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
+    @field_serializer("compose_spec", return_type=ComposeSpecLabelDict | None)
+    @staticmethod
+    def _serialize_compose_spec_for_label(
+        value: ComposeSpecLabelDict | None, info: SerializationInfo
+    ) -> ComposeSpecLabelDict | str | None:
+        # `Json[...]` fields expect a JSON-encoded string on the way in, but
+        # only `as_label_data` needs that encoding on the way out.
+        if info.context and info.context.get("as_label"):
+            return json_dumps(value)
+        return value
+
     def as_label_data(self) -> str:
-        # compose_spec needs to be json encoded before encoding it to json
-        # and storing it in the label
-        return self.model_copy(
-            update={"compose_spec": json_dumps(self.compose_spec)},
-            deep=True,
-        ).model_dump_json()
+        return self.model_dump_json(context={"as_label": True})
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)

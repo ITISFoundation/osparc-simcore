@@ -1,6 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from aiodocker import Docker
 from fastapi import FastAPI
@@ -20,7 +21,7 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class ContainersManager(SingletonInAppStateMixin):
-    app_state_name: str = "containers_manager"
+    app_state_name: ClassVar[str] = "containers_manager"
 
     docker: Docker = field(default_factory=Docker)
 

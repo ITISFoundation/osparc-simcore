@@ -317,16 +317,17 @@ async def patch_storage_setup(
 ) -> None:
     local_settings = StorageSettings.create_from_envs()
 
-    original_setup = dv2_modules_storage.setup
+    original_configure = dv2_modules_storage.configure_storage
 
-    def setup(
-        app: FastAPI,
+    def configure_storage(
+        app_lifespan,
+        *,
         storage_settings: StorageSettings,
         tracing_settings: TracingSettings | None,
     ) -> None:
-        original_setup(app, storage_settings=local_settings, tracing_settings=tracing_settings)
+        original_configure(app_lifespan, storage_settings=local_settings, tracing_settings=tracing_settings)
 
-    mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
+    mocker.patch("simcore_service_director_v2.modules.storage.configure_storage", side_effect=configure_storage)
 
 
 @pytest.fixture

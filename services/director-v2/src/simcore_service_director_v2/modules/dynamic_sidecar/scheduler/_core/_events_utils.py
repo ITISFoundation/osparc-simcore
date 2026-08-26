@@ -450,7 +450,7 @@ async def attempt_pod_removal_and_data_saving(app: FastAPI, scheduler_data: Sche
     )
 
     # remove sidecar's api client
-    remove_sidecars_client(app, scheduler_data.node_uuid)
+    await remove_sidecars_client(app, scheduler_data.node_uuid)
 
     # instrumentation
     message = InstrumentationRabbitMessage(
