@@ -7,20 +7,33 @@ from ._public_client import CatalogPublicClient
 from ._thin_client import CatalogThinClient
 
 
-async def _catalog_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    thin_client = CatalogThinClient(app)
-    thin_client.set_to_app_state(app)
-    await thin_client.setup_client()
+async def _catalog_thin_client_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    thin_client: CatalogThinClient | None = None
+    try:
+        thin_client = CatalogThinClient(app)
+        thin_client.set_to_app_state(app)
+        await thin_client.setup_client()
+        yield {}
+    finally:
+        if thin_client is not None:
+            try:
+                await thin_client.teardown_client()
+            finally:
+                if getattr(app.state, CatalogThinClient.app_state_name, None) is thin_client:
+                    CatalogThinClient.pop_from_app_state(app)
+
+
+async def _catalog_public_client_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    public_client: CatalogPublicClient | None = None
     try:
         public_client = CatalogPublicClient(app)
         public_client.set_to_app_state(app)
-
         yield {}
     finally:
-        CatalogPublicClient.pop_from_app_state(app)
-        await thin_client.teardown_client()
-        CatalogThinClient.pop_from_app_state(app)
+        if getattr(app.state, CatalogPublicClient.app_state_name, None) is public_client:
+            CatalogPublicClient.pop_from_app_state(app)
 
 
 def configure_catalog(app_lifespan: LifespanManager[FastAPI]) -> None:
-    app_lifespan.add(_catalog_lifespan)
+    app_lifespan.add(_catalog_thin_client_lifespan)
+    app_lifespan.add(_catalog_public_client_lifespan)
