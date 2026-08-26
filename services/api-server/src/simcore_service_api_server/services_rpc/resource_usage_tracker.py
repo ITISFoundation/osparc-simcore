@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from functools import partial
-from typing import ClassVar
 
 from fastapi import FastAPI
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -24,8 +23,9 @@ _exception_mapper = partial(service_exception_mapper, service_name="ResourceUsag
 
 @dataclass
 class ResourceUsageTrackerClient(SingletonInAppStateMixin):
-    app_state_name: ClassVar[str] = "resource_usage_tracker_rpc_client"
     _client: RabbitMQRPCClient
+
+    app_state_name: str = "resource_usage_tracker_rpc_client"
 
     @_exception_mapper(rpc_exception_map={_LicensedItemCheckoutNotFoundError: LicensedItemCheckoutNotFoundError})
     async def get_licensed_item_checkout(
