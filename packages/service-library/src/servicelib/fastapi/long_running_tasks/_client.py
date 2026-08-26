@@ -208,7 +208,7 @@ def configure_client(
     router_prefix: str = "",
     http_requests_timeout: PositiveFloat = _DEFAULT_HTTP_REQUESTS_TIMEOUT,
 ) -> None:
-    """Lifespan-based counterpart of `setup(...)`."""
+    """Adds long-running task client configuration to the application lifespan."""
 
     async def _lifespan(app: FastAPI) -> AsyncIterator[State]:
         app.state.long_running_client_configuration = ClientConfiguration(

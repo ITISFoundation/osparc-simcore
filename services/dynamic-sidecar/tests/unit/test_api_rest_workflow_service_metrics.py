@@ -116,7 +116,7 @@ async def mock_environment(
 
 @pytest.fixture
 async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
-    # add the client setup to the same application
+    # add the client configuration to the same application
     # this is only required for testing, in reality
     # this will be in a different process
     app_lifespan: LifespanManager[FastAPI] = LifespanManager()
