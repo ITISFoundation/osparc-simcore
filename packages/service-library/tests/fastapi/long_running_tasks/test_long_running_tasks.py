@@ -11,6 +11,7 @@ How these tests works:
 
 import asyncio
 import json
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Annotated, Final
 from unittest.mock import AsyncMock, Mock
@@ -22,6 +23,7 @@ from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
 from httpx import AsyncClient
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
@@ -217,22 +219,23 @@ async def test_workflow(
 
     progress_updates = []
     status_url = app.url_path_for("get_task_status", task_id=task_id)
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            result = await client.get(f"{status_url}")
-            assert result.status_code == status.HTTP_200_OK
-            task_status = TaskStatus.model_validate(result.json())
-            assert task_status
-            progress_updates.append((task_status.task_progress.message, task_status.task_progress.percent))
-            print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
-            assert task_status.done, "task incomplete"
-            retry_statistics = json.dumps(attempt.retry_state.retry_object.statistics, indent=2)
-            print(f"-- waiting for task status completed successfully: {retry_statistics}")
+    with log_context(logging.INFO, msg="waiting for task status completion") as ctx:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(60),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                result = await client.get(f"{status_url}")
+                assert result.status_code == status.HTTP_200_OK
+                task_status = TaskStatus.model_validate(result.json())
+                assert task_status
+                progress_updates.append((task_status.task_progress.message, task_status.task_progress.percent))
+                ctx.logger.info("received task status: %s", task_status.model_dump_json(indent=2))
+                assert task_status.done, "task incomplete"
+                retry_statistics = json.dumps(attempt.retry_state.retry_object.statistics, indent=2)
+                ctx.logger.info("retry statistics: %s", retry_statistics)
 
     EXPECTED_MESSAGES = [
         ("starting", 0.0),
