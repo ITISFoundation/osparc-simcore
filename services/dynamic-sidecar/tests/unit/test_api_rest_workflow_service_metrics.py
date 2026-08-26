@@ -15,9 +15,10 @@ import pytest
 from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
@@ -43,9 +44,9 @@ from pytest_simcore.helpers.long_running_tasks import (
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
 from settings_library.rabbit import RabbitSettings
@@ -119,9 +120,10 @@ async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
     # add the client setup to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    client_setup(local_app)
+    assert isinstance(local_app.router.lifespan_context, LifespanManager)
+    configure_client(local_app.router.lifespan_context)
 
-    async with LifespanManager(local_app):
+    async with ASGILifespanManager(local_app):
         yield local_app
 
 

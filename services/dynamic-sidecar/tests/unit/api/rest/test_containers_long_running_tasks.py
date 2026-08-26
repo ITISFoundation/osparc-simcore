@@ -16,10 +16,11 @@ import pytest
 import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from fastapi_lifespan_manager import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
@@ -40,9 +41,9 @@ from pytest_simcore.helpers.long_running_tasks import (
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import ProgressCallback, TaskId
 from servicelib.long_running_tasks.task import TaskRegistry
@@ -211,8 +212,9 @@ async def app(
     # add the client setup to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    client_setup(app)
-    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
+    assert isinstance(app.router.lifespan_context, LifespanManager)
+    configure_client(app.router.lifespan_context)
+    async with ASGILifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         _print_routes(app)
         yield app
 

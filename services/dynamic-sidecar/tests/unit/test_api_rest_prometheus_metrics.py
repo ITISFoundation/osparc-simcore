@@ -8,9 +8,10 @@ from typing import Final
 
 import pytest
 from aiodocker.volumes import DockerVolume
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
@@ -23,9 +24,9 @@ from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.models import TaskId
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
@@ -69,8 +70,9 @@ async def enable_prometheus_metrics(monkeypatch: pytest.MonkeyPatch, mock_enviro
 
 @pytest.fixture
 async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
-    client_setup(app)
-    async with LifespanManager(app):
+    assert isinstance(app.router.lifespan_context, LifespanManager)
+    configure_client(app.router.lifespan_context)
+    async with ASGILifespanManager(app):
         yield app
 
 

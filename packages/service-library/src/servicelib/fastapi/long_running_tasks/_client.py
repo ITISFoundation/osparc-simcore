@@ -202,24 +202,6 @@ class HttpClient:
             )
 
 
-def setup(
-    app: FastAPI,
-    *,
-    router_prefix: str = "",
-    http_requests_timeout: PositiveFloat = _DEFAULT_HTTP_REQUESTS_TIMEOUT,
-):
-    """
-    - `router_prefix` by default it is assumed the server mounts the APIs on
-        `/task/...` this will assume the APIs are as following
-        `{router_prefix}/task/...`
-    - `http_requests_timeout` short requests are used to interact with the
-        server API, a low timeout is sufficient
-    """
-    app.state.long_running_client_configuration = ClientConfiguration(
-        router_prefix=router_prefix, default_timeout=http_requests_timeout
-    )
-
-
 def configure_client(
     app_lifespan: LifespanManager[FastAPI],
     *,
