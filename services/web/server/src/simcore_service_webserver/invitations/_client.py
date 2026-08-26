@@ -1,9 +1,9 @@
 import contextlib
 import functools
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final
+from typing import ClassVar, Final
 
 from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
 from aiohttp.client_exceptions import ClientError
@@ -119,7 +119,7 @@ class InvitationsServiceApi:
             _logger.debug("Invitations service is not responsive: %s", err)
         return ok
 
-    is_responsive = ping
+    is_responsive: ClassVar[Callable[..., Awaitable[bool]]] = ping  # alias
 
     #
     # service API
