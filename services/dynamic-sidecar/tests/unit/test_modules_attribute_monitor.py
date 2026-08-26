@@ -16,15 +16,15 @@ from typing import Final
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.basic_types import PortInt
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.modules.attribute_monitor import (
     _logging_event_handler,
-    setup_attribute_monitor,
+    configure_attribute_monitor,
 )
 
 # NOTE: multiprocessing logs do not work with logcap,
@@ -111,8 +111,9 @@ def fake_app(fake_dy_volumes_mount_dir: Path, patch_logging: None) -> FastAPI:
 async def logging_event_handler_observer(
     fake_app: FastAPI,
 ) -> AsyncIterator[None]:
-    setup_attribute_monitor(fake_app)
-    async with LifespanManager(fake_app):
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    configure_attribute_monitor(app_lifespan)
+    async with app_lifespan(fake_app):
         assert fake_app.state.attribute_monitor
         yield None
 
