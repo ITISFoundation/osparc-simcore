@@ -129,8 +129,9 @@ def _create_licensed_items_get_page(
 
 @dataclass
 class WbApiRpcClient(SingletonInAppStateMixin):
-    app_state_name = "wb_api_rpc_client"
     _rpc_client: WebServerRpcClient
+
+    app_state_name: str = "wb_api_rpc_client"
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
