@@ -49,11 +49,11 @@ class OutputsContext:
 
 
 def configure_outputs_context(app_lifespan: LifespanManager[FastAPI]) -> None:
-    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    async def _lifespan_from_events_adapter(app: FastAPI) -> AsyncIterator[None]:
         assert isinstance(app.state.mounted_volumes, MountedVolumes)  # nosec
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
         app.state.outputs_context = OutputsContext(outputs_path=mounted_volumes.disk_outputs_path)
         yield
 
-    app_lifespan.add(_lifespan)
+    app_lifespan.add(_lifespan_from_events_adapter)
