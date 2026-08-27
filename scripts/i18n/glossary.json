@@ -21,6 +21,14 @@
       "resolution": "resolución",
       "solver": "simulador",
       "voxel": "vóxel"
+    },
+    "ko_KR": {
+      "boundary condition": "경계 조건",
+      "cell size": "셀 크기",
+      "mesh": "메시",
+      "resolution": "해상도",
+      "solver": "솔버",
+      "voxel": "복셀"
     }
   }
 }
