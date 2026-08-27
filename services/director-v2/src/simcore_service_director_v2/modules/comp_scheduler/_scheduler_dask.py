@@ -163,21 +163,12 @@ class DaskScheduler(BaseCompScheduler):
             run_id=comp_run.run_id,
             run_metadata=comp_run.metadata,
         ) as client:
-            # Change the tasks state to PENDING
             comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-            await comp_tasks_repo.update_project_tasks_state(
-                project_id,
-                comp_run.run_id,
-                list(scheduled_tasks.keys()),
-                RunningState.PENDING,
-                clear_errors=False,
-            )
-            # each task is started independently
-
             for node_id, task in scheduled_tasks.items():
                 published_tasks = await client.send_computation_tasks(
                     user_id=user_id,
                     project_id=project_id,
+                    run_id=comp_run.run_id,
                     tasks={node_id: task.image},
                     hardware_info=task.hardware_info,
                     callback=wake_up_callback,
@@ -190,9 +181,7 @@ class DaskScheduler(BaseCompScheduler):
                 # update the database so we do have the correct job_ids there
                 await limited_gather(
                     *(
-                        comp_tasks_repo.update_project_task_job_id(
-                            project_id, task.node_id, comp_run.run_id, task.job_id
-                        )
+                        comp_tasks_repo.set_task_job_id(project_id, task.node_id, comp_run.run_id, task.job_id)
                         for task in published_tasks
                     ),
                     log=_logger,

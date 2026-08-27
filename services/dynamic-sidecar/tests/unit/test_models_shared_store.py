@@ -11,6 +11,7 @@ import arrow
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
@@ -19,6 +20,7 @@ from simcore_service_dynamic_sidecar.core import application
 from simcore_service_dynamic_sidecar.models.shared_store import (
     STORE_FILE_NAME,
     SharedStore,
+    configure_shared_store,
 )
 
 
@@ -35,6 +37,14 @@ def trigger_setup_shutdown_events(
 @pytest.fixture
 def shared_store(trigger_setup_shutdown_events: None, app: FastAPI) -> SharedStore:
     return app.state.shared_store
+
+
+async def test_configure_shared_store_lifespan(app: FastAPI):
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    configure_shared_store(app_lifespan)
+
+    async with app_lifespan(app):
+        assert isinstance(app.state.shared_store, SharedStore)
 
 
 # mock docker_compose_down in application

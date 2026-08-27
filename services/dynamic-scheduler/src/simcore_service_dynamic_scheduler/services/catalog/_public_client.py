@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
@@ -13,7 +15,7 @@ from ._thin_client import CatalogThinClient
 
 
 class CatalogPublicClient(SingletonInAppStateMixin):
-    app_state_name: str = "catalog_public_client"
+    app_state_name: ClassVar[str] = "catalog_public_client"
 
     def __init__(self, app: FastAPI) -> None:
         self.app = app

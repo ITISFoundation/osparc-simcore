@@ -17,7 +17,10 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
-from .....core.errors import ComputationalTaskNotFoundError
+from .....core.errors import (
+    ComputationalTaskJobIdAlreadySetError,
+    ComputationalTaskNotFoundError,
+)
 from .....models.comp_runs import RunID
 from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
@@ -233,8 +236,44 @@ class CompTasksRepository(BaseRepository):
                 row = result.one()
                 return CompTaskAtDB.model_validate(row)
 
-    async def update_project_task_job_id(self, project_id: ProjectID, task: NodeID, run_id: RunID, job_id: str) -> None:
-        await self._update_task(project_id, task, run_id, job_id=job_id)
+    async def set_task_job_id(self, project_id: ProjectID, task: NodeID, run_id: RunID, job_id: str) -> None:
+        """sets the task's job_id and atomically moves it to PENDING.
+
+        Raises:
+            ComputationalTaskNotFoundError: if the task does not exist
+            ComputationalTaskJobIdAlreadySetError: if the task already has a job_id
+        """
+        task_kwargs = {"job_id": job_id, "state": RUNNING_STATE_TO_DB[RunningState.PENDING]}
+        async with self.db_engine.begin() as conn:
+            result: CursorResult = await conn.execute(
+                sa.update(comp_tasks)
+                .where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{task}")
+                    & (comp_tasks.c.job_id.is_(None))
+                )
+                .values(**task_kwargs)
+                .returning(literal_column("*"))
+            )
+            if result.one_or_none() is None:
+                task_exists = await conn.scalar(
+                    sa.select(comp_tasks.c.node_id).where(
+                        (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}")
+                    )
+                )
+                if task_exists is None:
+                    raise ComputationalTaskNotFoundError(node_id=task)
+                raise ComputationalTaskJobIdAlreadySetError(project_id=project_id, node_id=task)
+            # Sync with comp_run_snapshot_tasks table
+            await conn.execute(
+                sa.update(comp_run_snapshot_tasks)
+                .where(
+                    (comp_run_snapshot_tasks.c.run_id == run_id)
+                    & (comp_run_snapshot_tasks.c.project_id == f"{project_id}")
+                    & (comp_run_snapshot_tasks.c.node_id == f"{task}")
+                )
+                .values(**task_kwargs)
+            )
 
     async def reset_task_for_resubmission(
         self,

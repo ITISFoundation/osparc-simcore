@@ -3,7 +3,7 @@
 import logging
 from collections.abc import AsyncIterator
 from copy import deepcopy
-from typing import Any, Final
+from typing import Any, ClassVar, Final
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
@@ -106,7 +106,7 @@ async def substitute_vendor_secrets_in_specs(
 
 
 class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin):
-    app_state_name: str = "session_variables_table"
+    app_state_name: ClassVar[str] = "session_variables_table"
 
     @classmethod
     def create(cls, app: FastAPI):

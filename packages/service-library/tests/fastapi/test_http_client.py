@@ -6,6 +6,7 @@
 
 
 from collections.abc import Iterator
+from typing import ClassVar
 
 import httpx
 import pytest
@@ -23,7 +24,7 @@ from servicelib.fastapi.http_client import (
 
 def test_using_app_state_mixin():
     class SomeData(SingletonInAppStateMixin):
-        app_state_name: str = "my_data"
+        app_state_name: ClassVar[str] = "my_data"
         frozen: bool = True
 
         def __init__(self, value):
@@ -76,7 +77,7 @@ def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
 
 async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
     class MyClientApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
-        app_state_name: str = "my_client_api"
+        app_state_name: ClassVar[str] = "my_client_api"
 
     new_app = FastAPI()
 

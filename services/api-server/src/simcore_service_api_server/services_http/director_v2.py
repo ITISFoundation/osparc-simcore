@@ -3,6 +3,7 @@ from functools import partial
 from uuid import UUID
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.computations import (
     ComputationGet as DirectorV2ComputationGet,
 )
@@ -19,7 +20,7 @@ from ..exceptions.backend_errors import JobNotFoundError, LogFileNotFoundError
 from ..exceptions.service_errors_utils import ServiceHTTPStatus, service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
 from ..models.schemas.studies import JobLogsMap, LogLink
-from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
 logger = logging.getLogger(__name__)
 
@@ -127,9 +128,15 @@ class DirectorV2Api(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorV2Settings, tracing_settings: TracingSettings | None) -> None:
-    setup_client_instance(
+def configure(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    settings: DirectorV2Settings,
+    tracing_settings: TracingSettings | None,
+) -> None:
+    configure_client_instance(
         app,
+        app_lifespan,
         DirectorV2Api,
         # WARNING: it has /v0 and /v2 prefixes
         api_baseurl=settings.base_url,

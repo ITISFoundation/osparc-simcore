@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from common_library.exclude import as_dict_exclude_none
 from fastapi import FastAPI, status
 from httpx import Response
@@ -18,7 +20,7 @@ from ...core.settings import ApplicationSettings
 
 
 class DirectorV0ThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespanMixin):
-    app_state_name: str = "director_v0_thin_client"
+    app_state_name: ClassVar[str] = "director_v0_thin_client"
 
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings

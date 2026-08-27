@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
@@ -175,19 +176,20 @@ class MountedVolumes:
             yield f"{bind_path}:{state_path}"
 
 
-def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
-    settings: ApplicationSettings = app.state.settings
+def configure_mounted_fs(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        settings: ApplicationSettings = app.state.settings
+        app.state.mounted_volumes = MountedVolumes(
+            service_run_id=settings.DY_SIDECAR_RUN_ID,
+            node_id=settings.DY_SIDECAR_NODE_ID,
+            inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
+            outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
+            user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
+            state_paths=settings.DY_SIDECAR_STATE_PATHS,
+            state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
+            compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
+            dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
+        )
+        yield
 
-    app.state.mounted_volumes = mounted_volumes = MountedVolumes(
-        service_run_id=settings.DY_SIDECAR_RUN_ID,
-        node_id=settings.DY_SIDECAR_NODE_ID,
-        inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
-        outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
-        user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
-        state_paths=settings.DY_SIDECAR_STATE_PATHS,
-        state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
-        compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
-        dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
-    )
-
-    return mounted_volumes
+    app_lifespan.add(_lifespan)

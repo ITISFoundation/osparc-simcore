@@ -11,17 +11,23 @@ How these tests works:
 
 import asyncio
 import json
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Annotated, Final
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
 from httpx import AsyncClient
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
+    configure_server,
     get_long_running_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
@@ -50,6 +56,55 @@ ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 class _TestingError(Exception):
     pass
+
+
+async def test_configure_server_uses_application_lifespan(mocker: MockerFixture):
+    app = FastAPI()
+    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    long_running_manager = AsyncMock(spec=FastAPILongRunningManager)
+    mocker.patch(
+        "servicelib.fastapi.long_running_tasks._server.FastAPILongRunningManager",
+        return_value=long_running_manager,
+    )
+
+    configure_server(
+        app,
+        app_lifespan,
+        redis_settings=Mock(spec=RedisSettings),
+        rabbit_settings=Mock(spec=RabbitSettings),
+        lrt_namespace="test",
+    )
+
+    assert app.url_path_for("get_task_status", task_id="task-id") == "/task/task-id"
+    async with app_lifespan(app):
+        assert app.state.long_running_manager is long_running_manager
+        long_running_manager.setup.assert_awaited_once_with()
+
+    long_running_manager.teardown.assert_awaited_once_with()
+
+
+async def test_configure_server_cleans_up_after_startup_failure(mocker: MockerFixture):
+    app = FastAPI()
+    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    long_running_manager = AsyncMock(spec=FastAPILongRunningManager)
+    long_running_manager.setup.side_effect = _TestingError
+    mocker.patch(
+        "servicelib.fastapi.long_running_tasks._server.FastAPILongRunningManager",
+        return_value=long_running_manager,
+    )
+    configure_server(
+        app,
+        app_lifespan,
+        redis_settings=Mock(spec=RedisSettings),
+        rabbit_settings=Mock(spec=RabbitSettings),
+        lrt_namespace="test",
+    )
+
+    with pytest.raises(_TestingError):
+        async with app_lifespan(app):
+            pass
+
+    long_running_manager.teardown.assert_awaited_once_with()
 
 
 async def _string_list_task(
@@ -164,23 +219,23 @@ async def test_workflow(
 
     progress_updates = []
     status_url = app.url_path_for("get_task_status", task_id=task_id)
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            result = await client.get(f"{status_url}")
-            assert result.status_code == status.HTTP_200_OK
-            task_status = TaskStatus.model_validate(result.json())
-            assert task_status
-            progress_updates.append((task_status.task_progress.message, task_status.task_progress.percent))
-            print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
-            assert task_status.done, "task incomplete"
-            print(
-                f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
-            )
+    with log_context(logging.INFO, msg="waiting for task status completion") as ctx:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(60),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                result = await client.get(f"{status_url}")
+                assert result.status_code == status.HTTP_200_OK
+                task_status = TaskStatus.model_validate(result.json())
+                assert task_status
+                progress_updates.append((task_status.task_progress.message, task_status.task_progress.percent))
+                ctx.logger.info("received task status: %s", task_status.model_dump_json(indent=2))
+                assert task_status.done, "task incomplete"
+                retry_statistics = json.dumps(attempt.retry_state.retry_object.statistics, indent=2)
+                ctx.logger.info("retry statistics: %s", retry_statistics)
 
     EXPECTED_MESSAGES = [
         ("starting", 0.0),

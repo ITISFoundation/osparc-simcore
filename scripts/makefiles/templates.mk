@@ -1,4 +1,7 @@
 # Shared recipe body to create files from template counterparts.
+#
+# LIBRARY (.mk): include-only, not a directly-invoked entry point.
+# SEE scripts/makefiles/README.md for conventions.
 
 define clone_from_template
 $(if $(wildcard $@), \
