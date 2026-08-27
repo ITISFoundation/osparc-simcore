@@ -39,8 +39,8 @@ HEADING: Final[str] = "[green]*[/green]"
 @asynccontextmanager
 async def _minimal_app() -> AsyncIterator[FastAPI]:
     app_lifespan: LifespanManager[FastAPI] = LifespanManager()
-    configure_client(app_lifespan)
     app = FastAPI(lifespan=app_lifespan)
+    configure_client(app)
 
     async with app_lifespan(app):
         yield app

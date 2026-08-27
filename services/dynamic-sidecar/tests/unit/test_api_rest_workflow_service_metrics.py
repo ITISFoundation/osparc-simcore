@@ -120,8 +120,8 @@ async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
     # this is only required for testing, in reality
     # this will be in a different process
     app_lifespan: LifespanManager[FastAPI] = LifespanManager()
-    configure_client(app_lifespan)
     local_app = create_app(app_lifespan)
+    configure_client(local_app)
 
     async with ASGILifespanManager(local_app):
         yield local_app

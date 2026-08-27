@@ -215,8 +215,8 @@ async def app(
     # this is only required for testing, in reality
     # this will be in a different process
     app_lifespan: LifespanManager[FastAPI] = LifespanManager()
-    configure_client(app_lifespan)
     local_app = create_app(app_lifespan)
+    configure_client(local_app)
     async with ASGILifespanManager(local_app, startup_timeout=30, shutdown_timeout=30):
         _print_routes(local_app)
         yield local_app

@@ -168,7 +168,7 @@ async def app(
         rabbit_settings=rabbit_service,
         lrt_namespace="test",
     )
-    configure_client(app_lifespan)
+    configure_client(app)
     async with ASGILifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
