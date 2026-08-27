@@ -16,11 +16,10 @@ import pytest
 import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
-from asgi_lifespan import LifespanManager as ASGILifespanManager
+from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
-from fastapi_lifespan_manager import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
@@ -214,10 +213,9 @@ async def app(
     # add the client configuration to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
-    local_app = create_app(app_lifespan)
+    local_app = create_app()
     configure_client(local_app)
-    async with ASGILifespanManager(local_app, startup_timeout=30, shutdown_timeout=30):
+    async with LifespanManager(local_app, startup_timeout=30, shutdown_timeout=30):
         _print_routes(local_app)
         yield local_app
 
