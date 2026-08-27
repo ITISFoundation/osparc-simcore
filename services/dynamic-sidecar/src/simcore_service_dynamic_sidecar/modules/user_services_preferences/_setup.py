@@ -1,6 +1,9 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.logging_utils import log_context
 
 from ..._meta import APP_NAME
@@ -11,8 +14,9 @@ from ._utils import get_resolved_version, is_feature_enabled
 _logger = logging.getLogger(__name__)
 
 
-def setup_user_services_preferences(app: FastAPI) -> None:
-    async def on_startup() -> None:
+def configure_user_services_preferences(app_lifespan: LifespanManager[FastAPI]) -> None:
+    @asynccontextmanager
+    async def user_services_preferences_lifespan(app: FastAPI) -> AsyncIterator[None]:
         with log_context(_logger, logging.INFO, "setup user services preferences"):
             if is_feature_enabled(app):
                 settings: ApplicationSettings = app.state.settings
@@ -40,5 +44,6 @@ def setup_user_services_preferences(app: FastAPI) -> None:
                 )
             else:
                 _logger.warning("user service preferences not mounted")
+        yield
 
-    app.add_event_handler("startup", on_startup)
+    app_lifespan.add(user_services_preferences_lifespan)
