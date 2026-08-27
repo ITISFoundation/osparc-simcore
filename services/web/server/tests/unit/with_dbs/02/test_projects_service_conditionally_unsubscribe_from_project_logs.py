@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Callable
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
+from models_library.projects import ProjectID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -75,7 +76,7 @@ async def test_conditionally_unsubscribe_from_project_logs(
     client_2 = client_on_running_server_factory()
 
     # 1. user 1 opens project
-    sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
+    _sio1, client_id1, _sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
     await _open_project(
         client_1,
         client_id1,
@@ -84,13 +85,13 @@ async def test_conditionally_unsubscribe_from_project_logs(
     )
 
     # 2. create a separate client now and log in user2, open the same shared project
-    user_2 = await log_client_in(
+    _user_2 = await log_client_in(
         client_2,
         {"role": user_role.name},
         enable_check=True,
         exit_stack=exit_stack,
     )
-    sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(None, client_2)
+    _sio2, client_id2, _sio2_handlers = await create_socketio_connection_with_handlers(None, client_2)
     await _open_project(
         client_2,
         client_id2,
@@ -105,3 +106,118 @@ async def test_conditionally_unsubscribe_from_project_logs(
     # 4. user 2 closes the project (now unsubscribe should happen)
     await _close_project(client_2, client_id2, shared_project, status.HTTP_204_NO_CONTENT)
     assert mocked_publish_unsubscribe_from_project_logs_event.called
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.USER, status.HTTP_200_OK),
+    ],
+)
+async def test_close_project_for_user_still_unsubscribes_when_notify_state_update_fails(
+    max_number_of_user_sessions: int,
+    with_enabled_rtc_collaboration: None,
+    client: TestClient,
+    client_on_running_server_factory: Callable[[], TestClient],
+    logged_user: dict,
+    shared_project: dict,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    exit_stack: contextlib.AsyncExitStack,
+    create_socketio_connection_with_handlers: Callable[
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
+    ],
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mocked_conditionally_unsubscribe_project_logs: MockType,
+    mock_catalog_api: dict[str, MockType],
+    osparc_product_name: str,
+    mocker: MockerFixture,
+):
+    # Regression test: a failure while notifying the still-connected user's project state
+    # (e.g. an RPC timeout) must not prevent the log-unsubscription cleanup from running.
+    client_1 = client
+    client_2 = client_on_running_server_factory()
+
+    _sio1, client_id1, _sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
+    await _open_project(client_1, client_id1, shared_project, status.HTTP_200_OK)
+
+    await log_client_in(
+        client_2,
+        {"role": user_role.name},
+        enable_check=True,
+        exit_stack=exit_stack,
+    )
+    _sio2, client_id2, _sio2_handlers = await create_socketio_connection_with_handlers(None, client_2)
+    await _open_project(client_2, client_id2, shared_project, status.HTTP_200_OK)
+
+    # user 2 remains connected, so closing for user 1 takes the "notify state update" branch
+    mocker.patch(
+        "simcore_service_webserver.projects._projects_service.notify_project_state_update",
+        autospec=True,
+        side_effect=RuntimeError("injected failure"),
+    )
+
+    from simcore_service_webserver.projects._projects_service import (  # noqa: PLC0415
+        close_project_for_user,
+    )
+
+    with pytest.raises(RuntimeError, match="injected failure"):
+        await close_project_for_user(
+            user_id=logged_user["id"],
+            project_uuid=ProjectID(shared_project["uuid"]),
+            client_session_id=client_id1,
+            app=client_1.app,
+            simcore_user_agent="pytest",
+            product_name=osparc_product_name,
+        )
+
+    # despite the failure above, the log-unsubscription must still have been attempted
+    mocked_conditionally_unsubscribe_project_logs.assert_called_once()
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_on_user_disconnected_still_unsubscribes_when_locked_state_notification_fails(
+    user_role: UserRole,
+    with_enabled_rtc_collaboration: None,
+    client: TestClient,
+    logged_user: dict,
+    shared_project: dict,
+    create_socketio_connection_with_handlers: Callable[
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
+    ],
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mock_catalog_api: dict[str, MockType],
+    osparc_product_name: str,
+    mocker: MockerFixture,
+):
+    # Regression test: a failure notifying the project-locked state (e.g. an RPC timeout)
+    # must not prevent the log-unsubscription from running for the disconnecting session.
+    client_1 = client
+    _sio1, client_id1, _sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
+    await _open_project(client_1, client_id1, shared_project, status.HTTP_200_OK)
+
+    mocker.patch(
+        "simcore_service_webserver.projects._controller.projects_slot.retrieve_and_notify_project_locked_state",
+        autospec=True,
+        side_effect=RuntimeError("injected failure"),
+    )
+    mocked_unsubscribe = mocker.patch(
+        "simcore_service_webserver.projects._controller.projects_slot.conditionally_unsubscribe_project_logs_across_replicas",
+        autospec=True,
+    )
+
+    from simcore_service_webserver.projects._controller.projects_slot import (  # noqa: PLC0415
+        _on_user_disconnected,
+    )
+
+    # logged_gather(..., reraise=False) swallows the injected failure: this must not raise
+    await _on_user_disconnected(
+        user_id=logged_user["id"],
+        client_session_id=client_id1,
+        app=client_1.app,
+        product_name=osparc_product_name,
+    )
+
+    mocked_unsubscribe.assert_called_once()
