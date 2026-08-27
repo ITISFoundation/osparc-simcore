@@ -24,6 +24,7 @@ from models_library.rpc_pagination import (
     PageLimitInt,
     PageRpc,
 )
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.services_regex import (
@@ -193,6 +194,22 @@ class CatalogRpcSideEffects:
         )
 
     @validate_call(config={"arbitrary_types_allowed": True})
+    async def get_service_labels(
+        self,
+        rpc_client: RabbitMQRPCClient | MockType,
+        *,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> SimcoreServiceLabels:
+        assert rpc_client
+        assert service_key
+        assert service_version
+
+        return TypeAdapter(SimcoreServiceLabels).validate_python(
+            SimcoreServiceLabels.model_json_schema()["examples"][1],
+        )
+
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_all_services_summaries_paginated(
         self,
         rpc_client: RabbitMQRPCClient | MockType,
@@ -256,6 +273,7 @@ class ZeroListingCatalogRpcSideEffects:
     async def list_services_paginated(self, *args, **kwargs): ...
     async def get_service(self, *args, **kwargs): ...
     async def update_service(self, *args, **kwargs): ...
+    async def get_service_labels(self, *args, **kwargs): ...
     async def get_service_ports(self, *args, **kwargs): ...
     async def list_my_service_history_latest_first(self, *args, **kwargs):  # noqa: ARG002
         return PageRpc[ServiceRelease].create(

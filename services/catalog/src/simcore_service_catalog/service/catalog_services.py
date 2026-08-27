@@ -18,12 +18,13 @@ from models_library.batch_operations import create_batch_ids_validator
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt, PageTotalCount
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import HttpUrl
+from pydantic import HttpUrl, TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenRpcError,
     CatalogInconsistentRpcError,
@@ -818,3 +819,10 @@ async def get_catalog_service_extras(
     director_api: DirectorClient, service_key: ServiceKey, service_version: VersionStr
 ) -> ServiceExtras:
     return await director_api.get_service_extras(service_key=service_key, service_version=service_version)
+
+
+async def get_catalog_service_labels(
+    director_api: DirectorClient, service_key: ServiceKey, service_version: ServiceVersion
+) -> SimcoreServiceLabels:
+    labels = await director_api.get_service_labels(service_key=service_key, service_version=service_version)
+    return TypeAdapter(SimcoreServiceLabels).validate_python(labels)
