@@ -15,10 +15,9 @@ import pytest
 from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
-from asgi_lifespan import LifespanManager as ASGILifespanManager
+from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
-from fastapi_lifespan_manager import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
@@ -119,11 +118,10 @@ async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
     # add the client configuration to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
-    local_app = create_app(app_lifespan)
+    local_app = create_app()
     configure_client(local_app)
 
-    async with ASGILifespanManager(local_app):
+    async with LifespanManager(local_app):
         yield local_app
 
 
