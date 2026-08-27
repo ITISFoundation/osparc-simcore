@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import aio_pika
 from aiormq import ChannelInvalidStateError
+from aiormq.exceptions import ChannelNotFoundEntity
 from annotated_types import doc
 from common_library.async_tools import cancel_wait_task
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -62,7 +63,20 @@ async def _nack_message(
     message_handler: MessageHandler,
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
+    *,
+    dead_letter_requeue_enabled: bool,
 ) -> None:
+    if not dead_letter_requeue_enabled:
+        # NOTE: no dead-letter-exchange configured on this queue: nacking here drops the message
+        # for good, there is no retry to report on
+        _logger.warning(
+            "Handler '%s' failed for message_id='%s'; dropping it (dead-letter requeue disabled)",
+            message_handler,
+            message.message_id,
+        )
+        await message.nack(requeue=False)
+        return
+
     count = _get_x_death_count(message)
     _logger.debug(
         "Nacking message '%s' from handler '%s', death count %s, max retries %s",
@@ -94,6 +108,8 @@ async def _on_message(
     message_handler: MessageHandler,
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
+    *,
+    dead_letter_requeue_enabled: bool,
 ) -> None:
     log_error_context = {
         "message_id": message.message_id,
@@ -119,7 +135,12 @@ async def _on_message(
                                 logging.DEBUG,
                                 msg=f"Nack message {message.exchange=}, {message.routing_key=}",
                             ):
-                                await _nack_message(message_handler, max_retries_upon_error, message)
+                                await _nack_message(
+                                    message_handler,
+                                    max_retries_upon_error,
+                                    message,
+                                    dead_letter_requeue_enabled=dead_letter_requeue_enabled,
+                                )
                 except Exception as exc:  # pylint: disable=broad-exception-caught
                     _logger.exception(
                         **create_troubleshooting_log_kwargs(
@@ -131,7 +152,12 @@ async def _on_message(
                         )
                     )
                     with log_catch(_logger, reraise=False):
-                        await _nack_message(message_handler, max_retries_upon_error, message)
+                        await _nack_message(
+                            message_handler,
+                            max_retries_upon_error,
+                            message,
+                            dead_letter_requeue_enabled=dead_letter_requeue_enabled,
+                        )
 
     except ChannelInvalidStateError as exc:
         # NOTE: this error can happen as can be seen in aio-pika code
@@ -152,7 +178,7 @@ async def _on_message(
 class RabbitMQClient(RabbitMQClientBase):
     _connection_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
     _channel_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
-    _backlog_monitor_tasks: list[asyncio.Task] = field(init=False, default_factory=list)
+    _backlog_monitor_tasks: dict[QueueName, asyncio.Task] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         # recommendations are 1 connection per process
@@ -186,7 +212,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 await asyncio.gather(
                     *(
                         cancel_wait_task(task, max_delay=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S)
-                        for task in self._backlog_monitor_tasks
+                        for task in self._backlog_monitor_tasks.values()
                     )
                 )
             self._backlog_monitor_tasks.clear()
@@ -203,7 +229,7 @@ class RabbitMQClient(RabbitMQClientBase):
             channel.close_callbacks.add(self._channel_close_callback)
             return channel
 
-    def _start_backlog_monitor(self, queue_name: QueueName, exchange_name: ExchangeName) -> None:
+    def _start_backlog_monitor(self, queue_name: QueueName, exchange_name: ExchangeName, max_length: int) -> None:
         """Warns if a bounded queue's ready-message count keeps growing, i.e. the
         consumer cannot keep up with the publish rate (see `subscribe`'s `max_length`)."""
         previous_message_count: int | None = None
@@ -222,6 +248,13 @@ class RabbitMQClient(RabbitMQClientBase):
                         queue_name, passive=True, timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S
                     )
                     message_count = declared.declaration_result.message_count
+                except ChannelNotFoundEntity:
+                    # queue is gone (e.g. unsubscribe() raced this check): stop monitoring for good
+                    _logger.debug("Queue '%s' no longer exists, stopping its backlog monitor", queue_name)
+                    task = self._backlog_monitor_tasks.pop(queue_name, None)
+                    if task is not None:
+                        task.cancel()
+                    return
                 finally:
                     await channel.close()
             consecutive_growth = (
@@ -232,20 +265,19 @@ class RabbitMQClient(RabbitMQClientBase):
             if consecutive_growth >= _BACKLOG_MONITOR_CONSECUTIVE_GROWTH_TO_WARN:
                 _logger.warning(
                     "Queue '%s' (exchange '%s') backlog kept growing for %s consecutive checks "
-                    "(now %s ready messages): the consumer may not be keeping up with the publish rate",
+                    "(now %s/%s ready messages): the consumer may not be keeping up with the publish rate",
                     queue_name,
                     exchange_name,
                     consecutive_growth,
                     message_count,
+                    max_length,
                 )
             previous_message_count = message_count
 
-        self._backlog_monitor_tasks.append(
-            create_periodic_task(
-                _check_backlog,
-                interval=_BACKLOG_MONITOR_INTERVAL,
-                task_name=f"rabbitmq_backlog_monitor_{queue_name}",
-            )
+        self._backlog_monitor_tasks[queue_name] = create_periodic_task(
+            _check_backlog,
+            interval=_BACKLOG_MONITOR_INTERVAL,
+            task_name=f"rabbitmq_backlog_monitor_{queue_name}",
         )
 
     async def _create_consumer_tag(self, exchange_name) -> ConsumerTag:
@@ -292,7 +324,8 @@ class RabbitMQClient(RabbitMQClientBase):
             NonNegativeInt,
             doc(
                 "Also acts as a soft timeout: if `message_handler` does not finish processing "
-                "the message before this is reached, the message will be redelivered"
+                "the message before this is reached, the message will be redelivered (or, if "
+                "`enable_dead_letter_requeue=False`, simply dropped)"
             ),
         ] = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
         max_length: Annotated[
@@ -321,7 +354,11 @@ class RabbitMQClient(RabbitMQClientBase):
         ] = None,
         unexpected_error_retry_delay_s: Annotated[
             float,
-            doc("Time to wait between each retry when `message_handler` raised or returned `False`"),
+            doc(
+                "Time to wait between each retry when `message_handler` raised or returned `False`. "
+                "Has no effect when `enable_dead_letter_requeue=False`: such messages are dropped "
+                "immediately instead of being retried"
+            ),
         ] = _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
         unexpected_error_max_attempts: Annotated[
             int,
@@ -351,7 +388,11 @@ class RabbitMQClient(RabbitMQClientBase):
 
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            qos_value = prefetch_count or (1 if exclusive_queue is False else _DEFAULT_PREFETCH_VALUE)
+            qos_value = (
+                prefetch_count
+                if prefetch_count is not None
+                else (1 if exclusive_queue is False else _DEFAULT_PREFETCH_VALUE)
+            )
             await channel.set_qos(qos_value)
 
             exchange = await channel.declare_exchange(
@@ -404,12 +445,17 @@ class RabbitMQClient(RabbitMQClientBase):
 
             consumer_tag = await self._create_consumer_tag(exchange_name)
             await queue.consume(
-                partial(_on_message, message_handler, unexpected_error_max_attempts),
+                partial(
+                    _on_message,
+                    message_handler,
+                    unexpected_error_max_attempts,
+                    dead_letter_requeue_enabled=enable_dead_letter_requeue,
+                ),
                 exclusive=exclusive_queue,
                 consumer_tag=consumer_tag,
             )
             if max_length is not None:
-                self._start_backlog_monitor(queue.name, exchange_name)
+                self._start_backlog_monitor(queue.name, exchange_name, max_length)
             return queue.name, consumer_tag
 
     async def add_topics(
@@ -467,6 +513,9 @@ class RabbitMQClient(RabbitMQClientBase):
             queue = await channel.get_queue(queue_name)
             # NOTE: we force delete here
             await queue.delete(if_unused=False, if_empty=False)
+        backlog_monitor_task = self._backlog_monitor_tasks.pop(queue_name, None)
+        if backlog_monitor_task is not None:
+            await cancel_wait_task(backlog_monitor_task, max_delay=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S)
 
     async def publish(self, exchange_name: ExchangeName, message: RabbitMessage) -> None:
         """publish message in the exchange exchange_name.
