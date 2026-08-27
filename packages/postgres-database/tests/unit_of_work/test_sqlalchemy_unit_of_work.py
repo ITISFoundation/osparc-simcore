@@ -2,7 +2,7 @@ from typing import Protocol, cast
 
 import pytest
 from common_library.unit_of_work import ReadUnitOfWork, TransactionalUnitOfWork
-from simcore_postgres_database.sqlalchemy_unit_of_work import (
+from simcore_postgres_database.unit_of_work import (
     SqlAlchemyUnitOfWorkFactory,
     get_sqlalchemy_connection,
     get_sqlalchemy_transaction_connection,

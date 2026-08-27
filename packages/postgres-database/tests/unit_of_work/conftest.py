@@ -3,7 +3,7 @@ from types import TracebackType
 from typing import cast
 
 import pytest
-from simcore_postgres_database.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWorkFactory
+from simcore_postgres_database.unit_of_work import SqlAlchemyUnitOfWorkFactory
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
