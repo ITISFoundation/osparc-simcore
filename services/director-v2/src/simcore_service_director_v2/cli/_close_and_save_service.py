@@ -4,6 +4,7 @@ from typing import Final
 
 import rich
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.projects_nodes_io import NodeID
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from rich.progress import (
@@ -16,8 +17,8 @@ from rich.progress import (
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
-    setup,
 )
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
@@ -37,11 +38,11 @@ HEADING: Final[str] = "[green]*[/green]"
 
 @asynccontextmanager
 async def _minimal_app() -> AsyncIterator[FastAPI]:
-    app = FastAPI()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    app = FastAPI(lifespan=app_lifespan)
+    configure_client(app)
 
-    setup(app)
-
-    async with app.router.lifespan_context(app):
+    async with app_lifespan(app):
         yield app
 
 

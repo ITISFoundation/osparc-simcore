@@ -122,7 +122,7 @@ async def bg_task_app(
         rabbit_settings=rabbit_service,
         lrt_namespace="test",
     )
-    configure_client(app_lifespan, router_prefix=router_prefix)
+    configure_client(app, router_prefix=router_prefix)
 
     async with ASGILifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
