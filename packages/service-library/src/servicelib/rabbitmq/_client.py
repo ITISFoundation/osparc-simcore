@@ -427,7 +427,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=True,
-                arguments={"x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(exchange_name=exchange_name)},
+                passive=True,
             )
 
             await asyncio.gather(*(queue.bind(exchange, routing_key=topic) for topic in topics))
@@ -446,7 +446,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=True,
-                arguments={"x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(exchange_name=exchange_name)},
+                passive=True,
             )
 
             await asyncio.gather(
