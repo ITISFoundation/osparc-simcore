@@ -11,28 +11,31 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class _AsyncpgReadUnitOfWork(ReadUnitOfWork):
+class _SqlAlchemyReadUnitOfWork(ReadUnitOfWork):
     connection: AsyncConnection
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class _AsyncpgTransactionalUnitOfWork(TransactionalUnitOfWork):
+class _SqlAlchemyTransactionalUnitOfWork(TransactionalUnitOfWork):
     connection: AsyncConnection
 
 
-def get_asyncpg_connection(unit_of_work: ReadUnitOfWork) -> AsyncConnection:
-    if isinstance(unit_of_work, (_AsyncpgReadUnitOfWork, _AsyncpgTransactionalUnitOfWork)):
+def get_sqlalchemy_connection(unit_of_work: ReadUnitOfWork) -> AsyncConnection:
+    if isinstance(
+        unit_of_work,
+        (_SqlAlchemyReadUnitOfWork, _SqlAlchemyTransactionalUnitOfWork),
+    ):
         return unit_of_work.connection
-    msg = f"Expected an Asyncpg unit of work, got {type(unit_of_work).__name__}"
+    msg = f"Expected a SQLAlchemy unit of work, got {type(unit_of_work).__name__}"
     raise TypeError(msg)
 
 
-def get_asyncpg_transaction_connection(
+def get_sqlalchemy_transaction_connection(
     unit_of_work: TransactionalUnitOfWork,
 ) -> AsyncConnection:
-    if isinstance(unit_of_work, _AsyncpgTransactionalUnitOfWork):
+    if isinstance(unit_of_work, _SqlAlchemyTransactionalUnitOfWork):
         return unit_of_work.connection
-    msg = f"Expected an Asyncpg transactional unit of work, got {type(unit_of_work).__name__}"
+    msg = f"Expected a SQLAlchemy transactional unit of work, got {type(unit_of_work).__name__}"
     raise TypeError(msg)
 
 
@@ -42,12 +45,12 @@ async def _read_scope(
     existing: ReadUnitOfWork | None,
 ) -> AsyncIterator[ReadUnitOfWork]:
     if existing is not None:
-        get_asyncpg_connection(existing)
+        get_sqlalchemy_connection(existing)
         yield existing
         return
 
     async with engine.connect() as connection:
-        yield _AsyncpgReadUnitOfWork(connection=connection)
+        yield _SqlAlchemyReadUnitOfWork(connection=connection)
 
 
 @asynccontextmanager
@@ -56,16 +59,16 @@ async def _transaction_scope(
     existing: TransactionalUnitOfWork | None,
 ) -> AsyncIterator[TransactionalUnitOfWork]:
     if existing is not None:
-        get_asyncpg_transaction_connection(existing)
+        get_sqlalchemy_transaction_connection(existing)
         yield existing
         return
 
     async with engine.begin() as connection:
-        yield _AsyncpgTransactionalUnitOfWork(connection=connection)
+        yield _SqlAlchemyTransactionalUnitOfWork(connection=connection)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class AsyncpgUnitOfWorkFactory(UnitOfWorkFactory):
+class SqlAlchemyUnitOfWorkFactory(UnitOfWorkFactory):
     engine: AsyncEngine
 
     def read(

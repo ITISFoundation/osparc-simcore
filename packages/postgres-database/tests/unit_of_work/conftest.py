@@ -3,7 +3,7 @@ from types import TracebackType
 from typing import cast
 
 import pytest
-from simcore_postgres_database.db_asyncpg_uow import AsyncpgUnitOfWorkFactory
+from simcore_postgres_database.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWorkFactory
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
@@ -63,6 +63,6 @@ class _Engine:
 
 
 @pytest.fixture
-def asyncpg_uow_factory() -> tuple[AsyncpgUnitOfWorkFactory, _Engine]:
+def sqlalchemy_uow_factory() -> tuple[SqlAlchemyUnitOfWorkFactory, _Engine]:
     engine = _Engine()
-    return AsyncpgUnitOfWorkFactory(engine=cast(AsyncEngine, engine)), engine
+    return SqlAlchemyUnitOfWorkFactory(engine=cast(AsyncEngine, engine)), engine
