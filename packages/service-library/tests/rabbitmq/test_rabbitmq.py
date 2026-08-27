@@ -6,6 +6,8 @@
 
 
 import asyncio
+import datetime
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Final
@@ -703,3 +705,182 @@ async def test_unsubscribe_consumer(
     # Unsubscribe the queue
     for _ in range(idempotent_attempts):
         await client.unsubscribe(queue_name)
+
+
+async def test_subscribe_with_max_length_drops_oldest_ready_messages(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+):
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
+    exchange_name = random_exchange_name()
+
+    block_processing = asyncio.Event()
+    received: list[bytes] = []
+
+    async def _blocking_handler(data: bytes) -> bool:
+        received.append(data)
+        await block_processing.wait()
+        return True
+
+    max_length = 5
+    queue_name, _ = await consumer.subscribe(
+        exchange_name,
+        _blocking_handler,
+        prefetch_count=1,
+        max_length=max_length,
+    )
+
+    num_messages = max_length + 10
+    messages = [random_rabbit_message() for _ in range(num_messages)]
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages))
+
+    # the first message is delivered and blocks the (single-prefetch) consumer;
+    # the rest pile up as ready messages, capped by max_length
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            assert len(received) == 1
+
+    assert consumer._connection_pool  # noqa: SLF001
+    # NOTE: uses a dedicated channel, not consumer._channel_pool, since that shared pool
+    # could hand out the channel that is currently mid-delivery of the unacked message
+    async with consumer._connection_pool.acquire() as connection:  # noqa: SLF001
+        channel = await connection.channel()
+        declared = await channel.declare_queue(queue_name, passive=True)
+        assert declared.declaration_result.message_count is not None
+        assert declared.declaration_result.message_count <= max_length
+        await channel.close()
+
+    block_processing.set()
+    await asyncio.sleep(0.5)
+    # only the unacked message plus at most max_length ready ones ever got delivered
+    assert 1 <= len(received) <= max_length + 1
+    assert len(received) < num_messages
+
+
+async def test_subscribe_prefetch_count_limits_concurrent_deliveries(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+):
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
+    exchange_name = random_exchange_name()
+
+    release_processing = asyncio.Event()
+    in_flight = 0
+    max_in_flight = 0
+
+    async def _handler(_: bytes) -> bool:
+        nonlocal in_flight, max_in_flight
+        in_flight += 1
+        max_in_flight = max(max_in_flight, in_flight)
+        await release_processing.wait()
+        in_flight -= 1
+        return True
+
+    prefetch_count = 4
+    await consumer.subscribe(exchange_name, _handler, prefetch_count=prefetch_count)
+
+    messages = [random_rabbit_message() for _ in range(prefetch_count * 3)]
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages))
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            assert max_in_flight == prefetch_count
+
+    # give it a bit more time to ensure it never exceeds the configured prefetch
+    await asyncio.sleep(0.5)
+    assert max_in_flight == prefetch_count
+
+    release_processing.set()
+
+
+async def test_subscribe_enable_dead_letter_requeue_false_drops_failed_messages(
+    on_message_spy: mock.Mock,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+):
+    publisher = create_rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+    exchange_name = random_exchange_name()
+
+    async def _always_fail(_: Any) -> bool:
+        return False
+
+    await consumer.subscribe(
+        exchange_name,
+        _always_fail,
+        enable_dead_letter_requeue=False,
+        unexpected_error_retry_delay_s=_ON_ERROR_DELAY_S,
+    )
+    message = random_rabbit_message()
+    await publisher.publish(exchange_name, message)
+
+    # with the retry machinery disabled, a failing message is delivered exactly once, never retried
+    await _assert_wait_for_messages(on_message_spy, 1)
+
+
+async def test_subscribe_backlog_monitor_warns_when_consumer_falls_behind(
+    caplog: pytest.LogCaptureFixture,
+    mocker: MockerFixture,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+):
+    mocker.patch.object(_client, "_BACKLOG_MONITOR_INTERVAL", datetime.timedelta(milliseconds=50))
+    caplog.set_level(logging.WARNING)
+
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
+    exchange_name = random_exchange_name()
+
+    block_processing = asyncio.Event()
+
+    async def _blocking_handler(_: bytes) -> bool:
+        await block_processing.wait()
+        return True
+
+    await consumer.subscribe(
+        exchange_name,
+        _blocking_handler,
+        prefetch_count=1,
+        max_length=10000,
+    )
+
+    # publish continuously, much faster than every backlog check, so that the (blocked)
+    # consumer never drains anything and the ready count grows on every consecutive check
+    stop_publishing = asyncio.Event()
+
+    async def _publish_forever() -> None:
+        while not stop_publishing.is_set():
+            await publisher.publish(exchange_name, random_rabbit_message())
+
+    publish_task = asyncio.create_task(_publish_forever())
+    try:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(5),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        ):
+            with attempt:
+                assert "backlog kept growing" in caplog.text
+    finally:
+        stop_publishing.set()
+        await publish_task
+        block_processing.set()
+        # let the now-unblocked handler actually ack before the client connection is closed
+        await asyncio.sleep(0.5)
