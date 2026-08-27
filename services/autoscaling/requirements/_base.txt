@@ -416,7 +416,7 @@ s3transfer==0.14.0
     # via boto3
 sentry-sdk==2.44.0
     # via fastapi-cloud-cli
-sh==2.2.2
+sh==2.2.4
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 shellingham==1.5.4
     # via typer

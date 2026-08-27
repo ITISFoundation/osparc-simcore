@@ -118,7 +118,7 @@ googleapis-common-protos==1.70.0
     #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.2.4
     # via sqlalchemy
-grpcio==1.73.1
+grpcio==1.83.0
     # via opentelemetry-exporter-otlp-proto-grpc
 h11==0.16.0
     # via
@@ -381,7 +381,7 @@ s3transfer==0.13.0
     # via boto3
 sentry-sdk==2.35.0
     # via fastapi-cloud-cli
-sh==2.2.2
+sh==2.2.4
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 shellingham==1.5.4
     # via typer
@@ -434,6 +434,7 @@ typing-extensions==4.14.1
     #   fast-depends
     #   fastapi
     #   faststream
+    #   grpcio
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
