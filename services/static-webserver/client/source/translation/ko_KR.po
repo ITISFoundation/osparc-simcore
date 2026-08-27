@@ -9,14 +9,13 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-08-27T10:29:39Z\n"
+"X-Translation-Date: 2026-08-27T11:20:43Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title
 # within the OSPARC application, likely indicating information about a
 # specific product or feature.
 #: services/static-webserver/client/source/class/osparc/About.js:24
-#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:26
 msgid "About "
 msgstr "대략 \" "
@@ -276,7 +275,7 @@ msgstr "로그 아웃"
 # not yet available.
 #: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:111
 msgid "This app performs better for larger window size: "
-msgstr "\"이 앱은 더 큰 창 크기에서 더 잘 작동합니다: \" "
+msgstr "이 앱은 더 큰 창 크기에서 더 잘 작동합니다: "
 
 # CTX-INTERPRETATION: This string appears within the
 # `osparc/WindowSizeTracker.js` file, likely informing users about touchscreen
@@ -447,7 +446,7 @@ msgstr "제목"
 #: services/static-webserver/client/source/class/osparc/editor/OrganizationEditor.js:121
 #: services/static-webserver/client/source/class/osparc/editor/WorkspaceEditor.js:125
 msgid "Title"
-msgstr "\"제목\""
+msgstr "제목"
 
 # CTX-INTERPRETATION: The string "description" is used as a placeholder within
 # a text area for entering a description, likely in an administrative
@@ -688,7 +687,7 @@ msgstr "유효하지 않은 코드"
 # input field within the login form UI, providing context to the user.
 #: services/static-webserver/client/source/class/osparc/auth/ui/LoginView.js:78
 msgid " Email"
-msgstr "\" 이메일\""
+msgstr " 이메일"
 
 # CTX-INTERPRETATION: The string " Password" is used as a label for a password
 # field within the login form UI, indicating that the field requires a
@@ -885,7 +884,7 @@ msgstr "대학교 이메일"
 #: services/static-webserver/client/source/class/osparc/share/RequestServiceAccess.js:50
 #: services/static-webserver/client/source/class/osparc/user/UserProfile.js:110
 msgid "Email"
-msgstr "\"이메일\""
+msgstr "이메일"
 
 # CTX-INTERPRETATION: The string "Phone Number" is used as a label for a phone
 # number input field within user profile settings on the osparc application.
@@ -1139,7 +1138,7 @@ msgstr "어떻게 저희를 알게 되셨나요?"
 # policy link, based on the user's OS/PARC product.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:354
 msgid "I acknowledge that data will be processed in accordance to %1"
-msgstr "\"데이터 처리에 대한 %1에 동의합니다. (개인정보처리방침)\""
+msgstr "데이터 처리에 대한 %1에 동의합니다. (개인정보처리방침)"
 
 # CTX-INTERPRETATION: This string appears in the 'RequestAccount' component,
 # specifically within a checkbox for accepting the EULA, prompting the user to
@@ -1286,10 +1285,16 @@ msgstr "Enter 키를 눌러 전송 · Shift+Enter 키를 눌러 새 줄 입력"
 msgid "Only users with write access can add comments."
 msgstr "쓰기 권한이 있는 사용자만 댓글을 추가할 수 있습니다."
 
+# CTX-INTERPRETATION: The string "🔔 Notify user" appears as the label for a
+# button within the AddMessage component, likely used to notify a user about a
+# new message in a conversation.
+#: services/static-webserver/client/source/class/osparc/conversation/AddMessage.js:171
+msgid "🔔 Notify user"
+msgstr "🔔 사용자 알림"
+
 # CTX-INTERPRETATION: The string "Notify user" appears within the AddMessage
 # component, likely to trigger a notification for the user when a message is
 # added.
-#: services/static-webserver/client/source/class/osparc/conversation/AddMessage.js:171
 #: services/static-webserver/client/source/class/osparc/conversation/AddMessage.js:247
 msgid "Notify user"
 msgstr "사용자 알림"
@@ -1354,7 +1359,7 @@ msgstr "알 수 없는 사용자"
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:428
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:202
 msgid "Edit..."
-msgstr "\"수정...\""
+msgstr "수정..."
 
 # CTX-INTERPRETATION: The "Delete..." string appears in the MessageUI.js file,
 # likely within a user interface element for deleting messages in an online
@@ -1391,11 +1396,11 @@ msgstr "메시지를 삭제하시겠습니까?"
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:750
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1338
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1724
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2262
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2288
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2572
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2596
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2266
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2292
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2576
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2577
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2600
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:231
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:222
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:310
@@ -1506,13 +1511,13 @@ msgstr "공유됨"
 msgid "App mode"
 msgstr "앱 모드"
 
-# CTX-INTERPRETATION: The string "Hits: " is used within a UI component to
-# display the number of hits associated with a specific data item or service,
-# likely in a dashboard or card-based interface.
+# CTX-INTERPRETATION: This string is used within the 'hits-service' control to
+# display the number of hits associated with a service, likely on a dashboard
+# or card.
 #: services/static-webserver/client/source/class/osparc/dashboard/CardBase.js:733
 #: services/static-webserver/client/source/class/osparc/service/ServiceListItem.js:90
-msgid "Hits: "
-msgstr "결과: "
+msgid "Hits: %1"
+msgstr "결과: %1"
 
 # CTX-INTERPRETATION: The string "Unknown service(s)" appears in the
 # CardBase.js file, likely within a UI element that displays information about
@@ -1617,7 +1622,7 @@ msgstr "제한된<br>신용 필요"
 # when an empty icon is clicked.
 #: services/static-webserver/client/source/class/osparc/dashboard/CardBase.js:1168
 msgid "Empty"
-msgstr "\"비어 있는\""
+msgstr "비어 있는"
 
 # CTX-INTERPRETATION: The string "PROJECTS" is used as a label for a tab in
 # the Osparc dashboard, likely representing different projects or study areas.
@@ -1662,9 +1667,9 @@ msgstr "마지막 수정됨"
 # file or folder.
 #: services/static-webserver/client/source/class/osparc/dashboard/FileButtonItem.js:131
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:294
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2033
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2037
 msgid "Open location"
-msgstr "\"위치 열기\""
+msgstr "위치 열기"
 
 # CTX-INTERPRETATION: This string is used as a tooltip to indicate that an
 # item has been deleted in various UI components of the Osparc dashboard, such
@@ -1680,7 +1685,7 @@ msgstr "삭제됨"
 # renaming a folder within a study browser or conversation options menu,
 # likely used by users to modify folder names.
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:289
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2041
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2045
 #: services/static-webserver/client/source/class/osparc/support/ConversationOptionsMenu.js:73
 msgid "Rename..."
 msgstr "이름 변경..."
@@ -1690,15 +1695,15 @@ msgstr "이름 변경..."
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:306
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:701
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1691
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2105
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2111
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2109
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2115
 msgid "Move to..."
 msgstr "폴더로 이동..."
 
 # CTX-INTERPRETATION: The 'Restore' button is used within the study browser
 # and workspace interfaces to recover deleted folders from the trash.
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:317
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2278
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2282
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:226
 msgid "Restore"
 msgstr "복구"
@@ -1713,8 +1718,8 @@ msgstr "폴더 이름 변경"
 # deletion within a study browser or workspace, prompting the user to confirm
 # their action.
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:374
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2558
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2592
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2562
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2596
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:324
 msgid "Are you sure you want to delete"
 msgstr "삭제하시겠습니까?"
@@ -1732,8 +1737,8 @@ msgstr "폴더 삭제"
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:377
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1343
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1738
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2259
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2597
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2263
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2601
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:232
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:232
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:328
@@ -2033,7 +2038,7 @@ msgstr "리스트 보기"
 # likely within a resource browser or dashboard.
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:644
 msgid "Publishing "
-msgstr "\"게시 \" "
+msgstr "게시 "
 
 # CTX-INTERPRETATION: This string is used within the ResourceBrowserBase class
 # to display a user-friendly message indicating that a template has been
@@ -2075,11 +2080,11 @@ msgstr "삭제하시겠습니까? "
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:878
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:902
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:1001
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1819
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1834
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1848
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1823
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1838
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1852
 msgid "Creating "
-msgstr "\"생성 중 \" "
+msgstr "생성 중 "
 
 # CTX-INTERPRETATION: The "Share..." string appears in various UI elements
 # related to sharing resources or studies within the Osparc dashboard, likely
@@ -2106,7 +2111,7 @@ msgstr "태그..."
 #: services/static-webserver/client/source/class/osparc/dashboard/SearchBarFilterExtended.js:129
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:304
 msgid "Templates"
-msgstr "\"템플릿\""
+msgstr "템플릿"
 
 # CTX-INTERPRETATION: The string "Public Projects" appears in filter
 # components of a scientific simulation application's dashboard, likely
@@ -2115,7 +2120,7 @@ msgstr "\"템플릿\""
 #: services/static-webserver/client/source/class/osparc/dashboard/SearchBarFilterExtended.js:139
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:309
 msgid "Public Projects"
-msgstr "\"공개 프로젝트\""
+msgstr "공개 프로젝트"
 
 # CTX-INTERPRETATION: The string "Functions" appears in filter UI components
 # of the osparc dashboard, likely referring to a list or selection of
@@ -2346,7 +2351,7 @@ msgstr "공유"
 #: services/static-webserver/client/source/class/osparc/info/StudyLarge.js:215
 #: services/static-webserver/client/source/class/osparc/info/StudyLarge.js:280
 msgid "Classifiers"
-msgstr "\"분류자\""
+msgstr "분류자"
 
 # CTX-INTERPRETATION: The string "Quality" is likely used as a title or label
 # within a user interface related to resource details or study information,
@@ -2355,7 +2360,7 @@ msgstr "\"분류자\""
 #: services/static-webserver/client/source/class/osparc/info/MergedLarge.js:164
 #: services/static-webserver/client/source/class/osparc/info/StudyLarge.js:203
 msgid "Quality"
-msgstr "\"품질\""
+msgstr "품질"
 
 # CTX-INTERPRETATION: The string "Services Updates" is used as the title for a
 # page within a dashboard application, likely displaying information related
@@ -2420,7 +2425,6 @@ msgstr "오래된 서비스"
 # likely indicating a selection to display all results or options.
 #: services/static-webserver/client/source/class/osparc/dashboard/SearchBarFilter.js:82
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:84
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:228
 msgid "All"
 msgstr "모두"
 
@@ -2601,7 +2605,7 @@ msgstr "정렬"
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:35
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:41
 msgid "Name"
-msgstr "\"이름\""
+msgstr "이름"
 
 # CTX-INTERPRETATION: The string "Owner" likely refers to the user or entity
 # that owns a project or data within the Osparc application, as indicated by
@@ -2612,7 +2616,7 @@ msgstr "\"이름\""
 #: services/static-webserver/client/source/class/osparc/data/Roles.js:238
 #: services/static-webserver/client/source/class/osparc/share/RequestServiceAccess.js:46
 msgid "Owner"
-msgstr "\"소유자\""
+msgstr "소유자"
 
 # CTX-INTERPRETATION: This string likely appears in UI elements related to
 # displaying or managing data, possibly indicating the creation date of a
@@ -2651,8 +2655,8 @@ msgstr "파일이 없습니다"
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:627
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:737
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:777
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2323
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2474
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2327
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2478
 msgid "Successfully deleted"
 msgstr "성공적으로 삭제되었습니다."
 
@@ -2661,7 +2665,7 @@ msgstr "성공적으로 삭제되었습니다."
 # an operation.
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:616
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:766
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2447
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2451
 msgid "Successfully restored"
 msgstr "성공적으로 복원되었습니다"
 
@@ -2736,21 +2740,21 @@ msgstr "이동"
 # CTX-INTERPRETATION: The string "Cancel Selection" appears in the
 # StudyBrowser component to provide a label for a button that allows users to
 # deselect previously selected studies.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1758
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1762
 msgid "Cancel Selection"
 msgstr "선택 취소"
 
-# CTX-INTERPRETATION: The string "Select " is part of a function that
-# dynamically generates a label for a button, indicating whether a selection
-# has been made or not.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1758
-msgid "Select "
-msgstr "선택 "
+# CTX-INTERPRETATION: The string "Select %1" is used in the StudyBrowser
+# component to display a label for a select button, indicating the selected
+# study alias.
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1762
+msgid "Select %1"
+msgstr "%1 선택"
 
 # CTX-INTERPRETATION: This string is part of a renaming function within a
 # study browser interface, used to display the 'Rename' label before allowing
 # users to change the study name.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2043
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2047
 #: services/static-webserver/client/source/class/osparc/info/MergedLarge.js:339
 #: services/static-webserver/client/source/class/osparc/info/StudyLarge.js:257
 #: services/static-webserver/client/source/class/osparc/widget/NodesTree.js:275
@@ -2759,21 +2763,21 @@ msgstr "이름 바꾸기 "
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser and StudyOptions
 # components when an error occurs during a study renaming operation.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2059
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2063
 #: services/static-webserver/client/source/class/osparc/study/StudyOptions.js:110
 msgid "Something went wrong while renaming"
 msgstr "이름을 변경하는 동안 오류가 발생했습니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file when
 # there's an error during thumbnail updating, providing feedback to the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2065
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2069
 msgid "Something went wrong while updating the thumbnail"
 msgstr "썸네일 업데이트 중 오류가 발생했습니다."
 
 # CTX-INTERPRETATION: The string " files..." is part of a button label in the
 # StudyBrowser UI, likely used to open or access data related to a specific
 # study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2069
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2073
 msgid " files..."
 msgstr " 파일..."
 
@@ -2781,21 +2785,21 @@ msgstr " 파일..."
 # label in the study billing settings menu within the osparc dashboard, likely
 # allowing users to access or manage billing-related information for a
 # specific study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2077
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2081
 msgid "Billing Settings..."
 msgstr "청구 설정..."
 
 # CTX-INTERPRETATION: The 'Duplicate' string appears in the StudyBrowser.js
 # file, likely within a menu or button related to duplicating studies.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2144
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2148
 msgid "Duplicate"
 msgstr "복사"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser and
 # StudyTitleWOptions components, likely referring to a function that converts
 # a study into a pipeline workflow.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2151
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2164
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2155
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2168
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:80
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:205
 msgid "Convert to Pipeline"
@@ -2804,7 +2808,7 @@ msgstr "파이프라인으로 변환"
 # CTX-INTERPRETATION: The string appears in the StudyBrowser and
 # StudyTitleWOptions components, prompting the user to convert a project to a
 # pipeline or create a copy for conversion.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2160
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2164
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:201
 msgid "Would you like to convert this project to a pipeline?"
 msgstr "이 프로젝트를 파이프라인으로 변환하시겠습니까?"
@@ -2812,7 +2816,7 @@ msgstr "이 프로젝트를 파이프라인으로 변환하시겠습니까?"
 # CTX-INTERPRETATION: This string appears in the 'Convert to Pipeline'
 # confirmation window, offering an alternative option to convert a project by
 # creating a copy first.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2161
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2165
 msgid ""
 "Alternatively, you can create a copy of the project and convert the copy "
 "instead."
@@ -2821,7 +2825,7 @@ msgstr "프로젝트를 파이프라인으로 변환하는 대신, 프로젝트�
 # CTX-INTERPRETATION: The 'Convert' button label is used within a confirmation
 # dialog to confirm the conversion of a study or data set into a pipeline
 # format.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2165
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2169
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:206
 msgid "Convert"
 msgstr "변환"
@@ -2829,14 +2833,14 @@ msgstr "변환"
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file and is
 # used to label a button that allows users to create a copy of an existing
 # study and convert it.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2172
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2176
 msgid "Create a copy and convert it"
 msgstr "기존 연구를 복제하고 변환하는 기능을 수행하는 버튼의 레이블입니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser and
 # StudyTitleWOptions components, indicating a successful conversion of a
 # project to a pipeline workflow.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2178
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2182
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:213
 msgid "Project converted to pipeline"
 msgstr "프로젝트가 파이프라인으로 변환되었습니다."
@@ -2844,161 +2848,161 @@ msgstr "프로젝트가 파이프라인으로 변환되었습니다."
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
 # indicating an error occurred during the conversion of a project to a
 # pipeline mode.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2179
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2183
 msgid "Something went wrong while converting to pipeline"
 msgstr "파이프라인 모드로 변환하는 동안 오류가 발생했습니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
 # indicating that a project's copy has been successfully converted to a
 # pipeline mode.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2189
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2193
 msgid "Project's copy converted to pipeline"
 msgstr "프로젝트 복사가 파이프라인 모드로 변환되었습니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file when a
 # project copy is converted to a pipeline mode, indicating an error occurred
 # during the conversion process.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2190
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2194
 msgid "Something went wrong while converting the copy to pipeline"
 msgstr "프로젝트 복사본을 파이프라인 모드로 변환하는 중 오류가 발생했습니다."
 
 # CTX-INTERPRETATION: The string "Export cMIS" appears as the label for a
 # button in the StudyBrowser UI, allowing users to export data related to a
 # specific study using the cMIS functionality.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2205
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2209
 msgid "Export cMIS"
 msgstr "cMIS 내보내기"
 
 # CTX-INTERPRETATION: The "Remove" string appears in the StudyBrowser and
 # JsonSchemaFormHeader components, likely indicating a button or label
 # associated with deleting an element.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2265
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2583
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2584
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2269
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2587
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2588
 #: services/static-webserver/client/source/class/osparc/form/json/JsonSchemaFormHeader.js:35
 msgid "Remove"
-msgstr "\"삭제\""
+msgstr "삭제"
 
 # CTX-INTERPRETATION: The string "Delete function" appears in the context of a
 # confirmation window for deleting a function within a study browser, likely
 # prompting the user to confirm their action.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2301
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2305
 msgid "Delete function"
 msgstr "함수 삭제"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # prompting a user to confirm the deletion of a function that has associated
 # jobs.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2306
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2310
 msgid "The function has associated jobs. Are you sure you want to delete it?"
 msgstr "이 함수는 관련 작업과 연결되어 있습니다. 삭제하시겠습니까?"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file within a
 # function that handles errors during study duplication, providing feedback to
 # the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2345
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2349
 msgid "Something went wrong while duplicating"
 msgstr "복제 중 오류가 발생했습니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser UI, likely
 # indicating that the application is preparing files for export or processing
 # related to a study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2350
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2354
 msgid "Preparing files"
 msgstr "파일 준비 중"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # indicating that a background export process has been initiated and is now
 # running asynchronously.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2354
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2358
 msgid "Exporting process started and added to the background tasks"
 msgstr "데이터 내보내기 프로세스가 시작되었으며 백그라운드 작업으로 추가되었습니다."
 
 # CTX-INTERPRETATION: The string "Download started" is used as a subtitle
 # within a study browser UI to indicate that a download process has commenced.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2359
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2363
 msgid "Download started"
 msgstr "다운로드 시작됨"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file when an
 # error occurs during the study export process, indicating a failure.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2364
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2368
 msgid "Something went wrong while exporting the study"
 msgstr "연구 내보내기 중에 문제가 발생했습니다."
 
 # CTX-INTERPRETATION: The string "Uploading file" appears as a subtitle in the
 # 'Import' task UI within the StudyBrowser component, indicating that a file
 # is currently being uploaded.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2370
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2374
 msgid "Uploading file"
 msgstr "파일 업로드 중"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser component of the
 # osparc dashboard, indicating that a background import process has been
 # initiated and is now running.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2376
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2380
 msgid "Importing process started and added to the background tasks"
 msgstr "데이터 가져오기 프로세스가 시작되었고 백그라운드 작업으로 추가되었습니다."
 
 # CTX-INTERPRETATION: The string "Importing Study..." is used as the title of
 # a task card in the StudyBrowser UI, indicating that a study import operation
 # is currently in progress.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2379
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2383
 msgid "Importing Study..."
 msgstr "스터디 가져오기..."
 
 # CTX-INTERPRETATION: The string "Processing study" appears in the
 # StudyBrowser component of the osparc dashboard, likely indicating that a
 # study is currently being processed or analyzed.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2398
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2410
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2402
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2414
 msgid "Processing study"
 msgstr "연구 처리 중"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file when an
 # error occurs during the retrieval of a study using the osparc API, providing
 # feedback to the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2417
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2421
 msgid "Something went wrong while fetching the study"
 msgstr "연구를 가져오는 동안 문제가 발생했습니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file when
 # importing a study fails, providing an error message to the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2423
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2430
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2436
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2427
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2434
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2440
 msgid "Something went wrong while importing the study"
 msgstr "스터디 가져오기 중 오류가 발생했습니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
 # indicating that a study has been successfully removed from a list or
 # database.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2463
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2467
 msgid "Successfully removed"
 msgstr "성공적으로 제거되었습니다"
 
 # CTX-INTERPRETATION: The string appears in the StudyBrowser.js file, likely
 # within a function that handles project deletion or removal, indicating a
 # permission check.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2524
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2528
 msgid "You don't have permissions to delete or remove this project."
 msgstr "이 프로젝트를 삭제하거나 제거할 수 있는 권한이 없습니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # within a function that displays information about studies and their deletion
 # options.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2567
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2571
 msgid "They will be permanently deleted after %1 days."
 msgstr "이들은 영구적으로 %1일 후에 삭제됩니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # within a function related to permanently deleting study data after a
 # specified number of days.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2569
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
 msgid "It will be permanently deleted after %1 days."
 msgstr "데이터는 %1일 후에 영구적으로 삭제됩니다."
 
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2581
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2585
 msgid ""
 "'%1' will be removed from your list. Collaborators will still have access."
 msgstr "'%1'이(가) 목록에서 제거됩니다. 협업자는 계속 액세스할 수 있습니다."
@@ -3006,20 +3010,20 @@ msgstr "'%1'이(가) 목록에서 제거됩니다. 협업자는 계속 액세스
 # CTX-INTERPRETATION: The string "Duplicating " is part of a user interface
 # element used to display the title of a task related to duplicating a study,
 # likely within a scientific simulation application's dashboard.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2619
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2623
 msgid "Duplicating "
 msgstr "복사하는 "
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
 # indicating that a study duplication process has finished successfully.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2635
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2639
 msgid "Duplication completed"
 msgstr "복제가 완료되었습니다"
 
 # CTX-INTERPRETATION: The string "Duplication cancelled" appears in the
 # StudyBrowser.js file, likely indicating that a duplication operation has
 # been aborted by the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2640
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2644
 msgid "Duplication cancelled"
 msgstr "복사가 취소됨"
 
@@ -3431,7 +3435,7 @@ msgstr "삭제할 수 있습니다"
 #: services/static-webserver/client/source/class/osparc/data/Roles.js:129
 #: services/static-webserver/client/source/class/osparc/data/Roles.js:158
 msgid "- Can use it"
-msgstr "\"사용 가능\""
+msgstr "사용 가능"
 
 # CTX-INTERPRETATION: This string appears in the Roles.js file, likely
 # describing access rights for a user or role with 'write' permissions.
@@ -3566,7 +3570,7 @@ msgstr "서비스 실패: %1"
 #: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:404
 #: services/static-webserver/client/source/class/osparc/data/model/IframeHandler.js:419
 msgid "Service %1 %2"
-msgstr "\"서비스 %1 %2\""
+msgstr "서비스 %1 %2"
 
 # CTX-INTERPRETATION: This string appears in the Node.js code when service
 # metadata is not found during a data retrieval operation.
@@ -3869,7 +3873,7 @@ msgstr "반복이 없습니다."
 #: services/static-webserver/client/source/class/osparc/desktop/MainPageHandler.js:161
 #: services/static-webserver/client/source/class/osparc/snapshots/Loading.js:65
 msgid "Loading "
-msgstr "\"로딩 \" "
+msgstr "로딩 "
 
 # CTX-INTERPRETATION: The string "Preparing " is part of the header message
 # displayed during the preparation phase of a study in the application, likely
@@ -4291,7 +4295,6 @@ msgstr "서비스 데이터"
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:1197
 #: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:194
 #: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:217
-#: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:433
 msgid "Outputs"
 msgstr "결과물"
 
@@ -4360,7 +4363,7 @@ msgstr "줌 초기화"
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:732
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:739
 msgid "Delete Account"
-msgstr "\"계정 삭제\""
+msgstr "계정 삭제"
 
 # CTX-INTERPRETATION: The string "Your email" is used as a placeholder in a
 # form field for an email address, likely during account deletion or
@@ -4635,7 +4638,7 @@ msgstr "예, 비활성화"
 # the user's preferred two-factor authentication method.
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:526
 msgid "2FA Method"
-msgstr "\"2FA 방법\""
+msgstr "2FA 방법"
 
 # CTX-INTERPRETATION: The string "Your current password" appears as a
 # placeholder in a password field on the ProfilePage, prompting the user to
@@ -5008,7 +5011,7 @@ msgstr "총액"
 # flow.
 #: services/static-webserver/client/source/class/osparc/desktop/credits/BuyCreditsStepper.js:100
 msgid "Payment "
-msgstr "\"결제 \" "
+msgstr "결제 "
 
 # CTX-INTERPRETATION: The string "CheckoutId" is used as a label within a
 # table displaying checkout information, likely for identifying specific
@@ -5042,12 +5045,12 @@ msgstr "기간"
 msgid "Seats"
 msgstr "좌석"
 
-# CTX-INTERPRETATION: The string " credits" is used to display the user's
-# available credits in a formatted way, likely within a UI element showing
-# credit information.
+# CTX-INTERPRETATION: The string is used to display the user's available
+# credits in a CreditsIndicator component, formatting them with commas and
+# converting to a specific color based on their value.
 #: services/static-webserver/client/source/class/osparc/desktop/credits/CreditsIndicator.js:84
-msgid " credits"
-msgstr " 신원"
+msgid "%1 credits"
+msgstr "%1 크레딧"
 
 # CTX-INTERPRETATION: The string "No usage records found" appears in the
 # CreditsPerService.js file, likely within a UI component that displays
@@ -5061,7 +5064,7 @@ msgstr "사용 기록이 없습니다."
 # contributing data, likely within a timeframe of the last day.
 #: services/static-webserver/client/source/class/osparc/desktop/credits/CreditsSummary.js:49
 msgid "Last 24h"
-msgstr "\"지난 24시간\""
+msgstr "지난 24시간"
 
 # CTX-INTERPRETATION: Displays the date range for filtering data, specifically
 # indicating the previous week.
@@ -5078,12 +5081,12 @@ msgstr "지난 주"
 msgid "Last month"
 msgstr "지난달"
 
-# CTX-INTERPRETATION: The string " used" is part of a function that adds the
-# word "used" to a numerical value representing credits, likely for display
-# purposes in a user interface.
+# CTX-INTERPRETATION: This string is part of a user interface element that
+# displays the number of credits used by the user in the Osparc desktop
+# application.
 #: services/static-webserver/client/source/class/osparc/desktop/credits/CurrentUsageIndicator.js:87
-msgid " used"
-msgstr " 사용된"
+msgid "%1 used"
+msgstr "%1 사용됨"
 
 # CTX-INTERPRETATION: The string "PurchaseId" is used as a label in a table
 # displaying purchase information, likely for identifying individual
@@ -5099,9 +5102,8 @@ msgstr "구매 ID"
 #: services/static-webserver/client/source/class/osparc/desktop/credits/TransactionsTableModel.js:17
 #: services/static-webserver/client/source/class/osparc/desktop/credits/UsageTable.js:109
 #: services/static-webserver/client/source/class/osparc/jobs/SubRunsTable.js:111
-#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:77
 msgid "Credits"
-msgstr "\"크레딧\""
+msgstr "크레딧"
 
 # CTX-INTERPRETATION: The string "Select a Credit Account:" appears as a label
 # in a user interface element, likely used to prompt the user to choose a
@@ -5249,7 +5251,7 @@ msgstr "프로모션 중 오류가 발생했습니다. "
 #: services/static-webserver/client/source/class/osparc/desktop/organizations/MembersList.js:426
 #: services/static-webserver/client/source/class/osparc/desktop/organizations/MembersList.js:447
 msgid "Something went wrong while demoting to "
-msgstr "\"어드민 권한을 변경하는 동안 오류가 발생했습니다\" "
+msgstr "어드민 권한을 변경하는 동안 오류가 발생했습니다"
 
 # CTX-INTERPRETATION: This string appears in various files related to managing
 # collaborators and members within an organization, likely indicating a
@@ -5272,7 +5274,7 @@ msgstr "성공적으로 제거됨"
 #: services/static-webserver/client/source/class/osparc/share/CollaboratorsTag.js:76
 #: services/static-webserver/client/source/class/osparc/share/CollaboratorsWorkspace.js:72
 msgid "Something went wrong while removing "
-msgstr "\"제거하는 동안 오류가 발생했습니다\" "
+msgstr "제거하는 동안 오류가 발생했습니다"
 
 # CTX-INTERPRETATION: This string appears in the MembersList.js file and is
 # used to confirm whether the user has administrative or management privileges
@@ -5327,7 +5329,7 @@ msgstr "성공적으로 편집되었습니다"
 #: services/static-webserver/client/source/class/osparc/desktop/organizations/OrganizationsList.js:305
 #: services/static-webserver/client/source/class/osparc/desktop/wallets/WalletDetails.js:128
 msgid "Something went wrong while editing "
-msgstr "\"편집하는 동안 문제가 발생했습니다\" "
+msgstr "편집하는 동안 문제가 발생했습니다"
 
 # CTX-INTERPRETATION: The string "Members" appears as the title of a tab page
 # within an organizational details or wallet details view, likely displaying a
@@ -5458,7 +5460,7 @@ msgstr "번호"
 # component, likely for user input or validation.
 #: services/static-webserver/client/source/class/osparc/desktop/paymentMethods/PaymentMethodDetails.js:53
 msgid "Expiration date"
-msgstr "\"유효 기간\""
+msgstr "유효 기간"
 
 # CTX-INTERPRETATION: The string appears in the PaymentMethodListItem.js file,
 # specifically within a confirmation dialog to prompt the user before deleting
@@ -5535,7 +5537,7 @@ msgstr "대시보드로 돌아가기"
 # indicating that the action cannot be undone.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/ConfirmationsPage.js:61
 msgid "Delete a %1"
-msgstr "\"연구를 삭제하는 경우, 이 작업은 되돌릴 수 없습니다.\""
+msgstr "연구를 삭제하는 경우, 이 작업은 되돌릴 수 없습니다."
 
 # CTX-INTERPRETATION: This string appears in the confirmation dialog for
 # deleting a study, warning the user that the action is irreversible and
@@ -5634,7 +5636,7 @@ msgstr "크레딧 표시 설정"
 # setting remains active indefinitely.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:117
 msgid "Always"
-msgstr "\"항상\""
+msgstr "항상"
 
 # CTX-INTERPRETATION: This string "Warning" appears as a label within the
 # GeneralPage.js file, likely indicating a warning message or alert to the
@@ -5774,7 +5776,7 @@ msgstr "API 키를 삭제하시겠습니까?"
 # allows the user to delete an API key stored in their preferences.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/TokensPage.js:140
 msgid "Delete API key"
-msgstr "\"API 키 삭제\""
+msgstr "API 키 삭제"
 
 # CTX-INTERPRETATION: The string appears in the TokensPage.js file,
 # specifically when an attempt to delete an API key fails, indicating that the
@@ -5978,7 +5980,7 @@ msgstr "멤버로 강등 "
 #: services/static-webserver/client/source/class/osparc/desktop/wallets/MemberListItem.js:101
 #: services/static-webserver/client/source/class/osparc/ui/list/MemberListItem.js:130
 msgid "Remove "
-msgstr "\"삭제 \" "
+msgstr "삭제 "
 
 # CTX-INTERPRETATION: This label displays a message indicating that only
 # accountants within an organization can share a wallet with other users,
@@ -6315,7 +6317,7 @@ msgstr "모든 파일을 단일 ZIP 파일로 압축하여 업로드해 주십�
 # likely within a file management interface.
 #: services/static-webserver/client/source/class/osparc/file/FileDrop.js:252
 msgid "Drop me"
-msgstr "\"저기다 드세요\""
+msgstr "저기다 드세요"
 
 # CTX-INTERPRETATION: The string appears in the FileDrop.js and WorkbenchUI.js
 # files, indicating a message to the user when they attempt to upload folders
@@ -6537,7 +6539,7 @@ msgstr "까지"
 #: services/static-webserver/client/source/class/osparc/filter/DateFilters.js:32
 #: services/static-webserver/client/source/class/osparc/utils/Utils.js:664
 msgid "Today"
-msgstr "\"오늘\""
+msgstr "오늘"
 
 # CTX-INTERPRETATION: The string "Last year" is used as a label for a button
 # that allows the user to filter data from the previous year, setting the
@@ -6912,7 +6914,7 @@ msgstr "접근 권한 편집"
 # documentation.
 #: services/static-webserver/client/source/class/osparc/info/ServiceLarge.js:289
 msgid "Release Notes"
-msgstr "\"릴리즈 노트\""
+msgstr "릴리즈 노트"
 
 # CTX-INTERPRETATION: The string "Edit release notes URL" appears as the label
 # for a button that allows users to edit the URL associated with release
@@ -6920,7 +6922,7 @@ msgstr "\"릴리즈 노트\""
 # information.
 #: services/static-webserver/client/source/class/osparc/info/ServiceLarge.js:292
 msgid "Edit release notes URL"
-msgstr "\"릴리즈 노트 URL 편집\""
+msgstr "릴리즈 노트 URL 편집"
 
 # CTX-INTERPRETATION: This string "Integration Version" is used to display the
 # version of the integration component within a user interface, likely related
@@ -6961,7 +6963,7 @@ msgstr "설정되지 않음"
 # release notes, likely within a larger application interface.
 #: services/static-webserver/client/source/class/osparc/info/ServiceLarge.js:444
 msgid "Edit Release Notes URL"
-msgstr "\"릴리즈 노트 URL 편집\""
+msgstr "릴리즈 노트 URL 편집"
 
 # CTX-INTERPRETATION: This string "Edit Icon" appears as the title of an icon
 # editor window, likely used within a larger application to modify icons
@@ -7204,7 +7206,7 @@ msgstr "편집자와 조직에 공유"
 #: services/static-webserver/client/source/class/osparc/jobs/ActivityCenterWindow.js:70
 #: services/static-webserver/client/source/class/osparc/jobs/JobsButton.js:29
 msgid "Activity Center"
-msgstr "\"액티비티 센터\""
+msgstr "액티비티 센터"
 
 # CTX-INTERPRETATION: This string "Tasks" appears in the UI elements related
 # to managing and displaying tasks within a scientific simulation application,
@@ -7340,7 +7342,7 @@ msgstr "종료됨"
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:210
 #: services/static-webserver/client/source/class/osparc/po/UsersRegistered.js:233
 msgid "Info"
-msgstr "\"정보\""
+msgstr "정보"
 
 # CTX-INTERPRETATION: The string "Are you sure you want to cancel" is used in
 # a confirmation dialog within the RunsTable component to prompt the user
@@ -7369,7 +7371,7 @@ msgstr "실행 중지"
 # node ID.
 #: services/static-webserver/client/source/class/osparc/jobs/SubRunsTable.js:62
 msgid "Node Id"
-msgstr "\"노드 ID\""
+msgstr "노드 ID"
 
 # CTX-INTERPRETATION: The string "App" is likely used as a label or title for
 # an application within the OSPARC software, possibly in a table displaying
@@ -7729,7 +7731,7 @@ msgstr "숨기기"
 # users to request access.
 #: services/static-webserver/client/source/class/osparc/navigation/NavigationBar.js:208
 msgid "This is TIP.lite, a light version of TIP.<br>Request access to TIP."
-msgstr "\"이것은 TIP.lite로, TIP의 가벼운 버전입니다.<br>TIP에 대한 액세스를 요청하십시오.\""
+msgstr "이것은 TIP.lite로, TIP의 가벼운 버전입니다.<br>TIP에 대한 액세스를 요청하십시오."
 
 # CTX-INTERPRETATION: The string "Saving..." appears as a label within a UI
 # element (NavigationBar) indicating that the application is in the process of
@@ -7831,7 +7833,7 @@ msgstr "구매 주문 센터"
 #: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:111
 #: services/static-webserver/client/source/class/osparc/support/SupportCenter.js:166
 msgid "Help & Support"
-msgstr "\"도움말 및 지원\""
+msgstr "도움말 및 지원"
 
 # CTX-INTERPRETATION: This string appears in the 'UserMenu' component, likely
 # representing a button or menu item that opens a shop or marketplace window
@@ -7862,6 +7864,12 @@ msgstr "oSPARC에 대한 정보"
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:23
 msgid "About Product"
 msgstr "제품 정보"
+
+# CTX-INTERPRETATION: This string is used within the 'About Product' menu item
+# of a user interface, displaying the product name in the label.
+#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
+msgid "About %1"
+msgstr "%1 정보"
 
 # CTX-INTERPRETATION: The string "License" appears in the UserMenu component,
 # likely representing a button or menu item that allows users to access
@@ -7936,6 +7944,13 @@ msgstr "설명"
 #: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:237
 msgid "Preparing Inputs"
 msgstr "입력 준비 중"
+
+# CTX-INTERPRETATION: The string "Outputs (%1)" is used within a slideshow
+# node view to display the number of valid outputs processed, likely
+# indicating the status or results of a simulation.
+#: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:433
+msgid "Outputs (%1)"
+msgstr "출력 (%1)"
 
 # CTX-INTERPRETATION: The string "New Outputs generated" appears in the
 # BaseNodeView.js file, likely indicating that new simulation outputs have
@@ -8559,14 +8574,14 @@ msgstr "성공적으로 업데이트되었습니다."
 # selection context.
 #: services/static-webserver/client/source/class/osparc/pricing/PlanListItem.js:212
 msgid "Id: %1"
-msgstr "\"ID: %1\""
+msgstr "ID: %1"
 
 # CTX-INTERPRETATION: The string "Key: %1" is used within a function to
 # display the key value associated with a plan item, likely in a user
 # interface.
 #: services/static-webserver/client/source/class/osparc/pricing/PlanListItem.js:220
 msgid "Key: %1"
-msgstr "\"키: %1\""
+msgstr "키: %1"
 
 # CTX-INTERPRETATION: The string "New Pricing Plan" appears as the label for a
 # button that likely adds a new pricing plan within the application, based on
@@ -8685,7 +8700,7 @@ msgstr "새 가격 단위"
 # application, likely in the context of defining pricing plans.
 #: services/static-webserver/client/source/class/osparc/pricing/UnitsList.js:103
 msgid "Pricing Unit Creator"
-msgstr "\"가격 단위 생성기\""
+msgstr "가격 단위 생성기"
 
 # CTX-INTERPRETATION: This string appears as the title of a pop-up window used
 # to edit a pricing unit within the osparc.pricing.UnitsList application,
@@ -8709,9 +8724,7 @@ msgid ""
 "Sim4Life.web makes use of technologies developed by our research partner for"
 " the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-"
 "funded by the U.S. National Institutes of Health’s SPARC initiative."
-msgstr ""
-"\"Sim4Life.web은 연구 파트너가 개발한 기술을 사용하여 o<sup>2</sup>S<sup>2</sup>PARC 플랫폼, "
-"IT’IS Foundation 및 미국 국립 보건국 SPARC 이니셔티브의 자금을 지원받아 운영됩니다.\""
+msgstr "Sim4Life.web은 연구 파트너가 개발한 기술을 사용하여 o<sup>2</sup>S<sup>2</sup>PARC 플랫폼, IT’IS Foundation 및 미국 국립 보건국 SPARC 이니셔티브의 자금을 지원받아 운영됩니다."
 
 # CTX-INTERPRETATION: This string appears in the AboutProduct.js file and
 # provides a link to the Sim4Life website for users seeking more information.
@@ -9012,9 +9025,7 @@ msgid ""
 "        1) Start Sim4Life.lite: Click the <b>+ Start Sim4Life.lite</b> "
 "button to create a new project. This will start the user interface of "
 "Sim4Life.lite.      "
-msgstr ""
-"\"1) Start Sim4Life.lite: <b>+ Start Sim4Life.lite</b> 버튼을 클릭하여 새 프로젝트를 "
-"만듭니다. 그러면 Sim4Life.lite의 사용자 인터페이스가 시작됩니다.\"      "
+msgstr "1) Start Sim4Life.lite: <b>+ Start Sim4Life.lite</b> 버튼을 클릭하여 새 프로젝트를 만듭니다. 그러면 Sim4Life.lite의 사용자 인터페이스가 시작됩니다."
 
 # CTX-INTERPRETATION: This string appears in the Dashboard component of the
 # application, explaining how to manage existing projects represented as
@@ -9026,10 +9037,7 @@ msgid ""
 "managed.         Click on the card to open the project. Click the “three "
 "dots” in the upper right corner of the card to perform operations such as "
 "rename, share, delete.      "
-msgstr ""
-"\"각 카드: 기존 프로젝트(자신의 프로젝트 또는 다른 사용자가 공유하는 프로젝트)를 표시하며, 액세스하고 관리할 수 있습니다. 카드를 "
-"클릭하여 프로젝트를 엽니다. 또한 카드의 오른쪽 상단 모서리에 있는 \"세 개의 점\"을 클릭하여 이름을 변경하거나 공유하거나 삭제하는 "
-"등의 작업을 수행할 수 있습니다.\"      "
+msgstr "각 카드: 기존 프로젝트(자신의 프로젝트 또는 다른 사용자가 공유하는 프로젝트)를 표시하며, 액세스하고 관리할 수 있습니다. 카드를 클릭하여 프로젝트를 엽니다. 또한 카드의 오른쪽 상단 모서리에 있는 \"세 개의 점\"을 클릭하여 이름을 변경하거나 공유하거나 삭제하는 등의 작업을 수행할 수 있습니다."
 
 # CTX-INTERPRETATION: This string describes the availability of pre-built
 # tutorial projects for Sim4Life.lite users, which are automatically copied
@@ -9083,11 +9091,7 @@ msgid ""
 "wireless communication         to medical applications. The access to "
 "Sim4Life.lite is available free of charge to students enrolled at registered"
 " universities.      "
-msgstr ""
-"\"Sim4Life.lite는 강력한 웹 기반 시뮬레이션 플랫폼으로, 실제 현상을 모델링하고 분석하며 검증된 환경에서 복잡한 기술 장치를"
-" 설계할 수 있도록 합니다. Sim4Life.lite는 무선 통신부터 의료 응용 분야에 이르기까지 다양한 주제에 대한 컴퓨팅 모델링 및 "
-"시뮬레이션을 이해하는 데 도움이 되도록 특별히 학생들을 위해 만들어졌습니다. 등록된 대학의 학생에게 무료로 Sim4Life.lite에 "
-"액세스할 수 있습니다.\"      "
+msgstr "Sim4Life.lite는 강력한 웹 기반 시뮬레이션 플랫폼으로, 실제 현상을 모델링하고 분석하며 검증된 환경에서 복잡한 기술 장치를 설계할 수 있도록 합니다. Sim4Life.lite는 무선 통신부터 의료 응용 분야에 이르기까지 다양한 주제에 대한 컴퓨팅 모델링 및 시뮬레이션을 이해하는 데 도움이 되도록 특별히 학생들을 위해 만들어졌습니다. 등록된 대학의 학생에게 무료로 Sim4Life.lite에 액세스할 수 있습니다."
 
 # CTX-INTERPRETATION: 이 문자열은 Sim4Life.lite 소프트웨어의 기능 설명 섹션에 나타나며, 사용 가능한 솔버 및
 # 모델 목록을 나열합니다.
@@ -9258,9 +9262,7 @@ msgid ""
 " shapes, electrode dimensions and         potential electrode locations "
 "(currently required to narrow down the huge exposure configuration search "
 "space) are selected.      "
-msgstr ""
-"\"첫 번째 단계에서 관련 종, 자극 대상, 전극 모양, 전극 크기 및 잠재적 전극 위치(현재는 광범위한 노출 구성 검색 공간을 좁히는 "
-"데 필요한)를 선택합니다.\"      "
+msgstr "첫 번째 단계에서 관련 종, 자극 대상, 전극 모양, 전극 크기 및 잠재적 전극 위치(현재는 광범위한 노출 구성 검색 공간을 좁히는 데 필요한)를 선택합니다."
 
 # CTX-INTERPRETATION: This string appears in the ElectrodeSelector.js file,
 # guiding the user on how to submit their configuration after completing the
@@ -10026,7 +10028,7 @@ msgstr "계속"
 # an issue.
 #: services/static-webserver/client/source/class/osparc/store/Support.js:160
 msgid "Log in in "
-msgstr "\"로그인 \" "
+msgstr "로그인 "
 
 # CTX-INTERPRETATION: The 'Feedback' string is used as the title for a dialog
 # window that allows users to provide feedback on a product, likely related to
@@ -10213,11 +10215,12 @@ msgstr "메시지가 아직 없습니다"
 msgid "1 Message"
 msgstr "1개의 메시지"
 
-# CTX-INTERPRETATION: This string is used to display the number of messages in
-# a conversation page, appending ' Messages' to the numerical value.
+# CTX-INTERPRETATION: The string is used within the ConversationPage.js file
+# to display the number of messages in a conversation, likely on a user
+# interface element.
 #: services/static-webserver/client/source/class/osparc/study/ConversationPage.js:190
-msgid " Messages"
-msgstr " 메시지"
+msgid "%1 Messages"
+msgstr "%1개의 메시지"
 
 # CTX-INTERPRETATION: The string "Add new conversation" appears as a tooltip
 # for a button that allows the user to create a new conversation within a
@@ -10308,6 +10311,13 @@ msgstr "기간: 1년"
 msgid "Rent"
 msgstr "임대"
 
+# CTX-INTERPRETATION: This string is used within the PricingUnitLicense class
+# to display the number of credits associated with a license, formatted as
+# "Credits: %1".
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:77
+msgid "Credits: %1"
+msgstr "크레딧: %1"
+
 # CTX-INTERPRETATION: This string is part of a message displayed to the user
 # when renting a unit, indicating the availability date and rental cost.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
@@ -10321,12 +10331,12 @@ msgstr "까지 이용 가능합니다 "
 msgid "Selected"
 msgstr "선택됨"
 
-# CTX-INTERPRETATION: The string "Credits/h" is used within a PricingUnitTier
-# class to display the cost of a resource in terms of credits per hour, likely
-# for a user interface.
+# CTX-INTERPRETATION: This string is used within the PricingUnitTier class to
+# display a cost value in terms of 'Credits/h', using a localization function
+# to adapt to the user's locale.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:96
-msgid "Credits/h"
-msgstr "크레딧/시간"
+msgid "Credits/h: %1"
+msgstr "크레딧/시간: %1"
 
 # CTX-INTERPRETATION: The string "EC2" is used within a function to display
 # EC2-specific pricing information in Korean, likely as part of a user
@@ -10453,7 +10463,7 @@ msgstr "특정 콜 예약 소개를 선택하는 라디오 버튼의 레이블�
 # or project.
 #: services/static-webserver/client/source/class/osparc/support/BookACallTopicSelector.js:86
 msgid "some help with my project"
-msgstr "\"저의 프로젝트에 대한 도움을 요청하기\""
+msgstr "저의 프로젝트에 대한 도움을 요청하기"
 
 # CTX-INTERPRETATION: This string appears in the BookACallTopicSelector class,
 # likely related to a checkbox option for users to share their current project
@@ -10583,7 +10593,6 @@ msgstr "지원 티켓이 생성되었습니다. 저희 팀은 귀하의 요청�
 # unread messages within a conversation list, likely for visual notification.
 #: services/static-webserver/client/source/class/osparc/support/ConversationListItem.js:89
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:94
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:231
 msgid "Unread"
 msgstr "읽지 않은 메시지"
 
@@ -10592,7 +10601,6 @@ msgstr "읽지 않은 메시지"
 # user interface for managing conversations.
 #: services/static-webserver/client/source/class/osparc/support/ConversationListItem.js:98
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:112
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:237
 msgid "Archived"
 msgstr "보관됨"
 
@@ -10647,7 +10655,7 @@ msgstr "대화로 돌아가기"
 #: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:64
 #: services/static-webserver/client/source/class/osparc/support/HomePage.js:83
 msgid "Ask a Question"
-msgstr "\"질문하기\""
+msgstr "질문하기"
 
 # CTX-INTERPRETATION: This string appears in the "Book a Call 3rd" flow within
 # the ConversationPage, likely guiding the user to select a date and time for
@@ -10710,7 +10718,6 @@ msgstr "읽지 않은 대화만 표시"
 # button that filters conversations to show only those with an active status,
 # likely within a user interface.
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:103
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:234
 msgid "Active"
 msgstr "활성"
 
@@ -10762,6 +10769,33 @@ msgstr "현재 활성 대화가 없습니다."
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:210
 msgid "No archived conversations"
 msgstr "보관된 대화가 없습니다"
+
+# CTX-INTERPRETATION: This string is used within the 'Conversations' class to
+# display a label indicating that all items are selected or filtered, using
+# the provided count value.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:228
+msgid "All (%1)"
+msgstr "전체 (%1)"
+
+# CTX-INTERPRETATION: This string is used to display the number of unread
+# messages in a user interface, likely within a conversations or messaging
+# feature.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:231
+msgid "Unread (%1)"
+msgstr "읽지 않음 (%1)"
+
+# CTX-INTERPRETATION: This string is used to display the active status of a
+# filter in the user interface, replacing '%1' with the current active count.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:234
+msgid "Active (%1)"
+msgstr "활성 (%1)"
+
+# CTX-INTERPRETATION: This string is used to display the number of archived
+# items in a filter control within a user interface, likely for filtering
+# conversations or data based on their archival status.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:237
+msgid "Archived (%1)"
+msgstr "보관됨 (%1)"
 
 # CTX-INTERPRETATION: The string "Learning" is used as the title for a section
 # within a user interface element, likely indicating a learning-related
@@ -10829,7 +10863,7 @@ msgstr "파일 압축 중..."
 # being downloaded, along with the loaded and total sizes.
 #: services/static-webserver/client/source/class/osparc/task/ExportData.js:101
 msgid "Downloading: "
-msgstr "\"다운로드 중: \" "
+msgstr "다운로드 중: "
 
 # CTX-INTERPRETATION: This string is displayed in a progress window to inform
 # the user that a download process has started within the Osparc task export
@@ -10958,12 +10992,11 @@ msgstr "건너뛰기"
 msgid "To Tours"
 msgstr "투어 보기"
 
-# CTX-INTERPRETATION: The string "Step: " is part of a label that displays the
-# current simulation step and total steps in a tour, likely within a user
-# interface.
+# CTX-INTERPRETATION: The string is used within the 'Step' class to display
+# the current step number and total steps in a tour, likely for user guidance.
 #: services/static-webserver/client/source/class/osparc/tours/Step.js:209
-msgid "Step: "
-msgstr "\"단계: \" "
+msgid "Step: %1/%2"
+msgstr "단계: %1/%2"
 
 # CTX-INTERPRETATION: The string "by" appears as a label within a DateAndBy
 # component, likely indicating the date or time associated with an event or
@@ -10987,11 +11020,12 @@ msgstr "저의 것"
 msgid "Select a file"
 msgstr "파일 선택"
 
-# CTX-INTERPRETATION: This string appears as tooltip text indicating the
-# software is powered by OSPARC, likely within a UI element.
+# CTX-INTERPRETATION: This string is used in the 'PoweredByOsparc' component
+# to display the software name and version information, dynamically replacing
+# '%1' with the OSPARC official name.
 #: services/static-webserver/client/source/class/osparc/ui/basic/PoweredByOsparc.js:32
-msgid "powered by "
-msgstr "저희는 OSPARC에서 제공합니다. "
+msgid "powered by %1"
+msgstr "%1 제공"
 
 # CTX-INTERPRETATION: The string "Minimum items: " appears in a form field
 # validation context, likely indicating the minimum number of items required
@@ -11024,7 +11058,7 @@ msgstr "범위 초과"
 #: services/static-webserver/client/source/class/osparc/ui/form/ContentSchemaHelper.js:88
 #: services/static-webserver/client/source/class/osparc/ui/form/ContentSchemaHelper.js:130
 msgid "Minimum value: "
-msgstr "\"최소값: \" "
+msgstr "최소값: "
 
 # CTX-INTERPRETATION: The string "Maximum value: " is used within a form field
 # validation function to display the maximum allowed value based on a
@@ -11173,7 +11207,7 @@ msgstr "사용자 계정"
 # interface, likely for input or display of personal information.
 #: services/static-webserver/client/source/class/osparc/user/UserProfile.js:98
 msgid "Full Name"
-msgstr "\"전체 이름\""
+msgstr "전체 이름"
 
 # CTX-INTERPRETATION: The string "Phone" is used within the UserProfile class
 # to display phone number information in a grid-based user interface, likely
@@ -11532,7 +11566,7 @@ msgstr "모두 실행"
 # the system is currently processing and creating the study.
 #: services/static-webserver/client/source/class/osparc/widget/ProgressSequence.js:134
 msgid "CREATING "
-msgstr "\"만들고 있습니다\" "
+msgstr "만들고 있습니다"
 
 # CTX-INTERPRETATION: This string appears as the title of a progress label
 # within a ProgressSequence widget, indicating that a process is in progress.
@@ -11550,7 +11584,7 @@ msgstr "텍스트 입력"
 # indicating a maximum character limit for a subtitle or label field.
 #: services/static-webserver/client/source/class/osparc/widget/Renamer.js:138
 msgid "%1 characters max"
-msgstr "\"최대 %1 문자\""
+msgstr "최대 %1 문자"
 
 # CTX-INTERPRETATION: This tooltip explains the function of a toggle button
 # used in a LoggerView to filter log messages displayed from a specific node
@@ -11780,9 +11814,7 @@ msgstr "새 프로젝트 만들기"
 msgid ""
 "Clicking on the (+) New button, allows you to create new Projects, start "
 "your favourite Apps or create new Folders to organize the projects"
-msgstr ""
-"\"(+) New 버튼을 클릭하면 새 프로젝트를 만들거나, 좋아하는 앱을 시작하거나, 프로젝트를 정리하기 위한 새 폴더를 만드는 데 "
-"사용할 수 있습니다.\""
+msgstr "(+) New 버튼을 클릭하면 새 프로젝트를 만들거나, 좋아하는 앱을 시작하거나, 프로젝트를 정리하기 위한 새 폴더를 만드는 데 사용할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in tour guides for various SPARCS
 # applications, explaining the functionality of a search and filter tool.
@@ -11862,10 +11894,7 @@ msgid ""
 "template, it saves a snapshot of your project. Later, you can click on it to"
 " start a fresh, independent copy.<br>Templates shared with you by others "
 "will also appear here, so you can build on their work too."
-msgstr ""
-"\"템플릿은 프로젝트를 일시 정지하고 필요할 때마다 재사용할 수 있게 해줍니다. 템플릿을 만들면 프로젝트의 스냅샷을 저장합니다. 나중에 "
-"클릭하여 새롭고 독립적인 복본을 시작할 수 있습니다.<br>다른 사람에게 공유된 템플릿도 여기에 표시되므로, 다른 사람의 작업을 기반으로"
-" 구축할 수도 있습니다.\""
+msgstr "템플릿은 프로젝트를 일시 정지하고 필요할 때마다 재사용할 수 있게 해줍니다. 템플릿을 만들면 프로젝트의 스냅샷을 저장합니다. 나중에 클릭하여 새롭고 독립적인 복본을 시작할 수 있습니다.<br>다른 사람에게 공유된 템플릿도 여기에 표시되므로, 다른 사람의 작업을 기반으로 구축할 수도 있습니다."
 
 # CTX-INTERPRETATION: This string appears in tour guides explaining Public
 # Projects, comparing them to templates and highlighting their shared nature
@@ -11877,9 +11906,7 @@ msgid ""
 "Just like templates, Public Projects are frozen snapshots—but they’re shared"
 " with the entire scientific community. Anyone can browse them and create "
 "their own copy and build upon."
-msgstr ""
-"\"템플릿과 마찬가지로, 공개 프로젝트는 정지된 스냅샷입니다—하지만 과학 커뮤니티 전체와 공유됩니다. 누구나 이를 탐색하고 자신의 "
-"복사본을 만들고 기반을 구축할 수 있습니다.\""
+msgstr "템플릿과 마찬가지로, 공개 프로젝트는 정지된 스냅샷입니다—하지만 과학 커뮤니티 전체와 공유됩니다. 누구나 이를 탐색하고 자신의 복사본을 만들고 기반을 구축할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in the 'osparc_tours.json',
 # 's4l_tours.json', and 's4llite_tours.json' files, likely as part of a user
@@ -11981,9 +12008,7 @@ msgid ""
 "Here you can track all your running jobs, recent activity, and completed "
 "tasks. If you want to check the results once these are ready, you will find "
 "more details in the Activity Overview on the Project card."
-msgstr ""
-"\"여기에 실행 중인 모든 작업, 최근 활동 및 완료된 작업을 추적할 수 있습니다. 결과가 준비되면 프로젝트 카드에 있는 Activity"
-" Overview에서 자세한 내용을 확인할 수 있습니다.\""
+msgstr "여기에 실행 중인 모든 작업, 최근 활동 및 완료된 작업을 추적할 수 있습니다. 결과가 준비되면 프로젝트 카드에 있는 Activity Overview에서 자세한 내용을 확인할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears within the 'beforeClick' section of
 # a tour guide, explaining the functionality of a notification button.
@@ -12086,9 +12111,7 @@ msgstr "Sim4Life.lite 시작"
 msgid ""
 "Clicking on the (+) New button, allows you to create new Sim4Life.lite "
 "projects or new Folders to organize the projects"
-msgstr ""
-"\"(+) New 버튼을 클릭하면 새로운 Sim4Life.lite 프로젝트를 만들거나 프로젝트를 구성하기 위한 새 폴더를 만드는 데 "
-"사용할 수 있습니다.\""
+msgstr "(+) New 버튼을 클릭하면 새로운 Sim4Life.lite 프로젝트를 만들거나 프로젝트를 구성하기 위한 새 폴더를 만드는 데 사용할 수 있습니다."
 
 # CTX-INTERPRETATION: This string describes the functionality of a filtering
 # and searching tool within the application, allowing users to refine project
@@ -12376,3 +12399,8 @@ msgid ""
 "Once the payment is validated, the Credits will be added to your Credit "
 "Account and they will be ready to be used."
 msgstr "결제가 확인되면 신용은 귀하의 신용 계정에 추가되어 사용할 준비가 됩니다."
+
+# CTX-INTERPRETATION: This string is used to display the number of messages in
+# a conversation page, appending ' Messages' to the numerical value.
+#~ msgid " Messages"
+#~ msgstr " 메시지"
