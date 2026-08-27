@@ -23,8 +23,8 @@
   "locales": [
     "en_US",
     "es_ES",
-    "zh",
-    "ko_KR"
+    "ko_KR",
+    "zh"
   ],
   "writeAllTranslations": true,
   "applications": [
