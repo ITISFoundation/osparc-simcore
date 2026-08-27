@@ -1,5 +1,4 @@
 from typing import Final
-from uuid import uuid4
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -15,14 +14,13 @@ def generate_dask_job_id(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    run_id: int,
 ) -> DaskJobID:
-    """creates a dask job id:
-    The job ID shall contain the user_id, project_id, node_id
-    Also, it must be unique
-    and it is shown in the Dask scheduler dashboard website
+    """creates a deterministic dask job id:
+    The job ID shall contain the user_id, project_id, node_id and run_id
     """
     return DaskJobID(
-        f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
+        f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:runid_{run_id}"
     )
 
 

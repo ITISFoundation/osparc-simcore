@@ -7,18 +7,16 @@
 import contextlib
 import functools
 import logging
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
+from typing import ClassVar
 
 import httpx
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from httpx import HTTPStatusError
 from models_library.payments import StripeInvoiceID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.fastapi.http_client import (
-    AttachLifespanMixin,
-    BaseHTTPApi,
-    HealthMixinMixin,
-)
+from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
 
@@ -57,10 +55,10 @@ class _StripeBearerAuth(httpx.Auth):
         yield request
 
 
-class StripeApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
+class StripeApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
     """https://docs.stripe.com/api"""
 
-    app_state_name: str = "stripe_api"
+    app_state_name: ClassVar[str] = "stripe_api"
 
     async def is_healthy(
         self,
@@ -83,7 +81,7 @@ class StripeApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInA
         return InvoiceData.model_validate_json(response.text)
 
 
-def setup_stripe(app: FastAPI):
+def configure_stripe(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     assert app.state  # nosec
     settings: ApplicationSettings = app.state.settings
     api = StripeApi.from_client_kwargs(
@@ -97,4 +95,12 @@ def setup_stripe(app: FastAPI):
         )
 
     api.set_to_app_state(app)
-    api.attach_lifespan_to(app)
+
+    async def _stripe_lifespan(_: FastAPI) -> AsyncIterator[State]:
+        try:
+            await api.setup_client()
+            yield {}
+        finally:
+            await api.teardown_client()
+
+    app_lifespan.add(_stripe_lifespan)

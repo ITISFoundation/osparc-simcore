@@ -50,12 +50,12 @@ OLLAMA_LOG_FILE := $(OLLAMA_STATE_DIR)/ollama.log
 .PHONY: ollama-status ollama-serve ollama-stop ollama-pull ollama-ensure
 
 # ---------------------------------------------------------------------------
-ollama-status: ## Health-check the local Ollama daemon
-	@if curl -fsS $(OLLAMA_HOST)/api/tags >/dev/null 2>&1; then \
-	  echo "[ollama] reachable at $(OLLAMA_HOST)"; \
-	else \
-	  echo "[ollama] NOT reachable at $(OLLAMA_HOST)"; exit 1; \
-	fi
+ollama-ensure: ollama-pull ## Ensure Ollama daemon is running with model pulled
+
+# ---------------------------------------------------------------------------
+ollama-pull: | ollama-serve ## Pull the Ollama model (OLLAMA_MODEL=$(OLLAMA_MODEL))
+	@echo "[ollama] pull $(OLLAMA_MODEL)"
+	ollama pull $(OLLAMA_MODEL)
 
 # ---------------------------------------------------------------------------
 ollama-serve: ## Start local Ollama daemon in background (idempotent)
@@ -76,6 +76,14 @@ ollama-serve: ## Start local Ollama daemon in background (idempotent)
 	echo "[error] ollama serve did not become healthy within $(OLLAMA_STARTUP_TIMEOUT)s -- see $(OLLAMA_LOG_FILE)"; exit 1
 
 # ---------------------------------------------------------------------------
+ollama-status: ## Health-check the local Ollama daemon
+	@if curl -fsS $(OLLAMA_HOST)/api/tags >/dev/null 2>&1; then \
+	  echo "[ollama] reachable at $(OLLAMA_HOST)"; \
+	else \
+	  echo "[ollama] NOT reachable at $(OLLAMA_HOST)"; exit 1; \
+	fi
+
+# ---------------------------------------------------------------------------
 ollama-stop: ## Stop the Ollama daemon started by this Makefile
 	@if [ -f $(OLLAMA_PID_FILE) ]; then \
 	  kill $$(cat $(OLLAMA_PID_FILE)) 2>/dev/null || true; \
@@ -84,11 +92,3 @@ ollama-stop: ## Stop the Ollama daemon started by this Makefile
 	else \
 	  echo "[ollama] no PID file -- nothing to stop (daemon may be externally managed)"; \
 	fi
-
-# ---------------------------------------------------------------------------
-ollama-pull: | ollama-serve ## Pull the Ollama model (OLLAMA_MODEL=$(OLLAMA_MODEL))
-	@echo "[ollama] pull $(OLLAMA_MODEL)"
-	ollama pull $(OLLAMA_MODEL)
-
-# ---------------------------------------------------------------------------
-ollama-ensure: ollama-pull ## Ensure Ollama daemon is running with model pulled

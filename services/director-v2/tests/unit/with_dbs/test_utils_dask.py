@@ -91,7 +91,7 @@ async def mocked_node_ports_filemanager_fcts(
         "get_upload_links_from_s3": mocker.patch(
             "simcore_service_director_v2.utils.dask.port_utils.filemanager.get_upload_links_from_s3",
             autospec=True,
-            side_effect=lambda **kwargs: (
+            side_effect=lambda **kwargs: (  # noqa: ARG005
                 0,
                 FileUploadSchema(
                     urls=[
@@ -198,6 +198,7 @@ async def test_parse_output_data(
     fake_io_schema: dict[str, dict[str, str]],
     fake_task_output_data: TaskOutputData,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     # need some fakes set in the DB
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
@@ -213,6 +214,7 @@ async def test_parse_output_data(
         user_id,
         published_project.project.uuid,
         sleeper_task.node_id,
+        run_id=faker.pyint(min_value=1),
     )
     await parse_output_data(sqlalchemy_async_engine, dask_job_id, fake_task_output_data)
 
@@ -395,7 +397,8 @@ async def test_clean_task_output_and_log_files_if_invalid(
         mock.call(
             user_id=user_id,
             store_id=0,
-            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}",
+            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/"
+            f"{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}",
         )
         for key in fake_outputs
     ] + [
