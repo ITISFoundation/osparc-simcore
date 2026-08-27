@@ -8,7 +8,6 @@ from typing import Final
 from fastapi import FastAPI, Request, Response, status
 from fastapi_lifespan_manager import LifespanManager, State
 from opentelemetry.instrumentation.fastapi import _get_route_details
-from prometheus_client import CollectorRegistry
 from prometheus_client.openmetrics.exposition import (
     CONTENT_TYPE_LATEST,
     generate_latest,
@@ -98,24 +97,6 @@ def _shutdown(app: FastAPI) -> None:
     registry = prometheus_metrics.registry
     for collector in list(registry._collector_to_names.keys()):  # noqa: SLF001
         registry.unregister(collector)
-
-
-def setup_prometheus_instrumentation(app: FastAPI) -> CollectorRegistry:
-    initialize_prometheus_instrumentation(app)
-
-    async def _on_startup() -> None:
-        _startup(app)
-
-    def _on_shutdown() -> None:
-        _shutdown(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
-
-    prometheus_metrics = app.state.prometheus_metrics
-    assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
-
-    return prometheus_metrics.registry
 
 
 _PROMETHEUS_INSTRUMENTATION_ENABLED: Final[str] = "prometheus_instrumentation_enabled"
