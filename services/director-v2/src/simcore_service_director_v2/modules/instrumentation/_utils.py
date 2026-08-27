@@ -16,6 +16,18 @@ def get_metrics_labels(scheduler_data: "SchedulerData") -> dict[str, str]:
         "wallet_id": (f"{scheduler_data.wallet_info.wallet_id}" if scheduler_data.wallet_info else ""),
         "service_key": scheduler_data.key,
         "service_version": scheduler_data.version,
+        "product_name": scheduler_data.product_name,
+    }
+
+
+def get_running_services_labels(scheduler_data: "SchedulerData") -> dict[str, str]:
+    # NOTE: matches clusters-keeper/autoscaling convention (f"{None}" == "None") instead of ""
+    return {
+        "user_id": f"{scheduler_data.user_id}",
+        "wallet_id": f"{scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else None}",
+        "service_key": scheduler_data.key,
+        "service_version": scheduler_data.version,
+        "product_name": scheduler_data.product_name,
     }
 
 

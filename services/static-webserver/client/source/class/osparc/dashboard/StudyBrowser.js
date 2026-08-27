@@ -1754,12 +1754,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         marginRight: 8
       });
       selectButton.bind("value", this, "multiSelection");
-      selectButton.bind("value", selectButton, "label", {
-        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.product.Utils.getStudyAlias({
+      const updateLabel = () => {
+        const alias = osparc.product.Utils.getStudyAlias({
           plural: true,
           firstUpperCase: true
-        }))
-      });
+        });
+        selectButton.setLabel(selectButton.getValue() ? this.tr("Cancel Selection") : this.tr("Select %1", alias));
+      };
+      selectButton.addListener("changeValue", updateLabel);
+      qx.event.message.Bus.getInstance().subscribe("localeSwitch", updateLabel);
+      updateLabel();
       this.bind("multiSelection", selectButton, "value");
       this.bind("currentContext", selectButton, "visibility", {
         converter: currentContext => currentContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS ? "visible" : "excluded"
