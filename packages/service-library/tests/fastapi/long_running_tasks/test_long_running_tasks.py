@@ -19,7 +19,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
-from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -59,7 +59,7 @@ class _TestingError(Exception):
 
 async def test_configure_server_uses_application_lifespan(mocker: MockerFixture):
     app = FastAPI()
-    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
     long_running_manager = AsyncMock(spec=FastAPILongRunningManager)
     mocker.patch(
         "servicelib.fastapi.long_running_tasks._server.FastAPILongRunningManager",
@@ -84,7 +84,7 @@ async def test_configure_server_uses_application_lifespan(mocker: MockerFixture)
 
 async def test_configure_server_cleans_up_after_startup_failure(mocker: MockerFixture):
     app = FastAPI()
-    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
     long_running_manager = AsyncMock(spec=FastAPILongRunningManager)
     long_running_manager.setup.side_effect = _TestingError
     mocker.patch(
@@ -158,7 +158,7 @@ async def app(
     rabbit_service: RabbitSettings,
 ) -> AsyncIterator[FastAPI]:
     # overrides fastapi/conftest.py:app
-    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
     app = FastAPI(title="test app", lifespan=app_lifespan)
     app.include_router(server_routes)
     configure_server(
