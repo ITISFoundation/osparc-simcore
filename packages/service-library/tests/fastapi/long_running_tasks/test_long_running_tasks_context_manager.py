@@ -6,19 +6,22 @@ from collections.abc import AsyncIterable
 from typing import Annotated, Final
 
 import pytest
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as setup_client
-from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
-from servicelib.fastapi.long_running_tasks.server import setup as setup_server
+from servicelib.fastapi.long_running_tasks.server import (
+    configure_server,
+    get_long_running_manager,
+)
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     GenericClientError,
@@ -106,20 +109,22 @@ async def bg_task_app(
     use_in_memory_redis: RedisSettings,
     rabbit_service: RabbitSettings,
 ) -> AsyncIterable[FastAPI]:
-    app = FastAPI()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    app = FastAPI(lifespan=app_lifespan)
 
     app.include_router(user_routes)
 
-    setup_server(
+    configure_server(
         app,
+        app_lifespan,
         router_prefix=router_prefix,
         redis_settings=use_in_memory_redis,
         rabbit_settings=rabbit_service,
         lrt_namespace="test",
     )
-    setup_client(app, router_prefix=router_prefix)
+    configure_client(app, router_prefix=router_prefix)
 
-    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
+    async with ASGILifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
 
