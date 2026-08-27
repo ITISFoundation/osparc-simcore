@@ -270,8 +270,15 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
 
 
-def _gauge_value(gauge, *, instance_type: str, user_id: UserID, wallet_id: WalletID | None) -> float:
-    return gauge.labels(instance_type=instance_type, user_id=f"{user_id}", wallet_id=f"{wallet_id}")._value.get()  # noqa: SLF001
+def _gauge_value(
+    gauge, *, instance_type: str, user_id: UserID, wallet_id: WalletID | None, product_name: ProductName
+) -> float:
+    return gauge.labels(  # noqa: SLF001
+        instance_type=instance_type,
+        user_id=f"{user_id}",
+        wallet_id=f"{wallet_id}",
+        product_name=f"{product_name}",
+    )._value.get()
 
 
 async def test_cluster_management_core_updates_primary_instances_metrics(
@@ -294,7 +301,12 @@ async def test_cluster_management_core_updates_primary_instances_metrics(
     )
     assert len(created_clusters) == 1
     the_cluster = created_clusters[0]
-    labels = {"instance_type": the_cluster.type, "user_id": user_id, "wallet_id": wallet_id}
+    labels = {
+        "instance_type": the_cluster.type,
+        "user_id": user_id,
+        "wallet_id": wallet_id,
+        "product_name": product_name,
+    }
 
     await check_clusters(initialized_app)
     assert _gauge_value(primary_metrics.starting_instances.gauge, **labels) == 1

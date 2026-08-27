@@ -32,6 +32,7 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
             extra_allowed_method_names={
                 "attach_lifespan_to",
                 "get_from_app_state",
+                "lifespan",
                 "pop_from_app_state",
                 "set_to_app_state",
             },
