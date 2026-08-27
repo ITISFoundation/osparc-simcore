@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-08-27T11:20:26Z\n"
+"X-Translation-Date: 2026-08-27T13:09:22Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
@@ -6820,6 +6820,15 @@ msgstr "编辑标签"
 msgid "Apply Tags"
 msgstr "应用标签"
 
+# CTX-INTERPRETATION: This string appears within the TagManager class,
+# providing instructions to users on how to manage and apply tags for
+# organizing their data within the application.
+#: services/static-webserver/client/source/class/osparc/form/tag/TagManager.js:150
+msgid ""
+"Manage and apply tags to better organize your %1. Select from existing tags "
+"or create new ones, then save your changes when ready."
+msgstr "管理和应用标签，以便更好地组织您的数据 %1。从现有标签中选择或创建新的标签，然后随时保存更改。"
+
 # CTX-INTERPRETATION: The string "Function Id" appears as the label for a
 # button that copies the UUID of a function, likely within a user interface
 # for managing functions in a scientific simulation application.
@@ -9823,6 +9832,16 @@ msgstr "任何拥有该链接的人都可以访问此资源 "
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:135
 msgid "Any logged-in user with the link can copy and open this "
 msgstr "任何已登录的用户，只要拥有该链接，就可以复制并打开这个。 "
+
+# CTX-INTERPRETATION: This string appears in the Collaborators.js file,
+# describing a section that displays user and organization access information,
+# including roles.
+#: services/static-webserver/client/source/class/osparc/share/Collaborators.js:305
+msgid ""
+"This section provides an overview of all users and organizations who have "
+"access to the %1 and their assigned roles. Depending on your permissions, "
+"you may be able to modify access or update roles."
+msgstr "此部分提供所有具有对%1及其分配角色的用户和组织的概述。根据您的权限，您可能可以修改访问或更新角色。"
 
 # CTX-INTERPRETATION: The string "Shared with:" appears within a user
 # interface element, likely indicating the collaborators or users with whom a
