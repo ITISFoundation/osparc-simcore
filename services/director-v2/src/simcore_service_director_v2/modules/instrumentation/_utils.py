@@ -16,6 +16,7 @@ def get_metrics_labels(scheduler_data: "SchedulerData") -> dict[str, str]:
         "wallet_id": (f"{scheduler_data.wallet_info.wallet_id}" if scheduler_data.wallet_info else ""),
         "service_key": scheduler_data.key,
         "service_version": scheduler_data.version,
+        "product_name": scheduler_data.product_name,
     }
 
 
@@ -26,6 +27,7 @@ def get_running_services_labels(scheduler_data: "SchedulerData") -> dict[str, st
         "wallet_id": f"{scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else None}",
         "service_key": scheduler_data.key,
         "service_version": scheduler_data.version,
+        "product_name": scheduler_data.product_name,
     }
 
 

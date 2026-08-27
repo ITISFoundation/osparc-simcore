@@ -32,6 +32,7 @@ def test_get_metrics_labels_with_wallet(scheduler_data: SchedulerData) -> None:
     assert labels["user_id"] == f"{scheduler_data.user_id}"
     assert labels["service_key"] == scheduler_data.key
     assert labels["service_version"] == scheduler_data.version
+    assert labels["product_name"] == scheduler_data.product_name
 
 
 def test_get_running_services_labels_uses_none_string_for_missing_wallet(
@@ -48,3 +49,4 @@ def test_get_running_services_labels_with_wallet(scheduler_data: SchedulerData) 
     labels = get_running_services_labels(scheduler_data)
 
     assert labels["wallet_id"] == f"{scheduler_data.wallet_info.wallet_id}"
+    assert labels["product_name"] == scheduler_data.product_name

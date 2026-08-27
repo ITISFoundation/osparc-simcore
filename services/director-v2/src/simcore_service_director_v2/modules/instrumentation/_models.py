@@ -16,6 +16,7 @@ _INSTRUMENTATION_LABELS: Final[tuple[str, ...]] = (
     "wallet_id",
     "service_key",
     "service_version",
+    "product_name",
 )
 
 _MINUTE: Final[int] = 60
