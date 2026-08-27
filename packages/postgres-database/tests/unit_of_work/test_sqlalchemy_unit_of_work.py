@@ -47,6 +47,20 @@ async def test_read_scope_acquires_lazily_and_closes_owned_connection(
     assert engine.read_scopes[0].closed is True
 
 
+async def test_read_scope_closes_owned_connection_on_error(
+    sqlalchemy_uow_factory: SqlAlchemyUowFixture,
+):
+    factory, engine = sqlalchemy_uow_factory
+    expected_error = RuntimeError("read failed")
+
+    with pytest.raises(RuntimeError, match="read failed") as exc_info:
+        async with factory.read():
+            raise expected_error
+
+    assert exc_info.value is expected_error
+    assert engine.read_scopes[0].closed is True
+
+
 async def test_read_scope_reuses_existing_read_or_transaction_scope(
     sqlalchemy_uow_factory: SqlAlchemyUowFixture,
 ):
