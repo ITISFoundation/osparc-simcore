@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-08-27T11:20:01Z\n"
+"X-Translation-Date: 2026-08-27T13:09:08Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
@@ -6881,6 +6881,18 @@ msgstr "Editar etiqueta"
 msgid "Apply Tags"
 msgstr "Aplicar Etiquetas"
 
+# CTX-INTERPRETATION: The string appears within the TagManager class,
+# providing instructions on how to manage and apply tags for organizing data
+# in a scientific simulation application.
+#: services/static-webserver/client/source/class/osparc/form/tag/TagManager.js:150
+msgid ""
+"Manage and apply tags to better organize your %1. Select from existing tags "
+"or create new ones, then save your changes when ready."
+msgstr ""
+"Gestionar y aplicar etiquetas para organizar mejor sus %1. Seleccione de "
+"las etiquetas existentes o cree nuevas, luego guarde los cambios cuando esté"
+" listo."
+
 # CTX-INTERPRETATION: The string "Function Id" appears as the label for a
 # button that copies the UUID of a function, likely within a user interface
 # for managing functions in a scientific simulation application.
@@ -9996,6 +10008,20 @@ msgstr "Cualquier persona en Internet con el enlace puede acceder a esto "
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:135
 msgid "Any logged-in user with the link can copy and open this "
 msgstr "Cualquier usuario registrado con el enlace puede copiar y abrir esto "
+
+# CTX-INTERPRETATION: The string appears in the Collaborators.js file,
+# describing a section that displays user and organization access information,
+# including roles.
+#: services/static-webserver/client/source/class/osparc/share/Collaborators.js:305
+msgid ""
+"This section provides an overview of all users and organizations who have "
+"access to the %1 and their assigned roles. Depending on your permissions, "
+"you may be able to modify access or update roles."
+msgstr ""
+"Esta sección proporciona una descripción general de todos los usuarios y "
+"organizaciones que tienen acceso al %1 y a sus roles asignados. Dependiendo "
+"de sus permisos, es posible que pueda modificar el acceso o actualizar los "
+"roles."
 
 # CTX-INTERPRETATION: The string "Shared with:" appears within a user
 # interface element, likely a table or list, to indicate the collaborators or

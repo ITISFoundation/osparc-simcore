@@ -1,0 +1,3046 @@
+# Korean translations for osparc-simcore package.
+# Copyright (C) 2026 THE osparc-simcore'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the osparc-simcore package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: osparc-simcore\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-27 14:40+0200\n"
+"PO-Revision-Date: 2026-08-27 14:40+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko_KR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Translation-Date: 2026-08-27T12:52:04Z\n"
+"X-Translation-Model: ollama/translategemma:4b\n"
+
+# CTX-INTERPRETATION: This message indicates that the backend service required
+# for the simulation is temporarily inaccessible, prompting the user to retry
+# their request.
+#: services/api-server/src/simcore_service_api_server/_constants.py:6
+msgid "The service is currently unavailable. Please try again later."
+msgstr "서비스가 현재 사용 불가능합니다. 나중에 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This user-friendly message appears in the API server
+# when an internal error occurs, informing users that the issue is being
+# addressed.
+#: services/api-server/src/simcore_service_api_server/_constants.py:10
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience."
+msgstr ""
+"저희 쪽에서 문제가 발생했습니다. 저희는 이 문제를 가능한 한 빨리 해결할 수 있도록 조치를 취하고 있습니다. 양해 부탁드립니다."
+
+# CTX-INTERPRETATION: This string is likely part of a user-friendly error
+# message displayed to the user when an API request fails due to an internal
+# issue, providing a clear and understandable explanation.
+#: services/api-server/src/simcore_service_api_server/_constants.py:15
+msgid "Something went wrong with your request."
+msgstr "요청 처리 중 오류가 발생했습니다."
+
+# CTX-INTERPRETATION: This message indicates a failure to communicate with the
+# backend service, likely within an API server's error handling mechanism.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:12
+msgid "An error occurred when contacting the backend service."
+msgstr "백엔드 서비스와의 통신 중 오류가 발생했습니다."
+
+# CTX-INTERPRETATION: This string appears in the BackendTimeoutError exception
+# class, indicating that a request to the backend service timed out.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:23
+msgid "The backend request timed out."
+msgstr "백엔드 요청이 시간 초과되었습니다."
+
+# CTX-INTERPRETATION: This string is part of an error message indicating that
+# the input data provided to the API is invalid and cannot be processed.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:28
+msgid "The provided input is not valid."
+msgstr "제공된 입력이 유효하지 않습니다."
+
+# CTX-INTERPRETATION: This message appears in the backend API server when
+# encryption inputs provided by the user are invalid, indicating that the
+# available node inputs do not match.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:34
+#, python-brace-format
+msgid ""
+"The provided encryption inputs {inputs} are not valid. Available node inputs"
+" '{node_inputs}'"
+msgstr "제공된 암호화 입력 {inputs}는 유효하지 않습니다. 사용 가능한 노드 입력 '{node_inputs}'"
+
+# CTX-INTERPRETATION: This error message appears within the
+# `EncryptionNotConfiguredError` class, indicating that encryption is not
+# enabled on the current deployment and prompting users to contact support.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:40
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:52
+msgid ""
+"Encryption is not available on this deployment. Please contact support."
+msgstr "이 배포 환경에서는 암호화가 사용되지 않습니다. 지원팀에 문의하십시오."
+
+# CTX-INTERPRETATION: This message indicates that the encryption service is
+# currently down and users should retry their request later.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:46
+msgid ""
+"The encryption service is temporarily unavailable. Please try again shortly."
+msgstr "암호화 서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_api_server`
+# application to inform the user when it fails to retrieve a list of solvers
+# and projects.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:57
+msgid "Unable to retrieve the list of solvers and projects."
+msgstr "솔버 및 프로젝트 목록을 가져올 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `BaseBackEndError` class,
+# likely indicating a failure to retrieve job information from a backend
+# service.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:62
+msgid "Unable to retrieve the list of jobs."
+msgstr "백그라운드 작업 목록을 가져올 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `PaymentRequiredError`
+# exception class, indicating that a payment is necessary for the user to
+# continue with their request.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:67
+msgid "Payment is required to proceed."
+msgstr "계속하려면 결제가 필요합니다."
+
+# CTX-INTERPRETATION: This string is used within the `ProfileNotFoundError`
+# exception class to inform a user that a requested profile was not found,
+# likely in an API context.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:72
+msgid "The requested profile could not be found."
+msgstr "요청한 프로필을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message is displayed when the solver or a specified
+# project cannot be located within the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:78
+#, python-brace-format
+msgid ""
+"The program, solver, or project '{name}' version {version} could not be "
+"found."
+msgstr "프로그램, 솔버 또는 프로젝트 \"{name}\" 버전 {version}를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message is displayed when a user attempts to access
+# a program, solver, or project but lacks the necessary permissions.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:86
+#, python-brace-format
+msgid ""
+"You do not have permission to access the program, solver, or project "
+"'{name}' version {version}."
+msgstr "사용자는 프로그램, 솔버 또는 프로젝트 '{}'의 버전 {}에 액세스할 권한이 없습니다."
+
+# CTX-INTERPRETATION: This string is part of an error message indicating that
+# a user lacks the necessary permissions to access a specific job within a
+# simulation project.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:93
+#, python-brace-format
+msgid "You do not have permission to access job {project_id}."
+msgstr "당신은 {프로젝트_ID} 작업을 액세스할 권한이 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_api_server`
+# to inform a user that they lack permission to view or access specific jobs
+# associated with their project, indicated by placeholders.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:98
+#, python-brace-format
+msgid "You do not have permission to access jobs {project_uuids}."
+msgstr "당신은 해당 프로젝트의 작업에 액세스할 권한이 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `JobNotFoundError` exception
+# class, indicating that either the solver or a project job with the specified
+# ID could not be located.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:103
+#, python-brace-format
+msgid "The solver or project job {project_id} could not be found."
+msgstr "솔버 또는 프로젝트 작업 {project_id}를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `BatchJobNotFoundError`
+# exception class, indicating that a solver or project jobs associated with a
+# specific project cannot be located.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:108
+#, python-brace-format
+msgid "The solver or project jobs {project_uuids} could not be found."
+msgstr "솔버 또는 프로젝트 작업 {project_uuids}를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message indicates that the log file associated with
+# a solver or project job (identified by project_id) is missing, likely during
+# simulation execution.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:114
+#, python-brace-format
+msgid ""
+"The log file for the solver or project job {project_id} could not be found."
+msgstr "솔버 또는 프로젝트 작업 {project_id}에 대한 로그 파일이 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: 이 문자열은 프로젝트의 결과물이 존재하지 않을 때 사용자에게 표시되는 오류 메시지입니다.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:121
+#, python-brace-format
+msgid "The output for project {project_id} could not be found."
+msgstr "프로젝트 {project_id}에 대한 결과물을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used within the `ConfigurationError`
+# exception class to inform users about a configuration-related issue
+# encountered during application execution.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:126
+msgid "A configuration error occurred."
+msgstr "구성 오류가 발생했습니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_api_server`
+# to indicate that a product price was not found during an API request, likely
+# within the backend error handling mechanism.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:131
+msgid "The product price could not be found."
+msgstr "제품 가격을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_api_server`
+# to indicate that a wallet requested by a user could not be found, likely
+# within a backend system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:136
+msgid "The requested wallet could not be found."
+msgstr "요청한 지갑을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message indicates that the user attempting to
+# access a wallet lacks the necessary permissions within the simulation
+# application's backend.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:141
+msgid "You do not have permission to access this wallet."
+msgstr "이 지갑에 액세스할 권한이 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_api_server`
+# to inform a user that the specified job or project's ports could not be
+# located, likely during an API request.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:146
+#, python-brace-format
+msgid "The ports for job or project {project_id} could not be found."
+msgstr "지정된 작업 또는 프로젝트의 포트를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_api_server`
+# to inform a user when the metadata for a specified job or project
+# (identified by project_id) cannot be located.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:151
+#, python-brace-format
+msgid "The metadata for job or project {project_id} could not be found."
+msgstr "지정된 작업 또는 프로젝트의 메타데이터를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the simcore_service_api_server to
+# indicate that a requested pricing unit was not found within the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:156
+msgid "The pricing unit could not be found."
+msgstr "가격 단위를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the simcore_service_api_server to
+# indicate that a requested pricing plan was not found within the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:161
+msgid "The pricing plan could not be found."
+msgstr "가격 계획을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `ProjectAlreadyStartedError`
+# exception class, indicating that a project has already been initiated and
+# cannot be started again.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:166
+msgid "The project has already been started."
+msgstr "프로젝트가 이미 시작되었습니다."
+
+# CTX-INTERPRETATION: This string appears in the
+# `InsufficientNumberOfSeatsError` exception class, indicating that a
+# requested license item does not have enough available seats.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:171
+#, python-brace-format
+msgid "Not enough available seats for license item {licensed_item_id}."
+msgstr "라이선스 항목 {licensed_item_id}에 대한 충분한 좌석이 없습니다."
+
+# CTX-INTERPRETATION: This message indicates that a license checkout failed
+# due to a non-running dynamic service, providing the license item ID and
+# current service ID for troubleshooting.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:177
+#, python-brace-format
+msgid ""
+"Unable to check out license item {licensed_item_id} because the dynamic "
+"service is not running. Current service ID: {service_run_id}."
+msgstr ""
+"라이브 서비스가 실행되지 않아 라이선스 항목 {licensed_item_id}를 체크아웃할 수 없습니다. 현재 서비스 ID: "
+"{service_run_id}."
+
+# CTX-INTERPRETATION: This string appears in the backend API server when a
+# license item checkout record with the specified ID cannot be located within
+# the system.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:186
+#, python-brace-format
+msgid ""
+"The license item checkout {licensed_item_checkout_id} could not be found."
+msgstr "지정된 ID를 가진 라이선스 항목 체크아웃 기록을 시스템에서 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_api_server`
+# to inform a user that the required assets for a specific job (identified by
+# job_id) are not found, indicating a conflict.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:193
+#, python-brace-format
+msgid "The assets for job {job_id} are missing."
+msgstr "{job_id} 작업에 필요한 자원이 누락되었습니다."
+
+# CTX-INTERPRETATION: This string appears in the `ChatbotNotAvailableError`
+# exception class, indicating that the chatbot service is not active or
+# accessible.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:198
+msgid "The chatbot service is not enabled."
+msgstr "챗봇 서비스가 활성화되지 않았습니다."
+
+# CTX-INTERPRETATION: This string is used in the CeleryTaskNotFoundError
+# exception to inform a user that a task with a specific UUID could not be
+# found, likely within a backend service.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+#, python-brace-format
+msgid "Task {task_uuid} could not be found."
+msgstr "작업 {task_uuid}을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the backend API to inform a user
+# that they cannot retrieve output for a solver job due to incomplete
+# execution, providing details about the job's state.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:209
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for solver job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr ""
+"실행이 성공적으로 완료되지 않았기 때문에 솔버 작업 '{job_id}'의 출력을 가져올 수 없습니다. 현재 상태: {state}."
+
+# CTX-INTERPRETATION: This string is used in the backend API to inform a user
+# that a solver job with a specific ID is still running and displays its
+# current status.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
+#, python-brace-format
+msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
+msgstr "솔버 작업 '{job_id}'가 아직 종료되지 않았습니다. 현재 상태: {state}."
+
+# CTX-INTERPRETATION: This string is used in backend error messages to inform
+# users that a simulation job's output cannot be retrieved due to incomplete
+# or unsuccessful execution, providing the job ID and current state.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:226
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for project job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr ""
+"프로젝트 작업 '{job_id}'의 출력을 가져올 수 없습니다. 성공적으로 완료되지 않았기 때문입니다. 현재 상태: {state}."
+
+# CTX-INTERPRETATION: This message is displayed to the user when they attempt
+# to use a wallet and request solver outputs without sufficient credits.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:13
+#, python-brace-format
+msgid ""
+"Wallet '{wallet_name}' has {wallet_credit_amount} credits. Please add "
+"credits before requesting solver outputs."
+msgstr ""
+"지갑 '{wallet_name}'에는 {wallet_credit_amount}개의 크레딧이 있습니다. 솔버 출력을 요청하기 전에 먼저 "
+"크레딧을 충전해주세요."
+
+# CTX-INTERPRETATION: This string is part of a custom error message indicating
+# that a job lacks a wallet association, likely within an API server context.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:19
+#, python-brace-format
+msgid "Job {job_id} does not have an associated wallet."
+msgstr "작업 {job_id}에 연결된 지갑이 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the API server when the user
+# attempts to set the solver_version but fails to provide a solver_id,
+# indicating an invalid configuration.
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:33
+msgid ""
+"The solver_version parameter is set but solver_id is not. Please provide "
+"both parameters or neither."
+msgstr ""
+"solver_버전 매개변수는 설정되었지만 solver_ID는 제공되지 않았습니다. 두 매개변수 중 하나를 제공하거나 둘 다 제공하십시오."
+
+# CTX-INTERPRETATION: This message indicates that the API server could not
+# locate a previously cached function job when attempting to retrieve or
+# execute it.
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:12
+msgid "No cached function job was found."
+msgstr "기존에 캐시된 함수 작업이 발견되지 않았습니다."
+
+# CTX-INTERPRETATION: This message indicates that the system failed to execute
+# a function job due to an unspecified error, likely within a simulation API.
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:17
+msgid "Unable to process the function job."
+msgstr "함수 작업을 처리할 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `log_streaming_errors.py`
+# file when a user attempts to connect multiple streams to the same job ID,
+# indicating that only one stream can be connected at a time.
+#: services/api-server/src/simcore_service_api_server/exceptions/log_streaming_errors.py:16
+#, python-brace-format
+msgid ""
+"A stream is already connected to {job_id}. Only one stream can be connected "
+"at a time."
+msgstr "동일한 작업 ID에 여러 스트림이 이미 연결되어 있습니다. 한 번에 하나의 스트림만 연결할 수 있습니다."
+
+# CTX-INTERPRETATION: This user-friendly error message appears in the
+# `service_errors_utils.py` file, likely within an API server context, to
+# inform users about internal errors and provide updates on issue resolution.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:21
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience. [{}]"
+msgstr ""
+"저희 쪽에서 문제가 발생했습니다. 저희는 이미 알림을 받고 가능한 한 빨리 문제를 해결할 것입니다. 양해해 주셔서 감사합니다. [{}]"
+
+# CTX-INTERPRETATION: This string is used within the
+# service_error.response.detail to inform a user that a specific service
+# (service_name) is currently unavailable, potentially indicating an error or
+# temporary outage.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:84
+#, python-brace-format
+msgid "The {service_name} service was unavailable."
+msgstr "서비스 {service_name}가 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: This string is part of an error message indicating a
+# problem receiving a response from a specific service, where the placeholder
+# represents the name of that service.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:89
+#, python-brace-format
+msgid "Received unexpected response from {service_name}"
+msgstr "특정 서비스에서 예상치 못한 응답을 수신했습니다."
+
+# CTX-INTERPRETATION: This string is part of an error message generated when a
+# service returns an invalid response, indicating a problem with the API
+# interaction.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:116
+#, python-brace-format
+msgid "{service_name} service returned invalid response"
+msgstr "{service_name} 서비스에서 유효하지 않은 응답을 반환했습니다."
+
+# CTX-INTERPRETATION: This string appears in a service API server to inform
+# the user that a request to the backend timed out due to a gateway timeout.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:132
+msgid "Request to backend timed out"
+msgstr "백엔드에 대한 요청이 시간 초과되었습니다."
+
+# CTX-INTERPRETATION: This string appears within an exception handler in a
+# service API server, indicating that a request to the backend has failed.
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:144
+msgid "Request to backend failed"
+msgstr "백엔드에 대한 요청이 실패했습니다."
+
+# CTX-INTERPRETATION: This string is used in the TaskSchedulerError class to
+# provide a user-friendly error message when the task scheduler encounters an
+# issue.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:8
+msgid "An error occurred in the task scheduler."
+msgstr "작업 스케줄러에서 오류가 발생했습니다."
+
+# CTX-INTERPRETATION: This string is part of an error message indicating that
+# a task with a specific ID could not be located within the system, likely
+# used in API responses.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:13
+#, python-brace-format
+msgid "Task {job_id} could not be found."
+msgstr "작업 {job_id}를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the TaskResultMissingError
+# exception to inform a user that a task with a specific ID has not finished
+# execution.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:18
+#, python-brace-format
+msgid "Task {job_id} has not completed yet."
+msgstr "작업 {job_id}가 아직 완료되지 않았습니다."
+
+# CTX-INTERPRETATION: This string is used in the TaskCancelledError exception
+# class to inform a user that a task with a specific job ID has been
+# cancelled, indicating a conflict.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:23
+#, python-brace-format
+msgid "Task {job_id} has been cancelled."
+msgstr "작업 {job_id}가 취소되었습니다."
+
+# CTX-INTERPRETATION: This string is used within the TaskError class to
+# provide a user-friendly error message when a task fails during execution,
+# indicating the specific task ID that caused the error.
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:28
+#, python-brace-format
+msgid "Task '{job_id}' encountered an error."
+msgstr "작업 '{job_id}'에서 오류가 발생했습니다."
+
+# CTX-INTERPRETATION: This message indicates that a log stream could not be
+# forwarded due to a missing log streamer associated with a specific job ID.
+#: services/api-server/src/simcore_service_api_server/services_http/log_streaming.py:67
+#, python-brace-format
+msgid ""
+"Could not forward log because a logstreamer associated with job_id={job_id} "
+"was not registered"
+msgstr "job_id={job_id}와 연결된 로그 스트리머가 등록되지 않았기 때문에 로그 전송에 실패했습니다."
+
+# CTX-INTERPRETATION: This string is used within a containerized Dask task to
+# report an unexpected error encountered by a specific service, indicating the
+# service version and the container ID where it's running.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:9
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} encountered an unexpected error: {error_message}."
+msgstr ""
+"컨테이너 {container_id}에서 실행 중인 서비스 {service_key}:{service_version}가 예기치 않은 오류를 "
+"발생했습니다: {error_message}."
+
+# CTX-INTERPRETATION: This string is used to report the failure of a service
+# within a container, providing details like the service version, container
+# ID, and exit code.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:17
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} failed with code {exit_code}."
+msgstr ""
+"컨테이너 {container_id}에서 실행 중인 서비스 {service_key}:{service_version}이 코드 "
+"{exit_code}로 실패했습니다."
+
+# CTX-INTERPRETATION: This error message is displayed when a Dask service
+# process within a container exceeds its memory limits and is forcibly
+# stopped.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:24
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} ran out of memory and was terminated. Current limits are "
+"{service_resources}."
+msgstr ""
+"컨테이너 {container_id}에서 실행 중인 서비스 {service_key}:{service_version}가 메모리 부족으로 "
+"종료되었습니다. 현재 제한은 {service_resources}입니다."
+
+# CTX-INTERPRETATION: This string appears in the `container_tasks/errors.py`
+# file, likely indicating a failure scenario where a Dask service within a
+# container became unresponsive and was subsequently terminated due to
+# exceeding a timeout.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:33
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} was silent/hanging for longer than {timeout_timedelta} and "
+"was terminated."
+msgstr ""
+"컨테이너 {container_id}에서 실행 중인 서비스 {service_key}:{service_version}이 "
+"{timeout_timedelta} 초 이상 응답하지 않아 종료되었습니다."
+
+# CTX-INTERPRETATION: This string is used within the TaskCancelledError class
+# to provide a user-friendly message indicating that a task has been
+# cancelled, likely in a scientific simulation application.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:40
+msgid "The task was cancelled"
+msgstr "작업이 취소되었습니다."
+
+# CTX-INTERPRETATION: This message appears in the Dask task models library,
+# guiding users on how to correctly provide a single file or zip file when
+# using a service that expects a file-to-key map.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:45
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} {input} uses a file-to-key "
+"{file_to_key_map} map but receives zip data instead. TIP: either pass a "
+"single file or zip file and remove the file-to-key map parameter."
+msgstr ""
+"서비스 {service_key}:{service_version} {input}는 파일-키 매핑 {file_to_key_map}을 "
+"사용하지만, 대신 ZIP 데이터를 받습니다. 팁: 단일 파일을 또는 ZIP 파일을 전달하고 파일-키 매핑 매개변수를 제거하십시오."
+
+# CTX-INTERPRETATION: This message appears in the `dask-task-models-library`
+# library, specifically within error handling related to file access and
+# encryption, indicating a failure to securely operate on a specified file due
+# to mismatched keys or contexts.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:54
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} could not securely {operation} "
+"the {file_role} file {file_id}: {error_message}. TIP: this usually means the"
+" provided encryption key or context does not match the one used to encrypt "
+"the data."
+msgstr ""
+"서비스 {service_key}:{service_version}가 {operation} {file_role} 파일 {file_id}: "
+"{error_message}를 안전하게 처리할 수 없습니다. 팁: 일반적으로 제공된 암호화 키 또는 컨텍스트가 데이터를 암호화하는 데 "
+"사용되는 것과 일치하지 않는다는 의미입니다."
+
+# CTX-INTERPRETATION: This message appears in the `dask_task_models_library`
+# when a service decryption fails due to an unavailable encryption service,
+# prompting user support contact.
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:64
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} requires decryption, but the "
+"encryption service is currently unavailable: {error_message}. Please contact"
+" support if this persists."
+msgstr ""
+"서비스 {service_key}:{service_version}에 대한 암호화가 필요하지만, 현재 암호화 서비스가 사용 불가능합니다: "
+"{error_message}. 문제가 지속되면 지원팀에 문의하십시오."
+
+# CTX-INTERPRETATION: This string is used within a simulation application to
+# inform the user about the completion of a project pipeline execution for a
+# specific iteration, along with its status.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:230
+#, python-brace-format
+msgid ""
+"Project pipeline execution for iteration {iteration} has completed with "
+"status: {run_result}"
+msgstr "프로젝트 파이프라인 실행이 반복 {iteration}에서 완료되었으며 상태는 다음과 같습니다: {run_result}"
+
+# CTX-INTERPRETATION: This message appears in the scheduler module, informing
+# users about a task scheduling error and suggesting they contact oSparc
+# support.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:865
+msgid ""
+"An unexpected error occurred during task scheduling. Please contact oSparc "
+"support if this issue persists."
+msgstr "작업 스케줄링 중에 예기치 않은 오류가 발생했습니다. 문제가 지속되면 oSparc 지원팀에 문의하십시오."
+
+# CTX-INTERPRETATION: This message indicates that a variable resolution
+# operation failed while scheduling tasks, and the system will attempt to
+# retry.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
+msgid "Variable resolution timed out during task scheduling, will retry."
+msgstr "변수 해상도 설정 중 작업 스케줄링 중에 시간 초과가 발생했으며, 다시 시도합니다."
+
+# CTX-INTERPRETATION: This message appears in the comp_scheduler module,
+# indicating a timeout while waiting for computational resources, prompting
+# the user to retry or contact support.
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:974
+msgid ""
+"The system has timed out while waiting for computational resources. Please "
+"try running your project again or contact oSparc support if this issue "
+"persists."
+msgstr ""
+"시스템이 컴퓨팅 자원을 대기하는 동안 시간 초과되었습니다. 프로젝트를 다시 실행하거나 문제가 지속되면 oSparc 지원팀에 문의하십시오."
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# notify a user that their account has been added to a product, and it
+# includes the user's first name.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:1
+msgid "Dear %(first_name)s,"
+msgstr "친애하는 {{ first_name }}님,"
+
+# CTX-INTERPRETATION: This string is part of an email notification sent to a
+# user when their account gains access to a specific product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
+msgid ""
+"Your request has been approved and you now have access to %(product_name)s."
+msgstr "요청이 승인되었으며, 이제 {{ product_name }}에 액세스할 수 있습니다."
+
+# CTX-INTERPRETATION: This email body template is used to inform users who
+# have an existing account on a product about logging in to the same product
+# with their existing credentials.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:14
+msgid ""
+"Since you already have an account on\n"
+"  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
+msgstr "이미 계정이 있는 경우, 동일한 이메일 및 비밀번호로 %(product_name)s에 로그인하여 계속 진행해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user when they are added to an existing product's account, prompting them to
+# log in using their existing credentials.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:10
+msgid ""
+"Since you already have an account, please continue logging in to "
+"%(product_name)s with the same email and password."
+msgstr "이미 계정이 있는 경우, 동일한 이메일과 비밀번호를 사용하여 %(product_name)s에 로그인해 계속 진행해주세요."
+
+# CTX-INTERPRETATION: This string appears in an email body template used when
+# a user's account is added to a product, providing a link to access the
+# product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
+msgid "You can access %(product_name)s here: %(login_link)s"
+msgstr "제품에 사용자 계정을 추가하면 다음 링크를 통해 액세스할 수 있습니다: [로그인 링크]"
+
+# CTX-INTERPRETATION: This string appears in email templates for account
+# addition and new invitations, providing a contact link for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr "문제가 발생할 경우, 저희에게 [support_link]로 언제든지 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users when their account is added to a product or approved, and it displays
+# the product name with a friendly message.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
+msgid "Enjoy %(product_name)s!"
+msgstr "\"제품을 즐기세요!\""
+
+# CTX-INTERPRETATION: This string appears in email body templates related to
+# account actions (added, approved, rejected) within the Simcore notification
+# system.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:36
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
+msgid "Best regards,"
+msgstr "감사합니다,"
+
+# CTX-INTERPRETATION: This string appears in email notifications related to
+# account actions (added, approved, rejected) and indicates the team
+# associated with a specific product.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:39
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
+msgid "The %(product_name)s Team"
+msgstr "%(product_name)s 팀"
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# users who have existing accounts on a specific product to log in, ensuring
+# they can access the product using their existing credentials.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:7
+msgid ""
+"Since you already have an account on %(existing_product)s, please continue "
+"logging in to %(product_name)s with the same email and password."
+msgstr "이미 계정이 있는 경우, 동일한 이메일 및 비밀번호로 %(product_name)s에 로그인하여 계속 사용하십시오."
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# a user that their account has been added to a product, providing a link to
+# access the product's homepage.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
+msgid "You can access %(product_name)s here: %(link)s"
+msgstr "제품에 계정이 추가되었음을 알리는 이메일 템플릿의 일부로, 사용자가 제품의 홈 페이지에 액세스할 수 있는 링크를 제공합니다."
+
+# CTX-INTERPRETATION: This string appears in email templates for account
+# addition and new invitations, providing a contact email address for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr "\"문제가 발생할 경우, 저희에게 %(support_email)s로 문의해 주시기 바랍니다.\""
+
+# CTX-INTERPRETATION: This string appears in an email subject line to notify
+# the user that they have been added to a product's access list.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/subject.j2:1
+msgid "You Now Have Access to %(product_name)s"
+msgstr "이제 귀하는 %(product_name)s에 대한 액세스 권한을 갖게 되었습니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users about their account approval and provide a registration link.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:3
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. We are pleased to provide "
+"you with a one-time invitation link to register on the platform."
+msgstr ""
+"플랫폼에 등록하기 위한 일회용 초대 링크를 제공해 드릴 수 있게 되어 기쁩니다. %(product_name)s에 관심을 가져주셔서 "
+"감사합니다."
+
+# CTX-INTERPRETATION: This string appears in an email template to inform users
+# about their trial account period, providing both singular and plural forms
+# based on the number of days.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:6
+msgid "Your account includes %(count)s day trial period."
+msgid_plural "Your account includes %(count)s days trial period."
+msgstr[0] "귀하의 계정에는 %(count)s일 체험 기간이 포함됩니다."
+
+# CTX-INTERPRETATION: This string appears in an email template confirming
+# account approval and informs the user about receiving free credits.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:10
+msgid "You also receive %(extra_credits)s free credits."
+msgstr "또한, {{ extra_credits }} 개의 무료 크레딧을 받으실 수 있습니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# notify users when their account has been approved, providing a link to the
+# registration page.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:20
+msgid "Click %(register_link)s to access the registration page."
+msgstr "등록 페이지에 액세스하려면 %(register_link)s를 클릭하세요."
+
+# CTX-INTERPRETATION: This string appears in an email template for account
+# approval notifications, guiding the user to follow on-screen instructions
+# and providing a support link.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:25
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr "화면 안내에 따라 등록 절차를 진행하십시오. 문제가 발생하면 [지원 링크]로 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# notify users when their account has been approved, providing a link to the
+# registration page.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:13
+msgid "Click %(link)s to access the registration page."
+msgstr "등록 페이지에 액세스하려면 %(link)s를 클릭하세요."
+
+# CTX-INTERPRETATION: This string is part of an email template used to guide
+# new users through the registration process after their account has been
+# approved, providing contact information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:15
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr "화면 안내에 따라 등록 절차를 진행하십시오. 문제가 발생하면 %(support_email)s로 언제든지 문의해 주십시오."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users that their registration request for a product has been accepted.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Accepted"
+msgstr "회원가입 요청이 확인되었습니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users that their account registration has been rejected from a program,
+# thanking them for their interest.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. Unfortunately, your "
+"registration is not eligible for participation in this program."
+msgstr ""
+"프로그램에 참여할 자격이 없다는 점을 알리는 이메일 템플릿의 일부로, 사용자의 관심을 감사하며, 등록이 프로그램 참여 자격을 갖지 못함을"
+" 알려줍니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template for
+# account rejection notifications, offering further support and solutions.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:12
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_link)s."
+msgstr "이것은 계정 거부 이메일 본문에 나타나는 문구로, 추가 지원 및 솔루션을 제공합니다."
+
+# CTX-INTERPRETATION: This string appears in an email template for account
+# rejection notifications, inviting the user to contact support for further
+# assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:5
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_email)s."
+msgstr "이것은 계정 거부 알림 이메일 템플릿에서, 사용자가 추가 지원을 위해 저희에게 연락하도록 초대하는 문자입니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users that their registration request for a specific product has been
+# denied, indicating the product name in the message.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Denied"
+msgstr "회원 가입 요청이 {{0}}에 대해 거부되었습니다."
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# address a support team regarding an account request.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:1
+msgid "Dear Support team,"
+msgstr "친애하는 지원팀께,"
+
+# CTX-INTERPRETATION: This string appears in an email notification sent to a
+# user when their account request has been received by the system.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:3
+msgid "We have received the following request form for an account:"
+msgstr "다음 계정 요청이 접수되었습니다:"
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# inform a user about the details of a product they have requested, likely
+# within a service related to notifications or account management.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:10
+msgid "Some details about the requested product follow:"
+msgstr "요청한 제품에 대한 자세한 내용은 다음과 같습니다."
+
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# a user about the status of their account request validation.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:27
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:14
+msgid ""
+"To validate the request form, here you can get further info on this request:"
+msgstr "요청 양식을 유효성 검사하려면, 이 정보를 통해 요청에 대한 추가 정보를 얻을 수 있습니다."
+
+# CTX-INTERPRETATION: This HTML snippet provides an email notification
+# informing the user about account request and suggests using ipinfo.io to
+# find more IP information.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:18
+msgid "TIP: Use https://ipinfo.io/ to find out more information on the IP."
+msgstr "팁: 계정 요청에 대한 자세한 정보를 얻으려면 https://ipinfo.io/를 사용하세요."
+
+# CTX-INTERPRETATION: This string is used in email subject lines to notify
+# users when an account request has been made, including the product name.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/subject.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/subject.j2:1
+msgid "Request for an Account in %(product_name)s"
+msgstr "계정 요청에 대한 알림: {{ product_name }}"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their request to change the email address associated with their
+# account has been processed.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:3
+msgid ""
+"You have requested to change the email address linked to your "
+"%(product_name)s account. Please follow the on-screen information in the "
+"link below:"
+msgstr "귀하께서 귀하의 계정에 연결된 이메일 주소를 변경하는 요청을 하셨습니다. 다음 링크에 표시되는 정보에 따라 진행해 주세요:"
+
+# CTX-INTERPRETATION: This string appears within the HTML email body template
+# for changing a user's email address in the Simcore notification system.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
+msgid "Change email"
+msgstr ""
+"이메일 주소를 변경하는 데 사용되는 Simcore 알림 시스템의 사용자 이메일 주소 변경 HTML 이메일 본문 템플릿 내에서 표시됩니다."
+
+# CTX-INTERPRETATION: This string appears in email templates related to
+# various notifications (e.g., change of email, credit reimbursement, paid
+# status, project sharing) and provides a contact option for users needing
+# further assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further "
+"help."
+msgstr ""
+"<p>{% trans support_link=support_link %}저희에게 더 필요한 도움이 필요하시면 "
+"%(support_link)s로 언제든지 문의해 주십시오.{% endtrans %}</p>"
+
+# CTX-INTERPRETATION: This string appears in email templates related to
+# various notifications (e.g., change of email, credit reimbursement, new 2FA
+# code) as a formal closing.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:40
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:11
+msgid "Best Regards,"
+msgstr "감사합니다,"
+
+# CTX-INTERPRETATION: This string appears in email templates for various
+# notifications (e.g., change of email, credit reimbursement, paid project)
+# and prompts the user to contact support for assistance.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need further"
+" help."
+msgstr "필요한 경우 추가 지원을 위해 [support_email]로 언제든지 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string is part of an email subject indicating a
+# change in the user's sign-in email address within the Simcore notification
+# system.
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/subject.j2:1
+msgid "Change of Your Sign-In Email Address on %(product_name)s"
+msgstr "로그인 이메일 주소 변경 알림: {{ product_name }}"
+
+# CTX-INTERPRETATION: This string is part of an email body template used to
+# notify users about credit reimbursement.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:1
+msgid "Dear User,"
+msgstr "친애하는 사용자님께,"
+
+# CTX-INTERPRETATION: This email template informs users that their service run
+# on a specific product was affected by a platform issue and therefore not
+# billed, using placeholders for the service run number and product name.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:11
+msgid ""
+"We want to inform you that your service run (%(service_run)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+"서비스 실행(%(service_run)s)이 %(product_name)s에서 발생한 플랫폼 문제로 인해 청구되지 않았음을 알려드립니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users that credits have been reimbursed to their account.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:16
+msgid "%(credit_amount)s credits have been reimbursed to your Credit Account."
+msgstr "%(credit_amount)s 크레딧이 귀하의 크레딧 계정에 환불되었습니다."
+
+# CTX-INTERPRETATION: This string appears in an email template related to
+# credit reimbursement, informing the user that no further action is required
+# from their side.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:7
+msgid "No action is needed on your part."
+msgstr "당신은 추가 조치가 필요하지 않습니다."
+
+# CTX-INTERPRETATION: This email template informs users that their service run
+# was affected by a platform issue and therefore not billed, using
+# placeholders for the service run ID and product name.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:3
+msgid ""
+"We want to inform you that your service run (%(service_run_id)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+"서비스 실행(%(service_run_id)s)에 대해 플랫폼 문제로 인해 청구가 되지 않았음을 알려드립니다. "
+"%(product_name)s에서."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users that credits have been reimbursed to their account.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:5
+msgid ""
+"%(reimbursed_credits)s credits have been reimbursed to your Credit Account."
+msgstr "%(reimbursed_credits)s 크레딧이 귀하의 신용 계정에 환불되었습니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# users that their credits have been reimbursed, displaying the product name
+# in the subject line.
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/subject.j2:1
+msgid "Your credits have been reimbursed on %(product_name)s"
+msgstr "신용이 {{ product_name }}에서 환불되었습니다."
+
+# CTX-INTERPRETATION: This string is part of an email body sent to a user,
+# informing them about their two-factor authentication (2FA) sign-in code for
+# their account.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:3
+msgid ""
+"Please find below the Two-factor Authentication sign-in code for your "
+"%(host)s account."
+msgstr "아래는 귀하의 계정(%(host)s)에 대한 2단계 인증 로그인 코드를 확인하실 수 있습니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template,
+# displaying a two-factor authentication (2FA) code to the user.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
+msgid "Your code is: %(code_display)s"
+msgstr "코드가 다음과 같습니다: %(code_display)s"
+
+# CTX-INTERPRETATION: This string appears in an email template used to inform
+# a user about the validity period of a two-factor authentication (2FA) code.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
+msgid "This code is valid for %(ttl)s seconds."
+msgstr "이 코드는 %(ttl)s초 동안 유효합니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template for a new
+# two-factor authentication (2FA) code notification, providing contact
+# information.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further\n"
+"  help."
+msgstr "필요한 경우 [0]로 언제든지 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# display a two-factor authentication (2FA) code to the user.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
+msgid "Your code is: %(code)s"
+msgstr "코드가 다음과 같습니다: %(code)s"
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# notify users about a new two-factor authentication (2FA) code, providing
+# contact information for support.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need\n"
+"further help."
+msgstr "필요한 경우 저희에게 %(support_email)s로 언제든지 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to send a
+# user's two-factor authentication (2FA) code, indicating the recipient and
+# the specific code.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/subject.j2:1
+msgid "%(code)s is Your 2FA Sign-In Code for %(host)s"
+msgstr "\"%(code)s는 %(host)s에 대한 귀하의 2FA 로그인 코드를 나타냅니다.\""
+
+# CTX-INTERPRETATION: The string "Register" appears in the email body template
+# for a new invitation, likely prompting the recipient to create an account or
+# register for something.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:11
+msgid "Register"
+msgstr "등록"
+
+# CTX-INTERPRETATION: This string appears in an email body related to user
+# registration, guiding the recipient to follow on-screen instructions and
+# complete the process.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:7
+msgid ""
+"Please follow the on-screen information and proceed with your registration."
+msgstr "화면 안내에 따라 등록 절차를 진행해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string is part of an email template used to invite
+# users to register for a scientific simulation application, providing a link
+# to the registration page.
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
+msgid "Click here to access the registration page: %(link)s"
+msgstr "등록 페이지에 액세스하려면 클릭하세요: %(link)s"
+
+# CTX-INTERPRETATION: This string is part of an email body confirming a
+# payment and credit purchase, using placeholders for the price, credits
+# amount, and product name.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:10
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price)s for the purchase of %(credits)s. The credits have been added to "
+"your %(product_name)s account, and you are all set to utilize them."
+msgstr ""
+"결제 성공을 확인하여 귀하의 {{ price }}에 대한 구매를 확인합니다. %(credits)s 크레딧이 귀하의 "
+"%(product_name)s 계정에 추가되었으며, 이제 이를 사용할 수 있습니다."
+
+# CTX-INTERPRETATION: 이 문자열은 결제 확인 이메일 본문에 나타나며, 사용자가 영수증을 보거나 다운로드할 수 있는 링크를
+# 제공합니다.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
+msgid "For more details you can view or download your %(receipt_link)s."
+msgstr "자세한 내용은 다음 링크를 통해 확인하거나 다운로드하실 수 있습니다: ⟨1⟩."
+
+# CTX-INTERPRETATION: This email template confirms successful payment
+# processing and credits added to the user's account within the Simcore
+# platform.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:3
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price_dollars)s USD for the purchase of %(osparc_credits)s credits. The "
+"credits have been added to your %(product_name)s account, and you are all "
+"set to utilize them."
+msgstr ""
+"결제 처리에 성공했음을 확인합니다. {{ price_dollars }} USD에 대한 구매로 {{ osparc_credits }} "
+"크레딧이 추가되었습니다. 크레딧은 귀하의 {{ product_name }} 계정에 적용되었으며, 이제 사용하실 수 있습니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# inform users about a payment and provide a link to view or download their
+# receipt.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:5
+msgid ""
+"For more details you can view or download your receipt: %(invoice_url)s."
+msgstr "자세한 내용은 다음 링크를 통해 확인하거나 다운로드할 수 있습니다: {{ invoice_url }}."
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that their payment for credits has been successfully processed.
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/subject.j2:1
+msgid ""
+"Your Payment %(price_dollars)s USD for %(osparc_credits)s Credits Was "
+"Successful"
+msgstr "결제 내역: {{ price_dollars }} USD, {{ osparc_credits }} 크레딧 결제가 완료되었습니다."
+
+# CTX-INTERPRETATION: This string is part of an email body sent to a user
+# after they successfully register for a product, thanking them and providing
+# instructions on how to access their account.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:5
+msgid ""
+"Thank you for registering with %(product_name)s. Your\n"
+"  account has been successfully created and you can now sign in to %(host)s."
+msgstr ""
+"%(product_name)s를 등록해 주셔서 감사합니다. 귀하의 계정이 성공적으로 생성되었으며 이제 %(host)s에 로그인할 수 "
+"있습니다."
+
+# CTX-INTERPRETATION: This string appears in the email body, providing a
+# contact link for users who have registered and need support.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:8
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to contact\n"
+"  us at %(support_link)s."
+msgstr "질문이 있거나 도움이 필요하시면 다음 주소로 문의해 주세요: %(support_link)s."
+
+# CTX-INTERPRETATION: This string is part of an email template used to confirm
+# a user's registration and provide login instructions for the application,
+# replacing placeholders with product name and host.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:3
+msgid ""
+"Thank you for registering with %(product_name)s. Your account\n"
+"has been successfully created and you can now sign in to %(host)s."
+msgstr "회원가입에 감사드립니다. 귀하의 계정은 성공적으로 생성되었으며 이제 %(host)s로 로그인할 수 있습니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template used for
+# notifying users when they register for a service, providing contact
+# information.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:6
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to\n"
+"contact us at %(support_email)s."
+msgstr "\"질문이 있거나 도움이 필요하시면 언제든지 {{ support_email }}로 문의해 주시기 바랍니다.\""
+
+# CTX-INTERPRETATION: This string is part of an email subject line used when a
+# user registers for the application, welcoming them to the platform.
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
+msgid "Welcome to %(product_name)s!"
+msgstr "%(product_name)s에 오신 것을 환영합니다!"
+
+# CTX-INTERPRETATION: This string appears in an email template used to notify
+# a user that a password reset request has been submitted for their specified
+# host account.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:3
+msgid "A request to reset your %(host)s password has been made."
+msgstr "귀하의 {{ host }} 계정 비밀번호를 초기화하는 요청이 접수되었습니다."
+
+# CTX-INTERPRETATION: This string appears in an email template used to guide
+# the user on how to reset their password after a successful process
+# completion.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:5
+msgid "To complete the process, please click the link below:"
+msgstr "프로세스를 완료하려면 아래 링크를 클릭하십시오."
+
+# CTX-INTERPRETATION: This string appears in an email template used for
+# password reset functionality within the Simcore service.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:15
+msgid "Reset Password"
+msgstr "비밀번호 재설정"
+
+# CTX-INTERPRETATION: 이 문자열은 비밀번호 재설정 프로세스가 실패했을 때 사용자에게 오류 메시지를 표시하는 데 사용됩니다.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:8
+msgid "It could not be completed due to the following reason:"
+msgstr "다음 이유로 완료할 수 없습니다:"
+
+# CTX-INTERPRETATION: This string appears in an email body template for
+# password reset requests, informing the user to contact support immediately
+# if they didn't initiate the request due to security concerns.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:26
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_link)s for security reasons."
+msgstr "이 요청을 하지 않으셨다면 보안상의 이유로 즉시 [0]에 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# inform users about a password reset request and provide contact information
+# for security reasons.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:11
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_email)s for security reasons."
+msgstr "이 요청을 하지 않으셨다면, 보안상의 이유로 즉시 [support_email]으로 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string is used in the subject line of an email to
+# notify a user about a password reset request, specifying the host associated
+# with the account.
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/subject.j2:1
+msgid "Reset Password on %(host)s"
+msgstr "계정 관련 호스트에 대한 비밀번호 재설정 알림 제목"
+
+# CTX-INTERPRETATION: This string is part of an email template used to notify
+# a user that someone has shared a project with them.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:3
+msgid ""
+"Great news! %(sharer_name)s has shared a project with you on "
+"%(product_name)s."
+msgstr "훌륭한 소식! [공유자 이름]이 [제품 이름]에 대한 프로젝트를 공유했습니다."
+
+# CTX-INTERPRETATION: This string appears in an email template used to notify
+# users about project sharing and provide instructions on how to view the
+# project and accept the sharing.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:5
+msgid "To view the project and accept the sharing, follow below:"
+msgstr "프로젝트를 보고 공유를 수락하려면 아래 단계를 따르세요."
+
+# CTX-INTERPRETATION: This string "Open" appears in an email body template
+# related to sharing a project, likely prompting the recipient to open or
+# access the shared project.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:30
+msgid "Open"
+msgstr "열기"
+
+# CTX-INTERPRETATION: This string is part of an email subject indicating that
+# a project has been shared with the recipient, specifying the host where the
+# project resides.
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/subject.j2:1
+msgid "A project was shared with you on %(host)s"
+msgstr "프로젝트가 귀하에게 공유되었습니다. 프로젝트는 다음 위치에 있습니다: %(host)s"
+
+# CTX-INTERPRETATION: This string appears in an email template to notify users
+# about a new reply within a specific support conversation.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:8
+msgid "There is a new reply in the Support conversation %(convo_name)s."
+msgstr "지원 대화에 대한 새 응답이 있습니다. %(convo_name)s."
+
+# CTX-INTERPRETATION: This string appears in email templates related to
+# support conversations, indicating a new reply has been received.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid "There is a new reply in the Support conversation."
+msgstr "지원 대화에 새 응답이 있습니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template related to
+# support replies, prompting the user to access a conversation.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:28
+msgid "Go to the Conversation"
+msgstr "대화로 이동"
+
+# CTX-INTERPRETATION: This string appears in an email body template used to
+# notify users about a new reply within a specific support conversation.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid ""
+"There is a new reply in the Support conversation \"%(conversation_name)s\"."
+msgstr "지원 대화에 대한 새 응답이 있습니다: \"%(conversation_name)s\"."
+
+# CTX-INTERPRETATION: This string appears in an email body template for a
+# support reply, providing a link to view the conversation related to the
+# support request.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:8
+msgid "View the conversation: %(conversation_url)s"
+msgstr "대화 내용을 보려면: %(conversation_url)s"
+
+# CTX-INTERPRETATION: This string appears in an email subject line indicating
+# a new reply within a specific support conversation identified by the
+# conversation name.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center \"%(conversation_name)s\" conversation"
+msgstr "지원 센터의 \"{{ conversation_name }}\" 대화에 대한 새 응답입니다."
+
+# CTX-INTERPRETATION: This string appears in the subject line of an email
+# notification sent to a user when a new reply is added to their support
+# center conversation.
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center conversation"
+msgstr "지원 센터 대화에 대한 새 응답입니다"
+
+# CTX-INTERPRETATION: This string appears in an email template used to notify
+# a user that their account has been closed and express gratitude for their
+# participation.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:3
+msgid ""
+"We have received your account closure request, and we want to say thank you "
+"for being a part of our platform. While we're sad to see you go, we respect "
+"your decision."
+msgstr ""
+"계정 폐쇄 요청을 접수했으며, 플랫폼에 참여해 주셔서 감사합니다. 떠나시는 것을 아쉽게 생각하지만, 귀하의 결정을 존중합니다."
+
+# CTX-INTERPRETATION: 이 문자열은 사용자가 서비스를 해지할 때, 데이터 보관 기간 및 재활성화 방법을 안내하는 이메일
+# 본문에 포함됩니다.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:10
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_link)s. Afterwards it will "
+"be completely deleted from our system."
+msgstr ""
+"귀하의 프로젝트와 데이터는 안전하게 {{ retention_days }}일까지 보관됩니다. 해당 기간 내에 귀하가 다시 가입하려면 "
+"저희에게 이메일을 보내 주시면 계정을 복구할 수 있습니다. 이후에는 완전히 시스템에서 삭제됩니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template for
+# unregistration, providing users with a link to contact support.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:14
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to"
+" contact us to %(support_link)s in case of questions or any required "
+"assistance."
+msgstr "저희 지원팀은 필요한 모든 것을 도와드릴 수 있습니다. 질문이나 도움이 필요하시면 [0]로 문의해 주세요."
+
+# CTX-INTERPRETATION: This string appears in an email body related to user
+# unregistration within the Simcore service, wishing the user well.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:9
+msgid "We wish you all the best in your future endeavors."
+msgstr "앞으로의 모든 일에 행운을 빌며."
+
+# CTX-INTERPRETATION: This string is part of an email template used to inform
+# users about the data retention policy and account reactivation process after
+# unregistration.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:5
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period, if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_email)s. Afterwards, it "
+"will be completely deleted from our system."
+msgstr ""
+"여러 프로젝트와 데이터는 안전하게 %(retention_days)s일까지 보관됩니다. 해당 기간 동안, 계정을 다시 활성화하려면 "
+"%(support_email)s로 이메일을 보내주십시오. 이후에는 완전히 시스템에서 삭제됩니다."
+
+# CTX-INTERPRETATION: This string appears in an email body template used for
+# notifying users about unregistration, providing contact information for
+# support.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:7
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to"
+" contact us at %(support_email)s in case of questions or any required "
+"assistance."
+msgstr ""
+"저희 지원팀은 필요한 모든 것에 도움을 드릴 수 있습니다. 질문이나 도움이 필요하시면 [support_email]으로 언제든지 문의해 "
+"주세요."
+
+# CTX-INTERPRETATION: This string is part of an email subject related to
+# account unregistration, indicating the user's account closure within a
+# specific service.
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/subject.j2:1
+msgid "Closing Your Account in %(host)s"
+msgstr "계정 폐쇄 안내: [서비스 이름]"
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when a user attempts to create an API key with a display name that already
+# exists, indicating a conflict.
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:15
+msgid "An API key with this display name already exists"
+msgstr "동일한 디스플레이 이름을 가진 API 키가 이미 존재합니다."
+
+# CTX-INTERPRETATION: This string appears in a REST API controller within the
+# Simcore service webserver, indicating that an API key was not found during a
+# request.
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:19
+msgid "The requested API key could not be found"
+msgstr "요청된 API 키를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message indicates that the catalog service is
+# temporarily unavailable, informing the user to retry or seek support.
+#: services/web/server/src/simcore_service_webserver/catalog/_constants.py:9
+msgid ""
+"The catalog service is currently unavailable. This issue has been logged and"
+" will be investigated. "
+msgstr "현재 카탈로그 서비스가 사용할 수 없습니다. 이 문제는 기록되었으며 조사될 예정입니다. "
+
+# CTX-INTERPRETATION: This message indicates that the catalog service is
+# currently down and suggests the user to retry their request after some time.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:84
+msgid ""
+"The catalog service is temporarily unavailable. Please try again later."
+msgstr "카탈로그 서비스는 현재 사용할 수 없습니다. 잠시 후 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the REST API controller for a
+# catalog system, indicating that a user lacks the necessary permissions to
+# access a specific item.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:91
+msgid "Access denied: You don't have permission to view this catalog item."
+msgstr "접근 거부: 이 항목을 보려면 권한이 없습니다."
+
+# CTX-INTERPRETATION: This localized string appears as an error message within
+# a REST API endpoint related to catalog items, informing the user that a
+# requested item is missing or no longer available.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:97
+msgid "This catalog item does not exist or has been removed."
+msgstr "이 카탈로그 항목은 존재하지 않거나 삭제되었음을 알리는 메시지입니다."
+
+# CTX-INTERPRETATION: The string appears in a REST API endpoint that handles
+# requests for pricing plans, specifically when no default plan is found for
+# the current operation.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:101
+msgid "No default pricing plan is available for this operation."
+msgstr "이 작업에 사용할 수 있는 기본 가격 계획이 없습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST API controller that
+# handles errors when a service doesn't have a defined default pricing unit,
+# informing the user.
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:105
+msgid "No default pricing unit is defined for this service."
+msgstr "이 서비스에 대한 기본 가격 단위를 정의하지 않았음을 사용자에게 알립니다."
+
+# CTX-INTERPRETATION: This message indicates that a development feature is
+# active and users should enable it by setting
+# WEBSERVER_DEV_FEATURES_ENABLED=1.
+#: services/web/server/src/simcore_service_webserver/constants.py:39
+msgid ""
+"Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current "
+"implementation"
+msgstr "현재 구현을 활성화하려면 WEBSERVER_DEV_FEATURES_ENABLED=1로 설정하십시오. 개발 중입니다."
+
+# CTX-INTERPRETATION: This message appears in the user interface of a web-
+# based scientific simulation application, informing users about temporary
+# errors and providing support contact information.
+#: services/web/server/src/simcore_service_webserver/constants.py:47
+msgid "Please try again shortly. If the issue persists, contact support."
+msgstr "잠시 후 다시 시도해 주십시오. 문제가 지속되면 지원팀에 문의하십시오."
+
+# CTX-INTERPRETATION: This string appears as an error message when a
+# conversation is not found in the Simcore service web server, likely within a
+# REST API endpoint.
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:27
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:34
+msgid "Conversation not found."
+msgstr "대화가 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the REST API controller for
+# conversations, indicating that a requested conversation type is not
+# supported by the system.
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:41
+msgid "Unsupported conversation type."
+msgstr "지원되지 않는 대화 유형입니다."
+
+# CTX-INTERPRETATION: This message appears in a REST API endpoint related to
+# the director service, informing users about temporary unavailability and
+# indicating that an incident has been logged.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:45
+msgid ""
+"This service is temporarily unavailable. The incident has been logged and "
+"will be investigated. "
+msgstr "이 서비스는 일시적으로 사용할 수 없습니다. 이 문제는 기록되었으며 조사될 것입니다. "
+
+# CTX-INTERPRETATION: This message indicates that the application requires a
+# default wallet to perform computations, but it was unable to locate one.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:83
+msgid ""
+"A default wallet is required for running computations but could not be "
+"found."
+msgstr "계산 작업을 실행하려면 기본 지갑이 필요하지만 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when a user attempts to run a computation that requires credits from their
+# wallet, but they don't have enough.
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Your wallet does not have sufficient credits to run this computation: "
+"{details}"
+msgstr "사용자 지갑에는 이 계산을 실행하는 데 필요한 충분한 크레딧이 없습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in an error handler within a web
+# server component, indicating that a user-requested folder was not found.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:35
+msgid "The requested folder could not be found."
+msgstr "요청한 폴더를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in an error handler within a web
+# server component, indicating that a user's requested workspace was not
+# found.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:39
+msgid "The requested workspace could not be found."
+msgstr "요청한 워크스페이스를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# application when a user attempts to access a folder without sufficient
+# permissions, indicating a 'FolderAccessForbiddenError'.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:43
+msgid "You do not have permission to access this folder."
+msgstr "이 폴더에 액세스할 권한이 없습니다."
+
+# CTX-INTERPRETATION: This string appears in an error handler within a web
+# server context, indicating that a user lacks the necessary permissions to
+# access a specific workspace.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:47
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:32
+msgid "You do not have permission to access this workspace."
+msgstr "이 워크스페이스에 액세스할 권한이 없습니다."
+
+# CTX-INTERPRETATION: The string appears in an error message handler when a
+# user attempts to access a folder that is not accessible within their current
+# workspace, indicating a WorkspaceFolderInconsistencyError.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:51
+msgid "This folder is not available in the selected workspace."
+msgstr "이 폴더는 선택한 워크스페이스에서 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in an error message handler within a
+# web server component, indicating that a user-initiated folder operation
+# failed due to permission or other constraints.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:55
+#, python-brace-format
+msgid "The folder operation cannot be completed: {details}"
+msgstr "폴더 작업이 완료되지 않았습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in a web service handling folder
+# configuration errors, specifically when the user-provided configuration is
+# invalid.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:59
+#, python-brace-format
+msgid "The folder configuration is invalid: {details}"
+msgstr "폴더 구성이 유효하지 않습니다: {details}"
+
+# CTX-INTERPRETATION: This message appears in the web server's exception
+# handler when a user attempts to move a project but lacks necessary
+# permissions, guiding them on how to find the project using its UUID.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:64
+#, python-brace-format
+msgid ""
+"You do not have permission to move the project with UUID: {project_uuid}. To"
+" locate this project, copy and paste the UUID into the search bar."
+msgstr "UUID를 가진 프로젝트를 이동할 권한이 없습니다. 이 프로젝트를 찾으려면 UUID를 복사하여 검색창에 붙여넣으십시오."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# application when a user attempts to move a folder containing active projects
+# to the trash, preventing the operation.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:72
+msgid ""
+"Cannot move folder to trash because it contains projects that are currently "
+"running. Please stop all running services first and try again."
+msgstr "프로젝트가 현재 실행 중인 폴더를 쓰레기로 이동할 수 없습니다. 먼저 모든 실행 중인 서비스를 중지하고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when an error occurs during service shutdown before deleting a folder,
+# indicating a rollback.
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:79
+msgid ""
+"Something went wrong while stopping running services in projects within this"
+" folder before trashing. Aborting trash."
+msgstr "이 프로젝트 폴더 내에서 실행 중인 서비스를 중지하는 동안 오류가 발생하여 삭제 작업을 취소합니다."
+
+# CTX-INTERPRETATION: This message indicates that the user does not have
+# sufficient permissions to access a specific function within a product,
+# likely displayed in a web interface.
+#: services/web/server/src/simcore_service_webserver/functions/_functions_exceptions.py:23
+#, python-brace-format
+msgid ""
+"Group access rights could not be found for Function '{function_id}' in "
+"product '{product_name}'."
+msgstr "그룹 접근 권한이 제품 '{1}' 내의 함수 '{0}'에 대해 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used within a user error handler to
+# inform the user that a user with a specific ID or email address could not be
+# found in the system.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:27
+#, python-brace-format
+msgid "The user with ID {uid} or email {email} could not be found."
+msgstr "지정된 ID 또는 이메일 주소를 가진 사용자를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used within a web service to inform the
+# user when a group with a specified ID cannot be found in the system.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:31
+#, python-brace-format
+msgid "The group with ID {gid} could not be found."
+msgstr "지정된 ID를 가진 그룹을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is displayed in a user interface when a user
+# attempts to access a resource associated with a group, but the user is not a
+# member of that group.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:35
+#, python-brace-format
+msgid "The user is not a member of group {gid}."
+msgstr "사용자는 해당 그룹의 구성원이 아니므로 리소스에 액세스할 수 없습니다."
+
+# CTX-INTERPRETATION: This string is displayed in the user interface when a
+# user attempts to add themselves to a group, but they are already a member of
+# that group.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:39
+#, python-brace-format
+msgid "The user is already a member of group {gid}."
+msgstr "사용자는 이미 해당 그룹의 구성원입니다."
+
+# CTX-INTERPRETATION: This string is used within a web service to inform a
+# user that they lack the necessary permissions to access a specific group,
+# indicated by placeholders for permission and group ID.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:44
+#, python-brace-format
+msgid ""
+"You do not have sufficient rights for {permission} access to group {gid}."
+msgstr "당신은 그룹 {gid}에 대한 {permission} 액세스 권한이 충분하지 않습니다."
+
+# CTX-INTERPRETATION: This string appears in an exception handler within a web
+# server component, indicating that an invalid RRID (Research Registry ID) was
+# encountered during a request.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:51
+#, python-brace-format
+msgid "The RRID {rrid} is not valid."
+msgstr "RRID {rrid}는 유효하지 않습니다."
+
+# CTX-INTERPRETATION: This message indicates that the application failed to
+# fetch RRID data from the scicrunch.org service due to a temporary
+# unavailability.
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:56
+msgid ""
+"Unable to retrieve RRID information because the scicrunch.org service is "
+"currently unavailable."
+msgstr "scicrunch.org 서비스가 현재 사용 불가능하기 때문에 RRID 정보를 가져올 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# application when an invitation link is invalid or unusable, likely within a
+# web-based user interface.
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:9
+msgid "The invitation link appears to be corrupted or incomplete."
+msgstr "초대 링크가 손상되었거나 불완전한 것으로 보입니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# module's error handling, specifically within the `invitations` directory, to
+# inform users when an invitation has been previously claimed.
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:11
+msgid "This invitation has already been used and cannot be used again."
+msgstr "이 초대장은 이미 사용되었으며 다시 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: This exception handler displays a message to the user
+# when a requested market item with a specific ID is not found in the system.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:22
+#, python-brace-format
+msgid "The requested market item '{licensed_item_id}' could not be found."
+msgstr "요청된 시장 아이템 '{licensed_item_id}'를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in a web server to inform the user
+# that they do not have permission to access a specific credit account,
+# indicated by the wallet ID.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:29
+#, python-brace-format
+msgid "You do not have permission to access credit account '{wallet_id}'."
+msgstr "당신은 '{wallet_id}' 신용 계정에 액세스할 권한이 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the
+# services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py
+# file, likely indicating a payment failure due to insufficient funds.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:36
+msgid ""
+"Your credit account does not have sufficient funds to complete this "
+"purchase."
+msgstr "신용 계좌에 구매를 완료하는 데 필요한 충분한 잔액이 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# application when a user attempts to apply an invalid pricing plan to a
+# licensed item, guiding them to select a different one.
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:43
+msgid ""
+"The selected pricing plan is not valid for this licensed item. Please choose"
+" a different plan."
+msgstr "선택한 가격 계획은 이 라이센스 항목에 유효하지 않습니다. 다른 계획을 선택해 주세요."
+
+# CTX-INTERPRETATION: This string appears in the `rest_exceptions.py` file,
+# likely within a function that handles account creation or registration
+# failures, informing the user that an account with their provided email has
+# already been submitted.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/_rest_exceptions.py:38
+#, python-brace-format
+msgid ""
+"An account for the email {email} was already submitted. If you haven't "
+"received any updates, please contact support."
+msgstr "이메일 {email}에 대한 계정이 이미 제출되었습니다. 업데이트를 받지 못하셨다면 지원팀에 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: The string appears in the 'simcore_service_webserver'
+# application, specifically related to two-factor authentication login
+# functionality, indicating that it is currently unavailable.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:210
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
+msgid "2FA login is not available"
+msgstr "2FA 로그인 기능은 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: The string appears as an error message when the user
+# attempts to register without a valid invitation code in the registration
+# process.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:156
+msgid "Registration requires a valid invitation code."
+msgstr "회원 가입에는 유효한 초대 코드가 필요합니다."
+
+# CTX-INTERPRETATION: This string appears in the two-factor authentication
+# (2FA) endpoint of a web server, indicating that a user attempting login does
+# not have a registered phone number.
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
+msgid "User does not have a phone number registered"
+msgstr "사용자에게 등록된 전화번호가 없습니다."
+
+# CTX-INTERPRETATION: This string is used to send a verification code via SMS
+# to the user after they have entered their username and password, requiring
+# two-factor authentication.
+#. @TRANSLATOR SMS message of at most 70 characters
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#, python-brace-format
+msgid "Dear {first_name}, your verification code is {code}"
+msgstr "안녕하세요 {first_name}, 인증 코드는 {code}입니다."
+
+# CTX-INTERPRETATION: This string appears in the login flow, indicating that a
+# verification code has been sent via SMS to the user's phone number.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:5
+#, python-brace-format
+msgid "A verification code has been sent via SMS to {phone_number}."
+msgstr "SMS를 통해 인증 코드가 {phone_number}로 전송되었습니다."
+
+# CTX-INTERPRETATION: This message appears in the login flow of the Simcore
+# service webserver, informing users about the temporary unavailability of
+# two-factor authentication.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:7
+msgid ""
+"The two-factor authentication service is currently unavailable. Please try "
+"again in a few minutes."
+msgstr "이중 인증 서비스는 현재 사용할 수 없습니다. 몇 분 후에 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string is displayed to the user after they have
+# successfully activated their account through a two-factor authentication
+# process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:10
+msgid "Your account has been successfully activated."
+msgstr "계정이 성공적으로 활성화되었습니다."
+
+# CTX-INTERPRETATION: This string appears in the login flow of the web server,
+# instructing users to activate their accounts before logging in.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:12
+msgid ""
+"Please activate your account using the activation link we sent to your email"
+" before logging in."
+msgstr "계정을 활성화하려면 저희가 이메일로 보낸 활성화 링크를 사용하여 먼저 로그인하십시오."
+
+# CTX-INTERPRETATION: This string is displayed to the user after successful
+# account creation, indicating that they can now log in using their email
+# address.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:16
+#, python-brace-format
+msgid ""
+"Welcome! Your account has been created. You can now sign in as {email}."
+msgstr "환영합니다! 계정이 생성되었습니다. 이제 {이메일}로 로그인할 수 있습니다."
+
+# CTX-INTERPRETATION: This string appears in the login functionality of the
+# Simcore service webserver, informing users when their provided credentials
+# are invalid.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:20
+msgid ""
+"The provided credentials are incorrect. Please verify your email and "
+"password."
+msgstr "제공된 자격 증명이 올바르지 않습니다. 이메일 및 비밀번호를 확인해 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the login section of the web
+# server, informing users that email sending is temporarily unavailable and
+# suggesting they retry.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:24
+msgid "We're unable to send emails at this time. Please try again later."
+msgstr "현재 이메일 전송이 불가능합니다. 잠시 후 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in the login flow, informing the
+# user to verify their email address after registration.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:27
+msgid ""
+"Please check your new email address and click the verification link we sent "
+"you."
+msgstr "새로운 이메일 주소를 확인하고 저희가 보낸 인증 링크를 클릭해 주세요."
+
+# CTX-INTERPRETATION: This string appears in the login/constants.py file,
+# likely within a user interface element confirming that an email address
+# update was successful.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:30
+msgid "Your email address has been successfully updated."
+msgstr "이메일 주소가 성공적으로 업데이트되었습니다."
+
+# CTX-INTERPRETATION: This message appears in the login functionality of the
+# Simcore service webserver when a user attempts to register or log in with an
+# email address that is already associated with an existing account.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:32
+msgid ""
+"This email address is already associated with an account. Please sign in or "
+"use a different email address."
+msgstr "이 이메일 주소는 이미 계정과 연결되어 있습니다. 로그인하거나 다른 이메일 주소를 사용하십시오."
+
+# CTX-INTERPRETATION: This string appears in the email sent after a user
+# successfully changes their email address, informing them that further
+# instructions have been sent to their new email.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:35
+#, python-brace-format
+msgid "We've sent an email to {email} with further instructions."
+msgstr "새로운 이메일 주소를 변경한 후, 추가 지침이 해당 이메일로 전송되었음을 알리는 이메일에 사용됩니다."
+
+# CTX-INTERPRETATION: This string appears in the login section of the web
+# application, confirming a successful user login.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:36
+msgid "You have successfully signed in."
+msgstr "성공적으로 로그인했습니다."
+
+# CTX-INTERPRETATION: This string appears in the login/constants.py file and
+# is used to inform the user that they have successfully signed out of the
+# application.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:37
+msgid "You have successfully signed out."
+msgstr "성공적으로 로그아웃했습니다."
+
+# CTX-INTERPRETATION: This message appears in the login section of the web
+# server, informing users about a recent password reset request and providing
+# instructions.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:39
+msgid ""
+"You've recently requested a password reset. Please check your email for the "
+"reset link or wait before requesting another one."
+msgstr "최근에 비밀번호 재설정을 요청하셨습니다. 비밀번호 재설정 링크를 확인하거나 다시 요청하기 전에 잠시 기다리세요."
+
+# CTX-INTERPRETATION: This string appears in the login module, informing the
+# user that password reset is not allowed due to expired or removed
+# permissions, prompting them to retry or contact support.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:44
+#, python-brace-format
+msgid ""
+"Unable to reset password. Permissions may have expired or been removed. "
+"Please try again, or contact support if the problem continues: "
+"{support_email}"
+msgstr ""
+"비밀번호 재설정이 불가능합니다. 권한이 만료되었거나 제거되었을 수 있습니다. 다시 시도하거나 문제가 지속되면 지원팀에 문의하십시오: "
+"{support_email}"
+
+# CTX-INTERPRETATION: This message is displayed after a user successfully
+# changes their password within the application's login or account settings.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:48
+msgid "Your password has been updated."
+msgstr "비밀번호가 성공적으로 변경되었습니다."
+
+# CTX-INTERPRETATION: This string appears in the login functionality of the
+# Simcore service webserver, indicating that the user's password and
+# confirmation do not match.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:50
+msgid "Password and confirmation do not match. Please try again."
+msgstr "비밀번호와 확인이 일치하지 않습니다. 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in the login/constants.py file and
+# indicates that an account has no associated phone number.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:52
+msgid "No phone number is associated with this account."
+msgstr "이 계정에 전화 번호가 연결되어 있지 않습니다."
+
+# CTX-INTERPRETATION: This message appears in the login flow when a user
+# attempts to resend a verification code after failing multiple times, guiding
+# them to restart the verification process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:54
+msgid ""
+"You can no longer resend the verification code. Please restart the "
+"verification process."
+msgstr "이제 인증 코드를 다시 받을 수 없습니다. 인증 프로세스를 다시 시작해 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the login flow when two-factor
+# authentication is enabled and the user attempts to submit a verification
+# code after it has expired or become invalid.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:58
+msgid ""
+"You can no longer submit a verification code. Please restart the login "
+"process."
+msgstr "이제 인증 코드를 제출할 수 없습니다. 로그인 프로세스를 다시 시작해 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the login section of the web
+# server, informing users that phone registration is disabled and prompting
+# them to re-initiate the registration process.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:62
+msgid ""
+"Phone registration is no longer allowed. Please restart the registration "
+"process."
+msgstr "전화 등록은 더 이상 허용되지 않습니다. 등록 프로세스를 다시 시작해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This message appears in the login flow when a user
+# attempts to submit a verification code after it has expired or is otherwise
+# invalid, prompting them to restart the confirmation.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:66
+msgid ""
+"You can no longer submit a verification code. Please restart the "
+"confirmation process."
+msgstr "이제 인증 코드를 제출할 수 없습니다. 확인 프로세스를 다시 시작해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in the login/constants.py file and
+# is used to inform users when an email address they are trying to use for
+# registration or login is not registered.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:69
+msgid "This email address is not registered."
+msgstr "이 이메일 주소가 등록되지 않았습니다."
+
+# CTX-INTERPRETATION: This message appears in the login page, informing users
+# that their account is scheduled for deletion and providing contact
+# information for support.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:71
+#, python-brace-format
+msgid ""
+"This account is scheduled for deletion. To reactivate it or for more "
+"information, please contact support: {support_email}"
+msgstr "이 계정은 삭제될 예정입니다. 복구하거나 더 자세한 정보를 원하시면 지원팀에 문의하십시오: {support_email}"
+
+# CTX-INTERPRETATION: This string appears in the login/constants.py file,
+# likely informing a user that their account is banned and providing contact
+# information for support.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:76
+#, python-brace-format
+msgid ""
+"Access to this account is no longer available. Please contact support for "
+"more information: {support_email}"
+msgstr "이 계정에 대한 접근은 더 이상 허용되지 않습니다. 자세한 내용은 지원팀에 문의하십시오: {support_email}"
+
+# CTX-INTERPRETATION: This string appears in the login/constants.py file,
+# likely within a function that displays an expired account message to the
+# user.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:80
+#, python-brace-format
+msgid ""
+"This account has expired and access is no longer available. Please contact "
+"support for assistance: {support_email}"
+msgstr "계정이 만료되었으며 더 이상 액세스가 불가능합니다. 지원을 위해 지원 이메일로 문의하십시오: {support_email}"
+
+# CTX-INTERPRETATION: This message appears in the login page when a user's
+# account has been disabled and they are unable to register again, prompting
+# them to contact support.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:85
+#, python-brace-format
+msgid ""
+"This account has been disabled and cannot be registered again. Please "
+"contact support for details: {support_email}"
+msgstr "이 계정은 비활성화되었으며 다시 등록할 수 없습니다. 자세한 내용은 지원팀에 문의하십시오: {support_email}"
+
+# CTX-INTERPRETATION: This string appears in the login flow of the web server,
+# informing the user that their entered verification code is incorrect and
+# prompting them to try again or generate a new one.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:90
+msgid ""
+"The verification code entered is not valid. Please enter a valid "
+"verification code or generate a new one."
+msgstr "입력한 인증 코드는 유효하지 않습니다. 올바른 인증 코드를 입력하거나 새 코드를 생성해 주세요."
+
+# CTX-INTERPRETATION: This string appears in the login flow of the Simcore
+# service webserver, informing the user that their verification code is
+# invalid or expired and prompting them to request a new one.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:94
+msgid ""
+"The verification code has expired or is incorrect. Please request a new code"
+" and try again."
+msgstr "인증 코드가 만료되었거나 잘못된 경우입니다. 새 코드를 요청하고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This string appears in the login flow, specifically when
+# the user enters an invalid CAPTCHA, prompting them to retry.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:97
+msgid "The CAPTCHA entered is incorrect. Please try again."
+msgstr "입력한 CAPTCHA가 유효하지 않습니다. 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in the login functionality of the
+# web server, informing users when their entered password doesn't match the
+# one stored for their email address.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:99
+msgid ""
+"The password does not match the one associated with this email address. "
+"Please try again."
+msgstr "입력한 비밀번호가 이 이메일 주소와 연결된 비밀번호와 일치하지 않습니다. 다시 시도해 주세요."
+
+# CTX-INTERPRETATION: This message appears in the login flow, informing users
+# that their password doesn't match the email address and suggesting they use
+# the password from a unified account.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:103
+#, python-brace-format
+msgid ""
+"The password does not match the one associated with this email address.TIP: "
+"Your accounts across multiple platforms have been unified into a single "
+"login. Please try using the password from your {suggested_product} account."
+msgstr ""
+"이 비밀번호는 이 이메일 주소와 연결된 비밀번호와 일치하지 않습니다. 팁: 여러 플랫폼에서 계정이 하나의 로그인으로 통합되었습니다. "
+"{suggested_product} 계정의 비밀번호를 사용해 보십시오."
+
+# CTX-INTERPRETATION: This string is part of the password strength validation
+# message displayed during user registration or password change in the web
+# application, indicating the minimum required length.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:109
+#, python-brace-format
+msgid ""
+"Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters "
+"for security."
+msgstr "비밀번호는 보안을 위해 최소 {LOGIN_PASSWORD_MIN_LENGTH}자 이상으로 구성되어야 합니다."
+
+# CTX-INTERPRETATION: This string appears in the login section of the web
+# server, guiding users to contact support for new invitation requests.
+#: services/web/server/src/simcore_service_webserver/login/constants.py:113
+msgid "Please contact our support team to request a new invitation."
+msgstr "새로운 초대를 요청하려면 저희 지원팀에 문의해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string is part of an error message displayed to the
+# user when a form submission fails due to invalid input, specifically
+# indicating which field(s) caused the validation error.
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:92
+#, python-brace-format
+msgid "The form contains invalid information: '{failed}'"
+msgstr "폼에 유효하지 않은 정보가 포함되어 있습니다: '{failed}'"
+
+# CTX-INTERPRETATION: This message appears in the login account deletion flow,
+# informing the user that their provided email and password are incorrect,
+# prompting them to try again.
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:131
+msgid "Wrong email or password. Please try again to delete this account"
+msgstr "이메일 또는 비밀번호가 잘못되었습니다. 계정 삭제를 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# project, likely within a REST API endpoint related to notifications or
+# recipient management, indicating that no recipients have been chosen for a
+# specific action.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:23
+msgid "No active recipients selected."
+msgstr "선택된 활성 수신자가 없습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint related to
+# product settings, specifically indicating that email configuration is
+# missing for a given product.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:30
+#, python-brace-format
+msgid "Email settings for product '{product_name}' are not configured."
+msgstr "제품 '{product_name}'의 이메일 설정이 구성되지 않았습니다."
+
+# CTX-INTERPRETATION: This string appears in the REST API endpoint for
+# managing notification templates, indicating a failure to validate the
+# template's context during creation or update.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:37
+#, python-brace-format
+msgid ""
+"Validation of context failed for notification template '{template_name}'."
+msgstr "알림 템플릿의 컨텍스트 유효성 검사에 실패했습니다: '{template_name}'."
+
+# CTX-INTERPRETATION: This string is used within a REST API endpoint to inform
+# the user that a notification template and channel combination are not found
+# in the system.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:44
+#, python-brace-format
+msgid ""
+"Notification template '{template_name}' for channel '{channel}' not found."
+msgstr "채널 '{channel}'에 대한 알림 템플릿 '{template_name}'이 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the REST API endpoint for
+# handling notifications, indicating that a specified notification channel is
+# not recognized or supported by the system.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:51
+#, python-brace-format
+msgid "Notification channel '{channel}' is not supported."
+msgstr "알림 채널 '{channel}'는 지원되지 않습니다."
+
+# CTX-INTERPRETATION: This message appears in the web server's notification
+# system when a user attempts to send a simulation with more recipients than
+# allowed, indicating an error and suggesting a reduction.
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:58
+#, python-brace-format
+msgid ""
+"The number of recipients ({num_recipients}) exceeds the maximum of "
+"{max_recipients}. Please reduce the number of recipients and try again."
+msgstr "받는 사람 수 ({num_recipients})가 최대 수보다 많습니다. 받는 사람 수를 줄이고 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the onetime_api.py file when a
+# user attempts to make a payment to a wallet but lacks the required
+# permissions, indicating an authorization issue.
+#: services/web/server/src/simcore_service_webserver/payments/_onetime_api.py:40
+#, python-brace-format
+msgid ""
+"You do not have the necessary permissions to make payments to wallet "
+"{wallet_id}."
+msgstr "필요한 권한이 없어 지갑에 대한 결제를 할 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint that handles
+# product not found errors, providing a user-friendly message.
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:16
+msgid "This product could not be found."
+msgstr "이 제품을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in a REST API endpoint that handles
+# errors when the service is temporarily unavailable due to a configuration
+# issue, prompting the user to try again or contact support.
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:21
+msgid "This service is temporarily unavailable due to a configuration issue. "
+msgstr "이 서비스는 일시적으로 구성 문제로 인해 사용할 수 없습니다. 다시 시도하거나 지원팀에 문의하십시오. "
+
+# CTX-INTERPRETATION: This string appears in a REST exception handler to
+# inform the user when access to a specific folder is denied due to
+# permissions.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:61
+msgid "Access to this folder is forbidden."
+msgstr "이 폴더에 대한 액세스는 허용되지 않습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST exception handler within a
+# web server component, indicating that a requested folder was not found
+# during a file system operation.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:65
+msgid "The requested folder could not be found"
+msgstr "요청한 폴더를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used within a REST API endpoint to inform
+# the user when a specified node (identified by its UUID) is missing from a
+# project, likely during a simulation setup or data retrieval process.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:73
+#, python-brace-format
+msgid "Node '{node_uuid}' was not found in project '{project_uuid}'."
+msgstr ""
+"프로젝트 '{project_uuid}' 내에서 사용자를 지정된 노드({node_uuid}의 UUID로 식별됨)가 없는 경우에 대한 "
+"메시지를 제공합니다."
+
+# CTX-INTERPRETATION: This string is displayed in a REST API error response
+# when the server cannot find a parent node specified by its UUID, indicating
+# a missing dependency.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:77
+#, python-brace-format
+msgid "Parent node '{node_uuid}' was not found."
+msgstr "부모 노드 '{node_uuid}'를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in a REST API endpoint that handles
+# project node creation or updates, indicating missing required input values
+# to the server.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:81
+msgid "Required input values for this project node have not been set."
+msgstr "이 프로젝트 노드에 대한 필수 입력 값이 설정되지 않았음을 나타냅니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API error handling for
+# project duplication attempts when a project is located in the trash.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Cannot duplicate project {project_uuid} because it is in the trash. Restore "
+"it first and try again."
+msgstr "프로젝트 {project_uuid}를 복제할 수 없습니다. 먼저 삭제된 프로젝트를 복구한 후 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint for project
+# deletion within the Simcore service webserver, indicating an error message
+# when deleting a project.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:97
+#, python-brace-format
+msgid "Unable to complete deletion of project '{project_uuid}': {details}"
+msgstr "프로젝트 '{project_uuid}'의 삭제를 완료할 수 없습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint within the
+# Simcore service webserver, indicating that a requested project group was not
+# found.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:103
+#, python-brace-format
+msgid "The requested project group could not be found: {details}"
+msgstr "요청된 프로젝트 그룹을 찾을 수 없습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# project's REST API error handling, indicating a user lacks permissions to
+# perform an action on a specific project.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:108
+#, python-brace-format
+msgid ""
+"You do not have sufficient access rights to perform this action on project "
+"{project_uuid}."
+msgstr "이 프로젝트에 대한 작업을 수행할 충분한 권한이 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API controller for
+# project templates, indicating a user lacks the necessary permissions to
+# modify the template type.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:115
+msgid ""
+"You do not have sufficient permissions to update the project template type."
+msgstr "프로젝트 템플릿 유형을 업데이트할 수 있는 충분한 권한이 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# project when a user attempts to use a project in an invalid or unsupported
+# manner, as indicated by a 422 Unprocessable Entity HTTP status code.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:121
+msgid "The project cannot be used in this way."
+msgstr "프로젝트는 이 방식으로 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: This message is displayed when a user attempts to create
+# a simulation project exceeding the maximum allowed number of nodes,
+# indicating the requested and maximum node counts.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:126
+#, python-brace-format
+msgid ""
+"The project cannot contain more than {max_num_nodes} nodes. Requested: "
+"{requested_num_nodes}."
+msgstr ""
+"프로젝트는 최대 {max_num_nodes}개의 노드를 포함할 수 있습니다. 요청: {requested_num_nodes}개."
+
+# CTX-INTERPRETATION: This string is displayed in a REST API endpoint when a
+# project with the specified UUID cannot be located within the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:132
+#, python-brace-format
+msgid "Project {project_uuid} could not be found."
+msgstr "지정된 UUID를 가진 프로젝트가 시스템 내에서 찾을 수 없는 경우에 표시되는 메시지입니다."
+
+# CTX-INTERPRETATION: This message appears in the web server when a user
+# attempts to open more projects than allowed by the system's configuration,
+# prompting them to close one.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:137
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_projects} project/s at once. Please close"
+" another project and retry."
+msgstr "한 번에 열 수 있는 프로젝트 수를 초과하면 이 메시지가 표시됩니다. 다른 프로젝트를 닫고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# project when the system reaches its limit for concurrent dynamic services,
+# prompting the user to manually stop a service.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:144
+msgid ""
+"The maximum number of concurrently running dynamic services has been "
+"reached. Please manually stop a service and retry."
+msgstr "동시 실행되는 동적 서비스의 최대 수가 초과되었습니다. 서비스를 수동으로 중지하고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This message appears in the Simcore service web server
+# when a user attempts to change a wallet associated with a project that has
+# pending transactions, indicating that the operation is currently not
+# permitted.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:152
+msgid ""
+"This project has pending transactions. Changing the wallet is currently not "
+"allowed."
+msgstr "이 프로젝트에는 대기 중인 거래가 있습니다. 현재 지갑을 변경하는 것은 허용되지 않습니다."
+
+# CTX-INTERPRETATION: This message appears in the web server when a user
+# attempts to open more than the allowed number of sessions for a specific
+# project, indicating that they need to close one.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:159
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_sessions} session(s) for the same project"
+" at once. Please close another session and retry."
+msgstr ""
+"동일한 프로젝트에 대해 동시에 열 수 있는 세션 수를 초과하려고 할 때 이 메시지가 표시됩니다. 다른 세션을 닫고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This message appears in the web server's error handling
+# when a user attempts to modify a project's credit account, which is
+# currently embargoed due to negative balance.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:167
+#, python-brace-format
+msgid ""
+"Unable to change the credit account linked to the project. The project is "
+"embargoed because the last transaction of {debt_amount} resulted in the "
+"credit account going negative."
+msgstr ""
+"프로젝트의 신용 계정을 변경할 수 없습니다. 마지막 거래({debt_amount})로 인해 신용 계좌 잔액이 부족하여 프로젝트가 "
+"차단되었습니다."
+
+# CTX-INTERPRETATION: This message appears in the web server when a project
+# cannot be opened due to a negative credit account balance caused by a
+# previous transaction.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:176
+#, python-brace-format
+msgid ""
+"Unable to open the project. The project is embargoed because the last "
+"transaction of {debt_amount} resulted in the credit account going negative."
+msgstr "프로젝트를 열 수 없습니다. 마지막 거래로 인해 신용 계좌 잔액이 음수가 되었기 때문에 프로젝트가 잠겨 있습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API error handling when
+# the server receives a request containing invalid tag IDs.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:183
+msgid "Invalid tag IDs were provided in the request."
+msgstr "요청에 유효하지 않은 태그 ID가 제공되었습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API controller for
+# project management, indicating an invalid combination of project and
+# template types.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:188
+msgid "The project type and template type combination is not valid"
+msgstr "프로젝트 유형과 템플릿 유형의 조합이 유효하지 않습니다."
+
+# CTX-INTERPRETATION: The string appears in a REST exception handler,
+# indicating that a user is denied access to a specific workspace due to
+# permissions or other restrictions.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:198
+#, python-brace-format
+msgid "Access to this workspace is forbidden: {details}"
+msgstr "이 워크스페이스에 대한 액세스는 허용되지 않습니다: {상세 정보}"
+
+# CTX-INTERPRETATION: This string appears in the Simcore service web server
+# when a user attempts to access a workspace that does not exist, providing
+# details about the missing workspace.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:202
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:36
+#, python-brace-format
+msgid "The requested workspace could not be found: {details}"
+msgstr "요청한 워크스페이스를 찾을 수 없습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in a REST exception handler within a
+# web server, indicating that a requested wallet was not found by the system.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:210
+#, python-brace-format
+msgid "The requested wallet could not be found: {details}"
+msgstr "요청한 지갑을 찾을 수 없습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint related to
+# project payments, informing the user about missing wallet access.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:215
+#, python-brace-format
+msgid ""
+"Payment is required, but you do not have access to the project's linked "
+"wallet: {details}"
+msgstr "결제가 필요하지만, 프로젝트의 연결된 지갑에 액세스할 수 없습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# project, likely within a REST API endpoint that handles wallet operations,
+# informing the user when insufficient credits are present.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:222
+#, python-brace-format
+msgid ""
+"The wallet does not have enough credits to complete this operation: "
+"{details}"
+msgstr "지갑에 이 작업을 완료하는 데 필요한 충분한 크레딧이 없습니다: {details}"
+
+# CTX-INTERPRETATION: This string appears in a REST exception handler within a
+# web server, indicating that the application failed to locate a default
+# pricing plan for a user.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:232
+msgid "The default pricing plan could not be found."
+msgstr "기본 가격 계획을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST exception handler within a
+# web server, indicating that the system failed to locate a default pricing
+# unit for a specific project.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:236
+msgid "The default pricing unit could not be found."
+msgstr "기본 가격 단위를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST exception handler within a
+# web server, indicating that a requested conversation was not found.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:244
+msgid "The requested conversation could not be found."
+msgstr "요청한 대화는 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST exception handler within a
+# web server, indicating that a requested conversation message was not found.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:248
+msgid "The requested conversation message could not be found."
+msgstr "요청한 대화 메시지를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is displayed as a user-friendly message when
+# the catalog service is temporarily unavailable, likely within a REST API
+# endpoint.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:256
+msgid "The catalog service is currently unavailable."
+msgstr "현재 카탈로그 서비스는 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: This string is displayed as an error message when the
+# 'clusters-keeper' service is temporarily unavailable, likely within a web
+# server context.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:260
+msgid "The clusters-keeper service is currently unavailable."
+msgstr "클러스터 관리 서비스가 현재 사용 불가능합니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# project's REST API error handling, indicating a user lacks necessary
+# permissions to access a resource identified by '{name}'.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:265
+#, python-brace-format
+msgid "Access denied: You do not have sufficient permissions for {name}."
+msgstr "접근 거부: 충분한 권한이 없습니다. {name}."
+
+# CTX-INTERPRETATION: This string is part of an error message displayed when a
+# requested catalog item (identified by its name) cannot be found, likely
+# within a web-based user interface for managing simulation projects.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:271
+#, python-brace-format
+msgid "The requested item '{name}' was not found."
+msgstr "요청한 항목 '{}'를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is displayed in a REST API error response
+# when the server cannot find any items matching the specified name (⟨0⟩)
+# within a catalog batch.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:275
+#, python-brace-format
+msgid "None of these items '{name}' could be found."
+msgstr "이 항목 중 '{name}'에 해당하는 항목을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# project's node control REST API, indicating failure to stop a dynamic
+# service with specific project and node IDs.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/nodes_rest.py:311
+#, python-brace-format
+msgid "Could not stop dynamic service {project_id}.{node_id}"
+msgstr "동적 서비스 {project_id}.{node_id}를 중지할 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in a web-based interface for
+# managing scientific simulations, indicating a session identification issue
+# due to a missing socket ID.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/projects_states_rest.py:115
+msgid ""
+"Data corruption detected: unable to identify your session (socket_id "
+"missing). Please refresh the page and try again. If the problem persists, "
+"contact support."
+msgstr ""
+"데이터 손상 감지: 세션 식별 불가 (소켓 ID 누락). 페이지를 새로 고치고 다시 시도하십시오. 문제가 지속되면 지원팀에 문의하십시오."
+
+# CTX-INTERPRETATION: This message appears in the trash_rest.py file,
+# informing a user that they cannot delete a project currently in use and
+# instructing them to stop all services before attempting deletion.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:30
+#, python-brace-format
+msgid ""
+"Current study is in use and cannot be trashed [project_id={project_uuid}]. "
+"Please stop all services first and try again"
+msgstr ""
+"현재 연구가 사용 중이므로 삭제할 수 없습니다 [프로젝트 ID={project_uuid}]. 먼저 모든 서비스를 중지하고 다시 "
+"시도하십시오."
+
+# CTX-INTERPRETATION: This message appears in the trash functionality of a web
+# server, indicating an error occurred during service shutdown before deleting
+# project data.
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:35
+msgid ""
+"Something went wrong while stopping services before trashing. Aborting "
+"trash."
+msgstr "서비스를 정리하기 전에 중단하는 동안 문제가 발생했습니다. 정리 작업을 취소합니다."
+
+# CTX-INTERPRETATION: This string appears in the user interface of a web
+# server that tracks resource usage, informing users when the tracking service
+# is temporarily unavailable.
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:8
+msgid ""
+"The resource usage tracking service is temporarily unavailable. Please try "
+"again in a few moments."
+msgstr "리소스 사용 추적 서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in the resource usage tracker
+# service, indicating that the user's request for resource information could
+# not be fulfilled.
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:13
+msgid "The requested resource usage information could not be found."
+msgstr "요청된 리소스 사용 정보가 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string likely appears in the user interface to
+# indicate that a user does not have the necessary permissions or
+# authentication credentials to access a specific resource or functionality
+# within the simulation application.
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:5
+msgid "Unauthorized"
+msgstr "권한이 없습니다"
+
+# CTX-INTERPRETATION: This string appears in the security constants file,
+# indicating a temporary unavailability of the authentication service, likely
+# related to user login or authorization.
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:6
+msgid "Authentication service is temporary unavailable"
+msgstr "인증 서비스는 일시적으로 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears when a user attempts to access a
+# study without being logged in, guiding them to log in for access.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:11
+msgid ""
+"You must be logged in to access this study. Please log in and try again."
+msgstr "이 연구에 액세스하려면 로그인해야 합니다. 로그인을 하고 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string is used in the Simcore service webserver to
+# inform a user that a project with a specified ID was not found, likely
+# during a study dispatch operation.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:15
+#, python-brace-format
+msgid "The project with ID '{project_id}' could not be found."
+msgstr "'{project_id}' ID를 가진 프로젝트를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# module, likely within a user interface or API endpoint related to project
+# management, indicating that a specified project is inaccessible.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:19
+#, python-brace-format
+msgid "The project with ID '{project_id}' is not available or not shared."
+msgstr "ID '{project_id}'를 가진 프로젝트는 사용할 수 없거나 공유되지 않았습니다."
+
+# CTX-INTERPRETATION: This message appears on the website when a user attempts
+# to access a project that requires registration but hasn't logged in.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:24
+#, python-brace-format
+msgid ""
+"This project is only available for registered users.<br/><br/>Please log in "
+"and try again.<br/><br/>If you don't have an account, please request one at "
+"{support_email}.<br/><br/>"
+msgstr ""
+"이 프로젝트는 등록된 사용자만 이용할 수 있습니다.<br/><br/>로그인하여 다시 시도하십시오.<br/><br/>계정이 없으시면 "
+"{support_email}에서 요청해주세요."
+
+# CTX-INTERPRETATION: This message appears in the web server when the platform
+# exceeds the maximum allowed anonymous user limit, prompting users to retry
+# or log in.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:32
+msgid ""
+"We have reached the maximum number of anonymous users allowed on the "
+"platform. Please try again later or log in with a registered account."
+msgstr "플랫폼에서 허용된 최대 수의 익명 사용자를 초과했습니다. 나중에 다시 시도하거나 등록된 계정으로 로그인해 주세요."
+
+# CTX-INTERPRETATION: This message appears in the web server's user interface
+# when an unexpected error occurs during a simulation dispatch process,
+# guiding the user to troubleshoot or contact support.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:38
+msgid ""
+"Sorry, something unexpected went wrong! We track these errors automatically,"
+" but if the problem persists please contact us. In the meantime, try "
+"refreshing the page."
+msgstr ""
+"무언가 예기치 않은 오류가 발생했습니다! 이러한 오류는 자동으로 추적되지만 문제가 지속되면 저희에게 문의해 주십시오. 그동안 페이지를 "
+"새로 고쳐 보십시오."
+
+# CTX-INTERPRETATION: This string is part of an error message displayed to the
+# user when a project cannot be opened, indicating the reason for failure.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:81
+#, python-brace-format
+msgid "Unable to open your project: {public_error}"
+msgstr "프로젝트를 열 수 없습니다: {public_error}"
+
+# CTX-INTERPRETATION: This string appears in a web-based interface for
+# accessing a simulation study, informing users about access restrictions and
+# providing instructions on obtaining an account.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:109
+msgid ""
+"Access is restricted to registered users.<br/><br/>If you don't have an "
+"account, please contact support to request one.<br/><br/>"
+msgstr ""
+"등록된 사용자만 액세스할 수 있습니다.<br/><br/>계정이 없으시면 지원팀에 문의하여 요청해 주시기 바랍니다.<br/><br/>"
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when a user provides an invalid URL for a study, indicating that the link is
+# broken or missing necessary information.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:143
+msgid ""
+"The link you provided is invalid because it doesn't contain valid "
+"information related to data or a service. Please check the link and make "
+"sure it is correct."
+msgstr ""
+"제공하신 링크는 유효한 데이터 또는 서비스와 관련된 정보를 포함하고 있지 않아 유효하지 않습니다. 링크를 확인하여 올바른지 확인해 주시기"
+" 바랍니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# library, specifically within error messages related to file handling when no
+# registered service can process a specific file type.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:10
+#, python-brace-format
+msgid "None of the registered services can handle '{file_type}' files."
+msgstr "등록된 서비스 중 '{file_type}' 파일을 처리할 수 있는 서비스가 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# project, specifically within error messages related to file size exceeding a
+# limit during study dispatch.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:14
+#, python-brace-format
+msgid "File size {file_size_in_mb} MB exceeds the allowed limit."
+msgstr "파일 크기 {file_size_in_mb} MB가 허용된 한도를 초과했습니다."
+
+# CTX-INTERPRETATION: This string is used within the `ServiceNotFoundError`
+# exception class to inform a user that a specific service with a given key
+# and version could not be located.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:18
+#, python-brace-format
+msgid "Service {service_key}:{service_version} could not be found."
+msgstr "서비스 {service_key}:{service_version}를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# module, specifically within the `InvalidRedirectionParamsError` class, to
+# inform users when a provided link is invalid or missing.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:22
+msgid "The provided link is invalid or incomplete."
+msgstr "제공된 링크가 유효하지 않거나 불완전합니다."
+
+# CTX-INTERPRETATION: This message appears in the web server when the maximum
+# allowed number of guest users has been exceeded, guiding the user to log in
+# with a registered account or retry.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:27
+msgid ""
+"Maximum number of guest users has been reached. Please log in with a "
+"registered account or try again later."
+msgstr "게스트 사용자 수 제한이 초과되었습니다. 등록된 계정으로 로그인하거나 나중에 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_webserver`
+# to inform guest users that they are not authorized to access a specific
+# resource, likely within a study dispatching system.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:33
+msgid "Guest users are not allowed to access this resource."
+msgstr "게스트 사용자는 이 리소스를 액세스할 수 없습니다."
+
+# CTX-INTERPRETATION: This message is displayed in the web interface when a
+# study (project) fails to load or access its data due to corruption,
+# indicating an issue with the project's integrity.
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:38
+#, python-brace-format
+msgid ""
+"Project {project_uuid} appears to be corrupted and cannot be accessed "
+"properly."
+msgstr "프로젝트 {project_uuid}가 손상되어 제대로 액세스할 수 없는 것으로 보입니다."
+
+# CTX-INTERPRETATION: This string appears in the web server code when a user
+# attempts to access a tag that either doesn't exist or they lack permission
+# for.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:40
+#, python-brace-format
+msgid "The tag '{tag_id}' could not be found or you don't have access to it."
+msgstr "태그 '{tag_id}'를 찾을 수 없거나 해당 태그에 대한 액세스 권한이 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the web server code when a user
+# attempts to perform an operation on a tag that either doesn't exist or for
+# which they lack permissions.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:47
+#, python-brace-format
+msgid ""
+"Unable to {operation} tag '{tag_id}'. The tag was not found or you don't "
+"have sufficient access."
+msgstr "태그를 {operation}하는 데 실패했습니다. 태그가 존재하지 않거나 충분한 권한이 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the web server when a user
+# attempts to share a tag with all users, which is not permitted based on the
+# application's access control rules.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:53
+msgid "Sharing with everyone is not allowed."
+msgstr "모든 사용자에게 공유하는 것은 허용되지 않습니다."
+
+# CTX-INTERPRETATION: This message explains the sharing permissions for users
+# in a simulation application, specifying that only admin users (like testers
+# or POs) can share data with all users.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:58
+msgid ""
+"Sharing with all users is only allowed for admin users (e.g. testers, POs, "
+"...)."
+msgstr "모든 사용자와의 공유는 관리자 사용자(예: 테스터, PO 등)만 허용됩니다."
+
+# CTX-INTERPRETATION: This string appears in the web server code when a user
+# attempts to share or unshare a tag but lacks the necessary permissions.
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:65
+#, python-brace-format
+msgid ""
+"You don't have sufficient access rights to share (or unshare) tag "
+"'{tag_id}'."
+msgstr "당신은 태그 '{tag_id}'를 공유(또는 해제)할 충분한 권한이 없습니다."
+
+# CTX-INTERPRETATION: This string is displayed in a REST API endpoint when the
+# server cannot locate a file based on its identifier.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:26
+#, python-brace-format
+msgid "The file with identifier {file_id} could not be found"
+msgstr "지정자 {file_id}를 가진 파일이 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in a REST API endpoint within a
+# simulation application, indicating that a user lacks the required
+# permissions to access a specific file located in a particular location.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:31
+#, python-brace-format
+msgid ""
+"Permission denied: You (user {user_id}) don't have the necessary rights to "
+"access file {file_id} in location {location_id}"
+msgstr "권한 거부: 사용자 ({user_id})는 {file_id} 위치에 있는 파일에 액세스할 수 있는 필요한 권한이 없습니다."
+
+# CTX-INTERPRETATION: The string appears in a REST exception handler within a
+# web server component, indicating that a task was prematurely stopped during
+# execution.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:38
+#, python-brace-format
+msgid "Task {job_id} was terminated before completion"
+msgstr "작업 {job_id}가 완료되기 전에 종료되었습니다."
+
+# CTX-INTERPRETATION: This string is used within a web service to display
+# error messages related to tasks that have failed during execution, providing
+# details about the task ID, error message, and error type.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:43
+#, python-brace-format
+msgid ""
+"Task '{job_id}' encountered an error: {exc_msg} (error type: '{exc_type}')"
+msgstr "작업 '{job_id}'에서 오류가 발생했습니다: {exc_msg} (오류 유형: '{exc_type}')"
+
+# CTX-INTERPRETATION: The string appears in a REST exception handler within a
+# web server, indicating that a task with a specific ID is still in progress
+# and hasn't finished execution.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:49
+#, python-brace-format
+msgid "Task {job_id} is still running and has not completed yet"
+msgstr "작업 {job_id}가 아직 실행 중이며 완료되지 않았습니다."
+
+# CTX-INTERPRETATION: This string is displayed in a REST API endpoint when a
+# task with the specified ID cannot be found.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:53
+#, python-brace-format
+msgid "The requested task with ID {job_id} does not exist"
+msgstr "지정된 ID를 가진 요청된 작업이 존재하지 않습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API error handling for
+# a task scheduling system within a web server, informing users of a temporary
+# issue.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:58
+msgid ""
+"The task scheduling system encountered an error. Please try again later"
+msgstr "작업 스케줄링 시스템에서 오류가 발생했습니다. 잠시 후 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: The string is used in a REST API endpoint to inform the
+# user when the system fails to retrieve the current status of a specific
+# task, identified by its ID.
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:64
+#, python-brace-format
+msgid "Unable to get the current status for task {job_id}"
+msgstr "특정 작업의 현재 상태를 가져오는 데 실패했습니다."
+
+# CTX-INTERPRETATION: This message appears in the trash functionality of a web
+# server, informing users that a project cannot be moved to the trash while
+# services are running.
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:30
+msgid ""
+"The project is currently in use and cannot be moved to trash. Please stop "
+"all running services first and try again."
+msgstr "프로젝트는 현재 사용 중이므로 쓰레기로 이동할 수 없습니다. 먼저 모든 실행 중인 서비스를 중지하고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This message appears in the trash functionality of a web
+# server, indicating an error during service shutdown before deleting files.
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:37
+msgid ""
+"An error occurred while stopping services before moving to trash. The "
+"operation has been cancelled."
+msgstr "서비스를 중단하기 전에 쓰레기로 이동하는 동안 오류가 발생했습니다. 작업이 취소되었습니다."
+
+# CTX-INTERPRETATION: This message indicates an error occurred while
+# attempting to save or update user preferences within the application's web
+# server.
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:19
+msgid "Could not create or modify preferences"
+msgstr "사용자 설정 생성 또는 수정에 실패했습니다."
+
+# CTX-INTERPRETATION: This string is displayed in a REST API error response
+# when the frontend user preference requested by the client is not found in
+# the backend database.
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
+#, python-brace-format
+msgid "Provided {frontend_preference_name} not found"
+msgstr "요청된 프런트엔드 사용자 선호도가 백엔드 데이터베이스에 존재하지 않는 경우 표시되는 메시지입니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_webserver`
+# to inform a user when an API token for a specific service cannot be located,
+# likely during authentication or authorization.
+#: services/web/server/src/simcore_service_webserver/user_tokens/_controller/rest/_rest_exceptions.py:16
+#, python-brace-format
+msgid "The API token for '{service}' could not be found."
+msgstr "서비스 '<0>'에 대한 API 토큰을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_webserver`
+# to inform a user that there are no pending registration requests associated
+# with their email address within a specific product.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:32
+#, python-brace-format
+msgid ""
+"No pending registration request found for email {email} in {product_name}."
+msgstr "이메일 {email}을 가진 제품 {product_name}에 대한 등록 요청이 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API endpoint for user
+# retrieval when a user is not found or has privacy settings enabled,
+# indicating an error.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:39
+msgid ""
+"The requested user could not be found. This may be because the user is not "
+"registered or has privacy settings enabled."
+msgstr "요청한 사용자를 찾을 수 없습니다. 이는 사용자가 등록되지 않았거나 개인 정보 설정이 활성화되었기 때문일 수 있습니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# module, specifically within a REST API endpoint for user management,
+# informing users when they attempt to create an account with a username that
+# already exists.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:47
+#, python-brace-format
+msgid ""
+"The username '{user_name}' is already in use. Please try "
+"'{alternative_user_name}' instead."
+msgstr ""
+"사용자 이름 '{user_name}'이 이미 사용 중입니다. 대신 '{alternative_user_name}'을 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string is displayed in the user interface when an
+# existing account is found during a pre-registration attempt, informing the
+# user about the situation.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:54
+#, python-brace-format
+msgid ""
+"Found {num_found} existing account(s) for '{email}'. Unable to pre-register "
+"an existing user."
+msgstr "다음과 같은 계정이 '{email}'에 대해 이미 존재합니다. 기존 사용자를 사전 등록할 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API error handling for
+# a simulation application, indicating that a product is still being
+# configured and unavailable.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:61
+msgid ""
+"This product is currently being configured and is not yet ready for use. "
+"Please try again later."
+msgstr "이 제품은 현재 구성 중이며 사용을 위해 준비되지 않았습니다. 나중에 다시 시도해 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when a user attempts to perform an action that requires phone registration
+# but no pending registration is found, guiding them to initiate the
+# registration process.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:68
+msgid ""
+"No pending phone registration found. Please start the phone registration "
+"process first."
+msgstr "휴대전화 등록이 완료되지 않았습니다. 먼저 전화 등록 프로세스를 시작해주세요."
+
+# CTX-INTERPRETATION: This message appears in the REST API error handling for
+# phone registration, indicating an invalid or expired session.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:75
+msgid ""
+"Your phone registration session is invalid or has expired. Please start the "
+"phone registration process again."
+msgstr "휴대전화 등록 세션이 유효하지 않거나 만료되었습니다. 전화 등록 프로세스를 다시 시작하십시오."
+
+# CTX-INTERPRETATION: This string appears in the REST API error handling
+# within a web server, informing users that their confirmation code is invalid
+# and prompting them to re-enter it.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:83
+msgid ""
+"The confirmation code you entered is incorrect. Please check and try again."
+msgstr "죄송합니다. 입력하신 확인 코드가 올바르지 않습니다. 다시 확인하시고 시도해 주십시오."
+
+# CTX-INTERPRETATION: This string appears in the REST API error handling
+# within a web server component, indicating that a requested product or item
+# was not found in the system.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:90
+msgid "The requested product could not be found."
+msgstr "요청한 제품을 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the REST API error handling
+# within a web server component, indicating that a user's pre-registration
+# request could not be located.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:97
+msgid "The requested pre-registration was not found."
+msgstr "요청된 사전 등록이 발견되지 않았습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API endpoint for
+# managing user requests within a simulation system, indicating that a request
+# has already been processed and cannot be re-submitted.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:104
+msgid "This request was already reviewed and cannot be moved."
+msgstr "이 요청은 이미 검토되었으며 이동할 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API error handling when
+# a user attempts to move a request that is already associated with an
+# existing account.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:111
+msgid ""
+"This request is already linked to a created account and cannot be moved."
+msgstr "이 요청은 이미 생성된 계정에 연결되어 있으며 이동할 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when a user attempts to create an account with an email address that is
+# already associated with another user within the target product's system.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:118
+msgid "A request with this email already exists in the target product."
+msgstr "이 이메일 주소는 이미 대상 제품 내의 다른 사용자와 연결되어 있습니다."
+
+# CTX-INTERPRETATION: This message appears in the REST API when attempting to
+# grant access to a new product for an inactive user.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:125
+#, python-brace-format
+msgid ""
+"This user's account is not active ({status}) and cannot be granted access to"
+" a new product."
+msgstr "이 사용자의 계정은 비활성화되어 있으며, 새로운 제품에 대한 액세스를 부여할 수 없습니다."
+
+# CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
+# module, specifically within a REST API endpoint related to user approval,
+# indicating that an invitation URL is mandatory for approving a user's email.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:132
+#, python-brace-format
+msgid "An invitation URL is required to approve {email}."
+msgstr "초대 URL이 필요합니다. 이메일을 승인하려면."
+
+# CTX-INTERPRETATION: This string appears in the accounts REST API controller,
+# likely during product validation or account creation, indicating an invalid
+# product name.
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:72
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:205
+#, python-brace-format
+msgid ""
+"Invalid product '{product_name}'. The specified product does not exist."
+msgstr "유효하지 않은 제품 '{product_name}'. 지정된 제품은 존재하지 않습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# module, likely related to rate limiting or request throttling functionality.
+#: services/web/server/src/simcore_service_webserver/utils_rate_limiting.py:20
+msgid ""
+"Requests are being made too frequently. Please wait a moment before trying "
+"again."
+msgstr "요청이 너무 자주 발생하고 있습니다. 다시 시도하기 전에 잠시 기다려 주십시오."
+
+# CTX-INTERPRETATION: This message appears in the wallet service when a user
+# attempts to make a payment but the product's pricing information is missing,
+# indicating payments are unavailable.
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:6
+msgid ""
+"Payments are not currently available for this product as pricing has not "
+"been configured."
+msgstr "이 제품의 가격 정보가 아직 구성되지 않았기 때문에 결제가 현재 사용할 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the wallet service when payment
+# processing fails due to missing billing information required for tax
+# purposes.
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:11
+msgid ""
+"Unable to process payment because required billing information (such as "
+"country for tax purposes) is missing from your account. Please contact "
+"support to complete your billing setup."
+msgstr ""
+"필요한 청구 정보(예: 세금 목적으로 국가)가 계정에 누락되어 결제 처리가 불가능합니다. 청구 설정을 완료하려면 지원팀에 문의하십시오."
+
+# CTX-INTERPRETATION: This message appears in the web server's wallet handling
+# code when payment processing fails, informing the user about the issue and
+# providing support contact information.
+#: services/web/server/src/simcore_service_webserver/wallets/_handlers.py:88
+msgid ""
+"Payment processing is currently unavailable. Please hold off on retrying and"
+" contact support for help completing your payment. Our team has been "
+"notified and is already looking into it."
+msgstr ""
+"결제 처리가 현재 불가능합니다. 다시 시도하지 말고 결제를 완료하는 데 도움을 요청하기 위해 지원팀에 문의하십시오. 당사 팀에 알렸으며 "
+"이미 문제를 해결하고 있습니다."
+
+# CTX-INTERPRETATION: This string is used in the `simcore_service_webserver`
+# module to display an error message when a request contains invalid
+# parameters in its path, query, headers or body.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:24
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request path"
+msgstr "요청 경로의 유효하지 않은 매개변수/매개변수 '{failed}'가 있습니다."
+
+# CTX-INTERPRETATION: This string is used in the web request validation
+# service to inform users about invalid parameters found in the request query.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:25
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request query"
+msgstr "요청 쿼리에 있는 유효하지 않은 매개변수/매개변수 '{failed}'"
+
+# CTX-INTERPRETATION: This string is used to display an error message when the
+# request headers contain invalid parameters or fields during web request
+# validation.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:26
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request headers"
+msgstr "요청 헤더에 있는 유효하지 않은 매개변수/필드를 표시하는 오류 메시지입니다."
+
+# CTX-INTERPRETATION: This string is used to display an error message when the
+# request body contains invalid fields during web request validation in a
+# scientific simulation application.
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:27
+#, python-brace-format
+msgid "Invalid field/s '{failed}' in request body"
+msgstr "요청 본문에 있는 유효하지 않은 필드/필드 중 하나는 '{failed}'입니다."
+
+# CTX-INTERPRETATION: This exception handler displays a message when a
+# specified workspace and group are not found within the system.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:26
+#, python-brace-format
+msgid ""
+"The requested workspace {workspace_id} group {group_id} could not be found."
+msgstr "요청된 워크스페이스 {workspace_id} 그룹 {group_id}를 찾을 수 없습니다."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when a user attempts to delete a workspace containing active projects,
+# prompting them to stop services.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:42
+msgid ""
+"Unable to delete workspace because one or more projects are currently "
+"running. Please stop all running services and try again."
+msgstr "프로젝트가 현재 실행 중인 경우 워크스페이스를 삭제할 수 없습니다. 모든 실행 중인 서비스를 중지하고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
+# when an error occurs during service shutdown before deleting a workspace,
+# indicating a rollback.
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:49
+msgid ""
+"Something went wrong while stopping running services in projects within this"
+" workspace before trashing. Aborting trash."
+msgstr "이 작업 공간 내의 실행 중인 서비스가 정리되기 전에 삭제하기 전에 오류가 발생했습니다. 정리 작업을 취소합니다."
+
+# CTX-INTERPRETATION: This message appears in the aiohttp rest_middlewares.py
+# file, likely as an error message or notification to the user when an
+# internal error occurs during a request.
+#: packages/service-library/src/servicelib/aiohttp/rest_middlewares.py:37
+msgid ""
+"We apologize for the inconvenience. The issue has been recorded, please "
+"report it if it persists."
+msgstr "불편을 드려 죄송합니다. 문제가 기록되었으며, 지속되면 보고해 주시기 바랍니다."
