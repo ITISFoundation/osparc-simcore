@@ -1,18 +1,10 @@
 {
   "lang_names": {
-    "zh_CN": "Simplified Chinese",
     "es_ES": "Spanish",
-    "ko_KR": "Korean"
+    "ko_KR": "Korean",
+    "zh_CN": "Simplified Chinese"
   },
   "glossary": {
-    "zh_CN": {
-      "boundary condition": "边界条件",
-      "cell size": "网格尺寸",
-      "mesh": "网格",
-      "resolution": "分辨率",
-      "solver": "求解器",
-      "voxel": "体素"
-    },
     "es_ES": {
       "boundary condition": "condición de contorno",
       "cell size": "tamaño de celda",
@@ -29,6 +21,14 @@
       "resolution": "해상도",
       "solver": "솔버",
       "voxel": "복셀"
+    },
+    "zh_CN": {
+      "boundary condition": "边界条件",
+      "cell size": "网格尺寸",
+      "mesh": "网格",
+      "resolution": "分辨率",
+      "solver": "求解器",
+      "voxel": "体素"
     }
   }
 }

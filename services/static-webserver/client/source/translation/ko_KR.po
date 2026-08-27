@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-08-27T11:20:43Z\n"
+"X-Translation-Date: 2026-08-27T13:09:18Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title
@@ -6702,6 +6702,15 @@ msgstr "태그 편집"
 msgid "Apply Tags"
 msgstr "태그 적용"
 
+# CTX-INTERPRETATION: This string appears within the TagManager class,
+# providing instructions on how to manage and apply tags for organizing data
+# in a scientific simulation application.
+#: services/static-webserver/client/source/class/osparc/form/tag/TagManager.js:150
+msgid ""
+"Manage and apply tags to better organize your %1. Select from existing tags "
+"or create new ones, then save your changes when ready."
+msgstr "기존 태그를 선택하거나 새 태그를 만들고 저장할 때까지 태그를 관리하고 적용하여 데이터를 더 잘 정리하는 방법을 안내합니다."
+
 # CTX-INTERPRETATION: The 'Function Id' button allows users to copy the UUID
 # of a function displayed in the FunctionLarge component, likely for
 # identification or integration purposes.
@@ -9665,6 +9674,18 @@ msgstr "링크를 가진 인터넷 사용자 누구나 이 문서를 열 수 있
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:135
 msgid "Any logged-in user with the link can copy and open this "
 msgstr "로그인한 사용자는 이 링크를 통해 복사하고 열 수 있습니다. "
+
+# CTX-INTERPRETATION: This string appears in the Collaborators.js file,
+# describing a section that displays user and organization access information
+# with associated roles.
+#: services/static-webserver/client/source/class/osparc/share/Collaborators.js:305
+msgid ""
+"This section provides an overview of all users and organizations who have "
+"access to the %1 and their assigned roles. Depending on your permissions, "
+"you may be able to modify access or update roles."
+msgstr ""
+"이 섹션은 %1에 액세스 권한을 가진 모든 사용자 및 조직과 해당 역할에 대한 개요를 제공합니다. 귀하의 권한에 따라 액세스를 수정하거나"
+" 역할을 업데이트할 수 있습니다."
 
 # CTX-INTERPRETATION: The label "Shared with:" appears in the Collaborators.js
 # file, likely indicating which users or groups have access to a shared

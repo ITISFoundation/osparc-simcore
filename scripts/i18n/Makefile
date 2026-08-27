@@ -31,7 +31,7 @@ PARTIALS_DIR   := $(LOCALE_OUT_DIR)/_partials
 ENV_FILE       := $(REPO_ROOT)/.env
 
 # --- Backend configuration ---
-LANGS            ?= zh_CN es_ES               ## Backend target locales (space-separated locale codes)
+LANGS            ?= es_ES ko_KR zh_CN        ## Backend target locales (space-separated locale codes)
 POT              := $(LOCALE_OUT_DIR)/messages.pot
 PO_FILES         := $(foreach lang,$(LANGS),$(LOCALE_OUT_DIR)/$(lang)/LC_MESSAGES/messages.po)
 MO_FILES         := $(PO_FILES:.po=.mo)
