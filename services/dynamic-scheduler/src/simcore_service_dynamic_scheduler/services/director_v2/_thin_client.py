@@ -39,7 +39,6 @@ class DirectorV2ThinClient(BaseThinClient):
             total_retry_interval=DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
             default_http_client_timeout=Timeout(DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S),
-            extra_allowed_method_names={"attach_lifespan_to"},
             tracing_config=get_tracing_config(app),
         )
 
