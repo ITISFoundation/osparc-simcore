@@ -94,7 +94,7 @@ CLIENT_SRC_REL      := services/static-webserver/client/source/class
 CLIENT_TRANS_DIR    := $(CLIENT_DIR)/source/translation
 FRONTEND_PARTIALS_DIR := $(CLIENT_TRANS_DIR)/_partials
 FRONTEND_POT        := $(CLIENT_TRANS_DIR)/frontend.pot
-CLIENT_LANGS        ?= es_ES zh_CN            ## Frontend target locales (space-separated locale codes)
+CLIENT_LANGS        ?= es_ES ko_KR zh_CN      ## Frontend target locales (space-separated locale codes)
 
 # --- Guided tours JSON resources (extracted via json_cmd, not xgettext) ---
 # Data loaded at runtime (osparc.tours.Manager/List/Step), so their
