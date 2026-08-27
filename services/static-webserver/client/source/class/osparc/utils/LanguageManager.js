@@ -23,6 +23,10 @@ qx.Class.define("osparc.utils.LanguageManager", {
         backend: "es_ES",
         label: "Español [Spanish]",
       },
+      "ko_KR": {
+        backend: "ko_KR",
+        label: "한국어 [Korean]",
+      },
       "zh": {
         backend: "zh_CN",
         label: "中文 [Chinese]",
