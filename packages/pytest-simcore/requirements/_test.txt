@@ -149,7 +149,7 @@ sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-starlette==0.52.1
+starlette==1.6.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
