@@ -20,12 +20,12 @@ Makefile                                           @pcrespov @sanderegg
 /packages/pytest-simcore/                              @pcrespov @sanderegg
 /packages/service-integration/                         @pcrespov @sanderegg @GitHK
 /packages/service-library/                             @pcrespov
-/packages/service-library/src/servicelib/tracing.py    @bisgaard-itis
+/packages/service-library/src/servicelib/tracing.py    @sanderegg @mrnicegyu11
 /packages/service-library/src/servicelib/rabbitmq/     @pcrespov @giancarloromeo
 /packages/settings-library/                            @pcrespov @sanderegg
 /requirements/                                         @pcrespov @matusdrobuliak66
 /services/agent/                                       @GitHK
-/services/api-server/                                  @pcrespov @bisgaard-itis @wvangeit
+/services/api-server/                                  @pcrespov @wvangeit
 /services/api-server/tests/unit/pact_broker/           @matusdrobuliak66
 /services/autoscaling/                                 @sanderegg
 /services/catalog/                                     @pcrespov @sanderegg
