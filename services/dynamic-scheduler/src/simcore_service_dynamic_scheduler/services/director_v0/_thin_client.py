@@ -7,6 +7,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.fastapi.http_client import AttachLifespanMixin
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     expect_status,
@@ -18,7 +19,7 @@ from yarl import URL
 from ...core.settings import ApplicationSettings
 
 
-class DirectorV0ThinClient(SingletonInAppStateMixin, BaseThinClient):
+class DirectorV0ThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespanMixin):
     app_state_name: ClassVar[str] = "director_v0_thin_client"
 
     def __init__(self, app: FastAPI) -> None:
@@ -28,7 +29,9 @@ class DirectorV0ThinClient(SingletonInAppStateMixin, BaseThinClient):
         super().__init__(
             total_retry_interval=int(settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT),
             extra_allowed_method_names={
+                "attach_lifespan_to",
                 "get_from_app_state",
+                "lifespan",
                 "pop_from_app_state",
                 "set_to_app_state",
             },
